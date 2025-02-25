@@ -1535,6 +1535,113 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECSqlStatementTestFixture, UseOfWrongPropertyTags_ForAllVersions)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("UseOfWrongPropertyTags.ecdb"));
+
+    unsigned int ecXmlMajorVersion;
+    unsigned int ecXmlMinorVersion;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::ParseECVersion(ecXmlMajorVersion, ecXmlMinorVersion, ECVersion::Latest));
+
+    //Below schema uses ECProperty tag for Struct property which is wrong. It should use ECStructProperty tag.
+    Utf8CP xmlSchema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%d.%d">
+                                    <ECStructClass typeName="PrimStruct">
+                                        <ECProperty propertyName="p2d" typeName="Point2d" />
+                                        <ECProperty propertyName="p3d" typeName="Point3d" />
+                                    </ECStructClass>
+                                    <ECEntityClass typeName="UseOfWrongPropertyTags">
+                                        <ECProperty propertyName="Struct" typeName="PrimStruct" />
+                                        <ECStructArrayProperty propertyName="Struct_Array" typeName="PrimStruct" />
+                                    </ECEntityClass>
+                            </ECSchema>)xml";
+
+    //Below schema uses ECProperty tag for Struct property which is wrong. It should use ECStructProperty tag.
+    //Declaring separate xmlSchema for version 2.0 since, previous versions had different xml schema format.
+    Utf8CP xmlSchemaFor_V2_0 = R"xml(<ECSchema schemaName="TestSchema" version="1.0" nameSpacePrefix="test" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                                        <ECClass typeName="PrimStruct" isStruct = "true">
+                                            <ECProperty propertyName="i" typeName="int" />
+                                            <ECArrayProperty propertyName="I" typeName="int" />
+                                        </ECClass>
+                                        <ECClass typeName="UseOfWrongPropertyTags">
+                                            <ECProperty propertyName="Struct" typeName="PrimStruct" />
+                                        </ECClass>
+                                    </ECSchema>)xml";
+    
+    //Below schema uses ECProperty tag for Struct property which is wrong. It should use ECStructProperty tag.
+    //Declaring separate xmlSchema for version 3.0 since, previous versions had different xml schema format.
+    Utf8CP xmlSchemaFor_V3_0 = R"xml(<ECSchema schemaName="TestSchema" version="1.0" nameSpacePrefix="test" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+                                        <ECStructClass typeName="PrimStruct">
+                                            <ECProperty propertyName="p2d" typeName="Point2d" />
+                                            <ECArrayProperty propertyName="p3d" typeName="Point3d" />
+                                        </ECStructClass>
+                                        <ECEntityClass typeName="UseOfWrongPropertyTags">
+                                            <ECProperty propertyName="Struct" typeName="PrimStruct" />
+                                            <ECStructArrayProperty propertyName="Struct_Array" typeName="PrimStruct" />
+                                        </ECEntityClass>
+                                    </ECSchema>)xml";
+
+    for (const auto& [testCaseNumber, majorVersion, minorVersion, xmlSchemaVar, deserializationStatus, importStatus, schemaReadStatus, schemaImportResult] : std::vector<std::tuple<unsigned int, unsigned int, unsigned int, Utf8CP, bool, bool, SchemaReadStatus, SchemaImportResult>>
+        {
+        { 1, 2U, 0U, xmlSchemaFor_V2_0, true , true, SchemaReadStatus::Success, SchemaImportResult::OK },  // Older versions on encountering wrong property type default to a safe type in this case, "string"
+        { 2, 3U, 0U, xmlSchemaFor_V3_0, true , true, SchemaReadStatus::Success, SchemaImportResult::OK },  // Older versions on encountering wrong property type default to a safe type in this case, "string"
+        { 3, 3U, 1U, xmlSchema, true , true, SchemaReadStatus::Success, SchemaImportResult::OK },  // Older versions on encountering wrong property type default to a safe type in this case, "string"
+        { 4, ecXmlMajorVersion, ecXmlMinorVersion, xmlSchema, false , false, SchemaReadStatus::InvalidECSchemaXml, SchemaImportResult::ERROR }, // Current version should always log an error on encountering wrong property type with no deserialization and import
+        { 5, ecXmlMajorVersion, ecXmlMinorVersion + 1U, xmlSchema, true , false, SchemaReadStatus::Success, SchemaImportResult::ERROR }, // Future versions should deserialize successfully, default to a safe type but, import should fail
+        })
+        {
+        ECSchemaPtr schema;
+        const auto context = ECSchemaReadContext::CreateContext();
+        
+        // Schema should always be deserialized successfully irrespective of the ECXml version
+        if (deserializationStatus)
+        {
+        ASSERT_EQ(schemaReadStatus, ECSchema::ReadFromXmlString(schema, Utf8PrintfString(xmlSchemaVar, majorVersion, minorVersion).c_str(), *context)) << "Test case number : " << testCaseNumber << " failed at deserializing.";
+        ASSERT_EQ(deserializationStatus, schema.IsValid()) << "Test case number : " << testCaseNumber << " failed due to invalid schemas.";
+        }
+        else 
+        {
+        // But, schemas having unknown wrong property types with ecxml versions belonging to [V3_2, Latest] inclusive, should fail to deserialize
+        ASSERT_EQ(schemaReadStatus, ECSchema::ReadFromXmlString(schema, Utf8PrintfString(xmlSchemaVar, majorVersion, minorVersion).c_str(), *context)) << "Test case number : " << testCaseNumber << " failed since, a schema with wrong property type shouldn't deserialize for " << ecXmlMajorVersion << "." << ecXmlMinorVersion;
+        ASSERT_EQ(deserializationStatus, schema.IsValid()) << "Test case number : " << testCaseNumber << " failed since, a schema with wrong property type shouldn't deserialize for " << ecXmlMajorVersion << "." << ecXmlMinorVersion;
+        }
+         
+        // Checking if the wrong property types are defaulted to string type
+        if (deserializationStatus)
+            {
+            // Fetching the class pointer 
+            auto classP = schema->GetClassCP("UseOfWrongPropertyTags");
+            ASSERT_TRUE(classP) << "Test case : " << testCaseNumber << " failed to fetch class pointer.";
+            // Fetching the property pointer
+            auto propP = classP->GetPropertyByIndex(0);
+            ASSERT_TRUE(propP) << "Test case : " << testCaseNumber << " failed to fetch property pointer.";
+            // Fetching property as primitive property
+            auto primProp = propP->GetAsPrimitiveProperty();
+            ASSERT_TRUE(primProp) << "Test case failed : " << testCaseNumber << " failed to fetch the primitive property";
+            // Checking for equality of primivite property type to string
+            auto propType = primProp->GetType();
+            EXPECT_EQ(PRIMITIVETYPE_String, propType) << "Test case failed : " << testCaseNumber << " did not default to string type.";
+            }
+
+        
+        // Schema import should fail when ECXml version of the schema is greater than the current version that the ECDb supports
+        if (importStatus)
+        {
+        EXPECT_EQ(schemaImportResult, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas())) << "Test case number : " << testCaseNumber << " failed to import schema.";
+        EXPECT_EQ(importStatus, m_ecdb.Schemas().GetSchema("TestSchema") != nullptr)<< "Test case number : " << testCaseNumber << " failed at fetching the schema.";
+        }
+        else
+        {
+        //But, import should also fail when the schema has wrong property types with ECXml versions belonging to [V3_2, Latest] inclusive
+        EXPECT_EQ(schemaImportResult, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas())) << "Test case number : " << testCaseNumber << " failed since, a schema with wrong property type shouldn't import for " << ecXmlMajorVersion << "." << ecXmlMinorVersion;
+        EXPECT_EQ(importStatus, m_ecdb.Schemas().GetSchema("TestSchema") != nullptr)<< "Test case number : " << testCaseNumber << " failed since, a schema with wrong property type shouldn't import for " << ecXmlMajorVersion << "." << ecXmlMinorVersion;
+        }
+        
+        m_ecdb.AbandonChanges();
+        }
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, pragma_ecdb_version)
@@ -5557,8 +5664,8 @@ TEST_F(ECSqlStatementTestFixture, Int64InStructArrays)
     ASSERT_TRUE(!actualStructArrayJson.Parse<0>(rawStmt.GetValueText(0)).HasParseError());
 
     ASSERT_TRUE(actualStructArrayJson.IsArray());
-    ASSERT_EQ(123456, actualStructArrayJson[0]["I"]);
-    ASSERT_EQ(id.GetValue(), actualStructArrayJson[0]["I64"]) << "Int64 are expected to not be stringified in the JSON";
+    ASSERT_EQ(actualStructArrayJson[0]["I"], 123456);
+    ASSERT_EQ(actualStructArrayJson[0]["I64"], id.GetValue()) << "Int64 are expected to not be stringified in the JSON";
     }
 
 //---------------------------------------------------------------------------------------
@@ -10524,8 +10631,8 @@ TEST_F(ECSqlStatementTestFixture, AliasedEnumProps)
                 <ECEntityClass typeName="Foo" >
                     <ECProperty propertyName="Status" typeName="Status" />
                     <ECArrayProperty propertyName="Statuses" typeName="Status" />
-                    <ECProperty propertyName="Domain" typeName="Domain" />
-                    <ECArrayProperty propertyName="Domains" typeName="Domain" />
+                    <ECProperty propertyName="Domain" typeName="Domains" />
+                    <ECArrayProperty propertyName="Domains" typeName="Domains" />
                 </ECEntityClass>
               </ECSchema>)xml",
                 R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -10540,8 +10647,8 @@ TEST_F(ECSqlStatementTestFixture, AliasedEnumProps)
                 <ECEntityClass typeName="Foo" >
                     <ECProperty propertyName="Status" typeName="Status" />
                     <ECArrayProperty propertyName="Statuses" typeName="Status" />
-                    <ECProperty propertyName="Domain" typeName="Domain" />
-                    <ECArrayProperty propertyName="Domains" typeName="Domain" />
+                    <ECProperty propertyName="Domain" typeName="Domains" />
+                    <ECArrayProperty propertyName="Domains" typeName="Domains" />
                 </ECEntityClass>
               </ECSchema>)xml"})
         {
@@ -10580,7 +10687,7 @@ TEST_F(ECSqlStatementTestFixture, AliasedEnumProps)
 
         stmt.Finalize();
         CloseECDb();
-        }
+        }   
     }
 
 //---------------------------------------------------------------------------------------
@@ -12747,6 +12854,137 @@ TEST_F(ECSqlStatementTestFixture, InsertUsingOnlyAndAll)
     ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     }
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, Testing_Table_Valued_Functions_without_schemaNames)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Testing_Table_Valued_Functions_without_schemaNames.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    auto test_data = R"({
+        "planet": "mars",
+        "gravity": "3.721 m/s²",
+        "surface_area": "144800000 km²",
+        "distance_from_sun":"227900000 km",
+        "radius" : "3389.5 km",
+        "orbital_period" : "687 days",
+        "moons": ["Phobos", "Deimos"]
+    })";
+    //json_each
+    if("json_each without schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json_each(?) s where s.key='gravity'"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        }
+    if("json_each with schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json1.json_each(?) s where s.key='gravity'"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        }
+    if("json_each subquery without schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json_each(?) s where s.key='gravity')"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        }
+    if("json_each subquery with schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json1.json_each(?) s where s.key='gravity')"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        }
+
+        //json_each
+    if("json_each without schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json_tree(?) s where s.key='gravity'"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetName().c_str(), "key");
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetName().c_str(), "type");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        }
+    if("json_each with schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json1.json_tree(?) s where s.key='gravity'"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetName().c_str(), "key");
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetName().c_str(), "type");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        }
+    if("json_each subquery without schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json_tree(?) s where s.key='gravity')"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetName().c_str(), "key");
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetName().c_str(), "type");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        }
+    if("json_each subquery with schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json1.json_tree(?) s where s.key='gravity')"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetName().c_str(), "key");
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetName().c_str(), "type");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        }
+    if("json_each with space as schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select * from   .json_each(?) s where s.key='gravity'"));
+        }
+    if("json_tree with empty schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select * from .json_tree(?) s where s.key='gravity'"));
+        }
+    if("json_tree without args")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select * from json_tree s where s.key='gravity'"));
+        }
     }
 
 

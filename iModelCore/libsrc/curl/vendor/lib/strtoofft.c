@@ -39,7 +39,7 @@
 #  ifdef HAVE_STRTOLL
 #    define strtooff strtoll
 #  else
-#    if defined(_MSC_VER) && (_MSC_VER >= 1300) && (_INTEGRAL_MAX_BITS >= 64)
+#    if defined(_MSC_VER) && (_MSC_VER >= 1300)
 #      if defined(_SAL_VERSION)
          _Check_return_ _CRTIMP __int64 __cdecl _strtoi64(
              _In_z_ const char *_String,
@@ -207,7 +207,7 @@ static int get_char(char c, int base)
 #endif  /* Only present if we need strtoll, but do not have it. */
 
 /*
- * Parse a *positive* up to 64-bit number written in ascii.
+ * Parse a *positive* up to 64-bit number written in ASCII.
  */
 CURLofft curlx_strtoofft(const char *str, char **endp, int base,
                          curl_off_t *num)

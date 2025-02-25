@@ -93,6 +93,7 @@ const struct Curl_handler Curl_handler_dict = {
   ZERO_NULL,                            /* write_resp_hd */
   ZERO_NULL,                            /* connection_check */
   ZERO_NULL,                            /* attach connection */
+  ZERO_NULL,                            /* follow */
   PORT_DICT,                            /* defport */
   CURLPROTO_DICT,                       /* protocol */
   CURLPROTO_DICT,                       /* family */
@@ -146,7 +147,7 @@ static CURLcode sendf(struct Curl_easy *data, const char *fmt, ...)
 
   for(;;) {
     /* Write the buffer to the socket */
-    result = Curl_xfer_send(data, sptr, write_len, &bytes_written);
+    result = Curl_xfer_send(data, sptr, write_len, FALSE, &bytes_written);
 
     if(result)
       break;

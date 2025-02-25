@@ -79,6 +79,7 @@ const struct Curl_handler Curl_handler_gopher = {
   ZERO_NULL,                            /* write_resp_hd */
   ZERO_NULL,                            /* connection_check */
   ZERO_NULL,                            /* attach connection */
+  ZERO_NULL,                            /* follow */
   PORT_GOPHER,                          /* defport */
   CURLPROTO_GOPHER,                     /* protocol */
   CURLPROTO_GOPHER,                     /* family */
@@ -104,6 +105,7 @@ const struct Curl_handler Curl_handler_gophers = {
   ZERO_NULL,                            /* write_resp_hd */
   ZERO_NULL,                            /* connection_check */
   ZERO_NULL,                            /* attach connection */
+  ZERO_NULL,                            /* follow */
   PORT_GOPHER,                          /* defport */
   CURLPROTO_GOPHERS,                    /* protocol */
   CURLPROTO_GOPHER,                     /* family */
@@ -187,7 +189,7 @@ static CURLcode gopher_do(struct Curl_easy *data, bool *done)
     if(strlen(sel) < 1)
       break;
 
-    result = Curl_xfer_send(data, sel, k, &amount);
+    result = Curl_xfer_send(data, sel, k, FALSE, &amount);
     if(!result) { /* Which may not have written it all! */
       result = Curl_client_write(data, CLIENTWRITE_HEADER, sel, amount);
       if(result)
@@ -229,7 +231,7 @@ static CURLcode gopher_do(struct Curl_easy *data, bool *done)
   free(sel_org);
 
   if(!result)
-    result = Curl_xfer_send(data, "\r\n", 2, &amount);
+    result = Curl_xfer_send(data, "\r\n", 2, FALSE, &amount);
   if(result) {
     failf(data, "Failed sending Gopher request");
     return result;

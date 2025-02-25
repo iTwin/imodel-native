@@ -1271,7 +1271,7 @@ struct          UInt32KeyTree
 
         //  Some sugar *** EXPERIMENT ***
         operator VTYPE () { return GetValue (); }
-        operator KTYPE () { return this->getKey (); }
+        operator KTYPE () { return this->GetKey (); }
 
         //  Helper functions for UInt32KeyTree deleteXXX utility methods
         static StatusInt deleteValue1 (const Node*pEV, void*)

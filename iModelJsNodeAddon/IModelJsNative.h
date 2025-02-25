@@ -15,6 +15,9 @@
 #include <Napi/napi.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include "DgnDbWorker.h"
+#ifndef BENTLEY_WIN32
+    #include <signal.h>
+#endif
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -554,8 +557,8 @@ public:
     static DgnElementIdSet FindGeometryPartReferences(bvector<Utf8String> const& partIds, bool is2d, DgnDbR db);
 
     static void ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object request, Napi::Function callback);
-    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, ECDbCR, Napi::Object);
-    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, ECDbCR);
+    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, Napi::Object);
+    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env);
     static void GetTileTree(ICancellableP, DgnDbR db, Utf8StringCR id, Napi::Function& callback);
     static void GetTileContent(ICancellableP, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
     static void SetMaxTileCacheSize(uint64_t maxBytes);

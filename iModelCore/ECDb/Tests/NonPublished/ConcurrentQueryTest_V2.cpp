@@ -18,6 +18,7 @@ struct ConcurrentQueryFixture : ECDbTestFixture {
     void SetUp() override {
          // ConsoleLogger::SetSeverity("ECDb.ConcurrentQuery", BentleyApi::NativeLogging::LOG_TRACE);
         ECDbTestFixture::SetUp();
+        ConcurrentQueryMgr::Config::Reset(std::nullopt);
     }
 };
 struct SleepFunc : BeSQLite::ScalarFunction {
@@ -238,8 +239,8 @@ TEST_F(ConcurrentQueryFixture, Blob_Metadata) {
         "index":0,
         "jsonName":"bin",
         "name":"bin",
-        "extendedType":"Json",
-        "typeName":"string"
+        "extendedType":"",
+        "typeName":"binary"
     })json");
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Blob_Metadata.ecdb", SchemaItem(
@@ -270,8 +271,8 @@ TEST_F(ConcurrentQueryFixture, Blob_Metadata) {
     auto metadataJson = resJson["meta"][0];
 
     ASSERT_STREQ(metadataJson["accessString"].asCString(), "bin");
-    ASSERT_STREQ(metadataJson["typeName"].asCString(), "string");
-    ASSERT_STREQ(metadataJson["extendedType"].asCString(), "Json");
+    ASSERT_STREQ(metadataJson["typeName"].asCString(), "binary");
+    ASSERT_STREQ(metadataJson["extendedType"].asCString(), "");
     ASSERT_STREQ(metadataJson.Stringify(StringifyFormat::Indented).c_str(), expectedMetadataDoc.Stringify(StringifyFormat::Indented).c_str());
 }
 
@@ -280,7 +281,7 @@ TEST_F(ConcurrentQueryFixture, Blob_Metadata) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, Blob_NotAbbreviatedByDefault) {
     const uint8_t bin[] = {0x1, 0x1, 0x1};
-    
+
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Blob_NotAbbreviatedByDefault.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="testEntity"
@@ -385,16 +386,64 @@ TEST_F(ConcurrentQueryFixture, Blob_Abbreviated) {
     ASSERT_STREQ(resData[0][0].asString().c_str(), "{\"bytes\":13}");
 }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, BlobColumnInfoRepeated) {
+    // There was a bug where the abbreviateBlobs flag was not populated properly, this test checks that the flag behaves correctly
+    // when running the same query repeatedly with different values of the flag.
+    const uint8_t bin[] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x2c, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21};
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("BlobColumnInfoRepeated.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="testEntity"
+                    description="Cover all primitive, primitive array, struct of primitive, array of struct">
+                    <ECProperty propertyName="bin" typeName="binary" />
+                </ECEntityClass>
+            </ECSchema>)xml")));
+    ECSqlStatement stmt;
+    auto rc = stmt.Prepare(m_ecdb, R"sql(
+        insert into ts.testEntity(bin)
+        values(?)
+    )sql");
+    stmt.BindBlob(1, (void const*)bin, (int)sizeof(bin), IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    m_ecdb.SaveChanges();
+
+    auto checkBlobColumnInfo = [&](const std::string& expectedExtendedType, const std::string& expectedTypeName, std::optional<bool> abbreviateBlobs = std::nullopt) {
+        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+        auto req = ECSqlRequest::MakeRequest("SELECT bin FROM ts.testEntity");
+        if (abbreviateBlobs.has_value()) {
+            req->SetAbbreviateBlobs(abbreviateBlobs.value());
+        }
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+        auto res = ((ECSqlResponse*) r.get());
+        auto& rowProps = res->GetProperties();
+        ASSERT_EQ(rowProps.size(), 1);
+        auto& prop = rowProps[0];
+        ASSERT_STREQ(prop.GetExtendedType().c_str(), expectedExtendedType.c_str());
+        ASSERT_STREQ(prop.GetTypeName().c_str(), expectedTypeName.c_str());
+    };
+
+    checkBlobColumnInfo("", "binary");
+    checkBlobColumnInfo("", "binary", false);
+    checkBlobColumnInfo("Json", "string", true);
+    checkBlobColumnInfo("", "binary");
+    checkBlobColumnInfo("", "binary", false);
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
 
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
-    auto config = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    auto config = ConcurrentQueryMgr::Config::Get();
     config.SetQuota(QueryQuota(std::chrono::seconds(2), 1024));
     config.SetIgnoreDelay(false);
-    ConcurrentQueryMgr::ResetConfig(m_ecdb, config);
+    ConcurrentQueryMgr::Config::Reset(config);
 
     const auto delay = std::chrono::milliseconds(5000);
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
@@ -410,9 +459,9 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
 TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
 
-    auto config = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    auto config = ConcurrentQueryMgr::Config::Get();
     config.SetQuota(QueryQuota(std::chrono::seconds(10), 1000));
-    ConcurrentQueryMgr::ResetConfig(m_ecdb, config);
+    ConcurrentQueryMgr::Config::Reset(config);
 
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest(
@@ -428,9 +477,9 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
 TEST_F(ConcurrentQueryFixture, InterruptCheck_TimeLimitExceeded) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
 
-    auto config = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    auto config = ConcurrentQueryMgr::Config::Get();
     config.SetQuota(QueryQuota(std::chrono::seconds(1), 1000));
-    ConcurrentQueryMgr::ResetConfig(m_ecdb, config);
+    ConcurrentQueryMgr::Config::Reset(config);
 
     m_ecdb.AddFunction(SleepFunc::Instance());
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
@@ -676,9 +725,9 @@ TEST_F(ConcurrentQueryFixture, sqlite_only_eval_function_with_no_arg_or_constant
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, DelayRequest) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
-    ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::Config::Get();
     conf.SetIgnoreDelay(false);
-    ConcurrentQueryMgr::ResetConfig(m_ecdb, conf);
+    ConcurrentQueryMgr::Config::Reset(conf);
 
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
@@ -694,9 +743,9 @@ TEST_F(ConcurrentQueryFixture, DelayRequest) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, RestartToken) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
-    ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::Config::Get();
     conf.SetIgnoreDelay(false);
-    ConcurrentQueryMgr::ResetConfig(m_ecdb, conf);
+    ConcurrentQueryMgr::Config::Reset(conf);
 
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     const auto sql = "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt";
@@ -1099,6 +1148,90 @@ TEST_F(ConcurrentQueryFixture, CommentAtEndOfECSql) {
     }
 
 }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
 
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ConcurrentQuery_Simple.ecdb"));
+    ConcurrentQueryFixture::EnableECSqlExperimentalFeatures(m_ecdb, true);
+        {
+        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+        BeIdSet idSet;
+        idSet.insert(BeInt64Id(10));
+        idSet.insert(BeInt64Id(20));
+        idSet.insert(BeInt64Id(30));
+        idSet.insert(BeInt64Id(40));
+        int vsRowCount = 0;
+
+        ECSqlReader  vsReaderIdSet(mgr, "select id from IdSet(?)",
+            ECSqlParams().BindIdSet(1, idSet));
+
+        int i = 1;
+        while(vsReaderIdSet.Next()) {
+        auto classRow = vsReaderIdSet.GetRow();
+        ASSERT_EQ(i*10, BeStringUtilities::ParseHex(classRow[0].asString().c_str()));
+        i++;
+        vsRowCount++;
+        }
+        ASSERT_EQ(vsRowCount,4);
+        }
+        {
+        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+        BeIdSet idSet;
+        idSet.insert(BeInt64Id(10));
+        idSet.insert(BeInt64Id(20));
+        idSet.insert(BeInt64Id(30));
+        idSet.insert(BeInt64Id(40));
+        int vsRowCount = 0;
+
+        ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, IdSet(?) where ECInstanceId = id",
+            ECSqlParams().BindIdSet(1, idSet));
+
+        int i = 1;
+        while(vsReaderIdSet.Next()) {
+        auto classRow = vsReaderIdSet.GetRow();
+        ASSERT_EQ(i*10, BeStringUtilities::ParseHex(classRow[0].asString().c_str()));
+        i++;
+        vsRowCount++;
+        }
+        ASSERT_EQ(vsRowCount,4);
+        }
+        {
+        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+        int vsRowCount = 0;
+
+        ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, IdSet(?) where ECInstanceId = id",
+            ECSqlParams().BindId(1, BeInt64Id(33)));
+
+        while(vsReaderIdSet.Next())
+            {
+            vsRowCount++;
+            }
+        ASSERT_EQ(vsRowCount,0);
+        }
+    ConcurrentQueryMgr::Shutdown(m_ecdb);
+    ConcurrentQueryFixture::EnableECSqlExperimentalFeatures(m_ecdb, false);
+        {
+        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+        BeIdSet idSet;
+        idSet.insert(BeInt64Id(10));
+        idSet.insert(BeInt64Id(20));
+        idSet.insert(BeInt64Id(30));
+        idSet.insert(BeInt64Id(40));
+        int vsRowCount = 0;
+
+        ECSqlReader  vsReaderIdSet(mgr, "select id from IdSet(?)",
+            ECSqlParams().BindIdSet(1, idSet));
+
+        try{
+            vsReaderIdSet.Next();
+            }
+        catch (std::runtime_error e){
+            ASSERT_STREQ("'IdSet' virtual table is experimental feature and disabled by default.", e.what());
+            ASSERT_EQ(vsRowCount,0);
+            }
+        }
+}
 
 END_ECDBUNITTESTS_NAMESPACE

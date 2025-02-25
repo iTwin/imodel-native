@@ -410,9 +410,53 @@ DbValue  Changes::Change::GetNewValue(int colNum) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+Changes::Change::Change(SqlChangesetIterP iter, bool isValid) {
+    m_iter = iter;
+    m_isValid = isValid;
+    LoadOperation();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void Changes::Change::LoadOperation() const {
+    Utf8CP tableName = nullptr;
+    auto rc = m_iter != nullptr ? GetOperation(&tableName, &m_nCols, &m_opcode, &m_indirect) : BE_SQLITE_ERROR;
+    if (rc != BE_SQLITE_OK) {
+        m_tableName.clear();
+        m_nCols = 0;
+        m_indirect = 0;
+        m_opcode = (DbOpcode)0;
+    }
+    m_tableName.AssignOrClear(tableName);
+    rc = m_iter != nullptr ? GetPrimaryKeyColumns(&m_primaryKeyColumns, &m_primaryKeyColumnsCount) : BE_SQLITE_ERROR;
+    if (rc != BE_SQLITE_OK) {
+        m_primaryKeyColumns = nullptr;
+        m_primaryKeyColumnsCount = 0;
+    }
+    rc = m_iter != nullptr && m_tableName.empty() ? GetFKeyConflicts(&m_foreignKeyConflicts) : BE_SQLITE_ERROR;
+    if (rc != BE_SQLITE_OK) {
+        m_foreignKeyConflicts = 0;
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Changes::Change::IsPrimaryKeyColumn(int colNum) const {
+    if (m_primaryKeyColumns == nullptr || colNum < 0 || colNum >= m_primaryKeyColumnsCount) {
+        return false;
+    }
+    return m_primaryKeyColumns[colNum] != 0;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Changes::Change& Changes::Change::operator++()
     {
     m_isValid = (BE_SQLITE_ROW == (DbResult) sqlite3changeset_next(m_iter));
+    LoadOperation();
     return  *this;
     }
 
@@ -877,8 +921,14 @@ Rebase::~Rebase() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ApplyChangesArgs::ConflictCallback(void* pCtx, int cause, SqlChangesetIterP iter) {
     const auto changeStream = (ChangeStream*)pCtx;
-    if (changeStream->m_args && changeStream->m_args->HasConflictHandler()){
-        return (int)(((ChangeStream*)pCtx)->m_args)->OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
+    auto thisArgs = changeStream->m_args;
+    if (thisArgs) {
+        if (thisArgs->m_abortOnAnyConflict) {
+            return (int)ChangeStream::ConflictResolution::Abort;
+        }
+        if (thisArgs->HasConflictHandler()){
+            return (int)(((ChangeStream*)pCtx)->m_args)->OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
+        }
     }
     return (int)changeStream->_OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
 }

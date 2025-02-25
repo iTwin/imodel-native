@@ -270,48 +270,47 @@ template<typename T_Db> struct SQLiteOps {
         return Napi::Number::New(info.Env(), next);
     }
 
-    void EmbedFont(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_ANY_OBJ(0, arg);
-        BeJsConst argJson(arg);
+    void EmbedFontFile(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_INTEGER(0, id);
+        REQUIRE_ARGUMENT_ANY_OBJ(1, facesObj);
+        REQUIRE_ARGUMENT_ANY_OBJ(2, dataObj);
+        REQUIRE_ARGUMENT_BOOL(3, compress);
 
-        bool compressFont = argJson[JsInterop::json_compress()].asBool(false);
+        if (!dataObj.IsTypedArray() || !facesObj.IsArray()) {
+            BeNapi::ThrowJsException(info.Env(), "font data not valid");
+        }
+
+        bvector<FontFace> faces;
+        auto arr = facesObj.As<Napi::Array>();
+        for (uint32_t i = 0; i < arr.Length(); i++) {
+            Napi::Value v = arr[i];
+            if (!v.IsObject()) {
+                BeNapi::ThrowJsException(info.Env(), "font data not valid");
+            }
+
+            FontFace face(v);
+            faces.push_back(face);
+        }
+
+        if (faces.empty()) {
+            BeNapi::ThrowJsException(info.Env(), "font data not valid");
+        }
+
         auto db = &GetOpenedDb(info);
         auto dgnDb = dynamic_cast<DgnDbP>(db);
         std::unique_ptr<FontDb> fontDbHolder;
 
         FontDbP fontDb;
-        if (nullptr != dgnDb)
+        if (dgnDb) {
             fontDb = &dgnDb->Fonts().m_fontDb;
-        else {
-            fontDb = new FontDb(*db, true);
-            fontDbHolder.reset(fontDb);
+        } else {
+            fontDbHolder.reset(fontDb = new FontDb(*db, true));
         }
 
-        if (argJson.isMember(JsInterop::json_data())) {
-            bvector<FontFace> faces;
-            FontFace face(argJson[JsInterop::json_face()]);
-            if (face.m_familyName.empty())
-                BeNapi::ThrowJsException(info.Env(), "invalid face");
-            faces.emplace_back(face);
-
-            // NOTE: Do NOT combine the following two lines. Doing so can lead to a value in
-            // napiData that references freed memory due to the way the ref counted pointers work.
-            auto jsonData = argJson[JsInterop::json_data()];
-            auto napiData = jsonData.AsNapiValueRef();
-            if (!napiData->m_napiVal.IsTypedArray())
-                BeNapi::ThrowJsException(info.Env(), "font data not valid");
-
-            auto arrayBuf = napiData->m_napiVal.As<Napi::Uint8Array>();
-            if (SUCCESS == fontDb->EmbedFont(faces, ByteStream(arrayBuf.Data(), arrayBuf.ByteLength()), compressFont))
-                return;
+        auto arrayBuf = dataObj.As<Napi::Uint8Array>();
+        if (SUCCESS != fontDb->EmbedFont(id, faces, ByteStream(arrayBuf.Data(), arrayBuf.ByteLength()), compress)) {
+            BeNapi::ThrowJsException(info.Env(), "unable to embed font");
         }
-        if (SUCCESS == fontDb->EmbedFontFile(argJson[JsInterop::json_fileName()].asString().c_str(), compressFont))
-            return;
-
-        if (SystemTrueTypeFont(argJson[JsInterop::json_systemFont()].asString().c_str(), compressFont).Embed(*fontDb))
-            return;
-
-        BeNapi::ThrowJsException(info.Env(), "unable to embed font");
     }
 
     Napi::Value IsOpen(NapiInfoCR info) {
@@ -442,9 +441,9 @@ public:
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
         if (info.Length() > 0 && info[0].IsObject()) {
             Napi::Object inConf = info[0].As<Napi::Object>();
-            return JsInterop::ConcurrentQueryResetConfig(Env(), m_ecdb, inConf);
+            return JsInterop::ConcurrentQueryResetConfig(Env(), inConf);
         }
-        return JsInterop::ConcurrentQueryResetConfig(Env(), m_ecdb);
+        return JsInterop::ConcurrentQueryResetConfig(Env());
     }
     void ConcurrentQueryShutdown(NapiInfoCR info) {
         ConcurrentQueryMgr::Shutdown(m_ecdb);
@@ -753,7 +752,7 @@ public:
             InstanceMethod("createDb", &SQLiteDb::CreateDb),
             InstanceMethod("dispose", &SQLiteDb::Dispose),
             InstanceMethod("embedFile", &SQLiteDb::EmbedFile),
-            InstanceMethod("embedFont", &SQLiteDb::EmbedFont),
+            InstanceMethod("embedFontFile", &SQLiteDb::EmbedFontFile),
             InstanceMethod("extractEmbeddedFile", &SQLiteDb::ExtractEmbeddedFile),
             InstanceMethod("getFilePath", &SQLiteDb::GetFilePath),
             InstanceMethod("getLastInsertRowId", &SQLiteDb::GetLastInsertRowId),
@@ -1497,17 +1496,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return Napi::Number::New(Env(), (int) status);
     }
 
-    Napi::Value AddNewFont(NapiInfoCR info) {
+    void InvalidateFontMap(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        REQUIRE_ARGUMENT_ANY_OBJ(0, fontPropObj);
-        BeJsConst fontProps(fontPropObj);
-        int fontTypeVal = fontProps[JsInterop::json_type()].asInt(1);
-        FontType fontType = fontTypeVal==3 ? FontType::Shx : fontTypeVal==2 ? FontType::Rsc : FontType::TrueType;
-        Utf8String name = fontProps[JsInterop::json_name()].asString();
-        if (name.empty())
-            BeNapi::ThrowJsException(Env(), "Font name is invalid");
-        auto id = db.Fonts().GetId(fontType, name.c_str());
-        return Napi::Number::New(Env(), (int) id.GetValue());
+        BeMutexHolder lock(FontManager::GetMutex());
+        db.Fonts().Invalidate();
     }
 
     Napi::Value WriteFullElementDependencyGraphToFile(NapiInfoCR info)
@@ -2566,13 +2558,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     void ApplyChangeset(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, changeset);
+        REQUIRE_ARGUMENT_BOOL(1, fastForward);
 
         auto revision = JsInterop::GetChangesetProps(db.GetDbGuid().ToString(), changeset);
-
         auto currentId = db.Txns().GetParentChangesetId();
         ChangesetStatus stat =  ChangesetStatus::Success;
         if (revision->GetParentId() == currentId)  // merge
-            stat = db.Txns().MergeChangeset(*revision);
+            stat = db.Txns().MergeChangeset(*revision, fastForward);
         else if (revision->GetChangesetId() == currentId) //reverse
             db.Txns().ReverseChangeset(*revision);
         if (ChangesetStatus::Success != stat)
@@ -2605,12 +2597,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
 
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
-        auto& db = GetOpenedDb(info);;
         if (info.Length() > 0 && info[0].IsObject()) {
             Napi::Object inConf = info[0].As<Napi::Object>();
-            return JsInterop::ConcurrentQueryResetConfig(Env(), db, inConf);
+            return JsInterop::ConcurrentQueryResetConfig(Env(), inConf);
         }
-        return JsInterop::ConcurrentQueryResetConfig(Env(), db);
+        return JsInterop::ConcurrentQueryResetConfig(Env());
     }
 
     void ConcurrentQueryShutdown(NapiInfoCR info) {
@@ -2660,6 +2651,27 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         memcpy(blob.Data(), uncompressed.data(), uncompressed.size());
         return blob;
     }
+
+    void PullMergeResume(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeResume();
+    }
+
+    void PullMergeBegin(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeBegin();
+    }
+
+    void PullMergeEnd(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeEnd();
+    }
+
+    Napi::Value PullMergeInProgress(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        return Napi::Boolean::New(Env(), db.Txns().PullMergeInProgress());
+    }
+
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2678,7 +2690,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("abandonChanges", &NativeDgnDb::AbandonChanges),
             InstanceMethod("abandonCreateChangeset", &NativeDgnDb::AbandonCreateChangeset),
             InstanceMethod("addChildPropagatesChangesToParentRelationship", &NativeDgnDb::AddChildPropagatesChangesToParentRelationship),
-            InstanceMethod("addNewFont", &NativeDgnDb::AddNewFont),
+            InstanceMethod("invalidateFontMap", &NativeDgnDb::InvalidateFontMap),
             InstanceMethod("applyChangeset", &NativeDgnDb::ApplyChangeset),
             InstanceMethod("revertTimelineChanges", &NativeDgnDb::RevertTimelineChanges),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
@@ -2711,7 +2723,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("dumpChangeset", &NativeDgnDb::DumpChangeSet),
             InstanceMethod("elementGeometryCacheOperation", &NativeDgnDb::ElementGeometryCacheOperation),
             InstanceMethod("embedFile", &NativeDgnDb::EmbedFile),
-            InstanceMethod("embedFont", &NativeDgnDb::EmbedFont),
+            InstanceMethod("embedFontFile", &NativeDgnDb::EmbedFontFile),
             InstanceMethod("enableChangesetSizeStats", &NativeDgnDb::EnableChangesetSizeStats),
             InstanceMethod("enableTxnTesting", &NativeDgnDb::EnableTxnTesting),
             InstanceMethod("endMultiTxnOperation", &NativeDgnDb::EndMultiTxnOperation),
@@ -2848,6 +2860,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
             InstanceMethod("getNoCaseCollation", &NativeDgnDb::GetNoCaseCollation),
             InstanceMethod("setNoCaseCollation", &NativeDgnDb::SetNoCaseCollation),
+            InstanceMethod("pullMergeInProgress", &NativeDgnDb::PullMergeInProgress),
+            InstanceMethod("pullMergeBegin", &NativeDgnDb::PullMergeBegin),
+            InstanceMethod("pullMergeEnd", &NativeDgnDb::PullMergeEnd),
+            InstanceMethod("pullMergeResume", &NativeDgnDb::PullMergeResume),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
@@ -3535,7 +3551,34 @@ public:
                 return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
             idSet->insert(id);
         }
-        ECSqlStatus stat = m_binder->BindVirtualSet(idSet);
+        ECSqlStatus stat;
+        BinderInfo const& binderInfo = m_binder->GetBinderInfo();
+        if(binderInfo.GetType() == BinderInfo::BinderType::VirtualSet)
+            stat = m_binder->BindVirtualSet(idSet);
+        else if(binderInfo.GetType() == BinderInfo::BinderType::Array && binderInfo.IsForIdSet())
+        {
+            bool allElementsAdded = true;
+            for(auto it = idSet->begin(); it != idSet->end(); ++it)
+            {
+                if(!(*it).IsValid())
+                {
+                    allElementsAdded = false;
+                    break;
+                }
+                stat = m_binder->AddArrayElement().BindInt64((int64_t) (*it).GetValue());
+                if(!stat.IsSuccess())
+                {
+                    allElementsAdded = false;
+                    break;
+                }
+            }
+            if(allElementsAdded) // If even one array element has failed to be added we set the status for the entire operation as ECSqlStatus::Error
+                stat = ECSqlStatus::Success;
+            else
+                stat = ECSqlStatus::Error;
+        }
+        else
+            stat = ECSqlStatus::Error;
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
@@ -4379,6 +4422,7 @@ public:
           InstanceMethod("openGroup", &NativeChangesetReader::OpenGroup),
           InstanceMethod("writeToFile", &NativeChangesetReader::WriteToFile),
           InstanceMethod("openLocalChanges", &NativeChangesetReader::OpenLocalChanges),
+          InstanceMethod("openTxn", &NativeChangesetReader::OpenTxn),
           InstanceMethod("reset", &NativeChangesetReader::Reset),
           InstanceMethod("step", &NativeChangesetReader::Step),
         });
@@ -4514,6 +4558,27 @@ public:
             BeNapi::ThrowJsException(Env(), "no local changes");
 
         m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
+        }
+    void OpenTxn(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        REQUIRE_ARGUMENT_STRING(1, idStr);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+        NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
+        if (!nativeDgnDb->IsOpen())
+            BeNapi::ThrowJsException(Env(), "provided db is not open");
+
+        BeInt64Id id;
+        if (SUCCESS != BeInt64Id::FromString(id, idStr.c_str())) {
+            BeNapi::ThrowJsException(Env(), "expect txnId to be a hex string");
+        }
+
+        auto changeset = nativeDgnDb->GetDgnDb().Txns().OpenLocalTxn(TxnManager::TxnId(id.GetValueUnchecked()));
+        if (changeset == nullptr)
+            BeNapi::ThrowJsException(Env(), SqlPrintfString("no local change with id: %s", idStr.c_str()).GetUtf8CP());
+
+        m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
+
         }
     Napi::Value Step(NapiInfoCR info)
         {
@@ -6640,6 +6705,120 @@ static Napi::Value queryConcurrency(NapiInfoCR info)
     return Napi::Number::New(info.Env(), static_cast<int>(concurrency));
     }
 
+static Napi::Value getTrueTypeFontMetadata(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, fileName);
+    auto ret = Napi::Object::New(info.Env());
+    TrueTypeFile ttFile(fileName.c_str(), false);
+    BeJsValue retVal(ret);
+    ttFile.ExtractMetadata(retVal);
+    return ret;
+}
+
+static Napi::Value isRscFontData(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, dataObj);
+    auto isRsc = dataObj.IsTypedArray() && RscFont::IsRscFontData(dataObj.As<Napi::Uint8Array>().Data());
+    return Napi::Boolean::New(info.Env(), isRsc);
+}
+
+static Napi::Value imageBufferFromImageSource(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_UINTEGER(0, iSrcFmt);
+    if (static_cast<uint32_t>(ImageSource::Format::Png) != iSrcFmt && static_cast<uint32_t>(ImageSource::Format::Jpeg) != iSrcFmt) {
+        THROW_JS_EXCEPTION("ImageSource format must be Png or Jpeg");
+    }
+
+    REQUIRE_ARGUMENT_ANY_OBJ(1, oSrcData);
+    if (!oSrcData.IsTypedArray()) {
+        THROW_JS_EXCEPTION("ImageSource data must be Uint8Array");
+    }
+
+    auto srcData = oSrcData.As<Napi::Uint8Array>();
+    ImageSource src(static_cast<ImageSource::Format>(iSrcFmt), ByteStream(srcData.Data(), srcData.ByteLength()));
+    
+    REQUIRE_ARGUMENT_UINTEGER(2, iImgFmt);
+    Image::Format imgFmt;
+    if (iImgFmt == 255) {
+        // Use Rgb unless alpha channel is present.
+        imgFmt = src.SupportsTransparency() ? Image::Format::Rgba : Image::Format::Rgb;
+    } else {
+        if (static_cast<uint32_t>(Image::Format::Rgb) != iImgFmt && static_cast<uint32_t>(Image::Format::Rgba) != iImgFmt) {
+            THROW_JS_EXCEPTION("ImageBuffer format must be Rgb or Rgba");
+        }
+
+        imgFmt = static_cast<Image::Format>(iImgFmt);
+    }
+
+    REQUIRE_ARGUMENT_BOOL(3, flipVertically);
+
+    Image img(src, imgFmt, flipVertically ? Image::BottomUp::Yes : Image::BottomUp::No);
+    if (!img.IsValid()) {
+        return info.Env().Undefined();
+    }
+
+    // JPEG decoder can leave extra junk bytes past the end of the image data. Omit them.
+    auto expectedImgDataSize = img.GetWidth() * img.GetHeight() * img.GetBytesPerPixel();
+    auto imgDataSize = std::min(expectedImgDataSize, img.GetByteStream().GetSize());
+    auto imgData = Napi::Uint8Array::New(info.Env(), imgDataSize);
+    memcpy(imgData.Data(), img.GetByteStream().data(), imgDataSize);
+
+    Napi::Object ret = Napi::Object::New(info.Env());
+    ret.Set(Napi::String::New(info.Env(), "data"), imgData);
+    ret.Set(Napi::String::New(info.Env(), "format"), Napi::Number::New(info.Env(), static_cast<uint32_t>(img.GetFormat())));
+    ret.Set(Napi::String::New(info.Env(), "width"), Napi::Number::New(info.Env(), img.GetWidth()));
+
+    return ret;
+}
+
+static Napi::Value imageSourceFromImageBuffer(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_UINTEGER(0, iImgFmt);
+    if (static_cast<uint32_t>(Image::Format::Rgb) != iImgFmt && static_cast<uint32_t>(Image::Format::Rgba) != iImgFmt) {
+        THROW_JS_EXCEPTION("ImageBuffer format must be Rgb or Rgba");
+    }
+
+    REQUIRE_ARGUMENT_ANY_OBJ(1, oImgData);
+    if (!oImgData.IsTypedArray()) {
+        THROW_JS_EXCEPTION("ImageBuffer data must be Uint8Array");
+    }
+
+    REQUIRE_ARGUMENT_UINTEGER(2, imgWidth);
+    REQUIRE_ARGUMENT_UINTEGER(3, imgHeight);
+    
+    auto imgData = oImgData.As<Napi::Uint8Array>();
+    Image img(imgWidth, imgHeight, ByteStream(imgData.Data(), imgData.ByteLength()), static_cast<Image::Format>(iImgFmt));
+    if (!img.IsValid()) {
+        return info.Env().Undefined();
+    }
+
+    REQUIRE_ARGUMENT_UINTEGER(4, iSrcFmt);
+    ImageSource::Format srcFmt;
+    if (iSrcFmt == 255) {
+        // Use Jpeg unless alpha channel is present
+        srcFmt = Image::Format::Rgba == img.GetFormat() ? ImageSource::Format::Png : ImageSource::Format::Jpeg;
+    } else {
+        if (static_cast<uint32_t>(ImageSource::Format::Png) != iSrcFmt && static_cast<uint32_t>(ImageSource::Format::Jpeg) != iSrcFmt) {
+            THROW_JS_EXCEPTION("ImageSource format must be Png or Jpeg");
+        }
+
+        srcFmt = static_cast<ImageSource::Format>(iSrcFmt);
+    }
+
+    REQUIRE_ARGUMENT_BOOL(5, flipVertically);
+    REQUIRE_ARGUMENT_UINTEGER(6, jpegQuality);
+    
+    ImageSource src(img, srcFmt, jpegQuality, flipVertically ? Image::BottomUp::Yes : Image::BottomUp::No);
+    if (!src.IsValid()) {
+        return info.Env().Undefined();
+    }
+
+    auto data = Napi::Uint8Array::New(info.Env(), src.GetByteStream().size());
+    memcpy(data.Data(), src.GetByteStream().data(), src.GetByteStream().size());
+
+    Napi::Object ret = Napi::Object::New(info.Env());
+    ret.Set(Napi::String::New(info.Env(), "data"), data);
+    ret.Set(Napi::String::New(info.Env(), "format"), static_cast<uint32_t>(src.GetFormat()));
+
+    return ret;
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6697,6 +6876,10 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReporting", &setCrashReporting),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReportProperty", &setCrashReportProperty),
         Napi::PropertyDescriptor::Function(env, exports, "setMaxTileCacheSize", &setMaxTileCacheSize),
+        Napi::PropertyDescriptor::Function(env, exports, "getTrueTypeFontMetadata", &getTrueTypeFontMetadata),
+        Napi::PropertyDescriptor::Function(env, exports, "isRscFontData", &isRscFontData),
+        Napi::PropertyDescriptor::Function(env, exports, "imageBufferFromImageSource", &imageBufferFromImageSource),
+        Napi::PropertyDescriptor::Function(env, exports, "imageSourceFromImageBuffer", &imageSourceFromImageBuffer),
     });
 
     registerCloudSqlite(env, exports);

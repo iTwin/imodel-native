@@ -82,8 +82,6 @@ $(o)bufref$(oext) : $(BeCurlLibDir)bufref.c ${MultiCompileDepends}
 
 $(o)bufq$(oext) : $(BeCurlLibDir)bufq.c ${MultiCompileDepends}
 
-$(o)c-hyper$(oext) : $(BeCurlLibDir)c-hyper.c ${MultiCompileDepends}
-
 $(o)cf-https-connect$(oext) : $(BeCurlLibDir)cf-https-connect.c ${MultiCompileDepends}
 
 $(o)cf-h1-proxy$(oext) : $(BeCurlLibDir)cf-h1-proxy.c ${MultiCompileDepends}
@@ -192,6 +190,8 @@ $(o)http1$(oext) : $(BeCurlLibDir)http1.c ${MultiCompileDepends}
 
 $(o)http2$(oext) : $(BeCurlLibDir)http2.c ${MultiCompileDepends}
 
+$(o)httpsrr$(oext) : $(BeCurlLibDir)httpsrr.c ${MultiCompileDepends}
+
 $(o)http_aws_sigv4$(oext) : $(BeCurlLibDir)http_aws_sigv4.c ${MultiCompileDepends}
 
 $(o)http_chunks$(oext) : $(BeCurlLibDir)http_chunks.c ${MultiCompileDepends}
@@ -280,6 +280,8 @@ $(o)strdup$(oext) : $(BeCurlLibDir)strdup.c ${MultiCompileDepends}
 
 $(o)strerror$(oext) : $(BeCurlLibDir)strerror.c ${MultiCompileDepends}
 
+$(o)strparse$(oext) : $(BeCurlLibDir)strparse.c ${MultiCompileDepends}
+
 $(o)strtok$(oext) : $(BeCurlLibDir)strtok.c ${MultiCompileDepends}
 
 $(o)strtoofft$(oext) : $(BeCurlLibDir)strtoofft.c ${MultiCompileDepends}
@@ -346,6 +348,10 @@ $(o)sectransp$(oext) : $(BeCurlLibDir)vtls/sectransp.c ${MultiCompileDepends}
 
 $(o)vtls$(oext) : $(BeCurlLibDir)vtls/vtls.c ${MultiCompileDepends}
 
+$(o)vtls_scache$(oext) : $(BeCurlLibDir)vtls/vtls_scache.c ${MultiCompileDepends}
+
+$(o)vtls_spack$(oext) : $(BeCurlLibDir)vtls/vtls_spack.c ${MultiCompileDepends}
+
 $(o)cipher_suite$(oext) : $(BeCurlLibDir)vtls/cipher_suite.c ${MultiCompileDepends}
 
 $(o)wolfssl$(oext) : $(BeCurlLibDir)vtls/wolfssl.c ${MultiCompileDepends}
@@ -358,7 +364,7 @@ $(o)setopt$(oext) : $(BeCurlLibDir)setopt.c ${MultiCompileDepends}
 
 $(o)sha256$(oext) : $(BeCurlLibDir)sha256.c ${MultiCompileDepends}
 
-$(o)curl_path$(oext) : $(BeCurlLibDir)curl_path.c ${MultiCompileDepends}
+$(o)curl_path$(oext) : $(BeCurlLibDir)vssh/curl_path.c ${MultiCompileDepends}
 
 $(o)curl_range$(oext) : $(BeCurlLibDir)curl_range.c ${MultiCompileDepends}
 

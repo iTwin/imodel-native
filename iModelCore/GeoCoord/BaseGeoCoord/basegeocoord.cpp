@@ -8940,7 +8940,7 @@ struct GeoCoordWorkspaces {
             auto resource = new WorkspaceResource();
             auto rc = resource->Init(row);
             if (BE_SQLITE_OK == rc) {
-                Logging::LogMessageV("GeoCoord", LOG_INFO, "Successfully loaded GCS file %s from workspace %s", path, row.db->GetDbFileName());
+                Logging::LogMessageV("GeoCoord", LOG_DEBUG, "Successfully loaded GCS file %s from workspace %s", path, row.db->GetDbFileName());
                 return resource;
             }
             Logging::LogMessageV("GeoCoord", LOG_ERROR, "Unable to read data for GCS file %s from workspace %s, rc=%d", path, row.db->GetDbFileName(), rc);

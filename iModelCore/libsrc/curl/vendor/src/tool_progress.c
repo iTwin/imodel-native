@@ -26,8 +26,6 @@
 #include "tool_progress.h"
 #include "tool_util.h"
 
-#define ENABLE_CURLX_PRINTF
-/* use our own printf() functions */
 #include "curlx.h"
 
 /* The point of this function would be to return a string of the input data,
@@ -218,13 +216,16 @@ bool progress_meter(struct GlobalConfig *global,
         all_running++;
     }
     if(dlknown && all_dltotal)
-      /* TODO: handle integer overflow */
       msnprintf(dlpercen, sizeof(dlpercen), "%3" CURL_FORMAT_CURL_OFF_T,
-                all_dlnow * 100 / all_dltotal);
+                all_dlnow < (CURL_OFF_T_MAX/100) ?
+                (all_dlnow * 100 / all_dltotal) :
+                (all_dlnow / (all_dltotal/100)));
+
     if(ulknown && all_ultotal)
-      /* TODO: handle integer overflow */
       msnprintf(ulpercen, sizeof(ulpercen), "%3" CURL_FORMAT_CURL_OFF_T,
-                all_ulnow * 100 / all_ultotal);
+                all_ulnow < (CURL_OFF_T_MAX/100) ?
+                (all_ulnow * 100 / all_ultotal) :
+                (all_ulnow / (all_ultotal/100)));
 
     /* get the transfer speed, the higher of the two */
 
