@@ -643,7 +643,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         unionList.push_back(view);
         }
 
-    if (unionList.empty() || classMap.GetMapStrategy().GetStrategy() == MapStrategy::UnknownMapping)
+    if (unionList.empty() || classMap.GetMapStrategy().GetStrategy() == MapStrategy::UnsupportedByECVersion)
         {
         if (RenderNullView(viewSql, ctx, classMap) != SUCCESS)
             return ERROR;
@@ -820,7 +820,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
         unionList.push_back(view);
         }
 
-    if (unionList.empty() || relationMap.GetMapStrategy().GetStrategy() == MapStrategy::UnknownMapping)
+    if (unionList.empty() || relationMap.GetMapStrategy().GetStrategy() == MapStrategy::UnsupportedByECVersion)
         {
         if (RenderNullView(viewSql, ctx, relationMap) != SUCCESS)
             return ERROR;
@@ -1053,7 +1053,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         unionList.push_back(unionQuerySql);
         }
 
-    if (unionList.empty() || relationMap.GetMapStrategy().GetStrategy() == MapStrategy::UnknownMapping)
+    if (unionList.empty() || relationMap.GetMapStrategy().GetStrategy() == MapStrategy::UnsupportedByECVersion)
         {
         if (RenderNullView(viewSql, ctx, relationMap) != SUCCESS)
             return ERROR;
