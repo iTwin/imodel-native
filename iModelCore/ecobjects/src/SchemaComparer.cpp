@@ -956,7 +956,7 @@ BentleyStatus SchemaComparer::CompareRelationshipConstraint(RelationshipConstrai
                 {
                 if (constraintClass->HasBaseClasses())
                     continue;
-                else if (allowed && !constraintClass->HasBaseClasses())
+                if (allowed && !constraintClass->HasBaseClasses())
                     allowed -= 1;
                 else 
                     return false;
