@@ -4911,7 +4911,7 @@ TEST_F(SchemaMergerTests, MergeSchemasWhereResultWillHaveIllegalRC)
     };
 
     //Compare actual and expected xml schemas
-    // CompareResults(expectedSchemasXml, result2, true, ECVersion::V2_0, true);
+    CompareResults(expectedSchemasXml, result2, true, ECVersion::V2_0, true);
     
     }
 /*---------------------------------------------------------------------------------**//**
