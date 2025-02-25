@@ -347,7 +347,6 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
         }
 
     auto isMappingUnknown = false;
-    Utf8String logMessage;
     Nullable<MapStrategy> mapStrategy = DbSchemaPersistenceManager::ToMapStrategy(stmt->GetValueInt(0));
     const auto isNewerECXmlVersion = ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest);
 

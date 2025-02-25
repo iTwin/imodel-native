@@ -2488,22 +2488,21 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_UnknownMapSt
     unsigned int ecXmlMinorVersion;
     EXPECT_EQ(ECObjectsStatus::Success, ECSchema::ParseECVersion(ecXmlMajorVersion, ecXmlMinorVersion, ECVersion::Latest));
 
-    const auto executeTestCase = [&](Utf8StringCR classesToUpdate, const unsigned int testCaseNumber, Utf8StringCR selectStatement, const ECSqlStatus prepareResult, const DbResult stepResult, const std::vector<Utf8String>& columnNames)
+    const auto executeTestCase = [&](Utf8StringCR classesToUpdate, const unsigned int testCaseNumber, Utf8StringCR selectStatement, const ECSqlStatus sqlPrepareResult, const DbResult sqlStepResult, const std::vector<Utf8String>& expectedColumnNames)
         {
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(SqlPrintfString("UPDATE ec_Schema SET OriginalECXmlVersionMinor=%d WHERE Name='TestSchema'", ++ecXmlMinorVersion)));
 
         ECSqlStatement stmt;
         const auto errorLog = Utf8PrintfString("for testcase %d for classes %s", testCaseNumber, classesToUpdate.c_str());
-        EXPECT_EQ(prepareResult, stmt.Prepare(m_ecdb, selectStatement.c_str())) << "Sql Prepare failed " << errorLog;
-        if (prepareResult == ECSqlStatus::Success)
+        EXPECT_EQ(sqlPrepareResult, stmt.Prepare(m_ecdb, selectStatement.c_str())) << "Sql Prepare failed " << errorLog;
+        if (sqlPrepareResult == ECSqlStatus::Success)
             {
-            EXPECT_EQ(stmt.Step(), stepResult) << "Sql Step failed " << errorLog;
-            EXPECT_EQ(columnNames.size(), stmt.GetColumnCount()) << "Failed " << errorLog;
+            EXPECT_EQ(stmt.Step(), sqlStepResult) << "Sql Step failed " << errorLog;
+            EXPECT_EQ(expectedColumnNames.size(), stmt.GetColumnCount()) << "Failed " << errorLog;
             auto index = 0;
-            for (const auto& columnName : columnNames)
+            for (const auto& columnName : expectedColumnNames)
                 EXPECT_STREQ(stmt.GetColumnInfo(index++).GetProperty()->GetName().c_str(), columnName.c_str()) << "Failed " << errorLog;
             }
-
         stmt.Finalize();
         };
 
@@ -2521,25 +2520,40 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_UnknownMapSt
         {
         // Since the base class A itself has unknown mapping, all selects on it and it's sub classes should return null columns
         resetTestCase(Utf8PrintfString("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN (%s))", classesToUpdate.c_str()).c_str());
-        for (const auto& [testCaseNumber, selectStatement, prepareResult, stepResult, columnNames] : TestCaseData
+        for (const auto& [testCaseNumber, selectStatement, sqlPrepareResult, sqlStepResult, expectedColumnNames] : TestCaseData
             {
                 { 1, "SELECT * FROM ts.A", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
                 { 2, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::Success, BE_SQLITE_DONE,
                     {"ECInstanceId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
+
                 { 3, "SELECT * FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp", "PropChildA"} },
                 { 4, "SELECT ECInstanceId, PropA, PropChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE, 
                     {"ECInstanceId", "PropA", "PropChildA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
+
                 { 5, "SELECT * FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp", "PropChildA", "PropGrandChildA"} },
                 { 6, "SELECT ECInstanceId, PropA, PropChildA, PropGrandChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
                     {"ECInstanceId", "PropA", "PropChildA", "PropGrandChildA","AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
-                { 7, "SELECT * FROM ts.AToB", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-                { 8, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-                { 9, "SELECT * FROM ts.B"   , ECSqlStatus::Success, BE_SQLITE_ROW, { "ECInstanceId", "ECClassId", "PropB" } },    // Will return only ECInstanceId, ECClassId, PropB
-                {10, "SELECT PropB, BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },
-                {11, "SELECT BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },
+
+                { 7, "SELECT * FROM ts.AToA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                { 8, "SELECT * FROM ts.AToB", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                { 9, "SELECT * FROM ts.AToChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {10, "SELECT * FROM ts.AToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {11, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {12, "SELECT * FROM ts.BToChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {13, "SELECT * FROM ts.BToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {14, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+
+                {15, "SELECT * FROM ts.B"   , ECSqlStatus::Success, BE_SQLITE_ROW, { "ECInstanceId", "ECClassId", "PropB" } },
+                {16, "SELECT ECInstanceId, PropB FROM ts.B", ECSqlStatus::Success, BE_SQLITE_ROW, { "ECInstanceId", "PropB" } },
+                {17, "SELECT BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} }, // Error: Explicit select for BToChildARelProp and BToGrandChildARelProp
+
+                {18, "WITH CTE AS (SELECT * from ts.A) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
+                {19, "WITH CTE AS (SELECT * from ts.ChildA) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp", "PropChildA"} },
+                {20, "WITH CTE AS (SELECT * FROM ts.GrandChildA) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp", "PropChildA", "PropGrandChildA"} },
+                {21, "WITH CTE AS (SELECT * FROM ts.B) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_ROW, { "ECInstanceId", "ECClassId", "PropB" } },
             })
             {
-            executeTestCase(classesToUpdate, testCaseNumber, selectStatement, prepareResult, stepResult, columnNames);
+            executeTestCase(classesToUpdate, testCaseNumber, selectStatement, sqlPrepareResult, sqlStepResult, expectedColumnNames);
             }
         }
 
@@ -2547,58 +2561,76 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_UnknownMapSt
         {
         // Selects on ChildA and it's sub class GrandChildA should return null columns
         resetTestCase(Utf8PrintfString("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN (%s))", classesToUpdate.c_str()).c_str());
-        for (const auto& [testCaseNumber, selectStatement, prepareResult, stepResult, columnNames] : TestCaseData
+        for (const auto& [testCaseNumber, selectStatement, sqlPrepareResult, sqlStepResult, expectedColumnNames] : TestCaseData
             {
-                {12, "SELECT * FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToBRelProp"} },
-                {13, "SELECT ECInstanceId, PropA, AToARelProp, AToBRelProp FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId", "PropA", "AToARelProp", "AToBRelProp"} },
-                {14, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },   // Explicit select for AToChildARelProp and AToGrandChildARelProp
-                {15, "SELECT * FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA"} },
-                {16, "SELECT ECInstanceId, PropA, PropChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
+                {22, "SELECT * FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToBRelProp"} },
+                {23, "SELECT ECInstanceId, PropA, AToARelProp, AToBRelProp FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId", "PropA", "AToARelProp", "AToBRelProp"} },
+                {24, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },   // Error: Explicit select for AToChildARelProp and AToGrandChildARelProp
+
+                {25, "SELECT * FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA"} },
+                {26, "SELECT ECInstanceId, PropA, PropChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
                     {"ECInstanceId","PropA","PropChildA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp"} },
-                {17, "SELECT * FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA","PropGrandChildA"} },
-                {18, "SELECT ECInstanceId, PropA, PropChildA, PropGrandChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
+
+                {27, "SELECT * FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA","PropGrandChildA"} },
+                {28, "SELECT ECInstanceId, PropA, PropChildA, PropGrandChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
                     {"ECInstanceId","PropA","PropChildA","PropGrandChildA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp"} },
-                {19, "SELECT * FROM ts.AToA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-                {20, "SELECT * FROM ts.AToB", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-                {21, "SELECT * FROM ts.AToChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-                {22, "SELECT * FROM ts.AToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-                {23, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-                {24, "SELECT * FROM ts.BToChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-                {25, "SELECT * FROM ts.BToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-                {26, "SELECT * FROM ts.B"   , ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropB","BToARelProp"} },    // Will return only ECInstanceId, ECClassId, PropB
-                {27, "SELECT PropB, BToARelProp FROM ts.B", ECSqlStatus::Success, BE_SQLITE_ROW, {"PropB","BToARelProp"} },
-                {28, "SELECT PropB, BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },  // Explicit select for BToChildARelProp and BToGrandChildARelProp
+
+                {29, "SELECT * FROM ts.AToA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {30, "SELECT * FROM ts.AToB", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {31, "SELECT * FROM ts.AToChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {32, "SELECT * FROM ts.AToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {33, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {34, "SELECT * FROM ts.BToChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {35, "SELECT * FROM ts.BToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+
+                {36, "SELECT * FROM ts.B"   , ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropB","BToARelProp"} },
+                {37, "SELECT PropB, BToARelProp FROM ts.B", ECSqlStatus::Success, BE_SQLITE_ROW, {"PropB","BToARelProp"} },
+                {38, "SELECT PropB, BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },  // Explicit select for BToChildARelProp and BToGrandChildARelProp
+
+                {39, "WITH CTE AS (SELECT * from ts.A) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToBRelProp"} },
+                {40, "WITH CTE AS (SELECT * FROM ts.ChildA) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA"} },
+                {41, "WITH CTE AS (SELECT * FROM ts.GrandChildA) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA","PropGrandChildA"} },
+                {42, "WITH CTE AS (SELECT * FROM ts.B) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropB","BToARelProp"} },
             })
             {
-            executeTestCase(classesToUpdate, testCaseNumber, selectStatement, prepareResult, stepResult, columnNames);
+            executeTestCase(classesToUpdate, testCaseNumber, selectStatement, sqlPrepareResult, sqlStepResult, expectedColumnNames);
             }
         }
 
     // Selects on GrandChildA should return null columns
     resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('GrandChildA'))");
-    for (const auto& [testCaseNumber, selectStatement, prepareResult, stepResult, columnNames] : TestCaseData
+    for (const auto& [testCaseNumber, selectStatement, sqlPrepareResult, sqlStepResult, expectedColumnNames] : TestCaseData
         {
-            {29, "SELECT * FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToBRelProp"} },
-            {30, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","PropA","AToARelProp","AToChildARelProp","AToBRelProp"} },
-            {31, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} }, // Explicit select for AToGrandChildARelProp
-            {32, "SELECT * FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToBRelProp","PropChildA"} },
-            {33, "SELECT ECInstanceId, PropA, PropChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.ChildA", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },
-            {34, "SELECT * FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA","PropGrandChildA"} },
-            {36, "SELECT ECInstanceId, PropA, PropChildA, PropGrandChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
+            {43, "SELECT * FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToBRelProp"} },
+            {44, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","PropA","AToARelProp","AToChildARelProp","AToBRelProp"} },
+            {45, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },  // Error: Explicit select for AToGrandChildARelProp
+
+            {46, "SELECT * FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToBRelProp","PropChildA"} },
+            {47, "SELECT ECInstanceId, PropA, PropChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.ChildA", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} }, // Error: Explicit select for AToGrandChildARelProp
+
+            {48, "SELECT * FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA","PropGrandChildA"} },
+            {49, "SELECT ECInstanceId, PropA, PropChildA, PropGrandChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
                 {"ECInstanceId","PropA","PropChildA","PropGrandChildA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp"} },
-            {37, "SELECT * FROM ts.AToA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-            {38, "SELECT * FROM ts.AToB", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-            {39, "SELECT * FROM ts.AToChildA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-            {40, "SELECT * FROM ts.AToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-            {41, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-            {42, "SELECT * FROM ts.BToChildA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-            {43, "SELECT * FROM ts.BToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
-            {44, "SELECT * FROM ts.B"   , ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropB","BToARelProp","BToChildARelProp"} },
-            {45, "SELECT PropB, BToARelProp, BToChildARelProp FROM ts.B", ECSqlStatus::Success, BE_SQLITE_ROW, {"PropB","BToARelProp","BToChildARelProp"} },
-            {46, "SELECT PropB, BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },
+
+            {50, "SELECT * FROM ts.AToA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {51, "SELECT * FROM ts.AToB", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {52, "SELECT * FROM ts.AToChildA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {53, "SELECT * FROM ts.AToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {54, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {55, "SELECT * FROM ts.BToChildA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {56, "SELECT * FROM ts.BToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+
+            {57, "SELECT * FROM ts.B"   , ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropB","BToARelProp","BToChildARelProp"} },
+            {58, "SELECT PropB, BToARelProp, BToChildARelProp FROM ts.B", ECSqlStatus::Success, BE_SQLITE_ROW, {"PropB","BToARelProp","BToChildARelProp"} },
+            {59, "SELECT PropB, BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} }, // Error: Explicit select for BToGrandChildARelProp
+
+            {60, "WITH CTE AS (SELECT * from ts.A) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToBRelProp"} },
+            {61, "WITH CTE AS (SELECT * from ts.ChildA) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToBRelProp","PropChildA"} },
+            {62, "WITH CTE AS (SELECT * FROM ts.GrandChildA) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA","PropGrandChildA"} },
+            {63, "WITH CTE AS (SELECT * FROM ts.B) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropB","BToARelProp","BToChildARelProp"} },
         })
         {
-        executeTestCase("'GrandChildA'", testCaseNumber, selectStatement, prepareResult, stepResult, columnNames);
+        executeTestCase("'GrandChildA'", testCaseNumber, selectStatement, sqlPrepareResult, sqlStepResult, expectedColumnNames);
         }
 
     m_ecdb.AbandonChanges();
