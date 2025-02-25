@@ -1459,12 +1459,15 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
 
     FlatBufferBuilder fbb;
 
-    auto entityData = fbb.CreateVector(buffer, bufferSize);
-    auto faceSymb = 0 != fbSymbVec.size() ? fbb.CreateVectorOfStructs(&fbSymbVec.front(), fbSymbVec.size()) : 0;
+    uint8_t* entityBuf = nullptr;
+    auto entityData = fbb.CreateUninitializedVector(bufferSize, &entityBuf);
+    BeAssert(nullptr != entityBuf && "Unable to write b-rep data to FB!");
+    memcpy(entityBuf, buffer, bufferSize);
+    auto faceSymb = (0 != fbSymbVec.size() ? fbb.CreateVectorOfStructs(fbSymbVec.data(), fbSymbVec.size()) : 0);
 
     FB::BRepDataBuilder builder(fbb);
     Transform entityTransform = entity.GetEntityTransform();
-
+    // TODO Don't write identity transform?
     builder.add_entityTransform((FB::Transform*) &entityTransform);
     builder.add_brepType((FB::BRepType) entity.GetEntityType()); // Allow possibility of checking type w/o expensive restore of brep...
     builder.add_entityData(entityData);
@@ -2030,14 +2033,15 @@ IBRepEntityPtr GeometryStreamIO::Reader::ReadBRepEntity(uint8_t const* data)
     if (SUCCESS != T_HOST.GetBRepGeometryAdmin()._RestoreEntityFromMemory(entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), *((TransformCP) ppfb->entityTransform())))
         return nullptr;
 
-    if (!ppfb->has_symbology())
+    auto fbSymbology = ppfb->symbology();
+    if (nullptr == fbSymbology)
         return entity;
 
     T_FaceAttachmentsVec faceAttachmentsVec;
 
-    for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
+    for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
         {
-        FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
+        FB::FaceSymbology const* fbSymb = fbSymbology->Get(iSymb);
         FaceAttachment attachment;
 
         if (fbSymb->useColor())
@@ -2049,7 +2053,8 @@ IBRepEntityPtr GeometryStreamIO::Reader::ReadBRepEntity(uint8_t const* data)
         faceAttachmentsVec.push_back(attachment);
         }
 
-    if (!ppfb->has_symbologyIndex())
+    auto fbSymbologyIndex = ppfb->symbologyIndex();
+    if (nullptr == fbSymbologyIndex)
         {
         entity->SetFaceMaterialAttachments(faceAttachmentsVec);
 
@@ -2059,9 +2064,9 @@ IBRepEntityPtr GeometryStreamIO::Reader::ReadBRepEntity(uint8_t const* data)
     // Support for older BRep that didn't have face attachment index attrib and add the attributes now...
     T_FaceIndexToAttachmentIndexVec faceIndexAttVec;
 
-    for (size_t iSymbIndex=0; iSymbIndex < ppfb->symbologyIndex()->Length(); iSymbIndex++)
+    for (flatbuffers::uoffset_t iSymbIndex = 0; iSymbIndex < fbSymbologyIndex->Length(); iSymbIndex++)
         {
-        FB::FaceSymbologyIndex const* fbSymbIndex = ((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->Data())+iSymbIndex;
+        FB::FaceSymbologyIndex const* fbSymbIndex = fbSymbologyIndex->Get(iSymbIndex);
         FaceIndexToAttachmentIndex faceAttIndex;
 
         faceAttIndex.m_faceIndex = fbSymbIndex->faceIndex();
@@ -2325,13 +2330,13 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     {
                     DwgHatchDefLine line;
 
-                    line.m_angle   = fbDefLine.angle();
-                    line.m_through = *((DPoint2dCP) fbDefLine.through());
-                    line.m_offset  = *((DPoint2dCP) fbDefLine.offset());
-                    line.m_nDashes = static_cast<short>(fbDefLine.dashes()->Length());
+                    line.m_angle   = fbDefLine->angle();
+                    line.m_through = *((DPoint2dCP) fbDefLine->through());
+                    line.m_offset  = *((DPoint2dCP) fbDefLine->offset());
+                    line.m_nDashes = static_cast<short>(fbDefLine->dashes()->Length());
 
                     if (0 != line.m_nDashes)
-                        memcpy(line.m_dashes, fbDefLine.dashes()->Data(), line.m_nDashes * sizeof(double));
+                        memcpy(line.m_dashes, fbDefLine->dashes()->Data(), line.m_nDashes * sizeof(double));
 
                     defLines.push_back(line);
                     }
@@ -2763,7 +2768,8 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
 
-                if (!ppfb->has_symbology())
+                auto fbSymbology = ppfb->symbology();
+                if (nullptr == fbSymbology)
                     {
                     writer.Append(egOp);
                     break;
@@ -2771,9 +2777,9 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
                 bvector<FB::FaceSymbology> remappedFaceSymbVec;
 
-                for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
+                for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
                     {
-                    FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
+                    FB::FaceSymbology const* fbSymb = fbSymbology->Get(iSymb);
 
                     if (fbSymb->useMaterial())
                         {
@@ -2794,8 +2800,11 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                     }
 
                 FlatBufferBuilder remappedfbb;
-                auto remappedEntityData = remappedfbb.CreateVector(ppfb->entityData()->Data(), ppfb->entityData()->Length());
-                auto remappedFaceSymb = remappedfbb.CreateVectorOfStructs(&remappedFaceSymbVec.front(), remappedFaceSymbVec.size());
+                uint8_t* remappedEntityBuf = nullptr;
+                auto remappedEntityData = remappedfbb.CreateUninitializedVector(ppfb->entityData()->Length(), &remappedEntityBuf);
+                BeAssert(nullptr != remappedEntityBuf && "Unable to deep-copy b-rep data!");
+                memcpy(remappedEntityBuf, ppfb->entityData()->Data(), ppfb->entityData()->Length());
+                auto remappedFaceSymb = remappedfbb.CreateVectorOfStructs(remappedFaceSymbVec.data(), remappedFaceSymbVec.size());
                 auto remappedFaceSymbIndex = ppfb->has_symbologyIndex() ? remappedfbb.CreateVectorOfStructs((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->Data(), ppfb->symbologyIndex()->Length()) : 0;
                 auto mloc = FB::CreateBRepData(remappedfbb, ppfb->entityTransform(), ppfb->brepType(), remappedEntityData, remappedFaceSymb, remappedFaceSymbIndex);
                 remappedfbb.Finish(mloc);
@@ -2920,11 +2929,12 @@ void DefinitionElementUsageInfo::ScanGeometryStream(GeometryStreamCR geometryStr
                 if (!m_renderMaterialIds.empty())
                     {
                     auto brepFB = flatbuffers::GetRoot<FB::BRepData>(entry.m_data);
-                    if (brepFB->has_symbology())
+                    auto fbSymbology = brepFB->symbology();
+                    if (nullptr != fbSymbology)
                         {
-                        for (size_t iSymb=0; iSymb < brepFB->symbology()->Length(); iSymb++)
+                        for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
                             {
-                            FB::FaceSymbology const* faceSymbologyFB = ((FB::FaceSymbology const*) brepFB->symbology()->Data())+iSymb;
+                            FB::FaceSymbology const* faceSymbologyFB = fbSymbology->Get(iSymb);
 
                             if (faceSymbologyFB->useMaterial())
                                 {
@@ -5123,13 +5133,13 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
                         {
                         DwgHatchDefLine line;
 
-                        line.m_angle   = fbDefLine.angle();
-                        line.m_through = *((DPoint2dCP) fbDefLine.through());
-                        line.m_offset  = *((DPoint2dCP) fbDefLine.offset());
-                        line.m_nDashes = static_cast<short>(fbDefLine.dashes()->Length());
+                        line.m_angle   = fbDefLine->angle();
+                        line.m_through = *((DPoint2dCP) fbDefLine->through());
+                        line.m_offset  = *((DPoint2dCP) fbDefLine->offset());
+                        line.m_nDashes = static_cast<short>(fbDefLine->dashes()->Length());
 
                         if (0 != line.m_nDashes)
-                            memcpy(line.m_dashes, fbDefLine.dashes()->Data(), line.m_nDashes * sizeof(double));
+                            memcpy(line.m_dashes, fbDefLine->dashes()->Data(), line.m_nDashes * sizeof(double));
 
                         defLines.push_back(line);
                         }
@@ -5269,15 +5279,16 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
                 if (!entityTransform.IsIdentity())
                     BeJsGeomUtils::TransformToJson(value["transform"], entityTransform);
 
-                if (ppfb->has_symbology())
+                auto fbSymbology = ppfb->symbology();
+                if (nullptr != fbSymbology)
                     {
                     // NOTE: Ignoring older breps w/o face attachment index attrib, not worth the hassle...don't want to add it here...
                     if (!ppfb->has_symbologyIndex())
                         {
                         auto array = value["faceSymbology"];
-                        for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
+                        for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
                             {
-                            FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
+                            FB::FaceSymbology const* fbSymb = fbSymbology->Get(iSymb);
                             auto faceValue = array.appendValue();
 
                             if (fbSymb->useColor())
