@@ -493,7 +493,7 @@ BentleyStatus RscFont::LayoutGlyphs(GlyphLayoutResultR result, GlyphLayoutContex
     bvector<T_Id> fontChars = Utf8ToFontChars(context.m_string);
 
     // Sometimes need to reserve a special blank glyph because if an RSC font does not provide a space glyph, it must be adjusted based on the previous character.
-    unique_ptr<RscGlyph> blankGlyph;
+    std::unique_ptr<RscGlyph> blankGlyph;
 
     // Acquire the glyphs.
     result.m_glyphs.reserve(fontChars.size());
