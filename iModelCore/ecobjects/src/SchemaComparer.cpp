@@ -951,13 +951,13 @@ BentleyStatus SchemaComparer::CompareRelationshipConstraint(RelationshipConstrai
         {
         if (constraint.ConstraintClasses() != nullptr && constraint.ConstraintClasses()->size() > 1)
             {
-            int allowed = 1;
+            bool allowed = true;
             for (const auto& constraintClass : *constraint.ConstraintClasses())
                 {
                 if (constraintClass->HasBaseClasses())
                     continue;
                 if (allowed && !constraintClass->HasBaseClasses())
-                    allowed -= 1;
+                    allowed = false;
                 else 
                     return false;
                 }
