@@ -804,9 +804,9 @@ bool tryValueToSphere (BeJsConst value, ISolidPrimitivePtr &result)
         derefBool (value, "capped", capped, false);
         derefAxes (value, axes, RotMatrix::FromIdentity ());
         auto radius = derefValidatedDouble (value, "radius", ValidatedDouble (0.0, false));
-        auto radiusX = derefValidatedDouble (value, "radius", radius);
-        auto radiusY = derefValidatedDouble (value, "radius", radiusX);
-        auto radiusZ = derefValidatedDouble (value, "radius", radiusY);
+        auto radiusX = derefValidatedDouble (value, "radiusX", radius);
+        auto radiusY = derefValidatedDouble (value, "radiusY", radiusX);
+        auto radiusZ = derefValidatedDouble (value, "radiusZ", radiusY);
         // required ...
         if (   tryValueToXYZ (value["center"], center)
             && radiusX.IsValid ()
