@@ -1160,6 +1160,9 @@ bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint, Hi
 
         for (MSBsplineCurvePtr& isoCurveU : segmentsU)
             {
+            if (isoCurveU.IsNull())
+                continue;
+
             ICurvePrimitivePtr  curve = ICurvePrimitive::CreateBsplineCurveSwapFromSource(*isoCurveU);
 
             if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
@@ -1178,6 +1181,9 @@ bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint, Hi
 
         for (MSBsplineCurvePtr& isoCurveV : segmentsV)
             {
+            if (isoCurveV.IsNull())
+                continue;
+
             ICurvePrimitivePtr  curve = ICurvePrimitive::CreateBsplineCurveSwapFromSource(*isoCurveV);
 
             if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
