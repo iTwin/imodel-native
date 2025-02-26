@@ -122,7 +122,7 @@ struct RelationshipConstraintProxy final
         Nullable<Utf8String> RoleLabel() const { return m_constraint != nullptr ? m_constraint->GetRoleLabel() : Nullable<Utf8String>(); }
         Nullable<bool> IsPolymorphic() const { return m_constraint != nullptr ? m_constraint->GetIsPolymorphic() : Nullable<bool>(); }
         Nullable<Utf8String> Multiplicity() const { return m_constraint != nullptr ? m_constraint->GetMultiplicity().ToString() : Nullable<Utf8String>(); }
-        Nullable<Utf8String> AbstractConstraint() const { return (m_constraint != nullptr && m_constraint->GetAbstractConstraint() != nullptr) ? Nullable<Utf8String>(m_constraint->GetAbstractConstraint()->GetFullName()) : Nullable<Utf8String>(); }
+        Nullable<Utf8String> AbstractConstraint() const { return (m_constraint != nullptr && m_constraint->GetAbstractConstraint(false) != nullptr) ? Nullable<Utf8String>(m_constraint->GetAbstractConstraint(false)->GetFullName()) : Nullable<Utf8String>(); }
 
         ECN::ECRelationshipConstraintClassList const* ConstraintClasses() const { return m_constraint != nullptr ? &m_constraint->GetConstraintClasses() : nullptr; }
         bvector<ECN::IECInstancePtr> CustomAttributes() const
