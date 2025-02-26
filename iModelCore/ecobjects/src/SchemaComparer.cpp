@@ -946,29 +946,7 @@ BentleyStatus SchemaComparer::CompareRelationshipConstraint(RelationshipConstrai
     change.RoleLabel().Set(oldConstraint.RoleLabel(), newConstraint.RoleLabel());
     change.IsPolymorphic().Set(oldConstraint.IsPolymorphic(), newConstraint.IsPolymorphic());
     change.Multiplicity().Set(oldConstraint.Multiplicity(), newConstraint.Multiplicity());
-
-    auto abstractConstraintCheck = [&](RelationshipConstraintProxy const& constraint) -> bool
-        {
-        if (constraint.ConstraintClasses() != nullptr && constraint.ConstraintClasses()->size() > 1)
-            {
-            bool allowed = true;
-            for (const auto& constraintClass : *constraint.ConstraintClasses())
-                {
-                if (constraintClass->HasBaseClasses())
-                    continue;
-                if (allowed && !constraintClass->HasBaseClasses())
-                    allowed = false;
-                else 
-                    return false;
-                }
-            }
-        return true;
-        };
-    
-    bool setAbstractConstraintForOld = abstractConstraintCheck(oldConstraint);
-    bool setAbstractConstraintForNew = abstractConstraintCheck(newConstraint);
-
-    change.AbstractConstraint().Set(setAbstractConstraintForOld ? oldConstraint.AbstractConstraint() : Nullable<Utf8String>(), setAbstractConstraintForNew ? newConstraint.AbstractConstraint() : Nullable<Utf8String>());
+    change.AbstractConstraint().Set(oldConstraint.AbstractConstraint(), newConstraint.AbstractConstraint());
 
     if (SUCCESS != CompareRelationshipConstraintClasses(change.ConstraintClasses(), oldConstraint.ConstraintClasses(), newConstraint.ConstraintClasses()))
         {
