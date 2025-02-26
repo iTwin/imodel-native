@@ -3504,6 +3504,9 @@ ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECRelationshipCl
 //---------------+---------------+---------------+---------------+---------------+-------
 ECClassCP const ECRelationshipConstraint::GetAbstractConstraint() const
     {
+    // If constraint classes do not share a base class
+    // its an illegal relationship 
+    // hence, abstract constraint needs to be null
     if (m_constraintClasses.size() > 1)
         {
         if (!m_constraintClasses[0]->HasBaseClasses() && !m_constraintClasses[1]->HasBaseClasses())
