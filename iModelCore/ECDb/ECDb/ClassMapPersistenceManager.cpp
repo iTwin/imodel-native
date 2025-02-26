@@ -250,6 +250,69 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
     return SUCCESS;
     }
 
+namespace
+    {
+    static std::vector<Utf8String> classIdList;
+    Utf8String GetClassIdListAsString() { return BeStringUtilities::Join(classIdList, ","); }
+
+    void CollectAllBaseClassIds(const TableSpaceSchemaManager& schemaManager, const ECClassId& classId)
+        {
+        auto stmt = schemaManager.GetECDb().GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT BaseClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE ClassId=?", schemaManager.GetTableSpace().GetName().c_str()).c_str());
+        if (stmt == nullptr)
+            {
+            BeAssert(false && "Failed to get statement");
+            return;
+            }
+
+        stmt->BindId(1, classId);
+        while (stmt->Step() == BE_SQLITE_ROW)
+            {
+            const auto baseClassId = stmt->GetValueId<ECClassId>(0).ToString();
+            if (std::find(classIdList.begin(), classIdList.end(), baseClassId) == classIdList.end())
+                classIdList.push_back(baseClassId);
+            }
+        }
+
+    bool IsMappingUnknownInBaseOrConstraintClasses(const TableSpaceSchemaManager& schemaManager, ECClassCR ecClass)
+        {
+        classIdList.clear();
+        // Check if the class has any base class with unknown mapping
+        CollectAllBaseClassIds(schemaManager, ecClass.GetId());
+        
+        // Check if the class has any relationship constraint class with unknown mapping
+        if (const auto relClass = ecClass.GetRelationshipClassCP())
+            {
+            for (const auto constraintClass : relClass->GetSource().GetConstraintClasses())
+                CollectAllBaseClassIds(schemaManager, constraintClass->GetId());
+            for (auto& constraintClass : relClass->GetTarget().GetConstraintClasses())
+                CollectAllBaseClassIds(schemaManager, constraintClass->GetId());
+            }
+
+        const auto stmt = schemaManager.GetECDb().GetImpl().GetCachedSqliteStatement(Utf8PrintfString(
+            "SELECT c.Name, cm.MapStrategy FROM [%s]." TABLE_ClassMap " cm "
+            "INNER JOIN [%s]." TABLE_Class " c ON c.Id = cm.ClassId "
+            "WHERE cm.ClassId IN (%s)",
+            schemaManager.GetTableSpace().GetName().c_str(), schemaManager.GetTableSpace().GetName().c_str(), BeStringUtilities::Join(classIdList, ",").c_str()).c_str());
+
+        if (!stmt.IsValid())
+            {
+            BeAssert(false && "Failed to get statement");
+            return false;
+            }
+
+        while (stmt->Step() == BE_SQLITE_ROW)
+            {
+            if (DbSchemaPersistenceManager::ToMapStrategy(stmt->GetValueInt(1)).IsNull())
+                {
+                LOG.warningv("The class '%s' has an unsupported map strategy (%d). Querying this class will return null values. The ECDb file might have been created by a new version of the software.",
+                    stmt->GetValueText(0), stmt->GetValueInt(1));
+                return true;
+                }
+            }
+        return false;
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -283,12 +346,59 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
                 return ERROR;
         }
 
+    auto isMappingUnknown = false;
     Nullable<MapStrategy> mapStrategy = DbSchemaPersistenceManager::ToMapStrategy(stmt->GetValueInt(0));
+    const auto isNewerECXmlVersion = ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest);
+
     if (mapStrategy.IsNull())
         {
-        LOG.errorv("Failed to load class map for '%s'. It has an unsupported map strategy (%d). The ECDb file might have been created by a new version of the software.",
-                                       ecClass.GetFullName(), stmt->GetValueInt(0));
-        return ERROR;
+        if (isNewerECXmlVersion)
+            {
+            isMappingUnknown = true;
+            LOG.warningv("The class '%s' has an unsupported map strategy (%d). Querying this class will return null values. The ECDb file might have been created by a new version of the software.", ecClass.GetFullName(), stmt->GetValueInt(0));
+            }
+        else
+            {
+            LOG.errorv("Failed to load class map for '%s'. It has an unsupported map strategy (%d). The ECDb file might have been created by a new version of the software.", ecClass.GetFullName(), stmt->GetValueInt(0));
+            return ERROR;
+            }
+        }
+
+    if (isNewerECXmlVersion)
+        {
+        if (isMappingUnknown || IsMappingUnknownInBaseOrConstraintClasses(schemaManager, ecClass))
+            {
+            loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::UnsupportedByECVersion);
+    
+            if (ReadPropertyMaps(loadContext, ecdb, schemaManager, ecClass.GetId()) != SUCCESS)
+                return ERROR;
+            loadContext.m_classMapExists = true;
+            return SUCCESS;
+            }
+
+        // Check if the class has any navigation properties in which the other end class possibly has an unknown mapping strategy
+        const auto tblspaceName = schemaManager.GetTableSpace().GetName();
+        const auto classIdList = GetClassIdListAsString();
+
+        const auto relConstraintCheckStmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString(
+            "SELECT rcc.ClassId AS ConstraintClassId, p.Name "
+            "   FROM [%s]." TABLE_RelationshipConstraintClass " rcc "
+            "       INNER JOIN [%s]." TABLE_RelationshipConstraint " rc ON rc.Id = rcc.ConstraintId "
+            "       INNER JOIN [%s]." TABLE_Property " p ON rc.RelationshipClassId = p.NavigationRelationshipClassId "
+            "WHERE p.ClassId IN (%s) AND ConstraintClassId NOT IN (%s) AND p.NavigationRelationshipClassId IS NOT NULL", 
+            tblspaceName.c_str(), tblspaceName.c_str(), tblspaceName.c_str(), classIdList.c_str(), classIdList.c_str()).c_str());
+
+        if (!relConstraintCheckStmt.IsValid())
+            return ERROR;
+
+        while (relConstraintCheckStmt->Step() == BE_SQLITE_ROW)
+            {            
+            if (const auto constraintClass = schemaManager.GetClass(relConstraintCheckStmt->GetValueId<ECClassId>(0)); constraintClass != nullptr)
+                {
+                if (IsMappingUnknownInBaseOrConstraintClasses(schemaManager, *constraintClass))
+                    loadContext.AddPropertyToIgnoreList(relConstraintCheckStmt->GetValueText(1));
+                }
+            }
         }
 
     if (mapStrategy == MapStrategy::TablePerHierarchy)
@@ -364,6 +474,7 @@ BentleyStatus DbClassMapLoadContext::ReadPropertyMaps(DbClassMapLoadContext& ctx
         }
 
     stmt->BindId(1, classId);
+    const auto isMappingUnknown = ctx.GetMapStrategy().GetStrategy() == MapStrategy::UnsupportedByECVersion;
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         Utf8CP tableName = stmt->GetValueText(0);
@@ -372,11 +483,19 @@ BentleyStatus DbClassMapLoadContext::ReadPropertyMaps(DbClassMapLoadContext& ctx
 
         DbTable const* table = schemaManager.GetDbSchema().FindTable(tableName);
         if (table == nullptr)
+            {
+            if (isMappingUnknown)
+                continue;
             return ERROR;
+            }
 
         DbColumn const* column = table->FindColumn(columName);
         if (column == nullptr)
+            {
+            if (isMappingUnknown)
+                continue;
             return ERROR;
+            }
 
         ctx.m_columnByAccessString[accessString].push_back(column);
         }
