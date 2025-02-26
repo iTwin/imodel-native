@@ -4831,8 +4831,6 @@ TEST_F(SchemaMergerTests, MergeIdenticalSchemasHavingIllegalRC)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaMergerTests, MergeSchemasWhereResultWillHaveIllegalRC)
     {
-      //FAILING TEST CASE !!! needs more work 
-      //note : uncomment the CompareResults function call at the end of the test case to see the actual and expected xml schemas
       //In the test case name RC is short for Relationship Class
       Utf8CP schemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
       <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
