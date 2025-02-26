@@ -2085,8 +2085,9 @@ public:
     //! @remarks If the abstract constraint is not explicitly defined locally, it will be inherited from its base constraint, if one exists.
     //! If one does not exist and there is only one constraint class, that constraint class will be returned. If fail to find a valid class
     //! nullptr will be returned.
+    //! @param[in] autoDetermine If true and abstract constraint is unset, will attempt to determine the abstract constraint based on the constraint classes.
     //! @return The abstract constraint, an ECEntityClass or ECRelationshipClass, if one is defined, if one cannot be found nullptr is returned.
-    ECOBJECTS_EXPORT ECClassCP const GetAbstractConstraint() const;
+    ECOBJECTS_EXPORT ECClassCP const GetAbstractConstraint(bool autoDetermine = true) const;
 
     //! Determine whether the abstract constraint is set in this constraint.
     bool IsAbstractConstraintDefined() const {return nullptr != m_abstractConstraint;}

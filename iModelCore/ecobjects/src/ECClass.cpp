@@ -3502,21 +3502,12 @@ ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECRelationshipCl
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECClassCP const ECRelationshipConstraint::GetAbstractConstraint() const
+ECClassCP const ECRelationshipConstraint::GetAbstractConstraint(bool autoDetermine) const
     {
-    // If constraint classes do not share a base class
-    // its an illegal relationship 
-    // hence, abstract constraint needs to be null
-    if (m_constraintClasses.size() > 1)
-        {
-        if (!m_constraintClasses[0]->HasBaseClasses() && !m_constraintClasses[1]->HasBaseClasses())
-            return nullptr;
-        }
-
     if (nullptr != m_abstractConstraint)
         return m_abstractConstraint;
 
-    if (1 == m_constraintClasses.size())
+    if (autoDetermine && 1 == m_constraintClasses.size())
         return m_constraintClasses[0];
 
     return nullptr;
@@ -3613,6 +3604,9 @@ bool ECRelationshipConstraint::SupportsClass(ECClassCR ecClass) const
         return false;
 
     if (classCompatibleWithConstraint(GetAbstractConstraint(), &ecClass, m_isPolymorphic))
+        return true;
+
+    if (m_abstractConstraint == nullptr && !m_verify) // if no abstract constraint is set, and we are not verifying, we support any class
         return true;
 
     for (ECClassCP constraintClass : GetConstraintClasses())
