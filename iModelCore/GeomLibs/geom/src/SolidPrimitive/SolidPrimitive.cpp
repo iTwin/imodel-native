@@ -1423,8 +1423,7 @@ bool DgnSphereDetail::TryGetRotationAxis (DPoint3dR center, DVec3dR axis, double
 +--------------------------------------------------------------------------------------*/
 bool DgnSphereDetail::GetTransforms (TransformR localToWorld, TransformR worldToLocal) const
     {
-    QVNormalizedTransforms (m_localToWorld, localToWorld, worldToLocal);
-    return worldToLocal.InverseOf (m_localToWorld);
+    return QVNormalizedTransforms (m_localToWorld, localToWorld, worldToLocal);
     }
 
 
