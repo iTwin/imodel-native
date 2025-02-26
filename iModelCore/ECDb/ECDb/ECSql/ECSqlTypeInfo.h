@@ -15,6 +15,8 @@
 #define EXTENDEDTYPENAME_NavId "NavId"
 #define EXTENDEDTYPENAME_NavRelClassId "NavRelClassId"
 #define EXTENDEDTYPENAME_BeGuid "BeGuid"
+#define EXTENDEDTYPENAME_Json "Json"
+#define EXTENDEDTYPENAME_GeometryStream "GeometryStream"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -61,13 +63,13 @@ struct ECSqlTypeInfo final
 
     public:
         explicit ECSqlTypeInfo(Kind kind = Kind::Unset) : m_kind(kind) {}
-        
+
         static ECSqlTypeInfo CreatePrimitive(ECN::PrimitiveType primitiveType, bool isArray = false, Utf8CP extendedTypeName = nullptr) { return ECSqlTypeInfo(primitiveType, isArray, nullptr, nullptr, extendedTypeName); }
         static ECSqlTypeInfo CreateEnum(ECN::ECEnumerationCR ecEnum, bool isArray = false, Utf8CP extendedTypeName = nullptr) { return ECSqlTypeInfo(ecEnum.GetType(), isArray, nullptr, &ecEnum, extendedTypeName); }
         static ECSqlTypeInfo CreateDateTime(DateTime::Info const& info, bool isArray = false, Utf8CP extendedTypeName = nullptr) { return ECSqlTypeInfo(ECN::PrimitiveType::PRIMITIVETYPE_DateTime, isArray, info, nullptr, extendedTypeName); }
         static ECSqlTypeInfo CreateStruct(ECN::ECStructClassCR structType, bool isArray = false) { return ECSqlTypeInfo(structType, isArray); }
 
-        static ECSqlTypeInfo CreateArrayElement(ECSqlTypeInfo const& arrayInfo) 
+        static ECSqlTypeInfo CreateArrayElement(ECSqlTypeInfo const& arrayInfo)
             {
             BeAssert(arrayInfo.IsArray());
             if (arrayInfo.GetKind() == Kind::PrimitiveArray)
@@ -81,7 +83,7 @@ struct ECSqlTypeInfo final
 
         ~ECSqlTypeInfo() {}
 
-        ECSqlTypeInfo(ECSqlTypeInfo const& rhs) 
+        ECSqlTypeInfo(ECSqlTypeInfo const& rhs)
             : m_kind(rhs.m_kind), m_primitiveType(rhs.m_primitiveType), m_dateTimeInfo(rhs.m_dateTimeInfo), m_enumType(rhs.m_enumType), m_extendedTypeName(rhs.m_extendedTypeName), m_structType(rhs.m_structType),
             m_minOccurs(rhs.m_minOccurs), m_maxOccurs(rhs.m_maxOccurs), m_propertyMap(rhs.m_propertyMap) {}
         ECSqlTypeInfo& operator=(ECSqlTypeInfo const&);
@@ -119,10 +121,10 @@ struct ECSqlTypeInfo final
 
         bool DateTimeInfoMatches(DateTime::Info const& rhs) const;
 
-        ECN::PrimitiveType GetPrimitiveType() const 
+        ECN::PrimitiveType GetPrimitiveType() const
             {
             BeAssert(m_primitiveType.IsValid() && (IsPrimitive() || m_kind == Kind::PrimitiveArray));
-            return m_primitiveType.Value(); 
+            return m_primitiveType.Value();
             }
 
         DateTime::Info const& GetDateTimeInfo() const { BeAssert(GetPrimitiveType() == ECN::PRIMITIVETYPE_DateTime); return m_dateTimeInfo.Value(); }
