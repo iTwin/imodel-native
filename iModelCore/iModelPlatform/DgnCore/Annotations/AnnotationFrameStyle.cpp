@@ -413,22 +413,22 @@ BentleyStatus AnnotationFrameStylePersistence::DecodeFromFlatBuf(AnnotationFrame
     {
     for (auto const& setter : setters)
         {
-        switch (setter.key())
+        switch (setter->key())
             {
-            case FB::AnnotationFrameStyleProperty_CloudBulgeFactor: data.SetRealProperty(AnnotationFrameStyleProperty::CloudBulgeFactor, setter.realValue()); break;
-            case FB::AnnotationFrameStyleProperty_CloudDiameterFactor: data.SetRealProperty(AnnotationFrameStyleProperty::CloudDiameterFactor, setter.realValue()); break;
-            case FB::AnnotationFrameStyleProperty_FillColorType: data.SetIntegerProperty(AnnotationFrameStyleProperty::FillColorType, setter.integerValue()); break;
-            case FB::AnnotationFrameStyleProperty_FillColorValue: data.SetIntegerProperty(AnnotationFrameStyleProperty::FillColorValue, setter.integerValue()); break;
-            case FB::AnnotationFrameStyleProperty_FillTransparency: data.SetRealProperty(AnnotationFrameStyleProperty::FillTransparency, setter.realValue()); break;
-            case FB::AnnotationFrameStyleProperty_HorizontalPadding: data.SetRealProperty(AnnotationFrameStyleProperty::HorizontalPadding, setter.realValue()); break;
-            case FB::AnnotationFrameStyleProperty_IsFillEnabled: data.SetIntegerProperty(AnnotationFrameStyleProperty::IsFillEnabled, setter.integerValue()); break;
-            case FB::AnnotationFrameStyleProperty_IsStrokeCloud: data.SetIntegerProperty(AnnotationFrameStyleProperty::IsStrokeCloud, setter.integerValue()); break;
-            case FB::AnnotationFrameStyleProperty_IsStrokeEnabled: data.SetIntegerProperty(AnnotationFrameStyleProperty::IsStrokeEnabled, setter.integerValue()); break;
-            case FB::AnnotationFrameStyleProperty_StrokeColorType: data.SetIntegerProperty(AnnotationFrameStyleProperty::StrokeColorType, setter.integerValue()); break;
-            case FB::AnnotationFrameStyleProperty_StrokeColorValue: data.SetIntegerProperty(AnnotationFrameStyleProperty::StrokeColorValue, setter.integerValue()); break;
-            case FB::AnnotationFrameStyleProperty_StrokeWeight: data.SetIntegerProperty(AnnotationFrameStyleProperty::StrokeWeight, setter.integerValue()); break;
-            case FB::AnnotationFrameStyleProperty_Type: data.SetIntegerProperty(AnnotationFrameStyleProperty::Type, setter.integerValue()); break;
-            case FB::AnnotationFrameStyleProperty_VerticalPadding: data.SetRealProperty(AnnotationFrameStyleProperty::VerticalPadding, setter.realValue()); break;
+            case FB::AnnotationFrameStyleProperty_CloudBulgeFactor: data.SetRealProperty(AnnotationFrameStyleProperty::CloudBulgeFactor, setter->realValue()); break;
+            case FB::AnnotationFrameStyleProperty_CloudDiameterFactor: data.SetRealProperty(AnnotationFrameStyleProperty::CloudDiameterFactor, setter->realValue()); break;
+            case FB::AnnotationFrameStyleProperty_FillColorType: data.SetIntegerProperty(AnnotationFrameStyleProperty::FillColorType, setter->integerValue()); break;
+            case FB::AnnotationFrameStyleProperty_FillColorValue: data.SetIntegerProperty(AnnotationFrameStyleProperty::FillColorValue, setter->integerValue()); break;
+            case FB::AnnotationFrameStyleProperty_FillTransparency: data.SetRealProperty(AnnotationFrameStyleProperty::FillTransparency, setter->realValue()); break;
+            case FB::AnnotationFrameStyleProperty_HorizontalPadding: data.SetRealProperty(AnnotationFrameStyleProperty::HorizontalPadding, setter->realValue()); break;
+            case FB::AnnotationFrameStyleProperty_IsFillEnabled: data.SetIntegerProperty(AnnotationFrameStyleProperty::IsFillEnabled, setter->integerValue()); break;
+            case FB::AnnotationFrameStyleProperty_IsStrokeCloud: data.SetIntegerProperty(AnnotationFrameStyleProperty::IsStrokeCloud, setter->integerValue()); break;
+            case FB::AnnotationFrameStyleProperty_IsStrokeEnabled: data.SetIntegerProperty(AnnotationFrameStyleProperty::IsStrokeEnabled, setter->integerValue()); break;
+            case FB::AnnotationFrameStyleProperty_StrokeColorType: data.SetIntegerProperty(AnnotationFrameStyleProperty::StrokeColorType, setter->integerValue()); break;
+            case FB::AnnotationFrameStyleProperty_StrokeColorValue: data.SetIntegerProperty(AnnotationFrameStyleProperty::StrokeColorValue, setter->integerValue()); break;
+            case FB::AnnotationFrameStyleProperty_StrokeWeight: data.SetIntegerProperty(AnnotationFrameStyleProperty::StrokeWeight, setter->integerValue()); break;
+            case FB::AnnotationFrameStyleProperty_Type: data.SetIntegerProperty(AnnotationFrameStyleProperty::Type, setter->integerValue()); break;
+            case FB::AnnotationFrameStyleProperty_VerticalPadding: data.SetRealProperty(AnnotationFrameStyleProperty::VerticalPadding, setter->realValue()); break;
             }
         }
 
