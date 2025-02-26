@@ -484,6 +484,9 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
+        if (dbCtx.IsPropertyIgnored(property->GetName()) && m_ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            continue;
+
         DataPropertyMap const*  tphBaseClassPropMap = nullptr;
         if (&property->GetClass() != &m_ecClass && inheritanceMode == DbMappingManager::Classes::PropertyMapInheritanceMode::Clone)
             {
