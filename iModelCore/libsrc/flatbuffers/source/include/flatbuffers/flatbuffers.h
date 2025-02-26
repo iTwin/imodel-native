@@ -1877,10 +1877,15 @@ class FlatBufferBuilder {
     vector_downward &buf_;
 
    private:
+#ifndef EXCLUDE_BENTLEY_MODIFICATIONS
+    // Fix clang-19 error 'candidate function has been explicitly deleted'
+    FLATBUFFERS_DELETE_FUNC(TableKeyComparator &operator=(const TableKeyComparator &other));
+#else
     TableKeyComparator &operator=(const TableKeyComparator &other) {
       buf_ = other.buf_;
       return *this;
     }
+#endif
   };
   /// @endcond
 
