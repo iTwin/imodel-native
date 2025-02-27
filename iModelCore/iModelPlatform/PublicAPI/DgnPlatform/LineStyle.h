@@ -1545,7 +1545,6 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
-    // DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT DgnElementPtr _CloneForImport(DgnDbStatus *, DgnModelR, DgnImportContext &) const;
 
 public:

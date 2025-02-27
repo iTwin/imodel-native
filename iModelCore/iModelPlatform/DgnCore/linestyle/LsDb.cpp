@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-// #include "../../PublicAPI/DgnPlatform/LineStyle.h"
 
 Utf8CP LsJsonHelpers::CompId                = "compId";
 
@@ -644,17 +643,6 @@ DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportCon
     return (result == BSISUCCESS) ? dstStyleId : DgnStyleId();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-// void LineStyleElement::_RemapIds(DgnImportContext& importer)
-//     {
-//     T_Super::_RemapIds(importer);
-//     this->ImportLineStyle(importer.FindLineStyleId(), importer);
-//     importer.AddLineStyleId(this->GetId(), this->GetId());
-//     }
-
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -695,20 +683,5 @@ DgnStyleId RemapStyleId(DgnImportContext& context, DgnStyleId srcStyleId)
 
     return srcStyleId;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-// static LineStyleElementP cloneData(DgnElementCR oldElem, DgnElementR newElem)
-//     {
-//     LineStyleElementCP oldData = LineStyleElementCP(&oldElem);
-//     if (nullptr == oldData)
-//         return nullptr;
-
-//     LineStyleElementP newData = new LineStyleElement(oldElem.GetDgnDb());
-//     newData->CopyFrom(*oldData);
-
-//     return newData;
-//     }
-
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
