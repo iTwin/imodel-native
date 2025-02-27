@@ -1899,8 +1899,7 @@ void GeometricElement::_RemapIds(DgnImportContext& importer)
 // void LineStyleElement::_RemapIds(DgnImportContext& importer)
 //     {
 //     T_Super::_RemapIds(importer);
-//     this->ImportLineStyle(this->GetId(), importer);
-//     importer.AddLineStyleId(this->GetId(), this->GetId());
+//     m_elementId = importer.FindLineStyleId(DgnStyleId(m_elementId.GetValue()));
 //     }
 
 /*---------------------------------------------------------------------------------**//**

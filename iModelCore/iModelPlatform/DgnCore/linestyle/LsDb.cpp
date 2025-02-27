@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+// #include "../../PublicAPI/DgnPlatform/LineStyle.h"
 
 Utf8CP LsJsonHelpers::CompId                = "compId";
 
@@ -105,6 +106,8 @@ LsComponentPtr LsStrokePatternComponent::_Import(DgnImportContext& importer) con
     result->SaveToJson(jsonValue);
     LsComponentId componentId;
     LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::LineCode, jsonValue);
+    LsLocationP resLocation = LsLocationP(result->GetLocation());
+    resLocation->SetLocation(importer.GetDestinationDb(), componentId);
 
     //  Rely on LsComponent::Import to record the component ID mapping.
     return result;
@@ -135,6 +138,8 @@ LsComponentPtr LsPointComponent::_Import(DgnImportContext& importer) const
     cloned->SaveToJson(jsonValue);
     LsComponentId componentId;
     LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::LinePoint, jsonValue);
+    LsLocationP resLocation = LsLocationP(cloned->GetLocation());
+    resLocation->SetLocation(importer.GetDestinationDb(), componentId);
 
     return cloned;
     }
@@ -321,6 +326,8 @@ LsComponentPtr LsCompoundComponent::_Import(DgnImportContext& importer) const
     result->SaveToJson(jsonValue);
     LsComponentId componentId;
     LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::Compound, jsonValue);
+    LsLocationP resLocation = LsLocationP(result->GetLocation());
+    resLocation->SetLocation(importer.GetDestinationDb(), componentId);
 
     return result;
     }
@@ -332,12 +339,14 @@ LsComponentPtr LsSymbolComponent::_Import(DgnImportContext& importer) const
     {
     LsSymbolComponentP result = new LsSymbolComponent(*this);
 
-    importer.RemapGeometryPartId(result->m_geomPartId);
+    result->m_geomPartId = importer.RemapGeometryPartId(result->m_geomPartId);
 
     Json::Value     jsonValue;
     result->SaveToJson(jsonValue);
     LsComponentId componentId;
     LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::PointSymbol, jsonValue);
+    LsLocationP resLocation = LsLocationP(result->GetLocation());
+    resLocation->SetLocation(importer.GetDestinationDb(), componentId);
 
     return result;
     }
@@ -562,10 +571,10 @@ DgnStyleId DgnImportContext::_RemapLineStyleId(DgnStyleId sourceId)
         return dest;
 
     
-#if defined(NEEDSWORK_LINESTYLES) //  importers are not tested so don't risk passing along bad data.
+// #if defined(NEEDSWORK_LINESTYLES) //  importers are not tested so don't risk passing along bad data.
     dest = LineStyleElement::ImportLineStyle(sourceId, *this);
     AddLineStyleId(sourceId, dest);
-#endif
+// #endif
 
     return dest;
     }
@@ -631,19 +640,75 @@ DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportCon
         return DgnStyleId();
         }
 
-    BentleyStatus result = importer.GetDestinationDb().LineStyles().Insert(dstStyleId, name.c_str(), compId, LsDefinition::GetAttributes(jsonObj), LsDefinition::GetAttributes(jsonObj));
+    BentleyStatus result = importer.GetDestinationDb().LineStyles().Insert(dstStyleId, name.c_str(), compId, LsDefinition::GetAttributes(jsonObj), LsDefinition::GetUnitDef(jsonObj));
     return (result == BSISUCCESS) ? dstStyleId : DgnStyleId();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LineStyleElement::_RemapIds(DgnImportContext& importer)
+// void LineStyleElement::_RemapIds(DgnImportContext& importer)
+//     {
+//     T_Super::_RemapIds(importer);
+//     this->ImportLineStyle(importer.FindLineStyleId(), importer);
+//     importer.AddLineStyleId(this->GetId(), this->GetId());
+//     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR destModel, DgnImportContext& context) const
     {
-    T_Super::_RemapIds(importer);
-    this->ImportLineStyle(this->GetId(), importer);
-    importer.AddLineStyleId(this->GetId(), this->GetId());
+    DgnDbStatus _status;
+    if (nullptr == status)
+        status = &_status;
+
+
+    DgnElementPtr newElem = T_Super::_CloneForImport(status, destModel, context);
+    if (!newElem.IsValid() || (DgnDbStatus::Success != *status))
+        return newElem;
+
+    DgnStyleId destStyleId = context.RemapLineStyleId(DgnStyleId(this->m_elementId.GetValue()));
+
+    LineStyleElementPtr lineStyleElementPtr = dynamic_cast<LineStyleElement*>(newElem.get());
+    lineStyleElementPtr->m_elementId = destStyleId;
+    
+    DgnElementCPtr insertedEl = context.GetDestinationDb().Elements().GetElement(destStyleId);
+    LineStyleElementCPtr insertedLsEl = dynamic_cast<const LineStyleElement*>(insertedEl.get());
+    lineStyleElementPtr->SetData(insertedLsEl->GetData().c_str());
+
+    newElem->Update();
+    
+    
+    return newElem;
     }
+
+DgnStyleId RemapStyleId(DgnImportContext& context, DgnStyleId srcStyleId)
+    {
+    if (!context.IsBetweenDbs())
+        return srcStyleId;
+
+    DgnStyleId destStyleId = context.RemapLineStyleId(srcStyleId);
+    if (destStyleId.IsValid())
+        return destStyleId;
+
+    return srcStyleId;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+// static LineStyleElementP cloneData(DgnElementCR oldElem, DgnElementR newElem)
+//     {
+//     LineStyleElementCP oldData = LineStyleElementCP(&oldElem);
+//     if (nullptr == oldData)
+//         return nullptr;
+
+//     LineStyleElementP newData = new LineStyleElement(oldElem.GetDgnDb());
+//     newData->CopyFrom(*oldData);
+
+//     return newData;
+//     }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
