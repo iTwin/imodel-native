@@ -721,6 +721,11 @@ DbResult InstanceWriter::Impl::Insert(BeJsConst inst, InstanceWriter::InsertOpti
         return BE_SQLITE_ERROR;
     }
 
+    if (m_cache.GetECDb().IsReadonly()) {
+        m_error = "ECDb is readonly";
+        return BE_SQLITE_READONLY;
+    }
+
     Context ctx = Context(m_cache.GetECDb(), options, m_error);
     ECClassId classId;
     if (!TryGetECClassId(ctx, inst, classId)) {
@@ -759,11 +764,13 @@ DbResult InstanceWriter::Impl::Insert(BeJsConst inst, InstanceWriter::InsertOpti
                     return;
                 }
                 binder.BindId(id);
+                // out = ECInstanceKey(classId, id);
             } else {
                 binder.BindId(options.GetInstanceId());
+                // out = ECInstanceKey(classId, options.GetInstanceId());
             }
 
-            rc = stmt.GetStatement().Step(out);
+            rc = out.IsValid() ? stmt.GetStatement().Step(): stmt.GetStatement().Step(out);
             if (rc != BE_SQLITE_DONE) {
                 m_error = m_cache.GetECDb().GetLastError();
             }
@@ -781,6 +788,11 @@ DbResult InstanceWriter::Impl::Update(BeJsConst inst, InstanceWriter::UpdateOpti
     m_error.clear();
     if (!inst.isObject()) {
         return BE_SQLITE_ERROR;
+    }
+
+    if (m_cache.GetECDb().IsReadonly()) {
+        m_error = "ECDb is readonly";
+        return BE_SQLITE_READONLY;
     }
 
     Context ctx = Context(m_cache.GetECDb(), options, m_error);
@@ -822,11 +834,16 @@ DbResult InstanceWriter::Impl::Update(BeJsConst inst, InstanceWriter::UpdateOpti
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult InstanceWriter::Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& options) {
-
     m_error.clear();
     if (!inst.isObject()) {
         return BE_SQLITE_ERROR;
     }
+
+    if (m_cache.GetECDb().IsReadonly()) {
+        m_error = "ECDb is readonly";
+        return BE_SQLITE_READONLY;
+    }
+
     Context ctx = Context(m_cache.GetECDb(), options, m_error);
     ECInstanceId id;
     ECClassId classId;
