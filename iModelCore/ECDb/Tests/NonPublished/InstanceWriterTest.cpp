@@ -4,12 +4,28 @@
  *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 
-
-
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
+#define  PRINT_JSON(NAME, JSON)     printf(## NAME ## ": %s\n", JSON.Stringify(StringifyFormat::Indented).c_str());
 
-struct InstanceWriterFixture : ECDbTestFixture {};
+struct InstanceWriterFixture : ECDbTestFixture {
+    static std::optional<Utf8String> ReadInstance(ECDbCR ecdb, const ECInstanceKey& key, bool useJsName = false) {
+        BeJsDocument doc;
+        InstanceReader::Position pos(key.GetInstanceId(), key.GetClassId());
+        if (!ecdb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row) {
+                doc.From(row.GetJson(InstanceReader::JsonParams().SetAbbreviateBlobs(false).SetUseJsName(useJsName)));
+            })) {
+            return std::nullopt;
+        }
+        return doc.Stringify(StringifyFormat::Indented);
+    };
+    static DbResult InsertInstance(ECDbR ecdb, BeJsConst instance, InstanceWriter::InsertOptions opts, ECInstanceKey& key) {
+        return ecdb.GetInstanceWriter().Insert(instance, opts, key);
+    }
+    static DbResult InsertInstance(ECDbR ecdb, BeJsConst instance, InstanceWriter::InsertOptions opts) {
+        return ecdb.GetInstanceWriter().Insert(instance, opts);
+    }
+};
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -19,129 +35,118 @@ TEST_F(InstanceWriterFixture, basic) {
                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
                     <ECEntityClass typeName="P">
-                        <ECProperty propertyName="s"    typeName="string"  />
-                        <ECProperty propertyName="i"    typeName="int"     />
-                        <ECProperty propertyName="d"    typeName="double"  />
-                        <ECProperty propertyName="p2d"  typeName="point2d" />
-                        <ECProperty propertyName="p3d"  typeName="point3d" />
-                        <ECProperty propertyName="bi"   typeName="binary"  />
-                        <ECProperty propertyName="l"    typeName="long"    />
-                        <ECProperty propertyName="dt"   typeName="dateTime">
+                        <ECProperty propertyName="S"    typeName="string"  />
+                        <ECProperty propertyName="I"    typeName="int"     />
+                        <ECProperty propertyName="D"    typeName="double"  />
+                        <ECProperty propertyName="P2d"  typeName="point2d" />
+                        <ECProperty propertyName="P3d"  typeName="point3d" />
+                        <ECProperty propertyName="Bi"   typeName="binary"  />
+                        <ECProperty propertyName="L"    typeName="long"    />
+                        <ECProperty propertyName="DT"   typeName="dateTime">
                             <ECCustomAttributes>
                                 <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                                     <DateTimeKind>Utc</DateTimeKind>
                                 </DateTimeInfo>
                             </ECCustomAttributes>
                         </ECProperty>
-                        <ECProperty propertyName="b"    typeName="boolean" />
+                        <ECProperty propertyName="B"    typeName="boolean" />
                     </ECEntityClass>
                </ECSchema>)xml");
 
     ASSERT_EQ(SUCCESS, SetupECDb("first.ecdb", schema));
     m_ecdb.SaveChanges();
 
-    ECDb secondDb;
-    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(secondDb, "second.ecdb", BeFileName(m_ecdb.GetDbFileName()), ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+    ECDb writeDb;
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(writeDb, "second.ecdb", BeFileName(m_ecdb.GetDbFileName()), ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
 
-     // sample primitive type
-     const bool kB = true;
-     const DateTime kDt = DateTime::GetCurrentTimeUtc();
-     const double kD = 3.13;
-     const DPoint2d kP2d = DPoint2d::From(2, 4);
-     const DPoint3d kP3d = DPoint3d::From(4, 5, 6);
-     const int kBiLen = 10;
-     const int kI = 0x3432;
-     const int64_t kL = 0xfefefefefefefefe;
-     const uint8_t kBi[kBiLen] = {0x71, 0xdd, 0x83, 0x7d, 0x0b, 0xf2, 0x50, 0x01, 0x0a, 0xe1};
-     const char* kText = "Hello, World";
+    // sample primitive type
+    const bool kB = true;
+    const DateTime kDt = DateTime::FromString("2025-02-27T19:35:15.672Z");
+    const double kD = PI;
+    const DPoint2d kP2d = DPoint2d::From(2341.34, -4.3322);
+    const DPoint3d kP3d = DPoint3d::From(1.2344, -5.3322, -0.0001);
+    const int kBiLen = 10;
+    const int kI = 0x3432;
+    const int64_t kL = 0xfefefefefefefefe;
+    const uint8_t kBi[kBiLen] = {0x71, 0xdd, 0x83, 0x7d, 0x0b, 0xf2, 0x50, 0x01, 0x0a, 0xe1};
+    const char* kText = "Hello, World";
 
-     ECInstanceKey key;
-     if ("insert a row with primitive value") {
-         ECSqlStatement stmt;
-         ASSERT_EQ(ECSqlStatus::Success,
-                   stmt.Prepare(m_ecdb, "INSERT INTO ts.P(s,i,d,p2d,p3d,bi,l,dt,b) VALUES(?,?,?,?,?,?,?,?,?)"));
+    ECInstanceKey expectedKey;
+    if ("insert a row with primitive value") {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success,
+                  stmt.Prepare(m_ecdb, "INSERT INTO ts.P(s,i,d,p2d,p3d,bi,l,dt,b) VALUES(?,?,?,?,?,?,?,?,?)"));
 
-         // bind primitive types
-         stmt.BindText(1, kText, IECSqlBinder::MakeCopy::No);
-         stmt.BindInt(2, kI);
-         stmt.BindDouble(3, kD);
-         stmt.BindPoint2d(4, kP2d);
-         stmt.BindPoint3d(5, kP3d);
-         stmt.BindBlob(6, &kBi[0], kBiLen, IECSqlBinder::MakeCopy::No);
-         stmt.BindInt64(7, kL);
-         stmt.BindDateTime(8, kDt);
-         stmt.BindBoolean(9, kB);
-         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
-         m_ecdb.SaveChanges();
+        // bind primitive types
+        stmt.BindText(1, kText, IECSqlBinder::MakeCopy::No);
+        stmt.BindInt(2, kI);
+        stmt.BindDouble(3, kD);
+        stmt.BindPoint2d(4, kP2d);
+        stmt.BindPoint3d(5, kP3d);
+        stmt.BindBlob(6, &kBi[0], kBiLen, IECSqlBinder::MakeCopy::No);
+        stmt.BindInt64(7, kL);
+        stmt.BindDateTime(8, kDt);
+        stmt.BindBoolean(9, kB);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(expectedKey));
+        m_ecdb.SaveChanges();
     }
 
     BeJsDocument expected;
-    InstanceReader::Position pos(key.GetInstanceId(), key.GetClassId());
-    m_ecdb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row) {
-        expected.From(row.GetJson(InstanceReader::JsonParams().SetAbbreviateBlobs(false)));
-    });
-    /*
-        val: {
-        "ECInstanceId": "0x1",
-        "ECClassId": "0x58",
-        "s": "Hello, World",
-        "i": 13362,
-        "d": 3.13,
-        "p2d": {
-            "X": 2,
-            "Y": 4
-        },
-        "p3d": {
-            "X": 4,
-            "Y": 5,
-            "Z": 6
-        },
-        "bi": "{\"bytes\":10}",
-        "l": -72340172838076670.0,
-        "dt": "2025-02-27T14:20:40.142Z",
-        "b": true
-        }
-    */
-    printf("expected: %s\n", expected.Stringify(StringifyFormat::Indented).c_str());
-    // copy instance to another db use ECSql standard format
-    InstanceWriter writer(secondDb);
-    if ("copy a row from first to second") {
-        auto opts = InstanceWriter::InsertOptions();
-        ECInstanceKey key0;
-        opts.UseInstanceIdFromJs();
-        ASSERT_EQ(BE_SQLITE_DONE, writer.Insert(expected, opts, key0));
-        secondDb.SaveChanges();
 
+    auto expectedJson = ReadInstance(m_ecdb, expectedKey);
+    ASSERT_TRUE(expectedJson.has_value());
+    expected.Parse(expectedJson.value());
+
+    if ("copy instance to writeDb") {
+        ECInstanceKey actualKey;
+        ASSERT_EQ( BE_SQLITE_DONE, InsertInstance(writeDb, expected, InstanceWriter::InsertOptions().UseInstanceIdFromJs(), actualKey));
+        writeDb.SaveChanges();
         BeJsDocument actual;
-        InstanceReader::Position pos(key0.GetInstanceId(), key0.GetClassId());
-        secondDb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row) {
-            actual.From(row.GetJson(InstanceReader::JsonParams().SetAbbreviateBlobs(false)));
-        });
-        /*
-        expected: {
-        "ECInstanceId": "0x1",
-        "ECClassId": "0x58",
-        "s": "Hello, World",
-        "i": 13362,
-        "d": 3.13,
-        "p2d": {
-            "X": 2,
-            "Y": 4
-        },
-        "p3d": {
-            "X": 4,
-            "Y": 5,
-            "Z": 6
-        },
-        "bi": "{\"bytes\":10}",
-        "l": -72340172838076670.0,
-        "dt": "2025-02-27T18:40:32.885Z",
-        "b": true
-        }
-        */
-        printf("actual: %s\n", actual.Stringify(StringifyFormat::Indented).c_str());
-
+        auto actualJson = ReadInstance(writeDb, actualKey);
+        ASSERT_TRUE(actualJson.has_value());
+        actual.Parse(actualJson.value());
+        ASSERT_EQ(expectedKey, actualKey);
+        ASSERT_STRCASEEQ(expectedJson.value().c_str(), actualJson.value().c_str());
     }
+
+    if ("insert a js instance") {
+        // copy instance to another db use ECSql standard format
+        Utf8String testInst = R"json({
+            "id": "0x1234",
+            "className": "ts.P",
+            "s": "What is this?",
+            "i": -223,
+            "d": -3.141592653589793,
+            "p2d": {
+                "x": 341.34,
+                "y": -4.322
+            },
+            "p3d": {
+                "x": 11.2344,
+                "y": -15.3322,
+                "z": -20.0001
+            },
+            "bi": "encoding=base64;cd2DfQvyUAEK4Q==",
+            "l": 100000,
+            "dT": "2027-02-27T19:35:15.672Z",
+            "b": false
+        })json";
+
+        BeJsDocument testDoc;
+        ECInstanceKey actualKey;
+        testDoc.Parse(testInst);
+        auto opt = InstanceWriter::InsertOptions();
+        opt.UseInstanceIdFromJs();
+        opt.UseJsName(true);
+
+        ASSERT_EQ( BE_SQLITE_DONE, InsertInstance(writeDb, testDoc, opt, actualKey));
+        BeJsDocument actual;
+        auto actualJson = ReadInstance(writeDb, actualKey);
+        ASSERT_TRUE(actualJson.has_value());
+        actual.Parse(actualJson.value());
+        PRINT_JSON("actualJson", actual);
+    }
+
 }
 
 END_ECDBUNITTESTS_NAMESPACE
