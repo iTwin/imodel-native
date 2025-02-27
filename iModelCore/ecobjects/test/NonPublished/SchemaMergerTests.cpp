@@ -34,10 +34,10 @@ ECSchemaReadContextPtr InitializeReadContextWithAllSchemas(bvector<Utf8CP> const
     return readContext;
     }
 
-void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult& actualResult, bool dumpFullSchemaOnError = false)
+void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult& actualResult, bool dumpFullSchemaOnError = false, ECVersion ecXmlVersion = ECVersion::Latest, bool skipValidation = false)
     {
     bvector<ECSchemaCP> expectedSchemas;
-    ECSchemaReadContextPtr context = InitializeReadContextWithAllSchemas(expectedSchemasXml, &expectedSchemas);
+    ECSchemaReadContextPtr context = InitializeReadContextWithAllSchemas(expectedSchemasXml, &expectedSchemas, skipValidation);
     
     SchemaComparer comparer;
     SchemaComparer::Options options = SchemaComparer::Options(SchemaComparer::DetailLevel::NoSchemaElements, SchemaComparer::DetailLevel::NoSchemaElements);
@@ -63,7 +63,7 @@ void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult
             for(auto result : actualResult.GetResults())
               {
               Utf8String schemaXml;
-              result->WriteToXmlString(schemaXml);
+              result->WriteToXmlString(schemaXml, ecXmlVersion);
               LOG.error(schemaXml.c_str());
               }
             }
@@ -4490,6 +4490,428 @@ TEST_F(SchemaMergerTests, MergeRelationshipConstraints)
     CompareResults(expectedSchemasXml, result);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, MergeSchemasBothHavingIllegalRC)
+    {
+    //In the test case name RC is short for Relationship Class
+    Utf8CP schemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Joey" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Fastener" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Bolt" >
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECClass typeName="Weld" >
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+    
+            <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0,1)" polymorphic="true" roleLabel = "JointHasRandomThings">
+                  <Class class="Joey"/>
+              </Source>
+              <Target cardinality="(0,N)" polymorphic="true" roleLabel = "JointHasRandomThings (Reversed)">
+                  <Class class="Fastener"/>
+                  <Class class="Bolt"/>
+                  <Class class="Weld"/>
+              </Target>
+            </ECRelationshipClass>
+      </ECSchema>)xml";
+  
+    Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+          <ECClass typeName="Joey" isDomainClass="True">
+              <ECProperty propertyName="n" typeName="int"/>
+          </ECClass>
+          <ECClass typeName="Chandler" isDomainClass="True">
+              <ECProperty propertyName="n" typeName="int"/>
+          </ECClass>
+          <ECClass typeName="Nicks" >
+              <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+          </ECClass>
+          <ECClass typeName="RuleAll" >
+              <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+          </ECClass>
+    
+          <ECRelationshipClass typeName="ILikeFriendsObviously" isDomainClass="True" strength="referencing" strengthDirection="forward">
+            <Source cardinality="(0,1)" polymorphic="true" roleLabel = "ILikeFriendsObviously">
+                <Class class="Joey"/>
+            </Source>
+            <Target cardinality="(0,N)" polymorphic="true" roleLabel = "ILikeFriendsObviously (Reversed)">
+                <Class class="Chandler"/>
+                <Class class="Nicks"/>
+                <Class class="RuleAll"/>
+            </Target>
+          </ECRelationshipClass>
+      </ECSchema>)xml";
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas({schemaXml1}, nullptr, true);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas({schemaXml2}, nullptr, true);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    auto schemaMergeOptions = SchemaMergeOptions();
+    SchemaMergeResult result1;
+    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result1, leftSchemas, rightSchemas, schemaMergeOptions));
+    schemaMergeOptions.SetSkipValidation(true);
+    SchemaMergeResult result2;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, schemaMergeOptions));
+
+    bvector<Utf8CP> expectedSchemasXml = {
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Weld" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECClass typeName="Bolt" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECClass typeName="Chandler" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Fastener" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Joey" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Nicks" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECClass typeName="RuleAll" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECRelationshipClass typeName="ILikeFriendsObviously" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="referencing">
+                <Source cardinality="(0,1)" polymorphic="true" roleLabel = "ILikeFriendsObviously">
+                    <Class class="Joey"/>
+                </Source>
+                <Target cardinality="(0,N)" polymorphic="true" roleLabel = "ILikeFriendsObviously (Reversed)">
+                    <Class class="Chandler"/>
+                    <Class class="Nicks"/>
+                    <Class class="RuleAll"/>
+                </Target>
+            </ECRelationshipClass>
+            
+            <ECRelationshipClass typeName="JointHasRandomThings" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="referencing">
+                <Source cardinality="(0,1)" polymorphic="true" roleLabel = "JointHasRandomThings">
+                    <Class class="Joey"/>
+                </Source>
+                <Target cardinality="(0,N)" polymorphic="true" roleLabel = "JointHasRandomThings (Reversed)">
+                    <Class class="Fastener"/>
+                    <Class class="Bolt"/>
+                    <Class class="Weld"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml"
+    };
+    
+    //Compare actual and expected xml schemas
+    CompareResults(expectedSchemasXml, result2, true, ECVersion::V2_0, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, MergeSchemasOneHavingIllegalRC)
+    {
+    //In the test case name RC is short for Relationship Class
+    Utf8CP schemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+          <ECClass typeName="Joint" isDomainClass="True">
+              <ECProperty propertyName="n" typeName="int"/>
+          </ECClass>
+          <ECClass typeName="Fastener" isDomainClass="True">
+              <ECProperty propertyName="n" typeName="int"/>
+          </ECClass>
+          <ECClass typeName="Bolt" >
+              <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+          </ECClass>
+          <ECClass typeName="Weld" >
+              <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+          </ECClass>
+  
+          <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+            <Source cardinality="(0,1)" polymorphic="True">
+                <Class class="Joint" />
+            </Source>
+            <Target cardinality="(0,N)" polymorphic="True">
+                <Class class="Fastener"/>
+                <Class class="Bolt"/>
+                <Class class="Weld"/>
+            </Target>
+        </ECRelationshipClass>
+        <ECClass typeName="Zulu" isDomainClass="True">
+            <BaseClass>Joint</BaseClass>
+        </ECClass>
+    </ECSchema>)xml";
+
+    Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+          <ECClass typeName="Voodoo" isDomainClass="True">
+              <ECProperty propertyName="n" typeName="int"/>
+          </ECClass>
+    </ECSchema>)xml";
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas({schemaXml1}, nullptr, true);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas({schemaXml2}, nullptr, true);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    auto schemaMergeOptions = SchemaMergeOptions();
+    SchemaMergeResult result1;
+    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result1, leftSchemas, rightSchemas, schemaMergeOptions));
+    schemaMergeOptions.SetSkipValidation(true);
+    SchemaMergeResult result2;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, schemaMergeOptions));
+
+    bvector<Utf8CP> expectedSchemasXml = {
+      R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECClass typeName="Bolt" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+            <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+        </ECClass>
+        <ECClass typeName="Fastener" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+            <ECProperty propertyName="n" typeName="int"/>
+        </ECClass>
+        <ECClass typeName="Joint" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+            <ECProperty propertyName="n" typeName="int"/>
+        </ECClass>
+        <ECClass typeName="Weld" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+            <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+        </ECClass>
+        <ECRelationshipClass typeName="JointHasRandomThings" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="referencing">
+            <Source cardinality="(0,1)" polymorphic="true">
+                <Class class="Joint"/>
+            </Source>
+            <Target cardinality="(0,N)" polymorphic="true">
+                <Class class="Fastener"/>
+                <Class class="Bolt"/>
+                <Class class="Weld"/>
+            </Target>
+        </ECRelationshipClass>
+        <ECClass typeName="Voodoo" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+            <ECProperty propertyName="n" typeName="int"/>
+        </ECClass>
+        <ECClass typeName="Zulu" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+            <BaseClass>Joint</BaseClass>
+        </ECClass>
+    </ECSchema>)xml"
+    };
+
+    //Compare actual and expected xml schemas
+    CompareResults(expectedSchemasXml, result2, true, ECVersion::V2_0, true);
+    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, MergeIdenticalSchemasHavingIllegalRC)
+    {
+      //In the test case name RC is short for Relationship Class
+      Utf8CP schemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Joint" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Fastener" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Bolt" >
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECClass typeName="Weld" >
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+    
+            <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0,1)" polymorphic="True">
+                  <Class class="Joint" />
+              </Source>
+              <Target cardinality="(0,N)" polymorphic="True">
+                  <Class class="Fastener"/>
+                  <Class class="Bolt"/>
+                  <Class class="Weld"/>
+              </Target>
+          </ECRelationshipClass>
+          <ECClass typeName="Zulu" isDomainClass="True">
+              <BaseClass>Joint</BaseClass>
+          </ECClass>
+      </ECSchema>)xml";
+  
+      Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Joint" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Fastener" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Bolt" >
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECClass typeName="Weld" >
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+    
+            <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0,1)" polymorphic="True">
+                  <Class class="Joint" />
+              </Source>
+              <Target cardinality="(0,N)" polymorphic="True">
+                  <Class class="Fastener"/>
+                  <Class class="Bolt"/>
+                  <Class class="Weld"/>
+              </Target>
+          </ECRelationshipClass>
+          <ECClass typeName="Zulu" isDomainClass="True">
+              <BaseClass>Joint</BaseClass>
+          </ECClass>
+      </ECSchema>)xml";
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas({schemaXml1}, nullptr, true);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas({schemaXml2}, nullptr, true);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    auto schemaMergeOptions = SchemaMergeOptions();
+    SchemaMergeResult result1;
+    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result1, leftSchemas, rightSchemas, schemaMergeOptions));
+    schemaMergeOptions.SetSkipValidation(true);
+    SchemaMergeResult result2;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, schemaMergeOptions));
+
+    bvector<Utf8CP> expectedSchemasXml = {
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+          <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+              <ECClass typeName="Joint" isDomainClass="True">
+                  <ECProperty propertyName="n" typeName="int"/>
+              </ECClass>
+              <ECClass typeName="Fastener" isDomainClass="True">
+                  <ECProperty propertyName="n" typeName="int"/>
+              </ECClass>
+              <ECClass typeName="Bolt" >
+                  <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+              </ECClass>
+              <ECClass typeName="Weld" >
+                  <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+              </ECClass>
+      
+              <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                <Source cardinality="(0,1)" polymorphic="True">
+                    <Class class="Joint" />
+                </Source>
+                <Target cardinality="(0,N)" polymorphic="True">
+                    <Class class="Fastener"/>
+                    <Class class="Bolt"/>
+                    <Class class="Weld"/>
+                </Target>
+              </ECRelationshipClass>
+              <ECClass typeName="Zulu" isDomainClass="True">
+                  <BaseClass>Joint</BaseClass>
+              </ECClass>
+          </ECSchema>)xml"
+    };
+
+    //Compare actual and expected xml schemas
+    CompareResults(expectedSchemasXml, result2, true, ECVersion::V2_0, true);
+    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, MergeSchemasWhereResultWillHaveIllegalRC)
+    {
+      //In the test case name RC is short for Relationship Class
+      Utf8CP schemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Joint" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Weld" >
+                <ECProperty propertyName="p" typeName="int"/>
+            </ECClass>
+    
+            <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0,1)" polymorphic="True">
+                  <Class class="Joint" />
+              </Source>
+              <Target cardinality="(0,N)" polymorphic="True">
+                  <Class class="Weld"/>
+              </Target>
+          </ECRelationshipClass>
+      </ECSchema>)xml";
+  
+      Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Joint" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Fastener">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+    
+            <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0,1)" polymorphic="True">
+                  <Class class="Joint" />
+              </Source>
+              <Target cardinality="(0,N)" polymorphic="True">
+                  <Class class="Fastener"/>
+              </Target>
+          </ECRelationshipClass>
+      </ECSchema>)xml";
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas({schemaXml1}, nullptr, true);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas({schemaXml2}, nullptr, true);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    auto schemaMergeOptions = SchemaMergeOptions();
+    SchemaMergeResult result1;
+    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result1, leftSchemas, rightSchemas, schemaMergeOptions));
+    schemaMergeOptions.SetSkipValidation(true);
+    SchemaMergeResult result2;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, schemaMergeOptions));
+
+    bvector<Utf8CP> expectedSchemasXml = {
+      R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Joint" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Weld" >
+                <ECProperty propertyName="p" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Fastener">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+    
+            <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0,1)" polymorphic="True">
+                  <Class class="Joint" />
+              </Source>
+              <Target cardinality="(0,N)" polymorphic="True">
+                  <Class class="Weld"/>
+                  <Class class="Fastener"/>
+              </Target>
+          </ECRelationshipClass>
+      </ECSchema>)xml"
+    };
+
+    //Compare actual and expected xml schemas
+    CompareResults(expectedSchemasXml, result2, true, ECVersion::V2_0, true);
+    
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
