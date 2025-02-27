@@ -671,17 +671,5 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
     
     return newElem;
     }
-
-DgnStyleId RemapStyleId(DgnImportContext& context, DgnStyleId srcStyleId)
-    {
-    if (!context.IsBetweenDbs())
-        return srcStyleId;
-
-    DgnStyleId destStyleId = context.RemapLineStyleId(srcStyleId);
-    if (destStyleId.IsValid())
-        return destStyleId;
-
-    return srcStyleId;
-    }
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
