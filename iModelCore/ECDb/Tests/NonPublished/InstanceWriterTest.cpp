@@ -75,17 +75,72 @@ TEST_F(InstanceWriterFixture, basic) {
          m_ecdb.SaveChanges();
     }
 
+    BeJsDocument expected;
+    InstanceReader::Position pos(key.GetInstanceId(), key.GetClassId());
+    m_ecdb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row) {
+        expected.From(row.GetJson(InstanceReader::JsonParams().SetAbbreviateBlobs(false)));
+    });
+    /*
+        val: {
+        "ECInstanceId": "0x1",
+        "ECClassId": "0x58",
+        "s": "Hello, World",
+        "i": 13362,
+        "d": 3.13,
+        "p2d": {
+            "X": 2,
+            "Y": 4
+        },
+        "p3d": {
+            "X": 4,
+            "Y": 5,
+            "Z": 6
+        },
+        "bi": "{\"bytes\":10}",
+        "l": -72340172838076670.0,
+        "dt": "2025-02-27T14:20:40.142Z",
+        "b": true
+        }
+    */
+    printf("expected: %s\n", expected.Stringify(StringifyFormat::Indented).c_str());
     // copy instance to another db use ECSql standard format
     InstanceWriter writer(secondDb);
     if ("copy a row from first to second") {
-        BeJsDocument val;
-        InstanceReader::Position pos(key.GetInstanceId(), key.GetClassId());
-        m_ecdb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row) {
-            val.From(row.GetJson());
-        });
-
-        ASSERT_EQ(BE_SQLITE_DONE, writer.Insert(val, InstanceWriter::InsertOptions()));
+        auto opts = InstanceWriter::InsertOptions();
+        ECInstanceKey key0;
+        opts.UseInstanceIdFromJs();
+        ASSERT_EQ(BE_SQLITE_DONE, writer.Insert(expected, opts, key0));
         secondDb.SaveChanges();
+
+        BeJsDocument actual;
+        InstanceReader::Position pos(key0.GetInstanceId(), key0.GetClassId());
+        secondDb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row) {
+            actual.From(row.GetJson(InstanceReader::JsonParams().SetAbbreviateBlobs(false)));
+        });
+        /*
+        expected: {
+        "ECInstanceId": "0x1",
+        "ECClassId": "0x58",
+        "s": "Hello, World",
+        "i": 13362,
+        "d": 3.13,
+        "p2d": {
+            "X": 2,
+            "Y": 4
+        },
+        "p3d": {
+            "X": 4,
+            "Y": 5,
+            "Z": 6
+        },
+        "bi": "{\"bytes\":10}",
+        "l": -72340172838076670.0,
+        "dt": "2025-02-27T18:40:32.885Z",
+        "b": true
+        }
+        */
+        printf("actual: %s\n", actual.Stringify(StringifyFormat::Indented).c_str());
+
     }
 }
 

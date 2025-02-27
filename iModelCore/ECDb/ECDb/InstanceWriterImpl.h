@@ -38,30 +38,28 @@ namespace Internal {
     struct StatementMruCache;
     struct CachedStatement final {
         friend struct StatementMruCache;
+        using BinderList = std::vector<CachedBinder>;
 
     private:
         ClassMap const* m_classMap;
         ECSqlStatement m_stmt;
-        std::vector<CachedBinder> m_propertyBinders = {};
+        BinderList m_propertyBinders = {};
         int m_instanceIdIndex = -1;
+
+        // for now us hash table
+        std::unordered_map<Utf8String, BinderList::const_iterator> m_propertyIndexMap;
+        void BuildPropertyIndexMap(bool addUseJsNameMap);
 
     public:
         CachedStatement(ClassMap const& cls) : m_classMap(&cls) {}
-
+        Utf8String GetCurrentTimeStampProperty() const;
         ECClassCR GetClass() const { return m_classMap->GetClass(); }
         ClassMap const& GetClassMap() const { return *m_classMap; }
         ECSqlStatement& GetStatement() { return m_stmt; }
-        CachedBinder* FindBinder(Utf8StringCR name) {
-            for (auto& binder : m_propertyBinders) {
-                if (binder.GetProperty().GetName().EqualsIAscii(name)) {
-                    return &binder;
-                }
-            }
-            return nullptr;
-        }
+        const CachedBinder* FindBinder(Utf8StringCR name) const;
         const std::vector<CachedBinder>& GetBinders() const { return m_propertyBinders; }
         std::vector<CachedBinder>& GetBinders() { return m_propertyBinders; }
-        int GetWhereInstanceIdParameterIndex() const { return m_instanceIdIndex; }
+        int GetInstanceIdParameterIndex() const { return m_instanceIdIndex; }
     };
 
     struct CacheKey final {
@@ -108,7 +106,7 @@ namespace Internal {
         ECDbCR m_ecdb;
         BeMutex m_mutex;
         uint32_t m_maxCache;
-
+        bool m_addSupportForJsName = true;
         ECSqlStatus PrepareInsert(CachedStatement& cachedStmt);
         ECSqlStatus PrepareUpdate(CachedStatement& cachedStmt);
         ECSqlStatus PrepareDelete(CachedStatement& cachedStmt);
@@ -222,6 +220,7 @@ public:
     Impl& operator=(Impl&&) = delete;
     ~Impl() = default;
     Utf8StringCR GetLastError() const { return m_error; }
+    DbResult Insert(BeJsConst inst, InsertOptions const& options,  ECInstanceKey& key);
     DbResult Insert(BeJsConst inst, InsertOptions const& options);
     DbResult Update(BeJsConst inst, UpdateOptions const& options);
     DbResult Delete(BeJsConst inst, DeleteOptions const& options);
