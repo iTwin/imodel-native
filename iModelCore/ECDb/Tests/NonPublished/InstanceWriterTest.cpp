@@ -106,14 +106,14 @@ TEST_F(InstanceWriterFixture, basic) {
         ASSERT_TRUE(actualJson.has_value());
         actual.Parse(actualJson.value());
         ASSERT_EQ(expectedKey, actualKey);
-        ASSERT_STRCASEEQ(expectedJson.value().c_str(), actualJson.value().c_str());
+        ASSERT_STREQ(expectedJson.value().c_str(), actualJson.value().c_str());
     }
 
     if ("insert a js instance") {
         // copy instance to another db use ECSql standard format
         Utf8String testInst = R"json({
             "id": "0x1234",
-            "className": "ts.P",
+            "className": "TestSchema.P",
             "s": "What is this?",
             "i": -223,
             "d": -3.141592653589793,
@@ -140,11 +140,12 @@ TEST_F(InstanceWriterFixture, basic) {
         opt.UseJsName(true);
 
         ASSERT_EQ( BE_SQLITE_DONE, InsertInstance(writeDb, testDoc, opt, actualKey));
+        writeDb.SaveChanges();
         BeJsDocument actual;
-        auto actualJson = ReadInstance(writeDb, actualKey);
+        auto actualJson = ReadInstance(writeDb, actualKey, true);
         ASSERT_TRUE(actualJson.has_value());
         actual.Parse(actualJson.value());
-        PRINT_JSON("actualJson", actual);
+        ASSERT_STREQ(testDoc.Stringify(StringifyFormat::Indented).c_str(), actual.Stringify(StringifyFormat::Indented).c_str());
     }
 
 }
