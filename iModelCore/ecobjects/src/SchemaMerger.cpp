@@ -588,7 +588,8 @@ BentleyStatus SchemaMerger::MergeRelationshipConstraint(SchemaMergeResult& resul
 
         if (MergeReferencedSchemaItem<ECClassCP>(result, *constraintClassChange,
             [&](ECClassCP value) {
-                if(!constraint.SupportsClass(*value))
+                // only verify if an abstract constraint has been set. If not, we will skip this check
+                if(constraint.GetAbstractConstraint(false) != nullptr && !constraint.SupportsClass(*value))
                     return ECObjectsStatus::Error;
                 
                 return constraint.AddClass(*value);
