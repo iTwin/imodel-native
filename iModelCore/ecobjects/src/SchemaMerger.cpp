@@ -272,7 +272,7 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
             if(!result.ContainsSchema(schema->GetName().c_str()))
                 {
                 ECSchemaPtr copiedSchema;
-                if(schema->CopySchema(copiedSchema, !doNotMergeReferences ? &result.GetSchemaCache() : nullptr) != ECObjectsStatus::Success)
+                if(schema->CopySchema(copiedSchema, !doNotMergeReferences ? &result.GetSchemaCache() : nullptr, options.GetSkipValidation()) != ECObjectsStatus::Success)
                     {
                     result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
                         "Schema '%s' from %s side failed to be copied.", schema->GetFullSchemaName().c_str(), side);
@@ -351,6 +351,19 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
     if(dumpSchemas)
         {
         DumpSchemasToFile(result.GetResults(), dumpLocation.c_str(), "Result");
+        }
+    
+    if(false == options.GetSkipValidation())
+        {
+        for(const auto& schema : result.GetModifiedSchemas())
+            {
+            if(!schema->Validate(true))
+                {
+                result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0061,
+                    "Schema %s failed to validate.", schema->GetFullSchemaName().c_str());
+                return BentleyStatus::ERROR;
+                }
+            }
         }
 
     return BentleyStatus::SUCCESS;
@@ -512,7 +525,7 @@ BentleyStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP lef
             }
 
         ECClassP createdClass;
-        ECObjectsStatus status = left->CopyClass(createdClass, *newClass, true, className.c_str());
+        ECObjectsStatus status = left->CopyClass(createdClass, *newClass, true, className.c_str(), options.GetSkipValidation());
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
           {
           result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0029,
