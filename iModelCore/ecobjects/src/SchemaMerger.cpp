@@ -586,8 +586,13 @@ ECObjectsStatus SchemaMerger::MergeRelationshipConstraint(SchemaMergeResult& res
         return status;
     
     status = MergeReferencedSchemaItem<ECClassCP>(result, change.AbstractConstraint(),
-    [&](ECClassCP value) { return constraint.SetAbstractConstraint(*value); },
-    [&](ECSchemaP schema, Utf8StringCR name) { return schema->GetClassCP(name.c_str()); }, left->GetFullName(), options);
+            [&](ECClassCP value) { 
+                return constraint.SetAbstractConstraint(*value); 
+            },
+            [&](ECSchemaP schema, Utf8StringCR name) { 
+                return schema->GetClassCP(name.c_str()); 
+            }, 
+            left->GetFullName(), options);
     if(status != ECObjectsStatus::Success)
         return status;
 
@@ -865,14 +870,24 @@ ECObjectsStatus SchemaMerger::MergeProperty(SchemaMergeResult& result, ECPropert
         return status;
     
     status = MergeReferencedSchemaItem<PropertyCategoryCP>(result, propertyChange->Category(),
-    [&](PropertyCategoryCP value) { return left->SetCategory(value); },
-    [&](ECSchemaP schema, Utf8StringCR name) { return schema->GetPropertyCategoryCP(name.c_str()); }, key.c_str(), options);
+            [&](PropertyCategoryCP value) { 
+                return left->SetCategory(value); 
+            },
+            [&](ECSchemaP schema, Utf8StringCR name) { 
+                return schema->GetPropertyCategoryCP(name.c_str()); 
+            }, 
+            key.c_str(), options);
     if (status != ECObjectsStatus::Success)
         return status;
     
     status = MergeReferencedSchemaItem<KindOfQuantityCP>(result, propertyChange->KindOfQuantity(),
-    [&](KindOfQuantityCP value) { return left->SetKindOfQuantity(value); },
-    [&](ECSchemaP schema, Utf8StringCR name) { return schema->GetKindOfQuantityCP(name.c_str()); }, key.c_str(), options);
+            [&](KindOfQuantityCP value) { 
+                return left->SetKindOfQuantity(value); 
+            },
+            [&](ECSchemaP schema, Utf8StringCR name) { 
+                return schema->GetKindOfQuantityCP(name.c_str()); 
+            }, 
+            key.c_str(), options);
     if (status != ECObjectsStatus::Success)
         return status;
 
@@ -965,8 +980,13 @@ ECObjectsStatus SchemaMerger::MergeKindOfQuantity(SchemaMergeResult& result, Kin
         return status;
 
     status = MergeReferencedSchemaItem<ECUnitCP>(result, change->PersistenceUnit(),
-    [&](ECUnitCP value) { return left->SetPersistenceUnit(*value); },
-    [&](ECSchemaP schema, Utf8StringCR name) { return schema->GetUnitCP(name.c_str()); }, key, options);
+            [&](ECUnitCP value) { 
+                return left->SetPersistenceUnit(*value); 
+            },
+            [&](ECSchemaP schema, Utf8StringCR name) { 
+                return schema->GetUnitCP(name.c_str()); 
+            }, 
+            key, options);
     if (status != ECObjectsStatus::Success)
         return status;
 
