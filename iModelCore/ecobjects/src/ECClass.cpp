@@ -3606,9 +3606,6 @@ bool ECRelationshipConstraint::SupportsClass(ECClassCR ecClass) const
     if (classCompatibleWithConstraint(GetAbstractConstraint(), &ecClass, m_isPolymorphic))
         return true;
 
-    if (m_abstractConstraint == nullptr && !m_verify) // if no abstract constraint is set, and we are not verifying, we support any class
-        return true;
-
     for (ECClassCP constraintClass : GetConstraintClasses())
         {
         if (constraintClass->GetName().EqualsI("AnyClass"))
