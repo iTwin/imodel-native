@@ -428,7 +428,21 @@ public:
 
         return Napi::Number::New(Env(), (int)status);
     }
-
+    void AttachDb(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, fileName);
+        REQUIRE_ARGUMENT_STRING(1, alias);
+        auto rc = GetOpenedDb(info).AttachDb(fileName.c_str(), alias.c_str());
+        if (rc != BE_SQLITE_OK) {
+            BeNapi::ThrowJsException(info.Env(), "Failed to attach file", (int)rc);
+        }
+    }
+    void DetachDb(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, alias);
+        auto rc = GetOpenedDb(info).DetachDb(alias.c_str());
+        if (rc != BE_SQLITE_OK) {
+            BeNapi::ThrowJsException(info.Env(), "Failed to detach file", (int)rc);
+        }
+    }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
@@ -600,6 +614,8 @@ public:
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "ECDb", {
             InstanceMethod("abandonChanges", &NativeECDb::AbandonChanges),
+            InstanceMethod("attachDb", &NativeECDb::AttachDb),
+            InstanceMethod("detachDb", &NativeECDb::DetachDb),
             InstanceMethod("closeDb", &NativeECDb::CloseDb),
             InstanceMethod("concurrentQueryExecute", &NativeECDb::ConcurrentQueryExecute),
             InstanceMethod("concurrentQueryResetConfig", &NativeECDb::ConcurrentQueryResetConfig),
@@ -2589,6 +2605,21 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
         db.Txns().RevertTimelineChanges(changesets, skipSchemaChanges);
     }
+    void AttachDb(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, fileName);
+        REQUIRE_ARGUMENT_STRING(1, alias);
+        auto rc = GetOpenedDb(info).AttachDb(fileName.c_str(), alias.c_str());
+        if (rc != BE_SQLITE_OK) {
+            BeNapi::ThrowJsException(info.Env(), "Failed to attach file", (int)rc);
+        }
+    }
+    void DetachDb(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, alias);
+        auto rc = GetOpenedDb(info).DetachDb(alias.c_str());
+        if (rc != BE_SQLITE_OK) {
+            BeNapi::ThrowJsException(info.Env(), "Failed to detach file", (int)rc);
+        }
+    }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
@@ -2687,6 +2718,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "DgnDb", {
             InstanceMethod("abandonChanges", &NativeDgnDb::AbandonChanges),
+            InstanceMethod("attachDb", &NativeDgnDb::AttachDb),
+            InstanceMethod("detachDb", &NativeDgnDb::DetachDb),
             InstanceMethod("abandonCreateChangeset", &NativeDgnDb::AbandonCreateChangeset),
             InstanceMethod("addChildPropagatesChangesToParentRelationship", &NativeDgnDb::AddChildPropagatesChangesToParentRelationship),
             InstanceMethod("invalidateFontMap", &NativeDgnDb::InvalidateFontMap),

@@ -393,6 +393,21 @@ enum class WalCheckpointMode {
     Truncate=3, /* Like RESTART but also truncate WAL */
 };
 
+enum class AttachFileType {
+    Unknown,
+    Main,
+    Temp,
+    SchemaSync,
+    ECChangeCache
+};
+
+struct AttachFileInfo final {
+public:
+    Utf8String m_fileName;
+    Utf8String m_alias;
+    AttachFileType m_type;
+};
+
 //=======================================================================================
 //! A 4-digit number that specifies the version of the "profile" (schema) of a Db
 // @bsiclass
@@ -2935,6 +2950,7 @@ public:
     //! Detach a previously attached database. This method is necessary for the same reason AttachDb is necessary.
     //! @param[in] alias The alias by which the database was attached.
     BE_SQLITE_EXPORT DbResult DetachDb(Utf8CP alias) const;
+    BE_SQLITE_EXPORT std::vector<AttachFileInfo> GetAttachedDbs() const;
 
     //! Execute a single SQL statement on this Db.
     //! This merely binds, steps, and finalizes the statement. It is no more efficient than performing those steps individually,
