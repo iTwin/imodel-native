@@ -1436,6 +1436,7 @@ extern int ZEXPORT unzOpenCurrentFile3(unzFile file, int* method,
         pfile_in_zip_read_info->stream_initialised=Z_BZIP2ED;
       else
       {
+        free(pfile_in_zip_read_info->read_buffer);
         free(pfile_in_zip_read_info);
         return err;
       }
@@ -1456,6 +1457,7 @@ extern int ZEXPORT unzOpenCurrentFile3(unzFile file, int* method,
         pfile_in_zip_read_info->stream_initialised=Z_DEFLATED;
       else
       {
+        free(pfile_in_zip_read_info->read_buffer);
         free(pfile_in_zip_read_info);
         return err;
       }
