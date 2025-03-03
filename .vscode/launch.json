@@ -78,7 +78,7 @@
             "program": "${env:OutRoot}Winx64/Product/ECDb-Gtest/ECDbTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=InstanceWriterFixture.basic"
+                "--gtest_filter=InstanceWriterFixture.complex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

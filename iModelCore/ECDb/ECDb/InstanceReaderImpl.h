@@ -124,6 +124,7 @@ struct InstanceReader::Impl final {
         using Ptr = std::unique_ptr<Class> ;
         struct Factory final {
             private:
+                static DateTime::Info GetDateTimeInfo(PropertyMap const& propertyMap);
                 static ECSqlPropertyPath GetPropertyPath (PropertyMap const&);
                 static std::unique_ptr<ECSqlField> CreatePrimitiveField(ECSqlSelectPreparedStatement&, PropertyMap const&, TableView const&);
                 static std::unique_ptr<ECSqlField> CreateSystemField(ECSqlSelectPreparedStatement&, PropertyMap const&, TableView const&);

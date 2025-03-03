@@ -19,32 +19,32 @@ namespace Internal {
         m_propertyIndexMap.clear();
         for (auto it = m_propertyBinders.begin(); it != m_propertyBinders.end(); ++it) {
             auto& prop = it->GetPropertyMap();
-            m_propertyIndexMap[prop.GetName()] = it;
+            m_propertyIndexMap[prop.GetName()] = &(*it);
 
             if (!addUseJsNameMap)
                 continue;
 
             if (prop.GetType() == PropertyMap::Type::ECInstanceId) {
-                m_propertyIndexMap[ECJsonSystemNames::Id()] = it;
+                m_propertyIndexMap[ECJsonSystemNames::Id()] = &(*it);
             } else if (prop.GetType() == PropertyMap::Type::ECClassId) {
-                m_propertyIndexMap[ECJsonSystemNames::ClassName()] = it;
-                m_propertyIndexMap[ECJsonSystemNames::ClassFullName()] = it;
+                m_propertyIndexMap[ECJsonSystemNames::ClassName()] = &(*it);
+                m_propertyIndexMap[ECJsonSystemNames::ClassFullName()] = &(*it);
             } else if (prop.GetType() == PropertyMap::Type::ConstraintECClassId) {
                 if (prop.GetName().EqualsIAscii(ECDBSYS_PROP_SourceECClassId)) {
-                    m_propertyIndexMap[ECJsonSystemNames::SourceClassName()] = it;
+                    m_propertyIndexMap[ECJsonSystemNames::SourceClassName()] = &(*it);
                 } else if (prop.GetName().EqualsIAscii(ECDBSYS_PROP_TargetECClassId)) {
-                    m_propertyIndexMap[ECJsonSystemNames::TargetClassName()] = it;
+                    m_propertyIndexMap[ECJsonSystemNames::TargetClassName()] = &(*it);
                 }
-            } else if(prop.GetType() == PropertyMap::Type::ConstraintECInstanceId) {
+            } else if (prop.GetType() == PropertyMap::Type::ConstraintECInstanceId) {
                 if (prop.GetName().Equals(ECDBSYS_PROP_SourceECInstanceId)) {
-                    m_propertyIndexMap[ECJsonSystemNames::SourceId()] = it;
+                    m_propertyIndexMap[ECJsonSystemNames::SourceId()] = &(*it);
                 } else if (prop.GetName().Equals(ECDBSYS_PROP_TargetECInstanceId)) {
-                    m_propertyIndexMap[ECJsonSystemNames::TargetId()] = it;
+                    m_propertyIndexMap[ECJsonSystemNames::TargetId()] = &(*it);
                 }
             } else {
                 Utf8String str = prop.GetName();
-                str[0] = (Utf8Char) tolower(str[0]);
-                m_propertyIndexMap[str] = it;
+                str[0] = (Utf8Char)tolower(str[0]);
+                m_propertyIndexMap[str] = &(*it);
             }
         }
     }
@@ -58,7 +58,7 @@ namespace Internal {
             return "";
 
         ECValue v;
-        if (ECObjectsStatus::Success != ca->GetValue(v, "PropertyName")){
+        if (ECObjectsStatus::Success != ca->GetValue(v, "PropertyName")) {
             return "";
         }
         return v.GetUtf8CP();
@@ -70,7 +70,7 @@ namespace Internal {
         if (!m_propertyIndexMap.empty()) {
             auto it = m_propertyIndexMap.find(name);
             if (it != m_propertyIndexMap.end()) {
-                return &(*(it->second));
+                return it->second;
             }
             return nullptr;
         }
@@ -256,39 +256,40 @@ namespace Internal {
     //----------------------------------------------------------------------------------
     // @bsimethod
     //+---------------+---------------+---------------+---------------+---------------+-
-    bool StatementMruCache::WithInsert(ECClassId classId, std::function<void(CachedStatement&)> fn) {
+    DbResult StatementMruCache::WithInsert(ECClassId classId, std::function<DbResult(CachedStatement&)> fn) {
         BeMutexHolder _(m_mutex);
         auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Insert));
         if (cachedStmt == nullptr) {
-            return false;
+            LOG.errorv("Failed to prepare insert statement for class: %s", classId.ToHexStr().c_str());
+            return BE_SQLITE_ERROR;
         }
-        fn(*cachedStmt);
-        return true;
+        return fn(*cachedStmt);
     }
 
     //----------------------------------------------------------------------------------
     // @bsimethod
     //+---------------+---------------+---------------+---------------+---------------+-
-    bool StatementMruCache::WithUpdate(ECClassId classId, std::function<void(CachedStatement&)> fn) {
+    DbResult StatementMruCache::WithUpdate(ECClassId classId, std::function<DbResult(CachedStatement&)> fn) {
         BeMutexHolder _(m_mutex);
         auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Update));
         if (cachedStmt == nullptr) {
-            return false;
+            LOG.errorv("Failed to prepare update statement for class: %s", classId.ToHexStr().c_str());
+            return BE_SQLITE_ERROR;
         }
-        fn(*cachedStmt);
-        return true;
+        return fn(*cachedStmt);
     }
+
     //----------------------------------------------------------------------------------
     // @bsimethod
     //+---------------+---------------+---------------+---------------+---------------+-
-    bool StatementMruCache::WithDelete(ECClassId classId, std::function<void(CachedStatement&)> fn) {
+    DbResult StatementMruCache::WithDelete(ECClassId classId, std::function<DbResult(CachedStatement&)> fn) {
         BeMutexHolder _(m_mutex);
         auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Delete));
         if (cachedStmt == nullptr) {
-            return false;
+            LOG.errorv("Failed to prepare delete statement for class: %s", classId.ToHexStr().c_str());
+            return BE_SQLITE_ERROR;
         }
-        fn(*cachedStmt);
-        return true;
+        return fn(*cachedStmt);
     }
     //----------------------------------------------------------------------------------
     // @bsimethod
@@ -318,14 +319,7 @@ ECSqlStatus InstanceWriter::Impl::BindPrimitive(Context& ctx, PrimitiveType type
             ctx.SetError("Expected string for property %s, got %s", propertyName, val.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
-        if (ExtendedTypeHelper::GetExtendedType(extendType) == ExtendedTypeHelper::ExtendedType::BeGuid) {
-            BeGuid guid;
-            if (!guid.FromString(val.asCString())) {
-                ctx.SetError("Failed to parse guid from string: %s", val.asCString());
-                return ECSqlStatus(BE_SQLITE_ERROR);
-            }
-            return binder.BindGuid(guid, IECSqlBinder::MakeCopy::Yes);
-        }
+
         return binder.BindText(val.asCString(), IECSqlBinder::MakeCopy::Yes);
     } else if (type == ECN::PRIMITIVETYPE_Boolean) {
         if (!val.isBool()) {
@@ -352,6 +346,14 @@ ECSqlStatus InstanceWriter::Impl::BindPrimitive(Context& ctx, PrimitiveType type
         }
         return binder.BindInt64(val.asInt64());
     } else if (type == ECN::PRIMITIVETYPE_Binary) {
+        if (ExtendedTypeHelper::GetExtendedType(extendType) == ExtendedTypeHelper::ExtendedType::BeGuid && val.isString() && !val.isBinary()) {
+            BeGuid guid;
+            if (guid.FromString(val.asCString()) != SUCCESS) {
+                ctx.SetError("Failed to parse guid from string: %s", val.asCString());
+                return ECSqlStatus(BE_SQLITE_ERROR);
+            }
+            return binder.BindGuid(guid, IECSqlBinder::MakeCopy::Yes);
+        }
         if (!val.isBinary()) {
             ctx.SetError("Expected binary/base64 for property %s, got %s", propertyName, val.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
@@ -371,17 +373,26 @@ ECSqlStatus InstanceWriter::Impl::BindPrimitive(Context& ctx, PrimitiveType type
         }
         return binder.BindDateTime(dt);
     } else if (type == ECN::PRIMITIVETYPE_IGeometry) {
-        if (!val.isString()) {
-            ctx.SetError("Expected string/json for property %s, got %s", propertyName, val.Stringify().c_str());
-            return ECSqlStatus(BE_SQLITE_ERROR);
+        if (val.isString()) {
+            bvector<IGeometryPtr> geom;
+            if (!IModelJson::TryIModelJsonStringToGeometry(val.asCString(), geom)) {
+                ctx.SetError("Failed to parse geometry from json string: %s", val.Stringify().c_str());
+                return ECSqlStatus(BE_SQLITE_ERROR);
+            }
+            BeAssert(geom.size() == 1);
+            return binder.BindGeometry(*geom[0]);
         }
-        bvector<IGeometryPtr> geom;
-        if (!IModelJson::TryIModelJsonStringToGeometry(val.asCString(), geom)) {
-            ctx.SetError("Failed to parse geometry from json string: %s", val.Stringify().c_str());
-            return ECSqlStatus(BE_SQLITE_ERROR);
+        if (val.isObject()) {
+            bvector<IGeometryPtr> geom;
+            if (!IModelJson::TryIModelJsonValueToGeometry(val, geom)) {
+                ctx.SetError("Failed to parse geometry from json object: %s", val.Stringify().c_str());
+                return ECSqlStatus(BE_SQLITE_ERROR);
+            }
+            BeAssert(geom.size() == 1);
+            return binder.BindGeometry(*geom[0]);
         }
-        BeAssert(geom.size() == 1);
-        return binder.BindGeometry(*geom[0]);
+        ctx.SetError("Expected string/json for property %s, got %s", propertyName, val.Stringify().c_str());
+
     } else if (type == ECN::PRIMITIVETYPE_Point2d) {
         if (!val.isObject()) {
             ctx.SetError("Expected object for Point2d property, got %s", val.Stringify().c_str());
@@ -718,6 +729,7 @@ DbResult InstanceWriter::Impl::Insert(BeJsConst inst, InstanceWriter::InsertOpti
 DbResult InstanceWriter::Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& options, ECInstanceKey& out) {
     m_error.clear();
     if (!inst.isObject()) {
+        m_error = "Expected object";
         return BE_SQLITE_ERROR;
     }
 
@@ -729,54 +741,71 @@ DbResult InstanceWriter::Impl::Insert(BeJsConst inst, InstanceWriter::InsertOpti
     Context ctx = Context(m_cache.GetECDb(), options, m_error);
     ECClassId classId;
     if (!TryGetECClassId(ctx, inst, classId)) {
+        m_error = "Failed to get ECClassId/className/classFullName";
         return BE_SQLITE_ERROR;
     }
 
-    DbResult rc = BE_SQLITE_OK;
-    if (!m_cache.WithInsert(classId, [&](Internal::CachedStatement& stmt) {
-            inst.ForEachProperty([&](auto prop, auto val) {
-                auto binder = stmt.FindBinder(prop);
-                if (binder == nullptr) {
-                    if (ctx.NotifyUnknownJsProperty(prop, val) == Abortable::Abort) {
-                        return true;
-                    }
-                    return false; // continue
+    auto rc = m_cache.WithInsert(classId, [&](Internal::CachedStatement& stmt) {
+        ECSqlStatus bindStatus = ECSqlStatus::Success;
+        inst.ForEachProperty([&](auto prop, auto val) {
+            auto binder = stmt.FindBinder(prop);
+            if (binder == nullptr) {
+                if (ctx.NotifyUnknownJsProperty(prop, val) == Abortable::Abort) {
+                    return true;
                 }
-                if (binder->GetPropertyMap().GetType() == PropertyMap::Type::ECInstanceId) {
-                    return false; // skip ECInstanceId property, we will bind it later
-                }
-                return !BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), val).IsSuccess();
-            });
-
-            if (stmt.GetInstanceIdParameterIndex() < 0) {
-                BeAssert(false && "Failed to find ECInstanceId parameter in insert statement");
-                ctx.SetError("Failed to find ECInstanceId parameter in insert statement");
-                rc = BE_SQLITE_ERROR;
+                return false; // continue
             }
-
-            auto& binder = stmt.GetStatement().GetBinder(stmt.GetInstanceIdParameterIndex());
-            if (options.GetInstanceIdMode() == InstanceWriter::InsertOptions::InstanceIdMode::Auto) {
-                binder.BindNull();
-            } else if (options.GetInstanceIdMode() == InstanceWriter::InsertOptions::InstanceIdMode::FromJs) {
-                ECInstanceId id;
-                if (!TryGetECInstanceId(ctx, inst, id)) {
-                    rc = BE_SQLITE_ERROR;
-                    return;
-                }
-                binder.BindId(id);
-                // out = ECInstanceKey(classId, id);
-            } else {
-                binder.BindId(options.GetInstanceId());
-                // out = ECInstanceKey(classId, options.GetInstanceId());
+            if (binder->GetPropertyMap().GetType() == PropertyMap::Type::ECInstanceId) {
+                return false; // skip ECInstanceId property, we will bind it later
             }
-
-            rc = out.IsValid() ? stmt.GetStatement().Step(): stmt.GetStatement().Step(out);
-            if (rc != BE_SQLITE_DONE) {
-                m_error = m_cache.GetECDb().GetLastError();
+            bindStatus = BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), val);
+            if (!bindStatus.IsSuccess()) {
+                return true;
             }
-        })) {
-        // failed to prepare statement
-        rc = BE_SQLITE_ERROR;
+            return false;
+        });
+
+        if (!bindStatus.IsSuccess()) {
+            if (m_error.empty()) {
+                m_error = "Failed to bind property";
+            }
+            return BE_SQLITE_ERROR;
+        }
+        if (stmt.GetInstanceIdParameterIndex() < 0) {
+            BeAssert(false && "Failed to find ECInstanceId parameter in insert statement");
+            ctx.SetError("Failed to find ECInstanceId parameter in insert statement");
+            return BE_SQLITE_ERROR;
+        }
+
+        auto& binder = stmt.GetStatement().GetBinder(stmt.GetInstanceIdParameterIndex());
+        if (options.GetInstanceIdMode() == InstanceWriter::InsertOptions::InstanceIdMode::Auto) {
+            binder.BindNull();
+        } else if (options.GetInstanceIdMode() == InstanceWriter::InsertOptions::InstanceIdMode::FromJs) {
+            ECInstanceId id;
+            if (!TryGetECInstanceId(ctx, inst, id)) {
+                m_error = "Failed to get ECInstanceId/id";
+                return BE_SQLITE_ERROR;
+            }
+            binder.BindId(id);
+        } else {
+            binder.BindId(options.GetInstanceId());
+        }
+
+        auto rc = out.IsValid() ? stmt.GetStatement().Step() : stmt.GetStatement().Step(out);
+        if (rc != BE_SQLITE_DONE) {
+            m_error = m_cache.GetECDb().GetLastError();
+            if (m_error.empty()) {
+                m_error = "Failed to insert instance";
+            }
+        }
+        return rc;
+    });
+
+    if (rc != BE_SQLITE_DONE) {
+        if (m_error.empty()) {
+            m_error = "Failed to prepare insert statement";
+        }
+        LOG.errorv("InstanceWriter::Insert(): %s", m_error.c_str());
     }
     return rc;
 }
@@ -787,6 +816,7 @@ DbResult InstanceWriter::Impl::Insert(BeJsConst inst, InstanceWriter::InsertOpti
 DbResult InstanceWriter::Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& options) {
     m_error.clear();
     if (!inst.isObject()) {
+        m_error = "Expected object";
         return BE_SQLITE_ERROR;
     }
 
@@ -805,27 +835,46 @@ DbResult InstanceWriter::Impl::Update(BeJsConst inst, InstanceWriter::UpdateOpti
         return BE_SQLITE_ERROR;
     }
 
-    DbResult rc = BE_SQLITE_OK;
-    if (!m_cache.WithUpdate(classId, [&](Internal::CachedStatement& stmt) {
-            inst.ForEachProperty([&](auto prop, auto val) {
-                auto binder = stmt.FindBinder(prop);
-                if (binder == nullptr) {
-                    if (ctx.NotifyUnknownJsProperty(prop, val) == Abortable::Abort) {
-                        return true;
-                    }
-                    return false; // continue
+    auto rc = m_cache.WithUpdate(classId, [&](Internal::CachedStatement& stmt) {
+        ECSqlStatus bindStatus = ECSqlStatus::Success;
+        inst.ForEachProperty([&](auto prop, auto val) {
+            auto binder = stmt.FindBinder(prop);
+            if (binder == nullptr) {
+                if (ctx.NotifyUnknownJsProperty(prop, val) == Abortable::Abort) {
+                    return true;
                 }
-                return !BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), val).IsSuccess();
-            });
-            auto& binder = stmt.GetStatement().GetBinder((int)stmt.GetBinders().size());
-            binder.BindId(id);
-            rc = stmt.GetStatement().Step();
-            if (rc != BE_SQLITE_DONE) {
-                m_error = m_cache.GetECDb().GetLastError();
+                return false; // continue
             }
-        })) {
-        // failed to prepare statement
-        rc = BE_SQLITE_ERROR;
+            bindStatus = BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), val);
+            if (!bindStatus.IsSuccess()) {
+                return true;
+            }
+            return false;
+        });
+
+        if (!bindStatus.IsSuccess()) {
+            if (m_error.empty()) {
+                m_error = "Failed to bind property";
+            }
+            return BE_SQLITE_ERROR;
+        }
+        auto& binder = stmt.GetStatement().GetBinder((int)stmt.GetBinders().size());
+        binder.BindId(id);
+        auto rc = stmt.GetStatement().Step();
+        if (rc != BE_SQLITE_DONE) {
+            m_error = m_cache.GetECDb().GetLastError();
+            if (m_error.empty()) {
+                m_error = "Failed to insert instance";
+            }
+        }
+        return rc;
+    });
+
+    if (rc != BE_SQLITE_DONE) {
+        if (m_error.empty()) {
+            m_error = "Failed to prepare update statement";
+        }
+        LOG.errorv("InstanceWriter::Update(): %s", m_error.c_str());
     }
     return rc;
 }
@@ -836,6 +885,7 @@ DbResult InstanceWriter::Impl::Update(BeJsConst inst, InstanceWriter::UpdateOpti
 DbResult InstanceWriter::Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& options) {
     m_error.clear();
     if (!inst.isObject()) {
+        m_error = "Expected object";
         return BE_SQLITE_ERROR;
     }
 
@@ -848,22 +898,32 @@ DbResult InstanceWriter::Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOpti
     ECInstanceId id;
     ECClassId classId;
     if (!TryGetECInstanceId(ctx, inst, id)) {
+        m_error = "Failed to get ECInstanceId/id";
         return BE_SQLITE_ERROR;
     }
     if (!TryGetECClassId(ctx, inst, classId)) {
+        m_error = "Failed to get ECClassId/className/classFullName";
         return BE_SQLITE_ERROR;
     }
-    DbResult rc = BE_SQLITE_OK;
-    if (!m_cache.WithDelete(classId, [&](Internal::CachedStatement& stmt) {
-            auto& binder = stmt.GetStatement().GetBinder(1);
-            binder.BindId(id);
-            rc = stmt.GetStatement().Step();
-            if (rc != BE_SQLITE_DONE) {
-                m_error = m_cache.GetECDb().GetLastError();
+
+    auto rc = m_cache.WithDelete(classId, [&](Internal::CachedStatement& stmt) {
+        auto& binder = stmt.GetStatement().GetBinder(1);
+        binder.BindId(id);
+        auto rc = stmt.GetStatement().Step();
+        if (rc != BE_SQLITE_DONE) {
+            m_error = m_cache.GetECDb().GetLastError();
+            if (m_error.empty()) {
+                m_error = "Failed to delete instance";
             }
-        })) {
-        // failed to prepare statement
-        rc = BE_SQLITE_ERROR;
+        }
+        return rc;
+    });
+
+    if (rc != BE_SQLITE_DONE) {
+        if (m_error.empty()) {
+            m_error = "Failed to prepare delete statement";
+        }
+        LOG.errorv("InstanceWriter::Delete(): %s", m_error.c_str());
     }
     return rc;
 }
@@ -890,7 +950,7 @@ InstanceWriter::~InstanceWriter() { delete m_pImpl; }
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult InstanceWriter::Insert(BeJsConst inst, InsertOptions const& options,  ECInstanceKey& key) {
+DbResult InstanceWriter::Insert(BeJsConst inst, InsertOptions const& options, ECInstanceKey& key) {
     return m_pImpl->Insert(inst, options, key);
 }
 
