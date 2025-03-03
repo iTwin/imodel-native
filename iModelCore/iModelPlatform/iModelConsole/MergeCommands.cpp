@@ -89,7 +89,7 @@ void MergeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     ECN::SchemaMergeResult result;
     auto mergeStatus = ECN::SchemaMerger::MergeSchemas(result,existingSchemas, context1->GetCache().GetSchemas());
-    if(mergeStatus != BentleyStatus::SUCCESS)
+    if(mergeStatus != ECObjectsStatus::Success)
         {
         //TODO Log from issue reporter on result
         IModelConsole::WriteLine("Failed to merge incoming schemas with existing ones (SchemaMerger).");
@@ -249,7 +249,7 @@ void MergeExternalCommand::_Run(Session& session, Utf8StringCR argsUnparsed) con
 
     ECN::SchemaMergeResult result;
     auto mergeStatus = ECN::SchemaMerger::MergeSchemas(result, context1->GetCache().GetSchemas(), context2->GetCache().GetSchemas());
-    if(mergeStatus != BentleyStatus::SUCCESS)
+    if(mergeStatus != ECObjectsStatus::Success)
         {
         //TODO Log from issue reporter on result
         IModelConsole::WriteLine("Failed to merge incoming schemas with existing ones (SchemaMerger).");

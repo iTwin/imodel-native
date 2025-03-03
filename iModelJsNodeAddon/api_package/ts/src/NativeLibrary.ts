@@ -538,6 +538,8 @@ export declare namespace IModelJsNative {
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
+    public attachDb(filename: string, alias: string): void;
+    public detachDb(alias: string): void;
     public getNoCaseCollation(): NoCaseCollation;
     public setNoCaseCollation(collation: NoCaseCollation): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
@@ -786,6 +788,9 @@ export declare namespace IModelJsNative {
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
+    public attachDb(filename: string, alias: string): void;
+    public detachDb(alias: string): void;
+
   }
 
   class ChangedElementsECDb implements IDisposable {
