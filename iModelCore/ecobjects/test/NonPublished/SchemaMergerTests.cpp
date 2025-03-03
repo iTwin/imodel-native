@@ -4878,7 +4878,7 @@ TEST_F(SchemaMergerTests, MergeSchemasWhereResultWillHaveIllegalRC)
 
     auto schemaMergeOptions = SchemaMergeOptions();
     SchemaMergeResult result1;
-    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result1, leftSchemas, rightSchemas, schemaMergeOptions));
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, SchemaMerger::MergeSchemas(result1, leftSchemas, rightSchemas, schemaMergeOptions));
     schemaMergeOptions.SetSkipValidation(true);
     SchemaMergeResult result2;
     EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, schemaMergeOptions));
@@ -5208,7 +5208,7 @@ TEST_F(SchemaMergerTests, RelationshipConstraintNotCompatibleProblem)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<ReportedIssue> expectedIssues { ReportedIssue(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0024, "Setting ConstraintClass on Test2:MyRelationshipClass failed. Was trying to set to Test2:Lemon.") };
