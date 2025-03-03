@@ -75,18 +75,18 @@ BentleyStatus SchemaMerger::ValidateUniqueSchemaNames(bvector<ECSchemaCP> const&
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 template <typename T, typename TSetter, typename TParent> //TSetter may differ from T, being the const or reference version of T
-BentleyStatus SchemaMerger::MergePrimitive(PrimitiveChange<T>& change, TParent* parent, ECObjectsStatus(TParent::*setPrimitive)(TSetter), Utf8CP parentKey, SchemaMergeResult& result, SchemaMergeOptions const& options, bool preferLeftValue)
+ECObjectsStatus SchemaMerger::MergePrimitive(PrimitiveChange<T>& change, TParent* parent, ECObjectsStatus(TParent::*setPrimitive)(TSetter), Utf8CP parentKey, SchemaMergeResult& result, SchemaMergeOptions const& options, bool preferLeftValue)
     {
     if(!change.IsChanged())
-        return BentleyStatus::SUCCESS;
+        return ECObjectsStatus::Success;
 
     auto opCode = change.GetOpCode();
     if(opCode == ECChange::OpCode::Deleted)
-        return BentleyStatus::SUCCESS;
+        return ECObjectsStatus::Success;
 
     //if we prefer left values, and there is a valid old value, we keep it.
     if(preferLeftValue && opCode == ECChange::OpCode::Modified && change.GetOld().IsValid())
-        return BentleyStatus::SUCCESS;
+        return ECObjectsStatus::Success;
 
     auto newValue = change.GetNew();
 
@@ -94,17 +94,18 @@ BentleyStatus SchemaMerger::MergePrimitive(PrimitiveChange<T>& change, TParent* 
         { //IsValid() implicitly also checks IsNull()
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0015,
             "Changed %s has an invalid value on item %s.", change.GetChangeName(), parentKey);
-        return BentleyStatus::ERROR;
+        return ECObjectsStatus::Error;
         }
-
-    if ((parent->*setPrimitive)(newValue.Value()) != ECObjectsStatus::Success)
+    
+    auto status = (parent->*setPrimitive)(newValue.Value());
+    if (status != ECObjectsStatus::Success)
         {
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0016,
             "The setter for %s on item %s returned an error.", change.GetChangeName(), parentKey);
-        return BentleyStatus::ERROR;
+        return status;
         }
 
-    return BentleyStatus::SUCCESS;
+    return ECObjectsStatus::Success;
     }
 
 void SchemaMerger::MergeCustomAttributes(SchemaMergeResult& result, CustomAttributeChanges& changes, Utf8CP scopeDescription, IECCustomAttributeContainerP left, IECCustomAttributeContainerCP right)
@@ -172,10 +173,10 @@ void SchemaMerger::MergeCustomAttributes(SchemaMergeResult& result, CustomAttrib
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 template <typename T>
-BentleyStatus SchemaMerger::MergeReferencedSchemaItem(SchemaMergeResult& result, StringChange& change, SchemaItemSetterFunc<T> setterFunc, SchemaItemGetterFunc<T> getterFunc, Utf8CP parentKey, SchemaMergeOptions const& options)
+ECObjectsStatus SchemaMerger::MergeReferencedSchemaItem(SchemaMergeResult& result, StringChange& change, SchemaItemSetterFunc<T> setterFunc, SchemaItemGetterFunc<T> getterFunc, Utf8CP parentKey, SchemaMergeOptions const& options)
     {
     if(!change.IsChanged())
-        return BentleyStatus::SUCCESS;
+        return ECObjectsStatus::Success;
 
     auto opCode = change.GetOpCode();
     if(opCode == ECChange::OpCode::New || opCode == ECChange::OpCode::Modified)
@@ -185,14 +186,14 @@ BentleyStatus SchemaMerger::MergeReferencedSchemaItem(SchemaMergeResult& result,
             {
             result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0021,
                 "Changed referenced item %s has a null value on item %s.", change.GetChangeName(), parentKey);
-            return BentleyStatus::ERROR;
+            return ECObjectsStatus::Error;
             }
 
         if(!newValue.IsValid())
             {
             result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0022,
                 "Changed referenced item %s has an invalid value on item %s.", change.GetChangeName(), parentKey);
-            return BentleyStatus::ERROR;
+            return ECObjectsStatus::Error;
             }
 
         //in schema xml we have the "[alias]:Name"
@@ -205,18 +206,19 @@ BentleyStatus SchemaMerger::MergeReferencedSchemaItem(SchemaMergeResult& result,
             {
             result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0023,
                 "Unable to find Schema '%s' for obtaining %s. Item: %s", schemaName.c_str(), newValue.Value().c_str(), parentKey);
-            return BentleyStatus::ERROR;
+            return ECObjectsStatus::Error;
             }
-
-        if(setterFunc(getterFunc(schema, name)) != ECObjectsStatus::Success)
+        
+        auto status = setterFunc(getterFunc(schema, name));
+        if(status != ECObjectsStatus::Success)
             {
             result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0024,
                 "Setting %s on %s failed. Was trying to set to %s.", change.GetChangeName(), parentKey, newValue.Value().c_str());
-            return BentleyStatus::ERROR;
+            return status;
             }
         }
 
-    return BentleyStatus::SUCCESS;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -238,7 +240,7 @@ ECSchemaP SchemaMergeResult::GetSchema(Utf8CP schemaName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSchemaCP> const& rawLeft, bvector<ECSchemaCP> const& rawRight, SchemaMergeOptions const& options)
+ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSchemaCP> const& rawLeft, bvector<ECSchemaCP> const& rawRight, SchemaMergeOptions const& options)
     {
     //Make a copy of the input vectors so we don't modify the original (given to us as const anyways)
     bvector<ECSchemaCP> left(rawLeft);
@@ -251,7 +253,7 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
         auto leftValidationStatus = SchemaMerger::ValidateUniqueSchemaNames(left, result, "left") == BentleyStatus::SUCCESS;
         auto rightValidationStatus = SchemaMerger::ValidateUniqueSchemaNames(right, result, "right") == BentleyStatus::SUCCESS;
         if(!leftValidationStatus || !rightValidationStatus)
-            return BentleyStatus::ERROR;
+            return ECObjectsStatus::Error;
         }
 
     bool dumpSchemas = false;
@@ -264,7 +266,6 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
         DumpSchemasToFile(right, dumpLocation.c_str(), "Right");
         }
 
-    bool failedToFillSchemas = false;
     auto fillSchemasToResult = [&](Utf8CP side, bvector<ECSchemaCP>& input)
         {
         for(auto schema: input)
@@ -272,11 +273,12 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
             if(!result.ContainsSchema(schema->GetName().c_str()))
                 {
                 ECSchemaPtr copiedSchema;
-                if(schema->CopySchema(copiedSchema, !doNotMergeReferences ? &result.GetSchemaCache() : nullptr, options.GetSkipValidation()) != ECObjectsStatus::Success)
+                auto status = schema->CopySchema(copiedSchema, !doNotMergeReferences ? &result.GetSchemaCache() : nullptr, options.GetSkipValidation());
+                if(status != ECObjectsStatus::Success)
                     {
                     result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
                         "Schema '%s' from %s side failed to be copied.", schema->GetFullSchemaName().c_str(), side);
-                    failedToFillSchemas = true;
+                    return status;
                     }
                 if (copiedSchema.IsValid())
                     {
@@ -285,6 +287,7 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
                     }
                 }
             }
+        return ECObjectsStatus::Success;
         };
 
     bool mergeOnlyDynamicSchemas = options.GetMergeOnlyDynamicSchemas();
@@ -300,16 +303,16 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
         return true;
         };
 
-    fillSchemasToResult("left", left);
-    if(failedToFillSchemas)
-        return BentleyStatus::ERROR;
+    auto status = fillSchemasToResult("left", left);
+    if (status != ECObjectsStatus::Success)
+        return status;
 
     if (rawRight.empty())
-        return BentleyStatus::SUCCESS;
+        return ECObjectsStatus::Success;
 
-    fillSchemasToResult("right", right);
-    if(failedToFillSchemas)
-        return BentleyStatus::ERROR;
+    status = fillSchemasToResult("right", right);
+    if (status != ECObjectsStatus::Success)
+        return status;
 
     SchemaComparer comparer;
     SchemaComparer::Options comparerOptions = SchemaComparer::Options(SchemaComparer::DetailLevel::NoSchemaElements, SchemaComparer::DetailLevel::NoSchemaElements);
@@ -317,7 +320,7 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
     if (comparer.Compare(diff, result.GetResults(), right, comparerOptions) != BentleyStatus::SUCCESS)
         {
         result.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0013, "SchemaComparer comparison failed.");
-        return BentleyStatus::ERROR;
+        return ECObjectsStatus::Error;
         }
 
     for (auto schemaChange : diff.Changes())
@@ -340,10 +343,9 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
             }
 
         ECSchemaCP rightSchema = FindSchemaByName(right, schemaName);
-        if(MergeSchema(result, leftSchema, rightSchema, schemaChange, options) != BentleyStatus::SUCCESS)
-            {
-            return BentleyStatus::ERROR;
-            }
+        auto status = MergeSchema(result, leftSchema, rightSchema, schemaChange, options);
+        if(status != ECObjectsStatus::Success)
+            return status;
 
         result.m_modifiedSchemas.push_back(leftSchema);
         }
@@ -361,19 +363,19 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0061,
                     "Schema %s failed to validate.", schema->GetFullSchemaName().c_str());
-                return BentleyStatus::ERROR;
+                return ECObjectsStatus::Error;
                 }
             }
         }
 
-    return BentleyStatus::SUCCESS;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 template <typename TItemChange, typename TItem>
-BentleyStatus SchemaMerger::MergeItems(SchemaMergeResult& result, ECSchemaP left, ECSchemaCP right, SchemaMergeOptions const& options, ECChangeArray<TItemChange>& changes,
+ECObjectsStatus SchemaMerger::MergeItems(SchemaMergeResult& result, ECSchemaP left, ECSchemaCP right, SchemaMergeOptions const& options, ECChangeArray<TItemChange>& changes,
     TGetItemCP<TItem> getItemCP, TGetItemP<TItem> getItemP, TCopyItem<TItem> copyItem, TMergeItem<TItemChange, TItem> mergeItem)
     {
     for (const auto& schemaItemChange : changes)
@@ -394,7 +396,7 @@ BentleyStatus SchemaMerger::MergeItems(SchemaMergeResult& result, ECSchemaP left
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0059,
                     "Failed to find item with name %s in right schema %s. This usually indicates a dirty schema graph where multiple memory references of the same schema with different contents are provided.", itemName, right->GetFullSchemaName().c_str());
-                return BentleyStatus::ERROR;
+                return ECObjectsStatus::Error;
                 }
 
             if ( left->NamedElementExists(itemName) && 
@@ -404,7 +406,7 @@ BentleyStatus SchemaMerger::MergeItems(SchemaMergeResult& result, ECSchemaP left
                     {
                     result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0026,
                         "Another item with name %s already exists in the merged schema %s. RenameSchemaItemOnConflict is set to false.", newSchemaItem->GetFullName().c_str(), left->GetFullSchemaName().c_str());
-                    return BentleyStatus::ERROR;
+                    return ECObjectsStatus::Error;
                     }
 
                 newName = left->FindUniqueSchemaItemName(itemName);
@@ -416,7 +418,7 @@ BentleyStatus SchemaMerger::MergeItems(SchemaMergeResult& result, ECSchemaP left
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0027,
                     "Failed to copy %s into merged schema.", newSchemaItem->GetFullName().c_str());
-                return BentleyStatus::ERROR;
+                return status;
                 }
                 
             continue;
@@ -424,19 +426,21 @@ BentleyStatus SchemaMerger::MergeItems(SchemaMergeResult& result, ECSchemaP left
 
         auto leftItem = (left->*getItemP)(itemName);
         auto rightItem = (right->*getItemCP)(itemName);
-        if((*mergeItem)(result, leftItem, rightItem, schemaItemChange, options) != BentleyStatus::SUCCESS)
-            return BentleyStatus::ERROR;
+        auto status = (*mergeItem)(result, leftItem, rightItem, schemaItemChange, options);
+        if(status != ECObjectsStatus::Success)
+            return status;
         }
-    return BentleyStatus::SUCCESS;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP left, ECSchemaCP right, RefCountedPtr<SchemaChange> schemaChange, SchemaMergeOptions const& options)
+ECObjectsStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP left, ECSchemaCP right, RefCountedPtr<SchemaChange> schemaChange, SchemaMergeOptions const& options)
     {
-    if(MergePrimitive(schemaChange->Alias(), left, &ECSchema::SetAlias, left->GetName().c_str(), result, options) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    auto status = MergePrimitive(schemaChange->Alias(), left, &ECSchema::SetAlias, left->GetName().c_str(), result, options);
+    if(status != ECObjectsStatus::Success)
+        return status;
 
     if(schemaChange->VersionRead().IsChanged() || schemaChange->VersionWrite().IsChanged() || schemaChange->VersionMinor().IsChanged())
         {
@@ -461,10 +465,12 @@ BentleyStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP lef
             left->SetOriginalECXmlVersion(rightMajor, rightMinor);
         }
 
-    if (MergePrimitive(schemaChange->Description(), left, &ECSchema::SetDescription, left->GetName().c_str(), result, options) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(schemaChange->DisplayLabel(), left, &ECSchema::SetDisplayLabel, left->GetName().c_str(), result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    status = MergePrimitive(schemaChange->Description(), left, &ECSchema::SetDescription, left->GetName().c_str(), result, options);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(schemaChange->DisplayLabel(), left, &ECSchema::SetDisplayLabel, left->GetName().c_str(), result, options, !options.PreferRightSideDisplayLabel());
+    if (status != ECObjectsStatus::Success)
+        return status;
 
     if(schemaChange->References().IsChanged())
         {
@@ -481,26 +487,33 @@ BentleyStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP lef
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0028,
                     "Failed to find new referenced schema %s for schema %s", referenceFullName.c_str(), left->GetFullSchemaName().c_str());
-                return BentleyStatus::ERROR;
+                return ECObjectsStatus::Error;
                 }
             left->AddReferencedSchema(*newReferencedSchema);
             }
         }
-
-    if (MergeItems(result, left, right, options, schemaChange->Enumerations(), &ECSchema::GetEnumerationCP, &ECSchema::GetEnumerationP, &ECSchema::CopyEnumeration, &SchemaMerger::MergeEnumeration) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergeItems(result, left, right, options, schemaChange->PropertyCategories(), &ECSchema::GetPropertyCategoryCP, &ECSchema::GetPropertyCategoryP, &ECSchema::CopyPropertyCategory, &SchemaMerger::MergePropertyCategory) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergeItems(result, left, right, options, schemaChange->Phenomena(), &ECSchema::GetPhenomenonCP, &ECSchema::GetPhenomenonP, &ECSchema::CopyPhenomenon, &SchemaMerger::MergePhenomenon) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergeItems(result, left, right, options, schemaChange->UnitSystems(), &ECSchema::GetUnitSystemCP, &ECSchema::GetUnitSystemP, &ECSchema::CopyUnitSystem, &SchemaMerger::MergeUnitSystem) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergeItems(result, left, right, options, schemaChange->Units(), &ECSchema::GetUnitCP, &ECSchema::GetUnitP, &ECSchema::CopyUnit, &SchemaMerger::MergeUnit) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergeItems(result, left, right, options, schemaChange->Formats(), &ECSchema::GetFormatCP, &ECSchema::GetFormatP, &ECSchema::CopyFormat, &SchemaMerger::MergeFormat) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergeItems(result, left, right, options, schemaChange->KindOfQuantities(), &ECSchema::GetKindOfQuantityCP, &ECSchema::GetKindOfQuantityP, &ECSchema::CopyKindOfQuantity, &SchemaMerger::MergeKindOfQuantity) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    
+    status = MergeItems(result, left, right, options, schemaChange->Enumerations(), &ECSchema::GetEnumerationCP, &ECSchema::GetEnumerationP, &ECSchema::CopyEnumeration, &SchemaMerger::MergeEnumeration);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergeItems(result, left, right, options, schemaChange->PropertyCategories(), &ECSchema::GetPropertyCategoryCP, &ECSchema::GetPropertyCategoryP, &ECSchema::CopyPropertyCategory, &SchemaMerger::MergePropertyCategory);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergeItems(result, left, right, options, schemaChange->Phenomena(), &ECSchema::GetPhenomenonCP, &ECSchema::GetPhenomenonP, &ECSchema::CopyPhenomenon, &SchemaMerger::MergePhenomenon);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergeItems(result, left, right, options, schemaChange->UnitSystems(), &ECSchema::GetUnitSystemCP, &ECSchema::GetUnitSystemP, &ECSchema::CopyUnitSystem, &SchemaMerger::MergeUnitSystem);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergeItems(result, left, right, options, schemaChange->Units(), &ECSchema::GetUnitCP, &ECSchema::GetUnitP, &ECSchema::CopyUnit, &SchemaMerger::MergeUnit);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergeItems(result, left, right, options, schemaChange->Formats(), &ECSchema::GetFormatCP, &ECSchema::GetFormatP, &ECSchema::CopyFormat, &SchemaMerger::MergeFormat);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergeItems(result, left, right, options, schemaChange->KindOfQuantities(), &ECSchema::GetKindOfQuantityCP, &ECSchema::GetKindOfQuantityP, &ECSchema::CopyKindOfQuantity, &SchemaMerger::MergeKindOfQuantity);
+    if (status != ECObjectsStatus::Success)
+        return status;
 
     //First process New classes, then the rest
     for(auto classChange : schemaChange->Classes())
@@ -517,7 +530,7 @@ BentleyStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP lef
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0026,
                     "Another item with name %s already exists in the merged schema %s. RenameSchemaItemOnConflict is set to false.", newClass->GetFullName(), left->GetFullSchemaName().c_str());
-                return BentleyStatus::ERROR;
+                return ECObjectsStatus::Error;
                 }
 
 
@@ -530,7 +543,7 @@ BentleyStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP lef
           {
           result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0029,
             "Failed to copy class %s into merged schema", newClass->GetFullName());
-          return BentleyStatus::ERROR;
+          return status;
           }
         }
 
@@ -542,40 +555,50 @@ BentleyStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP lef
         Utf8CP className = classChange->GetChangeName();
         auto leftClass = left->GetClassP(className);
         auto rightClass = right->GetClassCP(className);
-        if(MergeClass(result, leftClass, rightClass, classChange, options) != BentleyStatus::SUCCESS)
-            return BentleyStatus::ERROR;
+        auto status = MergeClass(result, leftClass, rightClass, classChange, options);
+        if(status != ECObjectsStatus::Success)
+            return status;
         }
 
     Utf8PrintfString scopeDescription("Schema %s", left->GetName().c_str());
     MergeCustomAttributes(result, schemaChange->CustomAttributes(), scopeDescription.c_str(), left, right);
 
-    return BentleyStatus::SUCCESS;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaMerger::MergeRelationshipConstraint(SchemaMergeResult& result, ECRelationshipClassP left, ECClassCP right, RelationshipConstraintChange& change, SchemaMergeOptions const& options, bool isSource)
+ECObjectsStatus SchemaMerger::MergeRelationshipConstraint(SchemaMergeResult& result, ECRelationshipClassP left, ECClassCP right, RelationshipConstraintChange& change, SchemaMergeOptions const& options, bool isSource)
     {
     auto& constraint = isSource ? left->GetSource() : left->GetTarget();
-    if (MergePrimitive(change.RoleLabel(), &constraint, &ECRelationshipConstraint::SetRoleLabel, left->GetFullName(), result, options) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    auto status = MergePrimitive(change.RoleLabel(), &constraint, &ECRelationshipConstraint::SetRoleLabel, left->GetFullName(), result, options);
+    if (status != ECObjectsStatus::Success)
+        return status;
     //necessary as the many method overloads make deduction not work
     // int (Foo::*mpf)(int) = &Foo::mf; // selects int mf(int)
     ECObjectsStatus (ECRelationshipConstraint::*setMultiplicityPointer)(Utf8StringCR) = &ECRelationshipConstraint::SetMultiplicity;
-    if (MergePrimitive(change.Multiplicity(), &constraint, setMultiplicityPointer, left->GetFullName(), result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(change.IsPolymorphic(), &constraint, &ECRelationshipConstraint::SetIsPolymorphic, left->GetFullName(), result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-
-    if (MergeReferencedSchemaItem<ECClassCP>(result, change.AbstractConstraint(),
-      [&](ECClassCP value) { return constraint.SetAbstractConstraint(*value); },
-      [&](ECSchemaP schema, Utf8StringCR name) { return schema->GetClassCP(name.c_str()); }, left->GetFullName(), options) != BentleyStatus::SUCCESS)
-      return BentleyStatus::ERROR;
+    status = MergePrimitive(change.Multiplicity(), &constraint, setMultiplicityPointer, left->GetFullName(), result, options, false);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(change.IsPolymorphic(), &constraint, &ECRelationshipConstraint::SetIsPolymorphic, left->GetFullName(), result, options, false);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    
+    status = MergeReferencedSchemaItem<ECClassCP>(result, change.AbstractConstraint(),
+            [&](ECClassCP value) { 
+                return constraint.SetAbstractConstraint(*value); 
+            },
+            [&](ECSchemaP schema, Utf8StringCR name) { 
+                return schema->GetClassCP(name.c_str()); 
+            }, 
+            left->GetFullName(), options);
+    if(status != ECObjectsStatus::Success)
+        return status;
 
     auto& constraintClassChanges = change.ConstraintClasses();
     if(!constraintClassChanges.IsChanged())
-        return BentleyStatus::SUCCESS;
+        return ECObjectsStatus::Success;
 
     for(auto constraintClassChange : constraintClassChanges)
         {
@@ -585,8 +608,8 @@ BentleyStatus SchemaMerger::MergeRelationshipConstraint(SchemaMergeResult& resul
         auto opCode = constraintClassChange->GetOpCode();
         if (opCode == ECChange::OpCode::Deleted)
             continue;
-
-        if (MergeReferencedSchemaItem<ECClassCP>(result, *constraintClassChange,
+        
+        status = MergeReferencedSchemaItem<ECClassCP>(result, *constraintClassChange,
             [&](ECClassCP value) {
                 // only verify if an abstract constraint has been set. If not, we will skip this check
                 if(constraint.GetAbstractConstraint(false) != nullptr && !constraint.SupportsClass(*value))
@@ -594,24 +617,28 @@ BentleyStatus SchemaMerger::MergeRelationshipConstraint(SchemaMergeResult& resul
                 
                 return constraint.AddClass(*value);
                 },
-            [&](ECSchemaP schema, Utf8StringCR name) { return schema->GetClassCP(name.c_str()); }, left->GetFullName(), options) != BentleyStatus::SUCCESS)
-            return BentleyStatus::ERROR;
+            [&](ECSchemaP schema, Utf8StringCR name) { return schema->GetClassCP(name.c_str()); }, left->GetFullName(), options);
+        if(status != ECObjectsStatus::Success)
+            return status;
         }
-    
-    return BentleyStatus::SUCCESS;
+
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left, ECClassCP right, RefCountedPtr<ClassChange> classChange, SchemaMergeOptions const& options)
+ECObjectsStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left, ECClassCP right, RefCountedPtr<ClassChange> classChange, SchemaMergeOptions const& options)
     {
-    if (MergePrimitive(classChange->DisplayLabel(), left, &ECClass::SetDisplayLabel, left->GetFullName(), result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(classChange->Description(), left, &ECClass::SetDescription, left->GetFullName(), result, options) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(classChange->ClassModifier(), left, &ECClass::SetClassModifier, left->GetFullName(), result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    auto status = MergePrimitive(classChange->DisplayLabel(), left, &ECClass::SetDisplayLabel, left->GetFullName(), result, options, !options.PreferRightSideDisplayLabel());
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(classChange->Description(), left, &ECClass::SetDescription, left->GetFullName(), result, options);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(classChange->ClassModifier(), left, &ECClass::SetClassModifier, left->GetFullName(), result, options, false);
+    if (status != ECObjectsStatus::Success)
+        return status;
 
     // check if the classToMerge has the same type
     auto classType = left->GetClassType();
@@ -619,7 +646,7 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
         {
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0030,
             "Cannot merge class %s because the type of class is different.", left->GetFullName());
-        return BentleyStatus::ERROR;
+        return ECObjectsStatus::Error;
         }
 
     switch (left->GetClassType())
@@ -627,26 +654,30 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
         case ECClassType::Relationship:
             {
             auto mergedRelationshipClass = left->GetRelationshipClassP();
-            if ((MergePrimitive(classChange->Strength(), mergedRelationshipClass, &ECRelationshipClass::SetStrength, left->GetFullName(), result, options, false) != BentleyStatus::SUCCESS))
+            status = MergePrimitive(classChange->Strength(), mergedRelationshipClass, &ECRelationshipClass::SetStrength, left->GetFullName(), result, options, false);
+            if (status != ECObjectsStatus::Success)
                 {
                 if(!options.IgnoreStrengthChangeProblems())
-                    return BentleyStatus::ERROR;
+                    return status;
                 else
                     result.Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0057,
                         "Ignoring invalid relationship strength change on %s, because IgnoreStrengthChangeProblems is set.", left->GetFullName());
                 }
-            if (MergePrimitive(classChange->StrengthDirection(), mergedRelationshipClass, &ECRelationshipClass::SetStrengthDirection, left->GetFullName(), result, options, false) != BentleyStatus::SUCCESS)
-                return BentleyStatus::ERROR;
+            status = MergePrimitive(classChange->StrengthDirection(), mergedRelationshipClass, &ECRelationshipClass::SetStrengthDirection, left->GetFullName(), result, options, false);
+            if (status != ECObjectsStatus::Success)
+                return status;
 
             if (classChange->Source().IsChanged())
                 {
-                if (MergeRelationshipConstraint(result, mergedRelationshipClass, right, classChange->Source(), options, true) != BentleyStatus::SUCCESS)
-                    return BentleyStatus::ERROR;
+                status = MergeRelationshipConstraint(result, mergedRelationshipClass, right, classChange->Source(), options, true);
+                if (status != ECObjectsStatus::Success)
+                    return status;
                 }
             if (classChange->Target().IsChanged())
                 {
-                if (MergeRelationshipConstraint(result, mergedRelationshipClass, right, classChange->Target(), options, false) != BentleyStatus::SUCCESS)
-                    return BentleyStatus::ERROR;
+                status = MergeRelationshipConstraint(result, mergedRelationshipClass, right, classChange->Target(), options, false);
+                if (status != ECObjectsStatus::Success)
+                    return status;
                 }
 
             break;
@@ -678,7 +709,7 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0031,
                     "Unable to find schema which holds modified base class '%s' to remove from '%s'.", oldFullName.c_str(), left->GetFullName());
-                return BentleyStatus::ERROR;
+                return ECObjectsStatus::Error;
                 }
 
             ECClassCP baseClassToRemove = schema->GetClassCP(name.c_str());
@@ -686,14 +717,15 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0032,
                     "Unable to find modified base class '%s' to remove from '%s'.", oldFullName.c_str(), left->GetFullName());
-                return BentleyStatus::ERROR;
+                return ECObjectsStatus::Error;
                 }
-
-            if (left->RemoveBaseClass(*baseClassToRemove) != ECObjectsStatus::Success)
+            
+            status = left->RemoveBaseClass(*baseClassToRemove);
+            if (status != ECObjectsStatus::Success)
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0033,
                     "Removing Base Class '%s' from '%s' failed.", oldFullName.c_str(), left->GetFullName());
-                return BentleyStatus::ERROR;
+                return status;
                 }
             }
 
@@ -704,7 +736,7 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0034,
                     "Changed base class on item %s has a null or invalid value.", left->GetFullName());
-                return BentleyStatus::ERROR;
+                return ECObjectsStatus::Error;
                 }
 
             //in schema xml we have the "[alias]:Name"
@@ -717,7 +749,7 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0035,
                     "Unable to find Schema '%s'. For adding base class to: %s", schemaName.c_str(), left->GetFullName());
-                return BentleyStatus::ERROR;
+                return ECObjectsStatus::Error;
                 }
 
             auto newBaseClass = schema->GetClassCP(name.c_str());
@@ -725,22 +757,22 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0036,
                     "Unable to find Class '%s' in schema %s. For use as base class on: %s", name.c_str(), schemaName.c_str(), left->GetFullName());
-                return BentleyStatus::ERROR;
+                return ECObjectsStatus::Error;
                 }
 
             if(!SchemaConflictHelper::CanBaseClassBeAdded(*left, *newBaseClass))
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0037,
                     "New base class %s is incompatible with properties on %s or its derived classes.", newBaseClass->GetFullName(), left->GetFullName());
-                return BentleyStatus::ERROR;
+                return ECObjectsStatus::Error;
                 }
 
-            ECObjectsStatus status = left->AddBaseClass(*newBaseClass);
+            status = left->AddBaseClass(*newBaseClass);
             if (status != ECObjectsStatus::Success && status != ECObjectsStatus::NamedItemAlreadyExists)
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0038,
                     "AddBaseClass for base class %s returned an error on %s.", newBaseClass->GetFullName(), left->GetFullName());
-                return BentleyStatus::ERROR;
+                return status;
                 }
             }
         }
@@ -766,7 +798,7 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
                     {
                     result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0039,
                         "Failed to add property %s to class %s because it conflicts with another property. RenamePropertyOnConflict flag is set to false.", propertyName ,left->GetFullName());
-                    return BentleyStatus::ERROR;
+                    return ECObjectsStatus::Error;
                     }
 
                 //rename property
@@ -775,16 +807,17 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
                     {
                     result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0040,
                         "Failed to find a valid new name for property %s to class %s. It conflicts with another property. RenamePropertyOnConflict flag is set to true.", propertyName ,left->GetFullName());
-                    return BentleyStatus::ERROR;
+                    return ECObjectsStatus::Error;
                     }
                 }
 
             ECPropertyP createdProperty;
-            if (ECObjectsStatus::Success != left->CopyProperty(createdProperty, rightProperty, validName.c_str(), true))
+            status = left->CopyProperty(createdProperty, rightProperty, validName.c_str(), true);
+            if (ECObjectsStatus::Success != status)
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0041,
                     "Failed to copy property %s on class %s into merged schema", propertyName ,left->GetFullName());
-                return BentleyStatus::ERROR;
+                return status;
                 }
 
             if(renameProperty)
@@ -796,47 +829,68 @@ BentleyStatus SchemaMerger::MergeClass(SchemaMergeResult& result, ECClassP left,
             }
 
         auto leftProperty = left->GetPropertyP(propertyName);
-        if(MergeProperty(result, leftProperty, rightProperty, propertyChange, options) != BentleyStatus::SUCCESS)
-            return BentleyStatus::ERROR;
+        status = MergeProperty(result, leftProperty, rightProperty, propertyChange, options);
+        if(status != ECObjectsStatus::Success)
+            return status;
         }
 
     Utf8PrintfString scopeDescription("Class %s", left->GetName().c_str());
     MergeCustomAttributes(result, classChange->CustomAttributes(), scopeDescription.c_str(), left, right);
-    return BentleyStatus::SUCCESS;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaMerger::MergeProperty(SchemaMergeResult& result, ECPropertyP left, ECPropertyCP right, RefCountedPtr<PropertyChange> propertyChange, SchemaMergeOptions const& options)
+ECObjectsStatus SchemaMerger::MergeProperty(SchemaMergeResult& result, ECPropertyP left, ECPropertyCP right, RefCountedPtr<PropertyChange> propertyChange, SchemaMergeOptions const& options)
     {
     Utf8PrintfString key("%s:%s", left->GetClass().GetFullName(), left->GetName().c_str());
-    if (MergePrimitive(propertyChange->DisplayLabel(), left, &ECProperty::SetDisplayLabel, key.c_str(), result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(propertyChange->Description(), left, &ECProperty::SetDescription, key.c_str(), result, options) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(propertyChange->IsReadonly(), left, &ECProperty::SetIsReadOnly, key.c_str(), result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(propertyChange->Priority(), left, &ECProperty::SetPriority, key.c_str(), result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(propertyChange->MinimumLength(), left, &ECProperty::SetMinimumLength, key.c_str(), result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(propertyChange->MaximumLength(), left, &ECProperty::SetMaximumLength, key.c_str(), result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(propertyChange->MinimumValue(), left, &ECProperty::SetMinimumValue, key.c_str(), result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(propertyChange->MaximumValue(), left, &ECProperty::SetMaximumValue, key.c_str(), result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-
-    if (MergeReferencedSchemaItem<PropertyCategoryCP>(result, propertyChange->Category(),
-      [&](PropertyCategoryCP value) { return left->SetCategory(value); },
-      [&](ECSchemaP schema, Utf8StringCR name) { return schema->GetPropertyCategoryCP(name.c_str()); }, key.c_str(), options) != BentleyStatus::SUCCESS)
-      return BentleyStatus::ERROR;
+    auto status = MergePrimitive(propertyChange->DisplayLabel(), left, &ECProperty::SetDisplayLabel, key.c_str(), result, options, !options.PreferRightSideDisplayLabel());
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(propertyChange->Description(), left, &ECProperty::SetDescription, key.c_str(), result, options);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(propertyChange->IsReadonly(), left, &ECProperty::SetIsReadOnly, key.c_str(), result, options, false);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(propertyChange->Priority(), left, &ECProperty::SetPriority, key.c_str(), result, options, false);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(propertyChange->MinimumLength(), left, &ECProperty::SetMinimumLength, key.c_str(), result, options, false);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(propertyChange->MaximumLength(), left, &ECProperty::SetMaximumLength, key.c_str(), result, options, false);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(propertyChange->MinimumValue(), left, &ECProperty::SetMinimumValue, key.c_str(), result, options, false);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(propertyChange->MaximumValue(), left, &ECProperty::SetMaximumValue, key.c_str(), result, options, false);
+    if (status != ECObjectsStatus::Success)
+        return status;
     
-    if (MergeReferencedSchemaItem<KindOfQuantityCP>(result, propertyChange->KindOfQuantity(),
-      [&](KindOfQuantityCP value) { return left->SetKindOfQuantity(value); },
-      [&](ECSchemaP schema, Utf8StringCR name) { return schema->GetKindOfQuantityCP(name.c_str()); }, key.c_str(), options) != BentleyStatus::SUCCESS)
-      return BentleyStatus::ERROR;
+    status = MergeReferencedSchemaItem<PropertyCategoryCP>(result, propertyChange->Category(),
+            [&](PropertyCategoryCP value) { 
+                return left->SetCategory(value); 
+            },
+            [&](ECSchemaP schema, Utf8StringCR name) { 
+                return schema->GetPropertyCategoryCP(name.c_str()); 
+            }, 
+            key.c_str(), options);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    
+    status = MergeReferencedSchemaItem<KindOfQuantityCP>(result, propertyChange->KindOfQuantity(),
+            [&](KindOfQuantityCP value) { 
+                return left->SetKindOfQuantity(value); 
+            },
+            [&](ECSchemaP schema, Utf8StringCR name) { 
+                return schema->GetKindOfQuantityCP(name.c_str()); 
+            }, 
+            key.c_str(), options);
+    if (status != ECObjectsStatus::Success)
+        return status;
 
     if (propertyChange->IsPrimitive().IsChanged() ||
         propertyChange->IsStruct().IsChanged() ||
@@ -875,7 +929,7 @@ BentleyStatus SchemaMerger::MergeProperty(SchemaMergeResult& result, ECPropertyP
 
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0042,
             "Property %s is of a different kind between both sides. %s", key.c_str(), changeDetails.str().c_str());
-        return BentleyStatus::ERROR;
+        return ECObjectsStatus::Error;
         }
     
     if(propertyChange->TypeName().IsChanged())
@@ -894,7 +948,7 @@ BentleyStatus SchemaMerger::MergeProperty(SchemaMergeResult& result, ECPropertyP
             result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0043,
                 "Property %s has its type changed from %s to %s.", key.c_str(),
                 nullableToString(propertyChange->TypeName().GetOld()).c_str(), nullableToString(propertyChange->TypeName().GetNew()).c_str());;
-            return BentleyStatus::ERROR;
+            return ECObjectsStatus::Error;
             }
         else
             {
@@ -907,26 +961,35 @@ BentleyStatus SchemaMerger::MergeProperty(SchemaMergeResult& result, ECPropertyP
     Utf8PrintfString scopeDescription("Property %s", key.c_str());
     MergeCustomAttributes(result, propertyChange->CustomAttributes(), scopeDescription.c_str(), left, right);
 
-    return BentleyStatus::SUCCESS;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaMerger::MergeKindOfQuantity(SchemaMergeResult& result, KindOfQuantityP left, KindOfQuantityCP right, RefCountedPtr<KindOfQuantityChange> change, SchemaMergeOptions const& options)
+ECObjectsStatus SchemaMerger::MergeKindOfQuantity(SchemaMergeResult& result, KindOfQuantityP left, KindOfQuantityCP right, RefCountedPtr<KindOfQuantityChange> change, SchemaMergeOptions const& options)
   {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &KindOfQuantity::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(change->Description(), left, &KindOfQuantity::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(change->RelativeError(), left, &KindOfQuantity::SetRelativeError, key, result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    auto status = MergePrimitive(change->DisplayLabel(), left, &KindOfQuantity::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel());
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(change->Description(), left, &KindOfQuantity::SetDescription, key, result, options);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(change->RelativeError(), left, &KindOfQuantity::SetRelativeError, key, result, options, false);
+    if (status != ECObjectsStatus::Success)
+        return status;
 
-    if (MergeReferencedSchemaItem<ECUnitCP>(result, change->PersistenceUnit(),
-        [&](ECUnitCP value) { return left->SetPersistenceUnit(*value); },
-        [&](ECSchemaP schema, Utf8StringCR name) { return schema->GetUnitCP(name.c_str()); }, key, options) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    status = MergeReferencedSchemaItem<ECUnitCP>(result, change->PersistenceUnit(),
+            [&](ECUnitCP value) { 
+                return left->SetPersistenceUnit(*value); 
+            },
+            [&](ECSchemaP schema, Utf8StringCR name) { 
+                return schema->GetUnitCP(name.c_str()); 
+            }, 
+            key, options);
+    if (status != ECObjectsStatus::Success)
+        return status;
 
     auto& presentationFormatsChange = change->PresentationFormats();
     if(presentationFormatsChange.IsChanged())
@@ -972,39 +1035,43 @@ BentleyStatus SchemaMerger::MergeKindOfQuantity(SchemaMergeResult& result, KindO
               };
           for(auto& presFormat : mergedPresentationFormatStrings)
               {
-              if(left->AddPresentationFormatByString(presFormat, nameToFormatMapper, nameToUnitMapper) != ECObjectsStatus::Success)
+              status = left->AddPresentationFormatByString(presFormat, nameToFormatMapper, nameToUnitMapper);
+              if(status != ECObjectsStatus::Success)
                   {
                   result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0044,
                     "PresentationFormat %s failed to be added on kind of quantity %s.", presFormat.c_str(), left->GetFullName().c_str());
-                  return BentleyStatus::ERROR;
+                  return status;
                   }
               }
           }
       }
 
-    return BentleyStatus::SUCCESS;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaMerger::MergeEnumeration(SchemaMergeResult& result, ECEnumerationP left, ECEnumerationCP right, RefCountedPtr<EnumerationChange> change, SchemaMergeOptions const& options)
+ECObjectsStatus SchemaMerger::MergeEnumeration(SchemaMergeResult& result, ECEnumerationP left, ECEnumerationCP right, RefCountedPtr<EnumerationChange> change, SchemaMergeOptions const& options)
     {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &ECEnumeration::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(change->Description(), left, &ECEnumeration::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    auto status = MergePrimitive(change->DisplayLabel(), left, &ECEnumeration::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel());
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(change->Description(), left, &ECEnumeration::SetDescription, key, result, options);
+    if (status != ECObjectsStatus::Success)
+        return status;
     
     if(change->TypeName().IsChanged())
         {
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0045,
             "Enumeration '%s' has its Type changed. This is not supported.", key);
-        return BentleyStatus::ERROR;
+        return ECObjectsStatus::Error;
         }
 
-    if (MergePrimitive(change->IsStrict(), left, &ECEnumeration::SetIsStrict, key, result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    status = MergePrimitive(change->IsStrict(), left, &ECEnumeration::SetIsStrict, key, result, options, false);
+    if (status != ECObjectsStatus::Success)
+        return status;
     auto& enumeratorsChange = change->Enumerators();
     for(auto enumeratorChange : enumeratorsChange)
         {
@@ -1020,10 +1087,9 @@ BentleyStatus SchemaMerger::MergeEnumeration(SchemaMergeResult& result, ECEnumer
         if (opCode == ECChange::OpCode::New)
             {
             if(rightEnumerator == nullptr)
-            return BentleyStatus::ERROR;
+            return ECObjectsStatus::Error;
 
             ECEnumeratorP createdEnumerator;
-            ECObjectsStatus status;
             if (rightEnumerator->IsInteger())
                 status = left->CreateEnumerator(createdEnumerator, enumeratorName, rightEnumerator->GetInteger());
             else
@@ -1038,7 +1104,7 @@ BentleyStatus SchemaMerger::MergeEnumeration(SchemaMergeResult& result, ECEnumer
                     result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0047,
                         "Failed to copy Enumerator %s on Enumeration '%s'.", enumeratorName, key);
 
-            return BentleyStatus::ERROR;
+            return status;
             }
 
             createdEnumerator->SetDescription(rightEnumerator->GetInvariantDescription().c_str());
@@ -1049,141 +1115,158 @@ BentleyStatus SchemaMerger::MergeEnumeration(SchemaMergeResult& result, ECEnumer
             }
 
         auto leftEnumerator = left->FindEnumeratorByName(enumeratorName);
-        if (MergePrimitive(enumeratorChange->DisplayLabel(), leftEnumerator, &ECEnumerator::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-        if (MergePrimitive(enumeratorChange->Description(), leftEnumerator, &ECEnumerator::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-        if (MergePrimitive(enumeratorChange->String(), leftEnumerator, &ECEnumerator::SetString, key, result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-        if (MergePrimitive(enumeratorChange->Integer(), leftEnumerator, &ECEnumerator::SetInteger, key, result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+        status = MergePrimitive(enumeratorChange->DisplayLabel(), leftEnumerator, &ECEnumerator::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel());
+        if (status != ECObjectsStatus::Success)
+            return status;
+        status = MergePrimitive(enumeratorChange->Description(), leftEnumerator, &ECEnumerator::SetDescription, key, result, options);
+        if (status != ECObjectsStatus::Success)
+            return status;
+        status = MergePrimitive(enumeratorChange->String(), leftEnumerator, &ECEnumerator::SetString, key, result, options, false);
+        if (status != ECObjectsStatus::Success)
+            return status;
+        status = MergePrimitive(enumeratorChange->Integer(), leftEnumerator, &ECEnumerator::SetInteger, key, result, options, false);
+        if (status != ECObjectsStatus::Success)
+            return status;
         }
-    return BentleyStatus::SUCCESS;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaMerger::MergePropertyCategory(SchemaMergeResult& result, PropertyCategoryP left, PropertyCategoryCP right, RefCountedPtr<PropertyCategoryChange> change, SchemaMergeOptions const& options)
+ECObjectsStatus SchemaMerger::MergePropertyCategory(SchemaMergeResult& result, PropertyCategoryP left, PropertyCategoryCP right, RefCountedPtr<PropertyCategoryChange> change, SchemaMergeOptions const& options)
     {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &PropertyCategory::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(change->Description(), left, &PropertyCategory::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(change->Priority(), left, &PropertyCategory::SetPriority, key, result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    return BentleyStatus::SUCCESS;
+    auto status = MergePrimitive(change->DisplayLabel(), left, &PropertyCategory::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel());
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(change->Description(), left, &PropertyCategory::SetDescription, key, result, options);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(change->Priority(), left, &PropertyCategory::SetPriority, key, result, options, false);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaMerger::MergePhenomenon(SchemaMergeResult& result, PhenomenonP left, PhenomenonCP right, RefCountedPtr<PhenomenonChange> change, SchemaMergeOptions const& options)
+ECObjectsStatus SchemaMerger::MergePhenomenon(SchemaMergeResult& result, PhenomenonP left, PhenomenonCP right, RefCountedPtr<PhenomenonChange> change, SchemaMergeOptions const& options)
     {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &Phenomenon::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(change->Description(), left, &Phenomenon::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    auto status = MergePrimitive(change->DisplayLabel(), left, &Phenomenon::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel());
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(change->Description(), left, &Phenomenon::SetDescription, key, result, options);
+    if (status != ECObjectsStatus::Success)
+        return status;
     if(change->Definition().IsChanged())
       {
       result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0048,
         "Phenomenon '%s' has its definition changed. This is not supported.", key);
-      return BentleyStatus::ERROR;
+      return ECObjectsStatus::Error;
       }
-    return BentleyStatus::SUCCESS;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaMerger::MergeUnitSystem(SchemaMergeResult& result, UnitSystemP left, UnitSystemCP right, RefCountedPtr<UnitSystemChange> change, SchemaMergeOptions const& options)
+ECObjectsStatus SchemaMerger::MergeUnitSystem(SchemaMergeResult& result, UnitSystemP left, UnitSystemCP right, RefCountedPtr<UnitSystemChange> change, SchemaMergeOptions const& options)
     {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &UnitSystem::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
-          return BentleyStatus::ERROR;
-    if (MergePrimitive(change->Description(), left, &UnitSystem::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
-          return BentleyStatus::ERROR;
-    return BentleyStatus::SUCCESS;
+    auto status = MergePrimitive(change->DisplayLabel(), left, &UnitSystem::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel());
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(change->Description(), left, &UnitSystem::SetDescription, key, result, options);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaMerger::MergeUnit(SchemaMergeResult& result, ECUnitP left, ECUnitCP right, RefCountedPtr<UnitChange> change, SchemaMergeOptions const& options)
+ECObjectsStatus SchemaMerger::MergeUnit(SchemaMergeResult& result, ECUnitP left, ECUnitCP right, RefCountedPtr<UnitChange> change, SchemaMergeOptions const& options)
     {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &ECUnit::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
-          return BentleyStatus::ERROR;
-    if (MergePrimitive(change->Description(), left, &ECUnit::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
-          return BentleyStatus::ERROR;
+    auto status = MergePrimitive(change->DisplayLabel(), left, &ECUnit::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel());
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(change->Description(), left, &ECUnit::SetDescription, key, result, options);
+    if (status != ECObjectsStatus::Success)
+        return status;
 
     if(change->Phenomenon().IsChanged())
         {
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0049,
             "Unit '%s' has its Phenomenon changed. This is not supported.", key);
-        return BentleyStatus::ERROR;
+        return ECObjectsStatus::Error;
         }
 
     if(change->UnitSystem().IsChanged())
         {
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0050,
             "Unit '%s' has its UnitSystem changed. This is not supported.", key);
-        return BentleyStatus::ERROR;
+        return ECObjectsStatus::Error;
         }
-
-    if (MergePrimitive(change->IsConstant(), left, &ECUnit::SetConstant, key, result, options, false) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    
+    status = MergePrimitive(change->IsConstant(), left, &ECUnit::SetConstant, key, result, options, false);
+    if (status != ECObjectsStatus::Success)
+        return status;
 
     if(change->InvertingUnit().IsChanged())
         {
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0051,
             "Unit '%s' has its InvertingUnit changed. This is not supported.", key);
-        return BentleyStatus::ERROR;
+        return ECObjectsStatus::Error;
         }
     
     if(change->Definition().IsChanged())
         {
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0052,
             "Unit '%s' has its Definition changed. This is not supported.", key);
-        return BentleyStatus::ERROR;
+        return ECObjectsStatus::Error;
         }
 
     if(change->Numerator().IsChanged())
         {
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0053,
             "Unit '%s' has its Numerator changed. This is not supported.", key);
-        return BentleyStatus::ERROR;
+        return ECObjectsStatus::Error;
         }
 
     if(change->Denominator().IsChanged())
         {
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0054,
             "Unit '%s' has its Denominator changed. This is not supported.", key);
-        return BentleyStatus::ERROR;
+        return ECObjectsStatus::Error;
         }
 
     if(change->Offset().IsChanged())
         {
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0055,
             "Unit '%s' has its Offset changed. This is not supported.", key);
-        return BentleyStatus::ERROR;
+        return ECObjectsStatus::Error;
         }
 
-    return BentleyStatus::SUCCESS;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaMerger::MergeFormat(SchemaMergeResult& result, ECFormatP left, ECFormatCP right, RefCountedPtr<FormatChange> change, SchemaMergeOptions const& options)
+ECObjectsStatus SchemaMerger::MergeFormat(SchemaMergeResult& result, ECFormatP left, ECFormatCP right, RefCountedPtr<FormatChange> change, SchemaMergeOptions const& options)
     {
     Utf8CP key = left->GetFullName().c_str();
-    if (MergePrimitive(change->DisplayLabel(), left, &ECFormat::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel()) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
-    if (MergePrimitive(change->Description(), left, &ECFormat::SetDescription, key, result, options) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    auto status = MergePrimitive(change->DisplayLabel(), left, &ECFormat::SetDisplayLabel, key, result, options, !options.PreferRightSideDisplayLabel());
+    if (status != ECObjectsStatus::Success)
+        return status;
+    status = MergePrimitive(change->Description(), left, &ECFormat::SetDescription, key, result, options);
+    if (status != ECObjectsStatus::Success)
+        return status;
+    
     if(change->NumericSpec().IsChanged())
         {
         //auto newValue = change.GetNew();
@@ -1194,7 +1277,7 @@ BentleyStatus SchemaMerger::MergeFormat(SchemaMergeResult& result, ECFormatP lef
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0016,
                     "The setter for %s on item %s returned an error.", change->NumericSpec().GetChangeName(), left->GetFullName().c_str());
-                return BentleyStatus::ERROR;
+                return ECObjectsStatus::Error;
                 }
             }
         }
@@ -1203,9 +1286,9 @@ BentleyStatus SchemaMerger::MergeFormat(SchemaMergeResult& result, ECFormatP lef
         {
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0056,
             "Format '%s' has its CompositeSpec changed. This is not supported when merging schemas.", left->GetFullName().c_str());
-        return BentleyStatus::ERROR;
+        return ECObjectsStatus::Error;
         }
 
-    return BentleyStatus::SUCCESS;
+    return ECObjectsStatus::Success;
     }
 END_BENTLEY_ECOBJECT_NAMESPACE
