@@ -47,7 +47,7 @@ namespace Internal {
         int m_instanceIdIndex = -1;
 
         // for now us hash table
-        std::unordered_map<Utf8String, BinderList::const_iterator> m_propertyIndexMap;
+        std::unordered_map<Utf8String, CachedBinder*> m_propertyIndexMap;
         void BuildPropertyIndexMap(bool addUseJsNameMap);
 
     public:
@@ -119,9 +119,9 @@ namespace Internal {
         }
         void Reset();
         ECDbCR GetECDb() const { return m_ecdb; }
-        bool WithInsert(ECClassId classId, std::function<void(CachedStatement&)> fn);
-        bool WithUpdate(ECClassId classId, std::function<void(CachedStatement&)> fn);
-        bool WithDelete(ECClassId classId, std::function<void(CachedStatement&)> fn);
+        DbResult WithInsert(ECClassId classId, std::function<DbResult(CachedStatement&)> fn);
+        DbResult WithUpdate(ECClassId classId, std::function<DbResult(CachedStatement&)> fn);
+        DbResult WithDelete(ECClassId classId, std::function<DbResult(CachedStatement&)> fn);
     };
 };
 //---------------------------------------------------------------------------------------

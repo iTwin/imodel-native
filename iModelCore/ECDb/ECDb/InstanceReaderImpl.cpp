@@ -552,7 +552,7 @@ std::unique_ptr<ECSqlField> Class::Factory::CreatePrimitiveField(ECSqlSelectPrep
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor(prim->GetType()),
-        DateTime::Info(),
+        GetDateTimeInfo(propertyMap),
         nullptr,
         &propertyMap.GetProperty(),
         &propertyMap.GetProperty(),
@@ -679,7 +679,7 @@ std::unique_ptr<ECSqlField>  Class::Factory::CreateNavigationField(ECSqlSelectPr
     const auto prim = propertyMap.GetProperty().GetAsNavigationProperty();
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor::CreateNavigationTypeDescriptor(prim->GetType(), prim->IsMultiple()),
-        DateTime::Info(),
+        GetDateTimeInfo(propertyMap),
         nullptr,
         &propertyMap.GetProperty(),
         &propertyMap.GetProperty(),
@@ -706,7 +706,35 @@ std::unique_ptr<ECSqlField>  Class::Factory::CreateNavigationField(ECSqlSelectPr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DateTime::Info Class::Factory::GetDateTimeInfo(PropertyMap const& propertyMap) {
+    DateTime::Info info = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified);
+    if (propertyMap.GetType() != PropertyMap::Type::PrimitiveArray && propertyMap.GetType() != PropertyMap::Type::Primitive) {
+        return info;
+    }
+
+    if (auto property = propertyMap.GetProperty().GetAsPrimitiveArrayProperty()){
+        if (property->GetType() == PRIMITIVETYPE_DateTime) {
+            if (CoreCustomAttributeHelper::GetDateTimeInfo(info, *property) == ECObjectsStatus::Success) {
+                return info;
+            }
+        }
+    }
+    if (auto property = propertyMap.GetProperty().GetAsPrimitiveProperty()){
+        if (property->GetType() == PRIMITIVETYPE_DateTime) {
+            if (CoreCustomAttributeHelper::GetDateTimeInfo(info, *property) == ECObjectsStatus::Success) {
+                return info;
+            }
+        }
+    }
+
+    return info;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 std::unique_ptr<ECSqlField>   Class::Factory::CreateArrayField(ECSqlSelectPreparedStatement& stmt, PropertyMap const& propertyMap, TableView const& tbl) {
+
     ECN::ECTypeDescriptor desc;
     const auto& prop = propertyMap.GetProperty();
     if (prop.GetIsStructArray()) {
@@ -717,7 +745,7 @@ std::unique_ptr<ECSqlField>   Class::Factory::CreateArrayField(ECSqlSelectPrepar
     }
     ECSqlColumnInfo columnInfo(
         desc,
-        DateTime::Info(),
+        GetDateTimeInfo(propertyMap),
         prop.GetIsStructArray()? &prop.GetAsStructArrayProperty()->GetStructElementType(): nullptr,
         &propertyMap.GetProperty(),
         &propertyMap.GetProperty(),
