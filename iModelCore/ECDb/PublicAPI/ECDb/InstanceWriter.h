@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @internal Allow fast reading of full instance by its classid and instanceId
 //=======================================================================================
 struct InstanceWriter final {
-
+public:
     enum class Abortable : bool {
         Continue = false,
         Abort = true,
@@ -46,8 +46,16 @@ struct InstanceWriter final {
 
     struct UpdateOptions final : public BaseInsertOrUpdateOptions {
     private:
+        bool m_doNotModifyUnspecifiedProperties = false;
     public:
         UpdateOptions() : BaseInsertOrUpdateOptions() {}
+        bool GetDoNotModifyUnspecifiedProperties() const { return m_doNotModifyUnspecifiedProperties; }
+        // This can cause slow performance as it will read the existing instance from the database override
+        // the properties that are not specified in the input JSON.
+        UpdateOptions& DoNotModifyUnspecifiedProperties(bool v) {
+            m_doNotModifyUnspecifiedProperties = v;
+            return *this;
+        }
     };
 
     struct InsertOptions final : public BaseInsertOrUpdateOptions {
@@ -88,17 +96,19 @@ struct InstanceWriter final {
 
 private:
     Impl* m_pImpl;
-/**
- * 1. TimeStampProperty is skipped during insert & update.
-*/
+    /**
+     * 1. TimeStampProperty is skipped during insert & update.
+     */
 public:
     ECDB_EXPORT InstanceWriter(ECDbCR ecdb, uint32_t cacheSize = 40);
     ECDB_EXPORT ~InstanceWriter();
     ECDB_EXPORT Utf8StringCR GetLastError() const;
     ECDB_EXPORT DbResult Insert(BeJsConst inst, InsertOptions const& options);
-    ECDB_EXPORT DbResult Insert(BeJsConst inst, InsertOptions const& options,  ECInstanceKey& key);
+    ECDB_EXPORT DbResult Insert(BeJsConst inst, InsertOptions const& options, ECInstanceKey& key);
     ECDB_EXPORT DbResult Update(BeJsConst inst, UpdateOptions const& options);
     ECDB_EXPORT DbResult Delete(BeJsConst inst, DeleteOptions const& options);
+    ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceId instanceId, ECN::ECClassId classId, bool useJsName = false) const;
+    ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceKeyCR key, bool useJsName = false) const;
     ECDB_EXPORT void Reset();
 };
 

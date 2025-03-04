@@ -112,7 +112,8 @@ namespace Internal {
         ECSqlStatus PrepareDelete(CachedStatement& cachedStmt);
         std::unique_ptr<CachedStatement> Prepare(CacheKey key);
         CachedStatement* TryGet(CacheKey key);
-
+        SnappyToBlob m_snappyToBlob;
+        SnappyFromBlob m_snappyFromBlob;
     public:
         StatementMruCache(ECDbCR ecdb, uint32_t maxCache) : m_ecdb(ecdb), m_maxCache(maxCache) {
             m_mru.reserve(maxCache);
@@ -144,9 +145,9 @@ struct InstanceWriter::Impl final {
         Utf8StringR m_error;
 
     public:
-        Context(ECDbCR ecdb, InsertOptions const& opt, Utf8StringR err) : m_op(Internal::WriterOp::Insert), m_insertOptions(opt), m_ecdb(ecdb), m_error(err) {}
-        Context(ECDbCR ecdb, UpdateOptions const& opt, Utf8StringR err) : m_op(Internal::WriterOp::Update), m_updateOptions(opt), m_ecdb(ecdb), m_error(err) {}
-        Context(ECDbCR ecdb, DeleteOptions const& opt, Utf8StringR err) : m_op(Internal::WriterOp::Delete), m_deleteOptions(opt), m_ecdb(ecdb), m_error(err) {}
+        Context(ECDbCR ecdb, InsertOptions const& opt, Utf8StringR err) : m_op(Internal::WriterOp::Insert), m_insertOptions(opt), m_ecdb(ecdb), m_error(err) {m_error.clear();}
+        Context(ECDbCR ecdb, UpdateOptions const& opt, Utf8StringR err) : m_op(Internal::WriterOp::Update), m_updateOptions(opt), m_ecdb(ecdb), m_error(err) {m_error.clear();}
+        Context(ECDbCR ecdb, DeleteOptions const& opt, Utf8StringR err) : m_op(Internal::WriterOp::Delete), m_deleteOptions(opt), m_ecdb(ecdb), m_error(err) {m_error.clear();}
         Internal::WriterOp GetOp() const { return m_op; }
         bool IsInsert() const { return m_op == Internal::WriterOp::Insert; }
         bool IsUpdate() const { return m_op == Internal::WriterOp::Update; }
@@ -192,6 +193,7 @@ struct InstanceWriter::Impl final {
             m_error.VSprintf(fmt, args);
             va_end(args);
         }
+        bool HasError() const { return !m_error.empty(); }
     };
 
 private:
@@ -224,6 +226,8 @@ public:
     DbResult Insert(BeJsConst inst, InsertOptions const& options);
     DbResult Update(BeJsConst inst, UpdateOptions const& options);
     DbResult Delete(BeJsConst inst, DeleteOptions const& options);
+    ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceId instanceId, ECClassId classId, bool useJsName = false) const;
+    ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceKeyCR key, bool useJsName = false) const;
     void Reset();
 };
 

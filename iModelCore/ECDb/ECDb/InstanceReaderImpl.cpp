@@ -166,9 +166,18 @@ RowRender::Document& RowRender::ClearAndGetCachedJsonDocument() const {
     m_allocator.Clear();
     m_cachedJsonDoc.RemoveAllMembers();
     m_cachedJsonDoc.SetObject();
-
-
     return m_cachedJsonDoc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void RowRender::Reset() {
+    m_allocator.Clear();
+    m_cachedJsonDoc.RemoveAllMembers();
+    m_cachedJsonDoc.SetObject();
+    m_instanceKey = ECInstanceKey();
+    m_accessString.clear();
 }
 
 //---------------------------------------------------------------------------------------
@@ -221,6 +230,19 @@ void Reader::Clear() const {
     m_queryClassMap.clear();
     m_seekPos.Reset();
     m_propExists.Clear();
+    m_lastClassResolved = LastClassResolved();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void Reader::InvalidateSeekPos(ECInstanceKey const& key){
+    if (!key.IsValid()) {
+        m_seekPos.Reset();
+    }
+    if (m_seekPos.GetRowId() == key.GetInstanceId() && m_seekPos.GetClass() != nullptr && m_seekPos.GetClass()->GetClassId() == key.GetClassId()) {
+        m_seekPos.Reset();
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -367,6 +389,7 @@ void SeekPos::Reset() const {
     m_prop = nullptr;
     m_rowId=ECInstanceId();
     m_rowClassId = ECN::ECClassId();
+    m_rowRender.Reset();
 }
 
 //---------------------------------------------------------------------------------------
@@ -1156,10 +1179,19 @@ bool InstanceReader::Seek(Position const& pos, RowCallback callback, Options con
     return m_pImpl->Seek(pos, callback, opt);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void InstanceReader::Reset() {
     return m_pImpl->Reset();
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void InstanceReader::InvalidateSeekPos(ECInstanceKey const& key){
+    return m_pImpl->InvalidateSeekPos(key);
+}
 //////////////////////////////////////////////////////////////////////////
 //---------------------------------------------------------------------------------------
 // @bsimethod

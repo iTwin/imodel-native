@@ -632,20 +632,50 @@ TEST_F(InstanceWriterFixture, basic) {
         Utf8String testInst = R"json({
             "id": "0x1",
             "className": "TestSchema.P",
-            "s": "London"
+            "s": "London",
+            "i": 101
         })json";
         // UPDATE ts.P SET s = IIF(?, ?, s) WHERE ECInstanceId = 0x1
         BeJsDocument testDoc;
         testDoc.Parse(testInst);
         auto opt = InstanceWriter::UpdateOptions();
         opt.UseJsName(true);
+        opt.DoNotModifyUnspecifiedProperties(true);
         ASSERT_EQ(BE_SQLITE_DONE, UpdateInstance(writeDb, testDoc, opt));
         writeDb.SaveChanges();
         BeJsDocument actual;
+        writeDb.GetInstanceReader().Reset();
         auto actualJson = ReadInstance(writeDb, key, true);
         ASSERT_TRUE(actualJson.has_value());
         actual.Parse(actualJson.value());
-        PRINT_JSON("testDoc", actual);
+
+        ASSERT_STREQ(actual["s"].asCString(), "London");
+        ASSERT_EQ(actual["i"].asInt(), 101);
+
+        BeJsDocument expected;
+        expected.Parse(R"json({
+            "id": "0x1",
+            "className": "TestSchema.P",
+            "s": "London",
+            "i": 101,
+            "d": 3.141592653589793,
+            "p2d": {
+                "x": 2341.34,
+                "y": -4.3322
+            },
+            "p3d": {
+                "x": 1.2344,
+                "y": -5.3322,
+                "z": -0.0001
+            },
+            "bi": "encoding=base64;cd2DfQvyUAEK4Q==",
+            "l": -72340172838076670.0,
+            "dT": "2025-02-27T19:35:15.672Z",
+            "b": true
+            }
+        )json");
+
+        ASSERT_STREQ(expected.Stringify(StringifyFormat::Indented).c_str(), actual.Stringify(StringifyFormat::Indented).c_str());
     }
 }
 //---------------------------------------------------------------------------------------

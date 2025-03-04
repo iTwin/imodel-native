@@ -965,11 +965,12 @@ Napi::Value JsInterop::InsertInstance(ECDbR db, NapiInfoCR info) {
          options.UseInstanceId(db.GetElementIdSequence().GetNextId());
     }
 
-    auto rc = db.GetInstanceWriter().Insert(inst, options);
+    ECInstanceId id;
+    auto rc = db.GetInstanceWriter().Insert(inst, options, id);
     if (rc != DbResult::Success) {
         THROW_JS_EXCEPTION(db.GetInstanceWriter().GetLastError());
     }
-    return Napi::Value::From(info.Env(), options.GetInstanceId().ToHexStr());
+    return Napi::Value::From(info.Env(), id.ToHexStr());
 }
 
 //---------------------------------------------------------------------------------------
@@ -978,7 +979,7 @@ Napi::Value JsInterop::InsertInstance(ECDbR db, NapiInfoCR info) {
 Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
     REQUIRE_ARGUMENT_ANY_OBJ(0, instanceObj);
     REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
-     
+
     auto inst = BeJsNapiObject(instanceObj);
     auto args = BeJsNapiObject(argsObj);
     InstanceWriter::UpdateOptions options;

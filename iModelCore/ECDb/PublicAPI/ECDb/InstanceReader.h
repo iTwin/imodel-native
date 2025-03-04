@@ -93,6 +93,8 @@ struct InstanceReader final {
         ECDB_EXPORT ~InstanceReader();
         ECDB_EXPORT bool Seek(Position const&, RowCallback, Options const& = Options()) const;
         ECDB_EXPORT void Reset();
+        ECDB_EXPORT void InvalidateSeekPos(ECInstanceKey const& key = ECInstanceKey());
+
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
