@@ -986,7 +986,9 @@ Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
     if (args.isBoolMember("useJsNames")){
         options.SetUseJsNames(args.getBool(false));
     }
-
+    if (args.isBoolMember("incrementUpdate")){
+        options.UseIncrementalUpdate(args.getBool(false));
+    }
     auto rc = db.GetInstanceWriter().Update(inst, options);
     if (rc != DbResult::Success) {
         THROW_JS_EXCEPTION(db.GetInstanceWriter().GetLastError());

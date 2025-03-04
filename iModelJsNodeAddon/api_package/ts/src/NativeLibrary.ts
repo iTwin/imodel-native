@@ -423,21 +423,22 @@ export declare namespace IModelJsNative {
   }
 
   /**
- * Represents the arguments for reading an instance.
+ * Represents the arguments for insert an instance.
  */
   interface InsertInstanceArgs {
-    useJsNames?: boolean;
+    useJsNames?: true;
   }
 
   /**
- * Represents the arguments for reading an instance.
+ * Represents the arguments for update an instance.
  */
   interface UpdateInstanceArgs {
-    useJsNames?: boolean;
+    useJsNames?: true;
+    incrementUpdate?: true
   }
 
   /**
- * Represents the arguments for reading an instance.
+ * Represents the arguments for delete an instance.
  */
   interface DeleteInstanceArgs {
   }

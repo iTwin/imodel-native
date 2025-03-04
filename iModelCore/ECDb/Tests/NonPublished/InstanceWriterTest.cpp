@@ -640,7 +640,7 @@ TEST_F(InstanceWriterFixture, basic) {
         testDoc.Parse(testInst);
         auto opt = InstanceWriter::UpdateOptions();
         opt.UseJsName(true);
-        opt.DoNotModifyUnspecifiedProperties(true);
+        opt.UseIncrementalUpdate(true);
         ASSERT_EQ(BE_SQLITE_DONE, UpdateInstance(writeDb, testDoc, opt));
         writeDb.SaveChanges();
         BeJsDocument actual;
