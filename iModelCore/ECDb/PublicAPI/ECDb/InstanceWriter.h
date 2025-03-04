@@ -46,14 +46,14 @@ public:
 
     struct UpdateOptions final : public BaseInsertOrUpdateOptions {
     private:
-        bool m_doNotModifyUnspecifiedProperties = false;
+        bool m_useIncrementalUpdate = false;
     public:
         UpdateOptions() : BaseInsertOrUpdateOptions() {}
-        bool GetDoNotModifyUnspecifiedProperties() const { return m_doNotModifyUnspecifiedProperties; }
+        bool GetUseIncrementalUpdate() const { return m_useIncrementalUpdate; }
         // This can cause slow performance as it will read the existing instance from the database override
         // the properties that are not specified in the input JSON.
-        UpdateOptions& DoNotModifyUnspecifiedProperties(bool v) {
-            m_doNotModifyUnspecifiedProperties = v;
+        UpdateOptions& UseIncrementalUpdate(bool v) {
+            m_useIncrementalUpdate = v;
             return *this;
         }
     };

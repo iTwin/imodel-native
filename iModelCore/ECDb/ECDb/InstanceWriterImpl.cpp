@@ -866,7 +866,7 @@ DbResult InstanceWriter::Impl::Update(BeJsConst inst, InstanceWriter::UpdateOpti
     }
 
     std::unique_ptr<BeJsDocument> doc;
-    if (options.GetDoNotModifyUnspecifiedProperties()) {
+    if (options.GetUseIncrementalUpdate()) {
         doc = std::make_unique<BeJsDocument>();
         doc->SetEmptyObject();
         doc->From(inst);
