@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+// #include "../../PublicAPI/DgnPlatform/LineStyle.h"
 
 Utf8CP LsJsonHelpers::CompId                = "compId";
 
@@ -655,18 +656,50 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
     if (!newElem.IsValid() || (DgnDbStatus::Success != *status))
         return newElem;
 
-    DgnStyleId destStyleId = context.RemapLineStyleId(DgnStyleId(this->m_elementId.GetValue()));
+    DgnStyleId srcStyleId = DgnStyleId(m_elementId.GetValue());
 
-    LineStyleElementPtr lineStyleElementPtr = dynamic_cast<LineStyleElement*>(newElem.get());
-    lineStyleElementPtr->m_elementId = destStyleId;
-    
-    DgnElementCPtr insertedEl = context.GetDestinationDb().Elements().GetElement(destStyleId);
-    LineStyleElementCPtr insertedLsEl = dynamic_cast<const LineStyleElement*>(insertedEl.get());
-    lineStyleElementPtr->SetData(insertedLsEl->GetData().c_str());
+    LineStyleElementCPtr srcStyle = LineStyleElement::Get(context.GetSourceDb(), DgnStyleId(srcStyleId));
+    BeAssert(srcStyle.IsValid());
+    if (!srcStyle.IsValid())
+        {
+        BeAssert(false && "invalid source line style ID");
+        return newElem;
+        }
 
-    newElem->Update();
-    
-    
+    DgnStyleId dstStyleId = QueryId(context.GetDestinationDb(), srcStyle->GetName().c_str());
+    if (dstStyleId.IsValid())
+        {
+        //  *** TBD: Check if the line style definitions match. If not, rename and remap
+        context.AddLineStyleId(srcStyleId, dstStyleId);
+        return const_cast<DgnElement*>(context.GetDestinationDb().Elements().GetElement(dstStyleId).get());
+        }
+
+    Utf8String name(srcStyle->GetName());
+    Utf8String  srcData (srcStyle->GetData());
+
+    Json::Value  jsonObj (Json::objectValue);
+    if (!Json::Reader::Parse(srcData, jsonObj))
+        return newElem;
+
+    LsComponentId compId = LsDefinition::GetComponentId (jsonObj);
+    compId = LsComponent::Import(compId, context);
+    if (!compId.IsValid())
+        {
+        //  *** TBD: Check if the line style definitions match. If not, rename and remap
+        BeAssert(false && "unable to import component for line style");
+        return newElem;
+        }
+
+    DefinitionModelPtr model = m_dgndb.Models().Get<DefinitionModel>(DgnModel::DictionaryId());
+
+    LsDefinition::InitializeJsonObject(jsonObj, compId, LsDefinition::GetAttributes(jsonObj), LsDefinition::GetUnitDef(jsonObj));
+    Utf8String data = Json::FastWriter::ToString(jsonObj);
+
+    LineStyleElementPtr lsElement = dynamic_cast<LineStyleElement*>(newElem.get());
+    lsElement->SetName(name.c_str());
+    lsElement->SetDescription(nullptr);
+    lsElement->SetData(data.c_str());
+   
     return newElem;
     }
 END_BENTLEY_DGNPLATFORM_NAMESPACE
