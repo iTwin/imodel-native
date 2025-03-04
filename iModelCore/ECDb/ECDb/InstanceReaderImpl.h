@@ -182,6 +182,7 @@ struct InstanceReader::Impl final {
             }
             BeJsValue GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, InstanceReader::JsonParams const& param = InstanceReader::JsonParams()) const;
             BeJsValue GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8StringCR accessString, IECSqlValue const& ecsqlValue, InstanceReader::JsonParams const& param = InstanceReader::JsonParams()) const;
+            void Reset();
     };
 
     //=======================================================================================
@@ -253,6 +254,7 @@ struct InstanceReader::Impl final {
             ~Reader() { }
             void Clear() const;
             bool Seek(InstanceReader::Position const& position, InstanceReader::RowCallback callback, InstanceReader::Options const& options) const;
+            void InvalidateSeekPos(ECInstanceKey const& key);
     };
 
     private:
@@ -266,5 +268,6 @@ struct InstanceReader::Impl final {
             return m_reader.Seek(position, callback, options);
         }
         void Reset() { m_reader.Clear(); }
+        void InvalidateSeekPos(ECInstanceKey const& key) { m_reader.InvalidateSeekPos(key); }
 };
 END_BENTLEY_SQLITE_EC_NAMESPACE
