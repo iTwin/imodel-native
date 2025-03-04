@@ -9,6 +9,18 @@
 
 AppName = beflatc
 
+SourceDir = $(_MakeFilePath)source/
+BuildDir = $(_MakeFilePath)bin/
+
+o = $(OutputRootDir)Build/$(AppName)/
+$(o):
+    !~@mkdir $@
+
+dirToSearch = $(SourceDir)include
+%include cincapnd.mki
+
+dirToSearch = $(SourceDir)grpc
+%include cincapnd.mki
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 %if !defined (BMAKE_DELETE_ALL_TARGETS)
@@ -20,19 +32,61 @@ AppName = beflatc
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(BuildDir)flatc$(oext) : $(SourceDir)flatc.cpp ${MultiCompileDepends}
+$(o)flatc$(oext) : $(SourceDir)src/flatc.cpp ${MultiCompileDepends}
 
-$(BuildDir)idl_gen_cpp$(oext) : $(SourceDir)idl_gen_cpp.cpp ${MultiCompileDepends}
+$(o)flatc_main$(oext) : $(SourceDir)src/flatc_main.cpp ${MultiCompileDepends}
 
-$(BuildDir)idl_gen_fbs$(oext) : $(SourceDir)idl_gen_fbs.cpp ${MultiCompileDepends}
+$(o)reflection$(oext) : $(SourceDir)src/reflection.cpp ${MultiCompileDepends}
 
-$(BuildDir)idl_gen_general$(oext) : $(SourceDir)idl_gen_general.cpp ${MultiCompileDepends}
+$(o)util$(oext) : $(SourceDir)src/util.cpp ${MultiCompileDepends}
 
-$(BuildDir)idl_gen_go$(oext) : $(SourceDir)idl_gen_go.cpp ${MultiCompileDepends}
+$(o)idl_gen_cpp$(oext) : $(SourceDir)src/idl_gen_cpp.cpp ${MultiCompileDepends}
 
-$(BuildDir)idl_gen_text$(oext) : $(SourceDir)idl_gen_text.cpp ${MultiCompileDepends}
+$(o)idl_gen_fbs$(oext) : $(SourceDir)src/idl_gen_fbs.cpp ${MultiCompileDepends}
 
-$(BuildDir)idl_parser$(oext) : $(SourceDir)idl_parser.cpp ${MultiCompileDepends}
+$(o)idl_gen_go$(oext) : $(SourceDir)src/idl_gen_go.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_text$(oext) : $(SourceDir)src/idl_gen_text.cpp ${MultiCompileDepends}
+
+$(o)idl_parser$(oext) : $(SourceDir)src/idl_parser.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_csharp$(oext) : $(SourceDir)src/idl_gen_csharp.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_dart$(oext) : $(SourceDir)src/idl_gen_dart.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_kotlin$(oext) : $(SourceDir)src/idl_gen_kotlin.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_java$(oext) : $(SourceDir)src/idl_gen_java.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_js_ts$(oext) : $(SourceDir)src/idl_gen_js_ts.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_php$(oext) : $(SourceDir)src/idl_gen_php.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_python$(oext) : $(SourceDir)src/idl_gen_python.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_lobster$(oext) : $(SourceDir)src/idl_gen_lobster.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_lua$(oext) : $(SourceDir)src/idl_gen_lua.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_rust$(oext) : $(SourceDir)src/idl_gen_rust.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_grpc$(oext) : $(SourceDir)src/idl_gen_grpc.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_json_schema$(oext) : $(SourceDir)src/idl_gen_json_schema.cpp ${MultiCompileDepends}
+
+$(o)idl_gen_swift$(oext) : $(SourceDir)src/idl_gen_swift.cpp ${MultiCompileDepends}
+
+$(o)code_generators$(oext) : $(SourceDir)src/code_generators.cpp ${MultiCompileDepends}
+
+$(o)cpp_generator$(oext) : $(SourceDir)grpc/src/compiler/cpp_generator.cc ${MultiCompileDepends}
+
+$(o)go_generator$(oext) : $(SourceDir)grpc/src/compiler/go_generator.cc ${MultiCompileDepends}
+
+$(o)java_generator$(oext) : $(SourceDir)grpc/src/compiler/java_generator.cc ${MultiCompileDepends}
+
+$(o)python_generator$(oext) : $(SourceDir)grpc/src/compiler/python_generator.cc ${MultiCompileDepends}
+
+$(o)swift_generator$(oext) : $(SourceDir)grpc/src/compiler/swift_generator.cc ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

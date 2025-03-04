@@ -292,7 +292,7 @@ BentleyStatus TextAnnotationPersistence::DecodeFromFlatBuf(TextAnnotationR annot
         for (auto const& fbLeader : *fbAnnotation.leaders())
             {
             auto leader = AnnotationLeader::Create(*annotation.m_dgndb);
-            if (SUCCESS != AnnotationLeaderPersistence::DecodeFromFlatBuf(*leader, fbLeader))
+            if (SUCCESS != AnnotationLeaderPersistence::DecodeFromFlatBuf(*leader, *fbLeader))
                 {
                 BeAssert(false);
                 continue;

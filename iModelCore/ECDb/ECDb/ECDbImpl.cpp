@@ -263,23 +263,74 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaExperimentalFeatures::Create());
     GetPragmaManager().Register(PragmaParseTree::Create());
     GetPragmaManager().Register(PragmaPurgeOrphanRelationships::Create());
+    GetPragmaManager().Register(PragmaDbList::Create());
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const
-    {
-    DbTableSpace tableSpace(tableSpaceName, dbFileName);
-    if (!DbTableSpace::IsAttachedECDbFile(m_ecdb, tableSpaceName))
-        return BE_SQLITE_OK; //only need to react to attached ECDb files
+DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const {
+    auto tryGetProfileVersion = [&](ProfileVersion& ver) {
+        Statement stmt;
+        auto rc = stmt.Prepare(m_ecdb, SqlPrintfString("SELECT [StrData] FROM [%s].[be_Prop] WHERE [Namespace]='ec_Db' AND [Name] ='SchemaVersion'", tableSpaceName).GetUtf8CP());
+        if (rc != BE_SQLITE_OK) {
+            return false;
+        }
+        if (BE_SQLITE_ROW != stmt.Step()) {
+            return false;
+        }
 
-    if (SUCCESS != m_schemaManager->GetDispatcher().AddManager(tableSpace))
-        return BE_SQLITE_ERROR;
+        ver = ProfileVersion(0, 0, 0, 0);
+        if (!stmt.GetValueText(0))
+            return false;
 
-    GetChangeManager().OnDbAttached(tableSpace, dbFileName);
-    return BE_SQLITE_OK;
+        if (BentleyStatus::SUCCESS != ver.FromJson(stmt.GetValueText(0))){
+            return false;
+        }
+        return true;
+    };
+    ProfileVersion attachDbProfileVer(0, 0, 0, 0);
+    if (!tryGetProfileVersion(attachDbProfileVer)) {
+        m_issueReporter.ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSchema,
+            ECDbIssueId::ECDb_0735,
+            "Attached db '%s' will not be accessible via ECSQL as it does not support ECDb profile.",
+            tableSpaceName);
     }
+
+    const auto profileState = Db::CheckProfileVersion(
+        ECDb::CurrentECDbProfileVersion(),
+        attachDbProfileVer,
+        ECDb::MinimumUpgradableECDbProfileVersion(),
+        "ECDb"
+    );
+
+    const auto canOpen = (m_ecdb.IsReadonly() && (profileState.GetCanOpen() ==ProfileState::CanOpen::Readonly || profileState.GetCanOpen() == ProfileState::CanOpen::Readwrite)) || (!m_ecdb.IsReadonly() && profileState.GetCanOpen() ==ProfileState::CanOpen::Readwrite);
+    if (canOpen) {
+        DbTableSpace tableSpace(tableSpaceName, dbFileName);
+        if (!DbTableSpace::IsAttachedECDbFile(m_ecdb, tableSpaceName))
+            return BE_SQLITE_OK; //only need to react to attached ECDb files
+
+        if (SUCCESS != m_schemaManager->GetDispatcher().AddManager(tableSpace))
+            return BE_SQLITE_ERROR;
+
+        GetChangeManager().OnDbAttached(tableSpace, dbFileName);
+    } else {
+
+        m_issueReporter.ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSchema,
+            ECDbIssueId::ECDb_0736,
+            "Attached db with alias '%s' will not be accessible via ECSQL. Attach file EC profile version '%s' is incompatible with current runtime %s",
+            tableSpaceName,
+            attachDbProfileVer.ToString().c_str(),
+            ECDb::CurrentECDbProfileVersion().ToString().c_str());
+    }
+    return BE_SQLITE_OK;
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
