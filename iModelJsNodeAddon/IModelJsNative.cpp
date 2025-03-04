@@ -2322,7 +2322,21 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
     Napi::Value GetInstance(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        return JsInterop::GetInstance(db, info);
+        return JsInterop::ReadInstance(db, info);
+    }
+    Napi::Value InsertInstance(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Schemas().
+        db.GetElementIdSequence().Reset();
+        return JsInterop::InsertInstance(db, info);
+    }
+    Napi::Value UpdateInstance(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        return JsInterop::UpdateInstance(db, info);
+    }
+    Napi::Value DeleteInstance(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        return JsInterop::DeleteInstance(db, info);
     }
     void ResetBriefcaseId(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
@@ -6766,7 +6780,7 @@ static Napi::Value imageBufferFromImageSource(NapiInfoCR info) {
 
     auto srcData = oSrcData.As<Napi::Uint8Array>();
     ImageSource src(static_cast<ImageSource::Format>(iSrcFmt), ByteStream(srcData.Data(), srcData.ByteLength()));
-    
+
     REQUIRE_ARGUMENT_UINTEGER(2, iImgFmt);
     Image::Format imgFmt;
     if (iImgFmt == 255) {
@@ -6814,7 +6828,7 @@ static Napi::Value imageSourceFromImageBuffer(NapiInfoCR info) {
 
     REQUIRE_ARGUMENT_UINTEGER(2, imgWidth);
     REQUIRE_ARGUMENT_UINTEGER(3, imgHeight);
-    
+
     auto imgData = oImgData.As<Napi::Uint8Array>();
     Image img(imgWidth, imgHeight, ByteStream(imgData.Data(), imgData.ByteLength()), static_cast<Image::Format>(iImgFmt));
     if (!img.IsValid()) {
@@ -6836,7 +6850,7 @@ static Napi::Value imageSourceFromImageBuffer(NapiInfoCR info) {
 
     REQUIRE_ARGUMENT_BOOL(5, flipVertically);
     REQUIRE_ARGUMENT_UINTEGER(6, jpegQuality);
-    
+
     ImageSource src(img, srcFmt, jpegQuality, flipVertically ? Image::BottomUp::Yes : Image::BottomUp::No);
     if (!src.IsValid()) {
         return info.Env().Undefined();

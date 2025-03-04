@@ -127,7 +127,8 @@ namespace Internal {
         }
         ecsql.append(")");
 
-        auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str());
+        auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
+        auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken);
         if (!rc.IsSuccess()) {
             return rc;
         }
@@ -168,7 +169,8 @@ namespace Internal {
 
         ecsql.append(" WHERE [ECInstanceId] = ?");
 
-        auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str());
+        auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
+        auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken);
         if (!rc.IsSuccess()) {
             return rc;
         }
@@ -189,7 +191,8 @@ namespace Internal {
         Utf8String ecsql;
         ecsql.append("DELETE FROM ").append(cachedStmt.GetClass().GetECSqlName()).append(" WHERE [ECInstanceId] = ?");
 
-        auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str());
+        auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
+        auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken);
         if (!rc.IsSuccess()) {
             return rc;
         }

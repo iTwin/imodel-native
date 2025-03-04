@@ -120,7 +120,7 @@ struct VirtualSchemaManager : ECN::IECSchemaLocater {
         ECN::ECSchemaCP GetSchema(Utf8StringCR schemaName) const;
         ECN::ECClassCP GetClass(Utf8StringCR schemaName, Utf8StringCR className) const;
         // The numberOfClasses parameter gives us the exact number of classes found which can be used for more personalized error message
-        ECN::ECClassCP FindClass(Utf8StringCR className, size_t& numberOfClasses) const; 
+        ECN::ECClassCP FindClass(Utf8StringCR className, size_t& numberOfClasses) const;
         BentleyStatus Add(Utf8StringCR schemaXml) const;
         Utf8String GetDescription() const override {
             return Utf8PrintfString("ECDb:VirtualSchemaManager %s", m_ecdb.GetDbFileName());
@@ -220,7 +220,6 @@ public:
     BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&) const;
     BentleyStatus PurgeOrphanTables(SchemaImportContext&) const;
     /* ====================== */
-
     SchemaSync& GetSchemaSync() const { return m_schemaSync;  }
     VirtualSchemaManager const& GetVirtualSchemaManager() const;
     SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions, SchemaImportToken const*, SchemaSync::SyncDbUri) const;
@@ -342,10 +341,12 @@ struct SchemaManager::Dispatcher final
         ECN::ECSchemaPtr LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR, Utf8CP tableSpace) const;
         bool ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::ECSchemaCP GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities, SchemaLookupMode, Utf8CP tableSpace) const;
-
         ECN::ECClassCP FindClass(Utf8StringCR className, Utf8CP tableSpace) const;
         ECN::ECClassCP GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::ECClassCP GetClass(ECN::ECClassId classId, Utf8CP tableSpace) const;
+        bool IsSubClassOf(Utf8StringCR subClassECSqlName, Utf8StringCR parentClassECSqlName, Utf8CP tableSpace);
+        bool IsSubClassOf(ECN::ECClassId subClassId, ECN::ECClassId parentClassId, Utf8CP tableSpace);
+
         ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode, Utf8CP tableSpace) const;
         ClassMapStrategy GetClassMapStrategy(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode, Utf8CP tableSpace) const;
 
