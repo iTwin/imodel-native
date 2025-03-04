@@ -922,7 +922,90 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Napi::Value JsInterop::GetInstance(ECDbR db, NapiInfoCR info) {
+Napi::Value JsInterop::InsertInstance(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, instanceObj);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+    // it hold write token
+
+    auto inst = BeJsNapiObject(instanceObj);
+    auto args = BeJsNapiObject(argsObj);
+    InstanceWriter::InsertOptions options;
+    if (args.isBoolMember("useJsNames")){
+        options.SetUseJsNames(args.getBool(false));
+    }
+
+    bool generateInstanceId = true;
+    if (options.UseJsName())  {
+        if (inst.isStringMember("classFullName")){
+            generateInstanceId = db.Schemas().IsSubClassOf(inst["classFullName"].asString(), "BisCore:Element");
+        } else if (inst.isStringMember("className")){
+            generateInstanceId = db.Schemas().IsSubClassOf(inst["className"].asString(), "BisCore:Element");
+        } else {
+            THROW_JS_EXCEPTION("classFullName or className is required");
+        }
+    } else {
+        const auto classId =  inst["ECClassId"].GetId64<ECClassId>();
+        if (classId.IsNull()){
+            THROW_JS_EXCEPTION("ECClassId is required");
+        }
+        const auto elementClassId = db.Schemas().FindClass("BisCore:Element");
+        generateInstanceId = db.Schemas().IsSubClassOf(classId, elementClassId);
+    }
+
+    if (generateInstanceId){
+         options.UseInstanceId(db.GetElementIdSequence().GetNextId());
+    }
+
+    auto rc = db.GetInstanceWriter().Insert(inst, options);
+    if (rc != DbResult::Success) {
+        THROW_JS_EXCEPTION(db.GetInstanceWriter().GetLastError());
+    }
+    return Napi::Value::From(info.Env(), options.GetInstanceId().ToHexStr());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, instanceObj);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+     
+    auto inst = BeJsNapiObject(instanceObj);
+    auto args = BeJsNapiObject(argsObj);
+    InstanceWriter::UpdateOptions options;
+    if (args.isBoolMember("useJsNames")){
+        options.SetUseJsNames(args.getBool(false));
+    }
+
+    auto rc = db.GetInstanceWriter().Update(inst, options);
+    if (rc != DbResult::Success) {
+        THROW_JS_EXCEPTION(db.GetInstanceWriter().GetLastError());
+    }
+    return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, instanceObj);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+
+    auto inst = BeJsNapiObject(instanceObj);
+    auto args = BeJsNapiObject(argsObj);
+    InstanceWriter::DeleteOptions options;
+
+    auto rc = db.GetInstanceWriter().Delete(inst, options);
+    if (rc != DbResult::Success) {
+        THROW_JS_EXCEPTION(db.GetInstanceWriter().GetLastError());
+    }
+    return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::ReadInstance(ECDbR db, NapiInfoCR info) {
     constexpr auto kUseJsName = "useJsNames";
     constexpr auto kClassId = "classId";
     constexpr auto kClassIdsToClassNames = "classIdsToClassNames";

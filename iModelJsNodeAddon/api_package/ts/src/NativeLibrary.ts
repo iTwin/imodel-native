@@ -219,7 +219,7 @@ export declare namespace IModelJsNative {
     targetFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba | 255,
     flipVertically: boolean
   ): Pick<ImageBuffer, "data" | "format" | "width"> | undefined;
-  
+
   function imageSourceFromImageBuffer(
     imageFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba,
     imageData: Uint8Array,
@@ -229,7 +229,7 @@ export declare namespace IModelJsNative {
     flipVertically: boolean,
     jpegQuality: number
   ): { format: ImageSourceFormat.Jpeg | ImageSourceFormat.Png, data: Uint8Array } | undefined;
-  
+
   /** Get the SHA1 hash of a Schema XML file, possibly including its referenced Schemas */
   function computeSchemaChecksum(arg: {
     /** the full path to the root schema XML file */
@@ -420,6 +420,26 @@ export declare namespace IModelJsNative {
     abbreviateBlobs?: boolean;
     classIdsToClassNames?: boolean;
     useJsNames?: boolean;
+  }
+
+  /**
+ * Represents the arguments for reading an instance.
+ */
+  interface InsertInstanceArgs {
+    useJsNames?: boolean;
+  }
+
+  /**
+ * Represents the arguments for reading an instance.
+ */
+  interface UpdateInstanceArgs {
+    useJsNames?: boolean;
+  }
+
+  /**
+ * Represents the arguments for reading an instance.
+ */
+  interface DeleteInstanceArgs {
   }
 
   enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }
@@ -618,6 +638,10 @@ export declare namespace IModelJsNative {
     public getIModelId(): GuidString;
     public getIModelProps(): IModelProps;
     public getInstance(args: InstanceArgs): { [key: string]: any };
+    public insertInstance(inst: any, args: InsertInstanceArgs): Id64String;
+    public updateInstance(inst: any, args: UpdateInstanceArgs): boolean;
+    public deleteInstance(inst: any, args: DeleteInstanceArgs): boolean;
+
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
