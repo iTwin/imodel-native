@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "iModelConsole.h"
+#include <fstream>
 #include <Bentley/BeTimeUtilities.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -244,6 +245,53 @@ int IModelConsole::Run(int argc, WCharCP argv[])
         }
 
     return WaitForUserInput();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+int IModelConsole::ExecuteSampleQuery(char *sample_bytes)
+    {
+    //Initialize iModelConsole and print out banner
+    Setup();
+
+    // Helper lambda to run commands
+    auto runCommand = [this](const char* commandName, const char* args) {
+        IModelConsole::WriteLine(Utf8PrintfString("Executing: %s \n", commandName).c_str());
+        Command const* command = GetCommand(commandName);
+        BeAssert(command != nullptr);
+        command->Run(m_session, args);
+    };
+
+    // Helper function to remove files
+    auto removeFiles = [](const std::string& baseFilePath) {
+        std::remove((baseFilePath + "-journal").c_str());
+        std::remove((baseFilePath + "-wal").c_str());
+        std::remove((baseFilePath + "-shm").c_str());
+        std::remove(baseFilePath.c_str());
+    };
+
+    std::string filePath = "D:\\test.bim";
+
+    // 1. Close the bim file
+    runCommand(".close", filePath.c_str());
+
+    // 2. Delete the bim file if it exists
+    removeFiles(filePath);
+
+    // 3. Create a new bim file
+    runCommand(".create", ("ecdb " + filePath).c_str());
+
+    // 4. Run the sample command
+    runCommand(".parse", sample_bytes);
+
+    // 5. Close the bim file
+    runCommand(".close", filePath.c_str());
+
+    // 6. Delete the bim file
+    removeFiles(filePath);
+
+    return 0;
     }
 
 //---------------------------------------------------------------------------------------

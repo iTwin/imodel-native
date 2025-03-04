@@ -7,12 +7,30 @@
 #include "iModelConsole.h"
 #include <Bentley/Logging.h>
 
+#include <windows.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+
 #ifdef COMMENT_OUT_UNUSED_VARIABLE
 static WCharCP s_configFileName = L"logging.config.xml";
 #endif
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+
+// Function declaration
+void fuzz(char *name);
+
+std::string convertWCharToString(WCharCP wstr) {
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
+    std::string strTo(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wstr, -1, &strTo[0], size_needed, NULL, NULL);
+    return strTo;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -34,6 +52,34 @@ bool TryGetLogConfigPath(BeFileNameR logConfigPath, BeFileNameCR exeDir);
 void InitLogging(BeFileNameCR exeDir)
     {
     }
+
+// actual target function
+void fuzz(char *name) {
+    std::cout << "Inside Fuzz function" << std::endl;
+    char *sample_bytes = NULL;
+    uint32_t sample_size = 0; 
+    
+    // read the sample either from file
+    FILE *fp = NULL;
+    if (fopen_s(&fp, name, "rb") != 0 || !fp) {
+        printf("Error opening %s\n", name);
+        return;
+    }
+    fseek(fp, 0, SEEK_END);
+    sample_size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    sample_bytes = (char *)malloc(sample_size);
+    fread(sample_bytes, 1, sample_size, fp);
+    // Process the SQL input
+    printf("Sample Data: %s\n", sample_bytes);
+
+    IModelConsole::Singleton().ExecuteSampleQuery(sample_bytes);
+
+    fclose(fp);
+
+    if(sample_bytes)
+        free(sample_bytes);
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -71,7 +117,12 @@ int wmain(int argc, WCharCP argv[])
     BeAssertFunctions::SetBeAssertHandler(IModelConsoleBeAssertHandler);
 
     Dgn::PlatformLib::Initialize(IModelConsole::Singleton());
-    return IModelConsole::Singleton().Run(argc, argv);
+
+    std::string inputFileName = convertWCharToString(argv[1]);
+    fuzz(const_cast<char*>(inputFileName.c_str()));
+
+    return 0;
+    // return IModelConsole::Singleton().ExecuteSampleQuery(argc, argv);
     }
 
 #ifdef __unix__
