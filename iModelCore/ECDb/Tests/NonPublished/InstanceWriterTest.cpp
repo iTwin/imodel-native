@@ -27,6 +27,9 @@ struct InstanceWriterFixture : ECDbTestFixture {
     static DbResult InsertInstance(ECDbR ecdb, BeJsConst instance, InstanceWriter::InsertOptions opts) {
         return ecdb.GetInstanceWriter().Insert(instance, opts);
     }
+    static DbResult UpdateInstance(ECDbR ecdb, BeJsConst instance, InstanceWriter::UpdateOptions opts) {
+        return ecdb.GetInstanceWriter().Update(instance, opts);
+    }
 };
 
 //---------------------------------------------------------------------------------------
@@ -189,7 +192,7 @@ TEST_F(InstanceWriterFixture, complex) {
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(out));
         m_ecdb.SaveChanges();
     };
-    std::mt19937_64 gen;
+    std::mt19937_64 gen(0);
     auto bindJson = [&](IECSqlBinder& binder) {
         BeJsDocument json;
         std::uniform_int_distribution<int> distrib(0, 0xff);
@@ -451,49 +454,54 @@ TEST_F(InstanceWriterFixture, complex) {
     ECInstanceKey i3;
     insertRel(i1, i2, i3);
 
+    auto i1Json = ReadInstance(m_ecdb, i1, false);
+    ASSERT_TRUE(i1Json.has_value());
+    BeJsDocument i1JsVal;
+    i1JsVal.Parse(i1Json.value());
+
+    auto i2Json = ReadInstance(m_ecdb, i2, false);
+    ASSERT_TRUE(i2Json.has_value());
+    BeJsDocument i2JsVal;
+    i2JsVal.Parse(i2Json.value());
+
+    auto i3Json = ReadInstance(m_ecdb, i3, false);
+    ASSERT_TRUE(i3Json.has_value());
+    BeJsDocument i3JsVal;
+    i3JsVal.Parse(i3Json.value());
+
+    i1JsVal.removeMember("LastMod"); // this is timestamp property updated on trigger
+
     if ("copy instance to writeDb") {
-        ECInstanceKey actualKey;
-
-        auto i1Json = ReadInstance(m_ecdb, i1, false);
-        ASSERT_TRUE(i1Json.has_value());
-        BeJsDocument i1JsVal;
-        i1JsVal.Parse(i1Json.value());
-
-        auto i2Json = ReadInstance(m_ecdb, i2, false);
-        ASSERT_TRUE(i2Json.has_value());
-        BeJsDocument i2JsVal;
-        i2JsVal.Parse(i2Json.value());
-
-        auto i3Json = ReadInstance(m_ecdb, i3, false);
-        ASSERT_TRUE(i3Json.has_value());
-        BeJsDocument i3JsVal;
-        i3JsVal.Parse(i3Json.value());
-
         ECInstanceKey j1, j2, j3;
-
         ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(writeDb, i1JsVal, InstanceWriter::InsertOptions().UseInstanceIdFromJs(), j1));
         ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(writeDb, i2JsVal, InstanceWriter::InsertOptions().UseInstanceIdFromJs(), j2));
         ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(writeDb, i3JsVal, InstanceWriter::InsertOptions().UseInstanceIdFromJs(), j3));
-
         writeDb.SaveChanges();
-
 
         auto j1Json = ReadInstance(writeDb, j1, false);
         ASSERT_TRUE(j1Json.has_value());
-
+        BeJsDocument j1JsVal;
+        j1JsVal.Parse(j1Json.value());
+        j1JsVal.removeMember("LastMod"); // this is timestamp property updated on trigger
 
         auto j2Json = ReadInstance(m_ecdb, j2, false);
         ASSERT_TRUE(i2Json.has_value());
+        BeJsDocument j2JsVal;
+        j2JsVal.Parse(j2Json.value());
 
         auto j3Json = ReadInstance(m_ecdb, j3, false);
         ASSERT_TRUE(i3Json.has_value());
+        BeJsDocument j3JsVal;
+        j3JsVal.Parse(j3Json.value());
 
-        ASSERT_STREQ(i1Json.value().c_str(), j1Json.value().c_str());
-        ASSERT_STREQ(i2Json.value().c_str(), j2Json.value().c_str());
-        ASSERT_STREQ(i3Json.value().c_str(), j3Json.value().c_str());
+
+        ASSERT_STREQ(i1JsVal.Stringify(StringifyFormat::Indented).c_str(), j1JsVal.Stringify(StringifyFormat::Indented).c_str());
+        ASSERT_STREQ(i2JsVal.Stringify(StringifyFormat::Indented).c_str(), j2JsVal.Stringify(StringifyFormat::Indented).c_str());
+        ASSERT_STREQ(i3JsVal.Stringify(StringifyFormat::Indented).c_str(), j3JsVal.Stringify(StringifyFormat::Indented).c_str());
     }
-    if ("update ") {
-        
+
+    if ("update instance to writeDb") {
+
     }
 
 }
@@ -567,16 +575,16 @@ TEST_F(InstanceWriterFixture, basic) {
     auto expectedJson = ReadInstance(m_ecdb, expectedKey);
     ASSERT_TRUE(expectedJson.has_value());
     expected.Parse(expectedJson.value());
-
+    ECInstanceKey key;
     if ("copy instance to writeDb") {
-        ECInstanceKey actualKey;
-        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(writeDb, expected, InstanceWriter::InsertOptions().UseInstanceIdFromJs(), actualKey));
+
+        ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(writeDb, expected, InstanceWriter::InsertOptions().UseInstanceIdFromJs(), key));
         writeDb.SaveChanges();
         BeJsDocument actual;
-        auto actualJson = ReadInstance(writeDb, actualKey);
+        auto actualJson = ReadInstance(writeDb, key);
         ASSERT_TRUE(actualJson.has_value());
         actual.Parse(actualJson.value());
-        ASSERT_EQ(expectedKey, actualKey);
+        ASSERT_EQ(expectedKey, key);
         ASSERT_STREQ(expectedJson.value().c_str(), actualJson.value().c_str());
     }
 
@@ -617,6 +625,27 @@ TEST_F(InstanceWriterFixture, basic) {
         ASSERT_TRUE(actualJson.has_value());
         actual.Parse(actualJson.value());
         ASSERT_STREQ(testDoc.Stringify(StringifyFormat::Indented).c_str(), actual.Stringify(StringifyFormat::Indented).c_str());
+    }
+
+    if ("update a js instance") {
+        // copy instance to another db use ECSql standard format
+        Utf8String testInst = R"json({
+            "id": "0x1",
+            "className": "TestSchema.P",
+            "s": "London"
+        })json";
+        // UPDATE ts.P SET s = IIF(?, ?, s) WHERE ECInstanceId = 0x1
+        BeJsDocument testDoc;
+        testDoc.Parse(testInst);
+        auto opt = InstanceWriter::UpdateOptions();
+        opt.UseJsName(true);
+        ASSERT_EQ(BE_SQLITE_DONE, UpdateInstance(writeDb, testDoc, opt));
+        writeDb.SaveChanges();
+        BeJsDocument actual;
+        auto actualJson = ReadInstance(writeDb, key, true);
+        ASSERT_TRUE(actualJson.has_value());
+        actual.Parse(actualJson.value());
+        PRINT_JSON("testDoc", actual);
     }
 }
 //---------------------------------------------------------------------------------------
