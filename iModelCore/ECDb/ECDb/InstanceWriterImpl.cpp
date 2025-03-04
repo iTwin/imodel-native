@@ -858,7 +858,7 @@ DbResult InstanceWriter::Impl::Update(BeJsConst inst, InstanceWriter::UpdateOpti
             }
             return BE_SQLITE_ERROR;
         }
-        auto& binder = stmt.GetStatement().GetBinder((int)stmt.GetBinders().size());
+        auto& binder = stmt.GetStatement().GetBinder(stmt.GetInstanceIdParameterIndex());
         binder.BindId(id);
         auto rc = stmt.GetStatement().Step();
         if (rc != BE_SQLITE_DONE) {
