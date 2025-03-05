@@ -10,309 +10,334 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-namespace Internal {
-    //******************************CachedStatement**************************************
-    //----------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+-
-    void CachedStatement::BuildPropertyIndexMap(bool addUseJsNameMap) {
-        m_propertyIndexMap.clear();
-        for (auto it = m_propertyBinders.begin(); it != m_propertyBinders.end(); ++it) {
-            auto& prop = it->GetPropertyMap();
-            m_propertyIndexMap[prop.GetName()] = &(*it);
 
-            if (!addUseJsNameMap)
-                continue;
+#define FOREACH_CONTINUE false;
+#define FOREACH_ABORT true;
 
-            if (prop.GetType() == PropertyMap::Type::ECInstanceId) {
-                m_propertyIndexMap[ECJsonSystemNames::Id()] = &(*it);
-            } else if (prop.GetType() == PropertyMap::Type::ECClassId) {
-                m_propertyIndexMap[ECJsonSystemNames::ClassName()] = &(*it);
-                m_propertyIndexMap[ECJsonSystemNames::ClassFullName()] = &(*it);
-            } else if (prop.GetType() == PropertyMap::Type::ConstraintECClassId) {
-                if (prop.GetName().EqualsIAscii(ECDBSYS_PROP_SourceECClassId)) {
-                    m_propertyIndexMap[ECJsonSystemNames::SourceClassName()] = &(*it);
-                } else if (prop.GetName().EqualsIAscii(ECDBSYS_PROP_TargetECClassId)) {
-                    m_propertyIndexMap[ECJsonSystemNames::TargetClassName()] = &(*it);
-                }
-            } else if (prop.GetType() == PropertyMap::Type::ConstraintECInstanceId) {
-                if (prop.GetName().Equals(ECDBSYS_PROP_SourceECInstanceId)) {
-                    m_propertyIndexMap[ECJsonSystemNames::SourceId()] = &(*it);
-                } else if (prop.GetName().Equals(ECDBSYS_PROP_TargetECInstanceId)) {
-                    m_propertyIndexMap[ECJsonSystemNames::TargetId()] = &(*it);
-                }
-            } else {
-                Utf8String str = prop.GetName();
-                str[0] = (Utf8Char)tolower(str[0]);
-                m_propertyIndexMap[str] = &(*it);
-            }
-        }
-    }
-    //----------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+-
-    Utf8String CachedStatement::GetCurrentTimeStampProperty() const {
-        BeAssert(m_classMap != nullptr);
-        auto ca = m_classMap->GetClass().GetCustomAttributeLocal("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
-        if (ca == nullptr)
-            return "";
-
-        ECValue v;
-        if (ECObjectsStatus::Success != ca->GetValue(v, "PropertyName")) {
-            return "";
-        }
-        return v.GetUtf8CP();
-    }
-    //----------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+-
-    const CachedBinder* CachedStatement::FindBinder(Utf8StringCR name) const {
-        if (!m_propertyIndexMap.empty()) {
-            auto it = m_propertyIndexMap.find(name);
-            if (it != m_propertyIndexMap.end()) {
-                return it->second;
-            }
-            return nullptr;
-        }
-
-        for (auto& binder : m_propertyBinders) {
-            if (binder.GetProperty().GetName().EqualsIAscii(name)) {
-                return &binder;
-            }
-        }
-        return nullptr;
-    }
-    //******************************StatementMruCache**************************************
-    //----------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+-
-    ECSqlStatus StatementMruCache::PrepareInsert(CachedStatement& cachedStmt) {
-        Utf8String ecsql;
-        std::vector<PropertyMap const*> props;
-
-        auto& classMap = cachedStmt.GetClassMap();
-        ecsql.append("INSERT INTO ").append(cachedStmt.GetClass().GetECSqlName()).append(" (");
-        bool isFirst = true;
-
-        const auto timestampPropName = cachedStmt.GetCurrentTimeStampProperty();
-        auto& maps = classMap.GetPropertyMaps();
-        for (auto it = maps.begin(); it != maps.end(); ++it) {
-            auto prop = *it;
-            if (prop->GetType() == PropertyMap::Type::ECClassId) {
-                continue;
-            }
-            if (timestampPropName.EqualsIAscii(prop->GetName())) {
-                continue;
-            }
-            if (!isFirst) {
-                ecsql.append(", ");
-            } else {
-                isFirst = false;
-            }
-            ecsql.append("[").append(prop->GetName()).append("]");
-
-            props.push_back(prop);
-            if (prop->GetType() == PropertyMap::Type::ECInstanceId) {
-                cachedStmt.m_instanceIdIndex = (int)props.size();
-            }
-        }
-
-        ecsql.append(") VALUES (");
-
-        for (auto it = props.begin(); it != props.end(); ++it) {
-            if (it != props.begin()) {
-                ecsql.append(", ");
-            }
-            ecsql.append("?");
-        }
-        ecsql.append(")");
-
-        auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
-        auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken);
-        if (!rc.IsSuccess()) {
-            return rc;
-        }
-
-        int i = 1;
-        for (auto prop : props) {
-            cachedStmt.GetBinders().emplace_back(*prop, cachedStmt.GetStatement().GetBinder(i++));
-        }
-        return rc;
-    }
-
-    //----------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+-
-    ECSqlStatus StatementMruCache::PrepareUpdate(CachedStatement& cachedStmt) {
-        Utf8String ecsql;
-        std::vector<PropertyMap const*> props;
-
-        const auto timestampPropName = cachedStmt.GetCurrentTimeStampProperty();
-        auto& classMap = cachedStmt.GetClassMap();
-        ecsql.append("UPDATE ").append(cachedStmt.GetClass().GetECSqlName()).append(" SET ");
-        bool isFirst = true;
-        for (auto prop : classMap.GetPropertyMaps()) {
-            if (prop->GetType() == PropertyMap::Type::ECClassId || prop->GetType() == PropertyMap::Type::ECInstanceId) {
-                continue;
-            }
-            if (timestampPropName.EqualsIAscii(prop->GetName())) {
-                continue;
-            }
-            if (!isFirst) {
-                ecsql.append(", ");
-            } else {
-                isFirst = false;
-            }
-            ecsql.append("[").append(prop->GetName()).append("] = ?");
-            props.push_back(prop);
-        }
-
-        ecsql.append(" WHERE [ECInstanceId] = ?");
-
-        auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
-        auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken);
-        if (!rc.IsSuccess()) {
-            return rc;
-        }
-
-        int i = 1;
-        for (auto prop : props) {
-            cachedStmt.GetBinders().emplace_back(*prop, cachedStmt.GetStatement().GetBinder(i++));
-        }
-
-        cachedStmt.m_instanceIdIndex = i;
-        return rc;
-    }
-
-    //----------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+-
-    ECSqlStatus StatementMruCache::PrepareDelete(CachedStatement& cachedStmt) {
-        Utf8String ecsql;
-        ecsql.append("DELETE FROM ").append(cachedStmt.GetClass().GetECSqlName()).append(" WHERE [ECInstanceId] = ?");
-
-        auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
-        auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken);
-        if (!rc.IsSuccess()) {
-            return rc;
-        }
-        cachedStmt.m_instanceIdIndex = 1;
-        return rc;
-    }
-
-    //----------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+-
-    std::unique_ptr<CachedStatement> StatementMruCache::Prepare(CacheKey key) {
-        auto cls = m_ecdb.Schemas().GetClass(key.GetClassId());
-        if (cls == nullptr) {
-            return nullptr;
-        }
-        auto classMap = m_ecdb.Schemas().Main().GetClassMap(*cls);
-        if (cls == nullptr) {
-            return nullptr;
-        }
-
-        auto cachedStmt = std::make_unique<CachedStatement>(*classMap);
-        auto rc = ECSqlStatus::Success;
-        if (key.GetOp() == WriterOp::Insert) {
-            rc = PrepareInsert(*cachedStmt);
-        } else if (key.GetOp() == WriterOp::Update) {
-            rc = PrepareUpdate(*cachedStmt);
-        } else if (key.GetOp() == WriterOp::Delete) {
-            rc = PrepareDelete(*cachedStmt);
-        };
-
-        if (!rc.IsSuccess()) {
-            return nullptr;
-        }
-        cachedStmt->BuildPropertyIndexMap(m_addSupportForJsName);
-        return cachedStmt;
-    }
-
-    //----------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+-
-    CachedStatement* StatementMruCache::TryGet(CacheKey key) {
-        auto it = m_cache.find(key);
-        if (it == m_cache.end()) {
-
-            auto cachedStmt = Prepare(key);
-
-            it = m_cache.insert({key, std::move(cachedStmt)}).first;
-            m_mru.push_back(key);
-        } else {
-            m_mru.erase(std::remove(m_mru.begin(), m_mru.end(), key), m_mru.end());
-            m_mru.push_back(key);
-        }
-
-        while (m_cache.size() > (size_t)m_maxCache) {
-            m_cache.erase(m_mru.front());
-            m_mru.erase(m_mru.begin());
-        }
-
-        it->second->GetStatement().ClearBindings();
-        it->second->GetStatement().Reset();
-        return it->second.get();
-    }
-
-    //----------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+-
-    DbResult StatementMruCache::WithInsert(ECClassId classId, std::function<DbResult(CachedStatement&)> fn) {
-        BeMutexHolder _(m_mutex);
-        auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Insert));
-        if (cachedStmt == nullptr) {
-            LOG.errorv("Failed to prepare insert statement for class: %s", classId.ToHexStr().c_str());
-            return BE_SQLITE_ERROR;
-        }
-        return fn(*cachedStmt);
-    }
-
-    //----------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+-
-    DbResult StatementMruCache::WithUpdate(ECClassId classId, std::function<DbResult(CachedStatement&)> fn) {
-        BeMutexHolder _(m_mutex);
-        auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Update));
-        if (cachedStmt == nullptr) {
-            LOG.errorv("Failed to prepare update statement for class: %s", classId.ToHexStr().c_str());
-            return BE_SQLITE_ERROR;
-        }
-        return fn(*cachedStmt);
-    }
-
-    //----------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+-
-    DbResult StatementMruCache::WithDelete(ECClassId classId, std::function<DbResult(CachedStatement&)> fn) {
-        BeMutexHolder _(m_mutex);
-        auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Delete));
-        if (cachedStmt == nullptr) {
-            LOG.errorv("Failed to prepare delete statement for class: %s", classId.ToHexStr().c_str());
-            return BE_SQLITE_ERROR;
-        }
-        return fn(*cachedStmt);
-    }
-    //----------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+-
-    void StatementMruCache::Reset() {
-        BeMutexHolder _(m_mutex);
-        m_cache.clear();
-        m_mru.clear();
-    }
-    //******************************InstanceWriter::Impl********************************
-    //----------------------------------------------------------------------------------
-    // @bsimethod
-    //+---------------+---------------+---------------+---------------+---------------+-
-
-}
-//******************************InstanceWriter::Impl********************************
+using Impl = InstanceWriter::Impl;
+using MruStatementCache = Impl::MruStatementCache;
+using CachedWriteStatement = MruStatementCache::CachedWriteStatement;
+using BindContext = Impl::BindContext;
+using CachedBinder = MruStatementCache::CachedBinder;
+//******************************BindContext**************************************
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus InstanceWriter::Impl::BindPrimitive(Context& ctx, PrimitiveType type, IECSqlBinder& binder, BeJsConst val, Utf8CP propertyName, Utf8StringCR extendType) {
+void BindContext::SetError(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    m_error.VSprintf(fmt, args);
+    va_end(args);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+Impl::Abortable BindContext::NotifyUnknownJsProperty(Utf8CP prop, BeJsConst val) const {
+    if (IsInsert() && m_insertOptions.GetUnknownJsPropertyHandler() != nullptr) {
+        m_insertOptions.GetUnknownJsPropertyHandler()(prop, val);
+    }
+    if (IsUpdate() && m_updateOptions.GetUnknownJsPropertyHandler() != nullptr) {
+        m_updateOptions.GetUnknownJsPropertyHandler()(prop, val);
+    }
+    return Abortable::Continue;
+}
+//******************************CachedWriteStatement**************************************
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+void CachedWriteStatement::BuildPropertyIndexMap(bool addUseJsNameMap) {
+    m_propertyIndexMap.clear();
+    for (auto it = m_propertyBinders.begin(); it != m_propertyBinders.end(); ++it) {
+        auto& prop = it->GetPropertyMap();
+        m_propertyIndexMap[prop.GetName()] = &(*it);
+
+        if (!addUseJsNameMap)
+            continue;
+
+        if (prop.GetType() == PropertyMap::Type::ECInstanceId) {
+            m_propertyIndexMap[ECJsonSystemNames::Id()] = &(*it);
+        } else if (prop.GetType() == PropertyMap::Type::ECClassId) {
+            m_propertyIndexMap[ECJsonSystemNames::ClassName()] = &(*it);
+            m_propertyIndexMap[ECJsonSystemNames::ClassFullName()] = &(*it);
+        } else if (prop.GetType() == PropertyMap::Type::ConstraintECClassId) {
+            if (prop.GetName().EqualsIAscii(ECDBSYS_PROP_SourceECClassId)) {
+                m_propertyIndexMap[ECJsonSystemNames::SourceClassName()] = &(*it);
+            } else if (prop.GetName().EqualsIAscii(ECDBSYS_PROP_TargetECClassId)) {
+                m_propertyIndexMap[ECJsonSystemNames::TargetClassName()] = &(*it);
+            }
+        } else if (prop.GetType() == PropertyMap::Type::ConstraintECInstanceId) {
+            if (prop.GetName().Equals(ECDBSYS_PROP_SourceECInstanceId)) {
+                m_propertyIndexMap[ECJsonSystemNames::SourceId()] = &(*it);
+            } else if (prop.GetName().Equals(ECDBSYS_PROP_TargetECInstanceId)) {
+                m_propertyIndexMap[ECJsonSystemNames::TargetId()] = &(*it);
+            }
+        } else {
+            Utf8String str = prop.GetName();
+            str[0] = (Utf8Char)tolower(str[0]);
+            m_propertyIndexMap[str] = &(*it);
+        }
+    }
+}
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+Utf8String CachedWriteStatement::GetCurrentTimeStampProperty() const {
+    BeAssert(m_classMap != nullptr);
+    auto ca = m_classMap->GetClass().GetCustomAttributeLocal("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
+    if (ca == nullptr)
+        return "";
+
+    ECValue v;
+    if (ECObjectsStatus::Success != ca->GetValue(v, "PropertyName")) {
+        return "";
+    }
+    return v.GetUtf8CP();
+}
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+const CachedBinder* CachedWriteStatement::FindBinder(Utf8StringCR name) const {
+    if (!m_propertyIndexMap.empty()) {
+        auto it = m_propertyIndexMap.find(name);
+        if (it != m_propertyIndexMap.end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
+
+    for (auto& binder : m_propertyBinders) {
+        if (binder.GetProperty().GetName().EqualsIAscii(name)) {
+            return &binder;
+        }
+    }
+    return nullptr;
+}
+//******************************MruStatementCache**************************************
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+ECSqlStatus MruStatementCache::PrepareInsert(CachedWriteStatement& cachedStmt) {
+    Utf8String ecsql;
+    std::vector<PropertyMap const*> props;
+
+    auto& classMap = cachedStmt.GetClassMap();
+    ecsql.append("INSERT INTO ").append(cachedStmt.GetClass().GetECSqlName()).append(" (");
+    bool isFirst = true;
+
+    const auto timestampPropName = cachedStmt.GetCurrentTimeStampProperty();
+    auto& maps = classMap.GetPropertyMaps();
+    for (auto it = maps.begin(); it != maps.end(); ++it) {
+        auto prop = *it;
+        if (prop->GetType() == PropertyMap::Type::ECClassId) {
+            continue;
+        }
+        if (timestampPropName.EqualsIAscii(prop->GetName())) {
+            continue;
+        }
+        if (!isFirst) {
+            ecsql.append(", ");
+        } else {
+            isFirst = false;
+        }
+        ecsql.append("[").append(prop->GetName()).append("]");
+        props.push_back(prop);
+        if (prop->GetType() == PropertyMap::Type::ECInstanceId) {
+            cachedStmt.m_instanceIdIndex = (int)props.size();
+        }
+    }
+
+    ecsql.append(") VALUES (");
+
+    for (auto it = props.begin(); it != props.end(); ++it) {
+        if (it != props.begin()) {
+            ecsql.append(", ");
+        }
+        ecsql.append("?");
+    }
+    ecsql.append(")");
+
+    auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
+    auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken);
+    if (!rc.IsSuccess()) {
+        return rc;
+    }
+
+    int i = 1;
+    for (auto prop : props) {
+        cachedStmt.GetBinders().emplace_back(*prop, cachedStmt.GetStatement().GetBinder(i++));
+    }
+    return rc;
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+ECSqlStatus MruStatementCache::PrepareUpdate(CachedWriteStatement& cachedStmt) {
+    Utf8String ecsql;
+    std::vector<PropertyMap const*> props;
+
+    const auto timestampPropName = cachedStmt.GetCurrentTimeStampProperty();
+    auto& classMap = cachedStmt.GetClassMap();
+    ecsql.append("UPDATE ").append(cachedStmt.GetClass().GetECSqlName()).append(" SET ");
+    bool isFirst = true;
+    for (auto prop : classMap.GetPropertyMaps()) {
+        if (prop->GetType() == PropertyMap::Type::ECClassId || prop->GetType() == PropertyMap::Type::ECInstanceId) {
+            continue;
+        }
+        if (timestampPropName.EqualsIAscii(prop->GetName())) {
+            continue;
+        }
+        if (!isFirst) {
+            ecsql.append(", ");
+        } else {
+            isFirst = false;
+        }
+        ecsql.append("[").append(prop->GetName()).append("] = ?");
+        props.push_back(prop);
+    }
+
+    ecsql.append(" WHERE [ECInstanceId] = ?");
+
+    auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
+    auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken);
+    if (!rc.IsSuccess()) {
+        return rc;
+    }
+
+    int i = 1;
+    for (auto prop : props) {
+        cachedStmt.GetBinders().emplace_back(*prop, cachedStmt.GetStatement().GetBinder(i++));
+    }
+
+    cachedStmt.m_instanceIdIndex = i;
+    return rc;
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+ECSqlStatus MruStatementCache::PrepareDelete(CachedWriteStatement& cachedStmt) {
+    Utf8String ecsql;
+    ecsql.append("DELETE FROM ").append(cachedStmt.GetClass().GetECSqlName()).append(" WHERE [ECInstanceId] = ?");
+
+    auto crudWriteToken = m_ecdb.GetImpl().GetSettingsManager().GetCrudWriteToken();
+    auto rc = cachedStmt.GetStatement().Prepare(m_ecdb, ecsql.c_str(), crudWriteToken);
+    if (!rc.IsSuccess()) {
+        return rc;
+    }
+    cachedStmt.m_instanceIdIndex = 1;
+    return rc;
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+std::unique_ptr<CachedWriteStatement> MruStatementCache::Prepare(CacheKey key) {
+    auto cls = m_ecdb.Schemas().GetClass(key.GetClassId());
+    if (cls == nullptr) {
+        return nullptr;
+    }
+    auto classMap = m_ecdb.Schemas().Main().GetClassMap(*cls);
+    if (cls == nullptr) {
+        return nullptr;
+    }
+
+    auto cachedStmt = std::make_unique<CachedWriteStatement>(*classMap);
+    auto rc = ECSqlStatus::Success;
+    if (key.GetOp() == WriterOp::Insert) {
+        rc = PrepareInsert(*cachedStmt);
+    } else if (key.GetOp() == WriterOp::Update) {
+        rc = PrepareUpdate(*cachedStmt);
+    } else if (key.GetOp() == WriterOp::Delete) {
+        rc = PrepareDelete(*cachedStmt);
+    };
+
+    if (!rc.IsSuccess()) {
+        return nullptr;
+    }
+    cachedStmt->BuildPropertyIndexMap(m_addSupportForJsName);
+    return cachedStmt;
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+CachedWriteStatement* MruStatementCache::TryGet(CacheKey key) {
+    auto it = m_cache.find(key);
+    if (it == m_cache.end()) {
+
+        auto cachedStmt = Prepare(key);
+
+        it = m_cache.insert({key, std::move(cachedStmt)}).first;
+        m_mru.push_back(key);
+    } else {
+        m_mru.erase(std::remove(m_mru.begin(), m_mru.end(), key), m_mru.end());
+        m_mru.push_back(key);
+    }
+
+    while (m_cache.size() > (size_t)m_maxCache) {
+        m_cache.erase(m_mru.front());
+        m_mru.erase(m_mru.begin());
+    }
+
+    it->second->GetStatement().ClearBindings();
+    it->second->GetStatement().Reset();
+    return it->second.get();
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult MruStatementCache::WithInsert(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn) {
+    BeMutexHolder _(m_mutex);
+    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Insert));
+    if (cachedStmt == nullptr) {
+        LOG.errorv("Failed to prepare insert statement for class: %s", classId.ToHexStr().c_str());
+        return BE_SQLITE_ERROR;
+    }
+    return fn(*cachedStmt);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult MruStatementCache::WithUpdate(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn) {
+    BeMutexHolder _(m_mutex);
+    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Update));
+    if (cachedStmt == nullptr) {
+        LOG.errorv("Failed to prepare update statement for class: %s", classId.ToHexStr().c_str());
+        return BE_SQLITE_ERROR;
+    }
+    return fn(*cachedStmt);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult MruStatementCache::WithDelete(ECClassId classId, std::function<DbResult(CachedWriteStatement&)> fn) {
+    BeMutexHolder _(m_mutex);
+    auto cachedStmt = TryGet(CacheKey(classId, WriterOp::Delete));
+    if (cachedStmt == nullptr) {
+        LOG.errorv("Failed to prepare delete statement for class: %s", classId.ToHexStr().c_str());
+        return BE_SQLITE_ERROR;
+    }
+    return fn(*cachedStmt);
+}
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+void MruStatementCache::Reset() {
+    BeMutexHolder _(m_mutex);
+    m_cache.clear();
+    m_mru.clear();
+}
+
+//******************************Impl********************************
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+ECSqlStatus Impl::BindPrimitive(BindContext& ctx, PrimitiveType type, IECSqlBinder& binder, BeJsConst val, Utf8CP propertyName, Utf8StringCR extendType) {
     if (val.isNull()) {
         return binder.BindNull();
     }
@@ -398,7 +423,7 @@ ECSqlStatus InstanceWriter::Impl::BindPrimitive(Context& ctx, PrimitiveType type
 
     } else if (type == ECN::PRIMITIVETYPE_Point2d) {
         if (!val.isObject()) {
-            ctx.SetError("Expected object for Point2d property, got %s", val.Stringify().c_str());
+            ctx.SetError("Expected instance to be of type object for Point2d property, got %s", val.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
 
@@ -406,14 +431,14 @@ ECSqlStatus InstanceWriter::Impl::BindPrimitive(Context& ctx, PrimitiveType type
         auto y = ctx.IsUseJsName() ? val[ECN::ECJsonSystemNames::Point::Y()] : val[ECDBSYS_PROP_PointY];
 
         if (!x.isNumeric() || !y.isNumeric()) {
-            ctx.SetError("Expected object with x and y numeric members for Point2d property, got %s", val.Stringify().c_str());
+            ctx.SetError("Expected instance to be of type object with x and y numeric members for Point2d property, got %s", val.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
         auto p2d = DPoint2d::From(x.asDouble(), y.asDouble());
         return binder.BindPoint2d(p2d);
     } else if (type == ECN::PRIMITIVETYPE_Point3d) {
         if (!val.isObject()) {
-            ctx.SetError("Expected object for Point3d property, got %s", val.Stringify().c_str());
+            ctx.SetError("Expected instance to be of type object for Point3d property, got %s", val.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
         auto x = ctx.IsUseJsName() ? val[ECN::ECJsonSystemNames::Point::X()] : val[ECDBSYS_PROP_PointX];
@@ -421,7 +446,7 @@ ECSqlStatus InstanceWriter::Impl::BindPrimitive(Context& ctx, PrimitiveType type
         auto z = ctx.IsUseJsName() ? val[ECN::ECJsonSystemNames::Point::Z()] : val[ECDBSYS_PROP_PointZ];
 
         if (!x.isNumeric() || !y.isNumeric() || !z.isNumeric()) {
-            ctx.SetError("Expected object with x, y and z numeric members for Point3d property, got %s", val.Stringify().c_str());
+            ctx.SetError("Expected instance to be of type object with x, y and z numeric members for Point3d property, got %s", val.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
         auto p3d = DPoint3d::From(x.asDouble(), y.asDouble(), z.asDouble());
@@ -435,7 +460,7 @@ ECSqlStatus InstanceWriter::Impl::BindPrimitive(Context& ctx, PrimitiveType type
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus InstanceWriter::Impl::BindPrimitiveProperty(Context& ctx, PrimitiveECPropertyCR prop, IECSqlBinder& binder, BeJsConst val) {
+ECSqlStatus Impl::BindPrimitiveProperty(BindContext& ctx, PrimitiveECPropertyCR prop, IECSqlBinder& binder, BeJsConst val) {
     if (val.isNull()) {
         return binder.BindNull();
     }
@@ -445,7 +470,7 @@ ECSqlStatus InstanceWriter::Impl::BindPrimitiveProperty(Context& ctx, PrimitiveE
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus InstanceWriter::Impl::BindRootProperty(Context& ctx, PropertyMap const& propMap, IECSqlBinder& binder, BeJsConst val) {
+ECSqlStatus Impl::BindRootProperty(BindContext& ctx, PropertyMap const& propMap, IECSqlBinder& binder, BeJsConst val) {
     if (val.isNull()) {
         return binder.BindNull();
     }
@@ -463,7 +488,7 @@ ECSqlStatus InstanceWriter::Impl::BindRootProperty(Context& ctx, PropertyMap con
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus InstanceWriter::Impl::BindDataProperty(Context& ctx, ECPropertyCR propMap, IECSqlBinder& binder, BeJsConst val) {
+ECSqlStatus Impl::BindDataProperty(BindContext& ctx, ECPropertyCR propMap, IECSqlBinder& binder, BeJsConst val) {
     if (val.isNull()) {
         return binder.BindNull();
     }
@@ -486,7 +511,7 @@ ECSqlStatus InstanceWriter::Impl::BindDataProperty(Context& ctx, ECPropertyCR pr
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus InstanceWriter::Impl::BindSystemProperty(Context& ctx, SystemPropertyMap const& prop, IECSqlBinder& binder, BeJsConst val) {
+ECSqlStatus Impl::BindSystemProperty(BindContext& ctx, SystemPropertyMap const& prop, IECSqlBinder& binder, BeJsConst val) {
 
     switch (prop.GetType()) {
     case PropertyMap::Type::ECInstanceId:
@@ -516,7 +541,7 @@ ECSqlStatus InstanceWriter::Impl::BindSystemProperty(Context& ctx, SystemPropert
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus InstanceWriter::Impl::BindStructProperty(Context& ctx, StructECPropertyCR prop, IECSqlBinder& binder, BeJsConst val) {
+ECSqlStatus Impl::BindStructProperty(BindContext& ctx, StructECPropertyCR prop, IECSqlBinder& binder, BeJsConst val) {
     auto& structType = prop.GetType();
     return BindStruct(ctx, structType, binder, val);
 }
@@ -524,7 +549,7 @@ ECSqlStatus InstanceWriter::Impl::BindStructProperty(Context& ctx, StructECPrope
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus InstanceWriter::Impl::BindStruct(Context& ctx, ECStructClassCR structClass, IECSqlBinder& binder, BeJsConst val) {
+ECSqlStatus Impl::BindStruct(BindContext& ctx, ECStructClassCR structClass, IECSqlBinder& binder, BeJsConst val) {
     if (val.isNull()) {
         return binder.BindNull();
     }
@@ -534,9 +559,9 @@ ECSqlStatus InstanceWriter::Impl::BindStruct(Context& ctx, ECStructClassCR struc
         auto structProp = structClass.GetPropertyP(prop);
         if (structProp == nullptr) {
             if (ctx.NotifyUnknownJsProperty(prop, val) == Abortable::Abort) {
-                return true;
+                return FOREACH_ABORT;
             }
-            return false;
+            return FOREACH_CONTINUE;
         }
         rc = BindDataProperty(ctx, *structProp, binder[structProp->GetId()], val);
         if (!rc.IsSuccess()) {
@@ -550,7 +575,7 @@ ECSqlStatus InstanceWriter::Impl::BindStruct(Context& ctx, ECStructClassCR struc
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus InstanceWriter::Impl::BindPrimitiveArrayProperty(Context& ctx, PrimitiveArrayECProperty const& prop, IECSqlBinder& binder, BeJsConst val) {
+ECSqlStatus Impl::BindPrimitiveArrayProperty(BindContext& ctx, PrimitiveArrayECProperty const& prop, IECSqlBinder& binder, BeJsConst val) {
     if (val.isNull()) {
         return binder.BindNull();
     }
@@ -576,7 +601,7 @@ ECSqlStatus InstanceWriter::Impl::BindPrimitiveArrayProperty(Context& ctx, Primi
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus InstanceWriter::Impl::BindStructArrayProperty(Context& ctx, StructArrayECPropertyCR const& prop, IECSqlBinder& binder, BeJsConst val) {
+ECSqlStatus Impl::BindStructArrayProperty(BindContext& ctx, StructArrayECPropertyCR const& prop, IECSqlBinder& binder, BeJsConst val) {
     if (val.isNull()) {
         return binder.BindNull();
     }
@@ -593,7 +618,7 @@ ECSqlStatus InstanceWriter::Impl::BindStructArrayProperty(Context& ctx, StructAr
             return false;
         }
         if (!val.isObject()) {
-            ctx.SetError("Expected object for struct array property, got %s", val.Stringify().c_str());
+            ctx.SetError("Expected instance to be of type object for struct array property, got %s", val.Stringify().c_str());
             return true;
         }
 
@@ -611,13 +636,13 @@ ECSqlStatus InstanceWriter::Impl::BindStructArrayProperty(Context& ctx, StructAr
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus InstanceWriter::Impl::BindNavigationProperty(Context& ctx, NavigationECPropertyCR const& prop, IECSqlBinder& binder, BeJsConst val) {
+ECSqlStatus Impl::BindNavigationProperty(BindContext& ctx, NavigationECPropertyCR const& prop, IECSqlBinder& binder, BeJsConst val) {
     if (val.isNull()) {
         return binder.BindNull();
     }
 
     if (!val.isObject()) {
-        ctx.SetError("Expected object for navigation property, got %s", val.Stringify().c_str());
+        ctx.SetError("Expected instance to be of type object for navigation property, got %s", val.Stringify().c_str());
         return ECSqlStatus(BE_SQLITE_ERROR);
     }
 
@@ -652,7 +677,7 @@ ECSqlStatus InstanceWriter::Impl::BindNavigationProperty(Context& ctx, Navigatio
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-bool InstanceWriter::Impl::TryGetECClassId(Context& ctx, BeJsConst inst, ECClassId& classId) {
+bool Impl::TryGetECClassId(BindContext& ctx, BeJsConst inst, ECClassId& classId) {
     if (ctx.IsUseJsName()) {
         // className has higher priority
         auto className = inst[ECJsonSystemNames::ClassName()];
@@ -699,7 +724,7 @@ bool InstanceWriter::Impl::TryGetECClassId(Context& ctx, BeJsConst inst, ECClass
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-bool InstanceWriter::Impl::TryGetECInstanceId(Context& ctx, BeJsConst inst, ECInstanceId& id) {
+bool Impl::TryGetECInstanceId(BindContext& ctx, BeJsConst inst, ECInstanceId& id) {
     if (ctx.IsUseJsName()) {
         auto name = inst[ECJsonSystemNames::Id()];
         if (!name.isString()) {
@@ -721,7 +746,7 @@ bool InstanceWriter::Impl::TryGetECInstanceId(Context& ctx, BeJsConst inst, ECIn
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-void InstanceWriter::Impl::ToJson(BeJsValue out, ECInstanceId instanceId, ECClassId classId, bool useJsName) const {
+void Impl::ToJson(BeJsValue out, ECInstanceId instanceId, ECClassId classId, bool useJsName) const {
     if (!out.isObject()) {
         out.SetEmptyObject();
     }
@@ -740,14 +765,14 @@ void InstanceWriter::Impl::ToJson(BeJsValue out, ECInstanceId instanceId, ECClas
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-void InstanceWriter::Impl::ToJson(BeJsValue out, ECInstanceKeyCR key, bool useJsName) const {
+void Impl::ToJson(BeJsValue out, ECInstanceKeyCR key, bool useJsName) const {
     ToJson(out, key.GetInstanceId(), key.GetClassId(), useJsName);
 }
 
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult InstanceWriter::Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& options) {
+DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& options) {
     ECInstanceKey key;
     return Insert(inst, options, key);
 };
@@ -755,18 +780,17 @@ DbResult InstanceWriter::Impl::Insert(BeJsConst inst, InstanceWriter::InsertOpti
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult InstanceWriter::Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& options, ECInstanceKey& out) {
-    Context ctx = Context(m_cache.GetECDb(), options, m_error);
+DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& options, ECInstanceKey& out) {
+    BindContext ctx = BindContext(*this, options);
     if (!inst.isObject()) {
-        ctx.SetError("Expected object");
+        ctx.SetError("Expected instance to be of type object");
         return BE_SQLITE_ERROR;
     }
 
     if (m_cache.GetECDb().IsReadonly()) {
-        ctx.SetError("ECDb is readonly");
+        ctx.SetError("Connection is readonly");
         return BE_SQLITE_READONLY;
     }
-
 
     ECClassId classId;
     if (!TryGetECClassId(ctx, inst, classId)) {
@@ -774,15 +798,15 @@ DbResult InstanceWriter::Impl::Insert(BeJsConst inst, InstanceWriter::InsertOpti
         return BE_SQLITE_ERROR;
     }
 
-    auto rc = m_cache.WithInsert(classId, [&](Internal::CachedStatement& stmt) {
+    auto rc = m_cache.WithInsert(classId, [&](CachedWriteStatement& stmt) {
         ECSqlStatus bindStatus = ECSqlStatus::Success;
         inst.ForEachProperty([&](auto prop, auto val) {
             auto binder = stmt.FindBinder(prop);
             if (binder == nullptr) {
                 if (ctx.NotifyUnknownJsProperty(prop, val) == Abortable::Abort) {
-                    return true;
+                    return FOREACH_ABORT;
                 }
-                return false; // continue
+                return FOREACH_CONTINUE; // continue
             }
             if (binder->GetPropertyMap().GetType() == PropertyMap::Type::ECInstanceId) {
                 return false; // skip ECInstanceId property, we will bind it later
@@ -829,31 +853,23 @@ DbResult InstanceWriter::Impl::Insert(BeJsConst inst, InstanceWriter::InsertOpti
         }
         return rc;
     });
-
-    if (rc != BE_SQLITE_DONE) {
-        if (!ctx.HasError()) {
-            ctx.SetError("Failed to prepare insert statement");
-        }
-        LOG.errorv("InstanceWriter::Insert(): %s", m_error.c_str());
-    }
     return rc;
 }
 
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult InstanceWriter::Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& options) {
-    Context ctx = Context(m_cache.GetECDb(), options, m_error);
+DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& options) {
+    BindContext ctx = BindContext(*this, options);
     if (!inst.isObject()) {
-        ctx.SetError("Expected object");
+        ctx.SetError("Expected instance to be of type object");
         return BE_SQLITE_ERROR;
     }
 
     if (m_cache.GetECDb().IsReadonly()) {
-        ctx.SetError("ECDb is readonly");
+        ctx.SetError("Connection is readonly");
         return BE_SQLITE_READONLY;
     }
-
 
     ECInstanceId id;
     ECClassId classId;
@@ -865,58 +881,44 @@ DbResult InstanceWriter::Impl::Update(BeJsConst inst, InstanceWriter::UpdateOpti
         return BE_SQLITE_ERROR;
     }
 
-    std::unique_ptr<BeJsDocument> doc;
-    if (options.GetUseIncrementalUpdate()) {
-        doc = std::make_unique<BeJsDocument>();
-        doc->SetEmptyObject();
-        doc->From(inst);
-        InstanceReader::Position pos(id, classId);
-        m_cache.GetECDb().GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row) {
-            InstanceReader::JsonParams param;
-            param.SetUseJsName(options.GetUseJsName());
-            param.SetAbbreviateBlobs(false);
-            param.SetClassIdToClassNames(options.GetUseJsName());
-            row.GetJson(param).ForEachProperty([&](auto prop, auto val) {
-                if (!doc->hasMember(prop)) {
-                    (*doc)[prop].From(val);
-                }
-                return false;
-            });
-        });
-    }
-
-    auto rc = m_cache.WithUpdate(classId, [&](Internal::CachedStatement& stmt) {
+    auto rc = m_cache.WithUpdate(classId, [&](CachedWriteStatement& stmt) {
         ECSqlStatus bindStatus = ECSqlStatus::Success;
-        if (doc != nullptr) {
-            doc->ForEachProperty([&](auto prop, auto val) {
-                auto binder = stmt.FindBinder(prop);
-                if (binder == nullptr) {
-                    if (ctx.NotifyUnknownJsProperty(prop, val) == Abortable::Abort) {
-                        return true;
+        auto insert = [&](Utf8CP prop, BeJsConst val) {
+            auto binder = stmt.FindBinder(prop);
+            if (binder == nullptr) {
+                if (ctx.NotifyUnknownJsProperty(prop, val) == Abortable::Abort) {
+                    return FOREACH_ABORT;
+                }
+                return FOREACH_CONTINUE; // continue
+            }
+            bindStatus = BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), val);
+            if (!bindStatus.IsSuccess()) {
+                return true;
+            }
+            return false;
+        };
+
+        if (options.GetUseIncrementalUpdate()) {
+            BeJsDocument doc;
+            doc.SetEmptyObject();
+            doc.From(inst);
+            InstanceReader::Position pos(id, classId);
+            m_cache.GetECDb().GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row) {
+                InstanceReader::JsonParams param;
+                param.SetUseJsName(options.GetUseJsName());
+                param.SetAbbreviateBlobs(false);
+                param.SetClassIdToClassNames(options.GetUseJsName());
+                row.GetJson(param).ForEachProperty([&](auto prop, auto val) {
+                    if (!doc.hasMember(prop)) {
+                        doc[prop].From(val);
                     }
-                    return false; // continue
-                }
-                bindStatus = BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), val);
-                if (!bindStatus.IsSuccess()) {
-                    return true;
-                }
-                return false;
+                    return FOREACH_CONTINUE;
+                });
             });
+
+            doc.ForEachProperty(insert);
         } else {
-            inst.ForEachProperty([&](auto prop, auto val) {
-                auto binder = stmt.FindBinder(prop);
-                if (binder == nullptr) {
-                    if (ctx.NotifyUnknownJsProperty(prop, val) == Abortable::Abort) {
-                        return true;
-                    }
-                    return false; // continue
-                }
-                bindStatus = BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), val);
-                if (!bindStatus.IsSuccess()) {
-                    return true;
-                }
-                return false;
-            });
+            inst.ForEachProperty(insert);
         }
 
         if (!bindStatus.IsSuccess()) {
@@ -925,40 +927,34 @@ DbResult InstanceWriter::Impl::Update(BeJsConst inst, InstanceWriter::UpdateOpti
             }
             return BE_SQLITE_ERROR;
         }
+
         auto& binder = stmt.GetStatement().GetBinder(stmt.GetInstanceIdParameterIndex());
         binder.BindId(id);
         auto rc = stmt.GetStatement().Step();
         if (rc != BE_SQLITE_DONE) {
             ctx.SetError(m_cache.GetECDb().GetLastError().c_str());
             if (!ctx.HasError()) {
-                ctx.SetError("Failed to insert instance");
+                ctx.SetError("Failed to update instance");
             }
         }
-        m_cache.GetECDb().GetInstanceReader().InvalidateSeekPos(ECInstanceKey(classId,id));
+        m_cache.GetECDb().GetInstanceReader().InvalidateSeekPos(ECInstanceKey(classId, id));
         return rc;
     });
-
-    if (rc != BE_SQLITE_DONE) {
-        if (!ctx.HasError()) {
-            ctx.SetError("Failed to prepare update statement");
-        }
-        LOG.errorv("InstanceWriter::Update(): %s", m_error.c_str());
-    }
     return rc;
 }
 
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult InstanceWriter::Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& options) {
-    Context ctx = Context(m_cache.GetECDb(), options, m_error);
+DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& options) {
+    BindContext ctx = BindContext(*this, options);
     if (!inst.isObject()) {
-        ctx.SetError("Expected object");
+        ctx.SetError("Expected instance to be of type object");
         return BE_SQLITE_ERROR;
     }
 
     if (m_cache.GetECDb().IsReadonly()) {
-        ctx.SetError("ECDb is readonly");
+        ctx.SetError("Connection is readonly");
         return BE_SQLITE_READONLY;
     }
 
@@ -973,7 +969,7 @@ DbResult InstanceWriter::Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOpti
         return BE_SQLITE_ERROR;
     }
 
-    auto rc = m_cache.WithDelete(classId, [&](Internal::CachedStatement& stmt) {
+    auto rc = m_cache.WithDelete(classId, [&](CachedWriteStatement& stmt) {
         auto& binder = stmt.GetStatement().GetBinder(1);
         binder.BindId(id);
         auto rc = stmt.GetStatement().Step();
@@ -986,21 +982,14 @@ DbResult InstanceWriter::Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOpti
         return rc;
     });
 
-    if (rc != BE_SQLITE_DONE) {
-        if (!ctx.HasError()) {
-            ctx.SetError("Failed to prepare delete statement");
-        }
-        LOG.errorv("InstanceWriter::Delete(): %s", m_error.c_str());
-    }
-
-    m_cache.GetECDb().GetInstanceReader().InvalidateSeekPos(ECInstanceKey(classId,id));
+    m_cache.GetECDb().GetInstanceReader().InvalidateSeekPos(ECInstanceKey(classId, id));
     return rc;
 }
 
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-void InstanceWriter::Impl::Reset() {
+void Impl::Reset() {
     m_error.clear();
     m_cache.Reset();
 }
