@@ -383,33 +383,50 @@ bool tryValueToBVectorUInt32 (BeJsConst value, bvector<uint32_t> &data)
     return false;
     }
 
-bool completeAxesConstruction (DVec3dCR vector0, int index0, DVec3dCR vector1, int index1, int index2, RotMatrixR axes, RotMatrixCR defaultAxes)
+bool completeAxesConstruction (DVec3dCR vector0, int index0, DVec3dCR vector1, int index1, DVec3dCP vector2, int index2, RotMatrixR axes, RotMatrixCR defaultAxes)
     {
     DVec3d columns[3];
     columns[index0] = vector0;
     columns[index1] = vector1;
-    columns[index2] = DVec3d::FromCrossProduct (vector0, vector1);
-    axes = RotMatrix::FromColumnVectors (columns[0], columns[1], columns[2]);
-    if (axes.SquareAndNormalizeColumns (axes, index0, index1))
+    if (!vector2)
+        { // square and normalize
+        columns[index2] = DVec3d::FromCrossProduct (vector0, vector1);
+        axes = RotMatrix::FromColumnVectors (columns[0], columns[1], columns[2]);
+        if (axes.SquareAndNormalizeColumns (axes, index0, index1))
+            return true;
+        }
+    else
+        { // preserve axes
+        columns[index2] = *vector2;
+        axes = RotMatrix::FromColumnVectors(columns[0], columns[1], columns[2]);
         return true;
+        }
     axes = defaultAxes;
     return false;
     }
 bool derefAxes (BeJsConst source, RotMatrixR axes, RotMatrixCR defaultAxes)
     {
     axes = defaultAxes;
-    auto xyVectors = source["xyVectors"];
     DVec3d vectorX, vectorY, vectorZ;
+
+    auto xyzVectors = source["xyzVectors"];
+    if (xyzVectors.isArray() && xyzVectors.size() == 3
+        && tryValueToXYZ(xyzVectors[0], vectorX)
+        && tryValueToXYZ(xyzVectors[1], vectorY)
+        && tryValueToXYZ(xyzVectors[2], vectorZ))
+        return completeAxesConstruction(vectorX, 0, vectorY, 1, &vectorZ, 2, axes, defaultAxes);
+
+    auto xyVectors = source["xyVectors"];
     if (xyVectors.isArray () && xyVectors.size () == 2
         && tryValueToXYZ (xyVectors[0], vectorX)
         && tryValueToXYZ (xyVectors[1], vectorY))
-        return completeAxesConstruction (vectorX, 0, vectorY, 1, 2, axes, defaultAxes);
+        return completeAxesConstruction (vectorX, 0, vectorY, 1, nullptr, 2, axes, defaultAxes);
 
     auto zxVectors = source["zxVectors"];
     if (zxVectors.isArray () && zxVectors.size () == 2
         && tryValueToXYZ (zxVectors[0], vectorZ)
         && tryValueToXYZ (zxVectors[1], vectorX))
-        return completeAxesConstruction (vectorZ, 2, vectorX, 0, 1, axes, defaultAxes);
+        return completeAxesConstruction (vectorZ, 2, vectorX, 0, nullptr, 1, axes, defaultAxes);
 
     return false;
     }
@@ -613,11 +630,13 @@ bool tryValueToCone (BeJsConst value, ISolidPrimitivePtr &result)
         DPoint3d centerA, centerB;
         bool capped;
         RotMatrix axes;
+
         bool axesOK = derefAxes(value, axes, RotMatrix::FromIdentity());
         auto radius = derefValidatedDouble(value, "radius", ValidatedDouble (0, false));
         auto radiusA = derefValidatedDouble (value, "startRadius", radius);
         auto radiusB = derefValidatedDouble(value, "endRadius", radiusA);
         derefBool (value, "capped", capped, false);
+
         if (   tryValueToXYZ (value["start"], centerA)
             && tryValueToXYZ (value["end"], centerB)
             && radiusA.IsValid ()
@@ -809,14 +828,14 @@ bool tryValueToSphere (BeJsConst value, ISolidPrimitivePtr &result)
         auto radiusZ = derefValidatedDouble (value, "radiusZ", radiusY);
         // required ...
         if (   tryValueToXYZ (value["center"], center)
-            && radiusX.IsValid ()
-            && radiusY.IsValid ()
-            && radiusZ.IsValid ())
+            && radiusX.IsValid () && radiusX.Value() > 0
+            && radiusY.IsValid () && radiusY.Value() > 0
+            && radiusZ.IsValid () && radiusZ.Value() > 0)
             {
-            // hm .. insider knowledge here
-            // 1) sphere by radius and axes multiplies the axes by the radius -- radius=1 preserves "our" radii.
+            DgnSphereDetail dgnSphere(center, 1.0);
             axes.ScaleColumns (radiusX.Value (), radiusY.Value (), radiusZ.Value ());
-            DgnSphereDetail dgnSphere (center, axes, 1.0);
+            dgnSphere.m_localToWorld.SetMatrix(axes); // no constructors preserve the input axes, so set directly
+
             ValidatedDouble latitudeStartRadians, latitudeSweepRadians;
             if (derefLatitudeStartSweepRadians (value, latitudeStartRadians, latitudeSweepRadians))
                 {

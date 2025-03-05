@@ -309,50 +309,59 @@ struct BeCGIModelJsonValueWriter
 
     void SphereToJson (BeJsValue in, ISolidPrimitiveCR sp)
         {
-        auto value = in["sphere"];
         DgnSphereDetail detail;
-        DPoint3d center;
-        DVec3d unitX, unitY, unitZ;
-        double rxy, rz;
-        if (sp.TryGetDgnSphereDetail (detail)
-            && detail.IsTrueRotationAroundZ (center, unitX, unitY, unitZ, rxy, rz))
-            {
-            ToJson (value["center"], center, m_packIsolatedPoints);
-            auto axes = RotMatrix::FromColumnVectors (unitX, unitY, unitZ);
-            if (detail.m_capped)
-                value["capped"] = detail.m_capped;
-            if (axes.IsIdentity ())
-                {
-                // omit orientation of unrotated !!
-                }
-            else
-                {
-                auto zxVectors = value["zxVectors"];
-                ToJson (zxVectors.appendValue(),unitZ, m_packIsolatedPoints);
-                ToJson (zxVectors.appendValue(),unitX, m_packIsolatedPoints);
-                }
-            if (DoubleOps::AlmostEqual (rxy, rz))
-                {
-                value["radius"] = rz;
-                }
-            else
-                {
-                value["radiusX"] = rxy;   // radiusY will pick this up by default.
-                value["radiusZ"] = rz;
-                }
-            if (Angle::NearlyEqualAllowPeriodShift (detail.m_startLatitude, -Angle::PiOver2 ())
-                && Angle::NearlyEqualAllowPeriodShift (detail.m_latitudeSweep, Angle::Pi ())
-                )
-                {
-                // full sweep -- omit sweep data.
-                }
-            else
-                {
-                auto latitudeStartEnd = value["latitudeStartEnd"];
-                latitudeStartEnd.appendValue() = Angle::RadiansToDegrees (detail.m_startLatitude);
-                latitudeStartEnd.appendValue() = Angle::RadiansToDegrees (detail.m_startLatitude + detail.m_latitudeSweep);
-                }
+        if (!sp.TryGetDgnSphereDetail(detail))
+            return;
 
+        DVec3d unitX, unitY, unitZ;
+        double rX = unitX.Normalize(detail.m_localToWorld.ColumnX());
+        double rY = unitY.Normalize(detail.m_localToWorld.ColumnY());
+        double rZ = unitZ.Normalize(detail.m_localToWorld.ColumnZ());
+        double smallFraction = DoubleOps::SmallCoordinateRelTol();
+        if (rX <= smallFraction || rY <= smallFraction || rZ <= smallFraction)
+            return;
+
+        RotMatrix rigid, skew;
+        if (!detail.m_localToWorld.Matrix().RotateAndSkewFactors(rigid, skew, 0, 1))
+            return;
+
+        auto value = in["sphere"];
+        ToJson(value["center"], detail.m_localToWorld.Origin(), m_packIsolatedPoints);
+
+        // always specify an orthogonal frame if !identity for backwards compatibility
+        if (!rigid.IsIdentity())
+            {
+            auto zxVectors = value["zxVectors"];
+            ToJson(zxVectors.appendValue(), unitZ, m_packIsolatedPoints);
+            ToJson(zxVectors.appendValue(), unitX, m_packIsolatedPoints);
+            }
+
+        // specify a general matrix if skew/mirror local frame
+        if (!skew.IsDiagonal() || skew.Determinant() < 0.0)
+            {
+            auto xyzVectors = value["xyzVectors"];
+            ToJson(xyzVectors.appendValue(), unitX, m_packIsolatedPoints);
+            ToJson(xyzVectors.appendValue(), unitY, m_packIsolatedPoints);
+            ToJson(xyzVectors.appendValue(), unitZ, m_packIsolatedPoints);
+            }
+
+        bool fullSweep = Angle::NearlyEqual(detail.m_startLatitude, -Angle::PiOver2()) && Angle::NearlyEqual(detail.m_latitudeSweep, Angle::TwoPi());
+        if (detail.m_capped && !fullSweep)
+            value["capped"] = detail.m_capped;
+        if (!fullSweep)
+            {
+            auto latitudeStartEnd = value["latitudeStartEnd"];
+            latitudeStartEnd.appendValue() = Angle::RadiansToDegrees(detail.m_startLatitude);
+            latitudeStartEnd.appendValue() = Angle::RadiansToDegrees(detail.m_startLatitude + detail.m_latitudeSweep);
+            }
+
+        if (DoubleOps::AlmostEqual(rX, rY) && DoubleOps::AlmostEqual(rX, rZ))
+            value["radius"] = rX;
+        else
+            {
+            value["radiusX"] = rX;
+            value["radiusY"] = rY;
+            value["radiusZ"] = rZ;
             }
         }
 
@@ -378,14 +387,13 @@ struct BeCGIModelJsonValueWriter
 
     void ConeToJson (BeJsValue in, ISolidPrimitiveCR sp)
         {
-        static bool s_alwaysOutputConeXY = true;
         DgnConeDetail detail;
-        DPoint3d centerA, centerB;
-        double radiusA, radiusB;
-        RotMatrix axes;
-        bool capped;
         if (sp.TryGetDgnConeDetail (detail))
             {
+            DPoint3d centerA, centerB;
+            double radiusA, radiusB;
+            bool capped;
+
             if (detail.IsCylinder (centerA, centerB, radiusA, capped))
                 {
                 auto value = in["cylinder"];
@@ -395,37 +403,41 @@ struct BeCGIModelJsonValueWriter
                 value["radius"] = radiusA;
                 return;
                 }
-            else if (detail.IsCircular (centerA, centerB, axes, radiusA, radiusB, capped))
+
+            auto value = in["cone"];
+            value["capped"] = detail.m_capped;
+            ToJson(value["start"], centerA = detail.m_centerA, m_packIsolatedPoints);
+            ToJson(value["end"], centerB = detail.m_centerB, m_packIsolatedPoints);
+
+            if (DoubleOps::AlmostEqual(radiusA = detail.m_radiusA, radiusB = detail.m_radiusB))
                 {
-                auto value = in["cone"];
-                DVec3d unitX, unitY, unitZ;
-                axes.GetColumns (unitX, unitY, unitZ);
-                double dAB = centerA.Distance (centerB);
-                double hB = centerB.DotDifference (centerA, unitZ);
-                ToJson (value["start"], centerA, m_packIsolatedPoints);
-                ToJson (value["end"], centerB, m_packIsolatedPoints);
-                value["capped"] = capped;
-                // optional compress to single radius ..
-                if (DoubleOps::AlmostEqual (radiusA, radiusB))
-                    {
-                    value["radius"] = radiusA;
-                    }
-                else
-                    {
-                    value["startRadius"] = radiusA;
-                    value["endRadius"] = radiusB;
-                    }
-                if (s_alwaysOutputConeXY || !DoubleOps::AlmostEqual (hB, dAB))
-                    {
-                    // skewed cone needs explicit orientation (the perpendicular to the circle plane is not the cone axis)
-                    auto xyVectors = value["xyVectors"];
-                    ToJson (xyVectors.appendValue(), unitX, m_packIsolatedPoints);
-                    ToJson (xyVectors.appendValue(), unitY, m_packIsolatedPoints);
-                    }
+                value["radius"] = radiusA;
                 }
             else
                 {
-                // ?? elliptic section at base ??
+                value["startRadius"] = radiusA;
+                value["endRadius"] = radiusB;
+                }
+
+            // always specify an orthogonal frame if !identity for backwards compatibility
+            DVec3d vectorX = detail.m_vector0;
+            DVec3d vectorY = detail.m_vector90;
+            if (!vectorX.AlmostEqual(DVec3d::UnitX()) || !vectorY.AlmostEqual(DVec3d::UnitY()))
+                {
+                auto xyVectors = value["xyVectors"];
+                ToJson(xyVectors.appendValue(), vectorX, m_packIsolatedPoints);
+                ToJson(xyVectors.appendValue(), vectorY, m_packIsolatedPoints);
+                }
+
+            // specify a general matrix if elliptical sections
+            bool xySameLength = DoubleOps::AlmostEqual(vectorX.Magnitude(), vectorY.Magnitude());
+            bool ellipticalSections = !xySameLength || !vectorX.IsPerpendicularTo(vectorY);
+            if (ellipticalSections)
+                {
+                auto xyzVectors = value["xyzVectors"];
+                ToJson(xyzVectors.appendValue(), vectorX, m_packIsolatedPoints);
+                ToJson(xyzVectors.appendValue(), vectorY, m_packIsolatedPoints);
+                ToJson(xyzVectors.appendValue(), centerB - centerA, m_packIsolatedPoints);
                 }
             }
         }
