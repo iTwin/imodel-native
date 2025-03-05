@@ -22,12 +22,8 @@ struct InstanceWriter::Impl final {
     using UpdateOptions = InstanceWriter::UpdateOptions;
     using DeleteOptions = InstanceWriter::DeleteOptions;
     using Abortable = InstanceWriter::Abortable;
-    using UnknownJsPropertyHandler = BaseInsertOrUpdateOptions::UnknownJsPropertyHandler;
-    enum class WriterOp {
-        Insert,
-        Update,
-        Delete,
-    };
+    using UnknownJsPropertyHandler = Options::UnknownJsPropertyHandler;
+
     //---------------------------------------------------------------------------------------
     // @bsistruct
     //---------------------------------------------------------------------------------------
@@ -149,45 +145,25 @@ struct InstanceWriter::Impl final {
     //---------------------------------------------------------------------------------------
     struct BindContext final {
     private:
-        WriterOp m_op;
         InstanceWriter::Impl& m_writer;
-        const InsertOptions& m_insertOptions = InsertOptions();
-        const UpdateOptions& m_updateOptions = UpdateOptions();
-        const DeleteOptions& m_deleteOptions = DeleteOptions();
+        const Options& m_options;
         Utf8String m_error;
 
     public:
-        BindContext(InstanceWriter::Impl& writer, InsertOptions const& opt) : m_op(WriterOp::Insert), m_insertOptions(opt), m_writer(writer) {}
-        BindContext(InstanceWriter::Impl& writer, UpdateOptions const& opt) : m_op(WriterOp::Update), m_updateOptions(opt), m_writer(writer) {}
-        BindContext(InstanceWriter::Impl& writer, DeleteOptions const& opt) : m_op(WriterOp::Delete), m_deleteOptions(opt), m_writer(writer) {}
+        BindContext(InstanceWriter::Impl& writer, Options const& opt) : m_options(opt), m_writer(writer) {}
         ~BindContext() {
             if (HasError()) {
                 m_writer.m_error = m_error;
                 LOG.errorv("InstanceWriter error: %s", m_error.c_str());
             }
         }
-        WriterOp GetOp() const { return m_op; }
-        bool IsInsert() const { return m_op == WriterOp::Insert; }
-        bool IsUpdate() const { return m_op == WriterOp::Update; }
-        bool IsDelete() const { return m_op == WriterOp::Delete; }
+        Options const& GetOptions() const { return m_options; }
         Utf8StringCR GetLastError() const { return m_error; }
-        const InsertOptions& GetInsertOptions() const {
-            BeAssert(IsInsert());
-            return m_insertOptions;
-        }
-        const UpdateOptions& GetUpdateOptions() const {
-            BeAssert(IsUpdate());
-            return m_updateOptions;
-        }
-        const DeleteOptions& GetDeleteOptions() const {
-            BeAssert(IsDelete());
-            return m_deleteOptions;
-        }
         ECDbCR GetECDb() const { return m_writer.GetECDb(); }
         ECN::ECClassCP FindClass(Utf8StringCR name) const {
             return m_writer.GetECDb().Schemas().FindClass(name);
         }
-        bool IsUseJsName() const;
+        bool UseJsNames() const { return m_options.GetUseJsNames(); }
         Abortable NotifyUnknownJsProperty(Utf8CP prop, BeJsConst val) const;
         void SetError(const char* fmt, ...);
         bool HasError() const { return !m_error.empty(); }

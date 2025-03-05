@@ -1244,4 +1244,5 @@ bool InMemoryPropertyExistMap::Exist(ECN::ECClassId classId, Utf8CP propertyName
     return classIdSet.find(classId.GetValueUnchecked()) != classIdSet.end();
 }
 
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

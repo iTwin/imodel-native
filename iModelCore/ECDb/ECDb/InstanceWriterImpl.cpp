@@ -23,19 +23,6 @@ using CachedBinder = MruStatementCache::CachedBinder;
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-bool BindContext::IsUseJsName() const {
-    if (IsInsert()) {
-        return m_insertOptions.GetUseJsName();
-    }
-    if (IsUpdate()) {
-        return m_updateOptions.GetUseJsName();
-    }
-    return false;
-}
-
-//----------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+-
 void BindContext::SetError(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -47,11 +34,9 @@ void BindContext::SetError(const char* fmt, ...) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 Impl::Abortable BindContext::NotifyUnknownJsProperty(Utf8CP prop, BeJsConst val) const {
-    if (IsInsert() && m_insertOptions.GetUnknownJsPropertyHandler() != nullptr) {
-        m_insertOptions.GetUnknownJsPropertyHandler()(prop, val);
-    }
-    if (IsUpdate() && m_updateOptions.GetUnknownJsPropertyHandler() != nullptr) {
-        m_updateOptions.GetUnknownJsPropertyHandler()(prop, val);
+    auto handler = m_options.GetUnknownJsPropertyHandler();
+    if (handler) {
+        return handler(prop, val);
     }
     return Abortable::Continue;
 }
@@ -440,8 +425,8 @@ ECSqlStatus Impl::BindPrimitive(BindContext& ctx, PrimitiveType type, IECSqlBind
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
 
-        auto x = ctx.IsUseJsName() ? val[ECN::ECJsonSystemNames::Point::X()] : val[ECDBSYS_PROP_PointX];
-        auto y = ctx.IsUseJsName() ? val[ECN::ECJsonSystemNames::Point::Y()] : val[ECDBSYS_PROP_PointY];
+        auto x = ctx.UseJsNames() ? val[ECN::ECJsonSystemNames::Point::X()] : val[ECDBSYS_PROP_PointX];
+        auto y = ctx.UseJsNames() ? val[ECN::ECJsonSystemNames::Point::Y()] : val[ECDBSYS_PROP_PointY];
 
         if (!x.isNumeric() || !y.isNumeric()) {
             ctx.SetError("Expected instance to be of type object with x and y numeric members for Point2d property, got %s", val.Stringify().c_str());
@@ -454,9 +439,9 @@ ECSqlStatus Impl::BindPrimitive(BindContext& ctx, PrimitiveType type, IECSqlBind
             ctx.SetError("Expected instance to be of type object for Point3d property, got %s", val.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
-        auto x = ctx.IsUseJsName() ? val[ECN::ECJsonSystemNames::Point::X()] : val[ECDBSYS_PROP_PointX];
-        auto y = ctx.IsUseJsName() ? val[ECN::ECJsonSystemNames::Point::Y()] : val[ECDBSYS_PROP_PointY];
-        auto z = ctx.IsUseJsName() ? val[ECN::ECJsonSystemNames::Point::Z()] : val[ECDBSYS_PROP_PointZ];
+        auto x = ctx.UseJsNames() ? val[ECN::ECJsonSystemNames::Point::X()] : val[ECDBSYS_PROP_PointX];
+        auto y = ctx.UseJsNames() ? val[ECN::ECJsonSystemNames::Point::Y()] : val[ECDBSYS_PROP_PointY];
+        auto z = ctx.UseJsNames() ? val[ECN::ECJsonSystemNames::Point::Z()] : val[ECDBSYS_PROP_PointZ];
 
         if (!x.isNumeric() || !y.isNumeric() || !z.isNumeric()) {
             ctx.SetError("Expected instance to be of type object with x, y and z numeric members for Point3d property, got %s", val.Stringify().c_str());
@@ -659,8 +644,8 @@ ECSqlStatus Impl::BindNavigationProperty(BindContext& ctx, NavigationECPropertyC
         return ECSqlStatus(BE_SQLITE_ERROR);
     }
 
-    auto id = ctx.IsUseJsName() ? val[ECJsonSystemNames::Navigation::Id()] : val[ECDBSYS_PROP_NavPropId];
-    auto relClassId = ctx.IsUseJsName() ? val[ECJsonSystemNames::Navigation::RelClassName()] : val[ECDBSYS_PROP_NavPropRelECClassId];
+    auto id = ctx.UseJsNames() ? val[ECJsonSystemNames::Navigation::Id()] : val[ECDBSYS_PROP_NavPropId];
+    auto relClassId = ctx.UseJsNames() ? val[ECJsonSystemNames::Navigation::RelClassName()] : val[ECDBSYS_PROP_NavPropRelECClassId];
 
     if (!id.isNumeric() && !id.isString()) {
         ctx.SetError("Expected id for navigation property, got %s", id.Stringify().c_str());
@@ -673,7 +658,7 @@ ECSqlStatus Impl::BindNavigationProperty(BindContext& ctx, NavigationECPropertyC
             ctx.SetError("Expected relClassId for navigation property, got %s", relClassId.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
-        if (ctx.IsUseJsName()) {
+        if (ctx.UseJsNames()) {
             auto classP = ctx.FindClass(relClassId.asCString());
             if (classP == nullptr) {
                 ctx.SetError("Failed to find class with name: %s", relClassId.asCString());
@@ -691,7 +676,7 @@ ECSqlStatus Impl::BindNavigationProperty(BindContext& ctx, NavigationECPropertyC
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 bool Impl::TryGetECClassId(BindContext& ctx, BeJsConst inst, ECClassId& classId) {
-    if (ctx.IsUseJsName()) {
+    if (ctx.UseJsNames()) {
         // className has higher priority
         auto className = inst[ECJsonSystemNames::ClassName()];
         if (!className.isNull()) {
@@ -738,7 +723,7 @@ bool Impl::TryGetECClassId(BindContext& ctx, BeJsConst inst, ECClassId& classId)
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 bool Impl::TryGetECInstanceId(BindContext& ctx, BeJsConst inst, ECInstanceId& id) {
-    if (ctx.IsUseJsName()) {
+    if (ctx.UseJsNames()) {
         auto name = inst[ECJsonSystemNames::Id()];
         if (!name.isString()) {
             ctx.SetError("Expected string for id, got %s", name.Stringify().c_str());
@@ -918,9 +903,9 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
             InstanceReader::Position pos(id, classId);
             m_cache.GetECDb().GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row) {
                 InstanceReader::JsonParams param;
-                param.SetUseJsName(options.GetUseJsName());
+                param.SetUseJsName(options.GetUseJsNames());
                 param.SetAbbreviateBlobs(false);
-                param.SetClassIdToClassNames(options.GetUseJsName());
+                param.SetClassIdToClassNames(options.GetUseJsNames());
                 row.GetJson(param).ForEachProperty([&](auto prop, auto val) {
                     if (!doc.hasMember(prop)) {
                         doc[prop].From(val);
@@ -1059,5 +1044,70 @@ void InstanceWriter::Reset() {
 Utf8StringCR InstanceWriter::GetLastError() const {
     return m_pImpl->GetLastError();
 }
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+InstanceWriter::Options& InstanceWriter::Options::SetUnknownJsPropertyHandler(UnknownJsPropertyHandler handler) {
+    m_unknownJsPropertyHandler = handler;
+    return *this;
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+InstanceWriter::Options::UnknownJsPropertyHandler InstanceWriter::Options::GetUnknownJsPropertyHandler() const { return m_unknownJsPropertyHandler; }
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+InstanceWriter::InsertOptions& InstanceWriter::Options::asInsert() {
+    BeAssert(m_op == WriterOp::Insert);
+    return static_cast<InsertOptions&>(*this);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+InstanceWriter::UpdateOptions& InstanceWriter::Options::asUpdate() {
+    BeAssert(m_op == WriterOp::Update);
+    return static_cast<UpdateOptions&>(*this);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+InstanceWriter::DeleteOptions& InstanceWriter::Options::asDelete() {
+    BeAssert(m_op == WriterOp::Delete);
+    return static_cast<DeleteOptions&>(*this);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+InstanceWriter::InsertOptions& InstanceWriter::InsertOptions::UseInstanceId(ECInstanceId id) {
+    m_newInstanceId = id;
+    m_instanceIdMode = InstanceIdMode::Manual;
+    return *this;
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+InstanceWriter::InsertOptions& InstanceWriter::InsertOptions::UseInstanceIdFromJs() {
+    m_instanceIdMode = InstanceIdMode::FromJs;
+    m_newInstanceId = ECInstanceId();
+    return *this;
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+InstanceWriter::InsertOptions&InstanceWriter::InsertOptions:: UseAutoECInstanceId() {
+    m_instanceIdMode = InstanceIdMode::FromJs;
+    m_newInstanceId = ECInstanceId();
+    return *this;
+}
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

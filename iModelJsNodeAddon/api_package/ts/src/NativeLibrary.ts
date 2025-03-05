@@ -441,7 +441,7 @@ export declare namespace IModelJsNative {
  * Represents the arguments for delete an instance.
  */
   interface DeleteInstanceArgs {
-      placeholder?: true;
+    useJsNames?: true;
   }
 
   enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }

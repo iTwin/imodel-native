@@ -30,6 +30,9 @@ struct InstanceWriterFixture : ECDbTestFixture {
     static DbResult UpdateInstance(ECDbR ecdb, BeJsConst instance, InstanceWriter::UpdateOptions opts) {
         return ecdb.GetInstanceWriter().Update(instance, opts);
     }
+    static DbResult DeleteInstance(ECDbR ecdb, BeJsConst instance, InstanceWriter::DeleteOptions opts) {
+        return ecdb.GetInstanceWriter().Delete(instance, opts);
+    }
 };
 
 //---------------------------------------------------------------------------------------
@@ -616,7 +619,7 @@ TEST_F(InstanceWriterFixture, basic) {
         testDoc.Parse(testInst);
         auto opt = InstanceWriter::InsertOptions();
         opt.UseInstanceIdFromJs();
-        opt.UseJsName(true);
+        opt.UseJsNames(true);
 
         ASSERT_EQ(BE_SQLITE_DONE, InsertInstance(writeDb, testDoc, opt, actualKey));
         writeDb.SaveChanges();
@@ -627,7 +630,7 @@ TEST_F(InstanceWriterFixture, basic) {
         ASSERT_STREQ(testDoc.Stringify(StringifyFormat::Indented).c_str(), actual.Stringify(StringifyFormat::Indented).c_str());
     }
 
-    if ("update a js instance") {
+    if ("update a js instance with incremental update") {
         // copy instance to another db use ECSql standard format
         Utf8String testInst = R"json({
             "id": "0x1",
@@ -635,20 +638,22 @@ TEST_F(InstanceWriterFixture, basic) {
             "s": "London",
             "i": 101
         })json";
-        // UPDATE ts.P SET s = IIF(?, ?, s) WHERE ECInstanceId = 0x1
+
         BeJsDocument testDoc;
         testDoc.Parse(testInst);
+
         auto opt = InstanceWriter::UpdateOptions();
-        opt.UseJsName(true);
+        opt.UseJsNames(true);
         opt.UseIncrementalUpdate(true);
         ASSERT_EQ(BE_SQLITE_DONE, UpdateInstance(writeDb, testDoc, opt));
         writeDb.SaveChanges();
+
         BeJsDocument actual;
         writeDb.GetInstanceReader().Reset();
+
         auto actualJson = ReadInstance(writeDb, key, true);
         ASSERT_TRUE(actualJson.has_value());
         actual.Parse(actualJson.value());
-
         ASSERT_STREQ(actual["s"].asCString(), "London");
         ASSERT_EQ(actual["i"].asInt(), 101);
 
@@ -676,6 +681,63 @@ TEST_F(InstanceWriterFixture, basic) {
         )json");
 
         ASSERT_STREQ(expected.Stringify(StringifyFormat::Indented).c_str(), actual.Stringify(StringifyFormat::Indented).c_str());
+    }
+
+    if ("update a js instance with no incremental update") {
+        // copy instance to another db use ECSql standard format
+        Utf8String testInst = R"json({
+            "id": "0x1",
+            "className": "TestSchema.P",
+            "s": "Kiev",
+            "i": 2000
+        })json";
+
+        BeJsDocument testDoc;
+        testDoc.Parse(testInst);
+
+        auto opt = InstanceWriter::UpdateOptions();
+        opt.UseJsNames(true);
+        ASSERT_EQ(BE_SQLITE_DONE, UpdateInstance(writeDb, testDoc, opt));
+        writeDb.SaveChanges();
+
+        BeJsDocument actual;
+        writeDb.GetInstanceReader().Reset();
+        auto actualJson = ReadInstance(writeDb, key, true);
+        ASSERT_TRUE(actualJson.has_value());
+        actual.Parse(actualJson.value());
+
+        ASSERT_STREQ(actual["s"].asCString(), "Kiev");
+        ASSERT_EQ(actual["i"].asInt(), 2000);
+
+        BeJsDocument expected;
+        expected.Parse(R"json({
+            "id": "0x1",
+            "className": "TestSchema.P",
+            "s": "Kiev",
+            "i": 2000
+            }
+        )json");
+
+        ASSERT_STREQ(expected.Stringify(StringifyFormat::Indented).c_str(), actual.Stringify(StringifyFormat::Indented).c_str());
+    }
+
+    if ("delete isntance") {
+        // copy instance to another db use ECSql standard format
+        Utf8String testInst = R"json({
+            "id": "0x1",
+            "className": "TestSchema.P"
+        })json";
+
+        BeJsDocument testDoc;
+        testDoc.Parse(testInst);
+
+        auto opt = InstanceWriter::DeleteOptions();
+        opt.UseJsNames(true);
+        ASSERT_EQ(BE_SQLITE_DONE, DeleteInstance(writeDb, testDoc, opt));
+        ASSERT_EQ(1, writeDb.GetModifiedRowCount());
+        writeDb.SaveChanges();
+        auto actualJson = ReadInstance(writeDb, key, true);
+        ASSERT_FALSE(actualJson.has_value());
     }
 }
 //---------------------------------------------------------------------------------------
