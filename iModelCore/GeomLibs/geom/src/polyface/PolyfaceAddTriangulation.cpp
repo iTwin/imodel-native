@@ -730,7 +730,7 @@ static PolyfaceHeaderPtr CreateTwoPointVoronoi (DPoint3dCR point0, double radius
             q + 3, q + 2, q + 0, q + 1, 0,
             q + 1, q + 0, q + 4, q + 5, 0
         };
-        return PolyfaceHeader::CreateIndexedMesh (0, points, index1);
+        return PolyfaceHeader::CreateIndexedMeshSwap(0, points, index1);
     }
 bool PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (bvector<DPoint3d> const &points, PolyfaceHeaderPtr &delauney, PolyfaceHeaderPtr &voronoi)
     {
@@ -813,6 +813,8 @@ VuMask exteriorMask = VU_EXTERIOR_EDGE
     static bool s_interior = false;
     static double s_sign = -1.0;
     size_t errors = 0;
+    UNUSED_VARIABLE(errors);
+    
     if (nullptr != cellData)
         cellData->clear ();
     int useEdgeNeighborClip = voronoiMetric != 1.0;

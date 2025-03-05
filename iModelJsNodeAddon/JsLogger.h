@@ -27,8 +27,9 @@ struct LoggedMessage {
  */
 struct JsLogger : NativeLogging::Logger {
 private:
-  /** to synchronize access to `m_defaultSeverity` and `m_categoryFilter`. */
-  BeMutex m_severitiesMutex;
+  /** to synchronize access severities and JS objects */
+  BeMutex m_mutex;
+
   /** the default severity for categories not specified in `m_categoryFilter` */
   SEVERITY m_defaultSeverity = LOG_ERROR;
   /** cached set of severity levels. Can be cleared from JS by `NativeLibrary.clearLogLevelCache` */

@@ -13,25 +13,112 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DropSchemaResult SchemaWriter::DropSchema(Utf8StringCR schemaName, SchemaImportContext& ctx, bool logIssue) {
-    auto getReferencedBySchemas = [&] (ECSchemaId id) {
-        bvector<Utf8String> schemas;
-        auto stmt = ctx.GetECDb().GetCachedStatement(R"(
-            SELECT [ss].[Name]
-            FROM   [ec_SchemaReference] [rc]
-                JOIN [ec_Schema] [ss] ON [ss].[Id] = [rc].[SchemaId]
-            WHERE  [rc].[ReferencedSchemaId] = ?;)");
-        stmt->BindId(1, id);
-        while(stmt->Step() == BE_SQLITE_ROW) {
-            schemas.push_back(stmt->GetValueText(0));
+DropSchemaResult SchemaWriter::DropSchemas(bvector<Utf8String> schemaNames, SchemaImportContext& ctx, bool logIssue)
+    {
+    bvector<ECSchemaId> schemaIds;
+    bvector<Utf8String> schemaIdStrings;
+    bvector<Utf8String> missingSchemas;
+    
+    // Make sure the schemas exist
+    for (const auto& name : schemaNames)
+        {
+        if (const auto schema = ctx.GetECDb().Schemas().GetSchema(name); schema != nullptr)
+            {
+            const auto schemaId = schema->GetId();
+            schemaIds.push_back(schemaId);
+            schemaIdStrings.push_back(schemaId.ToString());
+            }
+        else
+            missingSchemas.push_back(name);
         }
-        return schemas;
-    };
-    // CustomAttribute has no forign key to container id, following method
-    // gather all customattributes for a given schema and delete them before
-    // schema or its mapping is deleted.
-    auto dropCustomAttributeInstanceAppliedToSchema =[&](ECSchemaId id) {
-        auto stmt = ctx.GetECDb().GetCachedStatement(R"sql(
+
+    if (!missingSchemas.empty())
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0300,
+            "Drop ECSchemas failed. ECSchema: Schemas %s not found.", BeStringUtilities::Join(missingSchemas, ",").c_str());
+        return DropSchemaResult(DropSchemaResult::Status::ErrorSchemaNotFound);
+        }
+
+    // Check if any of the schemas to be deleted are being referenced by other schemas
+    auto refSchemastmt = ctx.GetECDb().GetCachedStatement(Utf8PrintfString(R"sql(
+        SELECT 
+            [s1].[Id], [s1].[Name], [sr].[SchemaId]
+        FROM [ec_Schema] [s1]
+            JOIN [ec_SchemaReference] [sr] ON [s1].[Id] = [sr].[ReferencedSchemaId]
+        WHERE [sr].[ReferencedSchemaId] IN (%s);
+        )sql", BeStringUtilities::Join(schemaIdStrings, ",").c_str()).c_str());
+
+    schemaIdStrings.clear();
+
+    bmap<ECSchemaId, bvector<ECSchemaId>> referencesMap;
+    bmap<ECSchemaId, Utf8String> errorSchemas;
+    while (refSchemastmt->Step() != BE_SQLITE_DONE)
+        {
+        referencesMap[refSchemastmt->GetValueId<ECSchemaId>(0)].push_back(refSchemastmt->GetValueId<ECSchemaId>(2));
+        errorSchemas[refSchemastmt->GetValueId<ECSchemaId>(0)] = refSchemastmt->GetValueText(1);
+        }
+
+    for (const auto& val : referencesMap)
+        {
+        // Check if all the schemas that are referencing are also marked for deletion
+        if (std::all_of(val.second.begin(), val.second.end(), [&schemaIds](const ECSchemaId& schemaId) { return std::find(schemaIds.begin(), schemaIds.end(), schemaId) != std::end(schemaIds); }))
+            {
+            // Ignore duplicates for when mutiple schemas reference the same schema
+            std::for_each(val.second.begin(), val.second.end(), [&schemaIdStrings](const ECSchemaId& schemaId)
+                {
+                if (std::find(schemaIdStrings.begin(), schemaIdStrings.end(), schemaId.ToString()) == std::end(schemaIdStrings))
+                    schemaIdStrings.push_back(schemaId.ToString());
+                });
+            schemaIdStrings.push_back(val.first.ToString());
+
+            errorSchemas.erase(val.first);
+            }
+        }
+
+    if (!errorSchemas.empty())
+        {
+        bvector<Utf8String> errorMessage;
+        for (const auto& val : errorSchemas)
+            errorMessage.push_back(val.second);
+        if (logIssue)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0301, "Drop ECSchemas failed. Schema(s) %s are being referenced by other schemas.",
+                BeStringUtilities::Join(errorMessage, ",").c_str());
+            }
+        return DropSchemaResult(DropSchemaResult::Status::ErrorDeletedSchemaIsReferencedByAnotherSchema, std::move(errorMessage));
+        }
+
+    // Check schemas that are not referencing any other
+    for (const auto& schemaId : schemaIds)
+        {
+        if (std::find(schemaIdStrings.begin(), schemaIdStrings.end(), schemaId.ToString()) == std::end(schemaIdStrings))
+            schemaIdStrings.push_back(schemaId.ToString());
+        }
+
+    // Find if there are any instances belonging to the schemas that are about to be deleted.
+    auto stmt = ctx.GetECDb().GetCachedStatement(Utf8PrintfString(R"sql(
+        SELECT [cc].[Id] 
+            FROM [ec_class] [cc] 
+                JOIN [ec_ClassMap] [mm] ON [mm].[ClassId] = [cc].[Id]
+        WHERE [cc].[SchemaId] IN (%s) AND [mm].[MapStrategy] NOT IN (10, 11, 3);)sql", BeStringUtilities::Join(schemaIdStrings, ",").c_str()).c_str());
+
+    BeIdSet classIds;
+    while (stmt->Step() == BE_SQLITE_ROW)
+        classIds.insert(stmt->GetValueId<ECClassId>(0));
+
+    if (auto results = InstanceFinder::FindInstances(ctx.GetECDb(), std::move(classIds)); !results.IsEmpty())
+        {
+        if (logIssue)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0302,
+                "Drop ECSchema failed. One or more schemas have instances present. Make sure to delete them before dropping the schemas.");
+            }
+        return DropSchemaResult(DropSchemaResult::Status::ErrorDeleteSchemaHasClassesWithInstances, std::move(results));
+        }
+
+    auto dropCustomAttributeInstanceAppliedToSchema = [&](ECSchemaId id)
+        {
+        auto dropCAStmt = ctx.GetECDb().GetCachedStatement(R"sql(
             with [all_schema_custom_attributes]([schema_id], [custom_attribute_id]) as(
                 select
                     [p].[schemaid],
@@ -73,67 +160,39 @@ DropSchemaResult SchemaWriter::DropSchema(Utf8StringCR schemaName, SchemaImportC
                     join [ec_CustomAttribute] [ca] on [ca].[containerid] = [p].[container_id]
                             and [ca].[containertype] = [p].[container_type]
             )
-            delete from [ec_customAttribute] where [id] in (select [custom_attribute_id] from   [all_schema_custom_attributes] where  [schema_id] = ?);
-        )sql");
-        stmt->BindId(1, id);
-        return stmt->Step();
-    };
-    auto dropSchemaAndItsMapping = [&] (ECSchemaId id) {
-        auto rc = dropCustomAttributeInstanceAppliedToSchema(id);
-        if (rc != BE_SQLITE_DONE)
+            delete from [ec_customAttribute] where [id] in (select [custom_attribute_id] from   [all_schema_custom_attributes] where  [schema_id] = ?);)sql");
+        dropCAStmt->BindId(1, id);
+        return dropCAStmt->Step();
+        };
+    auto dropSchemaAndItsMapping = [&](ECSchemaId id)
+        {
+        if (const auto rc = dropCustomAttributeInstanceAppliedToSchema(id); rc != BE_SQLITE_DONE)
             return rc;
 
-        auto stmt = ctx.GetECDb().GetCachedStatement("DELETE FROM ec_Schema WHERE Id = ?");
-        stmt->BindId(1, id);
-        return stmt->Step();
-    };
-    // make sure the schema exist
-    auto schemaCP = ctx.GetECDb().Schemas().GetSchema(schemaName);
-    if (schemaCP == nullptr) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0300, "Drop ECSchema failed. ECSchema: Schema %s not found.", schemaName.c_str());
-        return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
-    const auto schemaId =  schemaCP->GetId();
-    // check if the schema is referenced by another schema.
-    auto referencedBy = getReferencedBySchemas(schemaId);
-    if (!referencedBy.empty()) {
-        if (logIssue)
-            {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0301,
-                "Drop ECSchema failed. ECSchema: Schema %s is referenced by other schemas (%s).", schemaName.c_str(), BeStringUtilities::Join(referencedBy, ",").c_str());
-            }
-        return DropSchemaResult(DropSchemaResult::Status::ErrorDeletedSchemaIsReferencedByAnotherSchema, std::move(referencedBy));
-    }
+        auto dropSchemaStmt = ctx.GetECDb().GetCachedStatement("DELETE FROM ec_Schema WHERE Id = ?");
+        dropSchemaStmt->BindId(1, id);
+        return dropSchemaStmt->Step();
+        };
 
-    // find if there are any instances belong to schema that is about to be deleted.
-    auto results = InstanceFinder::FindInstances(ctx.GetECDb(), schemaId, false);
-    if (!results.IsEmpty()) {
-        if (logIssue)
+    for (const auto& schemaId : schemaIds)
+        {
+        if (auto rc = dropSchemaAndItsMapping(schemaId); rc != BE_SQLITE_DONE)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0302,
-                "Drop ECSchema failed. ECSchema: Schema %s has instances. Make sure to delete them before dropping scheam.", schemaName.c_str());
+            if (logIssue)
+                {
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0303,
+                    "Drop ECSchemas failed due to a sqlite error %s.", BeSQLiteLib::GetLogError(rc).c_str());
+                }
+            return DropSchemaResult(DropSchemaResult::Status::Error);
             }
-        return DropSchemaResult(DropSchemaResult::Status::ErrorDeleteSchemaHasClassesWithInstances, std::move(results));
-    }
-
-    // drop schema should cascade delete all property maps
-    auto rc = dropSchemaAndItsMapping(schemaId);
-    if (rc != BE_SQLITE_DONE) {
-        if (logIssue)
-            {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0303,
-                "Drop ECSchema failed. ECSchema: Schema %s fail to drop due to sqlite error %s.", schemaName.c_str(), BeSQLiteLib::GetLogError(rc).c_str());
-            }
-        return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
+        }
 
     // repopulate cache tables
-
-    if (SUCCESS != ctx.GetECDb().Schemas().RepopulateCacheTables()) {
+    if (SUCCESS != ctx.GetECDb().Schemas().RepopulateCacheTables())
         return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
+    
     return DropSchemaResult(DropSchemaResult::Status::Success);
-}
+    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -227,6 +286,11 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
                 {
                 if (schema->GetName().Equals(schemaChange->GetChangeName()))
                     {
+                    if (!schema->IsDynamicSchema() && !schemaChange->VersionWrite().IsChanged() && !schemaChange->VersionRead().IsChanged() && !schemaChange->VersionMinor().IsChanged())
+                        {
+                        LOG.errorv("ECSchema import has failed. Schema %s has new changes, but the schema version is not incremented.", schema->GetName().c_str());
+                        }
+
                     existingSchema = schema;
                     break;
                     }
@@ -5706,6 +5770,17 @@ BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>&
                 ECSchema::GetECVersionString(ECVersion::Latest),
                 ECSchema::GetECVersionString(schema->GetECVersion())
             );
+            return ERROR;
+            }
+        if (schema->OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            {
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0734,
+                "Failed to import ECSchema %s. It has a higher ECXml version %s than the current version %s and may contain unknown elements which are not supported in this version of ECDb.",
+                schema->GetFullSchemaName().c_str(), schema->GetOriginalECXmlVersionAsString().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
             return ERROR;
             }
 

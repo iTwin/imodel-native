@@ -498,7 +498,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     SaveDb();
     ChangesetPropsPtr revision1 = CreateRevision("-cs1");
     EXPECT_TRUE(revision1.IsValid());
-    EXPECT_TRUE(revision1->ContainsSchemaChanges(*m_db));
+    EXPECT_TRUE(revision1->ContainsDdlChanges(*m_db));
 
     DumpRevision(*revision1, "Revision 1");
     CloseDb();
@@ -517,7 +517,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     SaveDb();
     ChangesetPropsPtr revision2 = CreateRevision("-cs2");
     EXPECT_TRUE(revision2.IsValid());
-    EXPECT_TRUE(revision2->ContainsSchemaChanges(*m_db));
+    EXPECT_TRUE(revision2->ContainsDdlChanges(*m_db));
 
     DumpRevision(*revision2, "Revision 2");
     CloseDb();

@@ -53,8 +53,8 @@ extern FILE *tool_stderr;
 #  define main(x,y) curl_main(x,y)
 #endif
 
-#ifndef OS
-#  define OS "unknown"
+#ifndef CURL_OS
+#  define CURL_OS "unknown"
 #endif
 
 #ifndef UNPRINTABLE_CHAR
@@ -66,10 +66,40 @@ extern FILE *tool_stderr;
 #  include "tool_strdup.h"
 #endif
 
-#if defined(WIN32) && !defined(MSDOS)
+#if defined(_WIN32)
+#  define CURL_STRICMP(p1, p2)  _stricmp(p1, p2)
+#elif defined(HAVE_STRCASECMP)
+#  ifdef HAVE_STRINGS_H
+#    include <strings.h>
+#  endif
+#  define CURL_STRICMP(p1, p2)  strcasecmp(p1, p2)
+#elif defined(HAVE_STRCMPI)
+#  define CURL_STRICMP(p1, p2)  strcmpi(p1, p2)
+#elif defined(HAVE_STRICMP)
+#  define CURL_STRICMP(p1, p2)  stricmp(p1, p2)
+#else
+#  define CURL_STRICMP(p1, p2)  strcmp(p1, p2)
+#endif
+
+#if defined(_WIN32)
 /* set in win32_init() */
 extern LARGE_INTEGER tool_freq;
 extern bool tool_isVistaOrGreater;
+/* set in init_terminal() */
+extern bool tool_term_has_bold;
 #endif
+
+#if defined(_WIN32) && !defined(HAVE_FTRUNCATE)
+
+int tool_ftruncate64(int fd, curl_off_t where);
+
+#undef  ftruncate
+#define ftruncate(fd,where) tool_ftruncate64(fd,where)
+
+#define HAVE_FTRUNCATE 1
+#define USE_TOOL_FTRUNCATE 1
+
+#endif /* _WIN32 && ! HAVE_FTRUNCATE */
+
 
 #endif /* HEADER_CURL_TOOL_SETUP_H */

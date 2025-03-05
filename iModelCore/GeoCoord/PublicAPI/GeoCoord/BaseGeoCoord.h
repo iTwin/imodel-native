@@ -470,7 +470,7 @@ public:
     // Add a list of WorkspaceDbs to find GCS resources.
     // @param dbName the workspace database name containing GCS resources.
     // @param container the CloudContainer holding the dbs (or nullptr)
-    // @param priority 0=highest (loaded first)
+    // @param priority 0=lowest
     BASEGEOCOORD_EXPORTED static bool AddWorkspaceDb(Utf8String dbName, BeSQLite::CloudContainerP container, int priority);
 
     BASEGEOCOORD_EXPORTED static BaseGCSPtr CreateGCS(CSParameters const& csParameters, int32_t coordSysId);

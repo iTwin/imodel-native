@@ -69,6 +69,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext& importer) override;
+    DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
 
     static Utf8String combineName(Utf8StringCR paletteName, Utf8StringCR materialName)
         {

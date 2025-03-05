@@ -346,6 +346,27 @@ void UpdateHandler::AddTask(bvector<IUpdateTaskPtr>& tasks, size_t startIndex, I
     tasks.insert(iter, &task);
     }
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct UpdateRecordsScope
+{
+private:
+    BeMutexHolder& m_lock;
+    IUpdateRecordsHandler& m_updateRecordsHandler;
+public:
+    UpdateRecordsScope(BeMutexHolder& lock, IUpdateRecordsHandler& updateRecordsHandler)
+        : m_updateRecordsHandler(updateRecordsHandler), m_lock(lock)
+        {
+        m_lock.lock();
+        m_updateRecordsHandler.Start();
+        }
+    ~UpdateRecordsScope()
+        {
+        m_updateRecordsHandler.Finish();
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -356,11 +377,7 @@ void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
     auto scope = Diagnostics::Scope::Create("Execute update tasks");
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Update, LOG_TRACE, Utf8PrintfString("Total initial update tasks: %u", tasks.size()));
 
-    if (m_updateRecordsHandler)
-        {
-        lock.lock();
-        m_updateRecordsHandler->Start();
-        }
+    auto updateRecordsScope = m_updateRecordsHandler ? std::make_unique<UpdateRecordsScope>(lock, *m_updateRecordsHandler) : nullptr;
 
     size_t i = 0;
     while (i < tasks.size())
@@ -384,9 +401,6 @@ void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
         }
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Update, LOG_TRACE, Utf8PrintfString("Total executed tasks: %" PRIu64, (uint64_t)i));
-
-    if (m_updateRecordsHandler)
-        m_updateRecordsHandler->Finish();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -542,12 +556,12 @@ private:
         if (newProvider.GetContext().GetPhysicalParentNode().IsNull())
             return;
 
-        // update parent hierarchy level if nodes count changed from/to 0
+        // update parent hierarchy level if nodes count changed from/to 0 or if parent node is a grouping node
         bool newProviderHasNodes = newProvider.HasNodes();
-        if (oldProviderHasNodes == newProviderHasNodes)
-            return;
-
         auto parent = newProvider.GetContext().GetPhysicalParentNode();
+        if (oldProviderHasNodes == newProviderHasNodes && !(parent.IsValid() && parent->GetKey()->AsGroupingNodeKey()))
+            return;
+        
         auto grandParent = parent.IsValid()
             ? m_nodesCache->GetPhysicalParentNode(parent->GetNodeId(), newProvider.GetContext().GetRulesetVariables(), newProvider.GetContext().GetInstanceFilter())
             : nullptr;

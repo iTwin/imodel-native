@@ -5,6 +5,7 @@
 #pragma once
 #include <ECDb/ECDb.h>
 #include <ECDb/ECInstanceId.h>
+#include <ECDb/IECSqlRow.h>
 #include <ECDb/IECSqlValue.h>
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/SchemaManager.h>
@@ -12,25 +13,6 @@
 #include <json/json.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//=======================================================================================
-//! IECSqlRow represent a single row that can be read. It can be pass around to allow
-//! only reading a instance.
-//+======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE IECSqlRow {
-    public:
-        //! Gets the number of ECSQL columns in the result set returned after calling Step on a SELECT statement.
-        //! @return Number of ECSQL columns in the result set
-        virtual int GetColumnCount() const = 0;
-
-                //! Gets the value of the specified column.
-        //! @remarks This is the generic way of getting the value of a specified column in the result set.
-        //! All other GetValueXXX methods are convenience methods around GetValue.
-        //! @return Value for the column
-        //! @note Possible errors:
-        //! - @p columnIndex is out of bounds
-        virtual IECSqlValue const& GetValue(int columnIndex) const =0;
-};
-
 //=======================================================================================
 //! ECSqlStatement is used to perform Create, Read, Update, Delete operations (@b CRUD)
 //! against @b ECInstances in an @ref ECDbFile "ECDb file".
@@ -266,6 +248,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! returns the appropriate error-code.
         //! @return Parameter binder
         ECDB_EXPORT IECSqlBinder& GetBinder(int parameterIndex);
+
+        //! Gets BinderInfo for the binder associated with the parameter at the specified index.
+        //! @param[in] parameterIndex Parameter index.
+        //! @return Parameter BinderInfo. If there is no valid binder on that index the it will still return BinderInfo with Binder type NoopECSqlBinderType
+        ECDB_EXPORT BinderInfo const& GetBinderInfo(int parameterIndex) { return GetBinder(parameterIndex).GetBinderInfo(); }
 
         //! Gets the parameter index for a named parameter. Will log an error if parameter not found.
         //!
@@ -696,5 +683,141 @@ struct ECSqlParseTreeFormatter final
     };
 
 #endif
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct IJsSerializable {
+    public:
+        ECDB_EXPORT virtual void ToJs(BeJsValue&) const = 0;
+        ECDB_EXPORT std::string Stringify(StringifyFormat format = StringifyFormat::Default) const;
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct ECSqlRowProperty final: IJsSerializable {
+    struct List final: public std::vector<ECSqlRowProperty>, IJsSerializable {
+        private:
+            ECSqlRowProperty const& GetPropertyInfo(std::string const& name) const;
+        public:
+            ECSqlRowProperty const& operator [](std::string const& name) const { return GetPropertyInfo(name);}
+            ECSqlRowProperty const& operator [](int index) const { return at(index); }
+            ECDB_EXPORT void ToJs(BeJsValue& val) const override;
+            ECDB_EXPORT void append(std::string className,
+                std::string accessString,
+                std::string jsonName,
+                std::string name,
+                std::string typeName,
+                bool generated,
+                std::string extendedType,
+                int index
+            );
+    };
+    private:
+        static constexpr auto JClass = "className";
+        static constexpr auto JAccessString = "accessString";
+        static constexpr auto JGenerated = "generated";
+        static constexpr auto JIndex = "index";
+        static constexpr auto JJsonName = "jsonName";
+        static constexpr auto JName = "name";
+        static constexpr auto JExtendedType = "extendedType";
+        static constexpr auto JType = "typeName";
+        std::string m_className;
+        std::string m_accessString;
+        std::string m_jsonName;
+        std::string m_name;
+        std::string m_typeName;
+        std::string m_extendedType;
+        bool m_isGenerated;
+        int  m_index;
+
+    public:
+        ECSqlRowProperty():m_index(-1), m_isGenerated(false){}
+        ECSqlRowProperty(std::string className, std::string accessString, std::string jsonName, std::string name, std::string typeName, bool generated, std::string extendedType, int index)
+            :m_index(index), m_extendedType(extendedType), m_className(className), m_accessString(accessString), m_jsonName(jsonName), m_name(name), m_typeName(typeName), m_isGenerated(generated){}
+        virtual ~ECSqlRowProperty(){}
+        std::string const& GetClassName() const { return m_className;}
+        std::string const& GetAccessString() const { return m_accessString;}
+        std::string const& GetJsonName() const { return m_jsonName;}
+        std::string const& GetName() const { return m_name;}
+        std::string const& GetTypeName() const { return m_typeName;}
+        std::string const& GetExtendedType() const { return m_extendedType;}
+        bool IsGenerated() const { return m_isGenerated;}
+        int GetIndex() const { return m_index;}
+        bool IsValid() const {return m_index >=0;}
+        ECDB_EXPORT void ToJs(BeJsValue& val) const override;
+};
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+enum class QueryRowFormat {
+    UseECSqlPropertyNames = 0,
+    UseECSqlPropertyIndexes = 1,
+    UseJsPropertyNames = 2
+};
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECSqlRowAdaptor {
+    struct Options {
+        static constexpr auto JAbbreviateBlobs = "abbreviateBlobs";
+        static constexpr auto JClassIdsToClassNames = "classIdsToClassNames";
+        static constexpr auto JUseJsName = "useJsName";
+        static constexpr auto JDoNotConvertClassIdsToClassNamesWhenAliased = "doNotConvertClassIdsToClassNamesWhenAliased";
+
+        bool m_abbreviateBlobs = true;
+        bool m_classIdToClassNames = false;
+        bool m_useJsName = false;
+        bool m_doNotConvertClassIdsToClassNamesWhenAliased = false;
+
+        Options& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this; }
+        Options& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v;  return *this; }
+        Options& UseJsNames(bool v) { m_useJsName = v;  return *this; }
+        Options& DoNotConvertClassIdsToClassNamesWhenAliased(bool v) { m_doNotConvertClassIdsToClassNamesWhenAliased = v;  return *this; }
+        ECDB_EXPORT void FromJson(BeJsValue opts);
+        ECDB_EXPORT void ToJson(BeJsValue opts) const;
+    };
+private:
+    ECDbCR m_ecdb;
+    ECSqlRowAdaptor::Options m_options;
+
+private:
+    BentleyStatus RenderRootProperty(BeJsValue out, IECSqlValue const& in) const;
+    BentleyStatus RenderProperty(BeJsValue out, IECSqlValue const& in) const;
+    BentleyStatus RenderPrimitiveProperty(BeJsValue out, IECSqlValue const& in, ECN::PrimitiveType const* prop) const;
+    BentleyStatus RenderNavigationProperty(BeJsValue out, IECSqlValue const& in) const;
+    BentleyStatus RenderPoint2d(BeJsValue out, IECSqlValue const& in) const;
+    BentleyStatus RenderPoint3d(BeJsValue out, IECSqlValue const& in) const;
+    BentleyStatus RenderLong(BeJsValue out, IECSqlValue const& in, ECN::PrimitiveECPropertyCP prop) const;
+    BentleyStatus RenderGeometryProperty(BeJsValue out, IECSqlValue const& in) const;
+    BentleyStatus RenderBinaryProperty(BeJsValue out, IECSqlValue const& in) const;
+    BentleyStatus RenderStructProperty(BeJsValue out, IECSqlValue const& in) const;
+    BentleyStatus RenderPrimitiveArrayProperty(BeJsValue out, IECSqlValue const& in) const;
+    BentleyStatus RenderStructArrayProperty(BeJsValue out, IECSqlValue const& in) const;
+
+public:
+    ECSqlRowAdaptor(ECDbCR ecdb):m_ecdb(ecdb){}
+    ECDB_EXPORT BentleyStatus RenderRow(BeJsValue rowJson, IECSqlRow const& stmt, bool asArray = true) const;
+    ECDB_EXPORT BentleyStatus RenderValue(BeJsValue valJson, IECSqlValue const& val) { return RenderRootProperty(valJson, val); }
+    ECDB_EXPORT void GetMetaData(ECSqlRowProperty::List& list, ECSqlStatement const& stmt) const;
+    Options& GetOptions() { return m_options; }
+    Options const& GetOptions() const { return m_options; }
+    BentleyStatus RenderRowAsArray(BeJsValue rowJson, IECSqlRow const& stmt) const { return RenderRow(rowJson, stmt, true); }
+    BentleyStatus RenderRowAsObject(BeJsValue rowJson, IECSqlRow const& stmt) const{ return RenderRow(rowJson, stmt, false); }
+};
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECSqlStatementRow : public IECSqlRow {
+    private:
+        ECSqlStatementCR m_stmt;
+    public:
+        ECSqlStatementRow(ECSqlStatement const& stmt) : m_stmt(stmt) {}
+        virtual int GetColumnCount() const override { return m_stmt.GetColumnCount(); }
+        virtual IECSqlValue const& GetValue(int columnIndex) const override { return m_stmt.GetValue(columnIndex); }
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -46,12 +46,17 @@ PragmaManager& ECDb::Impl::GetPragmaManager() const
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_profileManager(ecdb), m_changeManager(ecdb), m_sqliteStatementCache(50, &m_mutex), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
-    {
+ECDb::Impl::Impl(ECDbR ecdb) :
+    m_ecdb(ecdb),
+    m_profileManager(ecdb),
+    m_changeManager(ecdb),
+    m_sqliteStatementCache(50, &m_mutex),
+    m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence")),
+    m_disableDDLTracking(false) {
     m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
     // set default logger
     IssueDataSource::AppendLogSink(m_issueReporter, "ECDb");
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -115,7 +120,7 @@ bool IdFactory::Reset() const {
     m_relationshipConstraintIdSeq = IdSequence::Create(m_ecdb, TABLE_RelationshipConstraint, COL_DEFAULTNAME_Id);
     m_relationshipConstraintClassIdSeq = IdSequence::Create(m_ecdb, TABLE_RelationshipConstraintClass, COL_DEFAULTNAME_Id);
     m_schemaIdSeq = IdSequence::Create(m_ecdb, TABLE_Schema, COL_DEFAULTNAME_Id);
-    m_schemaReferencIdSeq = IdSequence::Create(m_ecdb, TABLE_SchemaReference, COL_DEFAULTNAME_Id);
+    m_schemaReferenceIdSeq = IdSequence::Create(m_ecdb, TABLE_SchemaReference, COL_DEFAULTNAME_Id);
     m_tableIdSeq = IdSequence::Create(m_ecdb, TABLE_Table, COL_DEFAULTNAME_Id);
     m_unitIdSeq = IdSequence::Create(m_ecdb, TABLE_Unit, COL_DEFAULTNAME_Id);
     m_unitSystemIdSeq = IdSequence::Create(m_ecdb, TABLE_UnitSystem, COL_DEFAULTNAME_Id);
@@ -144,7 +149,7 @@ bool IdFactory::IsValid() const {
         m_relationshipConstraintIdSeq != nullptr &&
         m_relationshipConstraintClassIdSeq != nullptr &&
         m_schemaIdSeq != nullptr &&
-        m_schemaReferencIdSeq != nullptr &&
+        m_schemaReferenceIdSeq != nullptr &&
         m_tableIdSeq != nullptr &&
         m_unitIdSeq != nullptr &&
         m_unitSystemIdSeq != nullptr;
@@ -233,7 +238,18 @@ void ECDb::Impl::OnInit() const
     RegisterECSqlPragmas();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::ExecuteDDL(Utf8CP ddl) const {
+    if (m_disableDDLTracking) {
+        // execute SQL track data changes only so DDL will skip through
+        return m_ecdb.ExecuteSql(ddl);
+    }
 
+    // track data and DDL changes.
+    return m_ecdb.ExecuteDdl(ddl);
+}
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
@@ -246,23 +262,75 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaIntegrityCheck::Create());
     GetPragmaManager().Register(PragmaExperimentalFeatures::Create());
     GetPragmaManager().Register(PragmaParseTree::Create());
+    GetPragmaManager().Register(PragmaPurgeOrphanRelationships::Create());
+    GetPragmaManager().Register(PragmaDbList::Create());
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const
-    {
-    DbTableSpace tableSpace(tableSpaceName, dbFileName);
-    if (!DbTableSpace::IsAttachedECDbFile(m_ecdb, tableSpaceName))
-        return BE_SQLITE_OK; //only need to react to attached ECDb files
+DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const {
+    auto tryGetProfileVersion = [&](ProfileVersion& ver) {
+        Statement stmt;
+        auto rc = stmt.Prepare(m_ecdb, SqlPrintfString("SELECT [StrData] FROM [%s].[be_Prop] WHERE [Namespace]='ec_Db' AND [Name] ='SchemaVersion'", tableSpaceName).GetUtf8CP());
+        if (rc != BE_SQLITE_OK) {
+            return false;
+        }
+        if (BE_SQLITE_ROW != stmt.Step()) {
+            return false;
+        }
 
-    if (SUCCESS != m_schemaManager->GetDispatcher().AddManager(tableSpace))
-        return BE_SQLITE_ERROR;
+        ver = ProfileVersion(0, 0, 0, 0);
+        if (!stmt.GetValueText(0))
+            return false;
 
-    GetChangeManager().OnDbAttached(tableSpace, dbFileName);
-    return BE_SQLITE_OK;
+        if (BentleyStatus::SUCCESS != ver.FromJson(stmt.GetValueText(0))){
+            return false;
+        }
+        return true;
+    };
+    ProfileVersion attachDbProfileVer(0, 0, 0, 0);
+    if (!tryGetProfileVersion(attachDbProfileVer)) {
+        m_issueReporter.ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSchema,
+            ECDbIssueId::ECDb_0735,
+            "Attached db '%s' will not be accessible via ECSQL as it does not support ECDb profile.",
+            tableSpaceName);
     }
+
+    const auto profileState = Db::CheckProfileVersion(
+        ECDb::CurrentECDbProfileVersion(),
+        attachDbProfileVer,
+        ECDb::MinimumUpgradableECDbProfileVersion(),
+        "ECDb"
+    );
+
+    const auto canOpen = (m_ecdb.IsReadonly() && (profileState.GetCanOpen() ==ProfileState::CanOpen::Readonly || profileState.GetCanOpen() == ProfileState::CanOpen::Readwrite)) || (!m_ecdb.IsReadonly() && profileState.GetCanOpen() ==ProfileState::CanOpen::Readwrite);
+    if (canOpen) {
+        DbTableSpace tableSpace(tableSpaceName, dbFileName);
+        if (!DbTableSpace::IsAttachedECDbFile(m_ecdb, tableSpaceName))
+            return BE_SQLITE_OK; //only need to react to attached ECDb files
+
+        if (SUCCESS != m_schemaManager->GetDispatcher().AddManager(tableSpace))
+            return BE_SQLITE_ERROR;
+
+        GetChangeManager().OnDbAttached(tableSpace, dbFileName);
+    } else {
+
+        m_issueReporter.ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSchema,
+            ECDbIssueId::ECDb_0736,
+            "Attached db with alias '%s' will not be accessible via ECSQL. Attach file EC profile version '%s' is incompatible with current runtime %s",
+            tableSpaceName,
+            attachDbProfileVer.ToString().c_str(),
+            ECDb::CurrentECDbProfileVersion().ToString().c_str());
+    }
+    return BE_SQLITE_OK;
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -467,6 +535,9 @@ void ECDb::Impl::ClearECDbCache() const
         {
         m_ecdb.DropAppData(*appDataKey);
         }
+
+    if (m_instanceReader != nullptr)
+        m_instanceReader->Reset();
 
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache();

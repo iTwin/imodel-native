@@ -52,7 +52,7 @@ static void ProcessLabelOverride(LabelDefinitionPtr& labelDefinition, CustomFunc
         ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(expressionContextParams);
         ECValue value;
         Utf8String displayValue;
-        if (ECExpressionsHelper(context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(displayValue))
+        if (ECExpressionEvaluationStatus::Success == ECExpressionsHelper(context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(displayValue))
             {
             if (value.IsString())
                 labelDefinition = LabelDefinition::FromString(displayValue.c_str());
@@ -180,6 +180,20 @@ protected:
         }
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String GetFormattedPropertyValue(PrimitiveECPropertyCR property, DbValue const& sqlValue, IECPropertyFormatter const* formatter, ECPresentation::UnitSystem unitSystem)
+    {
+    if (sqlValue.IsNull())
+        return "";
+    ECValue value = ValueHelpers::GetECValueFromSqlValue(property.GetType(), property.GetExtendedTypeName(), sqlValue);
+    Utf8String formattedValue;
+    if (nullptr != formatter && SUCCESS == formatter->GetFormattedPropertyValue(formattedValue, property, value, unitSystem))
+        return formattedValue;
+    return value.ToString();
+    }
+
 /*=================================================================================**//**
 * Parameters:
 * - ECClassId
@@ -228,10 +242,19 @@ public:
                     if (nullptr == ecClass)
                         HANDLE_CUSTOM_FUNCTION_FAILURE_RETURN(Utf8PrintfString("Invalid ECClassId: %" PRIu64, classId.GetValue()));
 
+                    ECPropertyCP instanceLabelProperty = ecClass->GetInstanceLabelProperty();
                     // if the override didn't apply, look for instance label property
-                    if (nullptr != ecClass->GetInstanceLabelProperty())
+                    if (nullptr != instanceLabelProperty)
                         {
-                        labelDefinition->SetECPropertyValue(*ecClass->GetInstanceLabelProperty(), args[2], args[2].GetValueText());
+                        if (instanceLabelProperty->GetIsPrimitive())
+                            {
+                            labelDefinition->SetECPropertyValue(*instanceLabelProperty, args[2], GetFormattedPropertyValue(*instanceLabelProperty->GetAsPrimitiveProperty(), args[2],
+                                GetContext().GetPropertyFormatter(), GetContext().GetUnitSystem()).c_str());
+                            }
+                        else
+                            {
+                            labelDefinition->SetECPropertyValue(*instanceLabelProperty, args[2], args[2].GetValueText());
+                            }
                         }
                     }
                 }
@@ -409,11 +432,13 @@ struct ECExpressionScalarCacheKey
     ECClassId m_classId;
     ECInstanceId m_instanceId;
     Utf8String m_expression;
+    PrimitiveType m_type;
     bool operator<(ECExpressionScalarCacheKey const& other) const
         {
         return m_classId < other.m_classId
             || m_classId == other.m_classId && m_instanceId < other.m_instanceId
-            || m_classId == other.m_classId && m_instanceId == other.m_instanceId && m_expression.CompareTo(other.m_expression) < 0;
+            || m_classId == other.m_classId && m_instanceId == other.m_instanceId && (int)m_type < (int)other.m_type
+            || m_classId == other.m_classId && m_instanceId == other.m_instanceId && (int)m_type == (int)other.m_type && m_expression.CompareTo(other.m_expression) < 0;
         }
     };
 
@@ -424,21 +449,23 @@ struct ECExpressionScalarCacheKey
 * - Expression
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScalarCacheKey, std::shared_ptr<Utf8String>>>
+struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScalarCacheKey, std::shared_ptr<ECValue>>>
     {
     EvaluateECExpressionScalar(CustomFunctionsManager const& manager)
-        : CachingScalarFunction(FUNCTION_NAME_EvaluateECExpression, 3, DbValueType::TextVal, manager)
+        : CachingScalarFunction(FUNCTION_NAME_EvaluateECExpression, 4, DbValueType::NullVal, manager)
         {}
     void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
-        ARGUMENTS_COUNT_PRECONDITION(3);
+        ARGUMENTS_COUNT_PRECONDITION(4);
 
         ECClassId classId = args[0].GetValueId<ECClassId>();
         ECInstanceId instanceId = args[1].GetValueId<ECInstanceId>();
         Utf8CP expression = args[2].GetValueText();
-        ECExpressionScalarCacheKey key = {classId, instanceId, expression};
+        PrimitiveType requestedTypePrimitive = (PrimitiveType)args[3].GetValueInt();
+        ECExpressionScalarCacheKey key = {classId, instanceId, expression, requestedTypePrimitive};
 
         auto iter = GetCache().find(key);
+
         if (GetCache().end() == iter)
             {
             NavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), "", nullptr, classId, instanceId, *LabelDefinition::Create());
@@ -447,37 +474,74 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
             ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(params);
 
             ECValue value;
-            Utf8String expressionResult;
             ECExpressionsCache noCache;
-            if (ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(expressionResult))
+            ECExpressionEvaluationStatus evaluationResult = ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext);
+            if (evaluationResult == ECExpressionEvaluationStatus::ParseError)
                 {
-                if (nullptr != GetContext().GetUsedClassesListener())
-                    {
-                    UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(),
-                        GetContext().GetSchemaHelper(), expression);
-                    }
+                ctx.SetResultError(Utf8PrintfString("Failed to parse ECExpression: %s", expression).c_str());
+                return;
+                }
+            if (evaluationResult == ECExpressionEvaluationStatus::EvaluationError)
+                {
+                ctx.SetResultError(Utf8PrintfString("Failed to evaluate ECExpression: %s", expression).c_str());
+                return;
+                }
+            if (evaluationResult == ECExpressionEvaluationStatus::InvalidECValueError)
+                {
+                ctx.SetResultError(Utf8PrintfString("Could not get ECValue from evaluated ECExpression: %s", expression).c_str());
+                return;
+                }
+            if (!value.IsPrimitive())
+                {  
+                ctx.SetResultError("Calculated property evaluated to a type that is not primitive");
+                return;
                 }
 
-            iter = GetCache().Insert(key, std::make_shared<Utf8String>(expressionResult)).first;
+            if (!value.ConvertToPrimitiveType(requestedTypePrimitive))
+                {
+                ctx.SetResultError("Calculated property evaluated to a type that couldn't be converted to requested type");
+                return;
+                }
+
+            if (nullptr != GetContext().GetUsedClassesListener())
+                {
+                UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(),
+                    GetContext().GetSchemaHelper(), expression);
+                }
+
+            iter = GetCache().Insert(key, std::make_shared<ECValue>(value)).first;
             }
 
-        ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), BeSQLite::DbFunction::Context::CopyData::No);
+        switch (requestedTypePrimitive)
+            {
+            case (PRIMITIVETYPE_String):
+                ctx.SetResultText(iter->second->GetUtf8CP(), std::strlen(iter->second->GetUtf8CP()), BeSQLite::DbFunction::Context::CopyData::Yes);
+                break;
+            case (PRIMITIVETYPE_Integer):
+                ctx.SetResultInt(iter->second->GetInteger());
+                break;
+            case (PRIMITIVETYPE_Long):
+                ctx.SetResultInt64(iter->second->GetLong());
+                break;
+            case (PRIMITIVETYPE_Boolean):
+                ctx.SetResultInt(iter->second->GetBoolean());
+                break;
+            case (PRIMITIVETYPE_Double):
+                ctx.SetResultDouble(iter->second->GetDouble());
+                break;
+            case (PRIMITIVETYPE_DateTime):
+                {
+                double expressionResultJulianDay;
+                iter->second->GetDateTime().ToJulianDay(expressionResultJulianDay);
+                ctx.SetResultDouble(expressionResultJulianDay);
+                break;
+                }
+            default:
+                ctx.SetResultError("Requested type is not supported");
+                break;
+            }
         }
    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String GetFormattedPropertyValue(PrimitiveECPropertyCR property, DbValue const& sqlValue, IECPropertyFormatter const* formatter, ECPresentation::UnitSystem unitSystem)
-    {
-    if (sqlValue.IsNull())
-        return "";
-    ECValue value = ValueHelpers::GetECValueFromSqlValue(property.GetType(), property.GetExtendedTypeName(), sqlValue);
-    Utf8String formattedValue;
-    if (nullptr != formatter && SUCCESS == formatter->GetFormattedPropertyValue(formattedValue, property, value, unitSystem))
-        return formattedValue;
-    return value.ToString();
-    }
 
 /*=================================================================================**//**
 * @bsiclass
@@ -610,20 +674,24 @@ struct GetPointAsJsonStringScalar : ECPresentation::ScalarFunction
     void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION_CUSTOM(nArgs == 2 || nArgs == 3, "2 or 3");
-
-        Utf8String str;
-        str.append("{\"x\":");
-        str.append(args[0].IsNull() ? "NULL" : args[0].GetValueText());
-        str.append(",\"y\":");
-        str.append(args[1].IsNull() ? "NULL" : args[1].GetValueText());
-        if (3 == nArgs)
+        if (args[0].IsNull() && args[1].IsNull() && (3 != nArgs || args[2].IsNull()))
+            ctx.SetResultNull();
+        else
             {
-            str.append(",\"z\":");
-            str.append(args[2].IsNull() ? "NULL" : args[2].GetValueText());
-            }
-        str.append("}");
+            Utf8String str;
+            str.append("{\"x\":");
+            str.append(args[0].IsNull() ? "NULL" : args[0].GetValueText());
+            str.append(",\"y\":");
+            str.append(args[1].IsNull() ? "NULL" : args[1].GetValueText());
+            if (3 == nArgs)
+                {
+                str.append(",\"z\":");
+                str.append(args[2].IsNull() ? "NULL" : args[2].GetValueText());
+                }
+            str.append("}");
 
-        ctx.SetResultText(str.c_str(), (int)str.size(), DbFunction::Context::CopyData::Yes);
+            ctx.SetResultText(str.c_str(), (int)str.size(), DbFunction::Context::CopyData::Yes);
+            }
         }
     };
 

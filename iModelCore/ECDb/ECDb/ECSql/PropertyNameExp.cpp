@@ -379,9 +379,22 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
                     break;
             }
         }
-     }
+    }
 
     if (matchProps.empty()) {
+        // Check if a column alias is being used within the select
+        if (auto parentSelect = FindParent(Exp::Type::SingleSelect); parentSelect != nullptr)
+            {
+            for (const auto dpExp : parentSelect->GetAsCP<SingleSelectStatementExp>()->GetSelection()->GetChildren())
+                {
+                const auto& derivedPropertyExp = dpExp->GetAs<DerivedPropertyExp>();
+                if (derivedPropertyExp.GetColumnAlias().EqualsI(GetPropertyName()))
+                    {
+                    SetPropertyRef(derivedPropertyExp);
+                    return SUCCESS;
+                    }
+                }
+            }
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0565,
             "No property or enumeration found for expression '%s'.", m_resolvedPropertyPath.ToString().c_str());
         return ERROR;
@@ -484,7 +497,7 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
             }
 
         case Exp::Type::SubqueryRef:
-            {
+            {  
             PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
             BeAssert(propertyRef != nullptr);
             propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
@@ -493,9 +506,44 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
             }
             break;
             }
+        case Exp::Type::CommonTableBlock:
+            { 
+            /*// This block is added because if the cte block has no columns we treat the select statement inside cte block just as a subquery of 
+            outer cte select statement and we pass the classref as CommonTableBlockExp,
+             the classref stays as CommonTableBlockExp if we "select *" in outer select statement
+             Ex- with cte as (select * from meta.ECClassDef) select * from cte*/
+            CommonTableBlockExp const& cteBlockExp = classRefExp->GetAs<CommonTableBlockExp>();  
+            if(cteBlockExp.GetColumns().size() == 0)
+                {
+                PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
+                BeAssert(propertyRef != nullptr);
+                propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
+                if (propertyMap == nullptr) 
+                    {
+                    BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a common table block is expected to always be a prop name exp");
+                    }
+                }
+            break;
+            }
         case Exp::Type::CommonTableBlockName :
             {
-            return nullptr;
+            /*// This block is added because if the cte block has no columns we treat the select statement inside cte block just as a subquery of 
+            outer cte select statement and we pass the classref as CommonTableBlockExp,
+             the classref becomes as CommonTableBlockNameExp if we "select <column>" in outer select statement
+             Ex- with cte as (select * from meta.ECClassDef) select ECInstanceId from cte*/ 
+            CommonTableBlockNameExp const& cteBlockNameExp = classRefExp->GetAs<CommonTableBlockNameExp>();
+            CommonTableBlockExp const* cteBlock = cteBlockNameExp.GetBlock();
+            if(cteBlock != nullptr && cteBlock->GetColumns().size() == 0)
+                {
+                PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
+                BeAssert(propertyRef != nullptr);
+                propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
+                if (propertyMap == nullptr) {
+                    BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a common table block name is expected to always be a prop name exp");
+                }
+                break;
+                }
+            return nullptr; // This block returns nullptr for proper alias referencing if the cte block has columns
             }
         default:
                 BeAssert(false && "Unhandled ClassRefExp subtype. This code needs to be adjusted.");

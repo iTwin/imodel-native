@@ -452,7 +452,7 @@ TEST(DRay3d, IntersectTriangle)
         bsiDRay3d_intersectTriangleFast(&ray, &intersection, trianglePoints),
         "expect no intersection when ray direction is (0,0,0)."
     );
-    origin = DPoint3d::From(10, 0, 0);
+    origin = DPoint3d::From(11, 0, 0);
     direction = DVec3d::From(1, 1, 1);
     ray = DRay3d::FromOriginAndVector(origin, direction);
     Check::False(
@@ -559,13 +559,18 @@ TEST(DRay3d, IntersectTriangleAccuracyAndPerformance)
                         }
                     else
                         {
-                        Check::Fail("rated ray hits rotated triangle while original ray did not hit original triangle.");
+                        Check::Fail("rotated ray hits rotated triangle while original ray did not hit original triangle.");
                         exitTheTest = true;
                         }
                     }
                 else
                     {
                     Check::Fail("slow function reported ray intersection while fast function did not.");
+                    Check::Fail("Please fix me: reproduce with below inputs and investigate.");
+                    Check::Print(ray, "ray");
+                    Check::Print(trianglePoints[0], "trianglePoints[0]");
+                    Check::Print(trianglePoints[1], "trianglePoints[1]");
+                    Check::Print(trianglePoints[2], "trianglePoints[2]");
                     exitTheTest = true;
                     }
                 }
@@ -573,6 +578,11 @@ TEST(DRay3d, IntersectTriangleAccuracyAndPerformance)
                 if (fastRet)
                     {
                     Check::Fail("fast function reported ray intersection while slow function did not.");
+                    Check::Fail("Please fix me: reproduce with below inputs and investigate.");
+                    Check::Print(ray, "ray");
+                    Check::Print(trianglePoints[0], "trianglePoints[0]");
+                    Check::Print(trianglePoints[1], "trianglePoints[1]");
+                    Check::Print(trianglePoints[2], "trianglePoints[2]");
                     exitTheTest = true;
                     }
             }
@@ -581,5 +591,48 @@ TEST(DRay3d, IntersectTriangleAccuracyAndPerformance)
         printf("%i intersections happened out of %i shoots \n", hits, N * N);
         printf("Calls to bsiDRay3d_intersectTriangle     took %llu nanoseconds \n", timeBySlowFunction);
         printf("Calls to bsiDRay3d_intersectTriangleFast took %llu nanoseconds \n", timeByFastFunction);
+        }
+    }
+
+TEST(DRay3d, IntersectRayOriginOnTriangle)
+    {
+    const int numSamples = 6;
+    DPoint3d origin[numSamples] = {
+        DPoint3d::From(-2, 40, 82), DPoint3d::From(2, 70, 0), DPoint3d::From(-32, 6, -43),
+        DPoint3d::From(13, -59, 2), DPoint3d::From(47, 0, -85), DPoint3d::From(-61, -79, 48),
+    };
+    DVec3d direction[numSamples] = {
+        DVec3d::From(-5, 41, -2), DVec3d::From(31, 90, 66), DVec3d::From(-93, -82, -12),
+        DVec3d::From(-6, 0, 23), DVec3d::From(-38, -74, 51), DVec3d::From(61, 61, 64),
+    };
+    DPoint3d triangles[numSamples][3] = {
+        {DPoint3d::From(9, -26, 93), DPoint3d::From(75, 36, 93), DPoint3d::From(-87, 92, 63)},
+        {DPoint3d::From(-17, 39, 5), DPoint3d::From(73, 84, -30), DPoint3d::From(-55, 94, 28)},
+        {DPoint3d::From(-58, -28, -82), DPoint3d::From(-20, 4, -23), DPoint3d::From(-50, 9, -73)},
+        {DPoint3d::From(56, -29, -90), DPoint3d::From(6, -1, 89), DPoint3d::From(13, -59, 2)},
+        {DPoint3d::From(64, -39, -84), DPoint3d::From(-50, -100, 17), DPoint3d::From(-47, -10, -16)},
+        {DPoint3d::From(57, 10, -92), DPoint3d::From(-10, -28, -85), DPoint3d::From(-42, -60, 79)},
+    };
+    DRay3d ray[numSamples]{};
+    bool slowRet = false;
+    bool fastRet = false;
+    DPoint3d intersectionPointSlow;
+    DPoint3d intersectionPointFast;
+    DPoint3d barycentric;
+    double rayParameter;
+
+    for (int i = 0; i < numSamples; i++)
+        {
+        ray[i] = DRay3d::FromOriginAndVector(origin[i], direction[i]);
+        slowRet = bsiDRay3d_intersectTriangle(&ray[i], &intersectionPointSlow, &barycentric, &rayParameter, triangles[i]);
+        fastRet = bsiDRay3d_intersectTriangleFast(&ray[i], &intersectionPointFast, triangles[i]);
+
+        Check::True(slowRet);
+        Check::True(fastRet);
+        Check::Near(
+            intersectionPointSlow,
+            intersectionPointFast,
+            "intersection points calculated by slow and fast functions are equal."
+        );
         }
     }

@@ -520,9 +520,6 @@ BentleyStatus AdapterHelper::StructArrayToJson(BeJsValue jsonValue, IECSqlValue 
     jsonValue.SetEmptyArray();
     for (IECSqlValue const& arrayElementValue : ecsqlValue.GetArrayIterable())
         {
-        if (arrayElementValue.IsNull())
-            continue;
-
         if (SUCCESS != StructToJson(jsonValue.appendValue(), arrayElementValue, schemaManager, formatOptions))
             return ERROR;
         }

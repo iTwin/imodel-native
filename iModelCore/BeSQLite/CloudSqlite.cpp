@@ -433,8 +433,11 @@ CloudResult CloudUtil::InitializeContainer(int nameSize, int blockSize) {
 /**
  * perform cleanup operation to remove deleted blocks from this CloudContainer
  * @param nSeconds delete all blocks in the container that were marked as unused before this number of seconds ago
+ * @param findOrphanedBlocks if true, search for orphaned blocks and add them to the list of orphaned blocks before deleting from the list of orphaned blocks.
+ * This would only be useful to set to false if a user is aware they've already built up an orphaned block list.
  */
-CloudResult CloudUtil::CleanDeletedBlocks(int nSeconds) {
+CloudResult CloudUtil::CleanDeletedBlocks(int nSeconds, bool findOrphanedBlocks) {
+    sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_FINDORPHANS, findOrphanedBlocks ? 1 : 0);
     auto stat = sqlite3_bcv_cleanup(m_handle, nSeconds);
     return CloudResult(stat, sqlite3_bcv_errmsg(m_handle));
 }

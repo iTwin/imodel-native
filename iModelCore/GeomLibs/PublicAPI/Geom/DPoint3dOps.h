@@ -902,7 +902,13 @@ static bool GEOMDLLIMPEXP InCircleXY(DPoint3d const &pointA, DPoint3d const &poi
 //! Short form of InCircleXY.  All parameters match, but this short form does not ahve the determinant and cross product return values.
 static bool GEOMDLLIMPEXP InCircleXY(DPoint3d const &pointA, DPoint3d const &pointB, DPoint3d const &pointC, DPoint3d const &pointD, bool onIsIn = true);
 
+//! @description return a tolerance as an absolute tolerance plus relative tolerance times largest xy-coordinate.
+static double GEOMDLLIMPEXP ToleranceXY (bvector<DPoint3d> const& data, double absTol, double relTol);
+
+//! @description return an area tolerance for a given xy-range and optional distance tolerance.
+static double AreaToleranceXY(DRange3dCR range, double distanceTolerance);
 };
+
 //! @description Operations in which an array of points is understood to be connected as a polyline (but not closed as a polygon).
 //! @ingroup BentleyGeom_Operations
 struct PolylineOps
@@ -1279,13 +1285,14 @@ double endFraction = 1.0
 
 //! Inplace compression of points to eliminate colinear points.
 //! @param [in,out] points points to compress
-//! @param [in] absTol absolute tolerance
+//! @param [in] absTol maximum chord height distance of a point to eliminate, or negative to compute a default (1.0e-12 times the largest point coordinate).
 //! @param [in] eliminateOverdraw if false, a 180 turn point is included in the output.  If true, the doubled line due to the
-//!     180 degree turn is elmiinated.  (Hence the range of the compressed polygon can be smaller)
-//! @param [in] closed If false, the first point always remains even if it is "within" colinear first and last segments.
+//!     180 degree turn is eliminated.  (Hence the range of the compressed polygon can be smaller)
+//! @param [in] wrap If false, the first point always remains even if it is "within" colinear first and last segments.
 //!       If true, this point can be eliminated.
 //! @param [in] xyOnly if true, use only xy coordinates in comparisons.
-public: static GEOMDLLIMPEXP void CompressColinearPoints (bvector<DPoint3d> &points, double absTol, bool eliminateOverdraw, bool closed, bool xyOnly = false);
+public: static GEOMDLLIMPEXP void CompressColinearPoints (bvector<DPoint3d> &points, double absTol, bool eliminateOverdraw, bool wrap, bool xyOnly = false);
+
 //! Simultaneously eliminate points from arrays pointsA and pointsB.
 //! <ul>
 //! <li> If pointsA and pointsB to do not have matched point counts return with no action.
@@ -1297,10 +1304,10 @@ public: static GEOMDLLIMPEXP void CompressColinearPoints (bvector<DPoint3d> &poi
 //! </ul>
 //! @param [in,out] pointsA points to compress
 //! @param [in,out] pointsB points to compress
-//! @param [in] absTol absolute tolerance
+//! @param [in] absTol maximum chord height distance of a point to eliminate, or negative to compute a default (1.0e-12 times the largest point coordinate).
 //! @param [in] eliminateOverdraw if false, a 180 turn point is included in the output.  If true, the doubled line due to the
-//!     180 degree turn is elmiinated.  (Hence the range of the compressed polygon can be smaller)
-//! @param [in] closed If false, the first point always remains even if it is "within" colinear first and last segments.
+//!     180 degree turn is eliminated.  (Hence the range of the compressed polygon can be smaller)
+//! @param [in] wrap If false, the first point always remains even if it is "within" colinear first and last segments.
 //!       If true, this point can be eliminated.
 //! @param [in] xyOnly if true, use only xy coordinates in comparisons.
 public: static GEOMDLLIMPEXP void CompressPairedColinearPoints
@@ -1489,6 +1496,29 @@ public: static GEOMDLLIMPEXP DVec3d AreaNormal (bvector<DPoint3d> const &xyz, si
 //!
 public: static GEOMDLLIMPEXP bool IsConvex (bvector<DPoint3d> const &xyz);
 
+//!
+//! Decompose a polygon into convex parts.
+//! First perform an xy-triangulation, then remove edges to form maximally convex ccw faces.
+//! @param [out] indices one-based, signed indices of convex face loops into which the input polygon is decomposed. Face loops are separated by 0. Interior edges are negated.
+//! @param [out] xyzOut array of the (copied) input vertices, appended with input polygon self-intersections, if any.
+//! @param [in]  xyzIn array of vertices of the polygon to decompose. May contain hole loops, separated by disconnect. For best usage, caller should transform into local coordinates first, since z is ignored.
+//! @param [in]  xyTol xy-coordinate tolerance for detecting duplicate polygon vertices, or negative to compute from range (default)
+//! @see FixupAndTriangulateLoopsXY
+//! @return number of convex parts, or zero if invalid input
+//!
+static GEOMDLLIMPEXP size_t SplitToConvexPartsXY(bvector<int>& indices, bvector<DPoint3d>& xyzOut, bvector<DPoint3d> const& xyzIn, double xyTol = -1.0);
+
+//!
+//! Sort and reorient polygons by containment and parity.
+//! * Computations ignore z-coordinates, but they are carried through to output. For best results, input polygons should contain no vertically separated vertices.
+//! * Input loops may intersect or even self-intersect.
+//! * A Boolean union operation is performed on a graph formed from the inputs, then the graph is flooded from the exterior face to mark void regions via a parity rule. This algorithm finds islands in holes, and holes in islands.
+//! @param [out] outerLoops array of CCW polygons bounding area.
+//! @param [out] holeLoops array of CW polygons bounding void.
+//! @param [in] inputLoops array of polygons, closure point optional, any orientation.
+//! @param [in] xyTol absolute tolerance for clustering xy-coordinates of polygon vertices, or negative to use 1.0e-8 times the largest polygon xy-coordinate (default).
+//!
+static GEOMDLLIMPEXP void CollectAllLoopsXY(bvector<bvector<DPoint3d>>& outerLoops, bvector<bvector<DPoint3d>>& holeLoops, bvector<bvector<DPoint3d>> const& inputLoops, double xyTol = -1.0);
 
 //!
 //! Triangulate a single xy polygon. Triangulation preserves original indices.
@@ -1548,6 +1578,31 @@ TransformCR             worldToLocal,
 bvector<DPoint3d>   *pXYZIn,
 double                  xyTolerance,
 bool                    bSignedOneBasedIndices
+);
+
+//!
+//! Triangulate space polygons projected into a caller-supplied coordinate frame.
+//! @param [out] triangleIndices output index array of triangles, formatted as per signedOneBasedIndices.
+//! @param [out] exteriorLoopIndices (optional) output index array for each exterior loop, formatted as per signedOneBasedIndices.
+//! @param [out] xyzOut array of output points, with additional points at self-intersections
+//! @param [in] localToWorld local to world transformation, applied to output
+//! @param [in] worldToLocal world to local transformation, applied to copy of input before triangulation
+//! @param [in] loops array of input polygons in world coordinates
+//! @param [in] xyTolerance tolerance for short edges on input polygon
+//! @param [in] signedOneBasedIndices if false, output indices are 0-based and separated by -1. If true, indices are 1-based with
+//! interior edges negated, and 0 is the separator.
+//! @return false if nonsimple polygon.
+//!
+static GEOMDLLIMPEXP bool FixupAndTriangulateProjectedLoops
+(
+bvector<int>& triangleIndices,
+bvector<int>* exteriorLoopIndices,
+bvector<DPoint3d>& xyzOut,
+TransformCR localToWorld,
+TransformCR worldToLocal,
+bvector<bvector<DPoint3d>> const& loops,
+double xyTolerance,
+bool signedOneBasedIndices
 );
 
 //! <ul>

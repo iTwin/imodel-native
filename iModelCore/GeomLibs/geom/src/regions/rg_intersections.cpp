@@ -47,6 +47,8 @@ int                 index
     {
     static int s_flagLabel = -1;
     static int s_dummy;
+    UNUSED_VARIABLE(s_dummy);
+
     bool    myStat = pIL->GetIntersection ((size_t)index, *pIntersection);
     if (myStat && s_flagLabel == pIntersection->label)
         {

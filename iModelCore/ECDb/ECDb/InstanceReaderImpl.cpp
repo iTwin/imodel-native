@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
+* See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
@@ -180,11 +180,11 @@ BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRo
     }
     auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
-    QueryJsonAdaptor adaptor(m_conn);
-    adaptor.UseJsNames(param.GetUseJsName());
-    adaptor.SetAbbreviateBlobs(param.GetAbbreviateBlobs());
-    adaptor.SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
-    adaptor.RenderRow(row, ecsqlRow, false);
+    ECSqlRowAdaptor adaptor(m_conn);
+    adaptor.GetOptions().UseJsNames(param.GetUseJsName());
+    adaptor.GetOptions().SetAbbreviateBlobs(param.GetAbbreviateBlobs());
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
+    adaptor.RenderRowAsObject(row, ecsqlRow);
     m_instanceKey = instanceKey;
     m_jsonParam = param;
     m_accessString.clear();
@@ -201,10 +201,10 @@ BeJsValue RowRender::GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8Strin
     auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
     auto out = row["$"];
-    QueryJsonAdaptor adaptor(m_conn);
-    adaptor.UseJsNames(param.GetUseJsName());
-    adaptor.SetAbbreviateBlobs(param.GetAbbreviateBlobs());
-    adaptor.SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
+    ECSqlRowAdaptor adaptor(m_conn);
+    adaptor.GetOptions().UseJsNames(param.GetUseJsName());
+    adaptor.GetOptions().SetAbbreviateBlobs(param.GetAbbreviateBlobs());
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
     adaptor.RenderValue(out, ecsqlValue);
     m_instanceKey = instanceKey;
     m_jsonParam = param;
@@ -226,7 +226,7 @@ void Reader::Clear() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool Reader::Seek(InstanceReader::Position const& pos, InstanceReader::RowCallback callback) const {
+bool Reader::Seek(InstanceReader::Position const& pos, InstanceReader::RowCallback callback, InstanceReader::Options const& opt) const {
     BeMutexHolder holder(m_mutex);
 
     Position rsPos = pos;
@@ -250,9 +250,10 @@ bool Reader::Seek(InstanceReader::Position const& pos, InstanceReader::RowCallba
     const auto whatChanged = m_seekPos.Compare(rsPos);
     bool hasRow = false;
     if (whatChanged == SeekPos::CompareResult::SameRowAndSchema) {
-        hasRow = m_seekPos.HasRow();
+        bool forceSeek = opt.GetForceSeek();
+        hasRow = forceSeek ? m_seekPos.Seek(rsPos.GetInstanceId()) : m_seekPos.HasRow();
     } else if (whatChanged == SeekPos::CompareResult::SameSchema) {
-        hasRow =  m_seekPos.Seek(rsPos.GetInstanceId());
+        hasRow = m_seekPos.Seek(rsPos.GetInstanceId());
     } else {
         if (!PrepareRowSchema(rsPos.GetClassId(), rsPos.GetAccessString())) {
             return false;
@@ -406,7 +407,10 @@ bool Class::Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool Property::Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const {
-    return m_table->Seek(rowId, &rowClassId);
+    OnAfterReset();
+    bool result = m_table->Seek(rowId, &rowClassId);
+    OnAfterStep();
+    return result;
 }
 
 //---------------------------------------------------------------------------------------
@@ -1120,8 +1124,8 @@ InstanceReader::InstanceReader(ECDbCR ecdb): m_pImpl(new Impl(*this, ecdb)) {}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool InstanceReader::Seek(Position const& pos, RowCallback callback ) const {
-    return m_pImpl->Seek(pos, callback);
+bool InstanceReader::Seek(Position const& pos, RowCallback callback, Options const& opt) const {
+    return m_pImpl->Seek(pos, callback, opt);
 }
 
 void InstanceReader::Reset() {

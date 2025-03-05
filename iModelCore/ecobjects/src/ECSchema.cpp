@@ -1586,9 +1586,23 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRe
     return status;
     }
 
-ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences)
+ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation)
     {
-    return GetOrCopyReferencedItemForCopy(classWithRef, refForCopy, startingRef, copyReferences, ECSchemaElementType::ECClass, &ECSchema::GetClassP, &ECSchema::CopyClass);
+        bool willCopyRef = copyReferences && areFromSameSchema(&classWithRef, startingRef);
+        ECSchemaP refSchema;
+        ECObjectsStatus status = getOrAddReferencedSchema(this, startingRef->GetSchema(), refSchema, willCopyRef);
+        if (ECObjectsStatus::Success != status)
+            return status;
+    
+        refForCopy = (refSchema->ECSchema::GetClassP)(startingRef->GetName().c_str());
+        if (nullptr == refForCopy)
+            {
+            if (willCopyRef)
+                status = CopyClass(refForCopy, *startingRef, copyReferences, nullptr, skipValidation);
+            else
+                status = logCopyErrorDueToReferencedItem(&classWithRef, this, startingRef, SchemaParseUtils::SchemaElementTypeToString(ECSchemaElementType::ECClass), refSchema, copyReferences);
+            }
+        return status;
     }
 ECObjectsStatus ECSchema::GetOrCopyReferencedEnumerationForCopy(ECClassCR classWithRef, ECEnumerationP& refForCopy, ECEnumerationCP startingRef, bool copyReferences)
     {
@@ -1606,7 +1620,7 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedPropertyCategoryForCopy(ECClassCR c
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences, Utf8CP newName)
+ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences, Utf8CP newName, bool skipValidation)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
     Utf8String targetClassName((newName == nullptr ? sourceClass.GetName().c_str() : newName));
@@ -1622,7 +1636,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
             // since the variable lives through the entire switch/case statement. Need to put in a scope block to make it explicit.
             ECRelationshipClassCP sourceAsRelationshipClass = sourceClass.GetRelationshipClassCP();
             ECRelationshipClassP newRelationshipClass;
-            status = this->CreateRelationshipClass(newRelationshipClass, targetClassName);
+            status = this->CreateRelationshipClass(newRelationshipClass, targetClassName, !skipValidation);
             if (ECObjectsStatus::Success == status)
                 {
                 newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
@@ -1634,6 +1648,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
 
                 if (ECObjectsStatus::Success != status)
                     {
+                    LOG.errorv("Failed to copy class %s to schema %s", sourceClass.GetFullName(), GetFullSchemaName().c_str());
                     DeleteClass(*newRelationshipClass);
                     newRelationshipClass = nullptr;
                     }
@@ -2001,7 +2016,7 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater) const
+ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater, bool skipValidation) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     status = CreateSchema(schemaOut,  GetName().c_str(), GetAlias().c_str(), GetVersionRead(), GetVersionWrite(), GetVersionMinor(), m_ecVersion);
@@ -2094,7 +2109,7 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP s
     for (ECClassP ecClass : m_classContainer)
         {
         ECClassP copyClass;
-        status = schemaOut->CopyClass(copyClass, *ecClass, true);
+        status = schemaOut->CopyClass(copyClass, *ecClass, true, nullptr, skipValidation);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }
@@ -2941,14 +2956,21 @@ static ECSchemaPtr ParseHeaderAndLocateSchema(WCharCP schemaXmlFile, ECSchemaRea
     {
         BeAssert(s_noAssert);
         LOG.errorv ("Error loading XML file %ls: %s (error at char %d)", schemaXmlFile, result.description(), result.offset);
+        if (outStatus != nullptr)
+            *outStatus = SchemaReadStatus::FailedToParseXml;
         return nullptr;
     }
 
     SchemaKey searchKey;
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     pugi::xml_node schemaNode;
-    if (SchemaReadStatus::Success != SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc))
+    const auto status = SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
+    if (SchemaReadStatus::Success != status)
+        {
+        if (outStatus != nullptr)
+            *outStatus = status;
         return nullptr;
+        }
 
     ECSchemaPtr schema = schemaContext.LocateSchema(searchKey, matchType);
     if (!schema.IsValid())
@@ -3526,12 +3548,28 @@ void ECSchema::SortSchemasInDependencyOrder(bvector<ECSchemaCP>& schemas, bool i
     schemas = temp;
     }
 
+namespace
+    {
+    bool CheckECVersionGreaterThanLatest(ECSchemaCR schema)
+        {
+        if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            {
+            LOG.errorv("The schema '%s' has ECVersion %s which is greater than the latest version %s and cannot be serialized.", schema.GetName().c_str(),
+                schema.GetOriginalECXmlVersionAsString().c_str(), schema.GetECVersionString(ECVersion::Latest));
+            return false;
+            }
+        return true;
+        }
+    }
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecXmlVersion) const
     {
     ecSchemaXml.clear();
+
+    if (!CheckECVersionGreaterThanLatest(*this))
+        return SchemaWriteStatus::FailedToSaveXml;
 
     BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
 
@@ -3558,6 +3596,9 @@ SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecX
 SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion ecXmlVersion) const
     {
     ecSchemaXml.clear();
+
+    if (!CheckECVersionGreaterThanLatest(*this))
+        return SchemaWriteStatus::FailedToSaveXml;
 
     BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
     xmlWriter->SetIndentation(4);
@@ -3599,6 +3640,9 @@ SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSche
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion, bool utf16) const
     {
+    if (!CheckECVersionGreaterThanLatest(*this))
+        return SchemaWriteStatus::FailedToSaveXml;
+
     auto serializeToFile = [&ecSchemaXmlFile, &utf16] (ECSchemaCR schema, ECVersion ecXmlVersion) {
         BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(ecSchemaXmlFile);
 
@@ -3625,6 +3669,9 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ec
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
     {
+    if (!CheckECVersionGreaterThanLatest(*this))
+        return false;
+
     ecSchemaJsonValue.SetNull();
     SchemaJsonWriter schemaWriter(ecSchemaJsonValue, *this);
 

@@ -728,7 +728,7 @@ GEOMDLLIMPEXP size_t                        GetParamCount () const;
 //! Return the number of colors.
 GEOMDLLIMPEXP size_t                        GetColorCount () const;
 //! Return the number of faces.  Note that this is not a "facet" count -- many facets can reference the same
-//! containing face in the parent geometry.
+//! containing face in the parent geometry. For facet count, use GetNumFacet.
 GEOMDLLIMPEXP size_t                        GetFaceCount () const;
 //! Return the number of point indices.
 GEOMDLLIMPEXP size_t                        GetPointIndexCount () const;
@@ -796,8 +796,11 @@ GEOMDLLIMPEXP bool                          TryGetFacetFaceDataAtReadIndex (size
 //! Return a PolyfaceHeader with the same contents.
 GEOMDLLIMPEXP PolyfaceHeaderPtr Clone () const;
 
-//! Return a PolyfaceHeader, with variable length faces.
+//! @deprecated 5/2024 - use no-arg overload
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneAsVariableSizeIndexed (PolyfaceQueryCR source) const;
+
+//! Return a PolyfaceHeader with the same contents, but with variable length index blocking.
+GEOMDLLIMPEXP PolyfaceHeaderPtr CloneAsVariableSizeIndexed() const;
 
 //!
 //! Collect information about faces in the mesh.
@@ -1008,7 +1011,7 @@ GEOMDLLIMPEXP bool IsFacetOrientationConsistent() const;
 //! @param [out] num4 Number of edges with 4 incident faces.
 //! @param [out] numMore Number of edges with 5 or more incident faces.
 //! @param [out] numCollapsed Number of polygon sides collapsed to points.
-//! @param [out] ignoreSliverFaces suppresses counting edges on sliver faces
+//! @param [in] ignoreSliverFaces suppresses counting edges on sliver faces
 //! @param [out] numWith0Visible number of edge clusters with none visible
 //! @param [out] numwith1OrMoreVisible number of edge clusters with 1 or more visible.
 //!
@@ -1052,12 +1055,12 @@ GEOMDLLIMPEXP void CollectPerFaceCounts (size_t &minPerFace, size_t &maxPerFace)
 //! @param [in] omitInvisibles true to hide segments that are not visible (due to negated indices)
 GEOMDLLIMPEXP void CollectSegments (bvector<DSegment3d> &segments, bool omitInvisibles) const;
 
-//! Cut with a plane. (Prototype)
-//! Return as a curve vector. Optionally structure as area-bounding loops.
+//! Cut with a plane. Return intersection edges as a curve vector, optionally structured as area-bounding loops.
 //! @param [in] sectionPlane plane to cut the mesh.
 //! @param [in] formRegions true to look for closed loops and structure the return as a loop or parity CurveVector.
-//! @param [in] markEdgeFractions true to attache FacetEdgeLocationDetailVector to the linestrings.
-GEOMDLLIMPEXP CurveVectorPtr PlaneSlice (DPlane3dCR sectionPlane, bool formRegions, bool markEdgeFractions = false) const;
+//! @param [in] markEdgeFractions true to attach FacetEdgeLocationDetailVector to the linestrings. Default is false.
+//! @param [in] skipOnPlaneFacets whether output lacks facets coplanar with sectionPlane. Default is false (include them).
+GEOMDLLIMPEXP CurveVectorPtr PlaneSlice (DPlane3dCR sectionPlane, bool formRegions, bool markEdgeFractions = false, bool skipOnPlaneFacets = false) const;
 
 //! Project linestring in given direction to intersection with facets.
 //! Return as a curve vector.
@@ -1476,8 +1479,8 @@ MeshAnnotationVector &description    //!< array to receive error descriptions.
 GEOMDLLIMPEXP bool HasIndexErrors () const;
 
 //! Return blocks of read indices for grouping components with vertex connectivity
+//! @param [in] connectivityType 0 for vertex connectivity, 1 for connectivity across any edge (no visibility test), 2 for invisible edge connectivity (any shared visible edge is a barrier)
 //! @param [out] blockedReadIndexArray read indices for individual faces, separated by (-1).
-//! @param [in] connectivityType 0 for vertex connectivity, 1 for edge connectivity, 2 for connectity across non-drawn edges
 GEOMDLLIMPEXP bool PartitionByConnectivity (int connectivityType, bvector<ptrdiff_t> &blockedReadIndexArray) const;
 
 //! Spread data from this mesh to many new meshes according to partition.  This method is to be used following
@@ -1504,7 +1507,7 @@ bvector<PolyfaceHeaderPtr> &submeshArray
 
 
 //! Return connected meshes.
-//! @param [in] connectivityType 0 for vertex connectivity, 1 for invisible edge connectivity (any shared visible edge is a barrier), 2 for connectivity across any edge (no visibility test)
+//! @param [in] connectivityType 0 for vertex connectivity, 1 for connectivity across any edge (no visibility test), 2 for invisible edge connectivity (any shared visible edge is a barrier)
 //! @param [out] submeshArray This is initially cleared, then filled with as many (smartpointers to) new arrays as needed
 //!     for the blocking.  Each new array receives data from a block.
 GEOMDLLIMPEXP bool PartitionByConnectivity (int connectivityType, bvector<PolyfaceHeaderPtr> &submeshArray) const;
@@ -1862,7 +1865,7 @@ GEOMDLLIMPEXP void Compress(double pointAbsTol, double normalAbsTol = -1.0, doub
 //! Points are active.
 //! Point indices are active if style is MESH_ELM_STYLE_INDEXED_FACE_LOOPS
 //! All other coordinate and index arrays are NOT active.
-//! TwoSided is true.
+//! NOTE: TwoSided is set to true, contrary to the typical default of false.
 GEOMDLLIMPEXP void ClearTags (uint32_t numPerFace, uint32_t meshStyle);
 
 //! Add data to index arrays.
@@ -2196,6 +2199,9 @@ GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateFixedBlockCoordinates (int numPerFa
 //! Create a mesh with (just) point and index data.
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateIndexedMesh (int numPerFace, bvector<DPoint3d> const &points, bvector<int> const &indexData);
 
+//! Create a mesh with (just) point and index data.
+//! For efficiency, the non-const input vector contents are swapped with those of the newly constructed mesh, so these inputs are empty on return.
+GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateIndexedMeshSwap(int numPerFace, bvector<DPoint3d>& points, bvector<int>& pointIndices);
 
 //! Create a (indexed) polyface containing all polygons from a TaggedPolygonVector
 GEOMDLLIMPEXP PolyfaceHeaderPtr static CreateFromTaggedPolygons
@@ -2372,9 +2378,12 @@ IPolyfaceVisitorFilter *filter  //!< [in] optional object to ask if current face
 //! @returns true if any changes were made.
 GEOMDLLIMPEXP bool CompactIndexArrays ();
 
+//! Trim excess capacity from the data and index vectors. No data is removed.
+//! @param compactIndices call CompactIndexArrays first
+//! @returns bytes trimmed
+GEOMDLLIMPEXP size_t CompactArrays(bool compactIndices);
 
 //! Apply a transform to all coordinates. Optionally reverse index order (to maintain cross product relationships)
-
 GEOMDLLIMPEXP void Transform
 (
 TransformCR transform,
@@ -2382,14 +2391,12 @@ bool        reverseIndicesIfMirrored = true
 );
 
 //! Apply a transform to all coordinates of an array of meshes. Optionally reverse index order (to maintain cross product relationships)
-
 static GEOMDLLIMPEXP void Transform
 (
 bvector<PolyfaceHeaderPtr> &data,
 TransformCR transform,
 bool        reverseIndicesIfMirrored = true
 );
-
 
 //!
 //! Reverse (negate) all stored normals.  Note that this does NOT change index order.
@@ -2542,10 +2549,12 @@ GEOMDLLIMPEXP bool AddPolygon (bvector<DPoint3d> const &xyz, bvector<DVec3d> con
 //! Add a polygon directly to the arrays.  Indices created as needed.
 //! Interpolate (if active) params, normals, and colors with barycentric mapping from visitor.
 GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> const &xyz, PolyfaceVisitorR visitor, IndexedParameterMap const &mapping);
-//! Add a polygon with linear mapping to parameter space
-//! If compressNormal is true, the normal is compared to the most recent normal
-//!     and that index is reused when identical normal index.
+//! Add a polygon, with linear mapping to parameter space.
+//! If compressNormal is true, the normal is compared to the most recent normal, and when identical, its index is reused.
 GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> const &xyz, TransformCR worldToParameterSpace, DVec3dCR normal, bool compressNormal, bool reverseXYZ);
+//! Add an indexed polygon, with linear mapping to parameter space.
+//! If compressNormal is true, the normal is compared to the most recent normal, and when identical, its index is reused.
+GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> const& xyz, bvector<int> const& signedOneBasedIndices, TransformCR worldToParameterSpace, DVec3dCR normal, bool compressNormal, bool reverse);
 
 //! Sweep the existing mesh promote to a solid
 //! @returns false if the input mesh has inconsistent visibility -- i.e. side or mixture of forward and back facing facets.
@@ -3426,12 +3435,12 @@ GEOMDLLIMPEXP bool operator() (const DVec3d& pointA, const DVec3d &pointB) const
 struct PolyfaceZYXMap : bmap <DPoint3d, size_t, DPoint3dZYXTolerancedSortComparison>
 {
 PolyfaceZYXMap (DPoint3dZYXTolerancedSortComparison const &compare);
+DPoint3dZYXTolerancedSortComparison const& GetComparator() const;
 };
 struct PolyfaceZYXDVec3dMap : bmap <DVec3d, size_t, DVec3dZYXTolerancedSortComparison>
 {
 PolyfaceZYXDVec3dMap (DVec3dZYXTolerancedSortComparison const &compare);
 };
-
 
 struct DPoint3dZYXSortComparison
 {
@@ -3521,6 +3530,11 @@ public:
     //! @param [in] point coordinates to look up.
     //! @param [out] index 0-based index within the client mesh.
     GEOMDLLIMPEXP bool   FindPoint (DPoint3dCR point, size_t &index);
+
+    //! return absolute tolerance for point comparisons
+    GEOMDLLIMPEXP double GetXYZAbsTol() const;
+    //! return relative tolerance for point comparisons
+    GEOMDLLIMPEXP double GetXYZRelTol() const;
 
 //! (Find or) Add a normal.  Return its (0 based) index.
     //! @param [in] normal normal coordinates.
@@ -3761,7 +3775,9 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 |   MESH_ELM_STYLE_INDEXED_FACE_LOOPS                                   |
 |       The mesh consists of an array of vertex coordinates and an      |
 |       array of indices into the vertex coordinate array.  Each face   |
-|       appears as a row of indices in the index matrix.                |
+|       appears as a row of signed 1-based indices in the index matrix. |
+|       These face loops have fixed-size blocking, or variable-sized    |
+|       blocking terminated by a zero.                                  |
 |   MESH_ELM_STYLE_POINT_CLOUD                                          |
 |       The mesh consists of a single array of (unblocked) coordinates. |
 |       (No connectivity stored.)                                       |
@@ -3780,6 +3796,13 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 |   MESH_ELM_STYLE_QUAD_GRID                                            |
 |       The mesh consists of a simple grid of points, to be formed into |
 |       quads.                                                          |
+|   MESH_ELM_STYLE_LARGE_MESH                                           |
+|       Abandoned. Do not use.                                          |
+|   MESH_ELM_STYLE_QVXLARGE_TRI_MESH                                    |
+|       The mesh consists of an array of vertex coordinates and an      |
+|       array of indices into the vertex coordinate array. Each face    |
+|       is a triangle appearing as three 0-based indices. This style    |
+|       of mesh is not persisted.                                       |
 |                                                                       |
 +----------------------------------------------------------------------*/
 #define MESH_ELM_STYLE_INDEXED_FACE_LOOPS       1
@@ -3789,6 +3812,7 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #define MESH_ELM_STYLE_TRIANGLE_GRID            5
 #define MESH_ELM_STYLE_QUAD_GRID                6
 #define MESH_ELM_STYLE_LARGE_MESH               7
+#define MESH_ELM_STYLE_QVXLARGE_TRI_MESH        8
 
 /*----------------------------------------------------------------------+
 |                                                                       |

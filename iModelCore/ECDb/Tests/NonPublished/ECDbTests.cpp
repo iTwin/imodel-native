@@ -286,6 +286,157 @@ TEST_F(ECDbTestFixture, TwoConnections)
     }
     }
 
+TEST_F(ECDbTestFixture, TestDropSchemasWithInstances)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("TestDropSchemasWithInstances.ecdb"));
+
+    // Import schemas
+    auto context = ECSchemaReadContext::CreateContext();
+    ASSERT_TRUE(context.IsValid());
+    context->AddSchemaLocater(m_ecdb.GetSchemaLocater());
+
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema1' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECEntityClass typeName='A'>
+                <ECProperty propertyName='Prop_A' typeName='int' />
+            </ECEntityClass>
+        </ECSchema>)xml", *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema2' alias='ts2' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECEntityClass typeName='B'>
+                <ECProperty propertyName='Prop_B' typeName='int' />
+            </ECEntityClass>
+        </ECSchema>)xml", *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas());
+
+    ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema("TestSchema1"));
+    ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema("TestSchema2"));
+
+    // Add instances
+    ECSqlStatement stmt;
+    ECInstanceKey instanceKey;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts1.A(Prop_A) VALUES(100)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(instanceKey));
+
+    // Schema drop should fail
+    TestIssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+    auto status = m_ecdb.Schemas().DropSchemas({ "TestSchema1", "TestSchema2" });
+    EXPECT_TRUE(status.IsError());
+    EXPECT_TRUE(status.HasInstances());
+    EXPECT_STREQ(listener.GetLastMessage().c_str(), "Drop ECSchema failed. One or more schemas have instances present. Make sure to delete them before dropping the schemas.");
+
+    // Delete the instances
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts1.A WHERE ECInstanceId=?"));
+    stmt.BindId(1, instanceKey.GetInstanceId());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    // Schema drop should now pass
+    listener.ClearIssues();
+    EXPECT_TRUE(m_ecdb.Schemas().DropSchemas({ "TestSchema1", "TestSchema2" }).IsSuccess());
+    EXPECT_TRUE(listener.IsEmpty());
+    }
+
+TEST_F(ECDbTestFixture, TestDropSchemasBeingReferenced)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("TestDropSchemasBeingReferenced.ecdb"));
+
+    // Import schemas
+    auto context = ECSchemaReadContext::CreateContext();
+    ASSERT_TRUE(context.IsValid());
+    context->AddSchemaLocater(m_ecdb.GetSchemaLocater());
+
+    const auto schemaTemplate = R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema%d' alias='ts%d' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            %s
+        </ECSchema>)xml";
+
+    for (const auto& [schemaNum, schemaRefs] : std::vector<std::pair<unsigned int, Utf8CP>>
+        {
+         { std::make_pair(1, "") },
+         { std::make_pair(2, "") },
+         { std::make_pair(3, "<ECSchemaReference name='TestSchema1' version='1.0.0' alias='ts1'/>") },
+         { std::make_pair(4, "<ECSchemaReference name='TestSchema2' version='1.0.0' alias='ts2'/>") },
+         { std::make_pair(5, R"xml(<ECSchemaReference name='TestSchema1' version='1.0.0' alias='ts1'/>
+            <ECSchemaReference name='TestSchema2' version='1.0.0' alias='ts2'/>)xml") },
+         { std::make_pair(6, R"xml(<ECSchemaReference name='TestSchema3' version='1.0.0' alias='ts3'/>
+            <ECSchemaReference name='TestSchema5' version='1.0.0' alias='ts5'/>)xml") },
+         { std::make_pair(7, "<ECSchemaReference name='TestSchema4' version='1.0.0' alias='ts4'/>") },
+        })
+        {
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, Utf8PrintfString(schemaTemplate, schemaNum, schemaNum, schemaRefs).c_str(), *context));
+        ASSERT_TRUE(schema.IsValid());
+        }
+
+    m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas());
+
+    for (auto i = 1; i <= 7; ++i)
+        ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema(Utf8PrintfString("TestSchema%d", i)));
+
+    m_ecdb.SaveChanges();
+    
+    TestIssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+
+    /* The schema references have been set up as:
+
+                       TestSchema1        TestSchema2
+                        /       \        /      |
+                TestSchema3   TestSchema5   TestSchema4
+                        \      /                |
+                      TestSchema6           TestSchema7
+    */
+
+    for (const auto& [testCaseNumber, schemasToDrop, expectedStatus, expectedStatusCode, expectedErrorMessage] 
+        : bvector<std::tuple<const unsigned int, const std::vector<Utf8String>, const bool, const DropSchemaResult::Status, Utf8CP>>
+        {
+            { __LINE__, { "TestSchema1","TestSchemaMissing1","TestSchema2","TestSchemaMissing2" }, false, DropSchemaResult::ErrorSchemaNotFound, "Drop ECSchemas failed. ECSchema: Schemas TestSchemaMissing1,TestSchemaMissing2 not found." },
+            
+            { __LINE__, { "TestSchema5","TestSchema6","TestSchema2","TestSchema4","TestSchema3","TestSchema7","TestSchema1" }, true, DropSchemaResult::Success, "" },
+            { __LINE__, { "TestSchema6","TestSchema7" }, true, DropSchemaResult::Success, "" },
+            { __LINE__, { "TestSchema5","TestSchema6" }, true, DropSchemaResult::Success, "" },
+            { __LINE__, { "TestSchema3","TestSchema5","TestSchema6" }, true, DropSchemaResult::Success, "" },
+            { __LINE__, { "TestSchema1","TestSchema3","TestSchema5","TestSchema6" }, true, DropSchemaResult::Success, "" },
+            { __LINE__, { "TestSchema2","TestSchema4","TestSchema5","TestSchema6","TestSchema7" }, true, DropSchemaResult::Success, "" },
+            { __LINE__, { "TestSchema7","TestSchema4" }, true, DropSchemaResult::Success, "" },
+
+            { __LINE__, { "TestSchema1","TestSchema2" }, false, DropSchemaResult::ErrorDeletedSchemaIsReferencedByAnotherSchema, "Drop ECSchemas failed. Schema(s) TestSchema1,TestSchema2 are being referenced by other schemas." },
+            { __LINE__, { "TestSchema3","TestSchema5","TestSchema4" }, false, DropSchemaResult::ErrorDeletedSchemaIsReferencedByAnotherSchema, "Drop ECSchemas failed. Schema(s) TestSchema3,TestSchema4,TestSchema5 are being referenced by other schemas." },
+            { __LINE__, { "TestSchema1","TestSchema3","TestSchema6" }, false, DropSchemaResult::ErrorDeletedSchemaIsReferencedByAnotherSchema, "Drop ECSchemas failed. Schema(s) TestSchema1 are being referenced by other schemas." },
+            { __LINE__, { "TestSchema1","TestSchema5","TestSchema6" }, false, DropSchemaResult::ErrorDeletedSchemaIsReferencedByAnotherSchema, "Drop ECSchemas failed. Schema(s) TestSchema1 are being referenced by other schemas." },
+            { __LINE__, { "TestSchema7","TestSchema2","TestSchema4" }, false, DropSchemaResult::ErrorDeletedSchemaIsReferencedByAnotherSchema, "Drop ECSchemas failed. Schema(s) TestSchema2 are being referenced by other schemas." },
+        })
+        {
+        listener.ClearIssues();
+        StopWatch timer(true);
+        auto status = m_ecdb.Schemas().DropSchemas(schemasToDrop);
+        timer.Stop();
+        //std::cout << "Elapsed seconds: " << timer.GetElapsedSeconds() << std::endl;
+        EXPECT_EQ(status.IsSuccess(), expectedStatus) << "Failed test case " << testCaseNumber;
+        EXPECT_EQ(status.GetStatus(), expectedStatusCode) << "Failed test case " << testCaseNumber;
+
+        if (Utf8String::IsNullOrEmpty(expectedErrorMessage))
+            {
+            EXPECT_TRUE(listener.IsEmpty()) << "Failed test case " << testCaseNumber;
+            for (const auto& schema : schemasToDrop)
+                EXPECT_FALSE(m_ecdb.Schemas().ContainsSchema(schema)) << "Failed to drop schema " << schema << " in test case " << testCaseNumber;
+            }
+        else
+            {
+            EXPECT_STREQ(listener.GetLastMessage().c_str(), expectedErrorMessage) << "Failed test case " << testCaseNumber;
+            }
+
+        m_ecdb.AbandonChanges();
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -538,7 +689,7 @@ TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CurrentECSqlVersion)
     {
-    BeVersion expectedVersion (1, 2, 8, 1);
+    BeVersion expectedVersion (2, 0, 2, 0);
     ASSERT_EQ(ECDb::GetECSqlVersion(), expectedVersion);
     }
 
@@ -561,21 +712,9 @@ TEST_F(ECDbTestFixture, NewFileECDbProfileVersion)
     ASSERT_EQ(m_ecdb.GetECDbProfileVersion(), expectedVersion);
     }
 
-class IssueListener : public ECN::IIssueListener
-    {
-    mutable bvector<Utf8String> m_issues;
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
-        {
-        m_issues.push_back(message);
-        }
-    public:
-    Utf8StringCR GetLastError() const { return m_issues.back();}
-    void ClearMessages() { m_issues.clear(); }
-    };
-
 TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
     {
-    IssueListener listener;
+    TestIssueListener listener;
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("newFile.ecdb"));
     m_ecdb.AddIssueListener(listener);
 
@@ -669,7 +808,7 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
         { __LINE__, "SELECT MIN(MIN(3, 4))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MIN(3, 4))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
         })
         {
-        listener.ClearMessages();
+        listener.ClearIssues();
         ECSqlStatement statement;
         EXPECT_EQ(expectedStatus, statement.Prepare(m_ecdb, sqlStatement.c_str())) << "Test case at line " << lineNumber << " failed.\n";
         if (expectedStatus == ECSqlStatus::Success)
@@ -680,7 +819,7 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
             }
         else
             {
-            EXPECT_STREQ(listener.GetLastError().c_str(), errorMsg.c_str()) << "Test case at line " << lineNumber << " failed.\n";
+            EXPECT_STREQ(listener.GetLastMessage().c_str(), errorMsg.c_str()) << "Test case at line " << lineNumber << " failed.\n";
             }
         statement.Finalize();
         }
@@ -698,7 +837,7 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
         "    </ECEntityClass>"
         "</ECSchema>")));
 
-    IssueListener listener;
+    TestIssueListener listener;
     m_ecdb.AddIssueListener(listener);
 
     for (const auto& [lineNumber, isSelect, sqlStatement, expectedStatus, expectedResult, errorMsg]
@@ -771,7 +910,7 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
         })
         {
         // Reset listener queue for current test case
-        listener.ClearMessages();
+        listener.ClearIssues();
 
         ECSqlStatement testCaseSQL;
         // Prepare the SQL statement
@@ -817,7 +956,7 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
         else
             {
             // Test if the parsing for MIN/MAX has failed with appropriate error message
-            EXPECT_STREQ(listener.GetLastError().c_str(), errorMsg.c_str()) << "Test case at line " << lineNumber << " failed.\n";
+            EXPECT_STREQ(listener.GetLastMessage().c_str(), errorMsg.c_str()) << "Test case at line " << lineNumber << " failed.\n";
             }
         }
     }

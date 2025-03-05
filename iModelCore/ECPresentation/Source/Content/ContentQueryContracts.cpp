@@ -5,6 +5,7 @@
 #include <ECPresentationPch.h>
 #include "ContentQueryContracts.h"
 #include "../Shared/Queries/CustomFunctions.h"
+#include "../Shared/Queries/QueryBuilderHelpers.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -55,22 +56,30 @@ Utf8CP ContentQueryContract::InputECInstanceKeysFieldName = "/InputECInstanceKey
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo,
+ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo, RelatedInstanceDisplayLabelFieldFactory displayLabelFieldFactory,
     PresentationQueryContractFieldPtr displayLabelField, bvector<RelatedClassPath> relatedInstancePaths, bool skipCompositePropertyFields, bool skipXToManyRelatedContentFields)
-    : PresentationQueryContract(id), m_descriptor(&descriptor), m_class(ecClass), m_relationshipClass(nullptr), m_queryInfo(queryInfo), m_displayLabelField(displayLabelField),
+    : PresentationQueryContract(id), m_descriptor(&descriptor), m_class(ecClass), m_relationshipClass(nullptr), m_queryInfo(queryInfo), m_relatedInstanceDisplayLabelFieldFactory(std::move(displayLabelFieldFactory)), m_displayLabelField(displayLabelField),
     m_relatedInstancePaths(std::move(relatedInstancePaths)), m_skipCompositePropertyFields(skipCompositePropertyFields), m_skipXToManyRelatedContentFields(skipXToManyRelatedContentFields)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Utf8StringCR calculatedPropertyValue, Utf8StringCR prefix) const
+PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Utf8StringCR calculatedPropertyValue, Utf8StringCR prefix, PrimitiveType type) const
     {
-    Utf8String value = "'";
-    value += calculatedPropertyValue;
-    value += "'";
-    PresentationQueryContractFieldPtr field = PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
-        CreateFieldsList("ECClassId", "ECInstanceId", value), true);
+    PresentationQueryContractFieldPtr field;
+    if (!calculatedPropertyValue.empty())
+        {
+        Utf8String value = "'" + calculatedPropertyValue + "'";
+        Utf8PrintfString fieldType("%d", (int)type);
+        field = PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
+        CreateFieldsList("ECClassId", "ECInstanceId", value, fieldType));
+        } 
+    else 
+        {
+        field = PresentationQueryContractSimpleField::Create(calculatedFieldName.c_str(), "CAST(null AS TEXT)", false);
+        }
+
     field->SetPrefixOverride(prefix);
     return field;
     }
@@ -299,7 +308,7 @@ bool ContentQueryContract::CreateContractFields(bvector<PresentationQueryContrac
 
             if (nullptr == descriptorField->AsCalculatedPropertyField()->GetClass() || selectClass->Is(descriptorField->AsCalculatedPropertyField()->GetClass()))
                 {
-                contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), prefix);
+                contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), prefix, descriptorField->AsCalculatedPropertyField()->GetType());
                 didCreateNonNullField = true;
                 }
             else
@@ -344,16 +353,22 @@ bool ContentQueryContract::CreateContractFields(bvector<PresentationQueryContrac
 
             auto relatedContentField = descriptorField->AsNestedContentField()->AsRelatedContentField();
             Utf8PrintfString keyFieldName("/key/%s", relatedContentField->GetUniqueName().c_str());
+            Utf8PrintfString displayLabelFieldName("/DisplayLabel/%s", relatedContentField->GetUniqueName().c_str());
             bvector<PresentationQueryContractFieldCPtr> nestedContractFields;
             if (CreateContractFields(nestedContractFields, relatedContentField->GetFields(), relatedContentField))
                 {
-                contractFields.push_back(CreateInstanceKeyField(keyFieldName.c_str(),
-                    relatedContentField->IsRelationshipField() ? relatedContentField->GetRelationshipClassAlias().c_str() : relatedContentField->GetContentClassAlias().c_str(), ECClassId()));
+                auto selectClass = relatedContentField->IsRelationshipField()
+                    ? SelectClass{relatedContentField->GetRelationshipClass(), relatedContentField->GetRelationshipClassAlias()}
+                    : SelectClass{relatedContentField->GetContentClass(), relatedContentField->GetContentClassAlias()};
+
+                contractFields.push_back(CreateInstanceKeyField(keyFieldName.c_str(), selectClass.GetAlias().c_str(), {}));
+                contractFields.push_back(m_relatedInstanceDisplayLabelFieldFactory(displayLabelFieldName.c_str(), selectClass));
                 didCreateNonNullField = true;
                 }
             else
                 {
-                contractFields.push_back(CreateInstanceKeyField(keyFieldName.c_str(), nullptr, ECClassId()));
+                contractFields.push_back(CreateInstanceKeyField(keyFieldName.c_str(), nullptr, {}));
+                contractFields.push_back(PresentationQueryContractSimpleField::Create(displayLabelFieldName.c_str(), "CAST(null AS TEXT)"));
                 }
             ContainerHelpers::Push(contractFields, nestedContractFields);
             }

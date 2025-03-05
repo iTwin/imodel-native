@@ -27,11 +27,11 @@
 /* =================================================================== */
 /*                Hand crafted config file for Mac OS 9                */
 /* =================================================================== */
-/*  On Mac OS X you must run configure to generate curl_config.h file  */
+/*   On macOS you must run configure to generate curl_config.h file    */
 /* =================================================================== */
 
-#ifndef OS
-#define OS "mac"
+#ifndef CURL_OS
+#define CURL_OS "mac"
 #endif
 
 #include <ConditionalMacros.h>
@@ -64,10 +64,6 @@
 #define HAVE_STRUCT_TIMEVAL     1
 
 #define HAVE_SIGACTION          1
-
-#ifdef MACOS_SSL_SUPPORT
-#  define USE_OPENSSL           1
-#endif
 
 #define CURL_DISABLE_LDAP       1
 

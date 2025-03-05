@@ -59,6 +59,7 @@ ClassNameExp const* TryGetOutmostView(PropertyNameExp const* propNameExp)
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+// Before calling this method please do check a flag using ctx.GetCreateField() getter
 ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedPropertyExp const* derivedProperty, int startColumnIndex)
     {
     BeAssert(derivedProperty != nullptr && derivedProperty->IsComplete());
@@ -160,7 +161,7 @@ ECSqlStatus ECSqlFieldFactory::CreateFieldForView(ECSqlPrepareContext& ctx, Prop
     if (classMap != nullptr && rootECClass == nullptr) {
         rootECClass = &classMap->GetClass();
     }
-    
+
     if(ecProperty == nullptr || ecProperty->GetClass().GetId() != rootECClass->GetId() || !ecProperty->GetName().EqualsI(propertyName)) {
         if(propertyName.EqualsI(ECDBSYS_PROP_ECClassId)) {
             ecProperty = ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::ECClassId());
@@ -179,7 +180,7 @@ ECSqlStatus ECSqlFieldFactory::CreateFieldForView(ECSqlPrepareContext& ctx, Prop
         if(dupStat != ECSqlStatus::Success)
             return dupStat;
     }
-    
+
     bool isGeneratedProperty = false;
     if(derivedProperty.HasAlias() || propertyPath.Size() > 1 || isDuplicate || ecProperty == nullptr)
         {
@@ -204,12 +205,7 @@ ECSqlStatus ECSqlFieldFactory::CreateFieldForView(ECSqlPrepareContext& ctx, Prop
     }
 
     ECSqlColumnInfo::RootClass rootClass(rootECClass != nullptr ? *rootECClass : ecProperty->GetClass(), nullptr);
-    bool isSystemProperty = false;
-    if(ecProperty != nullptr && ecProperty->HasId())
-        isSystemProperty = ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*ecProperty).IsSystemProperty();
-    if(!isSystemProperty && originalProperty != nullptr && originalProperty->HasId())
-        isSystemProperty = ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*originalProperty).IsSystemProperty();
-
+    const bool isSystemProperty = ecProperty ? (ExtendedTypeHelper::FromProperty(*ecProperty) != ExtendedTypeHelper::ExtendedType::Unknown): false;
     ECSqlPropertyPath resultPropertyPath;
     resultPropertyPath.AddEntry(*ecProperty);
 
@@ -250,7 +246,7 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
 
     if(isGenerated)
         {
-        isSystem = generatedProperty->HasId() && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*generatedProperty).IsSystemProperty();
+        isSystem = ExtendedTypeHelper::FromProperty(*generatedProperty) != ExtendedTypeHelper::ExtendedType::Unknown;
         propertyPath.AddEntry(*generatedProperty);
         rootClass = &generatedProperty->GetClass();
 
@@ -292,7 +288,7 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
 
     BeAssert((internalPropPath.GetClassMap() != nullptr) && "Error in program logic. PropertyPath must have been resolved.");
     ECClassCR ecClass = internalPropPath.GetClassMap()->GetClass();
-    isSystem = leafProp != nullptr && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();
+    isSystem = leafProp != nullptr && ExtendedTypeHelper::FromProperty(*leafProp) != ExtendedTypeHelper::ExtendedType::Unknown;
     Utf8CP tableSpace = resolvedPropertyName->GetPropertyMap()->GetClassMap().GetSchemaManager().GetTableSpace().GetName().c_str();
     return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, false, std::move(ecsqlPropPath), ECSqlColumnInfo::RootClass(ecClass, tableSpace, resolvedPropertyName->GetClassName()), leafProp, isDynamic);
     }

@@ -747,6 +747,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Utf8String m_valueExpression;
         ECClassCP m_class;
         Utf8String m_requestedName;
+        PrimitiveType m_type;
+        rapidjson::Document m_extendedData;
 
     protected:
         CalculatedPropertyField* _AsCalculatedPropertyField() override {return this;}
@@ -766,20 +768,36 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] valueExpression Value ECExpression.
         //! @param[in] ecClass Entity class this field is intended for.
         //! @param[in] priority Field priority.
-        CalculatedPropertyField(std::shared_ptr<Category const> category, Utf8String label, Utf8String name, Utf8String valueExpression, ECClassCP ecClass, int priority = Property::DEFAULT_PRIORITY)
-            : Field(category, label), m_requestedName(name), m_valueExpression(valueExpression), m_class(ecClass), m_priority(priority)
+        CalculatedPropertyField(std::shared_ptr<Category const> category, Utf8String label, Utf8String name, Utf8String valueExpression, PrimitiveType type, ECClassCP ecClass, int priority = Property::DEFAULT_PRIORITY)
+        : Field(category, label), m_requestedName(name), m_valueExpression(valueExpression), m_class(ecClass), m_priority(priority),
+            m_type(type), m_extendedData(rapidjson::kObjectType)
             {}
+
+        //! Copy constructor.
+        CalculatedPropertyField(CalculatedPropertyField const& other)
+            : Field(other), m_priority(other.m_priority), m_valueExpression(other.m_valueExpression), m_class(other.m_class), m_requestedName(other.m_requestedName), m_type(other.m_type)
+            {
+            m_extendedData.CopyFrom(other.m_extendedData, m_extendedData.GetAllocator());
+            }
 
         Utf8StringCR GetRequestedName() const {return m_requestedName;}
 
         //! Get the ECExpression used to calculate field's value.
-        Utf8String const& GetValueExpression() const {return m_valueExpression;}
+        Utf8StringCR GetValueExpression() const {return m_valueExpression;}
+
+        //! Get the ECExpression return type..
+        PrimitiveType GetType() const {return m_type;}
+
 
         //! Get the class this field is intended for.
         ECClassCP GetClass() const {return m_class;}
 
         //! Set the priority for this field.
         void SetPriority(int priority) {m_priority = priority;}
+
+        void AddExtendedData(Utf8CP key, ECValueCR value);
+
+        RapidJsonAccessor GetExtendedData() const { return RapidJsonAccessor(m_extendedData); }
     };
 
     struct ECArrayPropertiesField;
@@ -1103,7 +1121,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     {
     private:
         RelatedClassPath m_pathFromSelectClassToContentClass;
-        std::unordered_set<ECClassCP> m_actualSourceClasses;
+        std::unique_ptr<std::unordered_set<ECClassCP>> m_actualSourceClasses;
         RelationshipMeaning m_relationshipMeaning;
         bool m_isRelationshipField;
         Utf8String m_specificationIdentifier;
@@ -1132,7 +1150,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
             {}
         RelatedContentField(RelatedContentField const& other)
             : NestedContentField(other), m_pathFromSelectClassToContentClass(other.m_pathFromSelectClassToContentClass), m_relationshipMeaning(other.m_relationshipMeaning),
-            m_isRelationshipField(other.m_isRelationshipField), m_actualSourceClasses(other.m_actualSourceClasses)
+            m_isRelationshipField(other.m_isRelationshipField), m_actualSourceClasses(other.m_actualSourceClasses ? std::make_unique<std::unordered_set<ECClassCP>>(*other.m_actualSourceClasses) : nullptr)
             {}
         RelatedContentField(RelatedContentField&& other)
             : NestedContentField(std::move(other)), m_pathFromSelectClassToContentClass(std::move(other.m_pathFromSelectClassToContentClass)), m_relationshipMeaning(other.m_relationshipMeaning),
@@ -1145,9 +1163,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         void SetPathFromSelectToContentClass(RelatedClassPath path) {m_pathFromSelectClassToContentClass = path;}
 
         //! Actual source subclasses of source in 'path from select to content class'
-        std::unordered_set<ECClassCP> const& GetActualSourceClasses() const {return m_actualSourceClasses;}
-        std::unordered_set<ECClassCP>& GetActualSourceClasses() {return m_actualSourceClasses;}
-        void SetActualSourceClasses(std::unordered_set<ECClassCP> classes) {m_actualSourceClasses = classes;}
+        std::unordered_set<ECClassCP> const* GetActualSourceClasses() const {return m_actualSourceClasses.get();}
+        std::unordered_set<ECClassCP>* GetActualSourceClasses() {return m_actualSourceClasses.get();}
+        void SetActualSourceClasses(std::unique_ptr<std::unordered_set<ECClassCP>> classes) {m_actualSourceClasses = std::move(classes);}
 
         void SetRelationshipMeaning(RelationshipMeaning relationshipMeaning) {m_relationshipMeaning = relationshipMeaning;}
         RelationshipMeaning GetRelationshipMeaning() const {return m_relationshipMeaning;}
@@ -1897,6 +1915,7 @@ struct IPropertyCategorySupplier
 protected:
     virtual std::unique_ptr<ContentDescriptor::Category> _CreateDefaultCategory() const = 0;
     virtual std::unique_ptr<ContentDescriptor::Category> _CreateECClassCategory(ECClassCR) const = 0;
+    virtual std::unique_ptr<ContentDescriptor::Category> _CreatePropertyCategory(PropertyCategoryCR) const = 0;
     virtual std::unique_ptr<ContentDescriptor::Category> _CreatePropertyCategory(ECPropertyCR) const = 0;
 
 public:
@@ -1907,6 +1926,9 @@ public:
 
     //! Called to create a category based on specific ECClass
     std::unique_ptr<ContentDescriptor::Category> CreateECClassCategory(ECClassCR ecClass) const {return _CreateECClassCategory(ecClass);}
+
+    //! Called to create a category based on a PropertyCategory in schema.
+    std::unique_ptr<ContentDescriptor::Category> CreatePropertyCategory(PropertyCategoryCR schemaCategory) const {return _CreatePropertyCategory(schemaCategory);}
 
     //! Called to create a category based on ECProperty's category. Should return invalid category if property is not categorized.
     std::unique_ptr<ContentDescriptor::Category> CreatePropertyCategory(ECPropertyCR ecProperty) const {return _CreatePropertyCategory(ecProperty);}
@@ -1924,6 +1946,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefaultCategorySupplier : IPropertyCategorySuppli
 protected:
     ECPRESENTATION_EXPORT virtual std::unique_ptr<ContentDescriptor::Category> _CreateDefaultCategory() const override;
     ECPRESENTATION_EXPORT virtual std::unique_ptr<ContentDescriptor::Category> _CreateECClassCategory(ECClassCR) const override;
+    ECPRESENTATION_EXPORT virtual std::unique_ptr<ContentDescriptor::Category> _CreatePropertyCategory(PropertyCategoryCR) const override;
     ECPRESENTATION_EXPORT virtual std::unique_ptr<ContentDescriptor::Category> _CreatePropertyCategory(ECPropertyCR) const override;
 public:
     DefaultCategorySupplier() {}

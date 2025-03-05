@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <stdio.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 
 static bool s_printHullSteps = false;
 static int s_noisy = false;
@@ -649,7 +650,7 @@ void VerifyPolyface (PolyfaceHeader  &meshVectors, PolyfaceQueryR meshQuery, cha
     //varunused double tolerance = meshVectors.GetMediumTolerance ();
     double s_relTol = 0.01;
     //varunused int failures = 0;
-    int numEdges = 0;
+    //varunused int numEdges = 0;
     bvector<int>failureIndices;
     bvector<int>edgeFailureIndices;
     size_t numFacet = meshVectors.GetNumFacet ();
@@ -691,7 +692,7 @@ void VerifyPolyface (PolyfaceHeader  &meshVectors, PolyfaceQueryR meshQuery, cha
                 }
             else if (innerCount == 2)
                 {
-                numEdges++;
+                //varunused numEdges++;
                 }
             else
                 failureIndices.push_back (outerFaceCount);
@@ -704,13 +705,11 @@ void VerifyPolyface (PolyfaceHeader  &meshVectors, PolyfaceQueryR meshQuery, cha
                 edgeTestPoint.Interpolate (point0, f0, point1);
                 ptrdiff_t edgeIndex;
                 double edgeFraction;
-                int numFacetHit = 0;
                 int numEdgeHit = 0;
                 double edgeFractionTol = 1.0e-10;
                 bool foundPrimaryTarget = false;
                 for (pointVisitor->Reset (); pointVisitor->AdvanceToFacetBySearchPoint (edgeTestPoint, tolerance1, edgePoint, edgeIndex, edgeFraction);)
                     {
-                    numFacetHit++;
                     if (edgeIndex >= 0)
                         numEdgeHit++;
                     if (vectorVisitor->IndexPosition()[0] == pointVisitor->IndexPosition()[0]
@@ -876,7 +875,9 @@ void ExaminePolyface (PolyfaceHeaderR mesh, char const* title)
         VerifyMTG(mesh, title);
         PolyfaceHeaderPtr compactee = PolyfaceHeader::CreateFixedBlockIndexed (4);
         mesh.CopyTo (*compactee);
-        compactee->CompactIndexArrays ();
+        size_t savings = compactee->CompactArrays(true);
+        if (s_print && savings > 0)
+            printf ("Mesh compacted by %zu bytes\n", savings);
         VerifyPolyface (*compactee, *compactee, "compacted");
 
         PolyfaceHeaderPtr meshWithNormals = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -4602,6 +4603,126 @@ TEST (PolyfaceQuery, FacetOrientation)
         Check::Shift(3, 0, 0);
         }
     Check::ClearGeometry("PolyfaceQuery.FacetOrientation");
+    }
+
+// lexicographical order, with slop for equality
+static bool lexicalXYZLessThanTol(double x0, double y0, double z0, double x1, double y1, double z1, double tol = DoubleOps::SmallMetricDistance())
+    {
+    if (DoubleOps::WithinTolerance(x0, x1, tol) && DoubleOps::WithinTolerance(y0, y1, tol) && DoubleOps::WithinTolerance(z0, z1, tol))
+        return false;
+    if (!DoubleOps::WithinTolerance(x0, x1, tol))
+        {
+        if (x0 < x1)
+            return true;
+        if (x0 > x1)
+            return false;
+        }
+    if (!DoubleOps::WithinTolerance(y0, y1, tol))
+        {
+        if (y0 < y1)
+            return true;
+        if (y0 > y1)
+            return false;
+        }
+    if (!DoubleOps::WithinTolerance(z0, z1, tol))
+        {
+        if (z0 < z1)
+            return true;
+        if (z0 > z1)
+            return false;
+        }
+    return false;
+    }
+
+struct ComparePoints
+    {
+    bool operator() (DPoint3dCR v0, DPoint3dCR v1) const
+        {
+        return lexicalXYZLessThanTol(v0.x, v0.y, v0.z, v1.x, v1.y, v1.z);
+        }
+    };
+
+TEST(Polyface, SphereMeshSanity)
+    {
+    auto center = DPoint3d::FromZero();
+    auto mesh = SphereMesh(center, 10);
+    Check::SaveTransformed(mesh);
+
+    // verify outward facing normals and unique facet centroids
+    bset<DPoint3d, ComparePoints> centroids;
+    auto visitor = PolyfaceVisitor::Attach(*mesh);
+    for (; visitor->AdvanceToNextFace(); )
+        {
+        DPoint3d centroid;
+        DVec3d normal;
+        double area;
+        if (Check::True(PolygonOps::CentroidNormalAndArea(visitor->Point(), centroid, normal, area)))
+            {
+            if (Check::False(centroids.end() != centroids.find(centroid), "facet centroid is unique"))
+                centroids.insert(centroid);
+            Check::True(center.DotDifference(centroid, normal) < 0.0, "facet computed normal points outward");
+            }
+        }
+
+    Check::ClearGeometry("Polyface.SphereMeshSanity");
+    }
+
+TEST(Polyface,AuxData)
+    {
+    BeFileName dataFullPathName;
+    BeTest::GetHost().GetDocumentsRoot(dataFullPathName);
+    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"IModelJson").AppendToPath(L"indexedMesh2.imjs");
+
+    bvector<IGeometryPtr> geometry;
+    if (GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry))
+        {
+        auto mesh = geometry.front()->GetAsPolyfaceHeader();
+        if (mesh.IsValid())
+            {
+            PolyfaceAuxData::Channels channels;
+
+            bvector<double> latitude;
+            for (auto& pt : mesh->Point())
+                latitude.push_back(pt.z);
+            bvector<PolyfaceAuxChannel::DataPtr> latitudeData{ new PolyfaceAuxChannel::Data(0, std::move(latitude)) };
+            channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Distance, "Latitude", "Time", std::move(latitudeData)));
+
+            bvector<double> octant;
+            for (auto& pt : mesh->Point())
+                {
+                octant.push_back(pt.x > 0 ? 1 : (pt.x < 0 ? -1 : 0));
+                octant.push_back(pt.y > 0 ? 1 : (pt.y < 0 ? -1 : 0));
+                octant.push_back(pt.z > 0 ? 1 : (pt.z < 0 ? -1 : 0));
+                }
+            bvector<PolyfaceAuxChannel::DataPtr> octantData{ new PolyfaceAuxChannel::Data(0, std::move(octant)) };
+            channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Vector, "Octant", "Time", std::move(octantData)));
+
+            bvector<int32_t> auxIndex = mesh->PointIndex();
+            PolyfaceAuxDataPtr auxData(new PolyfaceAuxData(std::move(auxIndex), std::move(channels)));
+            mesh->SetAuxData(auxData);
+            mesh->Compress();
+
+            // sanity check flatbuffer file write
+            bvector<Byte> bytes, bytes2;
+            BentleyGeometryFlatBuffer::GeometryToBytes(*mesh, bytes);
+            if (Check::True(GTestFileOps::WriteToFile(bytes, nullptr, nullptr, L"indexedMesh2", L"fb"), "write fb file"))
+                {
+                BeFileName fbFileName;
+                BeTest::GetHost().GetOutputRoot(fbFileName);
+                fbFileName.AppendToPath(L"indexedMesh2");
+                fbFileName.AppendExtension(L"fb");
+                if (Check::True(GTestFileOps::ReadAsBytes(fbFileName, bytes2), "read fb file"))
+                    {
+                    Check::True(bytes == bytes2, "flatbuffer file roundtrip");
+                    auto geom = BentleyGeometryFlatBuffer::BytesToGeometry(bytes2);
+                    Check::True(geom.IsValid(), "deserialized mesh");
+                    auto mesh2 = geom->GetAsPolyfaceHeader();
+                    Check::True(mesh2.IsValid(), "mesh is valid");
+                    Check::True(mesh->IsSameStructureAndGeometry(*mesh2, 0.0), "roundtrip to same geometry");
+                    }
+                }
+            }
+        }
     }
 
 TEST(Polyface, DegenerateTriangulation)

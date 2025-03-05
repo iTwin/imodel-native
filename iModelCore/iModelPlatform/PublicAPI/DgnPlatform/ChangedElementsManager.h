@@ -40,6 +40,7 @@ struct ChangedElementsManager final {
         bool        m_wantBriefcaseRoll;
         bool        m_wantRelationshipCaching;
         bool        m_wantChunkTraversal;
+        bool        m_wantBoundingBoxes;
         int         m_relationshipCacheSize;
         BeFileName  m_tempLocation;
         Utf8String  m_rulesetDirectory;
@@ -90,6 +91,8 @@ struct ChangedElementsManager final {
         void SetWantRelationshipCaching(bool value) { m_wantRelationshipCaching = value; }
         //! Number of relationship entries allowed in a map per property edge
         void SetRelationshipCacheSize(int size) { m_relationshipCacheSize = size; }
+        //! Whether to store bounding boxes for changed model volume computation
+        void SetWantBoundingBoxes(bool value) { m_wantBoundingBoxes = value; }
         //! Set presentation manager to use in processing
         DGNPLATFORM_EXPORT void SetPresentationRulesetDirectory(Utf8String rulesetDir);
         //! Set the temp location where the cloned Dbs are stored and cached for processing

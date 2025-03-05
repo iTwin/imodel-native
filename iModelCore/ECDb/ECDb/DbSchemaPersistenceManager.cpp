@@ -161,7 +161,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         }
     ddl.append(")");
 
-    if (ecdb.ExecuteDdl(ddl.c_str()) != BE_SQLITE_OK)
+    if (ecdb.GetImpl().ExecuteDDL(ddl.c_str()) != BE_SQLITE_OK)
         {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0223,
             "Failed to create table %s: %s [%s]", table.GetName().c_str(), ecdb.GetLastError().c_str(), ddl.c_str());
@@ -264,7 +264,7 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
                 return ERROR;
             }
 
-        if (BE_SQLITE_OK != ecdb.ExecuteDdl(ddl.c_str()))
+        if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteDDL(ddl.c_str()))
             {
             ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0226,
                 "Failed to add new column %s. Error message: %s", ddl.c_str(), ecdb.GetLastError().c_str());
@@ -325,7 +325,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateIndex(ECDbCR ecdb, DbIndex const
         return ERROR;
         }
 
-    if (BE_SQLITE_OK != ecdb.ExecuteDdl(ddl.c_str()))
+    if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteDDL(ddl.c_str()))
         {
         ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0227,
             "Failed to create index %s on table %s. Error: %s [%s]", index.GetName().c_str(), index.GetTable().GetName().c_str(), ecdb.GetLastError().c_str(), ddl.c_str());

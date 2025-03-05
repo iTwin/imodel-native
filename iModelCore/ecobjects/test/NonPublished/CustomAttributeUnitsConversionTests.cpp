@@ -2074,24 +2074,12 @@ TEST_F(UnitInstanceConversionTest, UnitConversionNotSupportedOnIntForDoublePrimi
         }
     }
 
-template <typename IssueReportedCallback = void(*)(IssueSeverity, IssueCategory, IssueType, IssueId, Utf8CP)>
-class TestIssueListener : public IIssueListener
-    {
-    IssueReportedCallback m_onIssueReported;
-    virtual void _OnIssueReported(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) const override
-        {
-        m_onIssueReported(severity, category, type, id, message);
-        }
-    public:
-    TestIssueListener(IssueReportedCallback onIssueReported) : m_onIssueReported(onIssueReported) {}
-    };
-
 namespace
     {
     template <typename IssueReporterArguments>
-    TestIssueListener<IssueReporterArguments> MakeTestIssueListener(IssueReporterArguments&& f)
+    RelayIssueListener<IssueReporterArguments> MakeRelayIssueListener(IssueReporterArguments&& f)
         {
-        return TestIssueListener<IssueReporterArguments>(std::forward<IssueReporterArguments>(f));
+        return RelayIssueListener<IssueReporterArguments>(std::forward<IssueReporterArguments>(f));
         }
     }
 
@@ -2099,7 +2087,7 @@ TEST_F(UnitInstanceConversionTest, UnitConversionLoggingWithIssueReporter)
     {
     auto testListenerReportCount = 0;
     std::string logMessage;
-    auto testListener = MakeTestIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message)
+    auto testListener = MakeRelayIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message)
         {
         ++testListenerReportCount;
         logMessage = message;

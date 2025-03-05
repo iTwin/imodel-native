@@ -125,7 +125,7 @@
 /* #undef EGD_SOCKET */
 
 /* Define if you want to enable IPv6 support */
-/* #define ENABLE_IPV6 1 */
+/* #define USE_IPV6 1 */
 
 /* Define to the type of arg 2 for gethostname. */
 #define GETHOSTNAME_TYPE_ARG2 size_t
@@ -866,7 +866,7 @@
 /* #define NTLM_WB_FILE "/usr/bin/ntlm_auth" */
 
 /* cpu-machine-OS */
-#define OS "aarch64-unknown-linux-android"
+#define CURL_OS "aarch64-unknown-linux-android"
 
 /* Name of package */
 #define PACKAGE "curl"

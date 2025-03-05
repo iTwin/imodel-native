@@ -229,6 +229,7 @@ namespace connectivity
                 opt_member_function_args,
                 opt_null_order,
                 opt_only,
+                opt_only_all,
                 opt_order_by_clause,
                 opt_pragma_for,
                 opt_pragma_func,

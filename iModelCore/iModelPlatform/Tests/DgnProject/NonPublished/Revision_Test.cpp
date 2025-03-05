@@ -62,7 +62,7 @@ protected:
     void ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCodeSet& discarded);
     void ProcessSchemaRevision(ChangesetPropsCR revision, RevisionProcessOption revisionProcessOption);
     void MergeSchemaRevision(ChangesetPropsCR revision) {
-        EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(revision));
+        EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(revision));
     }
 
     static Utf8String CodeToString(DgnCodeCR code) { return Utf8PrintfString("%s:%s\n", code.GetScopeString().c_str(), code.GetValueUtf8CP()); }
@@ -303,7 +303,7 @@ TEST_F(RevisionTestFixture, Workflow)
 
         ChangesetPropsPtr revision = CreateRevision(Utf8PrintfString("-cst%d", revNum).c_str());
         ASSERT_TRUE(revision.IsValid());
-        ASSERT_FALSE(revision->ContainsSchemaChanges(*m_db));
+        ASSERT_FALSE(revision->ContainsDdlChanges(*m_db));
 
         revisions.push_back(revision);
         }
@@ -316,7 +316,7 @@ TEST_F(RevisionTestFixture, Workflow)
     // Merge all the saved revisions
     for (ChangesetPropsPtr const& rev : revisions)
         {
-        ChangesetStatus status = m_db->Txns().MergeChangeset(*rev);
+        ChangesetStatus status = m_db->Txns().PullMergeApply(*rev);
         ASSERT_TRUE(status == ChangesetStatus::Success);
         }
 
@@ -350,7 +350,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     ChangesetPropsPtr revision1 = CreateRevision("-cs2");
     ASSERT_TRUE(revision1.IsValid());
-    ASSERT_FALSE(revision1->ContainsSchemaChanges(*m_db));
+    ASSERT_FALSE(revision1->ContainsDdlChanges(*m_db));
 
     // Create Revision 2 after deleting the same element
     DgnElementCPtr el = m_db->Elements().Get<DgnElement>(elementId);
@@ -362,7 +362,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     ChangesetPropsPtr revision2 = CreateRevision("-cs3");
     ASSERT_TRUE(revision2.IsValid());
-    ASSERT_FALSE(revision2->ContainsSchemaChanges(*m_db));
+    ASSERT_FALSE(revision2->ContainsDdlChanges(*m_db));
 
     // Create Revision 3 deleting the test model (the API causes Elements to get deleted)
     RestoreTestFile();
@@ -374,27 +374,27 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     ChangesetPropsPtr revision3 = CreateRevision("-cs4");
     ASSERT_TRUE(revision3.IsValid());
-    ASSERT_FALSE(revision3->ContainsSchemaChanges(*m_db));
+    ASSERT_FALSE(revision3->ContainsDdlChanges(*m_db));
 
     ChangesetStatus revStatus;
 
     // Merge Rev1 first
     RestoreTestFile();
     ASSERT_TRUE(m_defaultModel.IsValid());
-    revStatus = m_db->Txns().MergeChangeset(*revision1);
+    revStatus = m_db->Txns().PullMergeApply(*revision1);
     ASSERT_TRUE(revStatus == ChangesetStatus::Success);
 
     // Merge Rev2 next
-    revStatus = m_db->Txns().MergeChangeset(*revision2);
+    revStatus = m_db->Txns().PullMergeApply(*revision2);
     ASSERT_TRUE(revStatus == ChangesetStatus::Success);
 
     // Merge Rev3 next - should fail since the parent does not match
-    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision3); }, "changeset out of order");
+    expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision3); }, "changeset out of order");
 
     // Merge Rev3 first
     RestoreTestFile();
     ASSERT_TRUE(m_defaultModel.IsValid());
-    revStatus = m_db->Txns().MergeChangeset(*revision3);
+    revStatus = m_db->Txns().PullMergeApply(*revision3);
     ASSERT_TRUE(revStatus == ChangesetStatus::Success);
 
     // Delete model and Merge Rev1 - should fail since the model does not exist
@@ -402,9 +402,10 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     status = m_defaultModel->Delete();
     ASSERT_TRUE(status == DgnDbStatus::Success);
     m_defaultModel = nullptr;
-    m_db->SaveChanges("Deleted model and contained elements");
+     m_db->SaveChanges("Deleted model and contained elements");
 
-    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision1); }, "Detected 1 foreign key conflicts in ChangeSet. Aborting merge.");
+    // In rebase following error would not happen
+    // expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision1); }, "Detected 1 foreign key conflicts in ChangeSet. Aborting merge.");
     }
 
 //---------------------------------------------------------------------------------------
@@ -429,7 +430,7 @@ TEST_F(RevisionTestFixture, MergeToReadonlyBriefcase)
     RestoreTestFile(Db::OpenMode::Readonly);
 
     // Merge revision that was previously created to create a checkpoint file
-    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision1); }, "file is readonly");
+    expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision1); }, "file is readonly");
     }
 
 //---------------------------------------------------------------------------------------
@@ -466,7 +467,7 @@ TEST_F(RevisionTestFixture, ResetIdSequencesAfterApply)
     // Restore baseline file, apply the change sets with the same element inserts, and validate the last sequence id
     RestoreTestFile();
 
-    ChangesetStatus status = m_db->Txns().MergeChangeset(*revision);
+    ChangesetStatus status = m_db->Txns().PullMergeApply(*revision);
     ASSERT_TRUE(status == ChangesetStatus::Success);
 
     DgnElementId idAfterMerge;
@@ -686,7 +687,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
 
     // Merge revision 2 (Data changes - inserts to both tables)
     LOG.infov("Merging Revision 2");
-    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*revision2));
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*revision2));
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable1 WHERE Id=1", 1));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable2 WHERE Id=1", 1));
@@ -852,13 +853,13 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
 
     ASSERT_TRUE(m_db->ColumnExists("TestTable", "Column2"));
 
-    ChangesetStatus status = m_db->Txns().MergeChangeset(*dataChangesRevision);
+    ChangesetStatus status = m_db->Txns().PullMergeApply(*dataChangesRevision);
     ASSERT_TRUE(status == ChangesetStatus::Success);
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 1));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=1", 0)); // i.e., null value
 
-    status = m_db->Txns().MergeChangeset(*moreDataChangesRevision);
+    status = m_db->Txns().PullMergeApply(*moreDataChangesRevision);
     ASSERT_TRUE(status == ChangesetStatus::Success);
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=1", 1));
@@ -1349,7 +1350,7 @@ TEST_F(RevisionTestFixture, DISABLED_CreateAndMergePerformance)
     timer.Start();
     for (ChangesetPropsPtr const& rev : revisions)
         {
-        RevisionStatus status = m_db->Txns().MergeChangeset(*rev);
+        RevisionStatus status = m_db->Txns().PullMergeApply(*rev);
         ASSERT_TRUE(status == RevisionStatus::Success);
         }
     timer.Stop();
@@ -1405,7 +1406,7 @@ TEST_F(RevisionTestFixture, DISABLED_MergeFolderWithRevisions)
         fileStatus = BeFileName::BeCopyFile(revPathname.c_str(), rev->GetChangeStreamFile().c_str());
         ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
 
-        RevisionStatus status = m_db->Txns().MergeChangeset(*rev);
+        RevisionStatus status = m_db->Txns().PullMergeApply(*rev);
 
         if (status != RevisionStatus::Success)
             LOG.infov("Failed to merge revision: %s", revId.c_str());
@@ -1437,7 +1438,7 @@ TEST_F(RevisionTestFixture, DISABLED_MergeSpecificRevision)
     fileStatus = BeFileName::BeCopyFile(revPathname.c_str(), rev->GetChangeStreamFile().c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
 
-    RevisionStatus status = m_db->Txns().MergeChangeset(*rev);
+    RevisionStatus status = m_db->Txns().PullMergeApply(*rev);
 
     if (status != RevisionStatus::Success)
         LOG.infov("Failed to merge revision: %s", revId.c_str());
@@ -1552,10 +1553,10 @@ TEST_F(RevisionTestFixture, IterateOverRedundantSchemaChange)
 
     // ignore the initial revision since it will have a bunch of inserted stuff for setup purposes that we're not trying to iterate over
     //RevisionChangesFileReader reader1(revisionPtrs[0]->GetRevisionChangesFile(), *m_db);
-    ChangesetFileReader reader2(revisionPtrs[1]->GetFileName(), *m_db);
-    ChangesetFileReader reader3(revisionPtrs[2]->GetFileName(), *m_db);
-    ChangesetFileReader reader4(revisionPtrs[3]->GetFileName(), *m_db);
-    ChangesetFileReader reader5(revisionPtrs[4]->GetFileName(), *m_db);
+    ChangesetFileReader reader2(revisionPtrs[1]->GetFileName(), m_db.get());
+    ChangesetFileReader reader3(revisionPtrs[2]->GetFileName(), m_db.get());
+    ChangesetFileReader reader4(revisionPtrs[3]->GetFileName(), m_db.get());
+    ChangesetFileReader reader5(revisionPtrs[4]->GetFileName(), m_db.get());
     // this pointer array compensates for a lack of copy or move constructors which make this type difficult to put in STL containers
     std::array<ChangesetFileReader*, revisionPtrs.size() - 1> revisionReaders { &reader2, &reader3, &reader4, &reader5  };
 
@@ -1663,7 +1664,7 @@ TEST_F(RevisionTestFixture, CheckProfileVersionUpdateAfterMerge)
     EXPECT_EQ(0, ecDbVersion.CompareTo(initialECDbVersion));
     }
 
-    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*revision));
+    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*revision));
 
     {
     auto dgnDbVersion = m_db->GetProfileVersion();
@@ -1705,7 +1706,7 @@ TEST_F(RevisionTestFixture, BrokenECDbProfileInRevision)
 
     RestoreTestFile();
 
-    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision); }, "failed to apply changes");
+    expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision); }, "failed to apply changes");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1734,5 +1735,5 @@ TEST_F(RevisionTestFixture, BrokenDgnDbProfileInRevision)
 
     RestoreTestFile();
 
-    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision); }, "failed to apply changes");
+    expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision); }, "failed to apply changes");
     }

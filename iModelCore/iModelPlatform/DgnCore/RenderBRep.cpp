@@ -208,8 +208,8 @@ void BRepFacetRequestQueue::Process()
     outerMark = nullptr; // destroy the mark so that its tls is freed before we are terminated
     m_state.store(State::Terminated);
 
-    lock.unlock();
     m_cv.notify_all();
+    lock.unlock();
     }
 
 /*---------------------------------------------------------------------------------**//**

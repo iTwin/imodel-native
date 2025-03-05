@@ -170,6 +170,7 @@ struct ChainAssembler : MTGGraph
 {
 int m_vertexLabel;
 int m_edgeLabel;
+DPoint3dZYXTolerancedSortComparison m_comp;
 
 // The map "second" indexes back to the (parallel) m_xyz and m_nodeID arrays.
 PolyfaceZYXMap m_map;
@@ -211,7 +212,7 @@ void PrintMinDistances ()
         }
     }
 ChainAssembler (double xyzTol)
-  : m_map (DPoint3dZYXTolerancedSortComparison (xyzTol, 0.0))
+  : m_comp(xyzTol, 0.0), m_map (m_comp)
     {
     m_vertexLabel = DefineLabel (MY_XYZ_LABEL_TAG, MTG_LabelMask_VertexProperty, -1);
     m_edgeLabel = DefineLabel (MY_EDGE_LABEL_TAG, MTG_LabelMask_EdgeProperty, -1);
@@ -229,28 +230,66 @@ size_t FindOrAddPoint (DPoint3dCR xyz)
     return index;
     }
 
+bool FindDirectedEdgeBetweenVertices(MTGNodeId nodeAtStartVertex, MTGNodeId nodeAtEndVertex, MTGNodeId* startNode = nullptr) const
+    {
+    if (IsValidNodeId(nodeAtStartVertex) && IsValidNodeId(nodeAtEndVertex))
+        {
+        int farVertexIndex;
+        TryGetLabel(nodeAtEndVertex, m_vertexLabel, farVertexIndex);
+        MTGARRAY_VERTEX_LOOP(currNodeId, this, nodeAtStartVertex)
+            {
+            if (GetMaskAt(currNodeId, MY_START_MASK))
+                {
+                int vertexIndex;
+                if (TryGetLabel(FSucc(currNodeId), m_vertexLabel, vertexIndex))
+                    {
+                    if (vertexIndex == farVertexIndex)
+                        {
+                        if (startNode)
+                            *startNode = currNodeId;
+                        return true;
+                        }
+                    }
+                }
+            }
+        MTGARRAY_END_VERTEX_LOOP(currNodeId, this, nodeAtStartVertex)
+        }
+    if (startNode)
+        *startNode = MTG_NULL_NODEID;
+    return false;
+    }
+
 void AddEdge (size_t edgeIndex, DPoint3dCR xyzA, DPoint3dCR xyzB)
-  {
-  size_t indexA = FindOrAddPoint (xyzA);
-  size_t indexB = FindOrAddPoint (xyzB);
+    {
+    if (!m_comp.operator()(xyzA, xyzB) && !m_comp.operator()(xyzB, xyzA))
+        return; // don't add a trivial edge
 
-  MTGNodeId nodeIdA, nodeIdB;
-  CreateEdge (nodeIdA, nodeIdB);
+    size_t indexA = FindOrAddPoint (xyzA);
+    size_t indexB = FindOrAddPoint (xyzB);
 
-  if (m_nodeId[indexA] == MTG_NULL_NODEID)
-      m_nodeId[indexA] = nodeIdA;
-  else
-    VertexTwist (nodeIdA, m_nodeId[indexA]);
-  if (m_nodeId[indexB] == MTG_NULL_NODEID)
-      m_nodeId[indexB] = nodeIdB;
-  else
-    VertexTwist (nodeIdB, m_nodeId[indexB]);
-  TrySetLabel (nodeIdA, m_vertexLabel, (int)indexA);
-  TrySetLabel (nodeIdB, m_vertexLabel, (int)indexB);
-  TrySetLabel (nodeIdA, m_edgeLabel, (int)edgeIndex);
-  TrySetLabel (nodeIdB, m_edgeLabel, (int)edgeIndex);
-  SetMaskAt (nodeIdA, MY_START_MASK);
-  }
+    MTGNodeId nodeIdA = m_nodeId[indexA];
+    MTGNodeId nodeIdB = m_nodeId[indexB];
+
+    // don't add an edge that's already there in either direction
+    if (FindDirectedEdgeBetweenVertices(nodeIdA, nodeIdB) || FindDirectedEdgeBetweenVertices(nodeIdB, nodeIdA))
+        return;
+
+    CreateEdge (nodeIdA, nodeIdB);  // overwrite vars with new nodes
+
+    if (m_nodeId[indexA] == MTG_NULL_NODEID)
+        m_nodeId[indexA] = nodeIdA;
+    else
+        VertexTwist (nodeIdA, m_nodeId[indexA]);
+    if (m_nodeId[indexB] == MTG_NULL_NODEID)
+        m_nodeId[indexB] = nodeIdB;
+    else
+        VertexTwist (nodeIdB, m_nodeId[indexB]);
+    TrySetLabel (nodeIdA, m_vertexLabel, (int)indexA);
+    TrySetLabel (nodeIdB, m_vertexLabel, (int)indexB);
+    TrySetLabel (nodeIdA, m_edgeLabel, (int)edgeIndex);
+    TrySetLabel (nodeIdB, m_edgeLabel, (int)edgeIndex);
+    SetMaskAt (nodeIdA, MY_START_MASK);
+    }
 
 bool TryGetEdgeIndexAndDirection (MTGNodeId nodeId, size_t &index, bool &atStart)
     {

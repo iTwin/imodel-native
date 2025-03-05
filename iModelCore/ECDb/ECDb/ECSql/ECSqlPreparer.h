@@ -43,6 +43,7 @@ struct ECSqlExpPreparer final
 
     public:
         static ECSqlStatus PrepareAllOrAnyExp(ECSqlPrepareContext&, AllOrAnyExp const&);
+        static ECSqlStatus InsertSubquery(ECSqlPrepareContext&, AllOrAnyExp const&, SelectStatementExp const&, SqlCompareListType const&, BooleanSqlOperator const&);
         static ECSqlStatus PrepareBetweenRangeValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, BetweenRangeValueExp const&);
         static ECSqlStatus PrepareBinaryValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, BinaryValueExp const&);
         static ECSqlStatus PrepareBinaryBooleanExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, BinaryBooleanExp const&);

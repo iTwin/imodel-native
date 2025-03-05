@@ -315,9 +315,14 @@ public:
         : m_schema(schema), ECInstanceReadContext(standaloneEnablerLocater, schema, typeResolver), m_key(schema.GetSchemaKey())
         { }
 
-    virtual ECSchemaCP _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const override
+    virtual ECObjectsStatus _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const
         {
-        return key.Matches(m_key, matchType) ? &m_schema : nullptr;
+        if (key.Matches(m_key, matchType))
+            {
+            schema = &m_schema;
+            return ECObjectsStatus::Success;
+            }
+        return ECObjectsStatus::SchemaNotFound;
         }
 };
 
@@ -345,17 +350,18 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual ECSchemaCP _FindSchemaCP(SchemaKeyCR keyIn, SchemaMatchType matchType) const
+    virtual ECObjectsStatus _FindSchemaCP(SchemaKeyCR keyIn, SchemaMatchType matchType, ECSchemaCP& schema) const
         {
         SchemaKey key(keyIn);
-        ECSchemaPtr schema = m_schemaReadContext.LocateSchema (key, matchType);
-        if (schema.IsNull())
-            return nullptr;
+        ECSchemaPtr schemaPtr = m_schemaReadContext.LocateSchema (key, matchType);
+        if (schemaPtr.IsNull())
+            return ECObjectsStatus::SchemaNotFound;
 
         if (nullptr != m_foundSchema)
-            (*m_foundSchema) = schema;
+            (*m_foundSchema) = schemaPtr;
 
-        return schema.get();
+        schema = schemaPtr.get();
+        return ECObjectsStatus::Success;
         }
     };
 
@@ -385,7 +391,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual ECSchemaCP _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const
+    virtual ECObjectsStatus _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const
         {
         if (m_containerSchema.GetName().EqualsI(key.GetName()))
             {
@@ -393,21 +399,25 @@ public:
             if (!m_containerSchema.GetSchemaKey().Matches(key, matchType))
                 {
                 LOG.errorv("CustomAttributeInstanceReadContext - Name of container schema (%s) matches requested key, but versions are incompatible.", m_containerSchema.GetName().c_str());
-                return nullptr;
+                return ECObjectsStatus::IncompatibleVersion;
                 }
 
-            return &m_containerSchema;
+            schema = &m_containerSchema;
+            return ECObjectsStatus::Success;
             }
 
         auto& references = m_containerSchema.GetReferencedSchemas();
         auto it = references.Find(key, matchType);
         if (it != references.end())
-            return it->second.get();
+            {
+            schema = it->second.get();
+            return ECObjectsStatus::Success;
+            }
 
         if (m_schemaContext.GetSchemasToPrune().end() != std::find(m_schemaContext.GetSchemasToPrune().begin(), m_schemaContext.GetSchemasToPrune().end(), key.GetName()))
             {
-            LOG.infov("Skipping loading of the custom attribute because its schema %s is being pruned.", key.GetFullSchemaName().c_str());
-            return nullptr;
+            LOG.debugv("Skipping loading of the custom attribute because its schema %s is being pruned.", key.GetFullSchemaName().c_str());
+            return ECObjectsStatus::SchemaIsPruned;
             }
 
         LOG.errorv("CustomAttributeInstanceReadContext - Custom attribute schema %s not found in referenced schemas of %s. Trying fallback mechanism.", key.GetFullSchemaName().c_str(), m_containerSchema.GetFullSchemaName().c_str());
@@ -415,9 +425,12 @@ public:
         SchemaKey nonConstKey(key);
         ECSchemaPtr schemaFromContext = m_schemaContext.LocateSchema (nonConstKey, matchType);
         if(schemaFromContext.IsValid())
-            return schemaFromContext.get();
+            {
+            schema = schemaFromContext.get();
+            return ECObjectsStatus::Success;
+            }
 
-        return nullptr;
+        return ECObjectsStatus::SchemaNotFound;
         }
     };
 

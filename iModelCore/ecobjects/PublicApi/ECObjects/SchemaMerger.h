@@ -51,9 +51,14 @@ public:
 struct SchemaMergeOptions final
     {
 private:
+    bool m_skipValidation = false;
     BeJsDocument m_json;
 public:
     SchemaMergeOptions() {}
+
+    //! Setting this flag instructs the merger to skip validations
+    void SetSkipValidation(bool flag) { m_skipValidation = flag; }
+    bool GetSkipValidation() const { return m_skipValidation; }
 
     //! Instructs the merger to only merge schemas which are marked as dynamic schemas. Defaults to false.
     void SetMergeOnlyDynamicSchemas(bool flag) { m_json[SCHEMAMERGER_OPTION_MERGEONLYDYNAMICSCHEMAS] = flag; }
@@ -125,31 +130,31 @@ public:
     //! @param[in] left All existing schemas
     //! @param[in] right The new schemas which should be merged
     //! @param[in] options Custom settings for merge schemas operation
-    ECOBJECTS_EXPORT static BentleyStatus MergeSchemas(SchemaMergeResult& result, bvector<ECSchemaCP> const& left, bvector<ECSchemaCP> const& right, SchemaMergeOptions const& options = SchemaMergeOptions());
+    ECOBJECTS_EXPORT static ECObjectsStatus MergeSchemas(SchemaMergeResult& result, bvector<ECSchemaCP> const& left, bvector<ECSchemaCP> const& right, SchemaMergeOptions const& options = SchemaMergeOptions());
 
     using ShouldMergeSchemaFunc = std::function<bool(ECSchemaCP schema)>;
 
 private:
-    static BentleyStatus MergeSchema(SchemaMergeResult& result, ECSchemaP left, ECSchemaCP right, RefCountedPtr<SchemaChange> schemaChange, SchemaMergeOptions const& options);
-    static BentleyStatus MergeClass(SchemaMergeResult& result, ECClassP left, ECClassCP right, RefCountedPtr<ClassChange> classChange, SchemaMergeOptions const& options);
-    static BentleyStatus MergeProperty(SchemaMergeResult& result, ECPropertyP left, ECPropertyCP right, RefCountedPtr<PropertyChange> propertyChange, SchemaMergeOptions const& options);
-    static BentleyStatus MergeRelationshipConstraint(SchemaMergeResult& result, ECRelationshipClassP left, ECClassCP right, RelationshipConstraintChange& change, SchemaMergeOptions const& options, bool isSource);
+    static ECObjectsStatus MergeSchema(SchemaMergeResult& result, ECSchemaP left, ECSchemaCP right, RefCountedPtr<SchemaChange> schemaChange, SchemaMergeOptions const& options);
+    static ECObjectsStatus MergeClass(SchemaMergeResult& result, ECClassP left, ECClassCP right, RefCountedPtr<ClassChange> classChange, SchemaMergeOptions const& options);
+    static ECObjectsStatus MergeProperty(SchemaMergeResult& result, ECPropertyP left, ECPropertyCP right, RefCountedPtr<PropertyChange> propertyChange, SchemaMergeOptions const& options);
+    static ECObjectsStatus MergeRelationshipConstraint(SchemaMergeResult& result, ECRelationshipClassP left, ECClassCP right, RelationshipConstraintChange& change, SchemaMergeOptions const& options, bool isSource);
 
-    static BentleyStatus MergeKindOfQuantity(SchemaMergeResult& result, KindOfQuantityP left, KindOfQuantityCP right, RefCountedPtr<KindOfQuantityChange> change, SchemaMergeOptions const& options);
-    static BentleyStatus MergeEnumeration(SchemaMergeResult& result, ECEnumerationP left, ECEnumerationCP right, RefCountedPtr<EnumerationChange> change, SchemaMergeOptions const& options);
-    static BentleyStatus MergePropertyCategory(SchemaMergeResult& result, PropertyCategoryP left, PropertyCategoryCP right, RefCountedPtr<PropertyCategoryChange> change, SchemaMergeOptions const& options);
+    static ECObjectsStatus MergeKindOfQuantity(SchemaMergeResult& result, KindOfQuantityP left, KindOfQuantityCP right, RefCountedPtr<KindOfQuantityChange> change, SchemaMergeOptions const& options);
+    static ECObjectsStatus MergeEnumeration(SchemaMergeResult& result, ECEnumerationP left, ECEnumerationCP right, RefCountedPtr<EnumerationChange> change, SchemaMergeOptions const& options);
+    static ECObjectsStatus MergePropertyCategory(SchemaMergeResult& result, PropertyCategoryP left, PropertyCategoryCP right, RefCountedPtr<PropertyCategoryChange> change, SchemaMergeOptions const& options);
 
-    static BentleyStatus MergePhenomenon(SchemaMergeResult& result, PhenomenonP left, PhenomenonCP right, RefCountedPtr<PhenomenonChange> change, SchemaMergeOptions const& options);
-    static BentleyStatus MergeUnitSystem(SchemaMergeResult& result, UnitSystemP left, UnitSystemCP right, RefCountedPtr<UnitSystemChange> change, SchemaMergeOptions const& options);
-    static BentleyStatus MergeUnit(SchemaMergeResult& result, ECUnitP left, ECUnitCP right, RefCountedPtr<UnitChange> change, SchemaMergeOptions const& options);
-    static BentleyStatus MergeFormat(SchemaMergeResult& result, ECFormatP left, ECFormatCP right, RefCountedPtr<FormatChange> change, SchemaMergeOptions const& options);
+    static ECObjectsStatus MergePhenomenon(SchemaMergeResult& result, PhenomenonP left, PhenomenonCP right, RefCountedPtr<PhenomenonChange> change, SchemaMergeOptions const& options);
+    static ECObjectsStatus MergeUnitSystem(SchemaMergeResult& result, UnitSystemP left, UnitSystemCP right, RefCountedPtr<UnitSystemChange> change, SchemaMergeOptions const& options);
+    static ECObjectsStatus MergeUnit(SchemaMergeResult& result, ECUnitP left, ECUnitCP right, RefCountedPtr<UnitChange> change, SchemaMergeOptions const& options);
+    static ECObjectsStatus MergeFormat(SchemaMergeResult& result, ECFormatP left, ECFormatCP right, RefCountedPtr<FormatChange> change, SchemaMergeOptions const& options);
 
     template <typename T, typename TSetter = T, typename TParent> //TSetter may differ from T, being the const or reference version of T
-    static BentleyStatus MergePrimitive(PrimitiveChange<T>& change, TParent* parent, ECObjectsStatus(TParent::*setPrimitive)(TSetter), Utf8CP parentKey, SchemaMergeResult& result, SchemaMergeOptions const& options, bool preferLeftValue = true);
+    static ECObjectsStatus MergePrimitive(PrimitiveChange<T>& change, TParent* parent, ECObjectsStatus(TParent::*setPrimitive)(TSetter), Utf8CP parentKey, SchemaMergeResult& result, SchemaMergeOptions const& options, bool preferLeftValue = true);
     static void MergeCustomAttributes(SchemaMergeResult& result, CustomAttributeChanges& changes, Utf8CP scopeDescription, IECCustomAttributeContainerP left, IECCustomAttributeContainerCP right);
 
     template <typename TItemChange, typename TItem>
-    using TMergeItem = BentleyStatus(*)(SchemaMergeResult&, TItem *, const TItem *, RefCountedPtr<TItemChange>, const SchemaMergeOptions &);
+    using TMergeItem = ECObjectsStatus(*)(SchemaMergeResult&, TItem *, const TItem *, RefCountedPtr<TItemChange>, const SchemaMergeOptions &);
     template <typename TItem>
     using TCopyItem = ECObjectsStatus(ECSchema::*)(TItem * &, const TItem &, bool, Utf8CP);
     template <typename TItem>
@@ -157,7 +162,7 @@ private:
     template <typename TItem>
     using TGetItemP = TItem *(ECSchema::*)(Utf8CP);
     template <typename TItemChange, typename TItem>
-    static BentleyStatus MergeItems(SchemaMergeResult& result, ECSchemaP left, ECSchemaCP right, SchemaMergeOptions const& options, ECChangeArray<TItemChange>& changes, TGetItemCP<TItem> getItemCP, TGetItemP<TItem> getItemP, TCopyItem<TItem> copyItem, TMergeItem<TItemChange, TItem> mergeItem);
+    static ECObjectsStatus MergeItems(SchemaMergeResult& result, ECSchemaP left, ECSchemaCP right, SchemaMergeOptions const& options, ECChangeArray<TItemChange>& changes, TGetItemCP<TItem> getItemCP, TGetItemP<TItem> getItemP, TCopyItem<TItem> copyItem, TMergeItem<TItemChange, TItem> mergeItem);
 
     template <typename T> 
     using SchemaItemGetterFunc = std::function<T(ECSchemaP schema, Utf8StringCR itemName)>;
@@ -165,7 +170,7 @@ private:
     using SchemaItemSetterFunc = std::function<ECObjectsStatus(T value)>;
 
     template <typename T>
-    static BentleyStatus MergeReferencedSchemaItem(SchemaMergeResult& result, StringChange& change, SchemaItemSetterFunc<T> setterFunc, SchemaItemGetterFunc<T> getterFunc, Utf8CP parentKey, SchemaMergeOptions const& options);
+    static ECObjectsStatus MergeReferencedSchemaItem(SchemaMergeResult& result, StringChange& change, SchemaItemSetterFunc<T> setterFunc, SchemaItemGetterFunc<T> getterFunc, Utf8CP parentKey, SchemaMergeOptions const& options);
     static ECSchemaCP FindSchemaByName(bvector<ECSchemaCP> const& schemas, Utf8CP schemaName);
     static BentleyStatus ValidateUniqueSchemaNames(bvector<ECSchemaCP> const& schemas, SchemaMergeResult& result, Utf8CP schemaListName);
 };

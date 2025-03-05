@@ -689,7 +689,7 @@ BeSQLite::EC::DropSchemaResult DgnDomains::DoDropSchema(Utf8StringCR name, bool 
     }
 
     if (dgndb.IsBriefcase()) {
-        if (dgndb.Txns().HasLocalChanges()) {
+        if (dgndb.Txns().HasChanges()) {
             LOG.error("Cannot drop schema when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
             return BeSQLite::EC::DropSchemaResult(DropSchemaResult::ErrorDbHasLocalChanges);
         }
@@ -699,8 +699,36 @@ BeSQLite::EC::DropSchemaResult DgnDomains::DoDropSchema(Utf8StringCR name, bool 
         LOG.debugv("Schema to be dropped: %s", name.c_str());
     }
 
-    dgndb.Txns().SetHasEcSchemaChanges(true);
     return dgndb.Schemas().DropSchema(name, dgndb.GetSchemaImportToken(), logIssue);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::EC::DropSchemaResult DgnDomains::DoDropSchemas(bvector<Utf8String> schemaNames, bool logIssue) {
+    DgnDbR dgndb = GetDgnDb();
+    if (dgndb.IsReadonly()) {
+        LOG.error("Cannot drop schemas from a Readonly Db");
+        return BeSQLite::EC::DropSchemaResult(DropSchemaResult::ErrorDbIsReadonly);
+    }
+
+    if (!m_allowSchemaImport) {
+        LOG.error("Drop schemas is prohibited");
+        return BeSQLite::EC::DropSchemaResult(DropSchemaResult::Error);
+    }
+
+    if (dgndb.IsBriefcase()) {
+        if (dgndb.Txns().HasLocalChanges()) {
+            LOG.error("Cannot drop schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
+            return BeSQLite::EC::DropSchemaResult(DropSchemaResult::ErrorDbHasLocalChanges);
+        }
+    }
+
+    if (LOG.isSeverityEnabled(SEVERITY::LOG_DEBUG)) {
+        LOG.debugv("Schemas to be dropped: %s", BeStringUtilities::Join(schemaNames, ",").c_str());
+    }
+
+    return dgndb.Schemas().DropSchemas(schemaNames, dgndb.GetSchemaImportToken(), logIssue);
 }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -731,8 +759,6 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const &importSchema
         if (dgndb.IsBriefcase() && dgndb.Txns().HasLocalChanges())
             LOG.debug("ImportSchemas called while there are local changes and/or txns in the briefcase.");
     }
-
-    dgndb.Txns().SetHasEcSchemaChanges(true);
 
     auto const rc =  dgndb.Schemas().ImportSchemas(importSchemas, importOptions, dgndb.GetSchemaImportToken(), uri);
     if (!rc.IsOk()) {

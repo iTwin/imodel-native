@@ -1074,9 +1074,24 @@ DRange1d DPoint3dOps::ProjectedParameterRange (bvector<DPoint3d> const &points, 
     return range;
     }
 
+double DPoint3dOps::ToleranceXY (bvector<DPoint3d> const& data, double absTol, double relTol)
+    {
+    if (absTol < 0.0)
+        absTol = s_defaultAbsTol;
+    if (relTol < 0.0)
+        relTol = s_defaultRelTol;
+    double tol = absTol;
+    if (relTol > 0.0)
+        tol += relTol * DPoint3dOps::LargestXYCoordinate(data.data(), data.size());
+    return tol;
+    }
 
-
-
+double DPoint3dOps::AreaToleranceXY(DRange3dCR range, double distanceTolerance)
+    {
+    // if A = bh and e is distance tolerance, then A' := (b+e/2)(h+e/2) = A + e/2(b+h+e/2), so A'-A = e/2(b+h+e/2).
+    double halfDistTol = 0.5 * distanceTolerance;
+    return halfDistTol * (range.XLength() + range.YLength() + halfDistTol);
+    }
 
 //! Query object used by cluster analysis.
 struct ClusterQueries

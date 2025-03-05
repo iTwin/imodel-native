@@ -10,7 +10,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC;
 const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_ECDB_SCHEMA = "44c5d675cdab562b732a90b8c0128149daaa7a2beefbcbddb576f7bf059cec33";
 const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_ECDB_MAP = "9c7834d13177336f0fa57105b9c1175b912b2e12e62ca2224482c0ffd9dfd337";
 const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_SQLITE_SCHEMA = "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443";
-const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_CHANNEL_SQLITE_SCHEMA = "114aebfc89d430c79bfd1bbbb5796837a91d02d8cb409dcdd83ba5d1dc074eb4";
+const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_CHANNEL_SQLITE_SCHEMA = "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -125,7 +125,7 @@ SchemaImportResult SchemaSyncTestFixture::SetupECDb(Utf8CP ecdbName)
     m_hub = std::make_unique<ECDbHub>(ECDbHub());
     m_briefcase = m_hub->CreateBriefcase();
     m_schemaChannel = std::make_unique<SchemaSyncDb>(SchemaSyncDb(ecdbName));
-    if (SchemaSync::Status::OK != m_briefcase->Schemas().GetSchemaSync().Init(GetSyncDbUri()))
+    if (SchemaSync::Status::OK != m_briefcase->Schemas().GetSchemaSync().Init(GetSyncDbUri(), BeGuid(true).ToString(), false))
         return SchemaImportResult::ERROR;
 
     EXPECT_EQ(BE_SQLITE_OK, m_briefcase->PullMergePush("init"));
@@ -145,7 +145,7 @@ SchemaImportResult SchemaSyncTestFixture::SetupECDb(Utf8CP ecdbName, SchemaItem 
     m_hub = std::make_unique<ECDbHub>(ECDbHub());
     m_briefcase = m_hub->CreateBriefcase();
     m_schemaChannel = std::make_unique<SchemaSyncDb>(SchemaSyncDb(ecdbName));
-    if (SchemaSync::Status::OK != m_briefcase->Schemas().GetSchemaSync().Init(GetSyncDbUri()))
+    if (SchemaSync::Status::OK != m_briefcase->Schemas().GetSchemaSync().Init(GetSyncDbUri(), BeGuid(true).ToString(), false))
         return SchemaImportResult::ERROR;
 
     EXPECT_EQ(BE_SQLITE_OK, m_briefcase->PullMergePush("init"));
@@ -259,19 +259,19 @@ void SchemaSyncTestFixture::PrintHash(ECDbR ecdb, Utf8CP desc) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SchemaSyncTestFixture::CheckHashes(ECDbR ecdb, Utf8CP schemaHash, Utf8CP mapHash, Utf8CP dbSchemaHash, bool strictCheck)
+void SchemaSyncTestFixture::CheckHashes(ECDbR ecdb, Utf8CP schemaHash, Utf8CP mapHash, Utf8CP dbSchemaHash, bool strictCheck, int lineNo)
     {
     if (strictCheck)
         {
-        ASSERT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str())       << "File: " << ecdb.GetDbFileName();
-        ASSERT_STREQ(mapHash, GetMapHash(ecdb).c_str())             << "File: " << ecdb.GetDbFileName();
-        ASSERT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str())   << "File: " << ecdb.GetDbFileName();
+        ASSERT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str())       << "File: " << ecdb.GetDbFileName() << " Line: " << lineNo;
+        ASSERT_STREQ(mapHash, GetMapHash(ecdb).c_str())             << "File: " << ecdb.GetDbFileName() << " Line: " << lineNo;;
+        ASSERT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str())   << "File: " << ecdb.GetDbFileName() << " Line: " << lineNo;;
         }
     else
         {
-        EXPECT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str())       << "File: " << ecdb.GetDbFileName();
-        EXPECT_STREQ(mapHash, GetMapHash(ecdb).c_str())             << "File: " << ecdb.GetDbFileName();
-        EXPECT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str())   << "File: " << ecdb.GetDbFileName();
+        EXPECT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str())       << "File: " << ecdb.GetDbFileName() << " Line: " << lineNo;;
+        EXPECT_STREQ(mapHash, GetMapHash(ecdb).c_str())             << "File: " << ecdb.GetDbFileName() << " Line: " << lineNo;;
+        EXPECT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str())   << "File: " << ecdb.GetDbFileName() << " Line: " << lineNo;;
         }
     }
 
@@ -460,7 +460,6 @@ SchemaImportResult InMemoryECDb::ImportSchema(SchemaItem const& si) {
     bvector<ECN::ECSchemaP> schemas;
     ctx->GetCache().GetSchemas(schemas);
     bvector<ECN::ECSchemaCP> schemasIn(schemas.begin(), schemas.end());
-   // if (m_tracker != nullptr) m_tracker->SetHasEcSchemaChanges(true);
     return Schemas().ImportSchemas(schemasIn, nullptr);
 }
 
@@ -780,12 +779,20 @@ ECDbChangeSet::Ptr ECDbChangeSet::From(ECDbChangeTracker& tracker, Utf8CP commen
     if (!tracker.HasChanges() && !tracker.HasDdlChanges()) {
         return nullptr;
     }
-    auto changeset = std::make_unique<ECDbChangeSet>( (int)(tracker.GetLocalChangesets().size() + 1), comment, tracker.GetDDL().c_str(), tracker.HasEcSchemaChanges());
+    auto changeset = std::make_unique<ECDbChangeSet>( (int)(tracker.GetLocalChangesets().size() + 1), comment, tracker.GetDDL().c_str(), false);
     if (tracker.HasChanges()) {
         auto rc = changeset->FromChangeTrack(tracker);
         if (rc != BE_SQLITE_OK) {
             return nullptr;
         }
+        bool hasECChanges = false;
+        for (auto& change : changeset->GetChanges()) {
+            if (change.GetTableName().StartsWithIAscii("ec_")) {
+                hasECChanges = true;
+                break;
+            }
+        }
+        changeset->m_hasSchemaChanges = hasECChanges;
     }
     return std::move(changeset);
 }
@@ -901,11 +908,10 @@ ECDbHub::ECDbHub():m_id(true), m_briefcaseid(10) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::vector<ECDbChangeSet*> ECDbHub::Query(int afterChangesetId) {
 	std::vector<ECDbChangeSet*> results;
-	const auto cid = afterChangesetId - 1;
-	if (cid < 0 || cid > (int)m_changesets.size() - 1) {
+	if (afterChangesetId < 0 || afterChangesetId >= (int)m_changesets.size()) {
 		return results;
 	}
-	for (auto i = cid; i < m_changesets.size(); ++i) {
+	for (auto i = afterChangesetId; i < m_changesets.size(); ++i) {
 		results.push_back(m_changesets[i].get());
 	}
 	return results;

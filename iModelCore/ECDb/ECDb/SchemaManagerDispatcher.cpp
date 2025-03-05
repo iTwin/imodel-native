@@ -199,6 +199,27 @@ ECClassCP VirtualSchemaManager::GetClass(Utf8StringCR schemaName, Utf8StringCR c
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP VirtualSchemaManager::FindClass(Utf8StringCR className, size_t& numberOfClasses) const{
+    BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
+    std::vector<ECClassCP> v;
+    for(auto it = m_schemas.begin(); it != m_schemas.end(); ++it)
+    {
+        ECClassCP tempClass = GetClass(it->first, className);
+        if(tempClass != nullptr)
+            v.push_back(tempClass);
+    }
+    numberOfClasses = v.size();
+    if(v.size() == 0)
+        return nullptr;
+    else if(v.size() == 1)
+        return v[0];
+    else
+        return nullptr;
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus VirtualSchemaManager::Add(Utf8StringCR schemaXml) const{
     return AddAndValidateVirtualSchema(schemaXml, true);
 }
@@ -252,6 +273,16 @@ SchemaManager::Dispatcher::Iterable SchemaManager::Dispatcher::GetIterable(Utf8C
 
     return Iterable(*manager);
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaManager::Dispatcher::ExistsManager(Utf8StringCR tableSpace) const
+    {
+    BeMutexHolder lock(m_mutex);
+    return m_managers.find(tableSpace) != m_managers.end();
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -750,7 +781,7 @@ bool SchemaManager::Dispatcher::IsClassUnsupported(ECClassId classId) const
 
             if (stmt.BindId(1, caClassId) != DbResult::BE_SQLITE_OK)
                 return;
-            
+
             while (stmt.Step() == BE_SQLITE_ROW)
                 {
                 auto classId = stmt.GetValueId<ECClassId>(0);
@@ -768,7 +799,7 @@ bool SchemaManager::Dispatcher::IsClassUnsupported(ECClassId classId) const
                     if (ca.Verify(m_ecdb.GetImpl().Issues(), classCaption.c_str()) == BentleyStatus::SUCCESS)
                         continue; //step out, our current code passes the CA requirements
                     }
-                
+
                 if (classWithCA->IsEntityClass() || classWithCA->IsRelationshipClass()) //ignoring structs here for now, the CA has no effect on those
                     {
                     baseUnsupportedClasses.insert(classId);
@@ -879,7 +910,7 @@ Nullable<ECDerivedClassesList> TableSpaceSchemaManager::GetAllDerivedClasses(ECN
         LOG.errorv("SchemaManager::GetAllDerivedClasses failed for ECClass %s. Its subclasses could not be loaded.", baseClass.GetFullName());
         return nullptr;
         }
-    
+
     return Nullable<ECDerivedClassesList>(m_reader.GetAllDerivedClasses(id));
     }
 
@@ -1005,48 +1036,46 @@ ClassMap* TableSpaceSchemaManager::AddClassMap(std::unique_ptr<ClassMap> classMa
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportToken const* schemaImportToken, bool logIssue) const {
-    ECDB_PERF_LOG_SCOPE("Drop schema");
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::DropSchema");
+    return DropSchemas({ name }, schemaImportToken, logIssue);
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DropSchemaResult MainSchemaManager::DropSchemas(bvector<Utf8String> schemaNames, SchemaImportToken const* schemaImportToken, bool logIssue) const
+    {
+    ECDB_PERF_LOG_SCOPE("Drop multiple schemas");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::DropSchemas");
     OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
     SchemaImportContext ctx(m_ecdb, SchemaManager::SchemaImportOptions());
-    Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_ecdb, schemaImportToken));
-    if (!policy.IsSupported()) {
-        LOG.error("Failed to drop ECSchema: Caller has not provided a SchemaImportToken.");
-        return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
-    // if (!GetSchemaSync().GetInfo().IsEmpty()) {
-    //     m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to drop ECSchema. ECDb is configured to use Schema Sync which does not support drop schema.");
-    //     return DropSchemaResult(DropSchemaResult::Status::Error);
-    // }
-    if (m_ecdb.IsReadonly()) {
-        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0278, "Failed to drop ECSchema. ECDb file is read-only.");
-        return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
 
-    if (m_ecdb.Schemas().GetSchema(name) == nullptr) {
-        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0279, "Failed to drop ECSchema. Schema provided does not exist");
-        return DropSchemaResult(DropSchemaResult::Status::ErrorSchemaNotFound);
-    }
+    if (const auto policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_ecdb, schemaImportToken)); !policy.IsSupported())
+        {
+        LOG.error("Failed to drop ECSchemas: Caller has not provided a SchemaImportToken.");
+        return DropSchemaResult(DropSchemaResult::Status::Error);
+        }
+    if (m_ecdb.IsReadonly())
+        {
+        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0278, "Failed to drop ECSchemas. ECDb file is read-only.");
+        return DropSchemaResult(DropSchemaResult::Status::Error);
+        }
 
-    const int majorMinorSub1Comp = m_ecdb.GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion(), ProfileVersion::VERSION_MajorMinorSub1);
-    if (majorMinorSub1Comp > 0) {
+    if (m_ecdb.GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion(), ProfileVersion::VERSION_MajorMinorSub1) > 0)
+        {
         m_ecdb.GetImpl().Issues().ReportV(
             IssueSeverity::Error,
             IssueCategory::BusinessProperties,
             IssueType::ECDbIssue,
             ECDbIssueId::ECDb_0280,
-            "Failed to drop ECSchema. Cannot drop schema from a file which was created with a higher version of this softwares. The file's version, however, is %s.",
+            "Failed to drop ECSchemas. Cannot drop schemas from a file which was created with a higher version of this softwares. The file's version, however, is %s.",
             ECDb::CurrentECDbProfileVersion().ToString().c_str(),
-            m_ecdb.GetECDbProfileVersion().ToString().c_str()
-        );
+            m_ecdb.GetECDbProfileVersion().ToString().c_str());
         return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
+        }
 
     BeMutexHolder lock(m_mutex);
-    auto rc =  SchemaWriter::DropSchema(name, ctx, logIssue);
-    if (rc.IsError()) {
+    if (auto rc =  SchemaWriter::DropSchemas(schemaNames, ctx, logIssue); rc.IsError())
         return rc;
-    }
 
     if (SUCCESS != ViewGenerator::DropECClassViews(m_ecdb))
         return DropSchemaResult(DropSchemaResult::Status::Error);
@@ -1064,16 +1093,17 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
         }
 
     m_ecdb.ClearECDbCache();
-    if (SUCCESS != DbMapValidator(ctx).Validate()) {
+    if (SUCCESS != DbMapValidator(ctx).Validate())
+        {
         ClearCache();
         return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
+        }
 
     m_ecdb.ClearECDbCache();
     OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::DropSchema");
-    return rc;
-}
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::DropSchemas");
+    return DropSchemaResult::Success;
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
@@ -1198,7 +1228,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
             m_ecdb.GetImpl().Issues().ReportV(
                 IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
                 "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was provided. Sync-Id: {%s}, uri: {%s}.",
-                localDbInfo.GetSyncId().ToString().c_str(),
+                localDbInfo.GetSyncId().c_str(),
                 resolvedSyncDbUri.GetUri().c_str()
             );
             return SchemaImportResult::ERROR;
@@ -1212,7 +1242,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                     IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0586,
                     "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}.",
 
-                    localDbInfo.GetSyncId().ToString().c_str()
+                    localDbInfo.GetSyncId().c_str()
                 );
                 return SchemaImportResult::ERROR;
                 }
@@ -1222,7 +1252,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                 m_ecdb.GetImpl().Issues().ReportV(
                     IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
                     "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
-                    localDbInfo.GetSyncId().ToString().c_str(),
+                    localDbInfo.GetSyncId().c_str(),
                     resolvedSyncDbUri.GetUri().c_str()
                 );
                 return SchemaImportResult::ERROR;
@@ -1232,7 +1262,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                 LOG.error("Failed to import ECSchemas: Failed to create id factory.");
                 return SchemaImportResult::ERROR;
                 }
-            }   
+            }
         }
     for (auto schema: schemas) {
         if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
@@ -1297,7 +1327,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
             m_ecdb.GetImpl().Issues().ReportV(
                 IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
                 "Failed to import ECSchemas. Unable to push changes to Sync-Id: {%s}, uri: {%s}.",
-                localDbInfo.GetSyncId().ToString().c_str(),
+                localDbInfo.GetSyncId().c_str(),
                 resolvedSyncDbUri.GetUri().c_str());
             return SchemaImportResult::ERROR;
             }
@@ -1397,11 +1427,6 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
 
         if (!ctx.AllowDataTransform()) {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0590, "Import ECSchema failed. Data transform is required which is rejected by default unless explicitly allowed.");
-            ctx.GetDataTransform().ForEach([&](TransformData::Task const& task) {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0591, "Transform SQL (%s): %s", task.GetDescription().c_str(), task.GetSql().c_str());
-                return true;
-            });
-
             return SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED;
         }
         if (BE_SQLITE_OK != ctx.GetDataTransform().Execute(m_ecdb)) {
@@ -1951,7 +1976,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                         }
 
                     // Drop the existing index as its defintion has modified and need to be recreated.
-                    if (BE_SQLITE_OK != m_ecdb.ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
+                    if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
                         return ERROR;
 
                     if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
@@ -1971,7 +1996,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
             else
                 {
                 // This is for safety.
-                if (BE_SQLITE_OK != m_ecdb.ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
+                if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
                     return ERROR;
 
                 LOG.debugv("Schema Import> Creating Index '%s'.", index.GetName().c_str());

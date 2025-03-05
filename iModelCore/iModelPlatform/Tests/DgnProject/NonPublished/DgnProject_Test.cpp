@@ -51,7 +51,7 @@ TEST_F(DgnDbTest, CheckStandardProperties)
     SetupSeedProject();
 
     DgnDbP project = m_db.get();
-    ASSERT_TRUE(project != NULL);
+    ASSERT_TRUE(project != nullptr);
     Utf8String val;
 
     // Check that std properties are in the be_Props table. We can only check the value of a few using this API.
@@ -81,7 +81,7 @@ TEST_F(DgnDbTest, ProjectProfileVersions)
 {
     SetupSeedProject();
     DgnDbP project = m_db.get();
-    ASSERT_TRUE(project != NULL);
+    ASSERT_TRUE(project != nullptr);
 
     // Get Schema version details
     DgnDbProfileVersion profileVer = project->GetProfileVersion();
@@ -119,7 +119,7 @@ TEST_F(DgnDbTest, ProjectWithDuplicateName)
 
     //Create and Verify that project was created
     project = DgnDb::CreateIModel(&status, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
-    ASSERT_TRUE(project != NULL);
+    ASSERT_TRUE(project != nullptr);
     ASSERT_EQ(BE_SQLITE_OK, status) << "Status returned is:" << status;
 
     // Close the original project (otherwise, we'll get a sharing violation, rather than a dup name error).
@@ -147,13 +147,13 @@ TEST_F(DgnDbTest, MultipleReadWrite)
     DgnDbPtr dgnProj1;
     dgnProj1 = DgnDb::OpenIModelDb(&status1, testFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
     EXPECT_EQ(BE_SQLITE_OK, status1) << status1;
-    ASSERT_TRUE(dgnProj1 != NULL);
+    ASSERT_TRUE(dgnProj1 != nullptr);
 
     DbResult status2;
     DgnDbPtr dgnProj2;
     dgnProj2 = DgnDb::OpenIModelDb(&status2, testFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
     EXPECT_NE(BE_SQLITE_OK, status2) << status2;
-    ASSERT_TRUE(dgnProj2 == NULL);
+    ASSERT_TRUE(dgnProj2 == nullptr);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -169,7 +169,7 @@ TEST_F(DgnDbTest, InvalidFileFormat)
     DbResult status;
     dgnProj = DgnDb::OpenIModelDb(&status, path, DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ(BE_SQLITE_NOTADB, status) << status;
-    ASSERT_TRUE(dgnProj == NULL);
+    ASSERT_TRUE(dgnProj == nullptr);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -189,7 +189,7 @@ TEST_F(DgnDbTest, CreateIModel)
     CreateDgnDbParams params(TEST_NAME);
     dgnProj = DgnDb::CreateIModel(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
     EXPECT_EQ(BE_SQLITE_OK, status) << status;
-    ASSERT_TRUE(dgnProj != NULL);
+    ASSERT_TRUE(dgnProj != nullptr);
 }
 
 
@@ -271,6 +271,64 @@ TEST_F(DgnDbTest, ImportSchemaWithLocalChanges)
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnDbTest, DropSchemas)
+    {
+    auto result = BE_SQLITE_ERROR;
+    CreateDgnDbParams params(TEST_NAME);
+    auto dgndb = DgnDb::CreateIModel(&result, DgnDbTestDgnManager::GetOutputFilePath(L"DropSchemas.bim"), params);
+    ASSERT_TRUE(dgndb.IsValid());
+
+    auto schemaContext = ECN::ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(dgndb->GetSchemaLocater());
+
+    BeFileName searchDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
+    searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
+    schemaContext->AddSchemaLocater(dgndb->GetSchemaLocater());
+    schemaContext->AddSchemaPath(searchDir.GetName());
+
+    ECSchemaPtr schema = nullptr;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(
+        <ECSchema schemaName="TestSchema1" alias="ts1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECEntityClass typeName="TestClass1">
+                <ECCustomAttributes>
+                    <ClassHasHandler xmlns="BisCore.1.0.0" />
+                </ECCustomAttributes>
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", *schemaContext));
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(
+        <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="TestSchema1" version="1.0.0" alias="ts1"/>
+            <ECEntityClass typeName="TestClass2">
+                <ECCustomAttributes>
+                    <ClassHasHandler xmlns="BisCore.1.0.0" />
+                </ECCustomAttributes>
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="Prop2" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", *schemaContext));
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_EQ(SchemaStatus::Success, dgndb->ImportSchemas(schemaContext->GetCache().GetSchemas(), true));
+    dgndb->SaveChanges();
+
+    ASSERT_TRUE(dgndb->Schemas().ContainsSchema("TestSchema1"));
+    ASSERT_TRUE(dgndb->Schemas().ContainsSchema("TestSchema2"));
+
+    EXPECT_TRUE(dgndb->DropSchemas({"TestSchema1", "TestSchema2"}).IsSuccess());
+    EXPECT_FALSE(dgndb->Schemas().ContainsSchema("TestSchema1"));
+    EXPECT_FALSE(dgndb->Schemas().ContainsSchema("TestSchema2"));
+    }
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, CreateWithInvalidName)
 {
     DgnDbPtr dgnProj;
@@ -285,7 +343,7 @@ TEST_F(DgnDbTest, CreateWithInvalidName)
     CreateDgnDbParams params(TEST_NAME);
     dgnProj = DgnDb::CreateIModel(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
     EXPECT_EQ(BE_SQLITE_OK, status) << status;
-    ASSERT_TRUE(dgnProj != NULL);
+    ASSERT_TRUE(dgnProj != nullptr);
     /////////It creates a DgnDbfile with .txt extension having success status needs to figure out is this right behavior
 }
 
@@ -304,7 +362,7 @@ TEST_F(DgnDbTest, FileNotFoundToOpen)
 
     dgnProj = DgnDb::OpenIModelDb(&status, BeFileName(dgndbFileNotExist.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ(BE_SQLITE_ERROR_FileNotFound, status) << status;
-    ASSERT_TRUE(dgnProj == NULL);
+    ASSERT_TRUE(dgnProj == nullptr);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -318,12 +376,12 @@ TEST_F(DgnDbTest, OpenAlreadyOpen)
     DbResult status;
     DgnDbPtr dgnProj = DgnDb::OpenIModelDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
     EXPECT_EQ(BE_SQLITE_OK, status) << status;
-    ASSERT_TRUE(dgnProj != NULL);
+    ASSERT_TRUE(dgnProj != nullptr);
 
     // once a Db is opened for ReadWrite with exclusive access, it can't be opened, even for read.
     DgnDbPtr dgnProj1 = DgnDb::OpenIModelDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ(BE_SQLITE_BUSY, status) << status;
-    ASSERT_TRUE(dgnProj1 == NULL);
+    ASSERT_TRUE(dgnProj1 == nullptr);
 }
 
 //---------------------------------------------------------------------------------------
@@ -359,6 +417,30 @@ TEST_F(DgnDbTest, IsPurgeOperationActive)
     }
     ASSERT_FALSE(db->IsPurgeOperationActive());
     }
+    
+TEST_F(DgnDbTest, CreateImodel_ShouldLogLessWarnings)
+    {
+    // Log to console
+    // NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    // NativeLogging::ConsoleLogger::GetLogger().SetSeverity("SQLite", BentleyApi::NativeLogging::LOG_TRACE);
+    
+    TestLogger testLogger;
+    LogCatcher logCatcher(testLogger);
+
+    CreateDgnDbParams params("EmptyModelTest");
+    DgnDbPtr db = DgnDb::CreateIModel(nullptr, DgnDbTestDgnManager::GetOutputFilePath(L"EmptyModelTest.bim"), params);
+    ASSERT_TRUE(db.IsValid());
+
+    int warningCount = 0;
+    for (const auto& message : testLogger.m_messages) {
+        if (message.first == NativeLogging::SEVERITY::LOG_WARNING) {
+            ++warningCount;
+        }
+    }
+    ASSERT_LT(warningCount, 50);
+    }
+
+
 
 //----------------------------------------------------------------------------------------
 // @bsiclass

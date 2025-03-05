@@ -12,10 +12,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-UpdateStatementExp::UpdateStatementExp(std::unique_ptr<ClassRefExp> classNameExp, std::unique_ptr<AssignmentListExp> assignmentListExp, std::unique_ptr<WhereExp> whereClauseExp, std::unique_ptr<OptionsExp> optionsExp)
+UpdateStatementExp::UpdateStatementExp(std::unique_ptr<ClassNameExp> classNameExp, std::unique_ptr<AssignmentListExp> assignmentListExp, std::unique_ptr<WhereExp> whereClauseExp, std::unique_ptr<OptionsExp> optionsExp)
     : Exp(Type::Update), m_whereClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
     {
-    BeAssert(classNameExp->GetType() == Exp::Type::ClassName);
     m_classNameExpIndex = AddChild(std::move(classNameExp));
     m_assignmentListExpIndex = AddChild(std::move(assignmentListExp));
 

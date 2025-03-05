@@ -23,15 +23,12 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-#if defined(HAVE_STRCASECMP) && defined(HAVE_STRINGS_H)
-#include <strings.h>
-#endif
-
 #include "tool_util.h"
 
+#include "curlx.h"
 #include "memdebug.h" /* keep this as LAST include */
 
-#if defined(WIN32) && !defined(MSDOS)
+#if defined(_WIN32)
 
 /* In case of bug fix this function has a counterpart in timeval.c */
 struct timeval tvnow(void)
@@ -81,7 +78,7 @@ struct timeval tvnow(void)
   /*
   ** Even when the configure process has truly detected monotonic clock
   ** availability, it might happen that it is not actually available at
-  ** run-time. When this occurs simply fallback to other time source.
+  ** runtime. When this occurs simply fallback to other time source.
   */
 #ifdef HAVE_GETTIMEOFDAY
   else
@@ -124,9 +121,46 @@ struct timeval tvnow(void)
 
 #endif
 
+#if defined(_WIN32)
+
+struct timeval tvrealnow(void)
+{
+  /* UNIX EPOCH (1970-01-01) in FILETIME (1601-01-01) as 64-bit value */
+  static const curl_uint64_t EPOCH = (curl_uint64_t)116444736000000000ULL;
+  SYSTEMTIME systime;
+  FILETIME ftime; /* 100ns since 1601-01-01, as double 32-bit value */
+  curl_uint64_t time; /* 100ns since 1601-01-01, as 64-bit value */
+  struct timeval now;
+
+  GetSystemTime(&systime);
+  SystemTimeToFileTime(&systime, &ftime);
+  time = ((curl_uint64_t)ftime.dwLowDateTime);
+  time += ((curl_uint64_t)ftime.dwHighDateTime) << 32;
+
+  now.tv_sec  = (long)((time - EPOCH) / 10000000L); /* unit is 100ns */
+  now.tv_usec = (long)(systime.wMilliseconds * 1000);
+  return now;
+}
+
+#else
+
+struct timeval tvrealnow(void)
+{
+  struct timeval now;
+#ifdef HAVE_GETTIMEOFDAY
+  (void)gettimeofday(&now, NULL);
+#else
+  now.tv_sec = time(NULL);
+  now.tv_usec = 0;
+#endif
+  return now;
+}
+
+#endif
+
 /*
  * Make sure that the first argument is the more recent time, as otherwise
- * we'll get a weird negative time-diff back...
+ * we will get a weird negative time-diff back...
  *
  * Returns: the time difference in number of milliseconds.
  */
@@ -140,18 +174,10 @@ long tvdiff(struct timeval newer, struct timeval older)
 int struplocompare(const char *p1, const char *p2)
 {
   if(!p1)
-    return p2? -1: 0;
+    return p2 ? -1 : 0;
   if(!p2)
     return 1;
-#ifdef HAVE_STRCASECMP
-  return strcasecmp(p1, p2);
-#elif defined(HAVE_STRCMPI)
-  return strcmpi(p1, p2);
-#elif defined(HAVE_STRICMP)
-  return stricmp(p1, p2);
-#else
-  return strcmp(p1, p2);
-#endif
+  return CURL_STRICMP(p1, p2);
 }
 
 /* Indirect version to use as qsort callback. */
@@ -159,3 +185,62 @@ int struplocompare4sort(const void *p1, const void *p2)
 {
   return struplocompare(* (char * const *) p1, * (char * const *) p2);
 }
+
+#ifdef USE_TOOL_FTRUNCATE
+
+#ifdef _WIN32_WCE
+/* 64-bit lseek-like function unavailable */
+#  undef _lseeki64
+#  define _lseeki64(hnd,ofs,whence) lseek(hnd,ofs,whence)
+#  undef _get_osfhandle
+#  define _get_osfhandle(fd) (fd)
+#endif
+
+/*
+ * Truncate a file handle at a 64-bit position 'where'.
+ */
+
+int tool_ftruncate64(int fd, curl_off_t where)
+{
+  intptr_t handle = _get_osfhandle(fd);
+
+  if(_lseeki64(fd, where, SEEK_SET) < 0)
+    return -1;
+
+  if(!SetEndOfFile((HANDLE)handle))
+    return -1;
+
+  return 0;
+}
+
+#endif /* USE_TOOL_FTRUNCATE */
+
+#ifdef _WIN32
+FILE *Curl_execpath(const char *filename, char **pathp)
+{
+  static char filebuffer[512];
+  unsigned long len;
+  /* Get the filename of our executable. GetModuleFileName is already declared
+   * via inclusions done in setup header file. We assume that we are using
+   * the ASCII version here.
+   */
+  len = GetModuleFileNameA(0, filebuffer, sizeof(filebuffer));
+  if(len > 0 && len < sizeof(filebuffer)) {
+    /* We got a valid filename - get the directory part */
+    char *lastdirchar = strrchr(filebuffer, DIR_CHAR[0]);
+    if(lastdirchar) {
+      size_t remaining;
+      *lastdirchar = 0;
+      /* If we have enough space, build the RC filename */
+      remaining = sizeof(filebuffer) - strlen(filebuffer);
+      if(strlen(filename) < remaining - 1) {
+        msnprintf(lastdirchar, remaining, "%s%s", DIR_CHAR, filename);
+        *pathp = filebuffer;
+        return fopen(filebuffer, FOPEN_READTEXT);
+      }
+    }
+  }
+
+  return NULL;
+}
+#endif

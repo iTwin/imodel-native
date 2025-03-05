@@ -67,4 +67,44 @@ BentleyStatus GeoServicesInterop::GetGeographicCRSInterpretation(BeJsValue resul
     return (BentleyStatus)status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+// @param extent If provided, only return CRS's that contain the given extent. Minimum longitude and latitude correspond to extent.low.x and extent.low.y, respectively.
+// Maximum longitude and latitude correspond to extent.high.x and extent.high.y, respectively.
+//---------------------------------------------------------------------------------------
+bvector<CRSListResponseProps> GeoServicesInterop::GetListOfCRS(DRange2dCP extent)
+    {
+    bvector<CRSListResponseProps> listOfCRS;
+    char csKeyName[128];
+    CRSListResponseProps props;
+    for (int index = 0; (0 < GeoCoordinates::CSMap::CS_csEnum(index, csKeyName, sizeof(csKeyName))); index++)
+        {
+        GeoCoordinates::BaseGCSPtr crs = GeoCoordinates::BaseGCS::CreateGCS(csKeyName);
 
+        // Don't include CRS with no range or with a range that covers the whole world
+        DRange2d crsRange(DRange2d::From(crs->GetMinimumLongitude(),
+                        crs->GetMinimumLatitude(),
+                        crs->GetMaximumLongitude(),
+                        crs->GetMaximumLatitude()));
+        if (crsRange.IsEmpty() || crsRange.Area() == 64800) //64800 => Worldwide, not wanted
+            {
+            continue;
+            }
+
+        // Don't include CRS if it does not contain the extent
+        if (extent)
+            {
+            DRange2d extentRange(DRange2d::From(extent->low.x, extent->low.y, extent->high.x, extent->high.y));
+            if (!extentRange.IntersectsWith(crsRange))
+                continue;
+            }
+
+        props.m_name = Utf8String(crs->GetName());
+        props.m_description = Utf8String(crs->GetDescription());
+        props.m_deprecated = crs->IsDeprecated();
+        props.m_crsExtent = crsRange;
+        listOfCRS.push_back(props);
+        }
+    
+    return listOfCRS;
+    }

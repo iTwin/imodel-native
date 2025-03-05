@@ -164,7 +164,7 @@ void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)
     ECInstanceDeleter deleter(ecdb, *testClass, nullptr);
     auto status = deleter.Delete(testECInstanceKey.GetInstanceId());
     timer.Stop();
-    ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(BE_SQLITE_OK, status);
 
     //printf ("Detach from profiler\n");
     //getchar ();

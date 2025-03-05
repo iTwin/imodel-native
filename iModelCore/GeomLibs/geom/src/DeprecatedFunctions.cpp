@@ -1980,6 +1980,7 @@ int         depth
     {
     int parent;
     static int errors = 0;
+    UNUSED_VARIABLE(errors);
     if (SUCCESS == IntArrayWrapper::get (pInstance, &parent, cluster))
         {
         if (parent != cluster)

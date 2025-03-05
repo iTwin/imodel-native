@@ -519,6 +519,8 @@ CurveVectorPtr &result
     result = CurveVectorPtr ();
     MTGNodeId nodeId, nextNodeId;   // or coded sequence token.
     int numLoop = 0;
+    UNUSED_VARIABLE(numLoop);
+    
     for (;TryGetInt (sequenceArray, nodeId, sequencerReadIndex);)
         {
         sequencerReadIndex++;

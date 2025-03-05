@@ -266,7 +266,7 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
         Schemas().GetSchemaSync().DisableSchemaSync();
         status = Domains().UpgradeSchemas(schemasToImport, domainsToImport, schemaImportOptions);
         Schemas().GetSchemaSync().ReEnableSchemaSync();
-        
+
         return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
     }
 
@@ -385,9 +385,9 @@ DbResult DgnDb::_AfterSchemaChangeSetApplied() const {
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::_AfterDataChangeSetApplied()
+DbResult DgnDb::_AfterDataChangeSetApplied(bool schemaChanged)
     {
-    DbResult result = T_Super::_AfterDataChangeSetApplied();
+    DbResult result = T_Super::_AfterDataChangeSetApplied(schemaChanged);
     if (result != BE_SQLITE_OK)
         return result;
 

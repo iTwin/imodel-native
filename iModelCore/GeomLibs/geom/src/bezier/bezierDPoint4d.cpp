@@ -2780,8 +2780,11 @@ DPoint3d    *pPoleArray,
 static void GetSampleFractions (double *fraction, int &numOut, int order, int numInteriorEdge, int numExtrapolate, int maxOut)
     {
     double u0, du;
-    static size_t sNumLines = 0;
-    static size_t sNumCurves = 0;
+    size_t sNumLines = 0;
+    size_t sNumCurves = 0;
+    UNUSED_VARIABLE(sNumLines);
+    UNUSED_VARIABLE(sNumCurves);
+
     if (order < 3)
         {
         numOut = 2;
@@ -2865,9 +2868,12 @@ const DPoint4d  *pB,
     int numExtraIntersection    = 0;
 
 
-    static int sNum22 = 0;
-    static int sNum2N = 0;
-    static int sNumNN = 0;
+    int sNum22 = 0;
+    int sNum2N = 0;
+    int sNumNN = 0;
+    UNUSED_VARIABLE(sNum22);
+    UNUSED_VARIABLE(sNum2N);
+    UNUSED_VARIABLE(sNumNN);
 
     if (orderA == 2 && orderB == 2)
         sNum22++;
@@ -2899,6 +2905,8 @@ const DPoint4d  *pB,
                 xyzA, numSampleA, false,
                 xyzB, numSampleB, false);
     int numExternal = 0;
+    UNUSED_VARIABLE(numExternal);
+    
     if (numSegmentIntersection > 0)
         {
         Function_Bezier_FractionToXY bezierA(pA, orderA);

@@ -1342,7 +1342,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     ASSERT_STRCASEEQ("ec_instanceidsequence", stmt.GetValueText(0)) << "Second row";
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only two entries expected in " << BEDB_TABLE_Local;
     stmt.Finalize();
-    
+
     //verify 4.0.0.4 upgrade
     Db benchmarkFile;
     ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly)));
@@ -1386,7 +1386,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(upgradedFile, "SELECT p.ExtendedTypeName, p.Name FROM meta.ECPropertyDef p JOIN meta.ECClassDef c ON c.ECInstanceId=p.Class.Id JOIN meta.ECSchemaDef s ON s.ECInstanceId=c.Schema.Id WHERE s.Name='ECDbSystem' AND p.PrimitiveType=?"));
     ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.BindInt(1, PrimitiveType::PRIMITIVETYPE_Long));
     int rowCount = 0;
-    
+
     // Vector of Expected Extended Type Names to compare against
     std::vector<Utf8String> testValues = { "Id", "ClassId", "NavId", "NavRelClassId", "SourceId", "SourceClassId", "TargetId", "TargetClassId" };
     while (BE_SQLITE_ROW == ecsqlStmt.Step())
@@ -1547,7 +1547,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, upgradedFilePath));
     ECDb upgradedFile;
     ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade)));
-    
+
     {
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
@@ -1555,9 +1555,9 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     ASSERT_EQ(25, stmt.GetValueInt(0)) << "ECDb profile table count";
     }
 
-    
+
     BeFileStatus stat = BeFileStatus::Success;
-    
+
     int benchmarkMasterTableRowCount = 0;
     {
     BeFileName benchmarkDdlDumpFilePath(artefactOutDir);
@@ -1718,23 +1718,18 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.A")) << "Preparing ECSQL against class with missing table is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
     bvector<ECClassId> classIds;
     classIds.push_back(testClass->GetId());
-    EXPECT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb(classIds)) << "expected to succeed but view would not work because of missing table";
-    sp.Cancel();
-
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb(classIds)) << "expected to succeed but view would not work because of missing table";});
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECEntityClass typeName="SubA">
                     <BaseClass>ts.A</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -1757,23 +1752,19 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.SubB")) << "Preparing ECSQL against class with missing table is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
     bvector<ECClassId> classIds;
     classIds.push_back(testClass->GetId());
-    EXPECT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb(classIds)) << "expected to succeed but view would not work because of missing table";
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb(classIds)) << "expected to succeed but view would not work because of missing table";});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECEntityClass typeName="SubA">
                     <BaseClass>ts.A</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -1791,23 +1782,19 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     stmt.Finalize();
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
     bvector<ECClassId> classIds;
     classIds.push_back(testClass->GetId());
-    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                <ECEntityClass typeName="SubB2">
                     <BaseClass>ts.B</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -1826,23 +1813,19 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.SubB")) << "Preparing ECSQL against class with unknown ShareColumnsMode is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
     bvector<ECClassId> classIds;
     classIds.push_back(testClass->GetId());
-    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECEntityClass typeName="SubB2">
                     <BaseClass>ts.B</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -1861,23 +1844,19 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.SubB")) << "Preparing ECSQL against class with unknown JoinedTableInfo is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
     bvector<ECClassId> classIds;
     classIds.push_back(testClass->GetId());
-    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECEntityClass typeName="SubB2">
                     <BaseClass>ts.B</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -1896,23 +1875,19 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.SubB")) << "Preparing ECSQL against class with unknown TableType is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
     bvector<ECClassId> classIds;
     classIds.push_back(testClass->GetId());
-    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECEntityClass typeName="SubB2">
                     <BaseClass>ts.B</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -1930,23 +1905,19 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A")) << "Preparing ECSQL against class with unknown ColumnKind is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
     bvector<ECClassId> classIds;
     classIds.push_back(testClass->GetId());
-    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECEntityClass typeName="SubA">
                     <BaseClass>ts.A</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -1964,23 +1935,19 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A")) << "Preparing ECSQL against class with unknown column data type is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
     bvector<ECClassId> classIds;
     classIds.push_back(testClass->GetId());
-    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECEntityClass typeName="SubA">
                     <BaseClass>ts.A</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -1998,23 +1965,19 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A")) << "Preparing ECSQL against class with unknown collation is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
     bvector<ECClassId> classIds;
     classIds.push_back(testClass->GetId());
-    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb(classIds));});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECEntityClass typeName="SubA">
                     <BaseClass>ts.A</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -2032,21 +1995,17 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A")) << "Preparing ECSQL against class with unknown ECClassType is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
-    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECEntityClass typeName="SubA">
                     <BaseClass>ts.A</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -2064,21 +2023,17 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.A")) << "Preparing ECSQL against class with unknown ECClassModifier is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
-    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECEntityClass typeName="SubA">
                     <BaseClass>ts.A</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -2096,13 +2051,10 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.AHasB")) << "Preparing ECSQL against class with unknown relationship strength is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
-    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECRelationshipClass typeName="SubAHasB" strength="Referencing" modifier="None" strengthDirection="Backward">
@@ -2114,8 +2066,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
                       <Class class ="B" />
                   </Target>
                </ECRelationshipClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -2133,13 +2084,10 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.AHasB")) << "Preparing ECSQL against class with unknown relationship strength direction is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
-    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECRelationshipClass typeName="SubAHasB" strength="Referencing" modifier="None" strengthDirection="Backward">
@@ -2151,8 +2099,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
                       <Class class ="B" />
                   </Target>
                </ECRelationshipClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -2170,21 +2117,17 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT Prop2 FROM ts.A")) << "Preparing ECSQL against class with unknown property kind is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
-    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECEntityClass typeName="SubA">
                     <BaseClass>ts.A</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
@@ -2202,25 +2145,495 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT Prop2 FROM ts.A")) << "Preparing ECSQL against class with unknown property primitive type is expected to fail";
 
     //ECClass views
-    Savepoint sp(m_ecdb, "");
-    EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());
-    sp.Cancel();
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, m_ecdb.Schemas().CreateClassViewsInDb());});
 
     //Schema import
-    sp.Begin();
-    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    m_ecdb.UsingSavepointWithCancel([&](){EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
                 <ECEntityClass typeName="SubA">
                     <BaseClass>ts.A</BaseClass>
                     <ECProperty propertyName="NewProp" typeName="string" />
                 </ECEntityClass>
-                </ECSchema>)xml")));
-    sp.Cancel();
+                </ECSchema>)xml")));});
 
     m_ecdb.AbandonChanges();
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
     }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_LoadSchemaAndElements)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ForwardCompatibilityLoadSchemaAndElements.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="A">
+                <ECProperty propertyName="Prop1" typeName="string"/>
+                <ECProperty propertyName="TestEnumProperty" typeName="TestEnum"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="SubA">
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName="Prop2" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <ECProperty propertyName="Prop3" typeName="string"/>
+                <ECNavigationProperty propertyName="RelProp" relationshipName="AHasB" direction="backward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="SubB">
+                <BaseClass>B</BaseClass>
+                <ECProperty propertyName="Prop4" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="C">
+                <ECProperty propertyName="Prop5" typeName="string"/>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="None" strengthDirection="Backward">
+                <Source multiplicity="(1..1)" polymorphic="False" roleLabel="A">
+                    <Class class ="A"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="False" roleLabel="B">
+                    <Class class ="B"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECEnumeration typeName="TestEnum" backingTypeName="int" isStrict="true">
+                <ECEnumerator name="Val1" value="1" />
+                <ECEnumerator name="Val2" value="2" />
+            </ECEnumeration>
+         </ECSchema>)xml")));
+
+    unsigned int ecXmlMajorVersion;
+    unsigned int ecXmlMinorVersion;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::ParseECVersion(ecXmlMajorVersion, ecXmlMinorVersion, ECVersion::Latest));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(SqlPrintfString("UPDATE ec_Schema SET OriginalECXmlVersionMinor=%d WHERE Name='TestSchema'", ++ecXmlMinorVersion)));
+    m_ecdb.SaveChanges();
+
+    {
+    for (const auto& sqlUpdate : { "UPDATE ec_Class SET Type=100 WHERE Name='A'", "UPDATE ec_Class SET Modifier=100 WHERE Name='A'" })
+        {
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(sqlUpdate));
+
+        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+        ASSERT_NE(nullptr, schema);
+        EXPECT_EQ(nullptr, schema->GetClassCP("A"));  // Class A should not be loaded
+        EXPECT_EQ(nullptr, schema->GetClassCP("SubA"));  // Any subclass of Class A should not be loaded
+        EXPECT_EQ(nullptr, schema->GetClassCP("AHasB")); // Relationship class should not be loaded as class A is an endpoint
+
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.A"));
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.SubA"));
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.AHasB"));
+        stmt.Finalize();
+
+        const auto classB = schema->GetClassCP("B");
+        ASSERT_NE(nullptr, classB);  // Class B should be loaded as it has no dependency on the other unloaded classes
+        EXPECT_NE(nullptr, classB->GetPropertyP("Prop3"));
+        EXPECT_EQ(nullptr, classB->GetPropertyP("RelProp")); // The nav prop shouldn't be loaded as the relationship class is not loaded
+
+        const auto subClassB = schema->GetClassCP("SubB");
+        ASSERT_NE(nullptr, subClassB);  // Subclass of B should be loaded as B is loaded
+        EXPECT_NE(nullptr, subClassB->GetPropertyP("Prop3"));
+        EXPECT_NE(nullptr, subClassB->GetPropertyP("Prop4"));
+        EXPECT_EQ(nullptr, subClassB->GetPropertyP("RelProp"));
+
+        const auto classC = schema->GetClassCP("C");
+        ASSERT_NE(nullptr, classC);  // C should be loaded as it doesn't have any dependencies on the other unloaded classes
+        EXPECT_NE(nullptr, classC->GetPropertyP("Prop5"));
+
+        m_ecdb.AbandonChanges();
+        ReopenECDb();
+        }
+    }
+
+    {
+    for (const auto& sqlUpdate : { "UPDATE ec_Property SET Kind=1000 WHERE Name='Prop1'", "UPDATE ec_Property SET PrimitiveType=-1 WHERE Name='Prop1'" })
+        {
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(sqlUpdate));
+
+        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+        ASSERT_NE(nullptr, schema);
+        const auto classA = schema->GetClassCP("A");    // Class A should load successfully without the "Prop1" property
+        ASSERT_NE(nullptr, classA);
+        EXPECT_EQ(nullptr, classA->GetPropertyP("Prop1"));
+
+        const auto subClassA = schema->GetClassCP("SubA");  // Class SubA should load successfully without the "Prop1" property
+        ASSERT_NE(nullptr, subClassA);
+        EXPECT_EQ(nullptr, subClassA->GetPropertyP("Prop1"));
+        EXPECT_NE(nullptr, subClassA->GetPropertyP("Prop2"));
+
+        EXPECT_NE(nullptr, schema->GetClassCP("AHasB"));
+
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT Prop1, TestEnumProperty FROM ts.A"));
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT Prop1, TestEnumProperty FROM ts.SubA"));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.AHasB"));
+        stmt.Finalize();
+
+        const auto classB = schema->GetClassCP("B");
+        ASSERT_NE(nullptr, classB);
+        EXPECT_NE(nullptr, classB->GetPropertyP("Prop3"));
+        EXPECT_NE(nullptr, classB->GetPropertyP("RelProp"));
+
+        const auto subClassB = schema->GetClassCP("SubB");
+        ASSERT_NE(nullptr, subClassB);
+        EXPECT_NE(nullptr, subClassB->GetPropertyP("Prop3"));
+        EXPECT_NE(nullptr, subClassB->GetPropertyP("Prop4"));
+        EXPECT_NE(nullptr, subClassB->GetPropertyP("RelProp"));
+
+        const auto classC = schema->GetClassCP("C");
+        ASSERT_NE(nullptr, classC);
+        EXPECT_NE(nullptr, classC->GetPropertyP("Prop5"));
+
+        m_ecdb.AbandonChanges();
+        ReopenECDb();
+        }
+    }
+
+    {
+    for (const auto& [sqlUpdate, relationshipClassLoaded] :
+        {
+        std::make_pair("UPDATE ec_Class SET RelationshipStrength=100 WHERE Name='AHasB'", false),
+        std::make_pair("UPDATE ec_Class SET RelationshipStrengthDirection=100 WHERE Name='AHasB'", false),
+        std::make_pair("UPDATE ec_property SET NavigationDirection=10 WHERE Name='RelProp'", true)
+        })
+        {
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(sqlUpdate));
+
+        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+        ASSERT_NE(nullptr, schema);
+        EXPECT_NE(nullptr, schema->GetClassCP("A"));
+        EXPECT_NE(nullptr, schema->GetClassCP("SubA"));
+        EXPECT_EQ(relationshipClassLoaded, nullptr != schema->GetClassCP("AHasB"));
+
+        const auto classB = schema->GetClassCP("B");
+        ASSERT_NE(nullptr, classB);
+        EXPECT_NE(nullptr, classB->GetPropertyP("Prop3"));
+        EXPECT_EQ(nullptr, classB->GetPropertyP("RelProp"));
+
+        const auto subClassB = schema->GetClassCP("SubB");
+        ASSERT_NE(nullptr, subClassB);
+        EXPECT_NE(nullptr, subClassB->GetPropertyP("Prop3"));
+        EXPECT_NE(nullptr, subClassB->GetPropertyP("Prop4"));
+        EXPECT_EQ(nullptr, subClassB->GetPropertyP("RelProp"));
+
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT Prop3, RelProp FROM ts.B"));
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT Prop3, Prop4, RelProp FROM ts.SubB"));
+        EXPECT_EQ(relationshipClassLoaded, ECSqlStatus::Success == stmt.Prepare(m_ecdb, "SELECT * FROM ts.AHasB"));
+        stmt.Finalize();
+
+        const auto classC = schema->GetClassCP("C");
+        ASSERT_NE(nullptr, classC);
+        EXPECT_NE(nullptr, classC->GetPropertyP("Prop5"));
+
+        m_ecdb.AbandonChanges();
+        ReopenECDb();
+        }
+    }
+
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE ec_Enumeration SET UnderlyingPrimitiveType=9999 WHERE Name='TestEnum'"));
+    const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+    ASSERT_NE(nullptr, schema);
+    EXPECT_EQ(nullptr, schema->GetEnumerationCP("TestEnum"));
+
+    const auto classA = schema->GetClassCP("A");
+    ASSERT_NE(nullptr, classA);
+    EXPECT_NE(nullptr, classA->GetPropertyP("Prop1"));
+    EXPECT_EQ(nullptr, classA->GetPropertyP("TestEnumProperty"));
+
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT Prop1, TestEnumProperty FROM ts.A"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT Prop1, TestEnumProperty FROM ts.SubA"));
+    stmt.Finalize();
+
+    m_ecdb.AbandonChanges();
+    ReopenECDb();
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_UnknownMapStrategy)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ForwardCompatibilitySafeguards_UnknownMapStrategy.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="A">
+                <ECProperty propertyName="PropA" typeName="string"/>
+                <ECNavigationProperty propertyName="AToARelProp" relationshipName="AToA" direction="Forward"/>
+                <ECNavigationProperty propertyName="AToChildARelProp" relationshipName="AToChildA" direction="Forward"/>
+                <ECNavigationProperty propertyName="AToGrandChildARelProp" relationshipName="AToGrandChildA" direction="Forward"/>
+                <ECNavigationProperty propertyName="AToBRelProp" relationshipName="AToB" direction="Forward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="ChildA">
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName="PropChildA" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="GrandChildA">
+                <BaseClass>ChildA</BaseClass>
+                <ECProperty propertyName="PropGrandChildA" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <ECProperty propertyName="PropB" typeName="string"/>
+                <ECNavigationProperty propertyName="BToARelProp" relationshipName="BToA" direction="Forward"/>
+                <ECNavigationProperty propertyName="BToChildARelProp" relationshipName="BToChildA" direction="Forward"/>
+                <ECNavigationProperty propertyName="BToGrandChildARelProp" relationshipName="BToGrandChildA" direction="Forward"/>
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="AToA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="A">
+                    <Class class ="A"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="A">
+                    <Class class ="A"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="AToB" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="A">
+                    <Class class ="A"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="B">
+                    <Class class ="B"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="AToChildA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="A">
+                    <Class class ="A"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="ChildA">
+                    <Class class ="ChildA"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="AToGrandChildA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="A">
+                    <Class class ="A"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="GrandChildA">
+                    <Class class ="GrandChildA"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="BToA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="B">
+                    <Class class ="B"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="A">
+                    <Class class ="A"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="BToChildA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="B">
+                    <Class class ="B"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="ChildA">
+                    <Class class ="ChildA"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="BToGrandChildA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="B">
+                    <Class class ="B"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="GrandChildA">
+                    <Class class ="GrandChildA"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+    ASSERT_NE(nullptr, schema);
+    const auto aToAClass = schema->GetClassCP("AToA");
+    ASSERT_NE(aToAClass, nullptr);
+    const auto aToChildAClass = schema->GetClassCP("AToChildA");
+    ASSERT_NE(aToChildAClass, nullptr);
+    const auto aToGrandChildAClass = schema->GetClassCP("AToGrandChildA");
+    ASSERT_NE(aToGrandChildAClass, nullptr);
+    const auto aToBClass = schema->GetClassCP("AToB");
+    ASSERT_NE(aToBClass, nullptr);
+
+    const auto bToAClass = schema->GetClassCP("BToA");
+    ASSERT_NE(bToAClass, nullptr);
+    const auto bToChildAClass = schema->GetClassCP("BToChildA");
+    ASSERT_NE(bToChildAClass, nullptr);
+    const auto bToGrandChildAClass = schema->GetClassCP("BToGrandChildA");
+    ASSERT_NE(bToGrandChildAClass, nullptr);
+
+    // Insert some data for tests
+    ECInstanceKey key1, key2, key3, key4;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key1, 
+        Utf8PrintfString("insert into ts.A(PropA,AToARelProp.Id,AToARelProp.RelECClassId,AToChildARelProp.Id,AToChildARelProp.RelECClassId,AToGrandChildARelProp.Id,AToGrandChildARelProp.RelECClassId,AToBRelProp.Id,AToBRelProp.RelECClassId) values ('PropA1', 0x1, %s, 0x1, %s, 0x1, %s, 0x1, %s)",
+        aToAClass->GetId().ToHexStr().c_str(), aToChildAClass->GetId().ToHexStr().c_str(), aToGrandChildAClass->GetId().ToHexStr().c_str(), aToBClass->GetId().ToHexStr().c_str()).c_str()));
+    
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key2, 
+        Utf8PrintfString("insert into ts.B(PropB,BToARelProp.Id,BToARelProp.RelECClassId,BToChildARelProp.Id,BToChildARelProp.RelECClassId,BToGrandChildARelProp.Id,BToGrandChildARelProp.RelECClassId) values ('PropB1', 0x1, %s, 0x1, %s, 0x1, %s)",
+        bToAClass->GetId().ToHexStr().c_str(), bToChildAClass->GetId().ToHexStr().c_str(), bToGrandChildAClass->GetId().ToHexStr().c_str()).c_str()));
+    
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key3, "insert into ts.ChildA(PropA, PropChildA) values ('PropA3', 'PropChildA1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key4, "insert into ts.GrandChildA(PropA, PropChildA, PropGrandChildA) values ('PropA4', 'PropChildA2', 'PropGrandChildA1')"));
+
+    ASSERT_TRUE(key1.IsValid());
+    ASSERT_TRUE(key2.IsValid());
+    ASSERT_TRUE(key3.IsValid());
+    ASSERT_TRUE(key4.IsValid());
+        
+    m_ecdb.SaveChanges();
+
+    // Set the schema to a newer minor version
+    unsigned int ecXmlMajorVersion;
+    unsigned int ecXmlMinorVersion;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::ParseECVersion(ecXmlMajorVersion, ecXmlMinorVersion, ECVersion::Latest));
+
+    const auto executeTestCase = [&](Utf8StringCR classesToUpdate, const unsigned int testCaseNumber, Utf8StringCR selectStatement, const ECSqlStatus sqlPrepareResult, const DbResult sqlStepResult, const std::vector<Utf8String>& expectedColumnNames)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(SqlPrintfString("UPDATE ec_Schema SET OriginalECXmlVersionMinor=%d WHERE Name='TestSchema'", ++ecXmlMinorVersion)));
+
+        ECSqlStatement stmt;
+        const auto errorLog = Utf8PrintfString("for testcase %d for classes %s", testCaseNumber, classesToUpdate.c_str());
+        EXPECT_EQ(sqlPrepareResult, stmt.Prepare(m_ecdb, selectStatement.c_str())) << "Sql Prepare failed " << errorLog;
+        if (sqlPrepareResult == ECSqlStatus::Success)
+            {
+            EXPECT_EQ(stmt.Step(), sqlStepResult) << "Sql Step failed " << errorLog;
+            EXPECT_EQ(expectedColumnNames.size(), stmt.GetColumnCount()) << "Failed " << errorLog;
+            auto index = 0;
+            for (const auto& columnName : expectedColumnNames)
+                EXPECT_STREQ(stmt.GetColumnInfo(index++).GetProperty()->GetName().c_str(), columnName.c_str()) << "Failed " << errorLog;
+            }
+        stmt.Finalize();
+        };
+
+    const auto resetTestCase = [&](Utf8CP updateStatement)
+        {
+        m_ecdb.AbandonChanges();
+        ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(updateStatement));
+        };
+
+    typedef std::vector<std::tuple<const unsigned int, const Utf8String, const ECSqlStatus, const DbResult, const std::vector<Utf8String>>> TestCaseData;
+
+
+    for (const auto& classesToUpdate : std::vector<Utf8String>{"'A'", "'A', 'ChildA'", "'A', 'GrandChildA'", "'A', 'ChildA', 'GrandChildA'"})
+        {
+        // Since the base class A itself has unknown mapping, all selects on it and it's sub classes should return null columns
+        resetTestCase(Utf8PrintfString("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN (%s))", classesToUpdate.c_str()).c_str());
+        for (const auto& [testCaseNumber, selectStatement, sqlPrepareResult, sqlStepResult, expectedColumnNames] : TestCaseData
+            {
+                { 1, "SELECT * FROM ts.A", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
+                { 2, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::Success, BE_SQLITE_DONE,
+                    {"ECInstanceId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
+
+                { 3, "SELECT * FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp", "PropChildA"} },
+                { 4, "SELECT ECInstanceId, PropA, PropChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE, 
+                    {"ECInstanceId", "PropA", "PropChildA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
+
+                { 5, "SELECT * FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp", "PropChildA", "PropGrandChildA"} },
+                { 6, "SELECT ECInstanceId, PropA, PropChildA, PropGrandChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
+                    {"ECInstanceId", "PropA", "PropChildA", "PropGrandChildA","AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
+
+                { 7, "SELECT * FROM ts.AToA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                { 8, "SELECT * FROM ts.AToB", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                { 9, "SELECT * FROM ts.AToChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {10, "SELECT * FROM ts.AToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {11, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {12, "SELECT * FROM ts.BToChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {13, "SELECT * FROM ts.BToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {14, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+
+                {15, "SELECT * FROM ts.B"   , ECSqlStatus::Success, BE_SQLITE_ROW, { "ECInstanceId", "ECClassId", "PropB" } },
+                {16, "SELECT ECInstanceId, PropB FROM ts.B", ECSqlStatus::Success, BE_SQLITE_ROW, { "ECInstanceId", "PropB" } },
+                {17, "SELECT BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} }, // Error: Explicit select for BToChildARelProp and BToGrandChildARelProp
+
+                {18, "WITH CTE AS (SELECT * from ts.A) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
+                {19, "WITH CTE AS (SELECT * from ts.ChildA) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp", "PropChildA"} },
+                {20, "WITH CTE AS (SELECT * FROM ts.GrandChildA) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp", "PropChildA", "PropGrandChildA"} },
+                {21, "WITH CTE AS (SELECT * FROM ts.B) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_ROW, { "ECInstanceId", "ECClassId", "PropB" } },
+            })
+            {
+            executeTestCase(classesToUpdate, testCaseNumber, selectStatement, sqlPrepareResult, sqlStepResult, expectedColumnNames);
+            }
+        }
+
+    for (const auto& classesToUpdate : std::vector<Utf8String>{"'ChildA'", "'ChildA', 'GrandChildA'"})
+        {
+        // Selects on ChildA and it's sub class GrandChildA should return null columns
+        resetTestCase(Utf8PrintfString("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN (%s))", classesToUpdate.c_str()).c_str());
+        for (const auto& [testCaseNumber, selectStatement, sqlPrepareResult, sqlStepResult, expectedColumnNames] : TestCaseData
+            {
+                {22, "SELECT * FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToBRelProp"} },
+                {23, "SELECT ECInstanceId, PropA, AToARelProp, AToBRelProp FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId", "PropA", "AToARelProp", "AToBRelProp"} },
+                {24, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },   // Error: Explicit select for AToChildARelProp and AToGrandChildARelProp
+
+                {25, "SELECT * FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA"} },
+                {26, "SELECT ECInstanceId, PropA, PropChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
+                    {"ECInstanceId","PropA","PropChildA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp"} },
+
+                {27, "SELECT * FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA","PropGrandChildA"} },
+                {28, "SELECT ECInstanceId, PropA, PropChildA, PropGrandChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
+                    {"ECInstanceId","PropA","PropChildA","PropGrandChildA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp"} },
+
+                {29, "SELECT * FROM ts.AToA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {30, "SELECT * FROM ts.AToB", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {31, "SELECT * FROM ts.AToChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {32, "SELECT * FROM ts.AToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {33, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {34, "SELECT * FROM ts.BToChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {35, "SELECT * FROM ts.BToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+
+                {36, "SELECT * FROM ts.B"   , ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropB","BToARelProp"} },
+                {37, "SELECT PropB, BToARelProp FROM ts.B", ECSqlStatus::Success, BE_SQLITE_ROW, {"PropB","BToARelProp"} },
+                {38, "SELECT PropB, BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },  // Explicit select for BToChildARelProp and BToGrandChildARelProp
+
+                {39, "WITH CTE AS (SELECT * from ts.A) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToBRelProp"} },
+                {40, "WITH CTE AS (SELECT * FROM ts.ChildA) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA"} },
+                {41, "WITH CTE AS (SELECT * FROM ts.GrandChildA) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA","PropGrandChildA"} },
+                {42, "WITH CTE AS (SELECT * FROM ts.B) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropB","BToARelProp"} },
+            })
+            {
+            executeTestCase(classesToUpdate, testCaseNumber, selectStatement, sqlPrepareResult, sqlStepResult, expectedColumnNames);
+            }
+        }
+
+    // Selects on GrandChildA should return null columns
+    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('GrandChildA'))");
+    for (const auto& [testCaseNumber, selectStatement, sqlPrepareResult, sqlStepResult, expectedColumnNames] : TestCaseData
+        {
+            {43, "SELECT * FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToBRelProp"} },
+            {44, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","PropA","AToARelProp","AToChildARelProp","AToBRelProp"} },
+            {45, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },  // Error: Explicit select for AToGrandChildARelProp
+
+            {46, "SELECT * FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToBRelProp","PropChildA"} },
+            {47, "SELECT ECInstanceId, PropA, PropChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.ChildA", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} }, // Error: Explicit select for AToGrandChildARelProp
+
+            {48, "SELECT * FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA","PropGrandChildA"} },
+            {49, "SELECT ECInstanceId, PropA, PropChildA, PropGrandChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
+                {"ECInstanceId","PropA","PropChildA","PropGrandChildA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp"} },
+
+            {50, "SELECT * FROM ts.AToA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {51, "SELECT * FROM ts.AToB", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {52, "SELECT * FROM ts.AToChildA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {53, "SELECT * FROM ts.AToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {54, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {55, "SELECT * FROM ts.BToChildA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {56, "SELECT * FROM ts.BToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+
+            {57, "SELECT * FROM ts.B"   , ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropB","BToARelProp","BToChildARelProp"} },
+            {58, "SELECT PropB, BToARelProp, BToChildARelProp FROM ts.B", ECSqlStatus::Success, BE_SQLITE_ROW, {"PropB","BToARelProp","BToChildARelProp"} },
+            {59, "SELECT PropB, BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} }, // Error: Explicit select for BToGrandChildARelProp
+
+            {60, "WITH CTE AS (SELECT * from ts.A) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToBRelProp"} },
+            {61, "WITH CTE AS (SELECT * from ts.ChildA) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToBRelProp","PropChildA"} },
+            {62, "WITH CTE AS (SELECT * FROM ts.GrandChildA) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA","PropGrandChildA"} },
+            {63, "WITH CTE AS (SELECT * FROM ts.B) SELECT * FROM CTE", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropB","BToARelProp","BToChildARelProp"} },
+        })
+        {
+        executeTestCase("'GrandChildA'", testCaseNumber, selectStatement, sqlPrepareResult, sqlStepResult, expectedColumnNames);
+        }
+
+    m_ecdb.AbandonChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2250,7 +2663,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
                 <ECEnumeration typeName="StringEnumDisplayLabel" backingTypeName="string" >
                     <ECEnumerator value="On" displayLabel="Turn On" />
                     <ECEnumerator value="Off" displayLabel="Turn Off" />
-                </ECEnumeration>                
+                </ECEnumeration>
                 <ECEntityClass typeName="Foo">
                     <ECProperty propertyName="Prop1" typeName="IntEnumNoDisplayLabel" />
                     <ECProperty propertyName="Prop2" typeName="IntEnumDisplayLabel" />
@@ -2390,7 +2803,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
                     <ECEnumerator value="On" displayLabel="Turn On" />
                     <ECEnumerator value="Off" displayLabel="Turn Off" />
                     <ECEnumerator value="Toggle" displayLabel="Toggle me" />
-                </ECEnumeration>                
+                </ECEnumeration>
                 <ECEntityClass typeName="Foo">
                     <ECProperty propertyName="Prop1" typeName="IntEnumNoDisplayLabel" />
                     <ECProperty propertyName="Prop2" typeName="IntEnumDisplayLabel" />
@@ -2576,7 +2989,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
         </ECSchema>)xml")));
 
     KindOfQuantityId koqId;
-    { 
+    {
     KindOfQuantityCP koq = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKoq");
     ASSERT_TRUE(koq != nullptr);
     koqId = koq->GetId();

@@ -321,7 +321,10 @@ bool _GetMSBsplineCurve(MSBsplineCurveR curve, double fractionA, double fraction
         {
         // avoid crashing tile generator on bad data that has snuck in somehow (reported by Sentry)
         if (!m_curve->IsValidGeometry())
+            {
+            curve.Zero();   // in case caller (inadvisably) frees on failure
             return false;
+            }
 
         return SUCCESS == curve.CopySegment (*m_curve,
             m_curve->FractionToKnot (fractionA), m_curve->FractionToKnot (fractionB));
@@ -339,10 +342,7 @@ bool _AddStrokes(bvector <DPoint3d> &points, IFacetOptionsCR options,
         {
         MSBsplineCurve curve;
         if (!_GetMSBsplineCurve (curve, startFraction, endFraction))
-            {
-            curve.ReleaseMem ();
             return false;
-            }
 
         curve.AddStrokes (points, options.GetChordTolerance (), options.GetAngleTolerance (), options.GetMaxEdgeLength (), includeStartPoint);
         curve.ReleaseMem ();
@@ -369,10 +369,7 @@ bool _AddStrokes(bvector <PathLocationDetail> &points, IFacetOptionsCR options,
         // ugh.  stroke in a subset curve, map parameters back . ..
         MSBsplineCurve curve;
         if (!_GetMSBsplineCurve (curve, startFraction, endFraction))
-            {
-            curve.ReleaseMem ();
             return false;
-            }
 
         curve.AddStrokes (options, xyz, nullptr, &params, true);
         for (size_t i = 0; i < xyz.size (); i++)
@@ -405,10 +402,7 @@ size_t _GetStrokeCount(IFacetOptionsCR options, double startFraction, double end
     {
     MSBsplineCurve curve;
     if (!_GetMSBsplineCurve (curve, startFraction, endFraction))
-        {
-        curve.ReleaseMem ();
         return 0;
-        }
 
     size_t count = options.BsplineCurveStrokeCount (curve);
     curve.ReleaseMem ();

@@ -890,7 +890,7 @@ bool tryValueToRuledSweep (BeJsConst value, ISolidPrimitivePtr &result)
         }
     return false;
     }
-// AUXDATA -- DO NOT PORT THIS TO CONNECT
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -965,9 +965,9 @@ PolyfaceAuxDataPtr  tryValueToPolyfaceAuxData(BeJsConst value)
         !tryValueToPolyfaceAuxDataChannels(channels, value["channels"]))
         return nullptr;
 
-    return new PolyfaceAuxData(
-std::move(indices), std::move(channels));
+    return new PolyfaceAuxData(std::move(indices), std::move(channels));
     }
+
 typedef ValidatedValue<int> ValidatedInt;
 
 // EDL 12/23/2020 using value.asInt() is unpredictable.
@@ -987,8 +987,8 @@ ValidatedInt AsInt(BeJsConst value, int defaultValue = 0)
         return ValidatedInt(defaultValue, false);
         }
     return ValidatedInt(defaultValue, false);
-
     }
+
 PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
     {
     if (parentValue.isNull ())
@@ -996,33 +996,34 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
     auto value = parentValue["indexedMesh"];
     if (value.isNull ())
         return nullptr;
-    PolyfaceHeaderPtr pf = PolyfaceHeader::CreateVariableSizeIndexed ();    // this makes numPerFace 0
-    auto iNumPerFace = AsInt (value["numPerFace"], 0);
-    if (iNumPerFace.IsValid ())
-        pf->SetNumPerFace (iNumPerFace.Value ());
 
-    auto jTwoSided = value["twoSided"];
-    if (jTwoSided.isBool ())
-        pf->SetTwoSided (jTwoSided.asBool ());
-    auto jExpectedClosure = value["expectedClosure"];
-    if (jExpectedClosure.isNumeric())
-        pf->SetExpectedClosure(jExpectedClosure.asInt());
+    bvector<DPoint3d> points;
+    if (!tryValueToBVectorDPoint3d(value["point"], points))
+        return nullptr;
+    bvector<int> pointIndices;
+    if (!tryValueToBVectorInt(value["pointIndex"], pointIndices))
+        return nullptr;
+
+    int numPerFace = 0;
+    auto iNumPerFace = AsInt (value["numPerFace"], 0);
+    if (iNumPerFace.IsValid())
+        numPerFace = iNumPerFace.Value();
+
+    // set numPerFace and required arrays, initialize inactive arrays
+    PolyfaceHeaderPtr pf = PolyfaceHeader::CreateIndexedMeshSwap(numPerFace, points, pointIndices);
+
+    bool twoSided;
+    derefBool(value, "twoSided", twoSided, false);
+    pf->SetTwoSided(twoSided);
 
     auto iExpectedClosure = AsInt (value["expectedClosure"]);
     if (iExpectedClosure.IsValid())
         pf->SetExpectedClosure(iExpectedClosure.Value());
 
-    if (tryValueToBVectorDPoint3d (value["point"], pf->Point ()))
-        pf->Point().SetActive (true);
-    if (tryValueToBVectorInt(value["pointIndex"], pf->PointIndex ()))
-        pf->PointIndex().SetActive (true);
-
     if (tryValueToBVectorUInt32 (value["color"], pf->IntColor ()))
         pf->IntColor().SetActive (true);
     if (tryValueToBVectorInt(value["colorIndex"], pf->ColorIndex ()))
-        pf->ColorIndex().SetTags(pf->ColorIndex().NumPerStruct(), pf->ColorIndex().StructsPerRow(),
-                                 MESH_ELM_TAG_FACE_LOOP_TO_INT_COLOR_INDICES,   // force correct tag
-                                 pf->ColorIndex().IndexFamily(), pf->ColorIndex().IndexedBy(), true);
+        pf->ColorIndex().SetActive(true);
 
     if (tryValueToBVectorDVec3d (value["normal"], pf->Normal ()))
         pf->Normal().SetActive (true);
@@ -1045,9 +1046,8 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
 
     TaggedNumericData numericData;
     if (tryValueToTaggedNumericData(value["tags"], numericData))
-        {
         pf->SetNumericTags (numericData);
-        }
+
     return pf;
     }
 
@@ -1135,6 +1135,7 @@ CurveVector::BoundaryType boundaryType
             int numOuter = 0;
             int numInner = 0;
             int numOther = 0;
+            UNUSED_VARIABLE(numInner);
             for (auto & cp : *result)
                 {
                 auto loop = cp->GetChildCurveVectorP ();

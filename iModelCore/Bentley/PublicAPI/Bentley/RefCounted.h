@@ -209,6 +209,10 @@ template<class T> T * get_pointer(RefCountedPtr<T> const & p) {return p.get();}
 template<class T, class U> RefCountedPtr<T> static_pointer_cast(RefCountedPtr<U> const & p){return static_cast<T *>(p.get());}
 template<class T, class U> RefCountedPtr<T> const_pointer_cast(RefCountedPtr<U> const & p) {return const_cast<T *>(p.get());}
 template<class T, class U> RefCountedPtr<T> dynamic_pointer_cast(RefCountedPtr<U> const & p){return dynamic_cast<T *>(p.get());}
+template<class T> bool operator== (std::nullptr_t const& lhs, RefCountedPtr<T> const& rhs) {return lhs == rhs.get();}
+template<class T> bool operator!= (std::nullptr_t const& lhs, RefCountedPtr<T> const& rhs) {return lhs != rhs.get();}
+template<class T> bool operator== (std::nullptr_t const& lhs, RefCountedCPtr<T> const& rhs) {return lhs == rhs.get();}
+template<class T> bool operator!= (std::nullptr_t const& lhs, RefCountedCPtr<T> const& rhs) {return lhs != rhs.get();}
 #endif // DOCUMENTATION_GENERATOR
 
 END_BENTLEY_NAMESPACE

@@ -252,7 +252,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnAfterSetBriefcaseId() override;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterSchemaChangeSetApplied() const override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterDataChangeSetApplied() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterDataChangeSetApplied(bool schemaChanged) override;
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void _OnBeforeClearECDbCache() override;
@@ -385,6 +385,10 @@ public:
     //! Drop a unreferenced schema with no instances
     //! @param[in] name schema that need to be dropped.
     DGNPLATFORM_EXPORT BeSQLite::EC::DropSchemaResult DropSchema(Utf8StringCR name, bool logIssue = true);
+
+    //! Drop multiple unreferenced schemas with no instances
+    //! @param[in] schemaNames List of schemas that need to be dropped.
+    DGNPLATFORM_EXPORT BeSQLite::EC::DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, bool logIssue = true);
 
     DGNPLATFORM_EXPORT static BeSQLite::DbResult SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade);
 

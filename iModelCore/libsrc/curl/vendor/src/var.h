@@ -27,11 +27,11 @@
 #include "tool_getparam.h"
 #include "dynbuf.h"
 
-struct var {
-  struct var *next;
-  const char *name;
+struct tool_var {
+  struct tool_var *next;
   const char *content;
   size_t clen; /* content length */
+  char name[1]; /* allocated as part of the struct */
 };
 
 struct GlobalConfig;
