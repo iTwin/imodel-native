@@ -5,6 +5,8 @@
 #include "testHarness.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 
+static char buf[MAX_PATH];
+
 // this fixup is not needed in the TypeScript crossPlatform test because only native API deserializes in fixed-size mesh format
 static void convertNativeMeshToVariableSized(IGeometryR geom)
     {
@@ -49,6 +51,22 @@ struct TestCase
     };
 BeFileName TestCase::s_root;
 
+static IGeometryPtr deserializeFirstGeom(BeFileNameCR fileName, TestCase::FileType fileType)
+    {
+    bvector<IGeometryPtr> geoms;
+    bool converted = false;
+    if (TestCase::FlatBuffer == fileType)
+        converted = GTestFileOps::FlatBufferFileToGeometry(fileName, geoms);
+    else if (TestCase::JSON == fileType)
+        converted = GTestFileOps::JsonFileToGeometry(fileName, geoms);
+    if (converted && geoms.size() > 0)
+        {
+        convertNativeMeshToVariableSized(*geoms[0]);
+        return geoms[0];
+        }
+    return nullptr;
+    };
+
 // Verify that the native API can read flatbuffer and json files written by the typescript and native APIs.
 // Each test case consists of at least four files that encode the same single geometry: native-authored fb and json, typescript-authored fb and json
 // The same test exists in typescript core-geometry and operates on the same data files; these tests and data should be kept in sync.
@@ -90,28 +108,22 @@ TEST(CrossPlatform, Equivalence)
 
     // TODO: add other test cases
 
-    bvector<IGeometryPtr> geometry;
-    char buf[MAX_PATH];
-    auto pushFirstDeserializedGeom = [&](BeFileNameCR fileName, TestCase::FileType fileType) -> void
-        {
-        fileName.GetNameA(buf);
-        bvector<IGeometryPtr> geom;
-        bool status = (TestCase::FileType::FlatBuffer == fileType) ? GTestFileOps::FlatBufferFileToGeometry(fileName, geom) : GTestFileOps::JsonFileToGeometry(fileName, geom);
-        if (Check::True(status && geom.size() > 0, std::string("deserialized at least one geometry from ").append(buf).c_str()))
-            {
-            convertNativeMeshToVariableSized(*geom[0]);
-            geometry.push_back(geom[0]);
-            }
-        };
-
     for (size_t iTestCase = 0; iTestCase < testCases.size(); ++iTestCase)
         {
-        geometry.clear();
+        bvector<IGeometryPtr> geometry;
+
+        // deserialize and collect all geometries
         for (auto platform : { TestCase::Native, TestCase::TypeScript })
             for (auto fileType : { TestCase::FlatBuffer, TestCase::JSON })
                 for (auto& fileName : testCases[iTestCase].m_fileNames.at(platform).at(fileType))
-                    pushFirstDeserializedGeom(fileName, fileType);
+                    {
+                    IGeometryPtr geom = deserializeFirstGeom(fileName, fileType);
+                    fileName.GetNameA(buf);
+                    if (Check::True(geom.IsValid(), std::string("deserialized at least one geometry from ").append(buf).c_str()))
+                        geometry.push_back(geom);
+                    }
 
+        // all TestCase geometries should be equivalent
         if (Check::LessThanOrEqual(4, geometry.size(), "have at least four geometries to compare"))
             {
             for (size_t i = 1; i < geometry.size(); ++i)
@@ -190,10 +202,45 @@ TEST(CrossPlatform, SolidPrimitives)
         serialize(*IGeometry::Create(ISolidPrimitive::CreateDgnCone(coneDetail1)), L"cone-elliptical-skew-new");
         }
 
-    // TODO:
-    // move files to root for native/TS repos
-    // add code here to verify for each testCase set:
-    // * all fb are the same, so reduce test cases
-    // * verify only NEW json files deserialize to the fb geometry
-    // * new json files are a superset of old json files
+    for (size_t iTestCase = 0; iTestCase < testCases.size(); ++iTestCase)
+        {
+        // all flatbuffer geometries should be equivalent
+        bvector<IGeometryPtr> fbGeom;
+        for (auto platform : { TestCase::Native, TestCase::TypeScript })
+            {
+            auto fileType = TestCase::FlatBuffer;
+            for (auto& fileName : testCases[iTestCase].m_fileNames.at(platform).at(fileType))
+                {
+                IGeometryPtr geom = deserializeFirstGeom(fileName, fileType);
+                fileName.GetNameA(buf);
+                if (Check::True(geom.IsValid(), std::string("deserialized at least one FB geometry from ").append(buf).c_str()))
+                    fbGeom.push_back(geom);
+                }
+            }
+        if (!Check::True(1 <= fbGeom.size(), "have at least one FB geometry to compare"))
+            continue;
+        IGeometryPtr geomToCompare = fbGeom[0]; // ASSUME correct
+        for (size_t i = 1; i < fbGeom.size(); ++i)
+            {
+            snprintf(buf, sizeof buf, "testCase[%zu]: fb0 compares to fb%zu", iTestCase, i);
+            Check::True(geomToCompare->IsSameStructureAndGeometry(*fbGeom[i]), buf);
+            }
+
+        // all "new" json geometries should equate to geomToCompare
+        for (auto platform : { TestCase::Native, TestCase::TypeScript })
+            {
+            auto fileType = TestCase::JSON;
+            for (auto& fileName : testCases[iTestCase].m_fileNames.at(platform).at(fileType))
+                {
+                if (fileName.EndsWith(L"-new.imjs"))
+                    {
+                    IGeometryPtr geom = deserializeFirstGeom(fileName, fileType);
+                    fileName.GetNameA(buf);
+                    if (Check::True(geom.IsValid(), std::string("deserialized at least one JSON geometry from ").append(buf).c_str()))
+                        Check::True(geomToCompare->IsSameStructureAndGeometry(*geom), std::string(buf).append("yields expected geometry").c_str());
+                    }
+                }
+            }
+        // NOTE: the analogous Typescript test verifies each property of old JSON is present in new JSON
+        }
     }
