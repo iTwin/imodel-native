@@ -664,7 +664,8 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
         {
         //  *** TBD: Check if the line style definitions match. If not, rename and remap
         context.AddLineStyleId(DgnStyleId(this->GetElementId().GetValue()), dstStyleId);
-        return const_cast<DgnElement*>(context.GetDestinationDb().Elements().GetElement(dstStyleId).get());
+        context.AddElementId(this->GetElementId(), DgnElementId(dstStyleId.GetValue()));
+        return nullptr;
         }
 
     Utf8String  srcData (this->GetData());
@@ -681,8 +682,6 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
         BeAssert(false && "unable to import component for line style");
         return newElem;
         }
-
-    DefinitionModelPtr model = m_dgndb.Models().Get<DefinitionModel>(DgnModel::DictionaryId());
 
     LsDefinition::InitializeJsonObject(jsonObj, compId, LsDefinition::GetAttributes(jsonObj), LsDefinition::GetUnitDef(jsonObj));
     Utf8String data = Json::FastWriter::ToString(jsonObj);
