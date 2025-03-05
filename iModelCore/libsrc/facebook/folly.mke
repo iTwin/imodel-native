@@ -10,7 +10,6 @@ IS_THIRD_PARTY_LIBRARY = 1
 %include mdl.mki
 
 appName = BeFolly
-CCompPDBName = $(appName)
 
 FollyDir = $(_MakeFilePath)folly/
 FollyVendorAPISrc = $(_MakeFilePath)VendorApi/folly/
