@@ -23,6 +23,19 @@ using CachedBinder = MruStatementCache::CachedBinder;
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
+bool BindContext::IsUseJsName() const {
+    if (IsInsert()) {
+        return m_insertOptions.GetUseJsName();
+    }
+    if (IsUpdate()) {
+        return m_updateOptions.GetUseJsName();
+    }
+    return false;
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
 void BindContext::SetError(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
