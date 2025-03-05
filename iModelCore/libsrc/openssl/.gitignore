@@ -3,3 +3,8 @@ vendor/doc
 vendor/fuzz
 vendor/test
 vendor/VMS
+vendor/oqs-provider
+vendor/python-ecdsa
+vendor/tlsfuzzer
+vendor/tlslite-ng
+vendor/wycheproof
