@@ -187,24 +187,8 @@ struct InstanceWriter::Impl final {
         ECN::ECClassCP FindClass(Utf8StringCR name) const {
             return m_writer.GetECDb().Schemas().FindClass(name);
         }
-        bool IsUseJsName() const {
-            if (IsInsert()) {
-                return m_insertOptions.GetUseJsName();
-            }
-            if (IsUpdate()) {
-                return m_updateOptions.GetUseJsName();
-            }
-            return false;
-        }
-        Abortable NotifyUnknownJsProperty(Utf8CP prop, BeJsConst val) const {
-            if (IsInsert() && m_insertOptions.GetUnknownJsPropertyHandler() != nullptr) {
-                m_insertOptions.GetUnknownJsPropertyHandler()(prop, val);
-            }
-            if (IsUpdate() && m_updateOptions.GetUnknownJsPropertyHandler() != nullptr) {
-                m_updateOptions.GetUnknownJsPropertyHandler()(prop, val);
-            }
-            return Abortable::Continue;
-        }
+        bool IsUseJsName() const;
+        Abortable NotifyUnknownJsProperty(Utf8CP prop, BeJsConst val) const;
         void SetError(const char* fmt, ...);
         bool HasError() const { return !m_error.empty(); }
     };
