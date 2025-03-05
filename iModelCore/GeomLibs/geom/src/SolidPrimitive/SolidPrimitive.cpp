@@ -1423,7 +1423,8 @@ bool DgnSphereDetail::TryGetRotationAxis (DPoint3dR center, DVec3dR axis, double
 +--------------------------------------------------------------------------------------*/
 bool DgnSphereDetail::GetTransforms (TransformR localToWorld, TransformR worldToLocal) const
     {
-    return QVNormalizedTransforms (m_localToWorld, localToWorld, worldToLocal);
+    QVNormalizedTransforms (m_localToWorld, localToWorld, worldToLocal);
+    return worldToLocal.InverseOf (m_localToWorld); // this makes no sense but without it SolidPrimitive.ArcIntersection test fails
     }
 
 
