@@ -940,11 +940,11 @@ Napi::Value JsInterop::InsertInstance(DgnDbR db, NapiInfoCR info) {
     auto args = BeJsValue(argsObj);
     InstanceWriter::InsertOptions options;
     if (args.isBoolMember("useJsNames")){
-        options.UseJsName(args.asBool(false));
+        options.UseJsNames(args.asBool(false));
     }
 
     bool generateInstanceId = false;
-    if (options.GetUseJsName())  {
+    if (options.GetUseJsNames())  {
         if (inst.isStringMember("classFullName")){
             generateInstanceId = db.Schemas().IsSubClassOf(inst["classFullName"].asString(), "BisCore:Element");
         } else if (inst.isStringMember("className")){
@@ -989,7 +989,7 @@ Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
     auto args = BeJsValue(argsObj);
     InstanceWriter::UpdateOptions options;
     if (args.isBoolMember("useJsNames")){
-        options.UseJsName(args.asBool(false));
+        options.UseJsNames(args.asBool(false));
     }
     if (args.isBoolMember("incrementUpdate")){
         options.UseIncrementalUpdate(args.asBool(false));
@@ -1011,7 +1011,9 @@ Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
     auto inst = BeJsValue(instanceObj);
     auto args = BeJsValue(argsObj);
     InstanceWriter::DeleteOptions options;
-
+    if (args.isBoolMember("useJsNames")){
+        options.UseJsNames(args.asBool(false));
+    }
     auto rc = db.GetInstanceWriter().Delete(inst, options);
     if (rc != BE_SQLITE_DONE) {
         THROW_JS_EXCEPTION(db.GetInstanceWriter().GetLastError().c_str( ));
