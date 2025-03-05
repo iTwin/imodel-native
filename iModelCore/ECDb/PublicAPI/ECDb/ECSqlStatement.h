@@ -766,13 +766,15 @@ struct ECSqlRowAdaptor {
         static constexpr auto JClassIdsToClassNames = "classIdsToClassNames";
         static constexpr auto JUseJsName = "useJsName";
         static constexpr auto JDoNotConvertClassIdsToClassNamesWhenAliased = "doNotConvertClassIdsToClassNamesWhenAliased";
-
+        static constexpr auto JSkipReadOnlyProperties = "skipReadOnlyProperties";
         bool m_abbreviateBlobs = true;
         bool m_classIdToClassNames = false;
         bool m_useJsName = false;
         bool m_doNotConvertClassIdsToClassNamesWhenAliased = false;
+        bool m_skipReadOnlyProperties = false;
 
         Options& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this; }
+        Options& SkipReadOnlyProperties(bool v) { m_skipReadOnlyProperties = v; return *this; }
         Options& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v;  return *this; }
         Options& UseJsNames(bool v) { m_useJsName = v;  return *this; }
         Options& DoNotConvertClassIdsToClassNamesWhenAliased(bool v) { m_doNotConvertClassIdsToClassNamesWhenAliased = v;  return *this; }
