@@ -30,6 +30,45 @@ describe("basic tests", () => {
     dgndb.closeFile();
     done();
   });
+  it.only("instance writer", () => {
+
+    const seedUri = path.join(getAssetsDir(), "test.bim");
+    const thisFile = path.join(getOutputDir(), "instance-writer.bim");
+    if (fs.existsSync(thisFile)) {
+      fs.unlinkSync(thisFile);
+    }
+    fs.copyFileSync(seedUri, thisFile);
+
+    const iModelDb = new iModelJsNative.DgnDb();
+    iModelDb.openIModel(thisFile, OpenMode.ReadWrite);
+    // const arg1 = { id: "0x1b", className: "BisCore:Subject" };
+    const arg2 = { id: "0x1b", classId: "0xce" };
+
+    const inst = iModelDb.getInstance({
+      ...arg2,
+      serializationMethod: InstanceSerializationMethod.JsonParse,
+      useJsNames: true,
+    })
+    assert.equal(inst.codeValue, "A", "codeValue should be A");
+
+    assert.isTrue(iModelDb.updateInstance({
+      "id": "0x1b",
+      "className": "BisCore.Subject",
+      "codeValue" : "A-MODIFIED",
+    }, {useJsNames: true, incrementUpdate: true}));
+
+    const inst2 = iModelDb.getInstance({
+      ...arg2,
+      serializationMethod: InstanceSerializationMethod.JsonParse,
+      useJsNames: true,
+    })
+    assert.equal(inst2.codeValue, "A-MODIFIED", "codeValue should be A-MODIFIED");
+    iModelDb.saveChanges();
+    iModelDb.closeFile();
+    // process.stdout.write(JSON.stringify(inst, null, 2));
+
+  });
+
   describe("getInstance()", () => {
     const args = { id: "0x38", classId: "0xe7" };
     /* eslint-disable @typescript-eslint/naming-convention */

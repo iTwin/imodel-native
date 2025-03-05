@@ -18,6 +18,10 @@ BentleyStatus ECSqlRowAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& stm
         int consecutiveNulls = 0;
         for (int columnIndex = 0; columnIndex < count; columnIndex++) {
             IECSqlValue const& ecsqlValue = stmt.GetValue(columnIndex);
+            if (m_options.m_skipReadOnlyProperties && ecsqlValue.GetColumnInfo().GetProperty() && ecsqlValue.GetColumnInfo().GetProperty()->GetIsReadOnly()) {
+                continue;
+            }
+
             if (ecsqlValue.IsNull()) {
                 ++consecutiveNulls;
                 continue;
@@ -35,6 +39,9 @@ BentleyStatus ECSqlRowAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& stm
         const int count = stmt.GetColumnCount();
         for (int columnIndex = 0; columnIndex < count; columnIndex++) {
             IECSqlValue const& ecsqlValue = stmt.GetValue(columnIndex);
+            if (m_options.m_skipReadOnlyProperties && ecsqlValue.GetColumnInfo().GetProperty() && ecsqlValue.GetColumnInfo().GetProperty()->GetIsReadOnly()) {
+                continue;
+            }
             if (ecsqlValue.IsNull()) {
                 continue;
             }
@@ -489,6 +496,9 @@ void ECSqlRowAdaptor::Options::FromJson(BeJsValue opts) {
 
     if (opts.isBoolMember(JDoNotConvertClassIdsToClassNamesWhenAliased))
         m_doNotConvertClassIdsToClassNamesWhenAliased = opts[JDoNotConvertClassIdsToClassNamesWhenAliased].asBool();
+
+    if (opts.isBoolMember(JSkipReadOnlyProperties))
+        m_skipReadOnlyProperties = opts[JSkipReadOnlyProperties].asBool();
 }
 
 //---------------------------------------------------------------------------------------
@@ -500,6 +510,7 @@ void ECSqlRowAdaptor::Options::ToJson(BeJsValue opts) const {
     opts[JClassIdsToClassNames] = m_classIdToClassNames;
     opts[JUseJsName] = m_useJsName;
     opts[JDoNotConvertClassIdsToClassNamesWhenAliased] = m_doNotConvertClassIdsToClassNamesWhenAliased;
+    opts[JSkipReadOnlyProperties] = m_skipReadOnlyProperties;
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

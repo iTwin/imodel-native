@@ -183,6 +183,9 @@ ECSqlStatus MruStatementCache::PrepareUpdate(CachedWriteStatement& cachedStmt) {
         if (prop->GetType() == PropertyMap::Type::ECClassId || prop->GetType() == PropertyMap::Type::ECInstanceId) {
             continue;
         }
+        if (prop->GetProperty().GetIsReadOnly()) {
+            continue;
+        }
         if (timestampPropName.EqualsIAscii(prop->GetName())) {
             continue;
         }
@@ -906,6 +909,7 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
                 param.SetUseJsName(options.GetUseJsNames());
                 param.SetAbbreviateBlobs(false);
                 param.SetClassIdToClassNames(options.GetUseJsNames());
+                param.SetSkipReadOnlyProperties(true);
                 row.GetJson(param).ForEachProperty([&](auto prop, auto val) {
                     if (!doc.hasMember(prop)) {
                         doc[prop].From(val);
