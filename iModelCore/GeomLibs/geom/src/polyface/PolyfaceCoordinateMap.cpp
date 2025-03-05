@@ -146,6 +146,14 @@ PolyfaceZYXMap::PolyfaceZYXMap (DPoint3dZYXTolerancedSortComparison const &compa
         }
 
 /*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+DPoint3dZYXTolerancedSortComparison const& PolyfaceZYXMap::GetComparator() const
+    {
+    return tree_.key_comp();
+    }
+
+/*--------------------------------------------------------------------------------**//**
 * @bsistruct
 +--------------------------------------------------------------------------------------*/
 PolyfaceZYXDVec3dMap::PolyfaceZYXDVec3dMap (DVec3dZYXTolerancedSortComparison const &compare)
@@ -181,6 +189,20 @@ PolyfaceCoordinateMap::~PolyfaceCoordinateMap ()
     delete m_normalMap;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+double PolyfaceCoordinateMap::GetXYZAbsTol() const
+    {
+    return m_pointMap->GetComparator().m_absTol;
+    }
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+double PolyfaceCoordinateMap::GetXYZRelTol() const
+    {
+    return m_pointMap->GetComparator().m_relTol;
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod

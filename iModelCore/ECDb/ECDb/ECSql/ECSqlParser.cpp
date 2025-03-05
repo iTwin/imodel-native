@@ -1608,7 +1608,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                 if (SUCCESS == ParseCommonTableBlockName(cteBlockNameExp, *thirdNode)) {
                     rangeClassRef = std::move(cteBlockNameExp);
                 }
-                if (SUCCESS == ParseTableValuedFunction(tableValueFunc, *thirdNode)) {
+                else if (SUCCESS == ParseTableValuedFunction(tableValueFunc, *thirdNode)) {
                     rangeClassRef = std::move(tableValueFunc);
                 }
             }
@@ -2075,10 +2075,10 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
     }
 
     const size_t pathLength = pathNode->count();
-    if (pathLength  != 2) {
+    if (pathLength != 1 && pathLength  != 2) 
         return ERROR;
-    }
 
+    if(pathLength == 2){
     auto schemaNode = pathNode->getChild(0);
     auto functionNode = pathNode->getChild(1);
 
@@ -2098,6 +2098,27 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
         }
 
     exp = std::make_unique<TableValuedFunctionExp>(schemaName.c_str(), std::move(memberFuncCall), PolymorphicInfo::NotSpecified());
+    }
+    else if(pathLength == 1)
+    {
+        auto functionNode = pathNode->getChild(0);
+
+        if(functionNode == nullptr) return ERROR;
+
+        if (functionNode->getChild(1) == nullptr || functionNode->getChild(1)->isLeaf()) { // We also need to check the leaf condition here because functionNode->getChild(1) is the argument node and that node should have children
+            return ERROR;
+        }
+
+        std::unique_ptr<MemberFunctionCallExp> memberFuncCall;
+        if (functionNode != nullptr)
+            {
+            if (SUCCESS != ParseMemberFunctionCall(memberFuncCall, *functionNode, true))
+                return ERROR;
+            }
+
+        exp = std::make_unique<TableValuedFunctionExp>("", std::move(memberFuncCall), PolymorphicInfo::NotSpecified());
+    }
+    
     return SUCCESS;
 }
 
@@ -2244,16 +2265,19 @@ BentleyStatus ECSqlParser::ParseMemberFunctionCall(std::unique_ptr<MemberFunctio
         return ERROR;
         }
 
-    BeAssert(parseNode.count() == 2);
+    if(parseNode.count() != 2)
+        return ERROR;
     OSQLParseNode const* argsNode = parseNode.getChild(1);
-    BeAssert(argsNode != nullptr);
+    if(argsNode == nullptr)
+        return ERROR;
     if (argsNode->isLeaf())
         {
         BeAssert(false && "ParseNode passed to ParseMemberFunctionCall is expected to have a non-empty second child node");
         return ERROR;
         }
 
-    BeAssert(argsNode->count() == 3);
+    if(argsNode->count() != 3)
+        return ERROR;
 
     Utf8StringCR functionName = parseNode.getChild(0)->getTokenValue();
     memberFunCallExp = std::make_unique<MemberFunctionCallExp>(functionName, tableValuedFunc);
@@ -2736,7 +2760,7 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
         }
     else if(SQL_ISRULE(queryExpNode, cte))
         {
-        //select_statement
+        //cte
         std::unique_ptr<CommonTableExp> cte = nullptr;
         if (SUCCESS != ParseCTE(cte, queryExpNode))
             return ERROR;

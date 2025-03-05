@@ -32,6 +32,9 @@
 
 /* forward declarations */
 struct UserDefined;
+#ifndef CURL_DISABLE_DOH
+struct doh_probes;
+#endif
 
 enum expect100 {
   EXP100_SEND_DATA,           /* enough waiting, just send the body now */
@@ -78,10 +81,11 @@ struct SingleRequest {
                                    first one */
   curl_off_t offset;            /* possible resume offset read from the
                                    Content-Range: header */
-  int httpversion;              /* Version in response (09, 10, 11, etc.) */
   int httpcode;                 /* error code from the 'HTTP/1.? XXX' or
                                    'RTSP/1.? XXX' line */
   int keepon;
+  unsigned char httpversion_sent; /* Version in request (09, 10, 11, etc.) */
+  unsigned char httpversion;    /* Version in response (09, 10, 11, etc.) */
   enum upgrade101 upgr101;      /* 101 upgrade state */
 
   /* Client Writer stack, handles transfer- and content-encodings, protocol
@@ -114,7 +118,7 @@ struct SingleRequest {
     struct TELNET *telnet;
   } p;
 #ifndef CURL_DISABLE_DOH
-  struct dohdata *doh; /* DoH specific data for this request */
+  struct doh_probes *doh; /* DoH specific data for this request */
 #endif
 #ifndef CURL_DISABLE_COOKIES
   unsigned char setcookies;
@@ -127,6 +131,7 @@ struct SingleRequest {
   BIT(download_done); /* set to TRUE when download is complete */
   BIT(eos_written);   /* iff EOS has been written to client */
   BIT(eos_read);      /* iff EOS has been read from the client */
+  BIT(eos_sent);      /* iff EOS has been sent to the server */
   BIT(rewind_read);   /* iff reader needs rewind at next start */
   BIT(upload_done);   /* set to TRUE when all request data has been sent */
   BIT(upload_aborted); /* set to TRUE when upload was aborted. Will also
@@ -135,6 +140,7 @@ struct SingleRequest {
   BIT(http_bodyless); /* HTTP response status code is between 100 and 199,
                          204 or 304 */
   BIT(chunk);         /* if set, this is a chunked transfer-encoding */
+  BIT(resp_trailer);  /* response carried 'Trailer:' header field */
   BIT(ignore_cl);     /* ignore content-length */
   BIT(upload_chunky); /* set TRUE if we are doing chunked transfer-encoding
                          on upload */
@@ -146,9 +152,7 @@ struct SingleRequest {
                         negotiation. */
   BIT(sendbuf_init); /* sendbuf is initialized */
   BIT(shutdown);     /* request end will shutdown connection */
-#ifdef USE_HYPER
-  BIT(bodywritten);
-#endif
+  BIT(shutdown_err_ignore); /* errors in shutdown will not fail request */
 };
 
 /**
@@ -190,18 +194,17 @@ void Curl_req_free(struct SingleRequest *req, struct Curl_easy *data);
  */
 void Curl_req_hard_reset(struct SingleRequest *req, struct Curl_easy *data);
 
-#ifndef USE_HYPER
 /**
  * Send request headers. If not all could be sent
  * they will be buffered. Use `Curl_req_flush()` to make sure
  * bytes are really send.
  * @param data      the transfer making the request
  * @param buf       the complete header bytes, no body
+ * @param httpversion version used in request (09, 10, 11, etc.)
  * @return CURLE_OK (on blocking with *pnwritten == 0) or error.
  */
-CURLcode Curl_req_send(struct Curl_easy *data, struct dynbuf *buf);
-
-#endif /* !USE_HYPER */
+CURLcode Curl_req_send(struct Curl_easy *data, struct dynbuf *buf,
+                       unsigned char httpversion);
 
 /**
  * TRUE iff the request has sent all request headers and data.
@@ -221,9 +224,25 @@ CURLcode Curl_req_send_more(struct Curl_easy *data);
 bool Curl_req_want_send(struct Curl_easy *data);
 
 /**
+ * TRUE iff the request has no buffered bytes yet to send.
+ */
+bool Curl_req_sendbuf_empty(struct Curl_easy *data);
+
+/**
  * Stop sending any more request data to the server.
  * Will clear the send buffer and mark request sending as done.
  */
 CURLcode Curl_req_abort_sending(struct Curl_easy *data);
+
+/**
+ * Stop sending and receiving any more request data.
+ * Will abort sending if not done.
+ */
+CURLcode Curl_req_stop_send_recv(struct Curl_easy *data);
+
+/**
+ * Invoked when all request data has been uploaded.
+ */
+CURLcode Curl_req_set_upload_done(struct Curl_easy *data);
 
 #endif /* HEADER_CURL_REQUEST_H */

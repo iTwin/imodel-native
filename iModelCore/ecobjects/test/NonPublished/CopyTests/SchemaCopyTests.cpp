@@ -1003,7 +1003,7 @@ TEST_F(SchemaCopyTest, SuccessfullyCopiesSchemaWithCustomAttributesInSchemaAndCl
                 <ECCustomAttributes>
                     <aCustomClass xmlns="testSchema.01.00.00"/>
                 </ECCustomAttributes>
-                <ECProperty propertyName="bProperty" typeName="aEntityClass">
+                <ECProperty propertyName="bProperty" typeName="int">
                     <ECCustomAttributes>
                         <cCustomClass xmlns="testSchema.01.00.00"/>
                     </ECCustomAttributes>

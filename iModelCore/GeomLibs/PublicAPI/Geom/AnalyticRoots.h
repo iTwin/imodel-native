@@ -14,7 +14,7 @@ class GEOMDLLIMPEXP AnalyticRoots
 {
 public:
 static int SolveLinear  (double c[2], double s[1]);
-static int SolveQuadric (double c[3], double s[2]);
+static int SolveQuadratic (double c[3], double s[2]);
 static int SolveCubic   (double c[4], double s[3]);
 // farSolution is the root farthest from the inflection.
 // This will have the steepest slope, hence the least numerical sensitivity.

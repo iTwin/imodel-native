@@ -13,17 +13,31 @@ Exp::FinalizeParseStatus TableValuedFunctionExp::_FinalizeParsing(ECSqlParseCont
     if (FinalizeParseMode::BeforeFinalizingChildren == mode) {
         const auto& vsm = ctx.GetECDb().Schemas().Main().GetVirtualSchemaManager();
         const auto classValuedFunc = GetFunctionExp()->GetFunctionName();
-        const auto tableViewClassP = vsm.GetClass(m_schemaName, classValuedFunc);
+        size_t numberOfClasses = 0; // The numberOfClasses variable gives us the exact number of classes found which is used for more personalized error message
+        const auto tableViewClassP = m_schemaName.EqualsI("") ? vsm.FindClass(classValuedFunc, numberOfClasses) : vsm.GetClass(m_schemaName, classValuedFunc);
         if (tableViewClassP == nullptr) {
-            ctx.Issues().ReportV(
+            if(numberOfClasses == 0)
+            {
+                ctx.Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
                 IssueType::ECDbIssue,
                 ECDbIssueId::ECDb_0451,
-                "TableValuedFunction %s.%s() has no ECClass describing its output.",
-                m_schemaName.c_str(),
-                classValuedFunc.c_str()
-            );
+                "TableValuedFunction %s() has no ECClass describing its output.",
+                m_schemaName.EqualsIAscii("") ? classValuedFunc.c_str() : m_schemaName.append(".").append(classValuedFunc).c_str()
+                );
+            }
+            else if(numberOfClasses > 1)
+            {
+                ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0738,
+                "TableValuedFunction %s() has more than one ECClass describing its output. Unable to understand ambiguous reference",
+                m_schemaName.EqualsIAscii("") ? classValuedFunc.c_str() : m_schemaName.append(".").append(classValuedFunc).c_str()
+                );
+            }
             return Exp::FinalizeParseStatus::Error;
         }
         m_virtualEntityClass = tableViewClassP->GetEntityClassCP();
@@ -45,6 +59,8 @@ Utf8StringCR TableValuedFunctionExp::_GetId() const {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TableValuedFunctionExp::_ExpandSelectAsterisk(
     std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const {
+    if(m_virtualEntityClass == nullptr)
+        return;
     BeAssert(m_virtualEntityClass != nullptr);
     auto alias = GetAlias();
     for(auto& prop : m_virtualEntityClass->GetProperties()) {
@@ -61,6 +77,8 @@ void TableValuedFunctionExp::_ExpandSelectAsterisk(
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyMatchResult TableValuedFunctionExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const& propertyPath, const PropertyMatchOptions& options) const {
+    if(m_virtualEntityClass == nullptr)
+        return PropertyMatchResult::NotFound();
     BeAssert(m_virtualEntityClass != nullptr);
     if (propertyPath.Size() == 1) {
        auto property = m_virtualEntityClass->GetPropertyP(propertyPath.First().GetName());

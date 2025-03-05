@@ -133,7 +133,7 @@ DPoint3d    *pPoint
 * @param pEdgeIndex IN OUT caller-allocated work buffer of size numPoints ints
 * @param numPoints IN number of points.
 * @param abstol IN smallest allowed absolute tolerance.
-* @param reltol IN relative tolerance.  An internal minimum is applied (1e-8)
+* @param reltol IN relative tolerance. Negative for default (1e-8). An internal minimum is applied (1e-14).
 * @return pointer to some vu around the loop.
 +----------------------------------------------------------------------*/
 static VuP     vu_loopFromDPoint3dArrayXYTol_goNoDisconnects
@@ -153,14 +153,14 @@ double          reltol
     VuP         baseP;
     static double s_defaultReltol = 1.0e-8;
     static double s_minReltol = 1.0e-14;
-    double      maxCoord = DPoint3dOps::LargestCoordinate (pWorkPoints, numPoints);
+    double      maxCoord = DPoint3dOps::LargestXYCoordinate (pWorkPoints, numPoints);
     double      xyTol;
     int         numGoodEdge;
 
     if (abstol < 0.0)
         abstol = 0.0;
 
-    if (reltol <= 0.0)
+    if (reltol < 0.0)
         reltol = s_defaultReltol;
     else if (reltol < s_minReltol)
         reltol = s_minReltol;

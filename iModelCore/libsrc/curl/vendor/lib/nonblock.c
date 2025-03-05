@@ -47,7 +47,7 @@ int curlx_nonblock(curl_socket_t sockfd,    /* operate on this */
                    int nonblock   /* TRUE or FALSE */)
 {
 #if defined(HAVE_FCNTL_O_NONBLOCK)
-  /* most recent unix versions */
+  /* most recent Unix versions */
   int flags;
   flags = sfcntl(sockfd, F_GETFL, 0);
   if(flags < 0)
@@ -63,9 +63,15 @@ int curlx_nonblock(curl_socket_t sockfd,    /* operate on this */
     flags &= ~O_NONBLOCK;
   return sfcntl(sockfd, F_SETFL, flags);
 
+#elif defined(HAVE_IOCTLSOCKET_CAMEL_FIONBIO)
+
+  /* Amiga */
+  long flags = nonblock ? 1L : 0L;
+  return IoctlSocket(sockfd, FIONBIO, (char *)&flags);
+
 #elif defined(HAVE_IOCTL_FIONBIO)
 
-  /* older unix versions */
+  /* older Unix versions */
   int flags = nonblock ? 1 : 0;
   return ioctl(sockfd, FIONBIO, &flags);
 
@@ -74,12 +80,6 @@ int curlx_nonblock(curl_socket_t sockfd,    /* operate on this */
   /* Windows */
   unsigned long flags = nonblock ? 1UL : 0UL;
   return ioctlsocket(sockfd, (long)FIONBIO, &flags);
-
-#elif defined(HAVE_IOCTLSOCKET_CAMEL_FIONBIO)
-
-  /* Amiga */
-  long flags = nonblock ? 1L : 0L;
-  return IoctlSocket(sockfd, FIONBIO, (char *)&flags);
 
 #elif defined(HAVE_SETSOCKOPT_SO_NONBLOCK)
 

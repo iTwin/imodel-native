@@ -381,10 +381,12 @@ struct SingleSelectStatementExp final : QueryExp
         bool IsCoreSelect() const { return m_limitOffsetClauseIndex == UNSET_CHILDINDEX && m_optionsClauseIndex == UNSET_CHILDINDEX; }
     };
 
+
 //********* QueryExp subclasses ***************************
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct CommonTableExp; // Forward Declared for SubqueryExp constructor
 struct SelectStatementExp;
 struct SubqueryExp final : QueryExp
     {
@@ -397,7 +399,8 @@ struct SubqueryExp final : QueryExp
         PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override;
         SelectClauseExp const* _GetSelection() const override;
     public:
-        explicit SubqueryExp(std::unique_ptr<Exp>);
+        explicit SubqueryExp(std::unique_ptr<SelectStatementExp>);
+        explicit SubqueryExp(std::unique_ptr<CommonTableExp>);
         template<typename T>
         T const* GetQuery() const;
     };
