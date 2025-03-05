@@ -1144,7 +1144,7 @@ GeoCoordinates::VertDatumCode GetEffectiveVerticalDatumCode(DgnGCSCR gcs)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb) {
+void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb, Utf8StringCR when) {
     // add the root subject, if available.
     auto rootSubject = dgndb.Elements().GetRootSubject();
     if (rootSubject.IsValid()) {
@@ -1158,7 +1158,7 @@ void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb) {
     auto& geolocation = dgndb.GeoLocation();
 
     // add project extents
-     geolocation.GetProjectExtents().ToJson(val[json_projectExtents()]);
+    geolocation.GetProjectExtents(when).ToJson(val[json_projectExtents()]);
 
     // add global origin
     BeJsGeomUtils::DPoint3dToJson(val[json_globalOrigin()], geolocation.GetGlobalOrigin());
