@@ -450,7 +450,7 @@ public:
     }
     Napi::Value GetInstance(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        return JsInterop::GetInstance(db, info);
+        return JsInterop::ReadInstance(db, info);
     }
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
         if (info.Length() > 0 && info[0].IsObject()) {
@@ -2326,8 +2326,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
     Napi::Value InsertInstance(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        db.Schemas().
-        db.GetElementIdSequence().Reset();
         return JsInterop::InsertInstance(db, info);
     }
     Napi::Value UpdateInstance(NapiInfoCR info) {
