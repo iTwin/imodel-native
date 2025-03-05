@@ -656,26 +656,18 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
     if (!newElem.IsValid() || (DgnDbStatus::Success != *status))
         return newElem;
 
-    DgnStyleId srcStyleId = DgnStyleId(m_elementId.GetValue());
-
-    LineStyleElementCPtr srcStyle = LineStyleElement::Get(context.GetSourceDb(), DgnStyleId(srcStyleId));
-    BeAssert(srcStyle.IsValid());
-    if (!srcStyle.IsValid())
-        {
-        BeAssert(false && "invalid source line style ID");
+    if(!context.IsBetweenDbs())
         return newElem;
-        }
 
-    DgnStyleId dstStyleId = QueryId(context.GetDestinationDb(), srcStyle->GetName().c_str());
+    DgnStyleId dstStyleId = QueryId(context.GetDestinationDb(), this->GetName().c_str());
     if (dstStyleId.IsValid())
         {
         //  *** TBD: Check if the line style definitions match. If not, rename and remap
-        context.AddLineStyleId(srcStyleId, dstStyleId);
+        context.AddLineStyleId(DgnStyleId(this->GetElementId().GetValue()), dstStyleId);
         return const_cast<DgnElement*>(context.GetDestinationDb().Elements().GetElement(dstStyleId).get());
         }
 
-    Utf8String name(srcStyle->GetName());
-    Utf8String  srcData (srcStyle->GetData());
+    Utf8String  srcData (this->GetData());
 
     Json::Value  jsonObj (Json::objectValue);
     if (!Json::Reader::Parse(srcData, jsonObj))
@@ -696,8 +688,6 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
     Utf8String data = Json::FastWriter::ToString(jsonObj);
 
     LineStyleElementPtr lsElement = dynamic_cast<LineStyleElement*>(newElem.get());
-    lsElement->SetName(name.c_str());
-    lsElement->SetDescription(nullptr);
     lsElement->SetData(data.c_str());
    
     return newElem;
