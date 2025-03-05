@@ -1545,7 +1545,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
-    DGNPLATFORM_EXPORT DgnElementPtr _CloneForImport(DgnDbStatus *, DgnModelR, DgnImportContext &) const;
+    DGNPLATFORM_EXPORT DgnElementPtr _CloneForImport(DgnDbStatus *, DgnModelR, DgnImportContext &) const override;
 
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LineStyle); }
