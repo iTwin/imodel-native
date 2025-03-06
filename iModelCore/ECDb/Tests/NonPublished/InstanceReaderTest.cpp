@@ -1830,24 +1830,23 @@ TEST_F(InstanceReaderFixture, ResetDynamicMetadata) {
     if ("top level instance props meta data") {
         const auto sql = R"x(
             select
-                ecInstanceId,
                 $->prop
             from ts.A
         )x";
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
-        assertDefault(stmt, 1 , "$->prop", "__x0024____x002D____x003E__prop");
+        assertDefault(stmt, 0 , "$->prop", "__x0024____x002D____x003E__prop");
         while(stmt.Step() == BE_SQLITE_ROW) {
             auto ecInstanceId = stmt.GetValueInt(0);
             if (ecInstanceId == 10) { // B.prop
-                assertDynamic(stmt, 1 , "prop", "prop", "", "B", PrimitiveType::PRIMITIVETYPE_Integer);
+                assertDynamic(stmt, 0 , "prop", "prop", "", "B", PrimitiveType::PRIMITIVETYPE_Integer);
             } else if (ecInstanceId == 11) { // C.prop
-                assertDynamic(stmt, 1 , "prop", "prop", "", "C", PrimitiveType::PRIMITIVETYPE_Double);
+                assertDynamic(stmt, 0 , "prop", "prop", "", "C", PrimitiveType::PRIMITIVETYPE_Double);
             }
         }
         stmt.Reset();
-        assertDefault(stmt, 1 , "$->prop", "__x0024____x002D____x003E__prop");
+        assertDefault(stmt, 0 , "$->prop", "__x0024____x002D____x003E__prop");
     }
 }
 

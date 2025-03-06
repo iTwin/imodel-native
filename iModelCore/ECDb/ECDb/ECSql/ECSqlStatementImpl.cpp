@@ -240,7 +240,25 @@ ECSqlStatus ECSqlStatement::Impl::Reset()
     if (!stat.IsSuccess())
         return stat;
 
-    return GetPreparedStatementP()->Reset();
+    stat = GetPreparedStatementP()->Reset();
+    if (!stat.IsSuccess()) {
+        return stat;
+    }
+
+    // Reset dynamic column info
+    const int count = GetColumnCount();
+    for (int i = 0; i < count; i++) {
+        IECSqlValue const& val = GetValue(i);
+        ECSqlColumnInfoCR col = val.GetColumnInfo();
+        if (col.IsDynamic()) {
+            ECSqlField* field = GetPreparedStatementP<ECSqlSelectPreparedStatement>()->GetField(i);
+            if (field) {
+                field->SetDynamicColumnInfo(ECSqlColumnInfo());
+            }
+        }
+    }
+
+    return ECSqlStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
