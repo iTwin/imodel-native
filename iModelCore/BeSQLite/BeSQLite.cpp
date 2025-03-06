@@ -1430,7 +1430,7 @@ void Statement::DumpResults()
 
     Reset();
     }
-    
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2785,6 +2785,36 @@ DbResult Db::DetachDb(Utf8CP alias) const
 
     return rc;
     }
+
+/*---------------------------------------------------------------------------------**//**
+*
++---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<AttachFileInfo> Db::GetAttachedDbs() const {
+    if (!IsDbOpen())
+        return {};
+
+    std::vector<AttachFileInfo> result;
+    Statement stmt;
+    stmt.Prepare(*this, "PRAGMA database_list");
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        AttachFileInfo info;
+        info.m_alias = stmt.GetValueText(1);
+        info.m_fileName = stmt.GetValueText(2);
+        if (info.m_alias.EqualsIAscii("main")) {
+            info.m_type = AttachFileType::Main;
+        } else if (info.m_alias.EqualsIAscii("schema_sync_db")){
+            info.m_type = AttachFileType::SchemaSync;
+        } else if (info.m_alias.EqualsIAscii("ecchange")){
+            info.m_type = AttachFileType::ECChangeCache;
+        } else if (info.m_alias.EqualsIAscii("temp")){
+            info.m_type = AttachFileType::Temp;
+        } else {
+            info.m_type = AttachFileType::Unknown;
+        }
+        result.push_back(info);
+    }
+    return result;
+}
 
 /*---------------------------------------------------------------------------------**//**
 *

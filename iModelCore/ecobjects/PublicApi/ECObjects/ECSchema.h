@@ -2085,8 +2085,9 @@ public:
     //! @remarks If the abstract constraint is not explicitly defined locally, it will be inherited from its base constraint, if one exists.
     //! If one does not exist and there is only one constraint class, that constraint class will be returned. If fail to find a valid class
     //! nullptr will be returned.
+    //! @param[in] autoDetermine If true and abstract constraint is unset, will attempt to determine the abstract constraint based on the constraint classes.
     //! @return The abstract constraint, an ECEntityClass or ECRelationshipClass, if one is defined, if one cannot be found nullptr is returned.
-    ECOBJECTS_EXPORT ECClassCP const GetAbstractConstraint() const;
+    ECOBJECTS_EXPORT ECClassCP const GetAbstractConstraint(bool autoDetermine = true) const;
 
     //! Determine whether the abstract constraint is set in this constraint.
     bool IsAbstractConstraintDefined() const {return nullptr != m_abstractConstraint;}
@@ -3831,7 +3832,8 @@ public:
     //! @param[in]  sourceClass The class to copy
     //! @param[in]  copyReferences If true the method will copy types from the source schema into the target schema, if they do not already exist. If false, there will be a schema reference created to the source schema if necessary.
     //! @param[in]  newName  If not nullptr, this name will be used as the new name instead of the original name
-    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences = false, Utf8CP newName = nullptr);
+    //! @param[in]  skipValidation If true, the method will skip validation of the copied class
+    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences = false, Utf8CP newName = nullptr, bool skipValidation = false);
 
     //! Gets the needed referenced schema item from this schema or it's references, copies it, or adds the reference.  The end result is that the output refForCopy is
     //! the correct object reference needed for a copy operation.
@@ -3846,7 +3848,7 @@ public:
     ECObjectsStatus GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), ECObjectsStatus(ECSchema::*copyItem)(RefItem *&, const RefItem &, bool, Utf8CP));
 
     // Specializations because they are used often or are referenced outside of ECSchema
-    ECObjectsStatus GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences);
+    ECObjectsStatus GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation = false);
     ECObjectsStatus GetOrCopyReferencedEnumerationForCopy(ECClassCR classWithRef, ECEnumerationP& refForCopy, ECEnumerationCP startingRef, bool copyReferences);
     ECObjectsStatus GetOrCopyReferencedKindOfQuantityForCopy(ECClassCR classWithRef, KindOfQuantityP& refForCopy, KindOfQuantityCP startingRef, bool copyReferences);
     ECObjectsStatus GetOrCopyReferencedPropertyCategoryForCopy(ECClassCR classWithRef, PropertyCategoryP& refForCopy, PropertyCategoryCP startingRef, bool copyReferences);
@@ -3903,7 +3905,7 @@ public:
 
     //! Copies this schema
     //! @param[out] schemaOut   If successful, will contain a copy of this schema
-    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater = nullptr) const;
+    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater = nullptr, bool skipValidation = false) const;
 
     //! Get the IECCustomAttributeContainer holding this schema's custom attributes
     IECCustomAttributeContainer& GetCustomAttributeContainer() {return *this;}

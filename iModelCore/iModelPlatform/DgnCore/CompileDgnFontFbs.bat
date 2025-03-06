@@ -7,20 +7,15 @@ rem   See LICENSE.md in the repository root for full copyright notice.
 rem ------------------------------------------------------------------------------------
 
 SET BaseName=DgnFont
-SET SrcDir=%SrcRoot%imodel02\iModelCore\DgnPlatform\DgnCore\
+SET SrcDir=%SrcRoot%imodel02\iModelCore\iModelPlatform\DgnCore\
 SET SrcFile=%SrcDir%%BaseName%.fbs
 SET GeneratedDir=%SrcDir%
 SET GeneratedFileName=%BaseName%_generated.h
 SET GeneratedFile=%GeneratedDir%%GeneratedFileName%
-SET OutDir=%SrcRoot%imodel02\iModelCore\DgnPlatform\PublicApi\DgnPlatform\
+SET OutDir=%SrcRoot%imodel02\iModelCore\iModelPlatform\PublicApi\DgnPlatform\
 SET OutFile=%OutDir%%BaseName%.fb.h
 
-REM flatbuffers comes from nuget now... just use the latest we can find:
-for /f %%i IN ('dir "%SrcRoot%nuget\FlatBuffersNuget_x64*" /ad /b /on') DO (
-set latestFBNugetDir=%SrcRoot%nuget\%%i
-)
-
-SET CompileExe=%latestFBNugetDir%\native\bin\beflatc.exe
+SET CompileExe=%SrcRoot%imodel02\iModelCore\libsrc\flatbuffers\bin\beflatc.exe
 SET CompileCmd=%CompileExe% -c
 ECHO Using compiler at '%CompileExe%'
 
@@ -38,7 +33,6 @@ ECHO Compiling '%SrcFile%'...
 
 %CompileCmd% %SrcFile% || (
     ECHO Compile failed
-    EXIT 1
     )
 
 IF NOT EXIST %GeneratedFile% ECHO Failed to generate '%GeneratedFile%' && EXIT 1
