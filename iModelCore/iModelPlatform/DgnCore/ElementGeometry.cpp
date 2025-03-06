@@ -1635,15 +1635,15 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
 
         if (0 != pattern->GetDwgHatchDef().size())
             {
-            for (auto defLine : pattern->GetDwgHatchDef())
+            for (const auto& defLine : pattern->GetDwgHatchDef())
                 {
-                FB::DwgHatchDefLineBuilder dashBuilder(fbb);
-
                 auto dashes = fbb.CreateVector(defLine.m_dashes, defLine.m_nDashes);
 
+                FB::DwgHatchDefLineBuilder dashBuilder(fbb);
+
                 dashBuilder.add_angle(defLine.m_angle);
-                dashBuilder.add_through((FB::DPoint2d*) &defLine.m_through);
-                dashBuilder.add_offset((FB::DPoint2d*) &defLine.m_offset);
+                dashBuilder.add_through((FB::DPoint2d const*) &defLine.m_through);
+                dashBuilder.add_offset((FB::DPoint2d const*) &defLine.m_offset);
                 dashBuilder.add_dashes(dashes);
 
                 defLineOffsets.push_back(dashBuilder.Finish());
