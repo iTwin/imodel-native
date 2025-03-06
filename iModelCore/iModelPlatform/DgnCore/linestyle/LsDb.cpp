@@ -106,7 +106,7 @@ LsComponentPtr LsStrokePatternComponent::_Import(DgnImportContext& importer) con
     result->SaveToJson(jsonValue);
     LsComponentId componentId;
     LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::LineCode, jsonValue);
-    LsLocationP resLocation = LsLocationP(result->GetLocation());
+    LsLocationP resLocation = const_cast<LsLocationP>(result->GetLocation());
     resLocation->SetLocation(importer.GetDestinationDb(), componentId);
 
     //  Rely on LsComponent::Import to record the component ID mapping.
@@ -138,7 +138,7 @@ LsComponentPtr LsPointComponent::_Import(DgnImportContext& importer) const
     cloned->SaveToJson(jsonValue);
     LsComponentId componentId;
     LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::LinePoint, jsonValue);
-    LsLocationP resLocation = LsLocationP(cloned->GetLocation());
+    LsLocationP resLocation = const_cast<LsLocationP>(cloned->GetLocation());
     resLocation->SetLocation(importer.GetDestinationDb(), componentId);
 
     return cloned;
@@ -326,7 +326,7 @@ LsComponentPtr LsCompoundComponent::_Import(DgnImportContext& importer) const
     result->SaveToJson(jsonValue);
     LsComponentId componentId;
     LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::Compound, jsonValue);
-    LsLocationP resLocation = LsLocationP(result->GetLocation());
+    LsLocationP resLocation = const_cast<LsLocationP>(result->GetLocation());
     resLocation->SetLocation(importer.GetDestinationDb(), componentId);
 
     return result;
@@ -345,7 +345,7 @@ LsComponentPtr LsSymbolComponent::_Import(DgnImportContext& importer) const
     result->SaveToJson(jsonValue);
     LsComponentId componentId;
     LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::PointSymbol, jsonValue);
-    LsLocationP resLocation = LsLocationP(result->GetLocation());
+    LsLocationP resLocation = const_cast<LsLocationP>(result->GetLocation());
     resLocation->SetLocation(importer.GetDestinationDb(), componentId);
 
     return result;
