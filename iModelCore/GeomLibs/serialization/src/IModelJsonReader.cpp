@@ -828,9 +828,9 @@ bool tryValueToSphere (BeJsConst value, ISolidPrimitivePtr &result)
         auto radiusZ = derefValidatedDouble (value, "radiusZ", radiusY);
         // required ...
         if (   tryValueToXYZ (value["center"], center)
-            && radiusX.IsValid () && radiusX.Value() > 0
-            && radiusY.IsValid () && radiusY.Value() > 0
-            && radiusZ.IsValid () && radiusZ.Value() > 0)
+            && radiusX.IsValid () && radiusX.Value() > 0.0
+            && radiusY.IsValid () && radiusY.Value() > 0.0
+            && radiusZ.IsValid () && radiusZ.Value() > 0.0)
             {
             DgnSphereDetail dgnSphere(center, 1.0);
             axes.ScaleColumns (radiusX.Value (), radiusY.Value (), radiusZ.Value ());

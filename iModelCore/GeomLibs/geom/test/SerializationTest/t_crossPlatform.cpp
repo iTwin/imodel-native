@@ -70,7 +70,7 @@ static IGeometryPtr deserializeFirstGeom(BeFileNameCR fileName, TestCase::FileTy
 // Verify that the native API can read flatbuffer and json files written by the typescript and native APIs.
 // Each test case consists of at least four files that encode the same single geometry: native-authored fb and json, typescript-authored fb and json
 // The same test exists in typescript core-geometry and operates on the same data files; these tests and data should be kept in sync.
-TEST(CrossPlatform, Equivalence)
+TEST(CrossPlatform, IndexedMeshAuxData)
     {
     bvector<TestCase> testCases;
 
@@ -135,7 +135,7 @@ TEST(CrossPlatform, Equivalence)
         }
     }
 
-TEST(CrossPlatform, SolidPrimitives)
+TEST(CrossPlatform, SkewSolidPrimitives)
     {
     bvector<TestCase> testCases;
 

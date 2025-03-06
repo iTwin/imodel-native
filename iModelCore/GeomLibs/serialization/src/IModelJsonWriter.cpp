@@ -355,8 +355,16 @@ struct BeCGIModelJsonValueWriter
             latitudeStartEnd.appendValue() = Angle::RadiansToDegrees(detail.m_startLatitude + detail.m_latitudeSweep);
             }
 
-        if (DoubleOps::AlmostEqual(rX, rY) && DoubleOps::AlmostEqual(rX, rZ))
-            value["radius"] = rX;
+        if (DoubleOps::AlmostEqual(rX, rY))
+            {
+            if (DoubleOps::AlmostEqual(rX, rZ))
+                value["radius"] = rX;
+            else
+                { // radiusY will pick up radiusX
+                value["radiusX"] = rX;
+                value["radiusZ"] = rZ;
+                }
+            }
         else
             {
             value["radiusX"] = rX;
@@ -388,57 +396,55 @@ struct BeCGIModelJsonValueWriter
     void ConeToJson (BeJsValue in, ISolidPrimitiveCR sp)
         {
         DgnConeDetail detail;
-        if (sp.TryGetDgnConeDetail (detail))
+        if (!sp.TryGetDgnConeDetail (detail))
+            return;
+
+        DPoint3d centerA, centerB;
+        double radiusA, radiusB;
+        bool capped;
+
+        if (detail.IsCylinder (centerA, centerB, radiusA, capped))
             {
-            DPoint3d centerA, centerB;
-            double radiusA, radiusB;
-            bool capped;
+            auto value = in["cylinder"];
+            ToJson (value["start"], centerA, m_packIsolatedPoints);
+            ToJson (value["end"], centerB, m_packIsolatedPoints);
+            value["capped"] = capped;
+            value["radius"] = radiusA;
+            return;
+            }
 
-            if (detail.IsCylinder (centerA, centerB, radiusA, capped))
-                {
-                auto value = in["cylinder"];
-                ToJson (value["start"], centerA, m_packIsolatedPoints);
-                ToJson (value["end"], centerB, m_packIsolatedPoints);
-                value["capped"] = capped;
-                value["radius"] = radiusA;
-                return;
-                }
+        auto value = in["cone"];
+        value["capped"] = detail.m_capped;
+        ToJson(value["start"], centerA = detail.m_centerA, m_packIsolatedPoints);
+        ToJson(value["end"], centerB = detail.m_centerB, m_packIsolatedPoints);
 
-            auto value = in["cone"];
-            value["capped"] = detail.m_capped;
-            ToJson(value["start"], centerA = detail.m_centerA, m_packIsolatedPoints);
-            ToJson(value["end"], centerB = detail.m_centerB, m_packIsolatedPoints);
+        if (DoubleOps::AlmostEqual(radiusA = detail.m_radiusA, radiusB = detail.m_radiusB))
+            value["radius"] = radiusA;
+        else
+            {
+            value["startRadius"] = radiusA;
+            value["endRadius"] = radiusB;
+            }
 
-            if (DoubleOps::AlmostEqual(radiusA = detail.m_radiusA, radiusB = detail.m_radiusB))
-                {
-                value["radius"] = radiusA;
-                }
-            else
-                {
-                value["startRadius"] = radiusA;
-                value["endRadius"] = radiusB;
-                }
+        // always specify an orthogonal frame if !identity for backwards compatibility
+        DVec3d vectorX = detail.m_vector0;
+        DVec3d vectorY = detail.m_vector90;
+        if (!vectorX.AlmostEqual(DVec3d::UnitX()) || !vectorY.AlmostEqual(DVec3d::UnitY()))
+            {
+            auto xyVectors = value["xyVectors"];
+            ToJson(xyVectors.appendValue(), vectorX, m_packIsolatedPoints);
+            ToJson(xyVectors.appendValue(), vectorY, m_packIsolatedPoints);
+            }
 
-            // always specify an orthogonal frame if !identity for backwards compatibility
-            DVec3d vectorX = detail.m_vector0;
-            DVec3d vectorY = detail.m_vector90;
-            if (!vectorX.AlmostEqual(DVec3d::UnitX()) || !vectorY.AlmostEqual(DVec3d::UnitY()))
-                {
-                auto xyVectors = value["xyVectors"];
-                ToJson(xyVectors.appendValue(), vectorX, m_packIsolatedPoints);
-                ToJson(xyVectors.appendValue(), vectorY, m_packIsolatedPoints);
-                }
-
-            // specify a general matrix if elliptical sections
-            bool xySameLength = DoubleOps::AlmostEqual(vectorX.Magnitude(), vectorY.Magnitude());
-            bool ellipticalSections = !xySameLength || !vectorX.IsPerpendicularTo(vectorY);
-            if (ellipticalSections)
-                {
-                auto xyzVectors = value["xyzVectors"];
-                ToJson(xyzVectors.appendValue(), vectorX, m_packIsolatedPoints);
-                ToJson(xyzVectors.appendValue(), vectorY, m_packIsolatedPoints);
-                ToJson(xyzVectors.appendValue(), centerB - centerA, m_packIsolatedPoints);
-                }
+        // specify a general matrix if elliptical sections
+        bool xySameLength = DoubleOps::AlmostEqual(vectorX.Magnitude(), vectorY.Magnitude());
+        bool ellipticalSections = !xySameLength || !vectorX.IsPerpendicularTo(vectorY);
+        if (ellipticalSections)
+            {
+            auto xyzVectors = value["xyzVectors"];
+            ToJson(xyzVectors.appendValue(), vectorX, m_packIsolatedPoints);
+            ToJson(xyzVectors.appendValue(), vectorY, m_packIsolatedPoints);
+            ToJson(xyzVectors.appendValue(), centerB - centerA, m_packIsolatedPoints);
             }
         }
 
