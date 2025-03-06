@@ -1827,27 +1827,21 @@ TEST_F(InstanceReaderFixture, ResetDynamicMetadata) {
     exec("insert into ts.B ( ecInstanceId, B.prop ) values ( 10, 100 )");
     exec("insert into ts.C ( ecInstanceId, C.prop ) values ( 11, 101 )");
 
-    if ("top level instance props meta data") {
-        const auto sql = R"x(
-            select
-                $->prop
-            from ts.A
-        )x";
+    const auto sql = R"x(
+        select
+            $->prop
+        from ts.A
+    )x";
 
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
-        assertDefault(stmt, 0 , "$->prop", "__x0024____x002D____x003E__prop");
-        while(stmt.Step() == BE_SQLITE_ROW) {
-            auto ecInstanceId = stmt.GetValueInt(0);
-            if (ecInstanceId == 10) { // B.prop
-                assertDynamic(stmt, 0 , "prop", "prop", "", "B", PrimitiveType::PRIMITIVETYPE_Integer);
-            } else if (ecInstanceId == 11) { // C.prop
-                assertDynamic(stmt, 0 , "prop", "prop", "", "C", PrimitiveType::PRIMITIVETYPE_Double);
-            }
-        }
-        stmt.Reset();
-        assertDefault(stmt, 0 , "$->prop", "__x0024____x002D____x003E__prop");
-    }
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    assertDefault(stmt, 0 , "$->prop", "__x0024____x002D____x003E__prop");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    assertDynamic(stmt, 0 , "prop", "prop", "", "B", PrimitiveType::PRIMITIVETYPE_Integer);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    assertDynamic(stmt, 0 , "prop", "prop", "", "C", PrimitiveType::PRIMITIVETYPE_Double);
+    stmt.Reset();
+    assertDefault(stmt, 0 , "$->prop", "__x0024____x002D____x003E__prop");
 }
 
 //---------------------------------------------------------------------------------------
