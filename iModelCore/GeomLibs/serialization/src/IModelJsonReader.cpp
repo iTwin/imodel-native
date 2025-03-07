@@ -177,7 +177,6 @@ bool tryValueToXYZ (BeJsConst value, DPoint3dR xyz)
         xyz.Init (xyzArray[0], xyzArray[1], xyzArray[2]);
         stat = haveX && haveY;  // allow optional z
         }
-
     return stat;
     }
 
@@ -1152,9 +1151,7 @@ CurveVector::BoundaryType boundaryType
             {
             // PP demands that only one loop be called outer ... check it . .
             int numOuter = 0;
-            int numInner = 0;
             int numOther = 0;
-            UNUSED_VARIABLE(numInner);
             for (auto & cp : *result)
                 {
                 auto loop = cp->GetChildCurveVectorP ();
@@ -1162,9 +1159,7 @@ CurveVector::BoundaryType boundaryType
                     {
                     if (loop->GetBoundaryType () == CurveVector::BOUNDARY_TYPE_Outer)
                         numOuter++;
-                    else if (loop->GetBoundaryType () == CurveVector::BOUNDARY_TYPE_Inner)
-                        numInner++;
-                    else
+                    else if (loop->GetBoundaryType () != CurveVector::BOUNDARY_TYPE_Inner)
                         numOther++;
                     }
                 }
