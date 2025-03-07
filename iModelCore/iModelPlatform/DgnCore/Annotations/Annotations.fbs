@@ -14,7 +14,7 @@ namespace BentleyM0200.Dgn.FB;
 //=======================================================================================
 enum AnnotationTextStyleProperty : int {
                                     //  TYPE    TARGET      NOTES
-                                    //  ----    ------      -----
+    None = 0,                       //  ----    ------      -----
     ColorType = 1,                  //  integer run         Must exist in AnnotationColorType enumeration
     ColorValue = 2,                 //  integer run         int64_t representation of ElementColor
     FontId = 3,                     //  integer run         Must be a valid font ID in the project
@@ -36,7 +36,7 @@ enum AnnotationTextStyleProperty : int {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct AnnotationTextStyleSetter (emitVectorTypedefs) {
+struct AnnotationTextStyleSetter {
     key:AnnotationTextStyleProperty;
     integerValue:long;
     realValue:double;
@@ -62,7 +62,7 @@ table AnnotationTextStyle {
 //=======================================================================================
 enum AnnotationTextBlockProperty : int {
                             //  TYPE    TARGET      NOTES
-                            //  ----    ------      -----
+    None = 0,               //  ----    ------      -----
     DocumentWidth = 1,      //  real    Document    In project UORs
     Justification = 2       //  integer Document    Must exist in the AnnotationTextBlock::HorizontalJustification enumeration
 
@@ -71,7 +71,7 @@ enum AnnotationTextBlockProperty : int {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct AnnotationTextBlockSetter (emitVectorTypedefs) {
+struct AnnotationTextBlockSetter {
     key:AnnotationTextBlockProperty;
     integerValue:long;
     realValue:double;
@@ -102,7 +102,7 @@ enum AnnotationTextRunSubSuperScript : int {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-table AnnotationTextBlockRun (emitVectorTypedefs) {
+table AnnotationTextBlockRun {
     type:AnnotationTextBlockRunType;
     properties:[AnnotationTextBlockSetter];
     styleId:long;
@@ -123,7 +123,7 @@ table AnnotationTextBlockRun (emitVectorTypedefs) {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-table AnnotationTextBlockParagraph (emitVectorTypedefs) {
+table AnnotationTextBlockParagraph {
     properties:[AnnotationTextBlockSetter];
     styleId:long;
     styleOverrides:[AnnotationTextStyleSetter];
@@ -153,7 +153,7 @@ table AnnotationTextBlock {
 //=======================================================================================
 enum AnnotationFrameStyleProperty : int {
                                     //  TYPE    NOTES
-                                    //  ----    -----
+    None = 0,                       //  ----    -----
     CloudBulgeFactor = 1,           //  real    Factor of effective diameter
     CloudDiameterFactor = 2,        //  real    Factor of text height
     FillColorType = 3,              //  integer Must exist in AnnotationColorType enumeration
@@ -174,7 +174,7 @@ enum AnnotationFrameStyleProperty : int {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct AnnotationFrameStyleSetter (emitVectorTypedefs) {
+struct AnnotationFrameStyleSetter {
     key:AnnotationFrameStyleProperty;
     integerValue:long;
     realValue:double;
@@ -215,7 +215,7 @@ table AnnotationFrame {
 //=======================================================================================
 enum AnnotationLeaderStyleProperty : int {
                                         //  TYPE    NOTES
-                                        //  ----    -----
+    None = 0,                           //  ----    -----
     LineColorType = 1,                  //  integer Must exist in AnnotationColorType enumeration
     LineColorValue = 2,                 //  integer int64_t representation of ElementColor
     LineType = 3,                       //  integer Must exist in the AnnotationLeaderLineType enumeration
@@ -231,7 +231,7 @@ enum AnnotationLeaderStyleProperty : int {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct AnnotationLeaderStyleSetter (emitVectorTypedefs) {
+struct AnnotationLeaderStyleSetter {
     key:AnnotationLeaderStyleProperty;
     integerValue:long;
     realValue:double;
@@ -283,7 +283,7 @@ struct AnnotationLeaderDPoint3d {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-table AnnotationLeader (emitVectorTypedefs) {
+table AnnotationLeader {
     majorVersion:ubyte;
     minorVersion:ubyte;
     styleId:long;
@@ -305,7 +305,7 @@ table AnnotationLeader (emitVectorTypedefs) {
 //=======================================================================================
 enum TextAnnotationSeedProperty : int {
                         //  TYPE    NOTES
-                        //  ----    -----
+    None = 0,           //  ----    -----
     FrameStyleId = 1,   //  integer ID of an AnnotationFrameStyle in the project
     LeaderStyleId = 2,  //  integer ID of an AnnotationLeaderStyle in the project
     TextStyleId = 3     //  integer ID of an AnnotationTextStyle in the project
@@ -315,7 +315,7 @@ enum TextAnnotationSeedProperty : int {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct TextAnnotationSeedSetter (emitVectorTypedefs) {
+struct TextAnnotationSeedSetter {
     key:TextAnnotationSeedProperty;
     integerValue:long;
     realValue:double;
