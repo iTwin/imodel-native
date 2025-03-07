@@ -830,9 +830,7 @@ struct BeCGIModelJsonValueWriter
     void PolyfaceToJson (BeJsValue in, PolyfaceHeaderCR mesh)
         {
         auto style = mesh.GetMeshStyle ();
-        if (style == MESH_ELM_STYLE_INDEXED_FACE_LOOPS)// && mesh.GetNumPerFace () < 2)
-                    // typescript side does not support blocked meshes.
-                    // but it is happy to read the IMJS and add the terminators.
+        if (style == MESH_ELM_STYLE_INDEXED_FACE_LOOPS)
             return IndexedPolyfaceToJson (in, mesh);
 
         auto indexedMesh = mesh.CloneAsVariableSizeIndexed(mesh);
