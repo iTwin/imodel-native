@@ -49,3 +49,8 @@ zlib/contrib/minizip/miniunzip.1
 zlib/contrib/minizip/minizip.1
 zlib/contrib/minizip/minizip.pc.in
 zlib/contrib/minizip/MiniZip64_Changes.txt
+zlib/contrib/minizip/ioapi.h
+zlib/contrib/minizip/unzip.h
+zlib/contrib/minizip/zip.h
+zlib/zconf.h
+zlib/zlib.h
