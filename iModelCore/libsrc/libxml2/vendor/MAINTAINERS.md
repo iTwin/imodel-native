@@ -1,7 +1,5 @@
 # Maintainer's Guide
 
-<<<<<<< HEAD
-=======
 ## Working with the test suite
 
 Most of the tests are contained in the `runtest` executable which
@@ -35,23 +33,14 @@ doc/apibuild.py generates doc/libxml2-api.xml which is used to generate
 Man pages and HTML documentation for xmllint and xmlcatalog are
 generated with xsltproc and DocBook stylesheets.
 
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 ## Making a release
 
 ### Rebuild generated files and documentation
 
-<<<<<<< HEAD
-The documentation and some generated files can be rebuilt by running
-
-    make -C doc rebuild
-
-This requires `xsltproc` and the libxml2 Python bindings to be installed.
-=======
 See above for details and run `make -C doc rebuild`.
 
 Look for new warning messages and inspect changes for correctness
 before committing.
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 
 ### Update the NEWS file
 
@@ -93,17 +82,6 @@ Create a new GitLab release on
 
 ### Announce the release
 
-<<<<<<< HEAD
-Announce the release by sending an email to the mailing list at
-xml@gnome.org.
-
-## Updating the CI Docker image
-
-Note that the CI image is used for libxslt as well. Run the following
-commands with the Dockerfile in the .gitlab-ci directory:
-
-    docker login registry.gitlab.gnome.org
-=======
 Announce the release on https://discourse.gnome.org under topics 'libxml2'
 and 'announcements'.
 
@@ -134,7 +112,6 @@ permissions. Then run the following commands with the Dockerfile in the
 
     docker login -u <username> -p <access_token> \
         registry.gitlab.gnome.org
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
     docker build -t registry.gitlab.gnome.org/gnome/libxml2 - \
         < .gitlab-ci/Dockerfile
     docker push registry.gitlab.gnome.org/gnome/libxml2

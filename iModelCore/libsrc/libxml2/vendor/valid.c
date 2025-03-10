@@ -5266,17 +5266,8 @@ xmlSnprintfElements(char *buf, int size, xmlNodePtr node, int glob) {
 		    strcat(buf, (char *) cur->ns->prefix);
 		    strcat(buf, ":");
 		}
-<<<<<<< HEAD
-                if (size - len < xmlStrlen(cur->name) + 10) {
-		    if ((size - len > 4) && (buf[len - 1] != '.'))
-			strcat(buf, " ...");
-		    return;
-		}
-	        strcat(buf, (char *) cur->name);
-=======
                 if (cur->name != NULL)
 	            strcat(buf, (char *) cur->name);
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 		if (cur->next != NULL)
 		    strcat(buf, " ");
 		break;

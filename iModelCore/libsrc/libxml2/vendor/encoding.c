@@ -1578,8 +1578,6 @@ free_handler:
     }
 }
 
-<<<<<<< HEAD
-=======
 #ifdef LIBXML_ICONV_ENABLED
 static int
 xmlCreateIconvHandler(const char *name, xmlCharEncodingHandler **out) {
@@ -1754,7 +1752,6 @@ error:
 }
 #endif /* LIBXML_ICU_ENABLED */
 
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 /**
  * xmlGetCharEncodingHandler:
  * @enc:  an xmlCharEncoding value.

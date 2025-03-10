@@ -574,18 +574,11 @@ xmlParse3986Segment(const char **str, char forbid, int empty)
     const char *cur;
 
     cur = *str;
-<<<<<<< HEAD
-    if (!ISA_PCHAR(cur)) {
-=======
     if (!ISA_PCHAR(uri, cur) || (*cur == forbid)) {
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
         if (empty)
 	    return(0);
 	return(1);
     }
-<<<<<<< HEAD
-    while (ISA_PCHAR(cur) && (*cur != forbid))
-=======
     NEXT(cur);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -597,7 +590,6 @@ xmlParse3986Segment(const char **str, char forbid, int empty)
 #endif
 
     while (ISA_PCHAR(uri, cur) && (*cur != forbid))
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
         NEXT(cur);
     *str = cur;
     return (0);
@@ -1971,8 +1963,6 @@ xmlBuildURI(const xmlChar *URI, const xmlChar *base) {
 	    goto done;
 	ret = xmlParseURIReference(bas, (const char *) base);
     }
-<<<<<<< HEAD
-=======
 
 #if defined(_WIN32) || defined(__CYGWIN__)
     /*
@@ -1994,7 +1984,6 @@ xmlBuildURI(const xmlChar *URI, const xmlChar *base) {
     ret = xmlParseURISafe((const char *) base, &bas);
     if (ret < 0)
         goto done;
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
     if (ret != 0) {
 	if (ref)
 	    val = xmlSaveUri(ref);

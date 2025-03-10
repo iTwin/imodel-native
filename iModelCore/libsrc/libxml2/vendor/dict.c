@@ -1265,8 +1265,6 @@ xmlDictGetUsage(xmlDictPtr dict) {
     return(limit);
 }
 
-<<<<<<< HEAD
-=======
 /*****************************************************************
  *
  * The code below was rewritten and is additionally licensed under
@@ -1872,4 +1870,3 @@ xmlRandom(void) {
 #endif
 }
 
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))

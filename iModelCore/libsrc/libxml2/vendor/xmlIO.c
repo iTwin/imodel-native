@@ -2271,14 +2271,6 @@ xmlRegisterInputCallbacks(xmlInputMatchCallback matchFunc,
     if (xmlInputCallbackNr >= MAX_INPUT_CALLBACK) {
 	return(-1);
     }
-<<<<<<< HEAD
-    xmlInputCallbackTable[xmlInputCallbackNr].matchcallback = matchFunc;
-    xmlInputCallbackTable[xmlInputCallbackNr].opencallback = openFunc;
-    xmlInputCallbackTable[xmlInputCallbackNr].readcallback = readFunc;
-    xmlInputCallbackTable[xmlInputCallbackNr].closecallback = closeFunc;
-    xmlInputCallbackInitialized = 1;
-    return(xmlInputCallbackNr++);
-=======
 #endif /* LIBXML_FTP_ENABLED */
 
 #ifdef LIBXML_HTTP_ENABLED
@@ -2305,7 +2297,6 @@ xmlRegisterInputCallbacks(xmlInputMatchCallback matchFunc,
     close(fd);
 
     return(ret);
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 }
 
 #ifdef LIBXML_OUTPUT_ENABLED

@@ -1,8 +1,5 @@
 NEWS file for libxml2
 
-<<<<<<< HEAD
-v2.11.9: Jul 24 2024
-=======
 v2.13.6: Feb 18 2025
 
 ### Security
@@ -78,7 +75,6 @@ v2.13.4: Sep 18 2024
 
 
 v2.13.3: Jul 24 2024
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 
 ### Security
 

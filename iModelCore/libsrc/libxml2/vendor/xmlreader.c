@@ -1730,22 +1730,6 @@ xmlTextReaderReadString(xmlTextReaderPtr reader)
 
     node = (reader->curnode != NULL) ? reader->curnode : reader->node;
     switch (node->type) {
-<<<<<<< HEAD
-    case XML_TEXT_NODE:
-       if (node->content != NULL)
-           return(xmlStrdup(node->content));
-       break;
-    case XML_ELEMENT_NODE:
-	if (xmlTextReaderDoExpand(reader) != -1) {
-	    return xmlTextReaderCollectSiblings(node->children);
-	}
-	break;
-    case XML_ATTRIBUTE_NODE:
-	TODO
-	break;
-    default:
-       break;
-=======
         case XML_TEXT_NODE:
         case XML_CDATA_SECTION_NODE:
             break;
@@ -1756,7 +1740,6 @@ xmlTextReaderReadString(xmlTextReaderPtr reader)
             break;
         default:
             return(NULL);
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
     }
     return(NULL);
 }

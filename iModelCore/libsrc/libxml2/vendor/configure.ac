@@ -2,13 +2,8 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.63])
 
 m4_define([MAJOR_VERSION], 2)
-<<<<<<< HEAD
-m4_define([MINOR_VERSION], 11)
-m4_define([MICRO_VERSION], 9)
-=======
 m4_define([MINOR_VERSION], 13)
 m4_define([MICRO_VERSION], 6)
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 
 AC_INIT([libxml2],[MAJOR_VERSION.MINOR_VERSION.MICRO_VERSION])
 AC_CONFIG_SRCDIR([entities.c])

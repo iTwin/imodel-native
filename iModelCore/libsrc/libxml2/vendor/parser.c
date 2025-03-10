@@ -14888,10 +14888,6 @@ xmlReadFile(const char *filename, const char *encoding, int options)
     xmlInitParser();
     ctxt = xmlCreateURLParserCtxt(filename, options);
     if (ctxt == NULL)
-<<<<<<< HEAD
-        return (NULL);
-    return (xmlDoRead(ctxt, NULL, encoding, options, 0));
-=======
         return(NULL);
 
     xmlCtxtUseOptions(ctxt, options);
@@ -14911,7 +14907,6 @@ xmlReadFile(const char *filename, const char *encoding, int options)
 
     xmlFreeParserCtxt(ctxt);
     return(doc);
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 }
 
 /**
@@ -15148,13 +15143,8 @@ xmlDocPtr
 xmlCtxtReadFd(xmlParserCtxtPtr ctxt, int fd,
               const char *URL, const char *encoding, int options)
 {
-<<<<<<< HEAD
-    xmlParserInputBufferPtr input;
-    xmlParserInputPtr stream;
-=======
     xmlParserInputPtr input;
     int inputFlags;
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 
     if (fd < 0)
         return (NULL);
@@ -15164,13 +15154,10 @@ xmlCtxtReadFd(xmlParserCtxtPtr ctxt, int fd,
 
     xmlCtxtReset(ctxt);
 
-<<<<<<< HEAD
-=======
     inputFlags = 0;
     if (options & XML_PARSE_UNZIP)
         inputFlags |= XML_INPUT_UNZIP;
     input = xmlNewInputFd(ctxt, URL, fd, encoding, inputFlags);
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 
     input = xmlParserInputBufferCreateFd(fd, XML_CHAR_ENCODING_NONE);
     if (input == NULL)

@@ -513,29 +513,6 @@ xmlParserInputPtr
 xmlSAX2ResolveEntity(void *ctx, const xmlChar *publicId, const xmlChar *systemId)
 {
     xmlParserCtxtPtr ctxt = (xmlParserCtxtPtr) ctx;
-<<<<<<< HEAD
-    xmlParserInputPtr ret;
-    xmlChar *URI;
-    const char *base = NULL;
-
-    if (ctx == NULL) return(NULL);
-    if (ctxt->input != NULL)
-	base = ctxt->input->filename;
-    if (base == NULL)
-	base = ctxt->directory;
-
-    URI = xmlBuildURI(systemId, (const xmlChar *) base);
-
-#ifdef DEBUG_SAX
-    xmlGenericError(xmlGenericErrorContext,
-	    "SAX.xmlSAX2ResolveEntity(%s, %s)\n", publicId, systemId);
-#endif
-
-    ret = xmlLoadExternalEntity((const char *) URI,
-				(const char *) publicId, ctxt);
-    if (URI != NULL)
-	xmlFree(URI);
-=======
     xmlParserInputPtr ret = NULL;
     xmlChar *URI = NULL;
 
@@ -580,7 +557,6 @@ xmlSAX2ResolveEntity(void *ctx, const xmlChar *publicId, const xmlChar *systemId
                                 (const char *) publicId, ctxt);
 
     xmlFree(URI);
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
     return(ret);
 }
 

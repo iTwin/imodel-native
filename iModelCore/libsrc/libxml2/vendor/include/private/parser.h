@@ -30,8 +30,6 @@ xmlParserGrow(xmlParserCtxtPtr ctxt);
 XML_HIDDEN void
 xmlParserShrink(xmlParserCtxtPtr ctxt);
 
-<<<<<<< HEAD
-=======
 XML_HIDDEN void
 xmlDetectEncoding(xmlParserCtxtPtr ctxt);
 XML_HIDDEN void
@@ -87,5 +85,4 @@ XML_HIDDEN xmlChar *
 xmlExpandEntitiesInAttValue(xmlParserCtxtPtr ctxt, const xmlChar *str,
                             int normalize);
 
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 #endif /* XML_PARSER_H_PRIVATE__ */

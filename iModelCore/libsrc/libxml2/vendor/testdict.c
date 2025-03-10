@@ -1,19 +1,13 @@
-<<<<<<< HEAD
-=======
 #include "libxml.h"
 
 #include <stdlib.h>
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 #include <string.h>
 #include <libxml/parser.h>
 #include <libxml/dict.h>
 
-<<<<<<< HEAD
-=======
 
 /**** dictionary tests ****/
 
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 /* #define WITH_PRINT */
 
 static const char *seeds1[] = {

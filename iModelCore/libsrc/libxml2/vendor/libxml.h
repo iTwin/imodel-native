@@ -82,8 +82,6 @@
   #define ATTRIBUTE_NO_SANITIZE(arg)
 #endif
 
-<<<<<<< HEAD
-=======
 #ifdef __clang__
   #if (!defined(__apple_build_version__) && __clang_major__ >= 12) || \
       (defined(__apple_build_version__) && __clang_major__ >= 13)
@@ -98,5 +96,4 @@
   #define ATTRIBUTE_NO_SANITIZE_INTEGER
 #endif
 
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 #endif /* ! __XML_LIBXML_H__ */

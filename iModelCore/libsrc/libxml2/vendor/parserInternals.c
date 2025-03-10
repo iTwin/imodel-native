@@ -1393,8 +1393,6 @@ xmlNewInputStream(xmlParserCtxtPtr ctxt) {
 }
 
 /**
-<<<<<<< HEAD
-=======
  * xmlNewInputURL:
  * @ctxt:  parser context
  * @url:  filename or URL
@@ -1679,7 +1677,6 @@ xmlNewInputPush(xmlParserCtxtPtr ctxt, const char *url,
 }
 
 /**
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
  * xmlNewIOInputStream:
  * @ctxt:  an XML parser context
  * @input:  an I/O Input

@@ -131,83 +131,6 @@ if(ZLIB_FOUND)
 endif()
 
 if (NOT MSVC)
-<<<<<<< HEAD
-	check_c_source_compiles("
-		void __attribute__((destructor))
-		f(void) {}
-		int main(void) { return 0; }
-	" HAVE_ATTRIBUTE_DESTRUCTOR)
-	if(HAVE_ATTRIBUTE_DESTRUCTOR)
-		set(ATTRIBUTE_DESTRUCTOR "__attribute__((destructor))")
-	endif()
-	check_include_files(arpa/inet.h HAVE_ARPA_INET_H)
-	check_function_exists(class HAVE_CLASS)
-	check_include_files(dlfcn.h HAVE_DLFCN_H)
-	check_library_exists(dl dlopen "" HAVE_DLOPEN)
-	check_include_files(dl.h HAVE_DL_H)
-	check_include_files(fcntl.h HAVE_FCNTL_H)
-	check_function_exists(fpclass HAVE_FPCLASS)
-	check_function_exists(ftime HAVE_FTIME)
-	check_function_exists(gettimeofday HAVE_GETTIMEOFDAY)
-	check_include_files(inttypes.h HAVE_INTTYPES_H)
-	check_function_exists(isascii HAVE_ISASCII)
-	check_library_exists(history append_history "" HAVE_LIBHISTORY)
-	check_library_exists(readline readline "" HAVE_LIBREADLINE)
-	check_function_exists(mmap HAVE_MMAP)
-	check_function_exists(munmap HAVE_MUNMAP)
-	check_include_files(netdb.h HAVE_NETDB_H)
-	check_include_files(netinet/in.h HAVE_NETINET_IN_H)
-	check_include_files(poll.h HAVE_POLL_H)
-	check_function_exists(putenv HAVE_PUTENV)
-	check_function_exists(rand_r HAVE_RAND_R)
-	check_library_exists(dld shl_load "" HAVE_SHLLOAD)
-	check_function_exists(stat HAVE_STAT)
-	check_include_files(stdint.h HAVE_STDINT_H)
-	check_include_files(sys/mman.h HAVE_SYS_MMAN_H)
-	check_include_files(sys/select.h HAVE_SYS_SELECT_H)
-	check_include_files(sys/socket.h HAVE_SYS_SOCKET_H)
-	check_include_files(sys/stat.h HAVE_SYS_STAT_H)
-	check_include_files(sys/timeb.h HAVE_SYS_TIMEB_H)
-	check_include_files(sys/time.h HAVE_SYS_TIME_H)
-	check_include_files(unistd.h HAVE_UNISTD_H)
-	check_symbol_exists(va_copy stdarg.h HAVE_VA_COPY)
-	check_symbol_exists(__va_copy stdarg.h HAVE___VA_COPY)
-	set(LT_OBJDIR ".libs/")
-	check_c_source_compiles("
-		#include <stdarg.h>
-		void a(va_list* ap) {};
-		int main() { va_list ap1, ap2; a(&ap1); ap2 = (va_list) ap1; return 0; }
-	" VA_LIST_IS_ARRAY_TEST)
-	if(VA_LIST_IS_ARRAY_TEST)
-		set(VA_LIST_IS_ARRAY FALSE)
-	else()
-		set(VA_LIST_IS_ARRAY TRUE)
-	endif()
-	check_c_source_compiles("
-		#include <stddef.h>
-		#include <sys/socket.h>
-		int main() { (void) getsockopt(1, 1, 1, NULL, (socklen_t*) NULL); return 0; }
-	" XML_SOCKLEN_T_SOCKLEN_T)
-	if(XML_SOCKLEN_T_SOCKLEN_T)
-		set(XML_SOCKLEN_T socklen_t)
-	else()
-		check_c_source_compiles("
-			#include <stddef.h>
-			#include <sys/socket.h>
-			int main() { (void) getsockopt(1, 1, 1, NULL, (size_t*) NULL); return 0; }
-		" XML_SOCKLEN_T_SIZE_T)
-		if(XML_SOCKLEN_T_SIZE_T)
-			set(XML_SOCKLEN_T size_t)
-		else()
-			check_c_source_compiles("
-				#include <stddef.h>
-				#include <sys/socket.h>
-				int main() { (void) getsockopt (1, 1, 1, NULL, (int*) NULL); return 0; }
-			" XML_SOCKLEN_T_INT)
-			set(XML_SOCKLEN_T int)
-		endif()
-	endif()
-=======
     check_c_source_compiles("
         void __attribute__((destructor))
         f(void) {}
@@ -299,7 +222,6 @@ if(LIBXML2_WITH_TLS)
             endif()
         endif()
     endif()
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 endif()
 
 set(
@@ -613,58 +535,6 @@ if(LIBXML2_WITH_TESTS)
 endif()
 
 if(LIBXML2_WITH_PYTHON)
-<<<<<<< HEAD
-	execute_process(
-		COMMAND
-		${Python_EXECUTABLE}
-		${CMAKE_CURRENT_SOURCE_DIR}/python/generator.py
-		${CMAKE_CURRENT_SOURCE_DIR}/doc/libxml2-api.xml
-		${CMAKE_CURRENT_SOURCE_DIR}/python/libxml2-python-api.xml
-		WORKING_DIRECTORY
-		${CMAKE_CURRENT_BINARY_DIR}
-	)
-	file(READ python/libxml.py LIBXML_PY)
-	file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/libxml2.py.in "${LIBXML_PY}")
-	file(READ ${CMAKE_CURRENT_BINARY_DIR}/libxml2class.py LIBXML2CLASS_PY)
-	file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/libxml2.py.in "${LIBXML2CLASS_PY}")
-	configure_file(${CMAKE_CURRENT_BINARY_DIR}/libxml2.py.in libxml2.py COPYONLY)
-	add_library(
-		LibXml2Mod
-		libxml2-py.c
-		libxml2-py.h
-		python/libxml.c
-		python/libxml_wrap.h
-		python/types.c
-	)
-	target_include_directories(
-		LibXml2Mod
-		PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/python>
-	)
-	target_link_libraries(LibXml2Mod LibXml2 Python::Python)
-	set_target_properties(
-		LibXml2Mod
-		PROPERTIES
-		IMPORT_PREFIX lib
-		OUTPUT_NAME xml2mod
-		PREFIX lib
-		VERSION ${PROJECT_VERSION}
-	)
-	if (WIN32)
-		set_target_properties(LibXml2Mod PROPERTIES SUFFIX ".pyd")
-	endif()
-	install(
-		TARGETS	LibXml2Mod
-		ARCHIVE DESTINATION ${LIBXML2_PYTHON_INSTALL_DIR} COMPONENT development
-		LIBRARY DESTINATION ${LIBXML2_PYTHON_INSTALL_DIR} COMPONENT runtime NAMELINK_COMPONENT development
-		RUNTIME DESTINATION ${LIBXML2_PYTHON_INSTALL_DIR} COMPONENT runtime
-	)
-	if(MSVC AND BUILD_SHARED_LIBS)
-		install(FILES $<TARGET_PDB_FILE:LibXml2Mod> DESTINATION ${LIBXML2_PYTHON_INSTALL_DIR} CONFIGURATIONS Debug RelWithDebInfo COMPONENT debug)
-	endif()
-	install(FILES python/drv_libxml2.py DESTINATION ${LIBXML2_PYTHON_INSTALL_DIR} COMPONENT runtime)
-	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libxml2.py DESTINATION ${LIBXML2_PYTHON_INSTALL_DIR} COMPONENT runtime)
-=======
     execute_process(
         COMMAND
         ${Python_EXECUTABLE}
@@ -715,7 +585,6 @@ if(LIBXML2_WITH_PYTHON)
     endif()
     install(FILES python/drv_libxml2.py DESTINATION ${LIBXML2_PYTHON_INSTALL_DIR} COMPONENT runtime)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libxml2.py DESTINATION ${LIBXML2_PYTHON_INSTALL_DIR} COMPONENT runtime)
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 endif()
 
 install(FILES doc/xml2-config.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 COMPONENT documentation)
@@ -741,15 +610,9 @@ install(
 )
 
 write_basic_package_version_file(
-<<<<<<< HEAD
-	${CMAKE_CURRENT_BINARY_DIR}/libxml2-config-version.cmake
-	VERSION ${PROJECT_VERSION}
-	COMPATIBILITY ExactVersion
-=======
     ${CMAKE_CURRENT_BINARY_DIR}/libxml2-config-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion
->>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 )
 
 install(
