@@ -18,11 +18,14 @@
 #include <libxml/relaxng.h>
 #include <libxml/dict.h>
 
+<<<<<<< HEAD
 #define TODO								\
     xmlGenericError(xmlGenericErrorContext,				\
 	    "Unimplemented block at %s:%d\n",				\
             __FILE__, __LINE__);
 
+=======
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 #define MAX_TOKEN 10
 
 typedef enum {
@@ -284,7 +287,11 @@ retry:
 	cur = ctxt->cur;
         if ((ctxt->end - ctxt->end > 2) &&
 	    (*cur == '"') && (cur[1] == '"')) {
+<<<<<<< HEAD
 	    TODO
+=======
+	    /* TODO */
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 	} else {
 	    while ((cur < ctxt->end) && (*cur != '"')) cur++;
 	    if (cur >= ctxt->end) goto eof;
@@ -297,7 +304,11 @@ retry:
 	}
     } else if (*ctxt->cur == '\'') {
         /* string, check for "'''" */
+<<<<<<< HEAD
 	TODO
+=======
+	/* TODO */
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
     } else if ((IS_OP(*ctxt->cur)) || (*ctxt->cur == ':')) {
         cur = ctxt->cur;
 	cur++;
@@ -351,7 +362,11 @@ retry:
 		if (xmlValidateNCName(token->token, 0) == 0)
 		    token->toktype = CRNG_QNAME;
 		else {
+<<<<<<< HEAD
 		    TODO /* sounds like an error ! */
+=======
+		    /* TODO: sounds like an error ! */
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 		    token->toktype = CRNG_IDENTIFIER;
 		}
 	    }
@@ -652,7 +667,11 @@ static int xmlParseCRNG_nameClass(xmlCRelaxNGParserCtxtPtr ctxt);
 static int
 xmlParseCRNG_params(xmlCRelaxNGParserCtxtPtr ctxt ATTRIBUTE_UNUSED)
 {
+<<<<<<< HEAD
     TODO
+=======
+    /* TODO */
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
     return(0);
 }
 
@@ -719,7 +738,11 @@ xmlParseCRNG_innerNameClass(xmlCRelaxNGParserCtxtPtr ctxt)
 	    ctxt->insert = cur;
 	    xmlParseCRNG_exceptNameClass(ctxt);
 	} else {
+<<<<<<< HEAD
 	    TODO
+=======
+	    /* TODO */
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 	}
     } else if ((token->toktype == CRNG_IDENTIFIER) ||
                (token->toktype == CRNG_KEYWORD)) {
@@ -737,7 +760,11 @@ xmlParseCRNG_innerNameClass(xmlCRelaxNGParserCtxtPtr ctxt)
 	ctxt->insert = cur;
 	xmlParseCRNGDropTokens(ctxt, 1);
     } else if (token->toktype == CRNG_CNAME) {
+<<<<<<< HEAD
         TODO
+=======
+        /* TODO */
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
     } else if (token->toktype == CRNG_NSNAME) {
 	cur = xmlNewNode(NULL, BAD_CAST "nsName");
 	if (cur == NULL) CRNG_MEM_ERROR0();
@@ -749,7 +776,11 @@ xmlParseCRNG_innerNameClass(xmlCRelaxNGParserCtxtPtr ctxt)
 	xmlParseCRNGDropTokens(ctxt, 1);
 	xmlParseCRNG_exceptNameClass(ctxt);
     } else {
+<<<<<<< HEAD
         TODO /* probably an error */
+=======
+        /* TODO: probably an error */
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
     }
 
     return(0);
@@ -845,7 +876,11 @@ xmlParseCRNG_datatype(xmlCRelaxNGParserCtxtPtr ctxt ATTRIBUTE_UNUSED)
 	                                            token->token);
 	    xmlParseCRNGDropTokens(ctxt, 1);
 	} else {
+<<<<<<< HEAD
 	    TODO /* probably an error */
+=======
+	    /* TODO: probably an error */
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 	}
     } else if (token->toktype == CRNG_LITERAL_SEGMENT) {
 	ctxt->insert = xmlNewNode(NULL, BAD_CAST "value");
@@ -857,7 +892,11 @@ xmlParseCRNG_datatype(xmlCRelaxNGParserCtxtPtr ctxt ATTRIBUTE_UNUSED)
 	            xmlParseCRNG_lookupDatatypePrefix(ctxt, token->prefix),
 		    token->token);
     } else {
+<<<<<<< HEAD
         TODO
+=======
+        /* TODO */
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
     }
     if (attrs != NULL) {
 	token = xmlParseCRNGGetToken(ctxt, 1);
@@ -951,19 +990,33 @@ xmlParseCRNG_primary(xmlCRelaxNGParserCtxtPtr ctxt ATTRIBUTE_UNUSED)
 	    ctxt->insert = xmlNewNodeEatName(NULL, (xmlChar *) token->token);
 	    xmlParseCRNGDropTokens(ctxt, 1);
 	    if (ctxt->insert == NULL) CRNG_MEM_ERROR0();
+<<<<<<< HEAD
 	    TODO
+=======
+	    /* TODO */
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 	} else if (token->token == ctxt->key_grammar) {
 	    ctxt->insert = xmlNewNodeEatName(NULL, (xmlChar *) token->token);
 	    xmlParseCRNGDropTokens(ctxt, 1);
 	    if (ctxt->insert == NULL) CRNG_MEM_ERROR0();
+<<<<<<< HEAD
 	    TODO
+=======
+	    /* TODO */
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 	} else if (token->token == ctxt->key_external) {
 	    ctxt->insert = xmlNewNode(NULL, BAD_CAST "externalRef");
 	    xmlParseCRNGDropTokens(ctxt, 1);
 	    if (ctxt->insert == NULL) CRNG_MEM_ERROR0();
+<<<<<<< HEAD
 	    TODO
 	} else {
 	   TODO
+=======
+	    /* TODO */
+	} else {
+	   /* TODO */
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 	}
     } else if (token->toktype == CRNG_IDENTIFIER) {
 	ctxt->insert = xmlNewNodeEatName(NULL, (xmlChar *) ctxt->key_ref);
@@ -1128,9 +1181,15 @@ xmlParseCRNG_component(xmlCRelaxNGParserCtxtPtr ctxt)
 	    xmlParseCRNG_pattern(ctxt);
 
 	} else if (token->token == ctxt->key_include) {
+<<<<<<< HEAD
 	    TODO
 	} else if (token->token == ctxt->key_div) {
 	    TODO
+=======
+	    /* TODO */
+	} else if (token->token == ctxt->key_div) {
+	    /* TODO */
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 	} else {
 	    return(-1);
 	}
@@ -1591,5 +1650,8 @@ int main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
     return(0);
 }
 #endif
+<<<<<<< HEAD
 #define bottom_rngparser
 #include "elfgcchack.h"
+=======
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))

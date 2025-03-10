@@ -1,14 +1,57 @@
 # Maintainer's Guide
 
+<<<<<<< HEAD
+=======
+## Working with the test suite
+
+Most of the tests are contained in the `runtest` executable which
+generally reads test cases from the `test` directory and compares output
+to files in the `result` directory.
+
+You can simply add new test cases and run `runtest -u` to update the
+results. If you debug test failures, it's also useful to execute
+`runtest -u` and then `git diff result` to get a diff between actual and
+expected results. You can restore the original results by running
+`git restore result` and `git clean -xd result`.
+
+## Generated files
+
+The documentation and other generated files can be rebuilt by running
+
+    make -C doc rebuild
+
+This requires `xsltproc`, the DocBook stylesheets in your XML Catalog
+and the libxml2 Python bindings to be installed, so it's best done on a
+Linux system. On Debian/Ubuntu, try
+
+    apt install xsltproc python3-libxml2 docbook-xsl docbook-xml
+
+doc/apibuild.py generates doc/libxml2-api.xml which is used to generate
+
+- API documentation with XSLT stylesheets
+- testapi.c with gentest.py
+- Python bindings with python/generator.py
+
+Man pages and HTML documentation for xmllint and xmlcatalog are
+generated with xsltproc and DocBook stylesheets.
+
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 ## Making a release
 
 ### Rebuild generated files and documentation
 
+<<<<<<< HEAD
 The documentation and some generated files can be rebuilt by running
 
     make -C doc rebuild
 
 This requires `xsltproc` and the libxml2 Python bindings to be installed.
+=======
+See above for details and run `make -C doc rebuild`.
+
+Look for new warning messages and inspect changes for correctness
+before committing.
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 
 ### Update the NEWS file
 
@@ -50,6 +93,7 @@ Create a new GitLab release on
 
 ### Announce the release
 
+<<<<<<< HEAD
 Announce the release by sending an email to the mailing list at
 xml@gnome.org.
 
@@ -59,6 +103,38 @@ Note that the CI image is used for libxslt as well. Run the following
 commands with the Dockerfile in the .gitlab-ci directory:
 
     docker login registry.gitlab.gnome.org
+=======
+Announce the release on https://discourse.gnome.org under topics 'libxml2'
+and 'announcements'.
+
+## Breaking the ABI
+
+Unfortunately, libxml2 exposes many internal structs which makes some
+beneficial changes impossible without breaking the ABI.
+
+The following changes are allowed (after careful consideration):
+
+- Appending members to structs which client code should never allocate
+  directly. A notable example is xmlParserCtxt. Other structs like
+  xmlError are allocated directly by client code and must not be changed.
+
+- Making a void function return a value.
+
+- Making functions accept const pointers unless it's a typedef for a
+  callback.
+
+- Changing signedness of struct members or function arguments.
+
+## Updating the CI Docker image
+
+Note that the CI image is used for libxslt as well. First create a
+GitLab access token with `read_registry` and `write_registry`
+permissions. Then run the following commands with the Dockerfile in the
+.gitlab-ci directory:
+
+    docker login -u <username> -p <access_token> \
+        registry.gitlab.gnome.org
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
     docker build -t registry.gitlab.gnome.org/gnome/libxml2 - \
         < .gitlab-ci/Dockerfile
     docker push registry.gitlab.gnome.org/gnome/libxml2

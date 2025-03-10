@@ -16,7 +16,10 @@
 #
 
 import sys
+<<<<<<< HEAD
 import string
+=======
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 import time
 
 #
@@ -574,8 +577,11 @@ header.write("""
 
 header.close()
 
+<<<<<<< HEAD
 output.write("""#define bottom_chvalid
 #include "elfgcchack.h"
 """)
+=======
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 output.close()
 

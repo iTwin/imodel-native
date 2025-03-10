@@ -86,6 +86,16 @@
 #define XML_XML_DEFAULT_CATALOG "file://" SYSCONFDIR "/xml/catalog"
 #endif
 
+<<<<<<< HEAD
+=======
+#ifndef STDIN_FILENO
+  #define STDIN_FILENO 0
+#endif
+
+/* Internal parser option */
+#define XML_PARSE_UNZIP     (1 << 24)
+
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 typedef enum {
     XMLLINT_RETURN_OK = 0,	/* No error */
     XMLLINT_ERR_UNCLASS = 1,	/* Unclassified */
@@ -1648,7 +1658,18 @@ testSAX(const char *filename) {
             progresult = XMLLINT_ERR_MEM;
 	    return;
 	}
+<<<<<<< HEAD
         xmlCtxtReadFile(ctxt, filename, NULL, options);
+=======
+        if (maxAmpl > 0)
+            xmlCtxtSetMaxAmplification(ctxt, maxAmpl);
+
+        if (strcmp(filename, "-") == 0)
+            xmlCtxtReadFd(ctxt, STDIN_FILENO, "-", NULL,
+                          options | XML_PARSE_UNZIP);
+        else
+            xmlCtxtReadFile(ctxt, filename, NULL, options);
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 
 	if (ctxt->myDoc != NULL) {
 	    fprintf(stderr, "SAX generated a doc !\n");
@@ -2319,10 +2340,34 @@ static void parseAndPrintFile(char *filename, xmlParserCtxtPtr rectxt) {
 
             doc = xmlCtxtReadFile(ctxt, filename, NULL, options);
 
+<<<<<<< HEAD
             if (ctxt->valid == 0)
                 progresult = XMLLINT_ERR_RDFILE;
             if (rectxt == NULL)
                 xmlFreeParserCtxt(ctxt);
+=======
+            munmap((char *) base, info.st_size);
+            close(fd);
+#endif
+        } else {
+            if (strcmp(filename, "-") == 0)
+                doc = xmlCtxtReadFd(ctxt, STDIN_FILENO, "-", NULL,
+                                    options | XML_PARSE_UNZIP);
+            else
+                doc = xmlCtxtReadFile(ctxt, filename, NULL, options);
+        }
+    }
+
+    if (doc == NULL) {
+        if (ctxt->errNo == XML_ERR_NO_MEMORY)
+            progresult = XMLLINT_ERR_MEM;
+        else
+	    progresult = XMLLINT_ERR_RDFILE;
+    } else {
+#ifdef LIBXML_VALID_ENABLED
+        if ((options & XML_PARSE_DTDVALID) && (ctxt->valid == 0))
+            progresult = XMLLINT_ERR_VALID;
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 #endif /* LIBXML_VALID_ENABLED */
 	} else {
 	    if (rectxt != NULL)

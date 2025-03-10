@@ -1335,7 +1335,7 @@ DECLARE_ISO_FUNCS(16)
 #endif /* LIBXML_ISO8859X_ENABLED */
 
 #ifdef LIBXML_ICONV_ENABLED
-  #define EMPTY_ICONV , (iconv_t) 0, (iconv_t) 0
+  #define EMPTY_ICONV , (iconv_t) -1, (iconv_t) -1
 #else
   #define EMPTY_ICONV
 #endif
@@ -1462,8 +1462,8 @@ xmlNewCharEncodingHandler(const char *name,
     handler->name = up;
 
 #ifdef LIBXML_ICONV_ENABLED
-    handler->iconv_in = NULL;
-    handler->iconv_out = NULL;
+    handler->iconv_in = (iconv_t) -1;
+    handler->iconv_out = (iconv_t) -1;
 #endif
 #ifdef LIBXML_ICU_ENABLED
     handler->uconv_in = NULL;
@@ -1578,6 +1578,183 @@ free_handler:
     }
 }
 
+<<<<<<< HEAD
+=======
+#ifdef LIBXML_ICONV_ENABLED
+static int
+xmlCreateIconvHandler(const char *name, xmlCharEncodingHandler **out) {
+    xmlCharEncodingHandlerPtr enc = NULL;
+    iconv_t icv_in = (iconv_t) -1;
+    iconv_t icv_out = (iconv_t) -1;
+    int ret;
+
+    *out = NULL;
+
+    icv_in = iconv_open("UTF-8", name);
+    if (icv_in == (iconv_t) -1) {
+        if (errno == EINVAL)
+            ret = XML_ERR_UNSUPPORTED_ENCODING;
+        else if (errno == ENOMEM)
+            ret = XML_ERR_NO_MEMORY;
+        else
+            ret = XML_ERR_SYSTEM;
+        goto error;
+    }
+
+    icv_out = iconv_open(name, "UTF-8");
+    if (icv_out == (iconv_t) -1) {
+        if (errno == EINVAL)
+            ret = XML_ERR_UNSUPPORTED_ENCODING;
+        else if (errno == ENOMEM)
+            ret = XML_ERR_NO_MEMORY;
+        else
+            ret = XML_ERR_SYSTEM;
+        goto error;
+    }
+
+    enc = xmlMalloc(sizeof(*enc));
+    if (enc == NULL) {
+        ret = XML_ERR_NO_MEMORY;
+        goto error;
+    }
+    memset(enc, 0, sizeof(*enc));
+
+    enc->name = xmlMemStrdup(name);
+    if (enc->name == NULL) {
+        ret = XML_ERR_NO_MEMORY;
+        goto error;
+    }
+    enc->iconv_in = icv_in;
+    enc->iconv_out = icv_out;
+
+    *out = enc;
+    return(0);
+
+error:
+    if (enc != NULL)
+        xmlFree(enc);
+    if (icv_in != (iconv_t) -1)
+        iconv_close(icv_in);
+    if (icv_out != (iconv_t) -1)
+        iconv_close(icv_out);
+    return(ret);
+}
+#endif /* LIBXML_ICONV_ENABLED */
+
+#ifdef LIBXML_ICU_ENABLED
+static int
+openIcuConverter(const char* name, int toUnicode, uconv_t **out)
+{
+    UErrorCode status;
+    uconv_t *conv;
+
+    *out = NULL;
+
+    conv = (uconv_t *) xmlMalloc(sizeof(uconv_t));
+    if (conv == NULL)
+        return(XML_ERR_NO_MEMORY);
+
+    conv->pivot_source = conv->pivot_buf;
+    conv->pivot_target = conv->pivot_buf;
+
+    status = U_ZERO_ERROR;
+    conv->uconv = ucnv_open(name, &status);
+    if (U_FAILURE(status))
+        goto error;
+
+    status = U_ZERO_ERROR;
+    if (toUnicode) {
+        ucnv_setToUCallBack(conv->uconv, UCNV_TO_U_CALLBACK_STOP,
+                                                NULL, NULL, NULL, &status);
+    }
+    else {
+        ucnv_setFromUCallBack(conv->uconv, UCNV_FROM_U_CALLBACK_STOP,
+                                                NULL, NULL, NULL, &status);
+    }
+    if (U_FAILURE(status))
+        goto error;
+
+    status = U_ZERO_ERROR;
+    conv->utf8 = ucnv_open("UTF-8", &status);
+    if (U_FAILURE(status))
+        goto error;
+
+    *out = conv;
+    return(0);
+
+error:
+    if (conv->uconv)
+        ucnv_close(conv->uconv);
+    xmlFree(conv);
+
+    if (status == U_FILE_ACCESS_ERROR)
+        return(XML_ERR_UNSUPPORTED_ENCODING);
+    if (status == U_MEMORY_ALLOCATION_ERROR)
+        return(XML_ERR_NO_MEMORY);
+    return(XML_ERR_SYSTEM);
+}
+
+static void
+closeIcuConverter(uconv_t *conv)
+{
+    if (conv == NULL)
+        return;
+    ucnv_close(conv->uconv);
+    ucnv_close(conv->utf8);
+    xmlFree(conv);
+}
+
+static int
+xmlCreateUconvHandler(const char *name, xmlCharEncodingHandler **out) {
+    xmlCharEncodingHandlerPtr enc = NULL;
+    uconv_t *ucv_in = NULL;
+    uconv_t *ucv_out = NULL;
+    int ret;
+
+    ret = openIcuConverter(name, 1, &ucv_in);
+    if (ret != 0)
+        goto error;
+    ret = openIcuConverter(name, 0, &ucv_out);
+    if (ret != 0)
+        goto error;
+
+    enc = (xmlCharEncodingHandlerPtr)
+           xmlMalloc(sizeof(xmlCharEncodingHandler));
+    if (enc == NULL) {
+        ret = XML_ERR_NO_MEMORY;
+        goto error;
+    }
+    memset(enc, 0, sizeof(xmlCharEncodingHandler));
+
+    enc->name = xmlMemStrdup(name);
+    if (enc->name == NULL) {
+        ret = XML_ERR_NO_MEMORY;
+        goto error;
+    }
+    enc->input = NULL;
+    enc->output = NULL;
+#ifdef LIBXML_ICONV_ENABLED
+    enc->iconv_in = (iconv_t) -1;
+    enc->iconv_out = (iconv_t) -1;
+#endif
+    enc->uconv_in = ucv_in;
+    enc->uconv_out = ucv_out;
+
+    *out = enc;
+    return(0);
+
+error:
+    if (enc != NULL)
+        xmlFree(enc);
+    if (ucv_in != NULL)
+        closeIcuConverter(ucv_in);
+    if (ucv_out != NULL)
+        closeIcuConverter(ucv_out);
+    return(ret);
+}
+#endif /* LIBXML_ICU_ENABLED */
+
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 /**
  * xmlGetCharEncodingHandler:
  * @enc:  an xmlCharEncoding value.
@@ -2045,7 +2222,7 @@ xmlEncInputChunk(xmlCharEncodingHandler *handler, unsigned char *out,
            ret = 0;
     }
 #ifdef LIBXML_ICONV_ENABLED
-    else if (handler->iconv_in != NULL) {
+    else if (handler->iconv_in != (iconv_t) -1) {
         ret = xmlIconvWrapper(handler->iconv_in, out, outlen, in, inlen);
     }
 #endif /* LIBXML_ICONV_ENABLED */
@@ -2094,7 +2271,7 @@ xmlEncOutputChunk(xmlCharEncodingHandler *handler, unsigned char *out,
            ret = 0;
     }
 #ifdef LIBXML_ICONV_ENABLED
-    else if (handler->iconv_out != NULL) {
+    else if (handler->iconv_out != (iconv_t) -1) {
         ret = xmlIconvWrapper(handler->iconv_out, out, outlen, in, inlen);
     }
 #endif /* LIBXML_ICONV_ENABLED */
@@ -2670,17 +2847,17 @@ xmlCharEncCloseFunc(xmlCharEncodingHandler *handler) {
      * Iconv handlers can be used only once, free the whole block.
      * and the associated icon resources.
      */
-    if ((handler->iconv_out != NULL) || (handler->iconv_in != NULL)) {
+    if ((handler->iconv_out != (iconv_t) -1) || (handler->iconv_in != (iconv_t) -1)) {
         tofree = 1;
-	if (handler->iconv_out != NULL) {
+	if (handler->iconv_out != (iconv_t) -1) {
 	    if (iconv_close(handler->iconv_out))
 		ret = -1;
-	    handler->iconv_out = NULL;
+	    handler->iconv_out = (iconv_t) -1;
 	}
-	if (handler->iconv_in != NULL) {
+	if (handler->iconv_in != (iconv_t) -1) {
 	    if (iconv_close(handler->iconv_in))
 		ret = -1;
-	    handler->iconv_in = NULL;
+	    handler->iconv_in = (iconv_t) -1;
 	}
     }
 #endif /* LIBXML_ICONV_ENABLED */

@@ -1265,3 +1265,611 @@ xmlDictGetUsage(xmlDictPtr dict) {
     return(limit);
 }
 
+<<<<<<< HEAD
+=======
+/*****************************************************************
+ *
+ * The code below was rewritten and is additionally licensed under
+ * the main license in file 'Copyright'.
+ *
+ *****************************************************************/
+
+ATTRIBUTE_NO_SANITIZE_INTEGER
+static unsigned
+xmlDictHashName(unsigned seed, const xmlChar* data, size_t maxLen,
+                size_t *plen) {
+    unsigned h1, h2;
+    size_t i;
+
+    HASH_INIT(h1, h2, seed);
+
+    for (i = 0; i < maxLen && data[i]; i++) {
+        HASH_UPDATE(h1, h2, data[i]);
+    }
+
+    HASH_FINISH(h1, h2);
+
+    *plen = i;
+    return(h2 | MAX_HASH_SIZE);
+}
+
+ATTRIBUTE_NO_SANITIZE_INTEGER
+static unsigned
+xmlDictHashQName(unsigned seed, const xmlChar *prefix, const xmlChar *name,
+                 size_t *pplen, size_t *plen) {
+    unsigned h1, h2;
+    size_t i;
+
+    HASH_INIT(h1, h2, seed);
+
+    for (i = 0; prefix[i] != 0; i++) {
+        HASH_UPDATE(h1, h2, prefix[i]);
+    }
+    *pplen = i;
+
+    HASH_UPDATE(h1, h2, ':');
+
+    for (i = 0; name[i] != 0; i++) {
+        HASH_UPDATE(h1, h2, name[i]);
+    }
+    *plen = i;
+
+    HASH_FINISH(h1, h2);
+
+    /*
+     * Always set the upper bit of hash values since 0 means an unoccupied
+     * bucket.
+     */
+    return(h2 | MAX_HASH_SIZE);
+}
+
+/**
+ * xmlDictComputeHash:
+ * @dict:  dictionary
+ * @string:  C string
+ *
+ * Compute the hash value of a C string.
+ *
+ * Returns the hash value.
+ */
+unsigned
+xmlDictComputeHash(const xmlDict *dict, const xmlChar *string) {
+    size_t len;
+    return(xmlDictHashName(dict->seed, string, SIZE_MAX, &len));
+}
+
+#define HASH_ROL31(x,n) ((x) << (n) | ((x) & 0x7FFFFFFF) >> (31 - (n)))
+
+/**
+ * xmlDictCombineHash:
+ * @v1:  first hash value
+ * @v2: second hash value
+ *
+ * Combine two hash values.
+ *
+ * Returns the combined hash value.
+ */
+ATTRIBUTE_NO_SANITIZE_INTEGER
+unsigned
+xmlDictCombineHash(unsigned v1, unsigned v2) {
+    /*
+     * The upper bit of hash values is always set, so we have to operate on
+     * 31-bit hashes here.
+     */
+    v1 ^= v2;
+    v1 += HASH_ROL31(v2, 5);
+
+    return((v1 & 0xFFFFFFFF) | 0x80000000);
+}
+
+/**
+ * xmlDictFindEntry:
+ * @dict: dict
+ * @prefix: optional QName prefix
+ * @name: string
+ * @len: length of string
+ * @hashValue: valid hash value of string
+ * @pfound: result of search
+ *
+ * Try to find a matching hash table entry. If an entry was found, set
+ * @found to 1 and return the entry. Otherwise, set @found to 0 and return
+ * the location where a new entry should be inserted.
+ */
+ATTRIBUTE_NO_SANITIZE_INTEGER
+static xmlDictEntry *
+xmlDictFindEntry(const xmlDict *dict, const xmlChar *prefix,
+                 const xmlChar *name, int len, unsigned hashValue,
+                 int *pfound) {
+    xmlDictEntry *entry;
+    unsigned mask, pos, displ;
+    int found = 0;
+
+    mask = dict->size - 1;
+    pos = hashValue & mask;
+    entry = &dict->table[pos];
+
+    if (entry->hashValue != 0) {
+        /*
+         * Robin hood hashing: abort if the displacement of the entry
+         * is smaller than the displacement of the key we look for.
+         * This also stops at the correct position when inserting.
+         */
+        displ = 0;
+
+        do {
+            if (entry->hashValue == hashValue) {
+                if (prefix == NULL) {
+                    /*
+                     * name is not necessarily null-terminated.
+                     */
+                    if ((strncmp((const char *) entry->name,
+                                 (const char *) name, len) == 0) &&
+                        (entry->name[len] == 0)) {
+                        found = 1;
+                        break;
+                    }
+                } else {
+                    if (xmlStrQEqual(prefix, name, entry->name)) {
+                        found = 1;
+                        break;
+                    }
+                }
+            }
+
+            displ++;
+            pos++;
+            entry++;
+            if ((pos & mask) == 0)
+                entry = dict->table;
+        } while ((entry->hashValue != 0) &&
+                 (((pos - entry->hashValue) & mask) >= displ));
+    }
+
+    *pfound = found;
+    return(entry);
+}
+
+/**
+ * xmlDictGrow:
+ * @dict: dictionary
+ * @size: new size of the dictionary
+ *
+ * Resize the dictionary hash table.
+ *
+ * Returns 0 in case of success, -1 if a memory allocation failed.
+ */
+static int
+xmlDictGrow(xmlDictPtr dict, unsigned size) {
+    const xmlDictEntry *oldentry, *oldend, *end;
+    xmlDictEntry *table;
+    unsigned oldsize, i;
+
+    /* Add 0 to avoid spurious -Wtype-limits warning on 64-bit GCC */
+    if ((size_t) size + 0 > SIZE_MAX / sizeof(table[0]))
+        return(-1);
+    table = xmlMalloc(size * sizeof(table[0]));
+    if (table == NULL)
+        return(-1);
+    memset(table, 0, size * sizeof(table[0]));
+
+    oldsize = dict->size;
+    if (oldsize == 0)
+        goto done;
+
+    oldend = &dict->table[oldsize];
+    end = &table[size];
+
+    /*
+     * Robin Hood sorting order is maintained if we
+     *
+     * - compute dict indices with modulo
+     * - resize by an integer factor
+     * - start to copy from the beginning of a probe sequence
+     */
+    oldentry = dict->table;
+    while (oldentry->hashValue != 0) {
+        if (++oldentry >= oldend)
+            oldentry = dict->table;
+    }
+
+    for (i = 0; i < oldsize; i++) {
+        if (oldentry->hashValue != 0) {
+            xmlDictEntry *entry = &table[oldentry->hashValue & (size - 1)];
+
+            while (entry->hashValue != 0) {
+                if (++entry >= end)
+                    entry = table;
+            }
+            *entry = *oldentry;
+        }
+
+        if (++oldentry >= oldend)
+            oldentry = dict->table;
+    }
+
+    xmlFree(dict->table);
+
+done:
+    dict->table = table;
+    dict->size = size;
+
+    return(0);
+}
+
+/**
+ * xmlDictLookupInternal:
+ * @dict: dict
+ * @prefix: optional QName prefix
+ * @name: string
+ * @maybeLen: length of string or -1 if unknown
+ * @update: whether the string should be added
+ *
+ * Internal lookup and update function.
+ */
+ATTRIBUTE_NO_SANITIZE_INTEGER
+static const xmlDictEntry *
+xmlDictLookupInternal(xmlDictPtr dict, const xmlChar *prefix,
+                      const xmlChar *name, int maybeLen, int update) {
+    xmlDictEntry *entry = NULL;
+    const xmlChar *ret;
+    unsigned hashValue;
+    size_t maxLen, len, plen, klen;
+    int found = 0;
+
+    if ((dict == NULL) || (name == NULL))
+	return(NULL);
+
+    maxLen = (maybeLen < 0) ? SIZE_MAX : (size_t) maybeLen;
+
+    if (prefix == NULL) {
+        hashValue = xmlDictHashName(dict->seed, name, maxLen, &len);
+        if (len > INT_MAX / 2)
+            return(NULL);
+        klen = len;
+    } else {
+        hashValue = xmlDictHashQName(dict->seed, prefix, name, &plen, &len);
+        if ((len > INT_MAX / 2) || (plen >= INT_MAX / 2 - len))
+            return(NULL);
+        klen = plen + 1 + len;
+    }
+
+    if ((dict->limit > 0) && (klen >= dict->limit))
+        return(NULL);
+
+    /*
+     * Check for an existing entry
+     */
+    if (dict->size > 0)
+        entry = xmlDictFindEntry(dict, prefix, name, klen, hashValue, &found);
+    if (found)
+        return(entry);
+
+    if ((dict->subdict != NULL) && (dict->subdict->size > 0)) {
+        xmlDictEntry *subEntry;
+        unsigned subHashValue;
+
+        if (prefix == NULL)
+            subHashValue = xmlDictHashName(dict->subdict->seed, name, len,
+                                           &len);
+        else
+            subHashValue = xmlDictHashQName(dict->subdict->seed, prefix, name,
+                                            &plen, &len);
+        subEntry = xmlDictFindEntry(dict->subdict, prefix, name, klen,
+                                    subHashValue, &found);
+        if (found)
+            return(subEntry);
+    }
+
+    if (!update)
+        return(NULL);
+
+    /*
+     * Grow the hash table if needed
+     */
+    if (dict->nbElems + 1 > dict->size / MAX_FILL_DENOM * MAX_FILL_NUM) {
+        unsigned newSize, mask, displ, pos;
+
+        if (dict->size == 0) {
+            newSize = MIN_HASH_SIZE;
+        } else {
+            if (dict->size >= MAX_HASH_SIZE)
+                return(NULL);
+            newSize = dict->size * 2;
+        }
+        if (xmlDictGrow(dict, newSize) != 0)
+            return(NULL);
+
+        /*
+         * Find new entry
+         */
+        mask = dict->size - 1;
+        displ = 0;
+        pos = hashValue & mask;
+        entry = &dict->table[pos];
+
+        while ((entry->hashValue != 0) &&
+               ((pos - entry->hashValue) & mask) >= displ) {
+            displ++;
+            pos++;
+            entry++;
+            if ((pos & mask) == 0)
+                entry = dict->table;
+        }
+    }
+
+    if (prefix == NULL)
+        ret = xmlDictAddString(dict, name, len);
+    else
+        ret = xmlDictAddQString(dict, prefix, plen, name, len);
+    if (ret == NULL)
+        return(NULL);
+
+    /*
+     * Shift the remainder of the probe sequence to the right
+     */
+    if (entry->hashValue != 0) {
+        const xmlDictEntry *end = &dict->table[dict->size];
+        const xmlDictEntry *cur = entry;
+
+        do {
+            cur++;
+            if (cur >= end)
+                cur = dict->table;
+        } while (cur->hashValue != 0);
+
+        if (cur < entry) {
+            /*
+             * If we traversed the end of the buffer, handle the part
+             * at the start of the buffer.
+             */
+            memmove(&dict->table[1], dict->table,
+                    (char *) cur - (char *) dict->table);
+            cur = end - 1;
+            dict->table[0] = *cur;
+        }
+
+        memmove(&entry[1], entry, (char *) cur - (char *) entry);
+    }
+
+    /*
+     * Populate entry
+     */
+    entry->hashValue = hashValue;
+    entry->name = ret;
+
+    dict->nbElems++;
+
+    return(entry);
+}
+
+/**
+ * xmlDictLookup:
+ * @dict: dictionary
+ * @name: string key
+ * @len: length of the key, if -1 it is recomputed
+ *
+ * Lookup a string and add it to the dictionary if it wasn't found.
+ *
+ * Returns the interned copy of the string or NULL if a memory allocation
+ * failed.
+ */
+const xmlChar *
+xmlDictLookup(xmlDictPtr dict, const xmlChar *name, int len) {
+    const xmlDictEntry *entry;
+
+    entry = xmlDictLookupInternal(dict, NULL, name, len, 1);
+    if (entry == NULL)
+        return(NULL);
+    return(entry->name);
+}
+
+/**
+ * xmlDictLookupHashed:
+ * @dict: dictionary
+ * @name: string key
+ * @len: length of the key, if -1 it is recomputed
+ *
+ * Lookup a dictionary entry and add the string to the dictionary if
+ * it wasn't found.
+ *
+ * Returns the dictionary entry.
+ */
+xmlHashedString
+xmlDictLookupHashed(xmlDictPtr dict, const xmlChar *name, int len) {
+    const xmlDictEntry *entry;
+    xmlHashedString ret;
+
+    entry = xmlDictLookupInternal(dict, NULL, name, len, 1);
+
+    if (entry == NULL) {
+        ret.name = NULL;
+        ret.hashValue = 0;
+    } else {
+        ret = *entry;
+    }
+
+    return(ret);
+}
+
+/**
+ * xmlDictExists:
+ * @dict: the dictionary
+ * @name: the name of the userdata
+ * @len: the length of the name, if -1 it is recomputed
+ *
+ * Check if a string exists in the dictionary.
+ *
+ * Returns the internal copy of the name or NULL if not found.
+ */
+const xmlChar *
+xmlDictExists(xmlDictPtr dict, const xmlChar *name, int len) {
+    const xmlDictEntry *entry;
+
+    entry = xmlDictLookupInternal(dict, NULL, name, len, 0);
+    if (entry == NULL)
+        return(NULL);
+    return(entry->name);
+}
+
+/**
+ * xmlDictQLookup:
+ * @dict: the dictionary
+ * @prefix: the prefix
+ * @name: the name
+ *
+ * Lookup the QName @prefix:@name and add it to the dictionary if
+ * it wasn't found.
+ *
+ * Returns the interned copy of the string or NULL if a memory allocation
+ * failed.
+ */
+const xmlChar *
+xmlDictQLookup(xmlDictPtr dict, const xmlChar *prefix, const xmlChar *name) {
+    const xmlDictEntry *entry;
+
+    entry = xmlDictLookupInternal(dict, prefix, name, -1, 1);
+    if (entry == NULL)
+        return(NULL);
+    return(entry->name);
+}
+
+/*
+ * Pseudo-random generator
+ */
+
+#ifdef _WIN32
+  #define WIN32_LEAN_AND_MEAN
+  #include <windows.h>
+  #include <bcrypt.h>
+#else
+  #if defined(HAVE_GETENTROPY)
+    #ifdef HAVE_UNISTD_H
+      #include <unistd.h>
+    #endif
+    #ifdef HAVE_SYS_RANDOM_H
+      #include <sys/random.h>
+    #endif
+  #endif
+  #include <time.h>
+#endif
+
+static xmlMutex xmlRngMutex;
+
+static unsigned globalRngState[2];
+
+/*
+ * xmlInitRandom:
+ *
+ * Initialize the PRNG.
+ */
+ATTRIBUTE_NO_SANITIZE_INTEGER
+void
+xmlInitRandom(void) {
+    xmlInitMutex(&xmlRngMutex);
+
+    {
+#ifdef _WIN32
+        NTSTATUS status;
+
+        status = BCryptGenRandom(NULL, (unsigned char *) globalRngState,
+                                 sizeof(globalRngState),
+                                 BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+        if (!BCRYPT_SUCCESS(status)) {
+            fprintf(stderr, "libxml2: BCryptGenRandom failed with "
+                    "error code %lu\n", GetLastError());
+            abort();
+        }
+#else
+        int var;
+
+#if defined(HAVE_GETENTROPY)
+        while (1) {
+            if (getentropy(globalRngState, sizeof(globalRngState)) == 0)
+                return;
+
+            /*
+             * This most likely means that libxml2 was compiled on
+             * a system supporting certain system calls and is running
+             * on a system that doesn't support these calls, as can
+             * be the case on Linux.
+             */
+            if (errno == ENOSYS)
+                break;
+
+            if (errno != EINTR) {
+                fprintf(stderr, "libxml2: getentropy failed with "
+                        "error code %d\n", errno);
+                abort();
+            }
+        }
+#endif
+
+        globalRngState[0] =
+                (unsigned) time(NULL) ^
+                HASH_ROL((unsigned) ((size_t) &xmlInitRandom & 0xFFFFFFFF), 8);
+        globalRngState[1] =
+                HASH_ROL((unsigned) ((size_t) &xmlRngMutex & 0xFFFFFFFF), 16) ^
+                HASH_ROL((unsigned) ((size_t) &var & 0xFFFFFFFF), 24);
+#endif
+    }
+}
+
+/*
+ * xmlCleanupRandom:
+ *
+ * Clean up PRNG globals.
+ */
+void
+xmlCleanupRandom(void) {
+    xmlCleanupMutex(&xmlRngMutex);
+}
+
+ATTRIBUTE_NO_SANITIZE_INTEGER
+static unsigned
+xoroshiro64ss(unsigned *s) {
+    unsigned s0 = s[0];
+    unsigned s1 = s[1];
+    unsigned result = HASH_ROL(s0 * 0x9E3779BB, 5) * 5;
+
+    s1 ^= s0;
+    s[0] = HASH_ROL(s0, 26) ^ s1 ^ (s1 << 9);
+    s[1] = HASH_ROL(s1, 13);
+
+    return(result & 0xFFFFFFFF);
+}
+
+/*
+ * xmlGlobalRandom:
+ *
+ * Generate a pseudo-random value using the global PRNG.
+ *
+ * Returns a random value.
+ */
+unsigned
+xmlGlobalRandom(void) {
+    unsigned ret;
+
+    xmlMutexLock(&xmlRngMutex);
+    ret = xoroshiro64ss(globalRngState);
+    xmlMutexUnlock(&xmlRngMutex);
+
+    return(ret);
+}
+
+/*
+ * xmlRandom:
+ *
+ * Generate a pseudo-random value using the thread-local PRNG.
+ *
+ * Returns a random value.
+ */
+unsigned
+xmlRandom(void) {
+#ifdef LIBXML_THREAD_ENABLED
+    return(xoroshiro64ss(xmlGetLocalRngState()));
+#else
+    return(xmlGlobalRandom());
+#endif
+}
+
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
