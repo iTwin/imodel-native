@@ -52,5 +52,5 @@ zlib/contrib/minizip/MiniZip64_Changes.txt
 zlib/contrib/minizip/ioapi.h
 zlib/contrib/minizip/unzip.h
 zlib/contrib/minizip/zip.h
-zlib/contrib/zconf.h
-zlib/contrib/zlib.h
+zlib/zconf.h
+zlib/zlib.h
