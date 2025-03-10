@@ -1715,8 +1715,9 @@ xmlTextReaderReadOuterXml(xmlTextReaderPtr reader ATTRIBUTE_UNUSED)
  *
  * Reads the contents of an element or a text node as a string.
  *
- * Returns a string containing the contents of the Element or Text node,
- *         or NULL if the reader is positioned on any other type of node.
+ * Returns a string containing the contents of the non-empty Element or
+ *         Text node (including CDATA sections), or NULL if the reader
+ *         is positioned on any other type of node.
  *         The string must be deallocated by the caller.
  */
 xmlChar *
@@ -1729,6 +1730,7 @@ xmlTextReaderReadString(xmlTextReaderPtr reader)
 
     node = (reader->curnode != NULL) ? reader->curnode : reader->node;
     switch (node->type) {
+<<<<<<< HEAD
     case XML_TEXT_NODE:
        if (node->content != NULL)
            return(xmlStrdup(node->content));
@@ -1743,6 +1745,18 @@ xmlTextReaderReadString(xmlTextReaderPtr reader)
 	break;
     default:
        break;
+=======
+        case XML_TEXT_NODE:
+        case XML_CDATA_SECTION_NODE:
+            break;
+        case XML_ELEMENT_NODE:
+            if ((xmlTextReaderDoExpand(reader) == -1) ||
+                (node->children == NULL))
+                return(NULL);
+            break;
+        default:
+            return(NULL);
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
     }
     return(NULL);
 }

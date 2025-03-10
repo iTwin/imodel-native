@@ -513,6 +513,7 @@ xmlParserInputPtr
 xmlSAX2ResolveEntity(void *ctx, const xmlChar *publicId, const xmlChar *systemId)
 {
     xmlParserCtxtPtr ctxt = (xmlParserCtxtPtr) ctx;
+<<<<<<< HEAD
     xmlParserInputPtr ret;
     xmlChar *URI;
     const char *base = NULL;
@@ -534,6 +535,52 @@ xmlSAX2ResolveEntity(void *ctx, const xmlChar *publicId, const xmlChar *systemId
 				(const char *) publicId, ctxt);
     if (URI != NULL)
 	xmlFree(URI);
+=======
+    xmlParserInputPtr ret = NULL;
+    xmlChar *URI = NULL;
+
+    if (ctx == NULL) return(NULL);
+
+    if (systemId != NULL) {
+        const xmlChar *base = NULL;
+        int res;
+
+        if (ctxt->input != NULL)
+            base = BAD_CAST ctxt->input->filename;
+
+        /*
+         * We don't really need the 'directory' struct member, but some
+         * users set it manually to a base URI for memory streams.
+         */
+        if (base == NULL)
+            base = BAD_CAST ctxt->directory;
+
+        if ((xmlStrlen(systemId) > XML_MAX_URI_LENGTH) ||
+            (xmlStrlen(base) > XML_MAX_URI_LENGTH)) {
+            xmlFatalErr(ctxt, XML_ERR_RESOURCE_LIMIT, "URI too long");
+            return(NULL);
+        }
+        res = xmlBuildURISafe(systemId, base, &URI);
+        if (URI == NULL) {
+            if (res < 0)
+                xmlSAX2ErrMemory(ctxt);
+            else
+                xmlWarnMsg(ctxt, XML_ERR_INVALID_URI,
+                           "Can't resolve URI: %s\n", systemId);
+            return(NULL);
+        }
+        if (xmlStrlen(URI) > XML_MAX_URI_LENGTH) {
+            xmlFatalErr(ctxt, XML_ERR_RESOURCE_LIMIT, "URI too long");
+            xmlFree(URI);
+            return(NULL);
+        }
+    }
+
+    ret = xmlLoadExternalEntity((const char *) URI,
+                                (const char *) publicId, ctxt);
+
+    xmlFree(URI);
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
     return(ret);
 }
 

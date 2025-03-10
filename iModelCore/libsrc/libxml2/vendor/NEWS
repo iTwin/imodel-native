@@ -1,6 +1,84 @@
 NEWS file for libxml2
 
+<<<<<<< HEAD
 v2.11.9: Jul 24 2024
+=======
+v2.13.6: Feb 18 2025
+
+### Security
+
+- [CVE-2025-24928] Fix stack-buffer-overflow in xmlSnprintfElements
+- [CVE-2024-56171] Fix use-after-free after xmlSchemaItemListAdd
+- pattern: Fix compilation of explicit child axis
+
+### Regressions
+
+- xmllint: Support compressed input from stdin
+- uri: Fix handling of Windows drive letters
+- reader: Fix return value of xmlTextReaderReadString again
+- SAX2: Fix xmlSAX2ResolveEntity if systemId is NULL
+
+### Portability
+
+- dict: Handle ENOSYS from getentropy gracefully
+- Fix compilation with uclibc (Dario Binacchi)
+- python: Declare init func with PyMODINIT_FUNC
+- tests: Fix sanitizer version check on old Apple clang
+- cmake: Work around broken sys/random.h in old macOS SDKs
+
+### Build
+
+- autotools: Set AC_CONFIG_AUX_DIR
+- cmake: Always build Python module as shared library
+- cmake: add missing `Bcrypt` link on Windows (Saleem Abdulrasool)
+- cmake: Fix compatibility in package version file
+
+
+v2.13.5: Nov 12 2024
+
+### Regressions
+
+- xmlIO: Fix reading from non-regular files like pipes
+- xmlreader: Fix return value of xmlTextReaderReadString
+- parser: Fix loading of parameter entities in external DTDs
+- parser: Fix downstream code that swaps DTDs
+- parser: Fix detection of duplicate attributes
+- string: Fix va_copy fallback
+
+### Bug fixes
+
+- xpath: Fix parsing of non-ASCII names
+
+
+v2.13.4: Sep 18 2024
+
+### Regressions
+
+- parser: Make unsupported encodings an error in declarations
+- io: don't set the executable bit when creating files (triallax)
+- xmlcatalog: Improved fix for #699
+- Revert "catalog: Fetch XML catalog before dumping"
+- io: Add missing calls to xmlInitParser
+- tree: Restore return value of xmlNodeListGetString with NULL list
+- parser: Fix error handling after reaching limit
+- parser: Make xmlParseChunk return an error if parser was stopped
+
+### Bug fixes
+
+- python: Fix SAX driver with character streams
+
+### Improvements
+
+- xpath: Make recursion check work with xmlXPathCompile
+- parser: Report at least one fatal error
+
+### Portability
+
+- include: Check whether _MSC_VER is defined
+
+
+v2.13.3: Jul 24 2024
+>>>>>>> 1945ec87 (Update libxml2 to 2.13.6 (#1032))
 
 ### Security
 
