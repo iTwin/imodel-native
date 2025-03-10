@@ -19,4 +19,5 @@
 
 #include <ECDb/InstanceReader.h>
 #include <ECDb/InstanceWriter.h>
+#include <ECDb/InstanceRepository.h>
 #include <ECDb/ECDbVirtualTab.h>

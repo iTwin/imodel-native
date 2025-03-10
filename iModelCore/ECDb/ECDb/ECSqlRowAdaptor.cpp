@@ -85,6 +85,10 @@ BentleyStatus ECSqlRowAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& stm
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus ECSqlRowAdaptor::RenderRootProperty(BeJsValue out, IECSqlValue const& in) const {
+    if (m_customHandler != nullptr) {
+        if (m_customHandler(out, in) == PropertyHandlerResult::Handled)
+            return SUCCESS;
+    }
     return RenderProperty(out, in);
 }
 

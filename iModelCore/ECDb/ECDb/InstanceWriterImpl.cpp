@@ -472,6 +472,13 @@ ECSqlStatus Impl::BindPrimitiveProperty(BindContext& ctx, PrimitiveECPropertyCR 
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 ECSqlStatus Impl::BindRootProperty(BindContext& ctx, PropertyMap const& propMap, IECSqlBinder& binder, BeJsConst val) {
+    if (auto handler = ctx.GetOptions().GetCustomBindHandler()) {
+        ECSqlStatus rc  = ECSqlStatus::Success;
+        if (handler(propMap.GetProperty(), binder, ctx.GetInstance(), val, rc) == PropertyHandlerResult::Handled) {
+            return rc;
+        }
+    }
+
     if (val.isNull()) {
         return binder.BindNull();
     }
@@ -747,11 +754,84 @@ bool Impl::TryGetECInstanceId(BindContext& ctx, BeJsConst inst, ECInstanceId& id
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-void Impl::ToJson(BeJsValue out, ECInstanceId instanceId, ECClassId classId, bool useJsName) const {
+bool Impl::TryGetId(ECInstanceId& instanceId, BeJsConst in, JsFormat jsFmt) const {
+    if (jsFmt == JsFormat::JsName) {
+        auto name = in[ECJsonSystemNames::Id()];
+        if (!name.isString()) {
+            return false;
+        }
+        instanceId = name.GetId64<ECInstanceId>();
+    } else {
+        auto idJs = in[ECDBSYS_PROP_ECInstanceId];
+        if (!idJs.isNumeric() && !idJs.isString()) {
+            return false;
+        }
+        instanceId = idJs.GetId64<ECInstanceId>();
+    }
+    return true;
+
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+bool Impl::TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt) const {
+    ECInstanceId instanceId;
+    ECClassId classId;
+    if (!TryGetId(instanceId, in, jsFmt)) {
+        return false;
+    }
+    if (!TryGetClassId(classId, in, jsFmt)) {
+        return false;
+    }
+    key = ECInstanceKey(classId, instanceId);
+    return true;
+
+}
+
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+bool Impl::TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt) const {
+    if (jsFmt == JsFormat::JsName) {
+        // className has higher priority
+        if (in.isStringMember(ECJsonSystemNames::ClassName())) {
+            auto name = in[ECJsonSystemNames::ClassName()];
+            auto classP = m_cache.GetECDb().Schemas().FindClass(name.asString());
+            if (classP != nullptr) {
+                classId = classP->GetId();
+            }
+            return classId.IsValid();
+        }
+        if (in.isStringMember(ECJsonSystemNames::ClassFullName())) {
+            auto name = in[ECJsonSystemNames::ClassFullName()];
+            auto classP = m_cache.GetECDb().Schemas().FindClass(name.asString());
+            if (classP != nullptr) {
+                classId = classP->GetId();
+            }
+            return classId.IsValid();
+        }
+        return false;
+    }
+
+    auto idJs = in[ECDBSYS_PROP_ECClassId];
+    if (!idJs.isNumeric() && !idJs.isString()) {
+        return false;
+    }
+    classId = in[ECDBSYS_PROP_ECClassId].GetId64<ECClassId>();
+
+    return classId.IsValid();
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+void Impl::ToJson(BeJsValue out, ECInstanceId instanceId, ECClassId classId, JsFormat jsFmt) const {
     if (!out.isObject()) {
         out.SetEmptyObject();
     }
-    if (useJsName) {
+    if (jsFmt == JsFormat::JsName) {
         out[ECJsonSystemNames::Id()] = instanceId.ToHexStr();
         auto classP = m_cache.GetECDb().Schemas().GetClass(classId);
         if (classP != nullptr) {
@@ -766,8 +846,8 @@ void Impl::ToJson(BeJsValue out, ECInstanceId instanceId, ECClassId classId, boo
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-void Impl::ToJson(BeJsValue out, ECInstanceKeyCR key, bool useJsName) const {
-    ToJson(out, key.GetInstanceId(), key.GetClassId(), useJsName);
+void Impl::ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt) const {
+    ToJson(out, key.GetInstanceId(), key.GetClassId(), jsFmt);
 }
 
 //----------------------------------------------------------------------------------
@@ -782,7 +862,7 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& options, ECInstanceKey& out) {
-    BindContext ctx = BindContext(*this, options);
+    BindContext ctx = BindContext(*this, inst, options);
     if (!inst.isObject()) {
         ctx.SetError("Expected instance to be of type object");
         return BE_SQLITE_ERROR;
@@ -861,7 +941,7 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& options) {
-    BindContext ctx = BindContext(*this, options);
+    BindContext ctx = BindContext(*this, inst, options);
     if (!inst.isObject()) {
         ctx.SetError("Expected instance to be of type object");
         return BE_SQLITE_ERROR;
@@ -949,7 +1029,7 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& options) {
-    BindContext ctx = BindContext(*this, options);
+    BindContext ctx = BindContext(*this, inst, options);
     if (!inst.isObject()) {
         ctx.SetError("Expected instance to be of type object");
         return BE_SQLITE_ERROR;
@@ -1113,5 +1193,39 @@ InstanceWriter::InsertOptions&InstanceWriter::InsertOptions:: UseAutoECInstanceI
     return *this;
 }
 
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+bool InstanceWriter::TryGetId(ECInstanceId& instanceId, BeJsConst in, JsFormat jsFmt) const {
+    return m_pImpl->TryGetId(instanceId, in, jsFmt);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+bool InstanceWriter::TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt) const{
+    return m_pImpl->TryGetClassId(classId, in, jsFmt);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+bool InstanceWriter::TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt) const{
+    return m_pImpl->TryGetInstanceKey(key, in, jsFmt);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+void InstanceWriter::ToJson(BeJsValue out, ECInstanceId instanceId, ECClassId classId, JsFormat jsFmt) const {
+    m_pImpl->ToJson(out, instanceId, classId, jsFmt);
+}
+
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+void InstanceWriter::ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt) const {
+    m_pImpl->ToJson(out, key, jsFmt);
+}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
