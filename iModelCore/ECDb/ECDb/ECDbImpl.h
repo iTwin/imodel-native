@@ -154,6 +154,7 @@ private:
     StatementCache m_sqliteStatementCache;
     mutable std::unique_ptr<InstanceReader> m_instanceReader;
     mutable std::unique_ptr<InstanceWriter> m_instanceWriter;
+    mutable std::unique_ptr<InstanceRepository> m_instanceRepo;
     BeBriefcaseBasedIdSequenceManager m_idSequenceManager;
     static const uint32_t s_instanceIdSequenceKey = 0;
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
@@ -249,7 +250,7 @@ public:
         }
         return *m_instanceReader;
     }
-    InstanceWriter& GetInstanceWriter() {
+    InstanceWriter& GetInstanceWriter() const {
         if (m_instanceWriter == nullptr) {
             BeMutexHolder holder(m_mutex);
             if (m_instanceWriter == nullptr) {
@@ -258,7 +259,15 @@ public:
         }
         return *m_instanceWriter;
     }
-
+    InstanceRepository& GetInstanceRepository() const {
+        if (m_instanceRepo == nullptr) {
+            BeMutexHolder holder(m_mutex);
+            if (m_instanceRepo == nullptr) {
+                m_instanceRepo = std::make_unique<InstanceRepository>(m_ecdb);
+            }
+        }
+        return *m_instanceRepo;
+    }
     IssueDataSource const& Issues() const { return m_issueReporter; }
     ProfileVersion const& RefreshProfileVersion() const {
         m_profileManager.RefreshProfileVersion();

@@ -22,27 +22,34 @@ public:
         Continue = false,
         Abort = true,
     };
+
     enum class WriterOp {
         Insert,
         Update,
         Delete,
     };
+
     struct InsertOptions;
     struct UpdateOptions;
     struct DeleteOptions;
 
     struct Options {
         using UnknownJsPropertyHandler = std::function<Abortable(Utf8CP, BeJsConst)>;
-
+        using CustomBindHandler = std::function<PropertyHandlerResult(ECN::ECPropertyCR, IECSqlBinder&, BeJsConst, BeJsConst, ECSqlStatus&)>;
     protected:
         bool m_useJsName;
         UnknownJsPropertyHandler m_unknownJsPropertyHandler;
+        CustomBindHandler m_customBindHandler;
         WriterOp m_op;
+
     public:
         Options(WriterOp op) : m_useJsName(false), m_op(op) {}
         bool GetUseJsNames() const { return m_useJsName; }
         Options& UseJsNames(bool v) { m_useJsName = v; return *this; }
         Options& SetUnknownJsPropertyHandler(UnknownJsPropertyHandler handler);
+        Options& SetCustomBindHandler(CustomBindHandler handler) { m_customBindHandler = handler; return *this; }
+        CustomBindHandler GetCustomBindHandler() const { return m_customBindHandler; }
+
         ECDB_EXPORT UnknownJsPropertyHandler GetUnknownJsPropertyHandler() const;
         ECDB_EXPORT InsertOptions& asInsert();
         ECDB_EXPORT UpdateOptions& asUpdate();
@@ -105,8 +112,14 @@ public:
     ECDB_EXPORT DbResult Insert(BeJsConst inst, InsertOptions const& options, ECInstanceKey& key);
     ECDB_EXPORT DbResult Update(BeJsConst inst, UpdateOptions const& options);
     ECDB_EXPORT DbResult Delete(BeJsConst inst, DeleteOptions const& options);
-    ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceId instanceId, ECN::ECClassId classId, bool useJsName = false) const;
-    ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceKeyCR key, bool useJsName = false) const;
+
+    ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceId instanceId, ECN::ECClassId classId, JsFormat jsFmt = JsFormat::Standard) const;
+    ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt = JsFormat::Standard) const;
+    ECDB_EXPORT bool TryGetId(ECInstanceId& instanceId, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
+    ECDB_EXPORT bool TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
+    ECDB_EXPORT bool TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
+
+
     ECDB_EXPORT void Reset();
 };
 

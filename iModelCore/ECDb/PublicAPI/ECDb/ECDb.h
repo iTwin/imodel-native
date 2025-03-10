@@ -16,7 +16,17 @@ struct InstanceReader;
 struct InstanceWriter;
 struct ECCrudWriteToken;
 struct SchemaImportToken;
+struct InstanceRepository;
 
+enum class JsFormat {
+    Standard,
+    JsName
+};
+
+enum class PropertyHandlerResult {
+    Continue,
+    Handled,
+};
 //=======================================================================================
 //! Enum which mirrors the ECEnumeration OpCode in the ECDbChange ECSchema.
 //! The enum can be used when programmatically binding values to the OpCode in an ECSQL
@@ -513,7 +523,9 @@ public:
     ECDB_EXPORT InstanceReader& GetInstanceReader() const;
 
     //! Allow insert, update & delete a instance in ECDb
-    ECDB_EXPORT InstanceWriter& GetInstanceWriter();
+    ECDB_EXPORT InstanceWriter& GetInstanceWriter() const;
+
+    ECDB_EXPORT InstanceRepository& GetInstanceRepository() const;
 
     //! When ECDb::ClearECDbCache is called, these listeners get notified before the actual caches are cleared.
     //! This gives users of ECDb the opportunity to free anything that relies on its caches, e.g.

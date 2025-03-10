@@ -542,6 +542,9 @@ void ECDb::Impl::ClearECDbCache() const
     if (m_instanceWriter != nullptr)
         m_instanceWriter->Reset();
 
+    if (m_instanceRepo != nullptr)
+        m_instanceRepo->Reset();
+
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache();
 

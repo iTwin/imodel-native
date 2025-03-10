@@ -761,6 +761,7 @@ enum class QueryRowFormat {
 //! @bsiclass
 //=======================================================================================
 struct ECSqlRowAdaptor {
+    using CustomHandler = std::function<PropertyHandlerResult(BeJsValue out, IECSqlValue const& val)>;
     struct Options {
         static constexpr auto JAbbreviateBlobs = "abbreviateBlobs";
         static constexpr auto JClassIdsToClassNames = "classIdsToClassNames";
@@ -784,7 +785,7 @@ struct ECSqlRowAdaptor {
 private:
     ECDbCR m_ecdb;
     ECSqlRowAdaptor::Options m_options;
-
+    CustomHandler m_customHandler;
 private:
     BentleyStatus RenderRootProperty(BeJsValue out, IECSqlValue const& in) const;
     BentleyStatus RenderProperty(BeJsValue out, IECSqlValue const& in) const;
@@ -805,6 +806,7 @@ public:
     ECDB_EXPORT BentleyStatus RenderValue(BeJsValue valJson, IECSqlValue const& val) { return RenderRootProperty(valJson, val); }
     ECDB_EXPORT void GetMetaData(ECSqlRowProperty::List& list, ECSqlStatement const& stmt) const;
     Options& GetOptions() { return m_options; }
+    void SetCustomHandler(CustomHandler handler) { m_customHandler = handler; }
     Options const& GetOptions() const { return m_options; }
     BentleyStatus RenderRowAsArray(BeJsValue rowJson, IECSqlRow const& stmt) const { return RenderRow(rowJson, stmt, true); }
     BentleyStatus RenderRowAsObject(BeJsValue rowJson, IECSqlRow const& stmt) const{ return RenderRow(rowJson, stmt, false); }

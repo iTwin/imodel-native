@@ -13,7 +13,6 @@
 #include <ECDb/InstanceWriter.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
 //---------------------------------------------------------------------------------------
 // @bsistruct
 //---------------------------------------------------------------------------------------
@@ -148,9 +147,10 @@ struct InstanceWriter::Impl final {
         InstanceWriter::Impl& m_writer;
         const Options& m_options;
         Utf8String m_error;
+        BeJsConst m_instance;
 
     public:
-        BindContext(InstanceWriter::Impl& writer, Options const& opt) : m_options(opt), m_writer(writer) {}
+        BindContext(InstanceWriter::Impl& writer, BeJsConst instance, Options const& opt) : m_options(opt), m_writer(writer), m_instance(instance) {}
         ~BindContext() {
             if (HasError()) {
                 m_writer.m_error = m_error;
@@ -167,6 +167,7 @@ struct InstanceWriter::Impl final {
         Abortable NotifyUnknownJsProperty(Utf8CP prop, BeJsConst val) const;
         void SetError(const char* fmt, ...);
         bool HasError() const { return !m_error.empty(); }
+        BeJsConst GetInstance() const { return m_instance; }
     };
 
 private:
@@ -201,8 +202,11 @@ public:
     DbResult Update(BeJsConst inst, UpdateOptions const& options);
     DbResult Delete(BeJsConst inst, DeleteOptions const& options);
 
-    ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceId instanceId, ECClassId classId, bool useJsName = false) const;
-    ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceKeyCR key, bool useJsName = false) const;
+    void ToJson(BeJsValue out, ECInstanceId instanceId, ECClassId classId, JsFormat jsFmt) const;
+    void ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt) const;
+    bool TryGetId(ECInstanceId& instanceId, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
+    bool TryGetClassId(ECClassId& classId, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
+    bool TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
     void Reset();
 };
 
