@@ -14,6 +14,9 @@ __xmlLoaderErr(void *ctx, const char *msg,
 XML_HIDDEN int
 xmlInputFromFd(xmlParserInputBufferPtr buf, int fd, int unzip);
 
+XML_HIDDEN int
+xmlInputFromFd(xmlParserInputBufferPtr buf, int fd, int unzip);
+
 #ifdef LIBXML_OUTPUT_ENABLED
 XML_HIDDEN xmlOutputBufferPtr
 xmlAllocOutputBufferInternal(xmlCharEncodingHandlerPtr encoder);
