@@ -15,6 +15,7 @@ LLVMFuzzerInitialize(int *argc ATTRIBUTE_UNUSED,
     xmlInitParser();
 #ifdef LIBXML_CATALOG_ENABLED
     xmlInitializeCatalog();
+    xmlCatalogSetDefaults(XML_CATA_ALLOW_NONE);
 #endif
     xmlSetGenericErrorFunc(NULL, xmlFuzzErrorFunc);
     xmlSetExternalEntityLoader(xmlFuzzEntityLoader);
@@ -30,7 +31,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
     if (size > 50000)
         return(0);
 
-    maxAlloc = xmlFuzzReadInt(4) % (size + 1);
+    maxAlloc = xmlFuzzReadInt(4) % (size + 100);
 
     xmlFuzzDataInit(data, size);
     xmlFuzzReadEntities();
