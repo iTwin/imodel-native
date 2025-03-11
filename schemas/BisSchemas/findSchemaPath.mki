@@ -71,7 +71,12 @@ BisSchemasDir = $(SrcRoot)BisSchemas/
 
 %endif
 
-releasedDir = $[@dir $[@subst *., ., $(SCHEMA_MATCHER)]]
+checkReleasedDir = $(BBPYTHONCMD) -c "import os; directory = print(1 if os.path.basename(os.path.dirname(r'$(SCHEMA_MATCHER)')).lower() == 'released' else 0)"
+isReleasedDir = $[@readstdout $(checkReleasedDir)]
+%if $(isReleasedDir) == "1"
+  releasedDir = $[@dir $[@subst *., ., $(SCHEMA_MATCHER)]]
+%endif
+
 getLatestReleasedVersion = $(BBPYTHONCMD) -c "import glob; items = glob.glob(r'$(SCHEMA_MATCHER)'); items.sort(reverse=True); print (items[0] if items else 'notFound')"
 
 getWIPVersion = $[@subst Released, \/, $(getLatestReleasedVersion)]
@@ -82,7 +87,7 @@ getWIPVersion = $[@subst Released, \/, $(getLatestReleasedVersion)]
     wipVersion = $[@readstdout "$(getWIPVersion)"]
 %endif
 
-useWIPVersion = 0
+useWIPVersion = "0"
 
 %message "SCHEMA_MATCHER = $(SCHEMA_MATCHER)"
 %message "WIP_SCHEMAS = $(WIP_SCHEMAS)"
@@ -118,6 +123,7 @@ useWIPVersion = 0
     schemaPath = $(wipVersion)
   %endif
 %else
+  %message "Switching to the WIP version, no released schema exist for SCHEMA_MATCHER $(SCHEMA_MATCHER)"
   schemaPath = $(wipVersion)
 %endif
 
