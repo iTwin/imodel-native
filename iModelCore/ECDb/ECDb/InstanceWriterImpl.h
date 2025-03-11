@@ -201,6 +201,7 @@ public:
     DbResult Insert(BeJsConst inst, InsertOptions const& options);
     DbResult Update(BeJsConst inst, UpdateOptions const& options);
     DbResult Delete(BeJsConst inst, DeleteOptions const& options);
+    DbResult Delete(ECInstanceKeyCR key, DeleteOptions const& options);
 
     void ToJson(BeJsValue out, ECInstanceId instanceId, ECClassId classId, JsFormat jsFmt) const;
     void ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt) const;

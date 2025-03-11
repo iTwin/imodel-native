@@ -112,6 +112,7 @@ public:
     ECDB_EXPORT DbResult Insert(BeJsConst inst, InsertOptions const& options, ECInstanceKey& key);
     ECDB_EXPORT DbResult Update(BeJsConst inst, UpdateOptions const& options);
     ECDB_EXPORT DbResult Delete(BeJsConst inst, DeleteOptions const& options);
+    ECDB_EXPORT DbResult Delete(ECInstanceKeyCR key, DeleteOptions const& options);
 
     ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceId instanceId, ECN::ECClassId classId, JsFormat jsFmt = JsFormat::Standard) const;
     ECDB_EXPORT void ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt = JsFormat::Standard) const;
