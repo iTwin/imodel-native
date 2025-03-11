@@ -251,7 +251,7 @@ DLM_NOENTRY = 1
 DLM_NO_BENTLEY_LIB = 1
 
 %if $(TARGET_PLATFORM) == "Windows"
-    LINKER_LIBRARIES = ws2_32.lib
+    LINKER_LIBRARIES = ws2_32.lib bcrypt.lib
 %endif
 
 LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(shlibprefix)$(dllPrefix)Icu4c$(libext)
