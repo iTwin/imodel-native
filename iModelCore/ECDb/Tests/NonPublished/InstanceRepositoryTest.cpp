@@ -11,24 +11,18 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 #define PRINT_JSON(NAME, JSON) printf(##NAME##": %s\n", JSON.Stringify(StringifyFormat::Indented).c_str());
 
 struct InstanceRepositoryFixture : ECDbTestFixture {
-
     static std::unique_ptr<BeJsDocument> PraseJson(const char* json) {
         auto doc = std::make_unique<BeJsDocument>();
         doc->Parse(json);
         return doc;
     }
-
 };
 
 struct FooHandler : InstanceRepository::IClassHandler {
 public:
-    FooHandler(ECN::ECClassId classId) : IClassHandler(classId) {}
-    PropertyHandlerResult OnNextId(ECInstanceId&) override {
-
-        return PropertyHandlerResult::Continue;
-    };
-
-    PropertyHandlerResult OnInsert(InstanceRepository::InsertArgs& args) override {
+    FooHandler(ECDbCR ecdb, ECN::ECClassId classId) : IClassHandler(ecdb, classId) {}
+    ~FooHandler() override = default;
+    PropertyHandlerResult OnBindProperty(InstanceRepository::WriteArgs& args) override {
         if (args.GetProperty().GetName() != "Sum") {
             return PropertyHandlerResult::Continue;
         }
@@ -37,32 +31,14 @@ public:
         auto b = args.GetInstance()["b"].asDouble();
         args.GetBinder().BindDouble(a + b);
         return PropertyHandlerResult::Handled;
-    };
-
-    PropertyHandlerResult OnUpdate(InstanceRepository::UpdateArgs& args) override {
-        if (args.GetProperty().GetName() != "Sum") {
-            return PropertyHandlerResult::Continue;
-        }
-
-        auto a = args.GetInstance()["a"].asDouble();
-        auto b = args.GetInstance()["b"].asDouble();
-        args.GetBinder().BindDouble(a + b);
-        return PropertyHandlerResult::Handled;
-    };
-
-    PropertyHandlerResult OnRead(InstanceRepository::ReadArgs& args) override {
-        return PropertyHandlerResult::Continue;
-    };
+    }
 };
+
 struct GooHandler : InstanceRepository::IClassHandler {
 public:
-    GooHandler(ECN::ECClassId classId) : IClassHandler(classId) {}
-    PropertyHandlerResult OnNextId(ECInstanceId&) override {
-
-        return PropertyHandlerResult::Continue;
-    };
-
-    PropertyHandlerResult OnInsert(InstanceRepository::InsertArgs& args) override {
+    GooHandler(ECDbCR ecdb, ECN::ECClassId classId) : IClassHandler(ecdb, classId) {}
+    ~GooHandler() override = default;
+    PropertyHandlerResult OnBindProperty(InstanceRepository::WriteArgs& args) override {
         if (args.GetProperty().GetName() != "Mul") {
             return PropertyHandlerResult::Continue;
         }
@@ -71,22 +47,7 @@ public:
         auto b = args.GetInstance()["b"].asDouble();
         args.GetBinder().BindDouble(a * b);
         return PropertyHandlerResult::Handled;
-    };
-
-    PropertyHandlerResult OnUpdate(InstanceRepository::UpdateArgs& args) override {
-        if (args.GetProperty().GetName() != "Mul") {
-            return PropertyHandlerResult::Continue;
-        }
-
-        auto a = args.GetInstance()["a"].asDouble();
-        auto b = args.GetInstance()["b"].asDouble();
-        args.GetBinder().BindDouble(a * b);
-        return PropertyHandlerResult::Handled;
-    };
-
-    PropertyHandlerResult OnRead(InstanceRepository::ReadArgs& args) override {
-        return PropertyHandlerResult::Continue;
-    };
+    }
 };
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -113,15 +74,10 @@ TEST_F(InstanceRepositoryFixture, basic) {
     ASSERT_TRUE(instRepo.RegisterClassHandler<FooHandler>("ts:Foo"));
     ASSERT_TRUE(instRepo.RegisterClassHandler<GooHandler>("ts:Goo"));
 
-
-
-
-
     auto options = PraseJson(R"json({
         "computeSum": true
         "computeMul": true
     })json");
-
 
     auto fooInst1 = PraseJson(R"json({
         "className": "TestSchema.Foo",
@@ -137,7 +93,6 @@ TEST_F(InstanceRepositoryFixture, basic) {
         "mul": 0,
         "sum": 0
     })json");
-
 
     ECInstanceKey fooKey, gooKey;
     ASSERT_EQ(BE_SQLITE_DONE, instRepo.Insert(*fooInst1, *options, JsFormat::JsName, fooKey));
@@ -183,7 +138,5 @@ TEST_F(InstanceRepositoryFixture, basic) {
     ASSERT_EQ(4.0, gooInstRead["b"].asDouble());
     ASSERT_EQ(9.0, gooInstRead["sum"].asDouble());
     ASSERT_EQ(20.0, gooInstRead["mul"].asDouble());
-
-
 }
 END_ECDBUNITTESTS_NAMESPACE

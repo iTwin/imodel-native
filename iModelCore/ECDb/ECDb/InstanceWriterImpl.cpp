@@ -19,6 +19,7 @@ using MruStatementCache = Impl::MruStatementCache;
 using CachedWriteStatement = MruStatementCache::CachedWriteStatement;
 using BindContext = Impl::BindContext;
 using CachedBinder = MruStatementCache::CachedBinder;
+
 //******************************BindContext**************************************
 //----------------------------------------------------------------------------------
 // @bsimethod
@@ -473,7 +474,7 @@ ECSqlStatus Impl::BindPrimitiveProperty(BindContext& ctx, PrimitiveECPropertyCR 
 //+---------------+---------------+---------------+---------------+---------------+-
 ECSqlStatus Impl::BindRootProperty(BindContext& ctx, PropertyMap const& propMap, IECSqlBinder& binder, BeJsConst val) {
     if (auto handler = ctx.GetOptions().GetCustomBindHandler()) {
-        ECSqlStatus rc  = ECSqlStatus::Success;
+        ECSqlStatus rc = ECSqlStatus::Success;
         if (handler(propMap.GetProperty(), binder, ctx.GetInstance(), val, rc) == PropertyHandlerResult::Handled) {
             return rc;
         }
@@ -649,6 +650,10 @@ ECSqlStatus Impl::BindNavigationProperty(BindContext& ctx, NavigationECPropertyC
         return binder.BindNull();
     }
 
+    if (val.isString() || val.isNumeric()) {
+        return binder.BindNavigation(val.GetId64<ECInstanceId>());
+    }
+
     if (!val.isObject()) {
         ctx.SetError("Expected instance to be of type object for navigation property, got %s", val.Stringify().c_str());
         return ECSqlStatus(BE_SQLITE_ERROR);
@@ -769,7 +774,6 @@ bool Impl::TryGetId(ECInstanceId& instanceId, BeJsConst in, JsFormat jsFmt) cons
         instanceId = idJs.GetId64<ECInstanceId>();
     }
     return true;
-
 }
 
 //----------------------------------------------------------------------------------
@@ -786,9 +790,7 @@ bool Impl::TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt) c
     }
     key = ECInstanceKey(classId, instanceId);
     return true;
-
 }
-
 
 //----------------------------------------------------------------------------------
 // @bsimethod
@@ -1024,7 +1026,30 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
     });
     return rc;
 }
-
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult Impl::Delete(ECInstanceKeyCR key, InstanceWriter::DeleteOptions const& options) {
+    BindContext ctx = BindContext(*this, BeJsDocument::Null(), options);
+    if (m_cache.GetECDb().IsReadonly()) {
+        ctx.SetError("Connection is readonly");
+        return BE_SQLITE_READONLY;
+    }
+    auto rc = m_cache.WithDelete(key.GetClassId(), [&](CachedWriteStatement& stmt) {
+        auto& binder = stmt.GetStatement().GetBinder(1);
+        binder.BindId(key.GetInstanceId());
+        auto rc = stmt.GetStatement().Step();
+        if (rc != BE_SQLITE_DONE) {
+            ctx.SetError(m_cache.GetECDb().GetLastError().c_str());
+            if (!ctx.HasError()) {
+                ctx.SetError("Failed to delete instance");
+            }
+        }
+        return rc;
+    });
+    m_cache.GetECDb().GetInstanceReader().InvalidateSeekPos(key);
+    return rc;
+}
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
@@ -1040,32 +1065,12 @@ DbResult Impl::Delete(BeJsConst inst, InstanceWriter::DeleteOptions const& optio
         return BE_SQLITE_READONLY;
     }
 
-    ECInstanceId id;
-    ECClassId classId;
-    if (!TryGetECInstanceId(ctx, inst, id)) {
-        ctx.SetError("Failed to get ECInstanceId/id");
+    ECInstanceKey key;
+    if (!TryGetInstanceKey(key, inst, JsFormat::JsName)) {
+        ctx.SetError("Failed to get ECInstanceId/id and ECClassId/className/classFullName");
         return BE_SQLITE_ERROR;
     }
-    if (!TryGetECClassId(ctx, inst, classId)) {
-        ctx.SetError("Failed to get ECClassId/className/classFullName");
-        return BE_SQLITE_ERROR;
-    }
-
-    auto rc = m_cache.WithDelete(classId, [&](CachedWriteStatement& stmt) {
-        auto& binder = stmt.GetStatement().GetBinder(1);
-        binder.BindId(id);
-        auto rc = stmt.GetStatement().Step();
-        if (rc != BE_SQLITE_DONE) {
-            ctx.SetError(m_cache.GetECDb().GetLastError().c_str());
-            if (!ctx.HasError()) {
-                ctx.SetError("Failed to delete instance");
-            }
-        }
-        return rc;
-    });
-
-    m_cache.GetECDb().GetInstanceReader().InvalidateSeekPos(ECInstanceKey(classId, id));
-    return rc;
+    return Delete(key, options);
 }
 
 //----------------------------------------------------------------------------------
@@ -1114,7 +1119,12 @@ DbResult InstanceWriter::Update(BeJsConst inst, UpdateOptions const& options) {
 DbResult InstanceWriter::Delete(BeJsConst inst, DeleteOptions const& options) {
     return m_pImpl->Delete(inst, options);
 }
-
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+DbResult InstanceWriter::Delete(ECInstanceKeyCR key, DeleteOptions const& options) {
+    return m_pImpl->Delete(key, options);
+}
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
@@ -1187,7 +1197,7 @@ InstanceWriter::InsertOptions& InstanceWriter::InsertOptions::UseInstanceIdFromJ
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-InstanceWriter::InsertOptions&InstanceWriter::InsertOptions:: UseAutoECInstanceId() {
+InstanceWriter::InsertOptions& InstanceWriter::InsertOptions::UseAutoECInstanceId() {
     m_instanceIdMode = InstanceIdMode::FromJs;
     m_newInstanceId = ECInstanceId();
     return *this;
@@ -1203,14 +1213,14 @@ bool InstanceWriter::TryGetId(ECInstanceId& instanceId, BeJsConst in, JsFormat j
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-bool InstanceWriter::TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt) const{
+bool InstanceWriter::TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt) const {
     return m_pImpl->TryGetClassId(classId, in, jsFmt);
 }
 
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-bool InstanceWriter::TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt) const{
+bool InstanceWriter::TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt) const {
     return m_pImpl->TryGetInstanceKey(key, in, jsFmt);
 }
 
@@ -1227,5 +1237,38 @@ void InstanceWriter::ToJson(BeJsValue out, ECInstanceId instanceId, ECClassId cl
 void InstanceWriter::ToJson(BeJsValue out, ECInstanceKeyCR key, JsFormat jsFmt) const {
     m_pImpl->ToJson(out, key, jsFmt);
 }
+
+// struct FastPropertyCache {
+
+//     private:
+//         ECDbCR m_ecdb;
+//         std::map<ECPropertyId, ECPropertyId> m_reverseOverridenPropertyMap;
+//         DbResult LoadProperties(ECClassId classId) {
+//             auto sql = R"sql(
+//                 SELECT
+//                     [base_prop].[Id] [base],
+//                     [overridden_prop].[Id] [overridden]
+//                 FROM   [ec_Property] [base_prop]
+//                     JOIN [ec_cache_ClassHierarchy] [ch] ON [ch].[BaseClassId] = [base_prop].[ClassId]
+//                     JOIN [ec_Property] [overridden_prop] ON [overridden_prop].[ClassId] = [ch].[ClassId]
+//                             AND [overridden_prop].[Name] = [base_prop].[Name]
+//                             AND [overridden_prop].[Id] != [base_prop].[Id]
+//                 WHERE  [base_prop].[ClassId] = ?;
+//             )sql";
+//             auto stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(sql);
+//             if (!stmt.IsValid()) {
+//                 return BE_SQLITE_ERROR;
+//             }
+//             stmt->BindId(1, classId);
+//             while (stmt->Step() == BE_SQLITE_ROW) {
+//                 auto base = stmt->GetValueId<ECClassId>(0);
+//                 auto overridden = stmt->GetValueId<ECClassId>(1);
+//                 m_reverseOverridenPropertyMap[overridden] = base;
+//             }
+
+//         }
+//     public:
+
+// }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
