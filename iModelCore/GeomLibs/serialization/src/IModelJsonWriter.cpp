@@ -426,10 +426,10 @@ struct BeCGIModelJsonValueWriter
             value["endRadius"] = radiusB;
             }
 
-        // always specify an orthogonal frame if !identity for backwards compatibility
+        // always specify an orthogonal frame for backwards compatibility
         DVec3d vectorX = detail.m_vector0;
         DVec3d vectorY = detail.m_vector90;
-        if (!vectorX.AlmostEqual(DVec3d::UnitX()) || !vectorY.AlmostEqual(DVec3d::UnitY()))
+        if (true)
             {
             auto xyVectors = value["xyVectors"];
             ToJson(xyVectors.appendValue(), vectorX, m_packIsolatedPoints);
