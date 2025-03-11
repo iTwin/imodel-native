@@ -1769,6 +1769,81 @@ TEST_F(InstanceReaderFixture, dynamic_meta_data) {
     }
 }
 
+TEST_F(InstanceReaderFixture, ResetDynamicMetadata) {
+    ASSERT_EQ(SUCCESS, SetupECDb("ResetDynamicMetadata.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECEntityClass typeName='A'>
+            </ECEntityClass>
+            <ECEntityClass typeName='B'>
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName='prop' typeName='int' />
+            </ECEntityClass>
+            <ECEntityClass typeName='C'>
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName='prop' typeName='double' />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    auto exec = [&](Utf8CP ecsql) {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+        m_ecdb.SaveChanges();
+    };
+
+    auto assertDefault = [](ECSqlStatement& stmt, int cl, Utf8CP displayLabel, Utf8CP propertyName) {
+        ECSqlColumnInfo const* ci;
+        PrimitiveECPropertyCP pr;
+        Utf8CP className = "DynamicECSqlSelectClause";
+        ci = &stmt.GetColumnInfo(cl);
+        EXPECT_TRUE(ci->IsDynamic());
+        EXPECT_TRUE(ci->GetDataType().IsPrimitive());
+        pr = ci->GetProperty()->GetAsPrimitiveProperty();
+        EXPECT_FALSE(pr->HasId());
+        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, pr->GetType());
+        EXPECT_STRCASEEQ(className                   , pr->GetClass().GetName().c_str());
+        EXPECT_STRCASEEQ(propertyName                , pr->GetName().c_str());
+        EXPECT_STRCASEEQ(""                          , pr->GetDescription().c_str());
+        EXPECT_STRCASEEQ(displayLabel                , pr->GetDisplayLabel().c_str());
+        EXPECT_STRCASEEQ("json"                      , pr->GetExtendedTypeName().c_str());
+    };
+
+    auto assertDynamic = [](ECSqlStatement& stmt, int cl, Utf8CP displayLabel, Utf8CP propertyName, Utf8CP description, Utf8CP className, PrimitiveType t) {
+        ECSqlColumnInfo const* ci;
+        PrimitiveECPropertyCP pr;
+        ci = &stmt.GetColumnInfo(cl);
+        EXPECT_TRUE(ci->IsDynamic());
+        EXPECT_TRUE(ci->GetDataType().IsPrimitive());
+        pr = ci->GetProperty()->GetAsPrimitiveProperty();
+        EXPECT_TRUE(pr->HasId());
+        EXPECT_EQ(t                  , pr->GetType());
+        EXPECT_STRCASEEQ(className   , pr->GetClass().GetName().c_str());
+        EXPECT_STRCASEEQ(propertyName, pr->GetName().c_str());
+        EXPECT_STRCASEEQ(description , pr->GetDescription().c_str());
+        EXPECT_STRCASEEQ(displayLabel, pr->GetDisplayLabel().c_str());
+        EXPECT_STRCASEEQ(""          , pr->GetExtendedTypeName().c_str());
+    };
+
+    exec("insert into ts.B ( ecInstanceId, B.prop ) values ( 10, 100 )");
+    exec("insert into ts.C ( ecInstanceId, C.prop ) values ( 11, 101 )");
+
+    const auto sql = R"x(
+        select
+            $->prop
+        from ts.A
+    )x";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    assertDefault(stmt, 0 , "$->prop", "__x0024____x002D____x003E__prop");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    assertDynamic(stmt, 0 , "prop", "prop", "", "B", PrimitiveType::PRIMITIVETYPE_Integer);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    assertDynamic(stmt, 0 , "prop", "prop", "", "C", PrimitiveType::PRIMITIVETYPE_Double);
+    stmt.Reset();
+    assertDefault(stmt, 0 , "$->prop", "__x0024____x002D____x003E__prop");
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
