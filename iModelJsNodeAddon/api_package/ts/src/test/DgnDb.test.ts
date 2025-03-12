@@ -10,7 +10,7 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import { openDgnDb } from ".";
-import { IModelJsNative, InstanceSerializationMethod, SchemaWriteStatus } from "../NativeLibrary";
+import { IModelJsNative, SchemaWriteStatus } from "../NativeLibrary";
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 
 // Crash reporting on linux is gated by the presence of this env variable.
@@ -30,7 +30,7 @@ describe("basic tests", () => {
     dgndb.closeFile();
     done();
   });
-  it.only("instance writer", () => {
+  it("instance writer", () => {
 
     const seedUri = path.join(getAssetsDir(), "test.bim");
     const thisFile = path.join(getOutputDir(), "instance-writer.bim");
@@ -42,26 +42,18 @@ describe("basic tests", () => {
     const iModelDb = new iModelJsNative.DgnDb();
     iModelDb.openIModel(thisFile, OpenMode.ReadWrite);
     // const arg1 = { id: "0x1b", className: "BisCore:Subject" };
-    const arg2 = { id: "0x1b", classId: "0xce" };
-
-    const inst = iModelDb.getInstance({
-      ...arg2,
-      serializationMethod: InstanceSerializationMethod.JsonParse,
-      useJsNames: true,
-    })
+    const key = { id: "0x1b", className: "BisCore.Subject" };
+    const inst = iModelDb.readInstance(key, {useJsNames: true});
     assert.equal(inst.codeValue, "A", "codeValue should be A");
 
     assert.isTrue(iModelDb.updateInstance({
       "id": "0x1b",
       "className": "BisCore.Subject",
       "codeValue" : "A-MODIFIED",
-    }, {useJsNames: true, incrementUpdate: true}));
+    }, { useJsNames: true }));
 
-    const inst2 = iModelDb.getInstance({
-      ...arg2,
-      serializationMethod: InstanceSerializationMethod.JsonParse,
-      useJsNames: true,
-    })
+    const inst2 = iModelDb.readInstance(key, { useJsNames: true });
+
     assert.equal(inst2.codeValue, "A-MODIFIED", "codeValue should be A-MODIFIED");
     iModelDb.saveChanges();
     iModelDb.closeFile();
@@ -70,91 +62,8 @@ describe("basic tests", () => {
   });
 
   describe("getInstance()", () => {
-    const args = { id: "0x38", classId: "0xe7" };
     /* eslint-disable @typescript-eslint/naming-convention */
-    const expected0 = {
-      ECInstanceId: "0x38",
-      ECClassId: "0xe7",
-      Model: {
-        Id: "0x1f",
-        RelECClassId: "0x40",
-      },
-      LastMod: "2017-07-25T20:44:59.926Z",
-      CodeSpec: {
-        Id: "0x1",
-        RelECClassId: "0x47",
-      },
-      CodeScope: {
-        Id: "0x1",
-        RelECClassId: "0x49",
-      },
-      Category: {
-        Id: "0x17",
-        RelECClassId: "0x8c",
-      },
-      InSpatialIndex: true,
-      Origin: {
-        X: 6.494445575423782,
-        Y: 19.89784647571006,
-        Z: 8.020100502512559,
-      },
-      Yaw: 25.949359512071446,
-      Pitch: 4.770832022195274e-15,
-      Roll: 114.7782627769506,
-      BBoxLow: {
-        X: -9.735928156263862,
-        Y: -9.735928156263864,
-        Z: -9.735928156263858,
-      },
-      BBoxHigh: {
-        X: 9.735928156263858,
-        Y: 9.73592815626386,
-        Z: 9.735928156263855,
-      },
-      GeometryStream: "{\"bytes\":203}",
-    };
-    const expected01 = {
-      ECInstanceId: "0x38",
-      ECClassId: "0xe7",
-      Model: {
-        Id: "0x1f",
-        RelECClassId: "0x40",
-      },
-      LastMod: "2017-07-25T20:44:59.926Z",
-      CodeSpec: {
-        Id: "0x1",
-        RelECClassId: "0x47",
-      },
-      CodeScope: {
-        Id: "0x1",
-        RelECClassId: "0x49",
-      },
-      Category: {
-        Id: "0x17",
-        RelECClassId: "0x8c",
-      },
-      InSpatialIndex: true,
-      Origin: {
-        X: 6.494445575423782,
-        Y: 19.89784647571006,
-        Z: 8.020100502512559,
-      },
-      Yaw: 25.949359512071446,
-      Pitch: 4.770832022195274e-15,
-      Roll: 114.7782627769506,
-      BBoxLow: {
-        X: -9.735928156263862,
-        Y: -9.735928156263864,
-        Z: -9.735928156263858,
-      },
-      BBoxHigh: {
-        X: 9.735928156263858,
-        Y: 9.73592815626386,
-        Z: 9.735928156263855,
-      },
-      GeometryStream: "encoding=base64;ywCAAjAABgAA+AAAAAEAAAAIDQgBAUAEAAAAMAAAABwAAAAYABQADAUeEQEIBgAHBRgBAQwBAQDwASQJAUALAAAAqAAAAGJnMDAwMWZiEAUXEAoADgAHBUIACgUQCAAHDAUIyAYAfAAEAAYAAAC8t0aTy3gjQNTy0dk2l6Q8BOGMD2d0zbxZPdLR+8bSvLS6W8O77KW8vQ0oBT8IANg8CQgg0LyQPKeSAhKeERAEPLoyKAAk4LwYLURU+yH5vwkIJAlAAQAAAAAAAAA=",
-    };
-    const expected02 = {
+    const standardFmt = {
       ECInstanceId: "0x38",
       ECClassId: "0xe7",
       Model: {
@@ -195,53 +104,11 @@ describe("basic tests", () => {
       },
       GeometryStream: new Uint8Array([203, 0, 128, 2, 48, 0, 6, 0, 0, 248, 0, 0, 0, 1, 0, 0, 0, 8, 13, 8, 1, 1, 64, 4, 0, 0, 0, 48, 0, 0, 0, 28, 0, 0, 0, 24, 0, 20, 0, 12, 5, 30, 17, 1, 8, 6, 0, 7, 5, 24, 1, 1, 12, 1, 1, 0, 240, 1, 36, 9, 1, 64, 11, 0, 0, 0, 168, 0, 0, 0, 98, 103, 48, 48, 48, 49, 102, 98, 16, 5, 23, 16, 10, 0, 14, 0, 7, 5, 66, 0, 10, 5, 16, 8, 0, 7, 12, 5, 8, 200, 6, 0, 124, 0, 4, 0, 6, 0, 0, 0, 188, 183, 70, 147, 203, 120, 35, 64, 212, 242, 209, 217, 54, 151, 164, 60, 4, 225, 140, 15, 103, 116, 205, 188, 89, 61, 210, 209, 251, 198, 210, 188, 180, 186, 91, 195, 187, 236, 165, 188, 189, 13, 40, 5, 63, 8, 0, 216, 60, 9, 8, 32, 208, 188, 144, 60, 167, 146, 2, 18, 158, 17, 16, 4, 60, 186, 50, 40, 0, 36, 224, 188, 24, 45, 68, 84, 251, 33, 249, 191, 9, 8, 36, 9, 64, 1, 0, 0, 0, 0, 0, 0, 0]),
     };
+
     /* eslint-enable @typescript-eslint/naming-convention */
-
-    const expected1 = {
+    const jsFormat = {
       id: "0x38",
-      className: "Generic.PhysicalObject",
-      model: {
-        id: "0x1f",
-        relClassName: "BisCore.ModelContainsElements",
-      },
-      lastMod: "2017-07-25T20:44:59.926Z",
-      codeSpec: {
-        id: "0x1",
-        relClassName: "BisCore.CodeSpecSpecifiesCode",
-      },
-      codeScope: {
-        id: "0x1",
-        relClassName: "BisCore.ElementScopesCode",
-      },
-      category: {
-        id: "0x17",
-        relClassName: "BisCore.GeometricElement3dIsInCategory",
-      },
-      inSpatialIndex: true,
-      origin: {
-        x: 6.494445575423782,
-        y: 19.89784647571006,
-        z: 8.020100502512559,
-      },
-      yaw: 25.949359512071446,
-      pitch: 4.770832022195274e-15,
-      roll: 114.7782627769506,
-      bBoxLow: {
-        x: -9.735928156263862,
-        y: -9.735928156263864,
-        z: -9.735928156263858,
-      },
-      bBoxHigh: {
-        x: 9.735928156263858,
-        y: 9.73592815626386,
-        z: 9.735928156263855,
-      },
-      geometryStream: "{\"bytes\":203}",
-    };
-
-    const expected11 = {
-      id: "0x38",
-      className: "Generic.PhysicalObject",
+      classFullName: "Generic.PhysicalObject",
       model: {
         id: "0x1f",
         relClassName: "BisCore.ModelContainsElements",
@@ -280,114 +147,16 @@ describe("basic tests", () => {
       },
       geometryStream: new Uint8Array([203, 0, 128, 2, 48, 0, 6, 0, 0, 248, 0, 0, 0, 1, 0, 0, 0, 8, 13, 8, 1, 1, 64, 4, 0, 0, 0, 48, 0, 0, 0, 28, 0, 0, 0, 24, 0, 20, 0, 12, 5, 30, 17, 1, 8, 6, 0, 7, 5, 24, 1, 1, 12, 1, 1, 0, 240, 1, 36, 9, 1, 64, 11, 0, 0, 0, 168, 0, 0, 0, 98, 103, 48, 48, 48, 49, 102, 98, 16, 5, 23, 16, 10, 0, 14, 0, 7, 5, 66, 0, 10, 5, 16, 8, 0, 7, 12, 5, 8, 200, 6, 0, 124, 0, 4, 0, 6, 0, 0, 0, 188, 183, 70, 147, 203, 120, 35, 64, 212, 242, 209, 217, 54, 151, 164, 60, 4, 225, 140, 15, 103, 116, 205, 188, 89, 61, 210, 209, 251, 198, 210, 188, 180, 186, 91, 195, 187, 236, 165, 188, 189, 13, 40, 5, 63, 8, 0, 216, 60, 9, 8, 32, 208, 188, 144, 60, 167, 146, 2, 18, 158, 17, 16, 4, 60, 186, 50, 40, 0, 36, 224, 188, 24, 45, 68, 84, 251, 33, 249, 191, 9, 8, 36, 9, 64, 1, 0, 0, 0, 0, 0, 0, 0]),
     };
-    const expected12 = {
-      id: "0x38",
-      className: "Generic.PhysicalObject",
-      model: {
-        id: "0x1f",
-        relClassName: "BisCore.ModelContainsElements",
-      },
-      lastMod: "2017-07-25T20:44:59.926Z",
-      codeSpec: {
-        id: "0x1",
-        relClassName: "BisCore.CodeSpecSpecifiesCode",
-      },
-      codeScope: {
-        id: "0x1",
-        relClassName: "BisCore.ElementScopesCode",
-      },
-      category: {
-        id: "0x17",
-        relClassName: "BisCore.GeometricElement3dIsInCategory",
-      },
-      inSpatialIndex: true,
-      origin: {
-        x: 6.494445575423782,
-        y: 19.89784647571006,
-        z: 8.020100502512559,
-      },
-      yaw: 25.949359512071446,
-      pitch: 4.770832022195274e-15,
-      roll: 114.7782627769506,
-      bBoxLow: {
-        x: -9.735928156263862,
-        y: -9.735928156263864,
-        z: -9.735928156263858,
-      },
-      bBoxHigh: {
-        x: 9.735928156263858,
-        y: 9.73592815626386,
-        z: 9.735928156263855,
-      },
-      geometryStream: "encoding=base64;ywCAAjAABgAA+AAAAAEAAAAIDQgBAUAEAAAAMAAAABwAAAAYABQADAUeEQEIBgAHBRgBAQwBAQDwASQJAUALAAAAqAAAAGJnMDAwMWZiEAUXEAoADgAHBUIACgUQCAAHDAUIyAYAfAAEAAYAAAC8t0aTy3gjQNTy0dk2l6Q8BOGMD2d0zbxZPdLR+8bSvLS6W8O77KW8vQ0oBT8IANg8CQgg0LyQPKeSAhKeERAEPLoyKAAk4LwYLURU+yH5vwkIJAlAAQAAAAAAAAA=",
-    };
-    it("default format with JsonParse", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.JsonParse,
-      });
-      assert.deepEqual(actual, expected0);
+
+    it("read instance as standard format", () => {
+      /* eslint-disable @typescript-eslint/naming-convention */
+      const actual = dgndb.readInstance({ ECInstanceId: "0x38", ECClassId: "0xe7" }, {});
+      assert.deepEqual(actual, standardFmt);
     });
-    it("default format with BeJsNapi", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.BeJsNapi,
-      });
-      assert.deepEqual(actual, expected0);
-    });
-    it("return blob with JsonParse", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.JsonParse,
-        abbreviateBlobs: false,
-      });
-      assert.deepEqual(actual, expected01);
-    });
-    it("return blob with BeJsNapi", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.BeJsNapi,
-        abbreviateBlobs: false,
-      });
-      assert.deepEqual(actual, expected02);
-    });
-    it("with useJsName using JsonParse ", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.JsonParse,
-        useJsNames: true,
-        classIdsToClassNames: true,
-      });
-      assert.deepEqual(actual, expected1);
-    });
-    it("with useJsName using BeJsNapi ", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.BeJsNapi,
-        useJsNames: true,
-        classIdsToClassNames: true,
-      });
-      assert.deepEqual(actual, expected1);
-    });
-    it("with useJsName & blob using JsonParse ", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.JsonParse,
-        useJsNames: true,
-        classIdsToClassNames: true,
-        abbreviateBlobs: false,
-      });
-      assert.deepEqual(actual, expected12);
-    });
-    it("with useJsName & blob using BeJsNapi ", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.BeJsNapi,
-        useJsNames: true,
-        classIdsToClassNames: true,
-        abbreviateBlobs: false,
-      });
-      assert.deepEqual(actual, expected11);
+
+    it("read instance as js format", () => {
+      const actual = dgndb.readInstance({ id: "0x38", classFullName: "Generic.PhysicalObject" }, {useJsNames: true});
+      assert.deepEqual(actual, jsFormat);
     });
   });
   it("compress/decompress", () => {

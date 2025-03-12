@@ -110,7 +110,7 @@ public:
     ECDB_EXPORT DbResult Delete(ECInstanceKeyCR key, BeJsConst userOptions, JsFormat inFmt) const;
     ECDB_EXPORT DbResult Read(BeJsConst key, BeJsValue out, BeJsConst userOptions, JsFormat fmt) const;
     ECDB_EXPORT DbResult Read(ECInstanceKeyCR key, BeJsValue out, BeJsConst userOptions, JsFormat fmt) const;
-
+    Utf8StringCR GetLastError() const { return m_lastError; }
     ECDB_EXPORT void Reset();
     template <typename T>
     bool RegisterClassHandler(ECN::ECClassId classId) {

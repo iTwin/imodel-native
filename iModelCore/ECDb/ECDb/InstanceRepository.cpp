@@ -185,7 +185,8 @@ DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance
             ECSqlRowAdaptor adaptor(m_ecdb);
             adaptor.GetOptions().SetAbbreviateBlobs(false);
             adaptor.GetOptions().SetConvertClassIdsToClassNames(fmt == JsFormat::JsName);
-            adaptor.GetOptions().UseJsNames(fmt == JsFormat::JsName);
+            adaptor.GetOptions().SetUseJsNames(fmt == JsFormat::JsName);
+            adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(fmt == JsFormat::JsName);
             if (!handlers.empty()) {
                 adaptor.SetCustomHandler([&](BeJsValue out, IECSqlValue const& val) {
                     auto args = ReadArgs(instKey, fmt, userOptions, val, out, outInstance);

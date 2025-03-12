@@ -448,9 +448,21 @@ public:
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
         JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
     }
-    Napi::Value GetInstance(NapiInfoCR info) {
+    Napi::Value ReadInstance(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         return JsInterop::ReadInstance(db, info);
+    }
+    Napi::Value InsertInstance(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::InsertInstance(db, info);
+    }
+    Napi::Value UpdateInstance(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::UpdateInstance(db, info);
+    }
+    Napi::Value DeleteInstance(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::DeleteInstance(db, info);
     }
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
         if (info.Length() > 0 && info[0].IsObject()) {
@@ -638,7 +650,10 @@ public:
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeECDb::SchemaSyncGetLocalDbInfo),
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeECDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("openDb", &NativeECDb::OpenDb),
-            InstanceMethod("getInstance", &NativeECDb::GetInstance),
+            InstanceMethod("readInstance", &NativeECDb::ReadInstance),
+            InstanceMethod("insertInstance", &NativeECDb::InsertInstance),
+            InstanceMethod("updateInstance", &NativeECDb::UpdateInstance),
+            InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
         });
@@ -2320,7 +2335,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         return Napi::Number::New(Env(), (int)db.ExecuteSql(sql.c_str()));
     }
-    Napi::Value GetInstance(NapiInfoCR info) {
+    Napi::Value ReadInstance(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         return JsInterop::ReadInstance(db, info);
     }
@@ -2792,7 +2807,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getCurrentTxnId", &NativeDgnDb::GetCurrentTxnId),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
-            InstanceMethod("getInstance", &NativeDgnDb::GetInstance),
+            InstanceMethod("readInstance", &NativeDgnDb::ReadInstance),
             InstanceMethod("insertInstance", &NativeDgnDb::InsertInstance),
             InstanceMethod("updateInstance", &NativeDgnDb::UpdateInstance),
             InstanceMethod("deleteInstance", &NativeDgnDb::DeleteInstance),

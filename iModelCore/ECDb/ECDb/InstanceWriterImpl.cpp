@@ -131,9 +131,11 @@ ECSqlStatus MruStatementCache::PrepareInsert(CachedWriteStatement& cachedStmt) {
         if (prop->GetType() == PropertyMap::Type::ECClassId) {
             continue;
         }
+        
         if (timestampPropName.EqualsIAscii(prop->GetName())) {
             continue;
         }
+
         if (!isFirst) {
             ecsql.append(", ");
         } else {
@@ -987,11 +989,12 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
             doc.From(inst);
             InstanceReader::Position pos(id, classId);
             m_cache.GetECDb().GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row) {
-                InstanceReader::JsonParams param;
-                param.SetUseJsName(options.GetUseJsNames());
+                JsReadOptions param;
+                param.SetUseJsNames(options.GetUseJsNames());
                 param.SetAbbreviateBlobs(false);
-                param.SetClassIdToClassNames(options.GetUseJsNames());
+                param.SetConvertClassIdsToClassNames(options.GetUseJsNames());
                 param.SetSkipReadOnlyProperties(true);
+                param.SetUseClassFullNameInsteadofClassName(options.GetUseJsNames());
                 row.GetJson(param).ForEachProperty([&](auto prop, auto val) {
                     if (!doc.hasMember(prop)) {
                         doc[prop].From(val);
