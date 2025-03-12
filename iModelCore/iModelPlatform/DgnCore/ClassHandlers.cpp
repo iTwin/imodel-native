@@ -23,15 +23,23 @@ namespace Handlers {
         constexpr static auto ClassName = "BisCore:RenderMaterial";
         RenderMaterial(ECDbCR db, ECN::ECClassId classId) : IClassHandler(db, classId) {}
         void OnAfterReadInstance(BeJsValue& instance, const BeJsConst&, JsFormat fmt) {
-            if (instance.isObjectMember("materialAssets")) {
+            BeAssert(fmt == JsFormat::JsName);
+            if (!instance.isObjectMember("jsonProperties")) {
                 return;
             }
-            BeJsValue materialAssets = instance["materialAssets"];
+
+            auto jsonProps = instance["jsonProperties"];
+            if (!jsonProps.isObjectMember("materialAssets")) {
+                return;
+            }
+
+            auto materialAssets = jsonProps["materialAssets"];
             if (!(materialAssets.hasMember("renderMaterial") && materialAssets["renderMaterial"].hasMember("Map"))) {
                 return;
             }
-            BeJsValue map = materialAssets["renderMaterial"]["Map"];
-            map.ForEachProperty([&](Utf8CP memberName, BeJsConst memberJson) {
+
+            auto map = materialAssets["renderMaterial"]["Map"];
+            map.ForEachProperty([&](auto memberName, auto memberJson) {
                 if (memberJson.isNumericMember("TextureId")) {
                     // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
                     auto textureIdAsStringForLogging = memberJson["TextureId"].Stringify();
