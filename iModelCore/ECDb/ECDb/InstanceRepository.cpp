@@ -68,10 +68,6 @@ DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsForma
     if (!handlers.empty()) {
         ECInstanceId instanceId;
         for (auto handler : handlers) {
-            handler->OnBeforeInsertInstance(in, userOptions);
-        }
-
-        for (auto handler : handlers) {
             if (handler->OnNextId(instanceId) == PropertyHandlerResult::Handled) {
                 break;
             }
@@ -79,6 +75,10 @@ DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsForma
 
         if (instanceId.IsValid()) {
             options.UseInstanceId(instanceId);
+        }
+
+        for (auto handler : handlers) {
+            handler->OnBeforeInsertInstance(in, userOptions, inFmt);
         }
 
         const auto instKey = ECInstanceKey(classId, instanceId);
@@ -119,7 +119,7 @@ DbResult InstanceRepository::Update(BeJsValue in, BeJsConst userOptions, JsForma
     auto handlers = TryGetHandlers(instKey.GetClassId());
     if (!handlers.empty()) {
         for (auto handler : handlers) {
-            handler->OnBeforeUpdateInstance(in, userOptions);
+            handler->OnBeforeUpdateInstance(in, userOptions, inFmt);
         }
 
         options.SetCustomBindHandler([&](ECN::ECPropertyCR prop, IECSqlBinder& binder, BeJsConst instance, BeJsConst val, ECSqlStatus& rc) {
@@ -204,7 +204,7 @@ DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance
                 rc = BE_SQLITE_ERROR;
             }
             for (auto handler : handlers) {
-                handler->OnAfterReadInstance(outInstance, userOptions);
+                handler->OnAfterReadInstance(outInstance, userOptions, fmt);
             }
         })) {
         rc = BE_SQLITE_DONE;

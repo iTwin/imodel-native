@@ -527,7 +527,7 @@ public:
 
     //! Utility method to get the next id in a sequence
     //! @private internal use only
-    DGNPLATFORM_EXPORT BeSQLite::BeBriefcaseBasedIdSequence const& GetElementIdSequence() const { return m_elementIdSequence; }
+    BeSQLite::BeBriefcaseBasedIdSequence const& GetElementIdSequence() const { return m_elementIdSequence; }
 
     //! Utility method to get the reset the element id sequence
     //! @private internal use only

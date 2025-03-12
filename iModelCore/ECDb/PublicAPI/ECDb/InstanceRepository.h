@@ -10,8 +10,14 @@
 #include <ECDb/IECSqlValue.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 struct InstanceRepository final {
 
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
     struct Args {
     private:
         const BeJsConst& m_userOptions;
@@ -28,6 +34,9 @@ struct InstanceRepository final {
         BeJsConst GetInstance() const { return m_instance; }
     };
 
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
     struct ReadArgs : Args {
     private:
         IECSqlValue const& m_value;
@@ -44,6 +53,9 @@ struct InstanceRepository final {
         }
     };
 
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
     struct WriteArgs : Args {
     private:
         IECSqlBinder& m_binder;
@@ -61,12 +73,18 @@ struct InstanceRepository final {
         bool IsUpdate() const { return !m_isInsert; }
     };
 
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
     struct DeleteArgs : Args {
     public:
         DeleteArgs(ECInstanceKeyCR key, JsFormat format, BeJsConst userOptions)
             : Args(key, format, userOptions, BeJsDocument::Null()) {}
     };
 
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
     struct IClassHandler {
     private:
         ECN::ECClassId m_classId;
@@ -80,16 +98,25 @@ struct InstanceRepository final {
             static_assert(std::is_base_of<ECDb, T>::value, "T must be derived from ECDb");
             return static_cast<const T&>(m_db);
         }
-
+        bool TryGetInstanceKey(ECInstanceKeyR key, BeJsConst jsKey, JsFormat fmt) const {
+            return m_db.GetInstanceWriter().TryGetInstanceKey(key, jsKey, fmt);
+        }
+        bool TryGetId(ECInstanceId& id, BeJsConst jsId, JsFormat fmt) const {
+            return m_db.GetInstanceWriter().TryGetId(id, jsId, fmt);
+        }
+        bool TryGetClassId(ECN::ECClassId& classId, BeJsConst jsClassId, JsFormat fmt) const {
+            return m_db.GetInstanceWriter().TryGetClassId(classId, jsClassId, fmt);
+        }
         virtual ~IClassHandler() = default;
         virtual PropertyHandlerResult OnNextId(ECInstanceId&) { return PropertyHandlerResult::Continue; };
         virtual PropertyHandlerResult OnBindProperty(WriteArgs&) { return PropertyHandlerResult::Continue; };
         virtual PropertyHandlerResult OnReadProperty(ReadArgs&) { return PropertyHandlerResult::Continue; };
-        virtual void OnBeforeInsertInstance(BeJsValue&, const BeJsConst&) {};
-        virtual void OnBeforeUpdateInstance(BeJsValue&, const BeJsConst&) {};
-        virtual void OnAfterReadInstance(BeJsValue&, const BeJsConst&) {};
+        virtual void OnBeforeInsertInstance(BeJsValue&, const BeJsConst&, JsFormat fmt) {};
+        virtual void OnBeforeUpdateInstance(BeJsValue&, const BeJsConst&, JsFormat fmt) {};
+        virtual void OnAfterReadInstance(BeJsValue&, const BeJsConst&, JsFormat fmt) {};
     };
 
+private:
     ECDbCR m_ecdb;
     mutable BeMutex m_mutex;
     mutable std::map<ECN::ECClassId, std::vector<IClassHandler*>> m_handlerMap;
