@@ -340,7 +340,7 @@ static bool Near (DEllipse3dCR a, DEllipse3dCR b, char const*pString = NULL, dou
 //! Check all components of a two DConic4d.
 static void Near (DConic4dCR a, DConic4dCR b, char const*pName = NULL, double refValue = 0.0);
 //! compare angles, allow shift by multiple of 2pi
-static bool NearPeriodic (double thetaA, double thetaB, char const*pString);
+static bool NearPeriodic (double thetaA, double thetaB, char const*pString = NULL);
 
 //! compare strongly typed angles, allow shift by multiple of 2pi
 static bool NearPeriodic (Angle thetaA, Angle thetaB, char const*pString = NULL);
