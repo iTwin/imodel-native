@@ -279,6 +279,7 @@ $(CoreObjs)ModelSpatialClassifier$(oext) :          $(DgnCoreDir)ModelSpatialCla
 
 $(CoreObjs)EntityIdsChangeGroup$(oext) :            $(DgnCoreDir)EntityIdsChangeGroup.cpp $(iModelPlatformAPISrc)EntityIdsChangeGroup.h ${MultiCompileDepends}
 
+$(CoreObjs)ClassHandlers$(oext) :                   $(DgnCoreDir)ClassHandlers.cpp ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
 #   DgnGeoCoord

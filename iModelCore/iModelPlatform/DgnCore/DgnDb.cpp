@@ -5,6 +5,7 @@
 #include "DgnPlatformInternal.h"
 #include <Bentley/BeTest.h> // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 #include <DgnPlatform/DgnGeoCoord.h>
+#include "ClassHandlers.h"
 
 #ifndef NDEBUG
 #define CHECK_NON_NAVIGATION_PROPERTY_API
@@ -188,6 +189,8 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
     if (DisqualifyTypeIndexForBisCoreExternalSourceAspect() != BE_SQLITE_OK)
         return BE_SQLITE_ERROR;
 
+    
+    RegisterBisCoreHandlers(*this);
     return BE_SQLITE_OK;
     }
 

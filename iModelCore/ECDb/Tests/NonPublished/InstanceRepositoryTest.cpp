@@ -56,7 +56,7 @@ TEST_F(InstanceRepositoryFixture, basic) {
             args.GetBinder().BindDouble(a + b);
             return PropertyHandlerResult::Handled;
         }
-        void OnBeforeInsertInstance(BeJsValue& inst, const BeJsConst&) override {
+        void OnBeforeInsertInstance(BeJsValue& inst, const BeJsConst&, JsFormat) override {
             inst["sum"] = 0;
         }
     };
@@ -75,11 +75,11 @@ TEST_F(InstanceRepositoryFixture, basic) {
             args.GetBinder().BindDouble(a * b);
             return PropertyHandlerResult::Handled;
         }
-        void OnBeforeInsertInstance(BeJsValue& inst, const BeJsConst&) override {
+        void OnBeforeInsertInstance(BeJsValue& inst, const BeJsConst&, JsFormat) override {
             inst["mul"] = 0;
         }
     };
-    
+
     ASSERT_TRUE(instRepo.RegisterClassHandler<FooHandler>("ts:Foo"));
     ASSERT_TRUE(instRepo.RegisterClassHandler<GooHandler>("ts:Goo"));
 
