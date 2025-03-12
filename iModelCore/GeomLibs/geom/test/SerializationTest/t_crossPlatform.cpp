@@ -137,6 +137,7 @@ TEST(CrossPlatform, IndexedMeshAuxData)
 
 TEST(CrossPlatform, SkewSolidPrimitives)
     {
+    // NOTE: some old native JSON files are empty or trivial because old serialization code returned error.
     bvector<TestCase> testCases;
 
     TestCase sphere0;

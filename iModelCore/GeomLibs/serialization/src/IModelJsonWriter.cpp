@@ -345,7 +345,7 @@ struct BeCGIModelJsonValueWriter
             ToJson(xyzVectors.appendValue(), unitZ, m_packIsolatedPoints);
             }
 
-        bool fullSweep = Angle::NearlyEqual(detail.m_startLatitude, -Angle::PiOver2()) && Angle::NearlyEqual(detail.m_latitudeSweep, Angle::TwoPi());
+        bool fullSweep = Angle::NearlyEqual(detail.m_startLatitude, -Angle::PiOver2()) && Angle::NearlyEqual(detail.m_latitudeSweep, Angle::Pi());
         if (detail.m_capped && !fullSweep)
             value["capped"] = detail.m_capped;
         if (!fullSweep)
