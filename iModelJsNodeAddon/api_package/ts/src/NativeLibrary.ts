@@ -119,13 +119,6 @@ export class NativeLibrary {
     return this._nativeLib;
   }
 }
-/** Use GetInstance() method
- * @internal
- */
-export const enum InstanceSerializationMethod {
-  JsonParse = 0,
-  BeJsNapi = 1
-}
 
 /** WAL checkpoint mode
  * @internal
@@ -410,40 +403,6 @@ export declare namespace IModelJsNative {
     diameter?: number;
   }
 
-  /**
-   * Represents the arguments for reading an instance.
-   */
-  interface InstanceArgs {
-    id: Id64String;
-    classId: Id64String;
-    serializationMethod: InstanceSerializationMethod;
-    abbreviateBlobs?: boolean;
-    classIdsToClassNames?: boolean;
-    useJsNames?: boolean;
-  }
-
-  /**
- * Represents the arguments for insert an instance.
- */
-  interface InsertInstanceArgs {
-    useJsNames?: true;
-  }
-
-  /**
- * Represents the arguments for update an instance.
- */
-  interface UpdateInstanceArgs {
-    useJsNames?: true;
-    incrementUpdate?: true
-  }
-
-  /**
- * Represents the arguments for delete an instance.
- */
-  interface DeleteInstanceArgs {
-    useJsNames?: true;
-  }
-
   enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }
 
   interface FontFaceProps {
@@ -639,11 +598,10 @@ export declare namespace IModelJsNative {
     public getIModelCoordinatesFromGeoCoordinates(points: IModelCoordinatesRequestProps): IModelCoordinatesResponseProps;
     public getIModelId(): GuidString;
     public getIModelProps(): IModelProps;
-    public getInstance(args: InstanceArgs): { [key: string]: any };
-    public insertInstance(inst: any, args: InsertInstanceArgs): Id64String;
-    public updateInstance(inst: any, args: UpdateInstanceArgs): boolean;
-    public deleteInstance(inst: any, args: DeleteInstanceArgs): boolean;
-
+    public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
+    public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
+    public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
@@ -801,7 +759,10 @@ export declare namespace IModelJsNative {
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
-    public getInstance(args: InstanceArgs): { [key: string]: any };
+    public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
+    public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
+    public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
     public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;

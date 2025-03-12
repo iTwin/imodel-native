@@ -18,11 +18,6 @@ struct ECCrudWriteToken;
 struct SchemaImportToken;
 struct InstanceRepository;
 
-enum class JsFormat {
-    Standard,
-    JsName
-};
-
 enum class PropertyHandlerResult {
     Continue,
     Handled,

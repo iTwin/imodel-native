@@ -537,7 +537,7 @@ public:
     static void UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents);
     static void UpdateIModelProps(DgnDbR dgndb, BeJsConst);
     static Napi::Value ReadInstance(ECDbR db, NapiInfoCR info);
-    static Napi::Value InsertInstance(DgnDbR db, NapiInfoCR info);
+    static Napi::Value InsertInstance(ECDbR db, NapiInfoCR info);
     static Napi::Value UpdateInstance(ECDbR db, NapiInfoCR info);
     static Napi::Value DeleteInstance(ECDbR db, NapiInfoCR info);
 

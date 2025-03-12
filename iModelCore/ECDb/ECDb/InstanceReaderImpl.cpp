@@ -117,7 +117,7 @@ bool PropertyExists::Exists(ECN::ECClassId classId, Utf8CP accessString) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BeJsValue SeekPos::GetJson(InstanceReader::JsonParams const& param) const {
+BeJsValue SeekPos::GetJson(JsReadOptions const& param) const {
     if (m_prop == nullptr) {
         return m_rowRender.GetInstanceJsonObject(ECInstanceKey(m_class->GetClassId(), m_rowId),*this, param);
     }
@@ -183,17 +183,13 @@ void RowRender::Reset() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, InstanceReader::JsonParams const& param ) const  {
+BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, JsReadOptions const& param ) const  {
     if (instanceKey == m_instanceKey && param == m_jsonParam && m_accessString.empty() && !(m_conn.IsDbOpen() && m_conn.IsWriteable())) {
         return BeJsValue(m_cachedJsonDoc);
     }
     auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
-    ECSqlRowAdaptor adaptor(m_conn);
-    adaptor.GetOptions().UseJsNames(param.GetUseJsName());
-    adaptor.GetOptions().SetAbbreviateBlobs(param.GetAbbreviateBlobs());
-    adaptor.GetOptions().SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
-    adaptor.GetOptions().SkipReadOnlyProperties(param.GetSkipReadOnlyProperties());
+    ECSqlRowAdaptor adaptor(m_conn, param);
     adaptor.RenderRowAsObject(row, ecsqlRow);
     m_instanceKey = instanceKey;
     m_jsonParam = param;
@@ -204,17 +200,14 @@ BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRo
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BeJsValue RowRender::GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8StringCR  accessString, IECSqlValue const& ecsqlValue, InstanceReader::JsonParams const& param) const  {
+BeJsValue RowRender::GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8StringCR  accessString, IECSqlValue const& ecsqlValue, JsReadOptions const& param) const  {
     if (instanceKey == m_instanceKey && param == m_jsonParam && m_accessString.Equals(accessString)) {
         return BeJsValue(m_cachedJsonDoc)["$"];
     }
     auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
     auto out = row["$"];
-    ECSqlRowAdaptor adaptor(m_conn);
-    adaptor.GetOptions().UseJsNames(param.GetUseJsName());
-    adaptor.GetOptions().SetAbbreviateBlobs(param.GetAbbreviateBlobs());
-    adaptor.GetOptions().SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
+    ECSqlRowAdaptor adaptor(m_conn, param);
     adaptor.RenderValue(out, ecsqlValue);
     m_instanceKey = instanceKey;
     m_jsonParam = param;
