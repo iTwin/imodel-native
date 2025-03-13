@@ -191,6 +191,19 @@ StatusInt LsSymbolReference::Output(LineStyleContextR lineStyleContext, LineStyl
 void LsSymbolComponent::Draw(LineStyleContextR context, TransformCR transform, ClipVectorCP clip, bool ignoreColor, bool ignoreWeight)
     {
     // NOTE: Unfortunately we can't just call ViewContext::AddSubGraphic for symbols since it won't support things like ignoreColor, ignoreWeight...
+    bool outputSubGraphic = context.GetGraphicR().WantSymbolsAsSubGraphics();
+    bool creatingTexture = context.GetCreatingTexture();
+
+    if (outputSubGraphic && !(creatingTexture || ignoreColor || ignoreWeight || clip))
+        {
+        Render::GraphicBuilderR mainGraphic = context.GetGraphicR();
+        ViewContextR viewContext = context.GetViewContext();
+        Render::GeometryParams tmpGeomParams(context.GetGeometryParams());
+
+        viewContext.AddSubGraphic(mainGraphic, m_geomPartId, transform, tmpGeomParams);
+        return;
+        }
+
     DgnGeometryPartCPtr geomPart = GetGeometryPart();
 
     if (!geomPart.IsValid())
@@ -208,7 +221,6 @@ void LsSymbolComponent::Draw(LineStyleContextR context, TransformCR transform, C
 
     Render::GeometryParamsCR baseParams = context.GetGeometryParams();
     bool cookParams = baseParams.GetCategoryId().IsValid(); // NOTE: LineStyleRangeCollector doesn't care about base symbology...
-    bool creatingTexture = context.GetCreatingTexture();
     Render::GraphicBuilderPtr symbolGraphic = mainGraphic.CreateSubGraphic(transform, clip);
 
     GeometryCollection collection(geomPart->GetGeometryStream(), *GetDgnDbP(), &baseParams);
