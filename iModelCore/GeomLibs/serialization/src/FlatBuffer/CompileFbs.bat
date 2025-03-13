@@ -20,7 +20,7 @@ rem ----------------------------------------------------------------------------
 :     * imodel-native\iModelCore\GeomLibs\serialization\src\FlatBuffer\  <--automatically copied by this script
 :   * TypeScript output is %OutDir%BGFBAccessors.ts, and belongs in:
 :     * itwinjs\core\geometry\src\serialization\
-:   * .NET output is %OutDir%Bentley\GeometryNET\FB\*.cs, and belongs in:
+:   * .NET output is %OutDir%*.cs, and belongs in:
 :     * PPBase\BentleyGeometryNet\src\FlatBuffers\gensrc\
 : * Do not commit %OutDir% and %TempDir%. After copying outputs, manually delete these directories. %TempDir% is
 :   automatically deleted by this script on successful completion.
@@ -49,25 +49,21 @@ IF NOT EXIST %TempDir% MKDIR %TempDir% || (
     goto done
     )
 
-: Native accessors: allcg_generated.h
-@ECHO namespace Bentley.Geometry.FB; > %TempFile%
-TYPE %SrcFile% >> %TempFile%
+: Native accessors
 @ECHO Compiling native accessors...
-%BeFlatcExe% -c -o %TempDir% %TempFile% || (
+%BeFlatcExe% -c -o %TempDir% %SrcFile% || (
     @ECHO Native compile failed
     goto done
     )
 SET GeneratedFile=%TempDir%%BaseName%_generated.h
 IF NOT EXIST %GeneratedFile% @ECHO Failed to generate '%GeneratedFile%' && goto done
 
-: modernize copyright
 SET OutFile=%OutDir%%BaseName%_generated.h
-%GemaExe% -f %SrcDir%fixupNative.g %GeneratedFile% > %OutFile%
-
-@ECHO Done Generating %OutFile%
+%GemaExe% -f %SrcDir%fixup\fixupNative.g %GeneratedFile% > %OutFile%
 COPY %OutFile% %SrcDir%
+@ECHO Done Generating %SrcDir%%BaseName%_generated.h
 
-: Typescript accessors: core\geometry\src\serialization\BGFBAccessors.ts
+: Typescript accessors
 @ECHO Compiling Typescript accessors...
 %BeFlatcExe% --ts -o %TempDir% %SrcFile% || (
     @ECHO Typescript compile failed
@@ -77,19 +73,25 @@ SET GeneratedFile=%TempDir%%BaseName%_generated.ts
 IF NOT EXIST %GeneratedFile% @ECHO Failed to generate '%GeneratedFile%' && goto done
 
 SET OutFile=%OutDir%BGFBAccessors.ts
-SET TypescriptDir=%SrcDir%typescript\
-%GemaExe% -f %TypescriptDir%fixupTypescript.g %GeneratedFile% > %OutFile%
+%GemaExe% -f %SrcDir%fixup\fixupTypescript.g %GeneratedFile% > %OutFile%
 @ECHO Done Generating %OutFile%
+@ECHO ... Please copy to itwinjs\core\geometry\serialization\BGFBAccessors.ts
 
-: .NET accessors: PPBase\BentleyGeometryNet\src\FlatBuffers\gensrc\*.cs
-@ECHO namespace Bentley.GeometryNET.FB; > %TempFile%
-TYPE %SrcFile% >> %TempFile%
+: .NET accessors
 @ECHO Compiling .NET accessors...
-%BeFlatcExe% -n -o %OutDir% %TempFile% || (
+%BeFlatcExe% -n -o %OutDir% %SrcFile% || (
     @ECHO .NET compile failed
     goto done
     )
-@ECHO Done Generating %OutDir%Bentley\GeometryNET\FB\*.cs
 
-@RD /Q %TempDir%
+FOR %%F IN (%OutDir%*.cs) DO (
+    %GemaExe% -f %SrcDir%fixup\fixupManaged.g %%F > %TempFile%
+    @COPY %TempFile% %%F > nul
+    )
+
+@ECHO Done Generating %OutDir%*.cs
+@ECHO ... Please copy to PPBase\BentleyGeometryNet\src\FlatBuffers\gensrc\*.cs
+@ECHO FlatBuffer compilation is complete. 
+
+@RD /Q/S %TempDir%
 :done

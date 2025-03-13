@@ -1,6 +1,6 @@
 !! header and footer
-\B=@read{copyright\.txt}@read{\.\\typescript\\topOfFile\.txt}
-\E=@read{\.\\typescript\\endOfFile\.txt}
+\B=@read{\.\\fixup\\copyright\.txt}@read{\.\\fixup\\topOfFileTypescript\.txt}
+\E=@read{\.\\fixup\\endOfFileTypescript\.txt}
 
 ApplyTagToIdentifiers:<I>\W\==\ \ \ \ tag$1\ \=
 ApplyTagToIdentifiers:?=?
