@@ -1702,6 +1702,7 @@ protected:
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
     virtual bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) {return true;}
     virtual bool _WantStrokePattern(PatternParamsCR pattern) {return true;}
+    virtual bool _WantSymbolsAsSubGraphics() {return false;} // Whether to output linestyle and pattern symbols as sub-graphics suitable for instancing instead of geometry...
 
     virtual void _AddBSplineCurveR(RefCountedMSBsplineCurveR curve, bool filled) { _AddBSplineCurve(curve, filled); }
     virtual void _AddBSplineCurve2dR(RefCountedMSBsplineCurveR curve, bool filled, double zDepth) { _AddBSplineCurve2d(curve, filled, zDepth); }
@@ -1728,6 +1729,7 @@ public:
     bool IsViewCoordinates() const {return m_createParams.IsViewCoordinates();}
     bool WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) { return _WantStrokeLineStyle(symb, facetOptions); }
     bool WantStrokePattern(PatternParamsCR pattern) { return _WantStrokePattern(pattern); }
+    bool WantSymbolsAsSubGraphics() { return _WantSymbolsAsSubGraphics(); }
 
     bool IsOpen() const {return _IsOpen();}
 
