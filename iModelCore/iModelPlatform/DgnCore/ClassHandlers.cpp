@@ -2,6 +2,8 @@
 #include "DgnPlatformInternal.h"
 
 using IClassHandler = InstanceRepository::IClassHandler;
+using WriteArgs = InstanceRepository::WriteArgs;
+using ReadArgs = InstanceRepository::ReadArgs;
 
 namespace Handlers {
     //=======================================================================================
@@ -15,6 +17,22 @@ namespace Handlers {
             return PropertyHandlerResult::Handled;
         };
     };
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
+    // struct GeometricElement : IClassHandler {
+    //     constexpr static auto ClassName = "BisCore:GeometricElement";
+    //     GeometricElement(ECDbCR db, ECN::ECClassId classId) : IClassHandler(db, classId) {}
+    //     virtual PropertyHandlerResult OnBindProperty(WriteArgs& args) {
+
+    //         return PropertyHandlerResult::Continue;
+    //     };
+    //     virtual PropertyHandlerResult OnReadProperty(ReadArgs& args) {
+    //         args.GetProperty().GetName().EqualsIAscii("Category");
+
+    //         return PropertyHandlerResult::Continue;
+    //     };
+    // };
 
     //=======================================================================================
     //! @bsiclass
