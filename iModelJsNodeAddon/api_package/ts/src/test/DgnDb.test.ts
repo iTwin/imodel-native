@@ -30,7 +30,7 @@ describe("basic tests", () => {
     dgndb.closeFile();
     done();
   });
-  it("instance writer", () => {
+  it("update instance", () => {
 
     const seedUri = path.join(getAssetsDir(), "test.bim");
     const thisFile = path.join(getOutputDir(), "instance-writer.bim");
@@ -47,9 +47,9 @@ describe("basic tests", () => {
     assert.equal(inst.codeValue, "A", "codeValue should be A");
 
     assert.isTrue(iModelDb.updateInstance({
-      "id": "0x1b",
-      "className": "BisCore.Subject",
-      "codeValue" : "A-MODIFIED",
+      id: "0x1b",
+      className: "BisCore.Subject",
+      codeValue : "A-MODIFIED",
     }, { useJsNames: true }));
 
     const inst2 = iModelDb.readInstance(key, { useJsNames: true });
@@ -60,7 +60,40 @@ describe("basic tests", () => {
     // process.stdout.write(JSON.stringify(inst, null, 2));
 
   });
+  it("insert instance", () => {
 
+    const seedUri = path.join(getAssetsDir(), "test.bim");
+    const thisFile = path.join(getOutputDir(), "instance-writer.bim");
+    if (fs.existsSync(thisFile)) {
+      fs.unlinkSync(thisFile);
+    }
+    fs.copyFileSync(seedUri, thisFile);
+
+    const iModelDb = new iModelJsNative.DgnDb();
+    iModelDb.openIModel(thisFile, OpenMode.ReadWrite);
+    // const arg1 = { id: "0x1b", className: "BisCore:Subject" };
+    const key = { id: "0x1b", className: "BisCore.Subject" };
+    const inst = iModelDb.readInstance(key, {useJsNames: true});
+    assert.equal(inst.codeValue, "A", "codeValue should be A");
+
+    const id = iModelDb.insertInstance({
+      className: "BisCore.Subject",
+      codeValue: "Test Subject",
+      codeSpec: { id: "0x1f" },
+      codeScope: { id: "0x13"},
+      useLabel: "Test Subject",
+      model: { id: "0x1", relClassName: "BisCore.ModelContainsElements" },
+      parent: { id: "0x13", relClassName: "BisCore.SubjectOwnsSubjects" },
+      /* eslint-disable @typescript-eslint/naming-convention */
+      jsonProperties: JSON.stringify({"Subject":{"Model":{"Type":"Hierarchy"}}}),
+    }, { useJsNames: true });
+
+    assert.isDefined(id);
+    iModelDb.saveChanges();
+    iModelDb.closeFile();
+    // process.stdout.write(JSON.stringify(inst, null, 2));
+
+  });
   describe("getInstance()", () => {
     /* eslint-disable @typescript-eslint/naming-convention */
     const standardFmt = {

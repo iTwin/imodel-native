@@ -83,7 +83,7 @@ void CachedWriteStatement::BuildPropertyIndexMap(bool addUseJsNameMap) {
 //+---------------+---------------+---------------+---------------+---------------+-
 Utf8String CachedWriteStatement::GetCurrentTimeStampProperty() const {
     BeAssert(m_classMap != nullptr);
-    auto ca = m_classMap->GetClass().GetCustomAttributeLocal("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
+    auto ca = m_classMap->GetClass().GetCustomAttribute("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
     if (ca == nullptr)
         return "";
 
@@ -131,7 +131,7 @@ ECSqlStatus MruStatementCache::PrepareInsert(CachedWriteStatement& cachedStmt) {
         if (prop->GetType() == PropertyMap::Type::ECClassId) {
             continue;
         }
-        
+
         if (timestampPropName.EqualsIAscii(prop->GetName())) {
             continue;
         }
