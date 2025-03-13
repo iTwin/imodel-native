@@ -1,5 +1,5 @@
-#include "DgnPlatformInternal.h"
 #include "ClassHandlers.h"
+#include "DgnPlatformInternal.h"
 
 using IClassHandler = InstanceRepository::IClassHandler;
 
@@ -22,40 +22,29 @@ namespace Handlers {
     struct RenderMaterial : IClassHandler {
         constexpr static auto ClassName = "BisCore:RenderMaterial";
         RenderMaterial(ECDbCR db, ECN::ECClassId classId) : IClassHandler(db, classId) {}
+
         void OnAfterReadInstance(BeJsValue& instance, const BeJsConst&, JsFormat fmt) {
             BeAssert(fmt == JsFormat::JsName);
-            if (!instance.isObjectMember("jsonProperties")) {
-                return;
-            }
-
-            auto jsonProps = instance["jsonProperties"];
-            if (!jsonProps.isObjectMember("materialAssets")) {
-                return;
-            }
-
-            auto materialAssets = jsonProps["materialAssets"];
-            if (!(materialAssets.hasMember("renderMaterial") && materialAssets["renderMaterial"].hasMember("Map"))) {
-                return;
-            }
-
-            auto map = materialAssets["renderMaterial"]["Map"];
-            map.ForEachProperty([&](auto memberName, auto memberJson) {
-                if (memberJson.isNumericMember("TextureId")) {
-                    // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
-                    auto textureIdAsStringForLogging = memberJson["TextureId"].Stringify();
-                    auto textureId = memberJson["TextureId"].GetId64<DgnTextureId>();
-                    auto textureIdJson = map[memberName]["TextureId"];
-                    (BeJsValue&)textureIdJson = textureId;
-                    if (!textureId.IsValid()) {
-                        ECInstanceId elementId;
-                        if (TryGetId(elementId, instance, fmt)) {
-                            LOG.warningv("RenderMaterialId: %s, had a TextureId %s which could not be converted to a valid id.", elementId.ToHexStr().c_str(), textureIdAsStringForLogging.c_str());
-                            BeAssert(false && "RenderMaterial had a textureId that we converted to invalid.");
+            auto map = BeJsPath::Extract(instance, "jsonProperties.materialAssets.renderMaterial.Map");
+            if (map.has_value()) {
+                map.value().ForEachProperty([&](auto memberName, auto memberJson) {
+                    if (memberJson.isNumericMember("TextureId")) {
+                        // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
+                        auto textureIdAsStringForLogging = memberJson["TextureId"].Stringify();
+                        auto textureId = memberJson["TextureId"].GetId64<DgnTextureId>();
+                        auto textureIdJson = map->Get(memberName)["TextureId"];
+                        (BeJsValue&)textureIdJson = textureId;
+                        if (!textureId.IsValid()) {
+                            ECInstanceId elementId;
+                            if (TryGetId(elementId, instance, fmt)) {
+                                LOG.warningv("RenderMaterialId: %s, had a TextureId %s which could not be converted to a valid id.", elementId.ToHexStr().c_str(), textureIdAsStringForLogging.c_str());
+                                BeAssert(false && "RenderMaterial had a textureId that we converted to invalid.");
+                            }
                         }
                     }
-                }
-                return false;
-            });
+                    return false;
+                });
+            }
         }
     };
 }

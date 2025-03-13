@@ -840,14 +840,14 @@ private:
     virtual int32_t GetInt(int32_t defVal) const override { return isNumeric() ? m_value->GetInt() : defVal; }
     virtual uint32_t GetUInt(uint32_t defVal) const override { return isNumeric() ? m_value->GetUint() : defVal; }
     virtual int64_t GetInt64(int64_t defVal) const override { return isNumeric() ? m_value->GetInt64() : defVal; }
-    virtual uint64_t GetUInt64(uint64_t defVal) const override { 
+    virtual uint64_t GetUInt64(uint64_t defVal) const override {
         if (m_value->IsDouble() && IsLosslessUint64(m_value->GetDouble())) {
             return static_cast<uint64_t>(m_value->GetDouble());
         }
         if (m_value->IsFloat() && IsLosslessUint64(m_value->GetFloat())) {
             return static_cast<uint64_t>(m_value->GetFloat());
         }
-        return m_value->IsUint64() ? m_value->GetUint64() : defVal; 
+        return m_value->IsUint64() ? m_value->GetUint64() : defVal;
     }
     bool IsLosslessUint64(double d) const {
         if (d < 0.0 || d > static_cast<double>(std::numeric_limits<uint64_t>::max())) {
@@ -1004,4 +1004,108 @@ inline BeJsConst::BeJsConst(RapidJsonValueCR val, rapidjson::MemoryPoolAllocator
 inline BeJsConst::BeJsConst(JsonValueCR val) : m_val(new BeJsonCppValue(val)) {}
 inline void BeJsConst::SaveTo(BeJsValue dest) const { dest.From(*this); }
 
+struct BeJsPath final {
+private:
+    struct Accessor {
+        std::string token;
+        int index = -1;
+    };
+    static std::vector<Accessor> Parse(const std::string& path) {
+        std::vector<Accessor> tokens;
+        if (path.empty() || path[0] != '$') {
+            return tokens;
+        }
+        size_t start = 1;
+        size_t end = 1;
+        while (end < path.size()) {
+            if (path[end] == '.') {
+                if (end > start) {
+                    tokens.push_back({path.substr(start, end - start)});
+                }
+                start = end + 1;
+            } else if (path[end] == '[') {
+                if (end > start) {
+                    tokens.push_back({path.substr(start, end - start)});
+                }
+                start = end + 1;
+                end++;
+                while (end < path.size() && path[end] != ']') {
+                    end++;
+                }
+                if (end < path.size()) {
+                    tokens.push_back({path.substr(start, end - start), stoi(path.substr(start, end - start))});
+                    start = end + 1;
+                }
+            }
+            end++;
+        }
+        if (end > start) {
+            tokens.push_back({path.substr(start, end - start)});
+        }
+        return tokens;
+    }
+    static std::optional<BeJsConst> Get(BeJsConst obj, std::vector<Accessor>& path) {
+        if (path.empty()) {
+            return obj;
+        }
+
+        auto current = path.back();
+        path.pop_back();
+
+        if (current.index > 0) {
+            if (!obj.isArray()) {
+                return std::nullopt;
+            }
+            if (current.index >= (int)obj.size()) {
+                return std::nullopt;
+            }
+            return Get(obj[current.index], path);
+        } else {
+            if (!obj.isObject()) {
+                return std::nullopt;
+            }
+            if (!obj.isObjectMember(current.token.c_str())) {
+                return std::nullopt;
+            }
+            return Get(obj[current.token], path);
+        }
+    }
+    static std::optional<BeJsValue> Get(BeJsValue obj, std::vector<Accessor>& path) {
+        if (path.empty()) {
+            return obj;
+        }
+
+        auto current = path.back();
+        path.pop_back();
+
+        if (current.index > 0) {
+            if (!obj.isArray()) {
+                return std::nullopt;
+            }
+            if (current.index >= (int)obj.size()) {
+                return std::nullopt;
+            }
+            return Get(obj[current.index], path);
+        } else {
+            if (!obj.isObject()) {
+                return std::nullopt;
+            }
+            if (!obj.isObjectMember(current.token.c_str())) {
+                return std::nullopt;
+            }
+            return Get(obj[current.token], path);
+        }
+    }
+
+public:
+    BeJsPath() = delete;
+    static std::optional<BeJsConst> Extract(BeJsConst obj, const std::string& path) {
+        auto tokens = Parse(path);
+        return Get(obj, tokens);
+    }
+    static std::optional<BeJsValue> Extract(BeJsValue obj, const std::string& path) {
+        auto tokens = Parse(path);
+        return Get(obj, tokens);
+    }
+};
 END_BENTLEY_NAMESPACE
