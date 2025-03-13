@@ -361,8 +361,10 @@ BentleyStatus ECSqlRowAdaptor::RenderPrimitiveArrayProperty(BeJsValue out, IECSq
 BentleyStatus ECSqlRowAdaptor::RenderStructArrayProperty(BeJsValue out, IECSqlValue const& in) const {
     out.SetEmptyArray();
     for (IECSqlValue const& arrayElementValue : in.GetArrayIterable()) {
-        if (arrayElementValue.IsNull())
+        if (arrayElementValue.IsNull()){
+            out.appendValue().SetEmptyObject();
             continue;
+        }
 
         if (SUCCESS != RenderStructProperty(out.appendValue(), arrayElementValue))
             return ERROR;
