@@ -74,7 +74,7 @@ struct ECJsonSystemNames final
     public:
         static constexpr Utf8CP Id() { return "id"; }
         static constexpr Utf8CP ClassName() { return "className"; }
-
+        static constexpr Utf8CP ClassFullName() { return "classFullName"; }
         static constexpr Utf8CP SourceId() { return "sourceId"; }
         static constexpr Utf8CP SourceClassName() { return "sourceClassName"; }
         static constexpr Utf8CP TargetId() { return "targetId"; }
@@ -378,7 +378,7 @@ public:
         {
         int64_t val = 0;
         bool stringCheckFailed = false;
-        if (json.IsString()) 
+        if (json.IsString())
             {
             Utf8CP strVal = json.GetString();
             if (strVal[0] == '-') // negative numbers are not valid
@@ -386,11 +386,11 @@ public:
             else if (strchr(strVal, '.') != nullptr) // decimal numbers are not valid
                 stringCheckFailed = true;
             }
-        else if (json.IsFloat() && IsLosslessUint64(json.GetFloat())) 
+        else if (json.IsFloat() && IsLosslessUint64(json.GetFloat()))
             {
             return TBeInt64Id((uint64_t) json.GetFloat());
-            } 
-        else if (json.IsDouble() && IsLosslessUint64(json.GetDouble())) 
+            }
+        else if (json.IsDouble() && IsLosslessUint64(json.GetDouble()))
             {
             return TBeInt64Id((uint64_t) json.GetDouble());
             }

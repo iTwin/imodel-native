@@ -1139,7 +1139,7 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance_after_cache_clean) {
         }));
 
         m_ecdb.ClearECDbCache();
-        
+
         ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row){
             EXPECT_STRCASEEQ(doc.Stringify(StringifyFormat::Indented).c_str(), row.GetJson().Stringify(StringifyFormat::Indented).c_str());
         }));
@@ -1268,8 +1268,8 @@ TEST_F(InstanceReaderFixture, ecsql_read_array_property){
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
-        SELECT 
-            $-> array_i, 
+        SELECT
+            $-> array_i,
             $->array_l,
             $->array_d,
             $->array_b,
@@ -1281,7 +1281,7 @@ TEST_F(InstanceReaderFixture, ecsql_read_array_property){
             $->array_g
         FROM ts.TestClass
     )sql"));
-    
+
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ(stmt.GetValueText(0), "[1,2,3]");
     ASSERT_STREQ(stmt.GetValueText(1), "[10000.0,-20000.0,30000.0]");
@@ -2324,9 +2324,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
             "2019-01-11T00:00:00.000"
         ],
         "dtUtc_array": [
-            "2017-01-17T00:00:00.000",
-            "2018-01-11T00:00:00.000",
-            "2019-01-10T00:00:00.000"
+            "2017-01-17T00:00:00.000Z",
+            "2018-01-11T00:00:00.000Z",
+            "2019-01-10T00:00:00.000Z"
         ],
         "i_array": [
             3842,
@@ -2472,9 +2472,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
                 "2019-01-11T00:00:00.000"
             ],
             "dtUtc_array": [
-                "2017-01-17T00:00:00.000",
-                "2018-01-11T00:00:00.000",
-                "2019-01-10T00:00:00.000"
+                "2017-01-17T00:00:00.000Z",
+                "2018-01-11T00:00:00.000Z",
+                "2019-01-10T00:00:00.000Z"
             ],
             "geom_array": [
                 {
