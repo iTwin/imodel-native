@@ -25,8 +25,6 @@
 
 #include "strcase.h"
 
-#define ENABLE_CURLX_PRINTF
-/* use our own printf() functions */
 #include "curlx.h"
 
 #include "tool_cfgable.h"
@@ -90,12 +88,11 @@ static size_t memcrlf(char *orig,
   return total; /* no delimiter found */
 }
 
-#define MAX_FILE2STRING (256*1024*1024) /* big enough ? */
+#define MAX_FILE2STRING MAX_FILE2MEMORY
 
 ParameterError file2string(char **bufp, FILE *file)
 {
   struct curlx_dynbuf dyn;
-  DEBUGASSERT(MAX_FILE2STRING < INT_MAX); /* needs to fit in an int later */
   curlx_dyn_init(&dyn, MAX_FILE2STRING);
   if(file) {
     do {
@@ -127,16 +124,45 @@ ParameterError file2string(char **bufp, FILE *file)
   return PARAM_OK;
 }
 
-ParameterError file2memory(char **bufp, size_t *size, FILE *file)
+static int myfseek(void *stream, curl_off_t offset, int whence)
+{
+#if defined(_WIN32) && defined(USE_WIN32_LARGE_FILES)
+  return _fseeki64(stream, (__int64)offset, whence);
+#elif defined(HAVE_FSEEKO) && defined(HAVE_DECL_FSEEKO)
+  return fseeko(stream, (off_t)offset, whence);
+#else
+  if(offset > LONG_MAX)
+    return -1;
+  return fseek(stream, (long)offset, whence);
+#endif
+}
+
+ParameterError file2memory_range(char **bufp, size_t *size, FILE *file,
+                                 curl_off_t starto, curl_off_t endo)
 {
   if(file) {
     size_t nread;
     struct curlx_dynbuf dyn;
+    curl_off_t offset = 0;
+    curl_off_t throwaway = 0;
+
+    if(starto) {
+      if(file != stdin) {
+        if(myfseek(file, starto, SEEK_SET))
+          return PARAM_READ_ERROR;
+        offset = starto;
+      }
+      else
+        /* we can't seek stdin, read 'starto' bytes and throw them away */
+        throwaway = starto;
+    }
+
     /* The size needs to fit in an int later */
-    DEBUGASSERT(MAX_FILE2MEMORY < INT_MAX);
     curlx_dyn_init(&dyn, MAX_FILE2MEMORY);
     do {
       char buffer[4096];
+      size_t n_add;
+      char *ptr_add;
       nread = fread(buffer, 1, sizeof(buffer), file);
       if(ferror(file)) {
         curlx_dyn_free(&dyn);
@@ -144,9 +170,35 @@ ParameterError file2memory(char **bufp, size_t *size, FILE *file)
         *bufp = NULL;
         return PARAM_READ_ERROR;
       }
-      if(nread)
-        if(curlx_dyn_addn(&dyn, buffer, nread))
-          return PARAM_NO_MEM;
+      n_add = nread;
+      ptr_add = buffer;
+      if(nread) {
+        if(throwaway) {
+          if(throwaway >= (curl_off_t)nread) {
+            throwaway -= nread;
+            offset += nread;
+            n_add = 0; /* nothing to add */
+          }
+          else {
+            /* append the trailing piece */
+            n_add = (size_t)(nread - throwaway);
+            ptr_add = &buffer[throwaway];
+            offset += throwaway;
+            throwaway = 0;
+          }
+        }
+        if(n_add) {
+          if((curl_off_t)(n_add + offset) > endo)
+            n_add = (size_t)(endo - offset + 1);
+
+          if(curlx_dyn_addn(&dyn, ptr_add, n_add))
+            return PARAM_NO_MEM;
+
+          offset += n_add;
+          if(offset > endo)
+            break;
+        }
+      }
     } while(!feof(file));
     *size = curlx_dyn_len(&dyn);
     *bufp = curlx_dyn_ptr(&dyn);
@@ -156,6 +208,11 @@ ParameterError file2memory(char **bufp, size_t *size, FILE *file)
     *bufp = NULL;
   }
   return PARAM_OK;
+}
+
+ParameterError file2memory(char **bufp, size_t *size, FILE *file)
+{
+  return file2memory_range(bufp, size, file, 0, CURL_OFF_T_MAX);
 }
 
 /*
@@ -561,13 +618,13 @@ static CURLcode checkpasswd(const char *kind, /* for what purpose */
 
     /* build a nice-looking prompt */
     if(!i && last)
-      curlx_msnprintf(prompt, sizeof(prompt),
-                      "Enter %s password for user '%s':",
-                      kind, *userpwd);
+      msnprintf(prompt, sizeof(prompt),
+                "Enter %s password for user '%s':",
+                kind, *userpwd);
     else
-      curlx_msnprintf(prompt, sizeof(prompt),
-                      "Enter %s password for user '%s' on URL #%zu:",
-                      kind, *userpwd, i + 1);
+      msnprintf(prompt, sizeof(prompt),
+                "Enter %s password for user '%s' on URL #%zu:",
+                kind, *userpwd, i + 1);
 
     /* get password */
     getpass_r(prompt, passwd, sizeof(passwd));

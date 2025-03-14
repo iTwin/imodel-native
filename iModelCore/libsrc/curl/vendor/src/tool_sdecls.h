@@ -64,10 +64,10 @@
 
 struct OutStruct {
   char *filename;
-  bool alloc_filename;
-  bool is_cd_filename;
-  bool s_isreg;
-  bool fopened;
+  BIT(alloc_filename);
+  BIT(is_cd_filename);
+  BIT(s_isreg);
+  BIT(fopened);
   FILE *stream;
   curl_off_t bytes;
   curl_off_t init;
@@ -114,12 +114,12 @@ typedef enum {
  */
 
 typedef enum {
-  HTTPREQ_UNSPEC,  /* first in list */
-  HTTPREQ_GET,
-  HTTPREQ_HEAD,
-  HTTPREQ_MIMEPOST,
-  HTTPREQ_SIMPLEPOST,
-  HTTPREQ_PUT
+  TOOL_HTTPREQ_UNSPEC,  /* first in list */
+  TOOL_HTTPREQ_GET,
+  TOOL_HTTPREQ_HEAD,
+  TOOL_HTTPREQ_MIMEPOST,
+  TOOL_HTTPREQ_SIMPLEPOST,
+  TOOL_HTTPREQ_PUT
 } HttpReq;
 
 

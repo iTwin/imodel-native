@@ -42,6 +42,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 extern "C" int checkNoActiveStatements(SqlDbP db);
 #endif
 
+extern "C" int getStatementState(SqlStatementP pStmt);
 extern "C" int sqlite3_shathree_init(sqlite3 *, char **, const sqlite3_api_routines *);
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
@@ -1430,6 +1431,17 @@ void Statement::DumpResults()
     Reset();
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Statement::TryGetStatementState(StatementState& state)
+    {
+    if(!IsPrepared())
+        return false;
+    state = (StatementState)getStatementState(m_stmt);
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1707,6 +1719,11 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
 
     // Don't check m_tracker->HasChanges - may have dynamic changes to rollback
     ChangeTracker::OnCommitStatus trackerStatus = (m_tracker.IsValid()) ? m_tracker->_OnCommit(isCommit, operation) : ChangeTracker::OnCommitStatus::Commit;
+
+    if (trackerStatus == ChangeTracker::OnCommitStatus::RebaseInProgress) {
+        return BE_SQLITE_ERROR;
+    }
+
     if (trackerStatus == ChangeTracker::OnCommitStatus::Abort) {
         // Abort is considered fatal and application must quit.
         // We do not allocate memory or attempt to log as this is only happens when sqlite returns NOMEM.
@@ -2772,6 +2789,36 @@ DbResult Db::DetachDb(Utf8CP alias) const
 /*---------------------------------------------------------------------------------**//**
 *
 +---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<AttachFileInfo> Db::GetAttachedDbs() const {
+    if (!IsDbOpen())
+        return {};
+
+    std::vector<AttachFileInfo> result;
+    Statement stmt;
+    stmt.Prepare(*this, "PRAGMA database_list");
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        AttachFileInfo info;
+        info.m_alias = stmt.GetValueText(1);
+        info.m_fileName = stmt.GetValueText(2);
+        if (info.m_alias.EqualsIAscii("main")) {
+            info.m_type = AttachFileType::Main;
+        } else if (info.m_alias.EqualsIAscii("schema_sync_db")){
+            info.m_type = AttachFileType::SchemaSync;
+        } else if (info.m_alias.EqualsIAscii("ecchange")){
+            info.m_type = AttachFileType::ECChangeCache;
+        } else if (info.m_alias.EqualsIAscii("temp")){
+            info.m_type = AttachFileType::Temp;
+        } else {
+            info.m_type = AttachFileType::Unknown;
+        }
+        result.push_back(info);
+    }
+    return result;
+}
+
+/*---------------------------------------------------------------------------------**//**
+*
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BriefcaseLocalValueCache::Register(size_t& index, Utf8CP name)
     {
     BeMutexHolder lock(m_mutex);
@@ -3150,10 +3197,30 @@ DbResult Db::TruncateTable(Utf8CP tableName) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::TableExists(Utf8CP tableName) const
     {
-    Statement statement;
-    return BE_SQLITE_OK == statement.TryPrepare(*this, SqlPrintfString("SELECT NULL FROM %s", tableName));
+    // tableName could contain tableSpace, parse if that's the case
+    Utf8String actualTableName(tableName);
+    Utf8String parsedTableSpace;
+    auto dotPosition = actualTableName.find('.');
+    if (dotPosition != Utf8String::npos) {
+        parsedTableSpace = actualTableName.substr(0, dotPosition);
+        actualTableName = actualTableName.substr(dotPosition + 1);
     }
 
+    CachedStatementPtr stmt;
+    if (Utf8String::IsNullOrEmpty(parsedTableSpace.c_str()))
+        stmt = GetCachedStatement("SELECT 1 FROM sqlite_master where type='table' AND name=?");
+    else
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT 1 FROM %s.sqlite_master where type='table' AND name=?", parsedTableSpace.c_str()).c_str());
+
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    stmt->BindText(1, actualTableName.c_str(), Statement::MakeCopy::No);
+    return stmt->Step() == BE_SQLITE_ROW;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //--------------+------------------------------------------------------------------------
@@ -3167,26 +3234,44 @@ void Db::FlushPageCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::ColumnExists(Utf8CP tableName, Utf8CP columnName) const
     {
-    Statement sql;
-    return BE_SQLITE_OK == sql.TryPrepare(*this, SqlPrintfString("SELECT [%s] FROM %s", columnName, tableName));
+    bvector<Utf8String> columns;
+
+    GetColumns(columns, tableName);
+    return columns.end() != std::find_if(columns.begin(), columns.end(), [columnName](Utf8StringCR col) { return col.EqualsIAscii(columnName); });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
+{
+    columns.clear();
+
+    Statement stmt;
+    DbResult status;
+
+    const char* dotPosition = strchr(tableName, '.');
+    if (dotPosition != nullptr)
     {
-    Statement statement;
-    DbResult status =  statement.TryPrepare(*this, SqlPrintfString("SELECT * FROM %s LIMIT 0", tableName));
+        Utf8String tablespace(tableName, dotPosition - tableName);
+        Utf8String actualTableName(dotPosition + 1);
+
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA %s.table_info([%s])", tablespace.c_str(), actualTableName.c_str()));
+    }
+    else
+    {
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA table_info([%s])", tableName));
+    }
+
     if (status != BE_SQLITE_OK)
         return false;
 
-    columns.clear();
-    for (int nColumn = 0; nColumn < statement.GetColumnCount(); nColumn++)
-        columns.push_back(statement.GetColumnName(nColumn));
+    while (stmt.Step() == BE_SQLITE_ROW)
+        columns.push_back(stmt.GetValueText(1));
 
     return true;
-    }
+}
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -3273,13 +3358,21 @@ DbFile::~DbFile() {
 
     if (BE_SQLITE_OK != rc) {
         sqlite3_stmt* stmt = nullptr;
+        std::vector<sqlite3_stmt*> stmts;
         while (nullptr != (stmt = sqlite3_next_stmt(m_sqlDb, stmt))) {
+            stmts.push_back(stmt);
             Utf8String openStatement(sqlite3_sql(stmt)); // keep as separate line for debugging
             LOG.errorv("Statement not closed: '%s'", openStatement.c_str());
         };
+        for(auto stmt : stmts)
+            sqlite3_finalize(stmt);
 
-        LOG.errorv("Cannot close database '%s'", sqlite3_db_filename(m_sqlDb, "main"));
-        BeAssert(false);
+        rc = (DbResult) sqlite3_close(m_sqlDb);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("Cannot close database '%s'", sqlite3_db_filename(m_sqlDb, "main"));
+            BeAssert(false);
+        }
+
     }
 
     m_sqlDb = 0;

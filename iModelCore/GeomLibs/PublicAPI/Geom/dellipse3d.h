@@ -104,7 +104,7 @@ double radius,              //!< [in] arc radius
 double sweepRadians         //!< [in] sweep angle.
 );
 //!
-//! @description Initialize an elliptical arc from 3 points.
+//! @description Create a circular arc from 3 points.
 //!
 //! @param [in] start start point
 //! @param [in] middle mid point
@@ -113,7 +113,7 @@ double sweepRadians         //!< [in] sweep angle.
 //!
 static DEllipse3d FromPointsOnArc (DPoint3dCR start, DPoint3dCR middle, DPoint3dCR end);
 
-//! Return a circular arc with gven center and start.  Endpoint is on the vector to given endTarget.
+//! Return a circular arc with given center and start.  Endpoint is on the vector to given endTarget.
 //! Sweep angle is the smaller of the two possible sweeps.
 //! @param [in] center circle center
 //! @param [in] startPoint arc start point.  This point determines the circle radius.
@@ -130,17 +130,17 @@ DPoint3dCR endTarget,    //!< [in] end target.  The ray from center to actual en
 DVec3dCR startTangentBias   //!< [in] preferred direction for start tangent.  The sweep angle is complemented as needed to make the startTangent DOTXY StartTangentBias positive
 );
 
-//! Return a (arc of an) ellipse with given 0 and 90 degree vectors.
+//! Return an (arc of an) ellipse with given 0 and 90 degree vectors.
 static DEllipse3d FromVectors
 (
 DPoint3dCR center, //!< [in] ellipse center.
 DVec3dCR vector0, //!< [in]  vector from center to parametric 0 degree point (Commonly but not necessarily the vector along the "major axis".)
-DVec3dCR vector90, //!< [in] vector from center to paramatric 90 degree point.  (Commonly but not necessarily the vector along the "minor axis".
+DVec3dCR vector90, //!< [in] vector from center to parametric 90 degree point.  (Commonly but not necessarily the vector along the "minor axis".
 double theta0,  //!< [in] parametric angle of start point.
 double sweep //!< [in] parametric sweep angle
 );
 
-//! Return a (arc of an) ellipse that is a fillet in the angle between two intersecting lines.
+//! Return an (arc of an) ellipse that is a fillet in the angle between two intersecting lines.
 //! The fillet center is the (smaller) arc "between" the rays from the common point outwards.
 //! @return The ellipse, or invalid carrier if the vectors are not independent.
 static ValidatedDEllipse3d FromFilletCommonPointAndRaysToTangency
@@ -151,7 +151,7 @@ DVec3dCR vectorB,  //!< [in]  vector from intersection towards tanency point on 
 double radius      //! [in] circle radius.
 );
 
-//! Return a (arc of an) ellipse that is a fillet in the angle between two line segments with a common point.
+//! Return an (arc of an) ellipse that is a fillet in the angle between two line segments with a common point.
 //! The fillet center is the (smaller) arc "between" the rays from the common point outwards.
 //! @return The ellipse, or invalid carrier if the vectors are not independent.
 static ValidatedDEllipse3d FromFilletInCorner
@@ -162,7 +162,7 @@ DPoint3dCR pointC,  //!< [in] point "after" the filleted corner.
 double radius       //!< [in] fillet radius
 );
 
-//! Return a (arc of an) ellipse that is a fillet in the angle between two line segments with a common point.
+//! Return an (arc of an) ellipse that is a fillet in the angle between two line segments with a common point.
 //! The fillet radius is chosen so that the tangency point closer of pointA and pointB
 //! The fillet center is the (smaller) arc "between" the rays from the common point outwards.
 //! The radius is determined
@@ -174,7 +174,7 @@ DPoint3dCR pointB,  //!< [in] corner to be filleted away
 DPoint3dCR pointC   //!< [in] point "after" the filleted corner.
 );
 
-//! Return a (arc of an) ellipse that is a fillet in the angle between two intersecting lines.
+//! Return an (arc of an) ellipse that is a fillet in the angle between two intersecting lines.
 //! The fillet center is the (smaller) arc "between" the rays from the line-line intersection
 //!     outbound in the direction of hte segments.
 //! @return The ellipse, or invalid carrier if the vectors are not independent.
@@ -195,7 +195,7 @@ static ValidatedDEllipse3d FromStartTangentSweepEndTangentXY
 DPoint3dCR pointA,      //!< [in] Constraint: Start at this point.
 DVec3dCR tangentA,      //!< [in] Constraint: Start tangent is parallel to this
 DPoint3dCR pointB,      //!< [in] Constraint: End at this point.
-DVec3dCR tangentB,     //!< [in] Constratin: End tangent is parallel to this.
+DVec3dCR tangentB,     //!< [in] Constraint: End tangent is parallel to this.
 double sweepRadians    //!< [in] Constraint: sweep angle for output ellipse
 );
 
@@ -203,7 +203,7 @@ double sweepRadians    //!< [in] Constraint: sweep angle for output ellipse
 //! Return an (arc of an) ellipse, with axes defined by a RotMatrix XY columns and scale factors.
 static DEllipse3d FromScaledRotMatrix
 (
-DPoint3dCR center,  //!< [in] ellispse center
+DPoint3dCR center,  //!< [in] ellipse center
 RotMatrixCR matrix, //!< [in] orientation matrix.
 double r0,          //!< [in] 0 degree radius.  0 degree vector is r0 times the x column of the matrix.
 double r90,          //!< [in]  90 degree radius.  90 degree vector is r90 times the y column of the matrix.
@@ -230,7 +230,7 @@ double factor        //!<[in] scale factor for vector0, vector90
 );
 
 
-//! Return an ellispe that sweeps the same points as source but has axes adjusted so vectors to parametric 0 and 90 degree points
+//! Return an ellipse that sweeps the same points as source but has axes adjusted so vectors to parametric 0 and 90 degree points
 //!    are perpendicular and the 0 degree vector is the customary major (larger) direction.
 //! @param [in] source original ellipse, in which vectors might be non perpendicular.
 static DEllipse3d FromMajorMinor (DEllipse3dCR source);
@@ -241,7 +241,7 @@ static DEllipse3d FromMajorMinor (DEllipse3dCR source);
 //! @param [in] radius circle radius.
 static DEllipse3d FromCenterNormalRadius (DPoint3dCR center, DVec3dCR normal, double radius);
 
-//! Return an ellispe that sweeps the same points as source but has axes adjusted so vectors to parametric 0 and 90 degree points
+//! Return an ellipse that sweeps the same points as source but has axes adjusted so vectors to parametric 0 and 90 degree points
 //!    are perpendicular.   This may choose a "small" adjustment of the axes even if the 90 degree axis ends up longer. Use FromMajorMinor to force
 //!    the 0 degree direction to be the larger axis.
 //! @param [in] source original ellipse, in which vectors might be non perpendicular.
@@ -357,13 +357,13 @@ double          sweep
 );
 
 //!
-//! @description Initialize an elliptical arc from 3 points.
+//! @description Initialize a circular arc from 3 points.
+//! Note: to create an elliptical arc use DEllipse3d::InitFromPointsOnAxisAndArc.
 //!
 //! @param [in] start start point
 //! @param [in] middle mid point
 //! @param [in] end end point
 //! @return true if the three points are valid, false if colinear.
-//!
 //!
 bool InitFromPointsOnArc
 (
@@ -373,7 +373,27 @@ DPoint3dCR      end
 );
 
 //!
-//! @description Initialize a circlular arc from start point, end point, another vector which
+//! @description Create an elliptical arc from 3 points on ellipse: two points on an axis and one in between.
+//! Note: to create a circular arc use DEllipse3d::InitFromPointsOnArc.
+//!
+//! @param [in] start start of arc, on an axis.
+//! @param [in] middle point on arc somewhere between `start` and `end`.
+//! @param [in] end point on arc directly opposite `start`.
+//! @param [in] theta0 arc start angle in radians (default zero is at `start`).
+//! @param [in] sweep arc sweep in radians, measured in the direction from `start` to `middle` (default 2pi).
+//! @return true if construction possible; false otherwise.
+//!
+bool InitFromPointsOnAxisAndArc
+(
+DPoint3dCR start,
+DPoint3dCR middle,
+DPoint3dCR end,
+double theta0 = 0.0,
+double sweep = msGeomConst_2pi
+);
+
+//!
+//! @description Initialize a circular arc from start point, end point, another vector which
 //!  determines the plane, and the arc length.
 //!
 //! @param [in] startIN start point

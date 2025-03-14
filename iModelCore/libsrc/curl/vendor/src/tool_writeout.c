@@ -22,8 +22,7 @@
  *
  ***************************************************************************/
 #include "tool_setup.h"
-#define ENABLE_CURLX_PRINTF
-/* use our own printf() functions */
+
 #include "curlx.h"
 #include "tool_cfgable.h"
 #include "tool_writeout.h"
@@ -119,8 +118,11 @@ static const struct writeoutvar variables[] = {
   {"time_connect", VAR_CONNECT_TIME, CURLINFO_CONNECT_TIME_T, writeTime},
   {"time_namelookup", VAR_NAMELOOKUP_TIME, CURLINFO_NAMELOOKUP_TIME_T,
    writeTime},
+  {"time_posttransfer", VAR_POSTTRANSFER_TIME, CURLINFO_POSTTRANSFER_TIME_T,
+   writeTime},
   {"time_pretransfer", VAR_PRETRANSFER_TIME, CURLINFO_PRETRANSFER_TIME_T,
    writeTime},
+  {"time_queue", VAR_QUEUE_TIME, CURLINFO_QUEUE_TIME_T, writeTime},
   {"time_redirect", VAR_REDIRECT_TIME, CURLINFO_REDIRECT_TIME_T, writeTime},
   {"time_starttransfer", VAR_STARTTRANSFER_TIME, CURLINFO_STARTTRANSFER_TIME_T,
    writeTime},
@@ -198,12 +200,12 @@ static int urlpart(struct per_transfer *per, writeoutid vid,
     char *part = NULL;
     const char *url = NULL;
 
-    if(vid >= VAR_INPUT_URLEHOST) {
+    if(vid >= VAR_INPUT_URLESCHEME) {
       if(curl_easy_getinfo(per->curl, CURLINFO_EFFECTIVE_URL, &url))
         rc = 5;
     }
     else
-      url = per->this_url;
+      url = per->url;
 
     if(!rc) {
       switch(vid) {
@@ -372,8 +374,8 @@ static int writeString(FILE *stream, const struct writeoutvar *wovar,
       }
       break;
     case VAR_INPUT_URL:
-      if(per->this_url) {
-        strinfo = per->this_url;
+      if(per->url) {
+        strinfo = per->url;
         valid = true;
       }
       break;
@@ -397,7 +399,7 @@ static int writeString(FILE *stream, const struct writeoutvar *wovar,
     case VAR_INPUT_URLEQUERY:
     case VAR_INPUT_URLEFRAGMENT:
     case VAR_INPUT_URLEZONEID:
-      if(per->this_url) {
+      if(per->url) {
         if(!urlpart(per, wovar->id, &strinfo)) {
           freestr = strinfo;
           valid = true;
@@ -410,8 +412,8 @@ static int writeString(FILE *stream, const struct writeoutvar *wovar,
     }
   }
 
-  if(valid) {
-    DEBUGASSERT(strinfo);
+  DEBUGASSERT(!valid || strinfo);
+  if(valid && strinfo) {
     if(use_json) {
       fprintf(stream, "\"%s\":", wovar->name);
       jsonWriteString(stream, strinfo, FALSE);
@@ -651,7 +653,7 @@ void ourWriteOut(struct OperationConfig *config, struct per_transfer *per,
               FILE *stream2;
               memcpy(fname, ptr, flen);
               fname[flen] = 0;
-              stream2 = fopen(fname, append? FOPEN_APPENDTEXT :
+              stream2 = fopen(fname, append ? FOPEN_APPENDTEXT :
                               FOPEN_WRITETEXT);
               if(stream2) {
                 /* only change if the open worked */

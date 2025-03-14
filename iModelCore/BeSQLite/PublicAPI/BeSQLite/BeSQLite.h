@@ -393,6 +393,21 @@ enum class WalCheckpointMode {
     Truncate=3, /* Like RESTART but also truncate WAL */
 };
 
+enum class AttachFileType {
+    Unknown,
+    Main,
+    Temp,
+    SchemaSync,
+    ECChangeCache
+};
+
+struct AttachFileInfo final {
+public:
+    Utf8String m_fileName;
+    Utf8String m_alias;
+    AttachFileType m_type;
+};
+
 //=======================================================================================
 //! A 4-digit number that specifies the version of the "profile" (schema) of a Db
 // @bsiclass
@@ -433,6 +448,18 @@ enum class DbDeserializeOptions {
     Readonly = 3
 };
 ENUM_IS_FLAGS(DbDeserializeOptions)
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+enum class StatementState
+{
+    // The first four values are in accordance with sqlite3.c
+    Init          = 0,   //!< Prepared statement under construction
+    Ready         = 1,   //!< Ready to run but not yet started
+    Run           = 2,   //!< Run in progress
+    Halt          = 3,   //!< Finished.  Need reset() or finalize()
+};
 
 //=======================================================================================
 // @bsiclass
@@ -984,6 +1011,10 @@ public:
 
     //! Dump query results to stdout, for debugging purposes
     BE_SQLITE_EXPORT void DumpResults();
+
+    //! Tries to get the state in which a particular statement is. Returns true if it is successful in getting the state of the statement otherwise returns false
+    //! If the returned value is true, the state value is stored in the passed reference argument.
+    BE_SQLITE_EXPORT bool TryGetStatementState(StatementState&);
 
     SqlStatementP GetSqlStatementP() const {return m_stmt;}  // for direct use of sqlite3 api
     operator SqlStatementP(){return m_stmt;}                 // for direct use of sqlite3 api
@@ -2919,6 +2950,7 @@ public:
     //! Detach a previously attached database. This method is necessary for the same reason AttachDb is necessary.
     //! @param[in] alias The alias by which the database was attached.
     BE_SQLITE_EXPORT DbResult DetachDb(Utf8CP alias) const;
+    BE_SQLITE_EXPORT std::vector<AttachFileInfo> GetAttachedDbs() const;
 
     //! Execute a single SQL statement on this Db.
     //! This merely binds, steps, and finalizes the statement. It is no more efficient than performing those steps individually,

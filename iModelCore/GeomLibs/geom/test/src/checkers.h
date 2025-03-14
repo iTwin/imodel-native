@@ -340,7 +340,7 @@ static bool Near (DEllipse3dCR a, DEllipse3dCR b, char const*pString = NULL, dou
 //! Check all components of a two DConic4d.
 static void Near (DConic4dCR a, DConic4dCR b, char const*pName = NULL, double refValue = 0.0);
 //! compare angles, allow shift by multiple of 2pi
-static bool NearPeriodic (double thetaA, double thetaB, char const*pString);
+static bool NearPeriodic (double thetaA, double thetaB, char const*pString = NULL);
 
 //! compare strongly typed angles, allow shift by multiple of 2pi
 static bool NearPeriodic (Angle thetaA, Angle thetaB, char const*pString = NULL);
@@ -448,6 +448,7 @@ static void SaveTransformed(MSBsplineSurfacePtr const &data);
 static void SaveTransformed(MSBsplineSurface const &data);
 static void SaveTransformed (MSBsplineCurveCR data);
 static void SaveTransformed(MSBsplineCurvePtr const &data, bool savePolygon = false);
+static void SaveTransformed(DPlane3dCR plane, double scale = 1.0);
 static void SaveTransformedEdges (DRange3dCR range);
 static void SaveTransformedEdges(DPoint3d corners[8]);
 static void Shift (double dx, double dy, double dz = 0.0);

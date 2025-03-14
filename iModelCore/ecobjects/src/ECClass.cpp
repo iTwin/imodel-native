@@ -3502,12 +3502,12 @@ ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECRelationshipCl
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECClassCP const ECRelationshipConstraint::GetAbstractConstraint() const
+ECClassCP const ECRelationshipConstraint::GetAbstractConstraint(bool autoDetermine) const
     {
     if (nullptr != m_abstractConstraint)
         return m_abstractConstraint;
 
-    if (1 == m_constraintClasses.size())
+    if (autoDetermine && 1 == m_constraintClasses.size())
         return m_constraintClasses[0];
 
     return nullptr;

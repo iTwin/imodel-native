@@ -101,7 +101,7 @@
     <ProductDirectory Name="CrashpadHandler" RelativeTo="AddonRoot" LibType="Static"/>
   </ProductDirectoryList>
 
-  <Part Name="iModelJsNative-Mobile" OnlyPlatforms="iOSX64,iOSARM64,AndroidARM64,AndroidX64" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dBUILD_FOR_IMODELJS_MOBILE=1" >
+  <Part Name="iModelJsNative-Mobile" OnlyPlatforms="iOSARM64,AndroidARM64,AndroidX64" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dBUILD_FOR_IMODELJS_MOBILE=1" >
     <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <Bindings>
