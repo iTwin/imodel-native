@@ -529,12 +529,14 @@ int CSmkBinaryEgm96 (struct cs_Egm96_ *__This)
 	double deltaLng = cs_Zero;
 
 	st = CS_rwDictDir (__This->binaryPath,sizeof (__This->binaryPath),__This->filePath);
+#if !defined(GEOCOORD_ENHANCEMENT)	/* Even if writable dir cannot be resolved, the binary file might already exist. */
 	if (st != 0)
 	{
 		CS_stncp (csErrnam,__This->filePath,MAXPATH);
 		CS_erpt (cs_DTC_FILE);
 		goto error;
 	}
+#endif
 	cp = strrchr (__This->binaryPath,cs_ExtsepC);
 	if (cp == NULL)
 	{
