@@ -5,6 +5,10 @@
 #include "testHarness.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 
+// Verify that the native API can read flatbuffer and json files written by the typescript and native APIs.
+// Each test case consists of at least four files that encode the same single geometry: native-authored fb and json, typescript-authored fb and json
+// The same tests exist in typescript core-geometry and operate on the same files; these tests and files should be kept in sync.
+
 static char buf[MAX_PATH];
 
 // this fixup is not needed in the TypeScript crossPlatform test because only native API deserializes in fixed-size mesh format
@@ -51,6 +55,7 @@ struct TestCase
     };
 BeFileName TestCase::s_root;
 
+// A file may contain multiple geometries. Deserialize only the first.
 static IGeometryPtr deserializeFirstGeom(BeFileNameCR fileName, TestCase::FileType fileType)
     {
     bvector<IGeometryPtr> geoms;
@@ -67,10 +72,18 @@ static IGeometryPtr deserializeFirstGeom(BeFileNameCR fileName, TestCase::FileTy
     return nullptr;
     };
 
-// Verify that the native API can read flatbuffer and json files written by the typescript and native APIs.
-// Each test case consists of at least four files that encode the same single geometry: native-authored fb and json, typescript-authored fb and json
-// The same test exists in typescript core-geometry and operates on the same data files; these tests and data should be kept in sync.
-TEST(CrossPlatform, IndexedMeshAuxData)
+static void serialize(IGeometryCR geom, WCharCP fileName)
+    {
+    bvector<Byte> fbBytes;
+    BentleyGeometryFlatBuffer::GeometryToBytes(geom, fbBytes);
+    if (Check::False(fbBytes.empty(), "exported to flatbuffer"))
+        GTestFileOps::WriteToFile(fbBytes, L"tmp\\native", nullptr, fileName, L"fb");
+    Utf8String json;
+    if (Check::True(IModelJson::TryGeometryToIModelJsonString(json, geom), "exported to json"))
+        GTestFileOps::WriteToFile(json, L"tmp\\native", nullptr, fileName, L"imjs");
+    };
+
+TEST(CrossPlatform, EquivalentFormats)
     {
     bvector<TestCase> testCases;
 
@@ -106,9 +119,7 @@ TEST(CrossPlatform, IndexedMeshAuxData)
     fixedSizeMesh.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"imjs"));
     testCases.push_back(fixedSizeMesh);
 
-
-
-    // TODO: add other test cases
+    // TODO: add future testcases where all formats deserialize to the same geometry
 
     for (size_t iTestCase = 0; iTestCase < testCases.size(); ++iTestCase)
         {
@@ -190,15 +201,6 @@ TEST(CrossPlatform, SkewSolidPrimitives)
         DgnSphereDetail sphereDetail1(DPoint3d::FromZero(), RotMatrix::FromColumnVectors(DVec3d::From(1, 1, 0.5), DVec3d::From(-1, 0.3, 0.4), DVec3d::From(0.1, 0, 1)), 1.0);
         DgnConeDetail coneDetail0(DPoint3d::FromZero(), DPoint3d::From(0, 0, 1), DVec3d::From(0.1, 0.1), DVec3d::From(-0.2, 0.2), 0.1, 0.2, true);
         DgnConeDetail coneDetail1(DPoint3d::FromZero(), DPoint3d::From(0, 0, 1), DVec3d::From(0.1, 0.2), DVec3d::From(-0.1, 0.2), 0.1, 0.2, true);
-        auto serialize = [](IGeometryCR geom, WCharCP fileName) -> void {
-            bvector<Byte> fbBytes;
-            BentleyGeometryFlatBuffer::GeometryToBytes(geom, fbBytes);
-            if (Check::False(fbBytes.empty(), "exported to flatbuffer"))
-                GTestFileOps::WriteToFile(fbBytes, L"tmp\\native", nullptr, fileName, L"fb");
-            Utf8String json;
-            if (Check::True(IModelJson::TryGeometryToIModelJsonString(json, geom), "exported to json"))
-                GTestFileOps::WriteToFile(json, L"tmp\\native", nullptr, fileName, L"imjs");
-            };
         serialize(*IGeometry::Create(ISolidPrimitive::CreateDgnSphere(sphereDetail0)), L"sphere-nonuniform-scale-new");
         serialize(*IGeometry::Create(ISolidPrimitive::CreateDgnSphere(sphereDetail1)), L"sphere-skew-axes-new");
         serialize(*IGeometry::Create(ISolidPrimitive::CreateDgnCone(coneDetail0)), L"cone-elliptical-perp-new");
@@ -250,19 +252,84 @@ TEST(CrossPlatform, SkewSolidPrimitives)
 
 TEST(CrossPlatform, IndexedMeshTopo)
     {
-    bvector<DPoint3d> vertices = {{0,0,0.7664205912849231}, {0,0.5,0.48180614748985123}, {0,0.25,0.802582585192784}, {0.5,0,0.43491424436272463}, {0.25,0,0.8188536774560378}, {0,0.75,0.33952742318739915}, {0.75,0,0.25206195068490395}, {0.25,0.5,0.504569375013316}, {0,1,0.2703371615911343}, {1,0,0.10755755225803061}, {0.25,0.75,0.2724132516081212}, {0.5,0.25,0.5381121104277191}, {0.5,0.5,0.3257620892806842}, {0.5,0.75,0.04371942681056798}, {0.25,1,0.2222400805896964}, {0.25,0.25,1.1652833229746615}, {1,0.25,0.23021761065562}, {0.75,0.25,0.5893585652638186}, {0.5,1,0.14597916468688915}, {0.75,0.75,0.11596980253736251}, {0.75,0.5,0.40804791637969084}, {1,0.5,0.16102556400617096}, {0.75,1,0.08104741694308121}, {1,0.75,0.050360274157937215}, {1,1,0.03586959238610449}};
-    bvector<int> oneBasedIndices = {1,5,16,3,0,5,4,12,16,0,4,7,18,12,0,7,10,17,18,0,3,16,8,2,0,16,12,13,8,0,12,18,21,13,0,18,17,22,21,0,2,8,11,6,0,8,13,14,11,0,13,21,20,14,0,21,22,24,20,0,6,11,15,9,0,11,14,19,15,0,14,20,23,19,0,20,24,25,23,0};
-    auto mesh = PolyfaceHeader::CreateIndexedMesh(1, vertices, oneBasedIndices);    // could do 1 and 5 for 
-    if (Check::True(mesh.IsValid(), "created mesh"))
+    bvector<TestCase> testCases;
+
+    TestCase mesh0;
+    WCharCP testName = L"indexedMeshTopo";
+    mesh0.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-fixed-old").AppendExtension(L"fb"));
+    mesh0.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-variable-old").AppendExtension(L"fb"));
+    mesh0.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-fixed-old").AppendExtension(L"imjs"));
+    mesh0.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-variable-old").AppendExtension(L"imjs"));
+    /*
+    mesh0.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-fixed-new").AppendExtension(L"fb"));
+    mesh0.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-variable-new").AppendExtension(L"fb"));
+    mesh0.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-fixed-new").AppendExtension(L"imjs"));
+    mesh0.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendString(L"-variable-new").AppendExtension(L"imjs"));
+    */
+    mesh0.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"fb"));
+    mesh0.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendString(L"-new").AppendExtension(L"fb"));
+    mesh0.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendString(L"-old").AppendExtension(L"imjs"));
+    mesh0.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendString(L"-new").AppendExtension(L"imjs"));
+    testCases.push_back(mesh0);
+
+    // temp code to generate files
+    if (false)
         {
-        BentleyGeometryFlatBuffer::GeometryToBytes (PolyfaceQueryCR polyfaceQuery, bvector<Byte>& buffer)
+        bvector<DPoint3d> vertices = {{0,0,0.7664205912849231}, {0,0.5,0.48180614748985123}, {0,0.25,0.802582585192784}, {0.5,0,0.43491424436272463}, {0.25,0,0.8188536774560378}, {0,0.75,0.33952742318739915}, {0.75,0,0.25206195068490395}, {0.25,0.5,0.504569375013316}, {0,1,0.2703371615911343}, {1,0,0.10755755225803061}, {0.25,0.75,0.2724132516081212}, {0.5,0.25,0.5381121104277191}, {0.5,0.5,0.3257620892806842}, {0.5,0.75,0.04371942681056798}, {0.25,1,0.2222400805896964}, {0.25,0.25,1.1652833229746615}, {1,0.25,0.23021761065562}, {0.75,0.25,0.5893585652638186}, {0.5,1,0.14597916468688915}, {0.75,0.75,0.11596980253736251}, {0.75,0.5,0.40804791637969084}, {1,0.5,0.16102556400617096}, {0.75,1,0.08104741694308121}, {1,0.75,0.050360274157937215}, {1,1,0.03586959238610449}};
+        bvector<int> oneBasedIndices = {1,5,16,3,0,5,4,12,16,0,4,7,18,12,0,7,10,17,18,0,3,16,8,2,0,16,12,13,8,0,12,18,21,13,0,18,17,22,21,0,2,8,11,6,0,8,13,14,11,0,13,21,20,14,0,21,22,24,20,0,6,11,15,9,0,11,14,19,15,0,14,20,23,19,0,20,24,25,23,0};
+        auto mesh0 = PolyfaceHeader::CreateIndexedMesh(1, vertices, oneBasedIndices);
+        auto mesh1 = PolyfaceHeader::CreateIndexedMesh(5, vertices, oneBasedIndices); // each quad face loop has a pad; same geometry as mesh0!
+        // IndexedPolyfaceWalker.buildEdgeMateIndices(mesh0);
+        // IndexedPolyfaceWalker.buildEdgeMateIndices(mesh1);
+        serialize(*IGeometry::Create(mesh0), L"indexedMeshTopo-variable-new");
+        serialize(*IGeometry::Create(mesh1), L"indexedMeshTopo-fixed-new");
+        }
 
-        const fbBytes = BentleyGeometryFlatBuffer.geometryToBytes(mesh, true);
-        if (ck.testDefined(fbBytes, "exported to flatbuffer"))
-        GeometryCoreTestIO.writeBytesToFile(fbBytes, "c:\\tmp\\typescript\\indexedMesh-topo-new.fb");
+    // Since native geomlibs does not yet support edgeMateIndices, all files should deserialize the same.
+    // TODO: when implement native edgeMateIndex support, uncomment above, run the temp code, copy the new files to data\crossPlatform\native (and to iTwin), then uncomment below.
+    for (size_t iTestCase = 0; iTestCase < testCases.size(); ++iTestCase)
+        {
+        bvector<IGeometryPtr> geometry;
 
-        const json = IModelJson.Writer.toIModelJson(mesh);
-        fs.writeFileSync("c:\\tmp\\typescript\\indexedMesh-topo-new.imjs", JSON.stringify(json));
-    }
-    expect(ck.getNumErrors()).toBe(0);
+        for (size_t iTestCase = 0; iTestCase < testCases.size(); ++iTestCase)
+            {
+            PolyfaceHeaderPtr mesh;
+            IGeometryPtr refGeom;
+            // IGeometryPtr refGeomWithTopo;
+            for (auto platform : { TestCase::Native, TestCase::TypeScript }) if (refGeom.IsNull() /* || refGeomWithTopo.IsNull() */)
+                {
+                for (auto fileType : { TestCase::FlatBuffer, TestCase::JSON }) if (refGeom.IsNull() /* || refGeomWithTopo.IsNull() */)
+                    {
+                    for (auto& fileName : testCases[iTestCase].m_fileNames.at(platform).at(fileType)) if (refGeom.IsNull() /* || refGeomWithTopo.IsNull() */)
+                        {
+                        IGeometryPtr geom = deserializeFirstGeom(fileName, fileType);
+                        mesh = geom.IsValid() ? geom->GetAsPolyfaceHeader() : nullptr;
+                        if (mesh.IsValid())
+                            {
+                            // if (refGeomWithTopo.IsNull() && mesh->GetEdgeMateIndexCP())
+                            //     refGeomWithTopo = geom;
+                            if (refGeom.IsNull() /* && !mesh->GetEdgeMateIndexCP() */)
+                                refGeom = geom;
+                            }
+                        }
+                    }
+                }
+
+            if (Check::True(refGeom.IsValid(), "found ref geom") /* && Check::True(refGeomWithTopo.IsValid(), "found ref geom with topo") */)
+              for (auto platform : { TestCase::Native, TestCase::TypeScript })
+                  for (auto fileType : {TestCase::FlatBuffer, TestCase::JSON })
+                      for (auto& fileName : testCases[iTestCase].m_fileNames.at(platform).at(fileType))
+                        {
+                        IGeometryPtr geom = deserializeFirstGeom(fileName, fileType);
+                        fileName.GetNameA(buf);
+                        if (Check::True(geom.IsValid(), std::string("deserialized at least one geom from ").append(buf).c_str()))
+                            {
+                            // if (fileName.Contains(L"-new."))
+                            //     Check::True(refGeomWithTopo->IsSameStructureAndGeometry(*geom), std::string(buf).append("encodes expected geom + topo").c_str());
+                            // else
+                                Check::True(refGeom->IsSameStructureAndGeometry(*geom), std::string(buf).append("encodes expected geom").c_str());
+                            }
+                        }
+            }
+        }
     }
