@@ -26,9 +26,8 @@ stages:
         displayName: Pull and build for Windows
 
         pool:
-          name: iModelTechCI
+          name: imodelNative-Win11-VS2022
           demands:
-          - Agent.OS -equals Windows_NT
           - Cmd
 
         steps:
