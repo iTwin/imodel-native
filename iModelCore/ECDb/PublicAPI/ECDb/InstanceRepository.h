@@ -62,7 +62,11 @@ struct InstanceRepository final {
             static_assert(std::is_base_of<ECDb, T>::value, "T must be derived from ECDb");
             return *static_cast<const T*>(m_db);
         }
-
+        template <typename T>
+        T& GetDbR() const{
+            static_assert(std::is_base_of<ECDb, T>::value, "T must be derived from ECDb");
+            return *static_cast<T*>(const_cast<ECDb*>(m_db));
+        }
     public:
         IClassHandler() = default;
         virtual ~IClassHandler() = default;

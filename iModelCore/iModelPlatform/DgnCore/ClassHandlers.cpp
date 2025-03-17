@@ -14,6 +14,41 @@ namespace Handlers {
                 SetError("Failed to get next id for Element");
             }
         };
+
+        PropertyHandlerResult OnBindECProperty(ECN::ECPropertyCR property, BeJsConst val, IECSqlBinder& binder, ECSqlStatus& rc) {
+            BeAssert(GetFormat() == JsFormat::JsName);
+            return PropertyHandlerResult::Continue;
+        }
+
+        PropertyHandlerResult OnBindUserProperty(Utf8CP property, BeJsConst val, PropertyBinder::Finder finder, ECSqlStatus& rc) {
+            BeAssert(GetFormat() == JsFormat::JsName);
+            if (BeStringUtilities::StricmpAscii(property, "code") == 0) {
+               auto code = DgnCode::FromJson(val, GetDb<DgnDb>(), true);
+               rc = finder("CodeValue")->GetBinder().BindText(code.GetValue().GetUtf8CP(), IECSqlBinder::MakeCopy::Yes);
+                if (rc != ECSqlStatus::Success) {
+                     return PropertyHandlerResult::Handled;
+                }
+                rc = finder("CodeScope")->GetBinder().BindNavigation(code.GetScopeElementId(GetDbR<DgnDb>()));
+                if (rc != ECSqlStatus::Success) {
+                    return PropertyHandlerResult::Handled;
+                }
+                rc = finder("CodeSpec")->GetBinder().BindNavigation(code.GetCodeSpecId());
+               return PropertyHandlerResult::Handled;
+            }
+
+            return PropertyHandlerResult::Continue;
+        }
+
+        ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder finder) {
+            auto value = finder("CodeValue")->GetReader().GetText();
+            auto scopeElementId = finder("CodeScope")->GetReader().GetNavigation<DgnElementId>(nullptr);
+            auto specId =finder("CodeSpec")->GetReader().GetNavigation<CodeSpecId>(nullptr);
+            auto code = DgnCode::CreateWithDbContext(GetDb<DgnDb>(), specId, scopeElementId, value);
+            code.ToJson(instance["code"]);
+
+            instance["model"] = finder("Model")->GetReader().GetNavigation<ECInstanceId>(nullptr);
+            return ECSqlStatus::Success;
+        }
     };
     //=======================================================================================
     //! @bsiclass
@@ -22,7 +57,7 @@ namespace Handlers {
         constexpr static auto ClassName = "BisCore:Model";
         void OnNextId(ECInstanceId& id) override {
             BeAssert(GetFormat() == JsFormat::JsName);
-            auto modeledElmentId = BeJsPath::Extract(GetInstance(), "modeledElment.id");
+            auto modeledElmentId = BeJsPath::Extract(GetInstance(), "$.modeledElment.id");
             if (modeledElmentId.has_value()) {
                 id = modeledElmentId->GetId64<ECInstanceId>();
             }
@@ -44,7 +79,7 @@ namespace Handlers {
 
         virtual ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder _) override {
             BeAssert(GetFormat() == JsFormat::JsName);
-            auto map = BeJsPath::Extract(instance, "jsonProperties.materialAssets.renderMaterial.Map");
+            auto map = BeJsPath::Extract(instance, "$.jsonProperties.materialAssets.renderMaterial.Map");
             if (map.has_value()) {
                 map.value().ForEachProperty([&](auto memberName, auto memberJson) {
                     if (memberJson.isNumericMember("TextureId")) {
@@ -75,7 +110,11 @@ namespace Handlers {
 bool RegisterBisCoreHandlers(DgnDbR db) {
     bool rc = true;
     auto& repo = db.GetInstanceRepository();
-    rc &= repo.RegisterClassHandler<Handlers::Element>(Handlers::Element::ClassName, {"CodeValue", "CodeScope", "CodeSpec"});
+    rc &= repo.RegisterClassHandler<Handlers::Element>(Handlers::Element::ClassName, {
+        "CodeValue",
+        "CodeScope",
+        "CodeSpec",
+    });
     rc &= repo.RegisterClassHandler<Handlers::RenderMaterial>(Handlers::RenderMaterial::ClassName);
     rc &= repo.RegisterClassHandler<Handlers::Model>(Handlers::Model::ClassName);
     return rc;
