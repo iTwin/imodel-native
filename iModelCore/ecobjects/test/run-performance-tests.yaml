@@ -28,9 +28,11 @@ stages:
       BB_V: '-v 4'
       BB_ARCH: x64
       PY_EXE: py -3
+      BB_OUT_ROOT: $(Build.BinariesDirectory)
       BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
       BB: $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py
       STRATEGY: 'iModelCore;SkipPull_imodel-native-internal'
+      BB_ARGS: '-p ECObjects-PerformanceGtest -f iModelCore/ECObjects/ECObjects -r imodel-native -s $(STRATEGY) -a $(BB_ARCH) --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)'
       # - name: bbSrcRoot
       #   value: '$(Agent.BuildDirectory)/bbsrc'
 
@@ -113,10 +115,9 @@ stages:
         #   env:
         #     AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
 
-        - script: $(PY_EXE) $(CALL_BB_PATH) pull -p ECObjects-PerformanceGtest -f iModelCore/ECObjects/ECObjects -r imodel-native $(BB_V) -a $(BB_ARCH)
+        - script: $(PY_EXE) $(BB) $(BB_ARGS) pull
           displayName: Pull
           env:
-            CALL_BB_PATH: $(CALL_BB_PATH)
             AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
 
         # - task: PythonScript@0
@@ -125,13 +126,12 @@ stages:
         #     scriptPath: '$(bbSrcRoot)/BentleyBuild/BentleyBuild.py'
         #     arguments: '-v 4 -a x64 -r imodel02 -f iModelCore/ECObjects/ECObjects -p ECObjects-PerformanceGtest build --tmrbuild --noprompt'
 
-        - script: $(PY_EXE) $(CALL_BB_PATH) build $(BB_V) -p ECObjects-PerformanceGtest -f iModelCore/ECObjects/ECObjects -r imodel-native -s $(STRATEGY) -a $(BB_ARCH)
+        - script: $(PY_EXE) $(BB) $(BB_ARGS) build
           displayName: Build
           env:
-            CALL_BB_PATH: $(CALL_BB_PATH)
             AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
 
-        - publish: $(Build.BinariesDirectory)/Winx64/Product/ECObjects-PerformanceGtest
+        - publish: $(BB_OUT_ROOT)/Winx64/Product/ECObjects-PerformanceGtest
           artifact: 'PerfTestsECObjects'
 
   - stage: run
