@@ -44,17 +44,13 @@ describe("basic tests", () => {
     // const arg1 = { id: "0x1b", className: "BisCore:Subject" };
     const key = { id: "0x1b", className: "BisCore.Subject" };
     const inst = iModelDb.readInstance(key, {useJsNames: true});
-    assert.equal(inst.codeValue, "A", "codeValue should be A");
+    assert.equal(inst.code.value, "A", "codeValue should be A");
 
-    assert.isTrue(iModelDb.updateInstance({
-      id: "0x1b",
-      className: "BisCore.Subject",
-      codeValue : "A-MODIFIED",
-    }, { useJsNames: true }));
-
+    inst.code.value = "A-MODIFIED";
+    assert.isTrue(iModelDb.updateInstance(inst, { useJsNames: true }));
     const inst2 = iModelDb.readInstance(key, { useJsNames: true });
 
-    assert.equal(inst2.codeValue, "A-MODIFIED", "codeValue should be A-MODIFIED");
+    assert.equal(inst2.code.value, "A-MODIFIED", "codeValue should be A-MODIFIED");
     iModelDb.saveChanges();
     iModelDb.closeFile();
     // process.stdout.write(JSON.stringify(inst, null, 2));
