@@ -68,7 +68,7 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (field) field->SetDynamicColumnInfo(ECSqlColumnInfo());
     m_ecdb.GetInstanceReader().Seek(
         InstanceReader::Position(instanceId, classId, accessStringVal.GetValueText()),
-        [&](InstanceReader::IRowContext const& row){
+        [&](InstanceReader::IRowContext const& row, auto _){
         auto& val = row.GetValue(0);
         if (val.IsNull()) {
             return;
@@ -159,7 +159,7 @@ void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     params.SetUseJsNames(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
     params.SetAbbreviateBlobs(!(jsonFlags & InstanceReader::FLAGS_DoNotTruncateBlobs));
 
-    auto setResult = [&](InstanceReader::IRowContext const& row){
+    auto setResult = [&](InstanceReader::IRowContext const& row, auto _) {
         const auto json = row.GetJson(params).Stringify();
         ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
     };

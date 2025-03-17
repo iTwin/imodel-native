@@ -1134,13 +1134,13 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance_after_cache_clean) {
     if(stmt.Step() == BE_SQLITE_ROW) {
         ECInstanceKey instanceKey (stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
         auto pos = InstanceReader::Position(stmt.GetValueId<ECInstanceId>(1), stmt.GetValueId<ECClassId>(0));
-        ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row){
+        ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row, auto _){
             EXPECT_STRCASEEQ(doc.Stringify(StringifyFormat::Indented).c_str(), row.GetJson().Stringify(StringifyFormat::Indented).c_str());
         }));
 
         m_ecdb.ClearECDbCache();
 
-        ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row){
+        ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row, auto _){
             EXPECT_STRCASEEQ(doc.Stringify(StringifyFormat::Indented).c_str(), row.GetJson().Stringify(StringifyFormat::Indented).c_str());
         }));
     }
@@ -1389,7 +1389,7 @@ TEST_F(InstanceReaderFixture, instance_reader) {
     if(stmt.Step() == BE_SQLITE_ROW) {
         ECInstanceKey instanceKey (stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
         auto pos = InstanceReader::Position(stmt.GetValueId<ECInstanceId>(1), stmt.GetValueId<ECClassId>(0));
-        ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row){
+        ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row, auto _){
             EXPECT_STRCASEEQ(doc.Stringify(StringifyFormat::Indented).c_str(), row.GetJson().Stringify(StringifyFormat::Indented).c_str());
         }));
     }
@@ -2873,7 +2873,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
     if ("check out instance reader with complex data") {
         auto& reader = m_ecdb.GetInstanceReader();
         auto pos = InstanceReader::Position(instKey.GetInstanceId(), instKey.GetClassId());
-        ASSERT_EQ(true, reader.Seek(pos, [&](InstanceReader::IRowContext const& row) {
+        ASSERT_EQ(true, reader.Seek(pos, [&](InstanceReader::IRowContext const& row, auto _) {
             EXPECT_STRCASEEQ(expected.Stringify(StringifyFormat::Indented).c_str(), row.GetJson().Stringify(StringifyFormat::Indented).c_str());
         }));
     }
@@ -3022,7 +3022,7 @@ TEST_F(InstanceReaderFixture, InstanceReaderForceSeek) {
 
     // Test for expected value and load same row and schema into InstanceReader
     auto pos = InstanceReader::Position(key.GetInstanceId(), key.GetClassId());
-    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row) {
+    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row, auto _) {
         EXPECT_STRCASEEQ(expectedPostInsert.c_str(), row.GetJson().Stringify().c_str());
     }));
 
@@ -3040,14 +3040,14 @@ TEST_F(InstanceReaderFixture, InstanceReaderForceSeek) {
     Utf8PrintfString expectedPostUpdate ("{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"%s\",\"StructProp\":{\"DoubleProp\":9.1,\"StringProp\":\"NewValue\"},\"PrimitiveProp\":20.01}", classId.c_str());
 
     // Test for unchanged expected value after update due to same row and schema optimization
-    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row) {
+    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row, auto _) {
         EXPECT_STRCASEEQ(expectedPostInsert.c_str(), row.GetJson().Stringify().c_str());
     }));
 
     // Test for updated expected value with force seek flag set to be toggled on
     InstanceReader::Options opt;
     opt.SetForceSeek(true);
-    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row) {
+    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row, auto _) {
         EXPECT_STRCASEEQ(expectedPostUpdate.c_str(), row.GetJson().Stringify().c_str());
     }, opt));
 }

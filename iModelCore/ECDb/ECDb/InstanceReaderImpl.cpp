@@ -277,7 +277,14 @@ bool Reader::Seek(InstanceReader::Position const& pos, InstanceReader::RowCallba
         hasRow = m_seekPos.Seek(rsPos.GetInstanceId());
     }
     if (hasRow) {
-        callback(m_seekPos);
+
+        callback(m_seekPos, [&](Utf8CP propName) -> std::optional<PropertyReader> {
+            auto prop = m_seekPos.GetClass()->FindProperty(propName);
+            if (prop == nullptr) {
+                return std::nullopt;
+            }
+            return PropertyReader(prop->GetValue());
+        });
     }
     return hasRow;
 }

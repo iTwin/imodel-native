@@ -14,7 +14,7 @@ struct InstanceWriterFixture : ECDbTestFixture {
     static std::optional<Utf8String> ReadInstance(ECDbCR ecdb, const ECInstanceKey& key, bool useJsName = false) {
         BeJsDocument doc;
         InstanceReader::Position pos(key.GetInstanceId(), key.GetClassId());
-        if (!ecdb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row) {
+        if (!ecdb.GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row, auto _) {
                 doc.From(row.GetJson(JsReadOptions().SetAbbreviateBlobs(false).SetUseJsNames(useJsName)));
             })) {
             return std::nullopt;

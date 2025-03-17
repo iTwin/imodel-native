@@ -8,112 +8,64 @@
 #include <ECDb/ECSqlStatement.h>
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/IECSqlValue.h>
+#include <ECDb/InstanceWriter.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
 struct InstanceRepository final {
-
-    //=======================================================================================
-    //! @bsiclass
-    //=======================================================================================
-    struct Args {
-    private:
-        const BeJsConst& m_userOptions;
-        JsFormat m_format;
-        ECInstanceKeyCR m_key;
-        const BeJsConst& m_instance;
-
-    public:
-        Args(ECInstanceKeyCR key, JsFormat format, const BeJsConst& userOptions, const BeJsConst& instance)
-            : m_format(format), m_userOptions(userOptions), m_key(key), m_instance(instance) {}
-        ECInstanceKeyCR GetKey() const { return m_key; }
-        JsFormat GetFormat() const { return m_format; }
-        const BeJsConst& GetUserOptions() const { return m_userOptions; }
-        BeJsConst GetInstance() const { return m_instance; }
+    enum class Operation {
+        Insert,
+        Update,
+        Delete,
+        Read
     };
-
-    //=======================================================================================
-    //! @bsiclass
-    //=======================================================================================
-    struct ReadArgs : Args {
-    private:
-        IECSqlValue const& m_value;
-        BeJsValue& m_out;
-
-    public:
-        ReadArgs(ECInstanceKeyCR key, JsFormat format, BeJsConst userOptions, IECSqlValue const& value, BeJsValue& out, const BeJsConst& instance)
-            : Args(key, format, userOptions, instance), m_value(value), m_out(out) {}
-        const IECSqlValue& GetValue() const { return m_value; }
-        BeJsValue GetOut() { return m_out; }
-        ECN::ECPropertyCR GetProperty() const {
-            auto prop = m_value.GetColumnInfo().GetProperty();
-            return *prop;
-        }
-    };
-
-    //=======================================================================================
-    //! @bsiclass
-    //=======================================================================================
-    struct WriteArgs : Args {
-    private:
-        IECSqlBinder& m_binder;
-        const BeJsConst& m_in;
-        ECN::ECPropertyCR m_prop;
-        bool m_isInsert;
-
-    public:
-        WriteArgs(ECInstanceKeyCR key, JsFormat format, BeJsConst userOptions, IECSqlBinder& binder, const BeJsConst& in, ECN::ECPropertyCR prop, const BeJsConst& instance, bool isInsert)
-            : Args(key, format, userOptions, instance), m_binder(binder), m_in(in), m_prop(prop) {}
-        IECSqlBinder& GetBinder() const { return m_binder; }
-        const BeJsConst& GetIn() const { return m_in; }
-        ECN::ECPropertyCR GetProperty() const { return m_prop; }
-        bool IsInsert() const { return m_isInsert; }
-        bool IsUpdate() const { return !m_isInsert; }
-    };
-
-    //=======================================================================================
-    //! @bsiclass
-    //=======================================================================================
-    struct DeleteArgs : Args {
-    public:
-        DeleteArgs(ECInstanceKeyCR key, JsFormat format, BeJsConst userOptions)
-            : Args(key, format, userOptions, BeJsDocument::Null()) {}
-    };
-
-    //=======================================================================================
-    //! @bsiclass
-    //=======================================================================================
     struct IClassHandler {
-    private:
-        ECN::ECClassId m_classId;
-        ECDbCR m_db;
+        friend struct InstanceRepository;
 
-    public:
-        IClassHandler(ECDbCR db, ECN::ECClassId classId) : m_classId(classId), m_db(db) {}
+
+    private:
+        bset<Utf8String, AsciiCaseInsensitiveCompare> m_customHandledProperties;
+        ECN::ECClassId m_classId;
+        const ECDb* m_db = nullptr;
+        BeJsConst* m_userOptions = nullptr;
+        JsFormat format;
+        BeJsConst* m_instance = nullptr;
+        Operation m_operation;
+        Utf8String m_error;
+        ECN::ECClassCP m_class = nullptr;
+        void SetContext(ECDbCR db, BeJsConst& instance, BeJsConst& userOptions, JsFormat fmt, Operation operation);
+        void Reset() { m_class = nullptr; }
+
+    protected:
+
         ECN::ECClassId GetClassId() const { return m_classId; }
+        ECDbCR GetECDb() const { return *m_db; }
+        BeJsConst& GetUserOptions() const { return *m_userOptions; }
+        JsFormat GetFormat() const { return format; }
+        BeJsConst& GetInstance() const { return *m_instance; }
+        Operation GetOperation() const { return m_operation; }
+        Utf8StringCR GetError() const { return m_error; }
+        ECN::ECClassCR GetClass() const { return *m_class; }
+        ECDB_EXPORT ECInstanceKey ParseInstanceKey() const;
+        ECDB_EXPORT ECN::ECClassId ParseClassId() const;
+        ECDB_EXPORT ECInstanceId ParseInstanceId() const;
+        ECDB_EXPORT void SetError(const char* fmt, ...);
+        virtual void OnNextId(ECInstanceId&) {};
+        virtual PropertyHandlerResult OnBindECProperty(ECN::ECPropertyCR property, BeJsConst val, IECSqlBinder& binder, ECSqlStatus& rc) { return PropertyHandlerResult::Continue; };
+        virtual PropertyHandlerResult OnBindUserProperty(Utf8CP property, BeJsConst val, PropertyBinder::Finder finder, ECSqlStatus& rc) { return PropertyHandlerResult::Continue; };
+        virtual PropertyHandlerResult OnReadECProperty(ECN::ECPropertyCR property, const IECSqlValue& valueReader, BeJsValue val, ECSqlStatus& rc) { return PropertyHandlerResult::Continue; };
+        virtual ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder finder) { return ECSqlStatus::Success; };
         template <typename T>
         const T& GetDb() const {
             static_assert(std::is_base_of<ECDb, T>::value, "T must be derived from ECDb");
-            return static_cast<const T&>(m_db);
+            return *static_cast<const T*>(m_db);
         }
-        bool TryGetInstanceKey(ECInstanceKeyR key, BeJsConst jsKey, JsFormat fmt) const {
-            return m_db.GetInstanceWriter().TryGetInstanceKey(key, jsKey, fmt);
-        }
-        bool TryGetId(ECInstanceId& id, BeJsConst jsId, JsFormat fmt) const {
-            return m_db.GetInstanceWriter().TryGetId(id, jsId, fmt);
-        }
-        bool TryGetClassId(ECN::ECClassId& classId, BeJsConst jsClassId, JsFormat fmt) const {
-            return m_db.GetInstanceWriter().TryGetClassId(classId, jsClassId, fmt);
-        }
+
+    public:
+        IClassHandler() = default;
         virtual ~IClassHandler() = default;
-        virtual PropertyHandlerResult OnNextId(ECInstanceId&) { return PropertyHandlerResult::Continue; };
-        virtual PropertyHandlerResult OnBindProperty(WriteArgs&) { return PropertyHandlerResult::Continue; };
-        virtual PropertyHandlerResult OnReadProperty(ReadArgs&) { return PropertyHandlerResult::Continue; };
-        virtual void OnBeforeInsertInstance(BeJsValue&, const BeJsConst&, JsFormat fmt) {};
-        virtual void OnBeforeUpdateInstance(BeJsValue&, const BeJsConst&, JsFormat fmt) {};
-        virtual void OnAfterReadInstance(BeJsValue&, const BeJsConst&, JsFormat fmt) {};
     };
 
 private:
@@ -123,6 +75,7 @@ private:
     mutable std::vector<std::unique_ptr<IClassHandler>> m_handlers;
     mutable Utf8String m_lastError;
     std::vector<IClassHandler*>& TryGetHandlers(ECN::ECClassId classId) const;
+    std::vector<IClassHandler*>& TryGetHandlers(ECN::ECClassId classId, JsFormat fmt, Operation operation, BeJsConst& instance, BeJsConst& userOptions) const;
 
 public:
     InstanceRepository(ECDbCR ecdb) : m_ecdb(ecdb) {}
@@ -138,9 +91,9 @@ public:
     ECDB_EXPORT DbResult Read(BeJsConst key, BeJsValue out, BeJsConst userOptions, JsFormat fmt) const;
     ECDB_EXPORT DbResult Read(ECInstanceKeyCR key, BeJsValue out, BeJsConst userOptions, JsFormat fmt) const;
     Utf8StringCR GetLastError() const { return m_lastError; }
-    ECDB_EXPORT void Reset();
+    ECDB_EXPORT void Reset(bool clearHandlers = false);
     template <typename T>
-    bool RegisterClassHandler(ECN::ECClassId classId) {
+    bool RegisterClassHandler(ECN::ECClassId classId, std::vector<Utf8CP> customHandledProperties = {}) {
         static_assert(std::is_base_of<IClassHandler, T>::value, "T must be derived from IClassHandler");
         BeMutexHolder _(m_mutex);
         if (std::find_if(m_handlers.begin(), m_handlers.end(), [&](const auto& handler) { return handler->GetClassId() == classId; }) != m_handlers.end()) {
@@ -151,17 +104,22 @@ public:
         if (!ecClass) {
             return false;
         }
-        m_handlers.emplace_back(std::make_unique<T>(m_ecdb, classId));
+        auto newHandler = std::make_unique<T>();
+        newHandler->m_classId = classId;
+        for(auto& prop : customHandledProperties) {
+            newHandler->m_customHandledProperties.insert(prop);
+        }
+        m_handlers.push_back(std::move(newHandler));
         m_handlerMap.clear();
         return true;
     }
     template <typename T>
-    bool RegisterClassHandler(Utf8CP className) {
+    bool RegisterClassHandler(Utf8CP className, std::vector<Utf8CP> customHandledProperties = {}) {
         auto classP = m_ecdb.Schemas().FindClass(className);
         if (!classP) {
             return false;
         }
-        return RegisterClassHandler<T>(classP->GetId());
+        return RegisterClassHandler<T>(classP->GetId(), customHandledProperties);
     }
     template <typename T>
     bool UnregisterClassHandler(ECN::ECClassId classId) {

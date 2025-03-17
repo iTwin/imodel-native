@@ -12,10 +12,16 @@ using IClassHandler = InstanceRepository::IClassHandler;
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void InstanceRepository::Reset() {
+void InstanceRepository::Reset(bool clearHandlers) {
     BeMutexHolder _(m_mutex);
-    m_handlerMap.clear();
-    m_handlers.clear();
+    if (clearHandlers) {
+        m_handlers.clear();
+        m_handlerMap.clear();
+    } else {
+        for (auto& handler : m_handlers) {
+            handler->Reset();
+        }
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -64,33 +70,43 @@ DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsForma
         return BE_SQLITE_ERROR;
     }
 
-    auto& handlers = TryGetHandlers(classId);
+    auto& handlers = TryGetHandlers(classId, inFmt, Operation::Insert, in, userOptions);
     if (!handlers.empty()) {
         ECInstanceId instanceId;
         for (auto handler : handlers) {
-            if (handler->OnNextId(instanceId) == PropertyHandlerResult::Handled) {
+            handler->OnNextId(instanceId);
+            if (instanceId.IsValid()) {
+                options.UseInstanceId(instanceId);
                 break;
             }
         }
 
-        if (instanceId.IsValid()) {
-            options.UseInstanceId(instanceId);
-        }
-
-        for (auto handler : handlers) {
-            handler->OnBeforeInsertInstance(in, userOptions, inFmt);
-        }
-
         const auto instKey = ECInstanceKey(classId, instanceId);
         options.SetCustomBindHandler([&](ECN::ECPropertyCR prop, IECSqlBinder& binder, BeJsConst instance, BeJsConst val, ECSqlStatus& rc) {
-            auto args = WriteArgs(instKey, inFmt, userOptions, binder, val, prop, instance, true);
             for (auto handler : handlers) {
-                auto result = handler->OnBindProperty(args);
+                auto status = handler->OnBindECProperty(prop, val, binder, rc);
+                if (status == PropertyHandlerResult::Handled) {
+                    return PropertyHandlerResult::Handled;
+                }
+            }
+            return PropertyHandlerResult::Continue;
+        });
+        options.SetUserPropertyHandler([&](Utf8CP name, BeJsConst val, PropertyBinder::Finder finder, ECSqlStatus& rc) {
+            for (auto handler : handlers) {
+                auto result = handler->OnBindUserProperty(name, val, finder, rc);
                 if (result == PropertyHandlerResult::Handled) {
                     return PropertyHandlerResult::Handled;
                 }
             }
             return PropertyHandlerResult::Continue;
+        });
+        options.SetCanBindHandler([&](ECN::ECPropertyCR prop) {
+            for (auto handler : handlers) {
+                if (handler->m_customHandledProperties.find(prop.GetName()) != handler->m_customHandledProperties.end()) {
+                    return false;
+                }
+            }
+            return true;
         });
     }
 
@@ -99,6 +115,18 @@ DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsForma
         m_lastError = m_ecdb.GetInstanceWriter().GetLastError();
     }
     return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+std::vector<IClassHandler*>& InstanceRepository::TryGetHandlers(ECN::ECClassId classId, JsFormat fmt, Operation operation, BeJsConst& instance, BeJsConst& userOptions)
+    const {
+    auto& handlers = TryGetHandlers(classId);
+    for (auto handler : handlers) {
+        handler->SetContext(m_ecdb, instance, userOptions, fmt, operation);
+    }
+    return handlers;
 }
 
 //---------------------------------------------------------------------------------------
@@ -116,21 +144,34 @@ DbResult InstanceRepository::Update(BeJsValue in, BeJsConst userOptions, JsForma
         return BE_SQLITE_ERROR;
     }
 
-    auto handlers = TryGetHandlers(instKey.GetClassId());
+    auto& handlers = TryGetHandlers(instKey.GetClassId(), inFmt, Operation::Update, in, userOptions);
     if (!handlers.empty()) {
-        for (auto handler : handlers) {
-            handler->OnBeforeUpdateInstance(in, userOptions, inFmt);
-        }
 
         options.SetCustomBindHandler([&](ECN::ECPropertyCR prop, IECSqlBinder& binder, BeJsConst instance, BeJsConst val, ECSqlStatus& rc) {
-            auto args = WriteArgs(instKey, inFmt, userOptions, binder, val, prop, instance, false);
             for (auto handler : handlers) {
-                auto result = handler->OnBindProperty(args);
+                auto status = handler->OnBindECProperty(prop, val, binder, rc);
+                if (status == PropertyHandlerResult::Handled) {
+                    return PropertyHandlerResult::Handled;
+                }
+            }
+            return PropertyHandlerResult::Continue;
+        });
+        options.SetUserPropertyHandler([&](Utf8CP name, BeJsConst val, PropertyBinder::Finder finder, ECSqlStatus& rc) {
+            for (auto handler : handlers) {
+                auto result = handler->OnBindUserProperty(name, val, finder, rc);
                 if (result == PropertyHandlerResult::Handled) {
                     return PropertyHandlerResult::Handled;
                 }
             }
             return PropertyHandlerResult::Continue;
+        });
+        options.SetCanBindHandler([&](ECN::ECPropertyCR prop) {
+            for (auto handler : handlers) {
+                if (handler->m_customHandledProperties.find(prop.GetName()) != handler->m_customHandledProperties.end()) {
+                    return false;
+                }
+            }
+            return true;
         });
     }
 
@@ -175,13 +216,13 @@ DbResult InstanceRepository::Delete(ECInstanceKeyCR key, BeJsConst userOptions, 
 DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance, BeJsConst userOptions, JsFormat fmt) const {
     BeMutexHolder _(m_mutex);
     m_lastError.clear();
-
-    auto handlers = TryGetHandlers(instKey.GetClassId());
+    auto nullValue = BeJsDocument::Null();
+    auto& handlers = TryGetHandlers(instKey.GetClassId(), fmt, Operation::Read, nullValue, userOptions);
     InstanceReader::Position pos(instKey.GetInstanceId(), instKey.GetClassId());
     auto& reader = m_ecdb.GetInstanceReader();
 
     auto rc = BE_SQLITE_ROW;
-    if (!reader.Seek(pos, [&](const InstanceReader::IRowContext& row) {
+    if (!reader.Seek(pos, [&](const InstanceReader::IRowContext& row, PropertyReader::Finder finder) {
             ECSqlRowAdaptor adaptor(m_ecdb);
             adaptor.GetOptions().SetAbbreviateBlobs(false);
             adaptor.GetOptions().SetConvertClassIdsToClassNames(fmt == JsFormat::JsName);
@@ -189,28 +230,42 @@ DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance
             adaptor.GetOptions().SetUseClassFullNameInsteadofClassName(fmt == JsFormat::JsName);
             if (!handlers.empty()) {
                 adaptor.SetCustomHandler([&](BeJsValue out, IECSqlValue const& val) {
-                    auto args = ReadArgs(instKey, fmt, userOptions, val, out, outInstance);
+                    ECSqlStatus status = ECSqlStatus::Success;
                     for (auto handler : handlers) {
-                        auto result = handler->OnReadProperty(args);
+                        auto result = handler->OnReadECProperty(*val.GetColumnInfo().GetProperty(),  val, out, status);
                         if (result == PropertyHandlerResult::Handled) {
                             return PropertyHandlerResult::Handled;
                         }
                     }
                     return PropertyHandlerResult::Continue;
                 });
+                adaptor.SetSkipPropertyHandler([&](ECPropertyCR prop) {
+                    for (auto handler : handlers) {
+                        if (handler->m_customHandledProperties.find(prop.GetName()) != handler->m_customHandledProperties.end())
+                            return true;
+                    }
+                    return false;
+                });
             }
 
             if (ERROR == adaptor.RenderRowAsObject(outInstance, row)) {
                 rc = BE_SQLITE_ERROR;
             }
+
+            ECSqlStatus status = ECSqlStatus::Success;
             for (auto handler : handlers) {
-                handler->OnAfterReadInstance(outInstance, userOptions, fmt);
+                status = handler->OnReadComplete(outInstance, finder);
+                if (!status.IsSuccess()) {
+                    rc = BE_SQLITE_ERROR;
+                    break;
+                }
             }
         })) {
         rc = BE_SQLITE_DONE;
     }
     return rc;
 }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -220,6 +275,67 @@ DbResult InstanceRepository::Read(BeJsConst in, BeJsValue outInstance, BeJsConst
         return BE_SQLITE_ERROR;
     }
     return Read(instKey, outInstance, userOptions, fmt);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECInstanceKey InstanceRepository::IClassHandler::ParseInstanceKey() const {
+    if (GetInstance().isNull()) {
+        return ECInstanceKey();
+    }
+    ECInstanceKey key;
+    GetDb<ECDb>().GetInstanceWriter().TryGetInstanceKey(key, GetInstance(), GetFormat());
+    return key;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECClassId InstanceRepository::IClassHandler::ParseClassId() const {
+    if (GetInstance().isNull()) {
+        return ECClassId();
+    }
+    ECClassId key;
+    GetDb<ECDb>().GetInstanceWriter().TryGetClassId(key, GetInstance(), GetFormat());
+    return key;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECInstanceId InstanceRepository::IClassHandler::ParseInstanceId() const {
+    if (GetInstance().isNull()) {
+        return ECInstanceId();
+    }
+    ECInstanceId key;
+    GetDb<ECDb>().GetInstanceWriter().TryGetId(key, GetInstance(), GetFormat());
+    return key;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void InstanceRepository::IClassHandler::SetError(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    m_error.VSprintf(fmt, args);
+    va_end(args);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void InstanceRepository::IClassHandler::SetContext(ECDbCR db, BeJsConst& instance, BeJsConst& userOptions, JsFormat fmt, Operation operation) {
+    m_db = &db;
+    m_error.clear();
+    m_instance = &instance;
+    m_userOptions = &userOptions;
+    format = fmt;
+    m_operation = operation;
+    if (!m_class) {
+        m_class = db.Schemas().GetClass(m_classId);
+    }
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

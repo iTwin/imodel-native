@@ -13,16 +13,26 @@
 #include <list>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+struct PropertyBinder final {
+    using Finder = std::function<std::optional<PropertyBinder>(Utf8CP)>;
+
+private:
+    ECN::ECPropertyCP m_property;
+    IECSqlBinder* m_binder;
+
+public:
+    PropertyBinder(ECN::ECPropertyCR prop, IECSqlBinder& binder) : m_property(&prop), m_binder(&binder) {}
+    PropertyBinder(PropertyBinder const&) = default;
+    PropertyBinder& operator=(PropertyBinder const&) = default;
+    ECN::ECPropertyCR GetProperty() const { return *m_property; }
+    IECSqlBinder& GetBinder() const { return *m_binder; }
+};
+
 //=======================================================================================
 //! @internal Allow fast reading of full instance by its classid and instanceId
 //=======================================================================================
 struct InstanceWriter final {
 public:
-    enum class Abortable : bool {
-        Continue = false,
-        Abort = true,
-    };
-
     enum class WriterOp {
         Insert,
         Update,
@@ -34,26 +44,51 @@ public:
     struct DeleteOptions;
 
     struct Options {
-        using UnknownJsPropertyHandler = std::function<Abortable(Utf8CP, BeJsConst)>;
         using CustomBindHandler = std::function<PropertyHandlerResult(ECN::ECPropertyCR, IECSqlBinder&, BeJsConst, BeJsConst, ECSqlStatus&)>;
+        using UserPropertyHandler = std::function<PropertyHandlerResult(Utf8CP, BeJsConst, PropertyBinder::Finder, ECSqlStatus&)>;
+        using CanBindHanlder = std::function<bool(ECN::ECPropertyCR)>;
+
     protected:
         bool m_useJsName;
-        UnknownJsPropertyHandler m_unknownJsPropertyHandler;
+        UserPropertyHandler m_userPropertyHandler;
         CustomBindHandler m_customBindHandler;
+        CanBindHanlder m_canBindHandler;
         WriterOp m_op;
 
     public:
         Options(WriterOp op) : m_useJsName(false), m_op(op) {}
         bool GetUseJsNames() const { return m_useJsName; }
-        Options& UseJsNames(bool v) { m_useJsName = v; return *this; }
-        Options& SetUnknownJsPropertyHandler(UnknownJsPropertyHandler handler);
-        Options& SetCustomBindHandler(CustomBindHandler handler) { m_customBindHandler = handler; return *this; }
         CustomBindHandler GetCustomBindHandler() const { return m_customBindHandler; }
-
-        ECDB_EXPORT UnknownJsPropertyHandler GetUnknownJsPropertyHandler() const;
-        ECDB_EXPORT InsertOptions& asInsert();
-        ECDB_EXPORT UpdateOptions& asUpdate();
-        ECDB_EXPORT DeleteOptions& asDelete();
+        CanBindHanlder GetCanBindHandler() const { return m_canBindHandler; }
+        UserPropertyHandler GetUserPropertyHandler() const { return m_userPropertyHandler; }
+        Options& UseJsNames(bool v) {
+            m_useJsName = v;
+            return *this;
+        }
+        Options& SetUserPropertyHandler(UserPropertyHandler handler) {
+            m_userPropertyHandler = handler;
+            return *this;
+        }
+        Options& SetCustomBindHandler(CustomBindHandler handler) {
+            m_customBindHandler = handler;
+            return *this;
+        }
+        Options& SetCanBindHandler(CanBindHanlder handler) {
+            m_canBindHandler = handler;
+            return *this;
+        }
+        InsertOptions& asInsert() {
+            BeAssert(m_op == WriterOp::Insert);
+            return static_cast<InsertOptions&>(*this);
+        }
+        UpdateOptions& asUpdate() {
+            BeAssert(m_op == WriterOp::Update);
+            return static_cast<UpdateOptions&>(*this);
+        }
+        DeleteOptions& asDelete() {
+            BeAssert(m_op == WriterOp::Delete);
+            return static_cast<DeleteOptions&>(*this);
+        }
         bool isInsert() const { return m_op == WriterOp::Insert; }
         bool isUpdate() const { return m_op == WriterOp::Update; }
         bool isDelete() const { return m_op == WriterOp::Delete; }
@@ -62,6 +97,7 @@ public:
     struct UpdateOptions final : public Options {
     private:
         bool m_useIncrementalUpdate = false;
+
     public:
         UpdateOptions() : Options(WriterOp::Update) {}
         bool GetUseIncrementalUpdate() const { return m_useIncrementalUpdate; }
@@ -94,8 +130,8 @@ public:
     };
 
     struct DeleteOptions final : public Options {
-        public:
-            DeleteOptions() : Options(WriterOp::Delete) {}
+    public:
+        DeleteOptions() : Options(WriterOp::Delete) {}
     };
     struct Impl;
 
@@ -119,7 +155,6 @@ public:
     ECDB_EXPORT bool TryGetId(ECInstanceId& instanceId, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
     ECDB_EXPORT bool TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
     ECDB_EXPORT bool TryGetInstanceKey(ECInstanceKeyR key, BeJsConst in, JsFormat jsFmt = JsFormat::Standard) const;
-
 
     ECDB_EXPORT void Reset();
 };
