@@ -13,6 +13,21 @@
 #include <json/json.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+struct PropertyReader final {
+    using Finder = std::function<std::optional<PropertyReader>(Utf8CP)>;
+
+private:
+    const IECSqlValue* m_reader;
+
+public:
+    PropertyReader(const IECSqlValue& reader) : m_reader(&reader) {}
+    PropertyReader(PropertyReader const&) = default;
+    PropertyReader& operator=(PropertyReader const&) = default;
+    ECN::ECPropertyCR GetProperty() const { return *(m_reader->GetColumnInfo().GetProperty()); }
+    const IECSqlValue& GetReader() const { return *m_reader; }
+};
+
 //=======================================================================================
 //! @internal Allow fast reading of full instance by its classid and instanceId
 //=======================================================================================
@@ -55,7 +70,7 @@ struct InstanceReader final {
             void SetForceSeek(bool v) { m_forceSeek = v; }
     };
 
-    using RowCallback = std::function<void(IRowContext const&)>;
+    using RowCallback = std::function<void(IRowContext const&, PropertyReader::Finder)>;
     struct Impl;
     private:
         Impl* m_pImpl;

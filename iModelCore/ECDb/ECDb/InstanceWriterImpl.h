@@ -20,8 +20,7 @@ struct InstanceWriter::Impl final {
     using InsertOptions = InstanceWriter::InsertOptions;
     using UpdateOptions = InstanceWriter::UpdateOptions;
     using DeleteOptions = InstanceWriter::DeleteOptions;
-    using Abortable = InstanceWriter::Abortable;
-    using UnknownJsPropertyHandler = Options::UnknownJsPropertyHandler;
+    using CustomBindHandler = Options::CustomBindHandler;
 
     //---------------------------------------------------------------------------------------
     // @bsistruct
@@ -164,7 +163,7 @@ struct InstanceWriter::Impl final {
             return m_writer.GetECDb().Schemas().FindClass(name);
         }
         bool UseJsNames() const { return m_options.GetUseJsNames(); }
-        Abortable NotifyUnknownJsProperty(Utf8CP prop, BeJsConst val) const;
+        ECSqlStatus NotifyUserProperty(Utf8CP prop, BeJsConst val, InstanceWriter::Impl::MruStatementCache::CachedWriteStatement& stmt) const;
         void SetError(const char* fmt, ...);
         bool HasError() const { return !m_error.empty(); }
         BeJsConst GetInstance() const { return m_instance; }

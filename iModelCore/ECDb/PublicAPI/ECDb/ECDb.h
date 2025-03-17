@@ -140,6 +140,13 @@ struct ECSqlConfig {
         void SetExperimentalFeaturesEnabled(bool v)  { m_experimentalFeaturesEnabled = v; }
 };
 
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct AsciiCaseInsensitiveCompare {
+    ECDB_EXPORT bool operator()(Utf8StringCR lhs, Utf8StringCR rhs) const;
+    ECDB_EXPORT bool operator()(Utf8CP lhs, Utf8CP rhs) const;
+};
 
 //=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".

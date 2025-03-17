@@ -70,6 +70,9 @@ BentleyStatus ECSqlRowAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& stm
                     ECN::ECJsonUtilities::LowerFirstChar(memberName);
                 }
 
+                if (m_skipPropertyHandler && m_skipPropertyHandler(*memberProp))
+                    continue;
+
                 if (SUCCESS != RenderRootProperty(rowJson[memberName], ecsqlValue))
                     return ERROR;
             } else {

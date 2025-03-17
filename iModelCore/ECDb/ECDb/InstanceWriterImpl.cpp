@@ -6,6 +6,7 @@
 #include <ECDb/InstanceWriter.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 #include <GeomSerialization/GeomLibsSerialization.h>
+// #include <Napi/napi.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -34,12 +35,19 @@ void BindContext::SetError(const char* fmt, ...) {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-Impl::Abortable BindContext::NotifyUnknownJsProperty(Utf8CP prop, BeJsConst val) const {
-    auto handler = m_options.GetUnknownJsPropertyHandler();
-    if (handler) {
-        return handler(prop, val);
+ECSqlStatus BindContext::NotifyUserProperty(Utf8CP name, BeJsConst val, CachedWriteStatement& stmt) const {
+    auto handler = m_options.GetUserPropertyHandler();
+    ECSqlStatus rc;
+    if (handler != nullptr) {
+        auto status =  handler(name, val, [&](Utf8CP name) -> std::optional<PropertyBinder> {
+            auto prop = stmt.FindBinder(name);
+            if (prop != nullptr) {
+                return PropertyBinder(prop->GetProperty(), prop->GetBinder());
+            }
+            return std::nullopt; }, rc);
+        if (status == PropertyHandlerResult::Handled) { return rc; }
     }
-    return Abortable::Continue;
+    return ECSqlStatus::Success;
 }
 //******************************CachedWriteStatement**************************************
 //----------------------------------------------------------------------------------
@@ -569,10 +577,7 @@ ECSqlStatus Impl::BindStruct(BindContext& ctx, ECStructClassCR structClass, IECS
     val.ForEachProperty([&](auto prop, auto val) {
         auto structProp = structClass.GetPropertyP(prop);
         if (structProp == nullptr) {
-            if (ctx.NotifyUnknownJsProperty(prop, val) == Abortable::Abort) {
-                return FOREACH_ABORT;
-            }
-            return FOREACH_CONTINUE;
+            return false;
         }
         rc = BindDataProperty(ctx, *structProp, binder[structProp->GetId()], val);
         if (!rc.IsSuccess()) {
@@ -888,7 +893,8 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
         inst.ForEachProperty([&](auto prop, auto val) {
             auto binder = stmt.FindBinder(prop);
             if (binder == nullptr) {
-                if (ctx.NotifyUnknownJsProperty(prop, val) == Abortable::Abort) {
+                bindStatus = ctx.NotifyUserProperty(prop, val, stmt);
+                if (bindStatus != ECSqlStatus::Success) {
                     return FOREACH_ABORT;
                 }
                 return FOREACH_CONTINUE; // continue
@@ -896,6 +902,12 @@ DbResult Impl::Insert(BeJsConst inst, InstanceWriter::InsertOptions const& optio
             if (binder->GetPropertyMap().GetType() == PropertyMap::Type::ECInstanceId) {
                 return false; // skip ECInstanceId property, we will bind it later
             }
+            if (auto canBind = ctx.GetOptions().GetCanBindHandler()) {
+                if (!canBind(binder->GetProperty())) {
+                    return FOREACH_CONTINUE;
+                }
+            }
+
             bindStatus = BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), val);
             if (!bindStatus.IsSuccess()) {
                 return true;
@@ -968,27 +980,11 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
 
     auto rc = m_cache.WithUpdate(classId, [&](CachedWriteStatement& stmt) {
         ECSqlStatus bindStatus = ECSqlStatus::Success;
-        auto insert = [&](Utf8CP prop, BeJsConst val) {
-            auto binder = stmt.FindBinder(prop);
-            if (binder == nullptr) {
-                if (ctx.NotifyUnknownJsProperty(prop, val) == Abortable::Abort) {
-                    return FOREACH_ABORT;
-                }
-                return FOREACH_CONTINUE; // continue
-            }
-            bindStatus = BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), val);
-            if (!bindStatus.IsSuccess()) {
-                return true;
-            }
-            return false;
-        };
-
         if (options.GetUseIncrementalUpdate()) {
-            BeJsDocument doc;
-            doc.SetEmptyObject();
-            doc.From(inst);
+            // bind any properties missing in the provided instance by reading it from db
+            // if these properties are not binded they are otherwise set to null.
             InstanceReader::Position pos(id, classId);
-            m_cache.GetECDb().GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row) {
+            m_cache.GetECDb().GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row, auto _) {
                 JsReadOptions param;
                 param.SetUseJsNames(options.GetUseJsNames());
                 param.SetAbbreviateBlobs(false);
@@ -996,16 +992,45 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
                 param.SetSkipReadOnlyProperties(true);
                 param.SetUseClassFullNameInsteadofClassName(options.GetUseJsNames());
                 row.GetJson(param).ForEachProperty([&](auto prop, auto val) {
-                    if (!doc.hasMember(prop)) {
-                        doc[prop].From(val);
+                    if (inst.hasMember(prop)) {
+                        return FOREACH_CONTINUE
+                    }
+
+                    if (auto binder = stmt.FindBinder(prop)) {
+                        bindStatus = BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), val);
+                        if (!bindStatus.IsSuccess()) {
+                            return FOREACH_ABORT;
+                        }
                     }
                     return FOREACH_CONTINUE;
                 });
             });
+        }
 
-            doc.ForEachProperty(insert);
-        } else {
-            inst.ForEachProperty(insert);
+        // bind properties from the provided instance
+        if (bindStatus.IsSuccess()) {
+            inst.ForEachProperty([&](auto prop, auto val) {
+                auto binder = stmt.FindBinder(prop);
+                if (binder == nullptr) {
+                    bindStatus = ctx.NotifyUserProperty(prop, val, stmt);
+                    if (bindStatus != ECSqlStatus::Success) {
+                        return FOREACH_ABORT;
+                    }
+                    return FOREACH_CONTINUE; // continue
+                }
+
+                if (auto canBind = ctx.GetOptions().GetCanBindHandler()) {
+                    if (!canBind(binder->GetProperty())) {
+                        return FOREACH_CONTINUE;
+                    }
+                }
+
+                bindStatus = BindRootProperty(ctx, binder->GetPropertyMap(), binder->GetBinder(), val);
+                if (!bindStatus.IsSuccess()) {
+                    return FOREACH_ABORT;
+                }
+                return FOREACH_CONTINUE;
+            });
         }
 
         if (!bindStatus.IsSuccess()) {
@@ -1140,43 +1165,6 @@ void InstanceWriter::Reset() {
 //+---------------+---------------+---------------+---------------+---------------+-
 Utf8StringCR InstanceWriter::GetLastError() const {
     return m_pImpl->GetLastError();
-}
-
-//----------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+-
-InstanceWriter::Options& InstanceWriter::Options::SetUnknownJsPropertyHandler(UnknownJsPropertyHandler handler) {
-    m_unknownJsPropertyHandler = handler;
-    return *this;
-}
-
-//----------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+-
-InstanceWriter::Options::UnknownJsPropertyHandler InstanceWriter::Options::GetUnknownJsPropertyHandler() const { return m_unknownJsPropertyHandler; }
-
-//----------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+-
-InstanceWriter::InsertOptions& InstanceWriter::Options::asInsert() {
-    BeAssert(m_op == WriterOp::Insert);
-    return static_cast<InsertOptions&>(*this);
-}
-
-//----------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+-
-InstanceWriter::UpdateOptions& InstanceWriter::Options::asUpdate() {
-    BeAssert(m_op == WriterOp::Update);
-    return static_cast<UpdateOptions&>(*this);
-}
-
-//----------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+-
-InstanceWriter::DeleteOptions& InstanceWriter::Options::asDelete() {
-    BeAssert(m_op == WriterOp::Delete);
-    return static_cast<DeleteOptions&>(*this);
 }
 
 //----------------------------------------------------------------------------------

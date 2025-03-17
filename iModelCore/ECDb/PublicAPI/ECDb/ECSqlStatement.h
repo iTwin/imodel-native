@@ -819,11 +819,12 @@ struct JsReadOptions final {
 //=======================================================================================
 struct ECSqlRowAdaptor {
     using CustomHandler = std::function<PropertyHandlerResult(BeJsValue out, IECSqlValue const& val)>;
-
+    using SkipPropertyHandler = std::function<bool(ECN::ECPropertyCR)>;
 private:
     ECDbCR m_ecdb;
     JsReadOptions m_options;
     CustomHandler m_customHandler;
+    SkipPropertyHandler m_skipPropertyHandler;
 private:
     BentleyStatus RenderRootProperty(BeJsValue out, IECSqlValue const& in) const;
     BentleyStatus RenderProperty(BeJsValue out, IECSqlValue const& in) const;
@@ -845,6 +846,7 @@ public:
     ECDB_EXPORT void GetMetaData(ECSqlRowProperty::List& list, ECSqlStatement const& stmt) const;
     JsReadOptions& GetOptions() { return m_options; }
     void SetCustomHandler(CustomHandler handler) { m_customHandler = handler; }
+    void SetSkipPropertyHandler(SkipPropertyHandler handler) { m_skipPropertyHandler = handler; }
     JsReadOptions const& GetOptions() const { return m_options; }
     BentleyStatus RenderRowAsArray(BeJsValue rowJson, IECSqlRow const& stmt) const { return RenderRow(rowJson, stmt, true); }
     BentleyStatus RenderRowAsObject(BeJsValue rowJson, IECSqlRow const& stmt) const{ return RenderRow(rowJson, stmt, false); }

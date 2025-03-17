@@ -2,8 +2,6 @@
 #include "DgnPlatformInternal.h"
 
 using IClassHandler = InstanceRepository::IClassHandler;
-using WriteArgs = InstanceRepository::WriteArgs;
-using ReadArgs = InstanceRepository::ReadArgs;
 
 namespace Handlers {
     //=======================================================================================
@@ -11,38 +9,41 @@ namespace Handlers {
     //=======================================================================================
     struct Element : IClassHandler {
         constexpr static auto ClassName = "BisCore:Element";
-        Element(ECDbCR db, ECN::ECClassId classId) : IClassHandler(db, classId) {}
-        PropertyHandlerResult OnNextId(ECInstanceId& id) override {
-            GetDb<DgnDb>().GetElementIdSequence().GetNextValue(id);
-            return PropertyHandlerResult::Handled;
+        void OnNextId(ECInstanceId& id) override {
+            if (GetDb<DgnDb>().GetElementIdSequence().GetNextValue(id) != BE_SQLITE_OK) {
+                SetError("Failed to get next id for Element");
+            }
         };
     };
     //=======================================================================================
     //! @bsiclass
     //=======================================================================================
-    // struct GeometricElement : IClassHandler {
-    //     constexpr static auto ClassName = "BisCore:GeometricElement";
-    //     GeometricElement(ECDbCR db, ECN::ECClassId classId) : IClassHandler(db, classId) {}
-    //     virtual PropertyHandlerResult OnBindProperty(WriteArgs& args) {
+    struct Model : IClassHandler {
+        constexpr static auto ClassName = "BisCore:Model";
+        void OnNextId(ECInstanceId& id) override {
+            BeAssert(GetFormat() == JsFormat::JsName);
+            auto modeledElmentId = BeJsPath::Extract(GetInstance(), "modeledElment.id");
+            if (modeledElmentId.has_value()) {
+                id = modeledElmentId->GetId64<ECInstanceId>();
+            }
+        };
+    };
 
-    //         return PropertyHandlerResult::Continue;
-    //     };
-    //     virtual PropertyHandlerResult OnReadProperty(ReadArgs& args) {
-    //         args.GetProperty().GetName().EqualsIAscii("Category");
-
-    //         return PropertyHandlerResult::Continue;
-    //     };
-    // };
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
+    struct GeometricElement : IClassHandler {
+        constexpr static auto ClassName = "BisCore:GeometricElement";
+    };
 
     //=======================================================================================
     //! @bsiclass
     //=======================================================================================
     struct RenderMaterial : IClassHandler {
         constexpr static auto ClassName = "BisCore:RenderMaterial";
-        RenderMaterial(ECDbCR db, ECN::ECClassId classId) : IClassHandler(db, classId) {}
 
-        void OnAfterReadInstance(BeJsValue& instance, const BeJsConst&, JsFormat fmt) {
-            BeAssert(fmt == JsFormat::JsName);
+        virtual ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder _) override {
+            BeAssert(GetFormat() == JsFormat::JsName);
             auto map = BeJsPath::Extract(instance, "jsonProperties.materialAssets.renderMaterial.Map");
             if (map.has_value()) {
                 map.value().ForEachProperty([&](auto memberName, auto memberJson) {
@@ -53,8 +54,8 @@ namespace Handlers {
                         auto textureIdJson = map->Get(memberName)["TextureId"];
                         (BeJsValue&)textureIdJson = textureId;
                         if (!textureId.IsValid()) {
-                            ECInstanceId elementId;
-                            if (TryGetId(elementId, instance, fmt)) {
+                            ECInstanceId elementId = ParseInstanceId();
+                            if (elementId.IsValid()) {
                                 LOG.warningv("RenderMaterialId: %s, had a TextureId %s which could not be converted to a valid id.", elementId.ToHexStr().c_str(), textureIdAsStringForLogging.c_str());
                                 BeAssert(false && "RenderMaterial had a textureId that we converted to invalid.");
                             }
@@ -63,6 +64,7 @@ namespace Handlers {
                     return false;
                 });
             }
+            return ECSqlStatus::Success;
         }
     };
 }
@@ -73,7 +75,8 @@ namespace Handlers {
 bool RegisterBisCoreHandlers(DgnDbR db) {
     bool rc = true;
     auto& repo = db.GetInstanceRepository();
-    rc &= repo.RegisterClassHandler<Handlers::Element>(Handlers::Element::ClassName);
+    rc &= repo.RegisterClassHandler<Handlers::Element>(Handlers::Element::ClassName, {"CodeValue", "CodeScope", "CodeSpec"});
     rc &= repo.RegisterClassHandler<Handlers::RenderMaterial>(Handlers::RenderMaterial::ClassName);
+    rc &= repo.RegisterClassHandler<Handlers::Model>(Handlers::Model::ClassName);
     return rc;
 }
