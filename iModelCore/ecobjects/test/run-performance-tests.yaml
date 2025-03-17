@@ -44,7 +44,6 @@ stages:
           - Cmd
 
         steps:
-        - checkout: self
         - checkout: imodel-native-internal
 
         - template: build/templates/prebuild.yml@imodel-native-internal
