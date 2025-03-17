@@ -48,7 +48,7 @@ stages:
 
         - template: build/templates/prebuild.yml@imodel-native-internal
           parameters:
-            otherRepo: imodel-native
+            otherRepo: imodel-native-internal
             nativePR: 'main'
 
         # - task: PythonScript@0
