@@ -4,27 +4,17 @@ rem   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 rem   See LICENSE.md in the repository root for full copyright notice.
 rem ------------------------------------------------------------------------------------
 
-: KEEP THIS FILE IN SYNC ACROSS ALL NATIVE GEOMLIBS REPOS:
-: * PPBase\Geomlibs\serialization\src\FlatBuffer\CompileFbs.bat
-: * imodel-native\iModelCore\GeomLibs\serialization\src\FlatBuffer\CompileFbs.bat
-: * imodel02\iModelCore\GeomLibs\serialization\src\FlatBuffer\CompileFbs.bat
-
 : NOTES:
 : * This Windows script compiles the flatbuffer geometry schema allcg.fbs into flatbuffer accessors for Bentley's
 :   native, iTwin, and .NET core geometry libraries.
-: * Run this script whenever data is added to a geometry type that must be persisted, then manually copy its outputs
-:   to the respective repos:
-:   * C++ output is %OutDir%allcg_generated.h, and belongs in:
-:     * PPBase\Geomlibs\serialization\src\FlatBuffer\
-:     * imodel02\iModelCore\GeomLibs\serialization\src\FlatBuffer\
-:     * imodel-native\iModelCore\GeomLibs\serialization\src\FlatBuffer\  <--automatically copied by this script
-:   * TypeScript output is %OutDir%BGFBAccessors.ts, and belongs in:
-:     * itwinjs\core\geometry\src\serialization\
-:   * .NET output is %OutDir%*.cs, and belongs in:
-:     * PPBase\BentleyGeometryNet\src\FlatBuffers\gensrc\
-: * Do not commit %OutDir% and %TempDir%. After copying outputs, manually delete these directories. %TempDir% is
-:   automatically deleted by this script on successful completion.
-: * The Google flatbuffers github repo has diverged too much to efficiently port Bentley changes and/or analyze the
+: * Changes to allcg.fbs and this file must be reflected in all native geomlibs repos: PPbase, imodel-native, imodel02.
+: * Whenever data is added to a geometry type that must be persisted:
+:   * Update allcg.fbs in all 3 locations.
+:   * Run this script in all 3 locations, and follow its directions.
+: * Do not commit %TempDir% and %OutDir%:
+:   * %TempDir% is automatically deleted on successful completion of this script.
+:   * %OutDir% may contain generated files (e.g., TypeScript accessors) to be manually copied elsewhere.
+: * The Google flatbuffers GitHub repo has diverged too much to efficiently port Bentley changes and/or analyze the
 :   generated accessor deltas. Lacking a compelling reason to upgrade, we continue to employ the original version
 :   of the flatbuffers compiler (with Bentley additions) that we first used to compile the TypeScript accessors:
 :   https://github.com/google/flatbuffers/releases/tag/v1.12.0 .
@@ -58,12 +48,9 @@ IF NOT EXIST %TempDir% MKDIR %TempDir% || (
 SET GeneratedFile=%TempDir%%BaseName%_generated.h
 IF NOT EXIST %GeneratedFile% @ECHO Failed to generate '%GeneratedFile%' && goto done
 
-SET OutFile=%OutDir%%BaseName%_generated.h
+SET OutFile=%SrcDir%%BaseName%_generated.h
 %GemaExe% -f %SrcDir%fixup\fixupNative.g %GeneratedFile% > %OutFile%
-COPY %OutFile% %SrcDir%
 @ECHO Done Generating %SrcDir%%BaseName%_generated.h
-@ECHO ... Please copy to PPBase\Geomlibs\serialization\src\FlatBuffer\%BaseName%_generated.h
-@ECHO ... Please copy to imodel02\iModelCore\GeomLibs\serialization\src\FlatBuffer\%BaseName%_generated.h
 
 : Typescript accessors
 @ECHO Compiling Typescript accessors...
@@ -77,23 +64,17 @@ IF NOT EXIST %GeneratedFile% @ECHO Failed to generate '%GeneratedFile%' && goto 
 SET OutFile=%OutDir%BGFBAccessors.ts
 %GemaExe% -f %SrcDir%fixup\fixupTypescript.g %GeneratedFile% > %OutFile%
 @ECHO Done Generating %OutFile%
-@ECHO ... Please copy to itwinjs\core\geometry\serialization\BGFBAccessors.ts
 
-: .NET accessors
-@ECHO Compiling .NET accessors...
-%BeFlatcExe% -n -o %OutDir% %SrcFile% || (
-    @ECHO .NET compile failed
-    goto done
-    )
-
-FOR %%F IN (%OutDir%*.cs) DO (
-    %GemaExe% -f %SrcDir%fixup\fixupManaged.g %%F > %TempFile%
-    @COPY %TempFile% %%F > nul
-    )
-
-@ECHO Done Generating %OutDir%*.cs
-@ECHO ... Please copy to PPBase\BentleyGeometryNet\src\FlatBuffers\gensrc\*.cs
 @ECHO FlatBuffer compilation is complete.
+@ECHO ---------------------
+@ECHO Further Instructions:
+@ECHO ---------------------
+@ECHO 1. Copy %OutFile% to itwinjs\core\geometry\src\serialization
+@ECHO 2. Copy %SrcFile% to PPBase\Geomlibs\serialization\src\FlatBuffer
+@ECHO 3. Run PPBase\Geomlibs\serialization\src\FlatBuffer\CompileFbs.bat
+@ECHO 4. Copy %SrcFile% to imodel02\iModelCore\GeomLibs\serialization\src\FlatBuffer
+@ECHO 5. Run imodel02\iModelCore\GeomLibs\serialization\src\FlatBuffer\CompileFbs.bat
+@ECHO ---------------------
 
 @RD /Q/S %TempDir%
 :done
