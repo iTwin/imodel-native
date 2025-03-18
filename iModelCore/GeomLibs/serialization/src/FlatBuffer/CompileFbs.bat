@@ -62,6 +62,8 @@ SET OutFile=%OutDir%%BaseName%_generated.h
 %GemaExe% -f %SrcDir%fixup\fixupNative.g %GeneratedFile% > %OutFile%
 COPY %OutFile% %SrcDir%
 @ECHO Done Generating %SrcDir%%BaseName%_generated.h
+@ECHO ... Please copy to PPBase\Geomlibs\serialization\src\FlatBuffer\%BaseName%_generated.h
+@ECHO ... Please copy to imodel02\iModelCore\GeomLibs\serialization\src\FlatBuffer\%BaseName%_generated.h
 
 : Typescript accessors
 @ECHO Compiling Typescript accessors...
@@ -91,7 +93,7 @@ FOR %%F IN (%OutDir%*.cs) DO (
 
 @ECHO Done Generating %OutDir%*.cs
 @ECHO ... Please copy to PPBase\BentleyGeometryNet\src\FlatBuffers\gensrc\*.cs
-@ECHO FlatBuffer compilation is complete. 
+@ECHO FlatBuffer compilation is complete.
 
 @RD /Q/S %TempDir%
 :done
