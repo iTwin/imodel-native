@@ -100,7 +100,7 @@ stages:
           - task: bentleysystemsinternal.iModel-Utilities-tasks.PerfData.PerfData@1
             displayName: 'Upload report data to DB: Time'
             inputs:
-              AppId: imodel02
+              AppId: ECObjects Native Library
               CsvPath: $(Pipeline.Workspace)\PerfTestsECObjects\run\Output\PerfTestResults\PerfResults.csv
               BuildId: $(Build.BuildId)
               DbName: imodeljsperfdata.database.windows.net
@@ -139,7 +139,7 @@ stages:
           - task: bentleysystemsinternal.iModel-Utilities-tasks.PerfData.PerfData@1
             displayName: 'Upload report data to DB: Memory'
             inputs:
-              AppId: imodel02
+              AppId: ECObjects Native Library
               CsvPath: $(Pipeline.Workspace)\PerfTestsECObjects\run\Output\PerfTestResults\PerfResults.csv
               BuildId: $(Build.BuildId)
               DbName: imodeljsperfdata.database.windows.net
@@ -178,7 +178,7 @@ stages:
           - task: bentleysystemsinternal.iModel-Utilities-tasks.PerfData.PerfData@1
             displayName: 'Upload report data to DB: PeakMemory'
             inputs:
-              AppId: imodel02
+              AppId: ECObjects Native Library
               CsvPath: $(Pipeline.Workspace)\PerfTestsECObjects\run\Output\PerfTestResults\PerfResults.csv
               BuildId: $(Build.BuildId)
               DbName: imodeljsperfdata.database.windows.net
