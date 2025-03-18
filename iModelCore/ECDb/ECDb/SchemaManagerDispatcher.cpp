@@ -274,6 +274,16 @@ SchemaManager::Dispatcher::Iterable SchemaManager::Dispatcher::GetIterable(Utf8C
 
     return Iterable(*manager);
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaManager::Dispatcher::ExistsManager(Utf8StringCR tableSpace) const
+    {
+    BeMutexHolder lock(m_mutex);
+    return m_managers.find(tableSpace) != m_managers.end();
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------

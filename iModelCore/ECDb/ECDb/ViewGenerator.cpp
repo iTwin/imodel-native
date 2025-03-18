@@ -616,23 +616,26 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         if (ctx.GetViewType() == ViewType::ECClassView)
             ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
 
-        if (SystemPropertyMap::PerTableIdPropertyMap const* classIdPropertyMap = tableRootClassMap->GetECClassIdPropertyMap()->FindDataPropertyMap(partition->GetTable()))
+        if (const auto ecClassIdPropertyMap = tableRootClassMap->GetECClassIdPropertyMap())
             {
-            const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
-            if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical &&
-                (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
+            if (SystemPropertyMap::PerTableIdPropertyMap const* classIdPropertyMap = ecClassIdPropertyMap->FindDataPropertyMap(partition->GetTable()))
                 {
-                const auto polymorphicInfo = isSelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo() : PolymorphicInfo::All();
-                Utf8String filterSQL;
-                if (SUCCESS != GenerateECClassIdFilter(filterSQL, classMap, partition->GetTable(), classIdPropertyMap->GetColumn(), polymorphicInfo))
-                    return ERROR;
-
-                if (!filterSQL.empty())
+                const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
+                if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical &&
+                    (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
                     {
-                    if (polymorphicInfo.IsOnly())
-                        view.Append(" WHERE ").Append(filterSQL.c_str());
-                    else
-                        view.Append(" ").Append(filterSQL.c_str());
+                    const auto polymorphicInfo = isSelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo() : PolymorphicInfo::All();
+                    Utf8String filterSQL;
+                    if (SUCCESS != GenerateECClassIdFilter(filterSQL, classMap, partition->GetTable(), classIdPropertyMap->GetColumn(), polymorphicInfo))
+                        return ERROR;
+
+                    if (!filterSQL.empty())
+                        {
+                        if (polymorphicInfo.IsOnly())
+                            view.Append(" WHERE ").Append(filterSQL.c_str());
+                        else
+                            view.Append(" ").Append(filterSQL.c_str());
+                        }
                     }
                 }
             }
@@ -640,7 +643,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         unionList.push_back(view);
         }
 
-    if (unionList.empty())
+    if (unionList.empty() || classMap.GetMapStrategy().GetStrategy() == MapStrategy::UnsupportedByECVersion)
         {
         if (RenderNullView(viewSql, ctx, classMap) != SUCCESS)
             return ERROR;
@@ -817,7 +820,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
         unionList.push_back(view);
         }
 
-    if (unionList.empty())
+    if (unionList.empty() || relationMap.GetMapStrategy().GetStrategy() == MapStrategy::UnsupportedByECVersion)
         {
         if (RenderNullView(viewSql, ctx, relationMap) != SUCCESS)
             return ERROR;
@@ -1116,7 +1119,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         unionList.push_back(unionQuerySql);
         }
 
-    if (unionList.empty())
+    if (unionList.empty() || relationMap.GetMapStrategy().GetStrategy() == MapStrategy::UnsupportedByECVersion)
         {
         if (RenderNullView(viewSql, ctx, relationMap) != SUCCESS)
             return ERROR;
