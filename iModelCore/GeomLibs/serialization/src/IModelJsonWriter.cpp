@@ -576,8 +576,9 @@ struct BeCGIModelJsonValueWriter
 
         if (mesh.GetNumPerFace() > 2)
             allData["numPerFace"] = mesh.GetNumPerFace();
-        if (mesh.GetTwoSided())
-            allData["twoSided"] = true;
+
+        allData["twoSided"] = mesh.GetTwoSided();
+
         if (auto expectedClosure = mesh.GetExpectedClosure())
             allData["expectedClosure"] = expectedClosure;
 

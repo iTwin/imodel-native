@@ -1030,7 +1030,7 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
     PolyfaceHeaderPtr pf = PolyfaceHeader::CreateIndexedMeshSwap(numPerFace, points, pointIndices);
 
     bool twoSided;
-    derefBool(value, "twoSided", twoSided, false);
+    derefBool(value, "twoSided", twoSided, true); // default value is true!
     pf->SetTwoSided(twoSided);
 
     auto iExpectedClosure = AsInt (value["expectedClosure"]);
