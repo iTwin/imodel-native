@@ -86,7 +86,7 @@ TEST_F(PerformanceTestsECJson, SerializeWithCustomAttributes)
 TEST_F(PerformanceTestsECJson, SerializeBisSchemas)
     {
 
-    SerializeBisSchemaToJson(GetStandardsPath(L"Units.01.00.07.ecschema.xml"));
+    SerializeBisSchemaToJson(GetStandardsPath(L"Units.01.00.08.ecschema.xml"));
     SerializeBisSchemaToJson(GetStandardsPath(L"Formats.01.00.00.ecschema.xml"));
 
     SerializeBisSchemaToJson(GetAssetsGSchemaPath(L"Dgn", L"BisCore.ecschema.xml"));

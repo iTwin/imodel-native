@@ -34,7 +34,7 @@ TEST_F(UnitsPerformanceTest, LoadUnitsSchema)
     BeFileName assetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsDir);
     assetsDir.append(L"ECSchemas\\Standard\\");
-    assetsDir.append(L"Units.01.00.07.ecschema.xml");
+    assetsDir.append(L"Units.01.00.08.ecschema.xml");
 
     timer.Start();
     ECSchema::ReadFromXmlFile(unitsSchema, assetsDir.c_str(), *context);
