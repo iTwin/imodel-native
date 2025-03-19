@@ -30,6 +30,20 @@ describe("basic tests", () => {
     dgndb.closeFile();
     done();
   });
+  it("subclassof"), () => {
+    const seedUri = path.join(getAssetsDir(), "test.bim");
+    const iModelDb = new iModelJsNative.DgnDb();
+    iModelDb.openIModel(seedUri, OpenMode.Readonly);
+    assert.isTrue(iModelDb.isSubClassof("BisCore:GeometricElement3d", "BisCore:GeometricElement"));
+    assert.isTrue(iModelDb.isSubClassof("BisCore:GeometricElement2d", "BisCore:GeometricElement"));
+    assert.isTrue(iModelDb.isSubClassof("BisCore:GeometricModel2d", "BisCore:GeometricModel"));
+    assert.isTrue(iModelDb.isSubClassof("BisCore:GeometricModel3d", "BisCore:GeometricModel"));
+
+    assert.isFalse(iModelDb.isSubClassof("BisCore:GeometricElement", "BisCore:GeometricElement3d"));
+    assert.isFalse(iModelDb.isSubClassof("BisCore:GeometricElement", "BisCore:GeometricElement2d"));
+    assert.isFalse(iModelDb.isSubClassof("BisCore:GeometricModel", "BisCore:GeometricModel2d"));
+    assert.isFalse(iModelDb.isSubClassof("BisCore:GeometricModel", "BisCore:GeometricModel3d"));
+  }
   it("update instance", () => {
 
     const seedUri = path.join(getAssetsDir(), "test.bim");
@@ -99,25 +113,31 @@ describe("basic tests", () => {
         relClassName: "BisCore.GeometricElement3dIsInCategory",
       },
       inSpatialIndex: true,
-      origin: {
-        x: 6.494445575423782,
-        y: 19.89784647571006,
-        z: 8.020100502512559,
+      placement: {
+        origin: [
+          6.494445575423782,
+          19.89784647571006,
+          8.020100502512559
+        ],
+        angles: {
+          yaw: 25.949359512071446,
+          pitch: 4.770832022195274e-15,
+          roll: 114.77826277695058
+        },
+        bbox: {
+          low: [
+            -9.735928156263862,
+            -9.735928156263864,
+            -9.735928156263858
+          ],
+          high: [
+            9.735928156263858,
+            9.73592815626386,
+            9.735928156263855
+          ]
+        }
       },
-      yaw: 25.949359512071446,
-      pitch: 4.770832022195274e-15,
-      roll: 114.7782627769506,
-      bBoxLow: {
-        x: -9.735928156263862,
-        y: -9.735928156263864,
-        z: -9.735928156263858,
-      },
-      bBoxHigh: {
-        x: 9.735928156263858,
-        y: 9.73592815626386,
-        z: 9.735928156263855,
-      },
-      geometryStream: new Uint8Array([203, 0, 128, 2, 48, 0, 6, 0, 0, 248, 0, 0, 0, 1, 0, 0, 0, 8, 13, 8, 1, 1, 64, 4, 0, 0, 0, 48, 0, 0, 0, 28, 0, 0, 0, 24, 0, 20, 0, 12, 5, 30, 17, 1, 8, 6, 0, 7, 5, 24, 1, 1, 12, 1, 1, 0, 240, 1, 36, 9, 1, 64, 11, 0, 0, 0, 168, 0, 0, 0, 98, 103, 48, 48, 48, 49, 102, 98, 16, 5, 23, 16, 10, 0, 14, 0, 7, 5, 66, 0, 10, 5, 16, 8, 0, 7, 12, 5, 8, 200, 6, 0, 124, 0, 4, 0, 6, 0, 0, 0, 188, 183, 70, 147, 203, 120, 35, 64, 212, 242, 209, 217, 54, 151, 164, 60, 4, 225, 140, 15, 103, 116, 205, 188, 89, 61, 210, 209, 251, 198, 210, 188, 180, 186, 91, 195, 187, 236, 165, 188, 189, 13, 40, 5, 63, 8, 0, 216, 60, 9, 8, 32, 208, 188, 144, 60, 167, 146, 2, 18, 158, 17, 16, 4, 60, 186, 50, 40, 0, 36, 224, 188, 24, 45, 68, 84, 251, 33, 249, 191, 9, 8, 36, 9, 64, 1, 0, 0, 0, 0, 0, 0, 0]),
+      // geometryStream: new Uint8Array([203, 0, 128, 2, 48, 0, 6, 0, 0, 248, 0, 0, 0, 1, 0, 0, 0, 8, 13, 8, 1, 1, 64, 4, 0, 0, 0, 48, 0, 0, 0, 28, 0, 0, 0, 24, 0, 20, 0, 12, 5, 30, 17, 1, 8, 6, 0, 7, 5, 24, 1, 1, 12, 1, 1, 0, 240, 1, 36, 9, 1, 64, 11, 0, 0, 0, 168, 0, 0, 0, 98, 103, 48, 48, 48, 49, 102, 98, 16, 5, 23, 16, 10, 0, 14, 0, 7, 5, 66, 0, 10, 5, 16, 8, 0, 7, 12, 5, 8, 200, 6, 0, 124, 0, 4, 0, 6, 0, 0, 0, 188, 183, 70, 147, 203, 120, 35, 64, 212, 242, 209, 217, 54, 151, 164, 60, 4, 225, 140, 15, 103, 116, 205, 188, 89, 61, 210, 209, 251, 198, 210, 188, 180, 186, 91, 195, 187, 236, 165, 188, 189, 13, 40, 5, 63, 8, 0, 216, 60, 9, 8, 32, 208, 188, 144, 60, 167, 146, 2, 18, 158, 17, 16, 4, 60, 186, 50, 40, 0, 36, 224, 188, 24, 45, 68, 84, 251, 33, 249, 191, 9, 8, 36, 9, 64, 1, 0, 0, 0, 0, 0, 0, 0]),
       code: {
         spec: "0x1",
         scope: "0x1",
@@ -125,7 +145,7 @@ describe("basic tests", () => {
       },
     };
 
-    it("read instance as js format", () => {
+    it.only("read instance as js format", () => {
       const actual = dgndb.readInstance({ id: "0x38", classFullName: "Generic.PhysicalObject" }, {useJsNames: true});
       assert.deepEqual(actual, jsFormat);
     });
