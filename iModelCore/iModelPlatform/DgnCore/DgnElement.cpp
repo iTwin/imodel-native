@@ -1455,7 +1455,7 @@ GeometrySource3dCP DgnElement::ToGeometrySource3d() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, void const* blob, int blobSize)
+DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR db, void const* blob, int blobSize)
     {
     if (0 == blobSize && nullptr == blob)
         return DgnDbStatus::Success;
@@ -3631,7 +3631,7 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
 
     int blobSize;
     void const* blob = stmt.GetValueBlob(geomIndex, &blobSize);
-    return m_geom.ReadGeometryStream(GetDgnDb().Elements().GetSnappyFrom(), blob, blobSize);
+    return m_geom.ReadGeometryStream(GetDgnDb().Elements().GetSnappyFrom(), GetDgnDb(), blob, blobSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4070,19 +4070,19 @@ DgnDbStatus GeometricElement::WriteGeomStream() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlStatus GeometryStream::Write(BeSQLite::SnappyToBlob& snappy, IECSqlBinder& binder) const {
     snappy.Init();
-    snappy.Write(data(), size());
+    snappy.Write(data(), (uint32_t)size());
     ByteStream stream;
     snappy.SaveTo(stream);
-    return binder.BindBlob(stream.data(), stream.size(), IECSqlBinder::MakeCopy::Yes);
+    return binder.BindBlob(stream.data(), (int)stream.size(), IECSqlBinder::MakeCopy::Yes);
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlStatus GeometryStream::Read(BeSQLite::SnappyFromMemory& snappy, const IECSqlValue& valueReader) {
+ECSqlStatus GeometryStream::Read(BeSQLite::SnappyFromMemory& snappy, DgnDbR db, const IECSqlValue& valueReader) {
     int sz;
     auto blob = valueReader.GetBlob(&sz);
-    if (ReadGeometryStream(snappy, blob, sz)!= DgnDbStatus::Success)
+    if (ReadGeometryStream(snappy, db, blob, sz)!= DgnDbStatus::Success)
         return ECSqlStatus::Error;
     return ECSqlStatus::Success;
 }
