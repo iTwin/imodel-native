@@ -4071,8 +4071,8 @@ DgnDbStatus GeometricElement::WriteGeomStream() const
 ECSqlStatus GeometryStream::Write(BeSQLite::SnappyToBlob& snappy, IECSqlBinder& binder) const {
     snappy.Init();
     snappy.Write(data(), size());
-    std::vector<Byte> stream;
-    snappy.SaveToMemory(stream);
+    ByteStream stream;
+    snappy.SaveTo(stream);
     return binder.BindBlob(stream.data(), stream.size(), IECSqlBinder::MakeCopy::Yes);
 }
 
