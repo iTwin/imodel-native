@@ -4636,6 +4636,18 @@ DbResult SnappyToBlob::SaveToRow(DbR db, Utf8CP tableName, Utf8CP column, int64_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void SnappyToBlob::SaveToMemory(std::vector<Byte>& buffer) {
+    Finish();
+    buffer.clear();
+    buffer.reserve(GetCompressedSize());
+    for (uint32_t i = 0; i < m_currChunk; ++i) {
+        buffer.insert(buffer.end(), m_chunks[i]->m_data, m_chunks[i]->m_data + m_chunks[i]->GetChunkSize());
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult SnappyToBlob::SaveToRow(BlobIO& io)
     {
     DbResult status = BE_SQLITE_ERROR;

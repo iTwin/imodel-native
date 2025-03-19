@@ -640,6 +640,7 @@ export declare namespace IModelJsNative {
     public isProfilerRunning(): boolean;
     public isReadonly(): boolean;
     public isRedoPossible(): boolean;
+    public isSubClassof(childClassFullName: string, parentClassFullName: string): boolean;
     public isTxnIdValid(txnId: TxnIdString): boolean;
     public isUndoPossible(): boolean;
     public logTxnError(fatal: boolean): void;

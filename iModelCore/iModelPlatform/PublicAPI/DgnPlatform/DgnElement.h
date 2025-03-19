@@ -2071,10 +2071,12 @@ public:
 struct GeometryStream : ByteStream {
 public:
     bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
-    DGNPLATFORM_EXPORT DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize); //!< @private
+    DGNPLATFORM_EXPORT DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, void const* blob, int blobSize); //!< @private
     static DgnDbStatus WriteGeometryStream(BeSQLite::SnappyToBlob&, DgnDbR, DgnElementId, Utf8CP className, Utf8CP propertyName); //!< @private
     DgnDbStatus BindGeometryStream(bool& multiChunkGeometryStream, BeSQLite::SnappyToBlob&, BeSQLite::EC::ECSqlStatement&, Utf8CP parameterName) const; //!< @private
     DGNPLATFORM_EXPORT bool IsViewIndependent() const;
+    BeSQLite::EC::ECSqlStatus Write(BeSQLite::SnappyToBlob&, BeSQLite::EC::IECSqlBinder& binder) const;
+    BeSQLite::EC::ECSqlStatus Read(BeSQLite::SnappyFromMemory&, const BeSQLite::EC::IECSqlValue& valueReader);
 };
 
 //=======================================================================================
