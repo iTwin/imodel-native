@@ -170,6 +170,14 @@ void DgnDb::_OnDbClose()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult DgnDb::_OnDbCreated(Db::CreateParams const& params) {
+    RegisterBisCoreHandlers(*this);
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
     {
     DbResult rc;
@@ -189,7 +197,7 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
     if (DisqualifyTypeIndexForBisCoreExternalSourceAspect() != BE_SQLITE_OK)
         return BE_SQLITE_ERROR;
 
-    
+
     RegisterBisCoreHandlers(*this);
     return BE_SQLITE_OK;
     }

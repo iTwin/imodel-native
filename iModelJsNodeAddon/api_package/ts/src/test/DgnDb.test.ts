@@ -168,7 +168,7 @@ describe("basic tests", () => {
       },
     };
 
-    it.only("read instance as js format", () => {
+    it("read instance as js format", () => {
       const actual = dgndb.readInstance({ id: "0x38", classFullName: "Generic.PhysicalObject" }, {useJsNames: true, wantGeometry: true});
       assert.deepEqual(actual, jsFormat);
     });
