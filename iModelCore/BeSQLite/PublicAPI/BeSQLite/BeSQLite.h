@@ -3426,6 +3426,7 @@ public:
     //! change the size of a blob.
     //! @see sqlite3_blob_open, sqlite3_blob_write, sqlite3_blob_close
     BE_SQLITE_EXPORT DbResult SaveToRow(BlobIO& blobIO);
+    BE_SQLITE_EXPORT DbResult SaveToMemory(std::vector<Byte>& buffer);
 
     //! Obtain a thread-local SnappyToBlob. The returned object is deleted when the calling thread exits and should never be shared between threads.
     BE_SQLITE_EXPORT static SnappyToBlob& GetForThread();

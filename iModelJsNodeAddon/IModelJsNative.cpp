@@ -1232,6 +1232,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         SetDgnDb(*JsInterop::CreateIModel(filename, props)); // CreateIModel throws on errors
     }
 
+    Napi::Value IsSubClassOf(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, childClassFullName);
+        REQUIRE_ARGUMENT_STRING(1, parentClassFullName);
+        auto& db = GetOpenedDb(info);;
+        return Napi::Boolean::New(Env(), db.Schemas().IsSubClassOf(childClassFullName, parentClassFullName));
+    }
+
     Napi::Value GetECClassMetaData(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, s);
@@ -2805,6 +2812,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getCurrentChangeset", &NativeDgnDb::GetCurrentChangeset),
             InstanceMethod("getCurrentTxnId", &NativeDgnDb::GetCurrentTxnId),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
+            InstanceMethod("isSubClassOf", &NativeDgnDb::IsSubClassOf),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
             InstanceMethod("readInstance", &NativeDgnDb::ReadInstance),
             InstanceMethod("insertInstance", &NativeDgnDb::InsertInstance),
