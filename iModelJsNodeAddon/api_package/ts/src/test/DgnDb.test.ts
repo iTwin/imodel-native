@@ -30,20 +30,20 @@ describe("basic tests", () => {
     dgndb.closeFile();
     done();
   });
-  it("subclassof"), () => {
+  it("subclassof", () => {
     const seedUri = path.join(getAssetsDir(), "test.bim");
     const iModelDb = new iModelJsNative.DgnDb();
     iModelDb.openIModel(seedUri, OpenMode.Readonly);
-    assert.isTrue(iModelDb.isSubClassof("BisCore:GeometricElement3d", "BisCore:GeometricElement"));
-    assert.isTrue(iModelDb.isSubClassof("BisCore:GeometricElement2d", "BisCore:GeometricElement"));
-    assert.isTrue(iModelDb.isSubClassof("BisCore:GeometricModel2d", "BisCore:GeometricModel"));
-    assert.isTrue(iModelDb.isSubClassof("BisCore:GeometricModel3d", "BisCore:GeometricModel"));
+    assert.isTrue(iModelDb.isSubClassOf("BisCore:GeometricElement3d", "BisCore:GeometricElement"));
+    assert.isTrue(iModelDb.isSubClassOf("BisCore:GeometricElement2d", "BisCore:GeometricElement"));
+    assert.isTrue(iModelDb.isSubClassOf("BisCore:GeometricModel2d", "BisCore:GeometricModel"));
+    assert.isTrue(iModelDb.isSubClassOf("BisCore:GeometricModel3d", "BisCore:GeometricModel"));
 
-    assert.isFalse(iModelDb.isSubClassof("BisCore:GeometricElement", "BisCore:GeometricElement3d"));
-    assert.isFalse(iModelDb.isSubClassof("BisCore:GeometricElement", "BisCore:GeometricElement2d"));
-    assert.isFalse(iModelDb.isSubClassof("BisCore:GeometricModel", "BisCore:GeometricModel2d"));
-    assert.isFalse(iModelDb.isSubClassof("BisCore:GeometricModel", "BisCore:GeometricModel3d"));
-  }
+    assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricElement", "BisCore:GeometricElement3d"));
+    assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricElement", "BisCore:GeometricElement2d"));
+    assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel2d"));
+    assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel3d"));
+  });
   it("update instance", () => {
 
     const seedUri = path.join(getAssetsDir(), "test.bim");
@@ -145,7 +145,7 @@ describe("basic tests", () => {
       },
     };
 
-    it.only("read instance as js format", () => {
+    it("read instance as js format", () => {
       const actual = dgndb.readInstance({ id: "0x38", classFullName: "Generic.PhysicalObject" }, {useJsNames: true});
       assert.deepEqual(actual, jsFormat);
     });
