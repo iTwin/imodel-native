@@ -259,6 +259,25 @@ TEST_F(ECSqlStatementTestFixture, MultilineStringLiteralOrName) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, dummy)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("dummy.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2" schemaName="AllProperties" alias="aps" version="01.00.00">
+                        <ECEntityClass typeName="TestElement" modifier="None">
+                            <BaseClass>IPrimitive</BaseClass>
+                        </ECEntityClass>
+                        <ECEntityClass typeName="IPrimitive" modifier="Abstract">
+                            <ECProperty propertyName="p2d" typeName="point2d"/>
+                        </ECEntityClass>
+                </ECSchema>)xml")));
+
+    ECSqlStatement stmt2;
+    ASSERT_EQ(ECSqlStatus::Success, stmt2.Prepare(m_ecdb, "SELECT p2d.X FROM (SELECT * FROM (SELECT * FROM aps.TestElement LIMIT 1))"));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, SelectBitwiseOperators)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("bitwise.ecdb"));
