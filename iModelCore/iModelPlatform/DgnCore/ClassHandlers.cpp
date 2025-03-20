@@ -399,6 +399,7 @@ bool RegisterBisCoreHandlers(DgnDbR db) {
                                                            "CodeScope",
                                                            "CodeSpec",
                                                        });
+                                                       
     rc &= repo.RegisterClassHandler<Handlers::GeometricElement3d>(Handlers::GeometricElement3d::ClassName,
                                                                   {"Origin",
                                                                    "Yaw",

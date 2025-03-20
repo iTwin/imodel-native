@@ -246,7 +246,6 @@ protected:
     DGNPLATFORM_EXPORT void _OnDbClose() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpening() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened(BeSQLite::Db::OpenParams const& params) override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbCreated(BeSQLite::Db::CreateParams const& params) override;
 
     DGNPLATFORM_EXPORT void _OnDbGuidChange(BeSQLite::BeGuid guid) override;
     DGNPLATFORM_EXPORT void _OnBeforeSetBriefcaseId(BeSQLite::BeBriefcaseId newId) override;
