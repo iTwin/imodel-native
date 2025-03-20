@@ -7,13 +7,13 @@ rem ----------------------------------------------------------------------------
 : NOTES:
 : * This Windows script compiles the flatbuffer geometry schema allcg.fbs into flatbuffer accessors for Bentley's
 :   native, iTwin, and .NET core geometry libraries.
-: * Changes to allcg.fbs and this file must be reflected in all native geomlibs repos: PPbase, imodel-native, imodel02.
+: * Changes to allcg.fbs and this file must be reflected in all native geomlibs repos: PPBase, imodel-native, imodel02.
 : * Whenever data is added to a geometry type that must be persisted:
 :   * Update allcg.fbs in all 3 locations.
 :   * Run this script in all 3 locations, and follow its directions.
 : * Do not commit %TempDir% and %OutDir%:
 :   * %TempDir% is automatically deleted on successful completion of this script.
-:   * %OutDir% may contain generated files (e.g., TypeScript accessors) to be manually copied elsewhere.
+:   * %OutDir% will contain generated file(s) to be manually copied elsewhere.
 : * The Google flatbuffers GitHub repo has diverged too much to efficiently port Bentley changes and/or analyze the
 :   generated accessor deltas. Lacking a compelling reason to upgrade, we continue to employ the original version
 :   of the flatbuffers compiler (with Bentley additions) that we first used to compile the TypeScript accessors:
@@ -50,7 +50,7 @@ IF NOT EXIST %GeneratedFile% @ECHO Failed to generate '%GeneratedFile%' && goto 
 
 SET OutFile=%SrcDir%%BaseName%_generated.h
 %GemaExe% -f %SrcDir%fixup\fixupNative.g %GeneratedFile% > %OutFile%
-@ECHO Done Generating %SrcDir%%BaseName%_generated.h
+@ECHO Done Generating %OutFile%
 
 : Typescript accessors
 @ECHO Compiling Typescript accessors...
@@ -66,9 +66,9 @@ SET OutFile=%OutDir%BGFBAccessors.ts
 @ECHO Done Generating %OutFile%
 
 @ECHO FlatBuffer compilation is complete.
-@ECHO ---------------------
-@ECHO Further Instructions:
-@ECHO ---------------------
+@ECHO -------------------------------------------
+@ECHO Further Instructions (if not already done):
+@ECHO -------------------------------------------
 @ECHO 1. Copy %OutFile% to itwinjs\core\geometry\src\serialization
 @ECHO 2. Copy %SrcFile% to PPBase\Geomlibs\serialization\src\FlatBuffer
 @ECHO 3. Run PPBase\Geomlibs\serialization\src\FlatBuffer\CompileFbs.bat
