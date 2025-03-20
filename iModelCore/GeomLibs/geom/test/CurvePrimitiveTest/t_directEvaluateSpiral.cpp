@@ -2233,59 +2233,74 @@ TEST(Spiral, IFCExample)
     spirals.push_back({ DPoint3d::From(45.149770078000001, 453.89909698999999, 0.0), Angle::FromDegrees(178.27518985685947).Radians(), -288.0, 84.185, 0.0 });
     spirals.push_back({ DPoint3d::From(45.144496272000001, 453.90564859999996, 0.0), Angle::FromDegrees(134.41597069150998).Radians(), -288.0, 84.185, 0.0 });
     spirals.push_back({ DPoint3d::From(45.138458033999999, 453.91150319999997, 0.0), Angle::FromDegrees(141.46781977769137).Radians(), -288.0, 84.185, 0.0 });
-    spirals.push_back({ DPoint3d::From(45.130047531000001, 453.91151409, 0.0), Angle::FromDegrees(-174.49098982092858).Radians(), -288.0, 84.185, 0.0 }); 
+    spirals.push_back({ DPoint3d::From(45.130047531000001, 453.91151409, 0.0), Angle::FromDegrees(-174.49098982092858).Radians(), -288.0, 84.185, 0.0 });
     spirals.push_back({ DPoint3d::From(45.131965288000001, 453.91970303999996, 0.0), Angle::FromDegrees(82.402720200584724).Radians(), -288.0, 84.185, 0.0 });
     spirals.push_back({ DPoint3d::From(45.138791476999997, 453.92461627000002, 0.0), Angle::FromDegrees(41.328087890916969).Radians(), -288.0, 84.185, 0.0 });
     spirals.push_back({ DPoint3d::From(45.131012322000001, 453.92141917000003, 0.0), Angle::FromDegrees(-152.07498850473402).Radians(), -288.0, 84.185, 0.0 });
     spirals.push_back({ DPoint3d::From(45.132640429999999, 453.91316775000002, 0.0), Angle::FromDegrees(-73.255010821769091).Radians(), -288.0, 84.185, 0.0 });
 
-    double zDelta = 10;
-    for (auto& spiral : spirals)
+    Transform frame0, invFrame0;
+    ICurvePrimitivePtr curve0;
+    for (size_t i = 0; i < spirals.size(); i++)
         {
-        ICurvePrimitivePtr curve = ICurvePrimitive::CreatePseudolSpiralWithTrueRadiusLengthRadius(
-            DSpiral2dBase::TransitionType_Clothoid, spiral.startPoint, spiral.startRadians, spiral.startRadius, spiral.targetLength, spiral.endRadius);
-
+        auto const& spiral = spirals[i];
+        ICurvePrimitivePtr curve = ICurvePrimitive::CreatePseudolSpiralWithTrueRadiusLengthRadius(DSpiral2dBase::TransitionType_Clothoid, spiral.startPoint, spiral.startRadians, spiral.startRadius, spiral.targetLength, spiral.endRadius);
+        if (!Check::True(curve.IsValid()))
+            continue;
         Check::SaveTransformed(*curve);
-        Check::True(curve.IsValid());
-        Check::Shift(0, 0, zDelta);
 
-        // IFC exporter needs to reverse-engineer the inputs from the placement.
+        // IFC exporter needs to reverse-engineer the spiral inputs given the output curve.
         auto placement = curve->GetSpiralPlacementCP();
         Check::True(placement != nullptr);
         Check::True(placement->spiral != nullptr);
-    
+
+        // All these spirals were obtained by faulty IFC exporter code in successive roundtrip; they should be the same.
+        // Try to figure out why they are different by computing the transform that equates them.
+        Transform invFrame = placement->frame.ValidatedInverse().Value();
+        if (i == 0)
+            {
+            curve0 = curve;
+            frame0 = placement->frame;
+            invFrame0 = frame0.ValidatedInverse().Value();
+            }
+        else
+            {
+            auto curveTransformed = curve->Clone(Transform::FromProduct(frame0, invFrame));
+            Check::True(curve0->IsSameStructureAndGeometry(*curveTransformed, DoubleOps::SmallMetricDistance()), "Spirals are the same after rotation");
+            }
+
         // When fracA < fracB, the local spiral defines a segment of the spiral starting at the
         // origin and extending into the first quadrant (or 4th if negative (CW) curvature).
         // When fracA > fracB, not only is the curve reversed, but the local spiral sits in
         // quadrant 3 (or 2) of the full spiral, which is obtained by rotating the half in
         // quadrant 1 (or 4) 180 degrees about the origin.
         bool rotateAndReverse = placement->fractionA > placement->fractionB;
-    
+
         DPoint3d myStartPoint = placement->frame.Origin();
         DPoint3d myEndPoint; curve->FractionToPoint(rotateAndReverse ? 0.0 : 1.0, myEndPoint);
         double myTargetLength = placement->spiral->mLength;
         double myStartRadius = DoubleOps::ValidatedDivideDistance(1.0, placement->spiral->mCurvature0, 0.0);
         double myEndRadius = DoubleOps::ValidatedDivideDistance(1.0, placement->spiral->mCurvature1, 0.0);
-    
+
         DVec3d myStartTangent = DVec3d::FromXYAngleAndMagnitude(placement->spiral->mTheta0, 1.0);
         if (rotateAndReverse)
             myStartTangent.Scale(-1.0);
         placement->frame.MultiplyMatrixOnly(myStartTangent);
         double myStartRadians = myStartTangent.AngleXY();
-    
+
         DVec3d myEndTangent = DVec3d::FromXYAngleAndMagnitude(placement->spiral->mTheta1, 1.0);
         if (rotateAndReverse)
             myEndTangent.Scale(-1.0);
         placement->frame.MultiplyMatrixOnly(myEndTangent);
         double myEndRadians = myEndTangent.AngleXY();
-    
+
         if (rotateAndReverse)
             {
             std::swap(myStartRadius, myEndRadius);
             std::swap(myStartRadians, myEndRadians);
             std::swap(myStartPoint, myEndPoint);
             }
-    
+
         Check::Near(myStartPoint, spiral.startPoint);
         Check::NearPeriodic(myStartRadians, spiral.startRadians);
         Check::Near(myStartRadius, spiral.startRadius);
