@@ -170,19 +170,6 @@ void DgnDb::_OnDbClose()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnDb::_OnDbCreated(Db::CreateParams const& params) {
-    DbResult rc;
-
-    if (BE_SQLITE_OK != (rc = T_Super::_OnDbCreated(params)))
-        return rc;
-
-    RegisterBisCoreHandlers(*this);
-    return BE_SQLITE_OK;
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
     {
     DbResult rc;
@@ -712,6 +699,7 @@ DbResult DgnDb::CreateNewIModel(BeFileNameCR inFileName, CreateDgnDbParams const
         return rc;
 
     InitializeDgnDb(params);
+    RegisterBisCoreHandlers(*this);
     return BE_SQLITE_OK;
 }
 

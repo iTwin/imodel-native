@@ -121,6 +121,7 @@ public:
     bool RegisterClassHandler(Utf8CP className, std::vector<Utf8CP> customHandledProperties = {}) {
         auto classP = m_ecdb.Schemas().FindClass(className);
         if (!classP) {
+            BeAssert(false && "Class not found");
             return false;
         }
         return RegisterClassHandler<T>(classP->GetId(), customHandledProperties);
