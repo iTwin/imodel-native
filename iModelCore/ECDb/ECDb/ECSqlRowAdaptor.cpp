@@ -207,8 +207,7 @@ BentleyStatus ECSqlRowAdaptor::RenderLong(BeJsValue out, IECSqlValue const& in, 
             if (m_options.ConvertClassIdsToClassNames() || m_options.UseJsNames()) {
                 auto classCP = m_ecdb.Schemas().GetClass(id, in.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
                 if (classCP != nullptr) {
-                    ECN::ECJsonUtilities::ClassNameToJson(out, *classCP);
-                    return SUCCESS;
+                    ECN::ECJsonUtilities::ClassNameToJson(out, *classCP, m_options.UseClassFullNameInsteadofClassName());
                 }
             }
             out = id.ToHexStr();
