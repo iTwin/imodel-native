@@ -188,7 +188,11 @@ public:
     //! Generates the fully qualified name of an ECClass as used in the ECJSON format: &lt;schema name&gt;.&lt;class name&gt;
     //! @param[in] ecClass ECClass
     //! @return Fully qualified class name for the ECJSON format
-    static Utf8String FormatClassName(ECClassCR ecClass) {return Utf8PrintfString("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());}
+    static Utf8String FormatClassName(ECClassCR ecClass, bool useColon = false) {
+        if (useColon)
+            return Utf8PrintfString("%s:%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
+        return Utf8PrintfString("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
+    }
 
     //! Generates the fully qualified name of an PropertyCategory as used in the ECJSON format: &lt;schema name&gt;.&lt;PropertyCategory name&gt;
     //! @param[in] ecPropertyCategory PropertyCategory
@@ -217,7 +221,7 @@ public:
     //! @param[out] json JSON value
     //! @param[in] ecClass ECClass
     //! @return SUCCESS or ERROR
-    static void ClassNameToJson(BeJsValue json, ECClassCR ecClass) { json = FormatClassName(ecClass); }
+    static void ClassNameToJson(BeJsValue json, ECClassCR ecClass, bool useColon = false) { json = FormatClassName(ecClass, useColon); }
 
     //! Returns a fully qualified name of any SchemaChild
     //! Type must have both GetName() and GetSchema() methods
