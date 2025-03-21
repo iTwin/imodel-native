@@ -671,7 +671,7 @@ ECSqlStatus Impl::BindStructArrayProperty(BindContext& ctx, StructArrayECPropert
 }
 
 namespace {
-    bool IsHexadecimalOrNumeric(Utf8StringCR str) {
+    bool IsHexadecimalOrDecimal(Utf8StringCR str) {
         if (std::all_of(str.begin(), str.end(), ::isdigit))
             return true;
 
@@ -693,7 +693,7 @@ ECSqlStatus Impl::BindNavigationProperty(BindContext& ctx, NavigationECPropertyC
     }
 
     if (val.isString() || val.isNumeric()) {
-        if (!IsHexadecimalOrNumeric(val.asString())) {
+        if (!IsHexadecimalOrDecimal(val.asString())) {
             ctx.SetError("Value supplied is not a valid decimal or hexadecimal value for the ECInstanceId/id field %s", val.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
@@ -727,7 +727,7 @@ ECSqlStatus Impl::BindNavigationProperty(BindContext& ctx, NavigationECPropertyC
             }
             classId = classP->GetId();
         } else {
-            if (relClassId.isString() && !IsHexadecimalOrNumeric(relClassId.asString())) {
+            if (relClassId.isString() && !IsHexadecimalOrDecimal(relClassId.asString())) {
                 ctx.SetError("Value supplied is not a valid decimal or hexadecimal value for the RelECClassId field %s", relClassId.Stringify().c_str());
                 return ECSqlStatus(BE_SQLITE_ERROR);
             }
@@ -779,7 +779,7 @@ bool Impl::TryGetECClassId(BindContext& ctx, BeJsConst inst, ECClassId& classId)
             ctx.SetError("Expected id for ECClassId property, got %s", idJs.Stringify().c_str());
             return false;
         }
-        if (idJs.isString() && !IsHexadecimalOrNumeric(idJs.asString())) {
+        if (idJs.isString() && !IsHexadecimalOrDecimal(idJs.asString())) {
             ctx.SetError("Value supplied is not a valid decimal or hexadecimal value for the ECClassId field %s", idJs.Stringify().c_str());
             return false;
         }
@@ -798,7 +798,7 @@ bool Impl::TryGetECInstanceId(BindContext& ctx, BeJsConst inst, ECInstanceId& id
             ctx.SetError("Expected string for id, got %s", name.Stringify().c_str());
             return false;
         }
-        if (!IsHexadecimalOrNumeric(name.asString())) {
+        if (!IsHexadecimalOrDecimal(name.asString())) {
             ctx.SetError("Value supplied is not a valid decimal value %s", name.Stringify().c_str());
             return false;
         }
@@ -809,7 +809,7 @@ bool Impl::TryGetECInstanceId(BindContext& ctx, BeJsConst inst, ECInstanceId& id
             ctx.SetError("Expected id for ECInstanceId property, got %s", idJs.Stringify().c_str());
             return false;
         }
-        if (idJs.isString() && !IsHexadecimalOrNumeric(idJs.asString())) {
+        if (idJs.isString() && !IsHexadecimalOrDecimal(idJs.asString())) {
             ctx.SetError("Value supplied is not a valid decimal or hexadecimal value %s", idJs.Stringify().c_str());
             return false;
         }
@@ -827,7 +827,7 @@ bool Impl::TryGetId(ECInstanceId& instanceId, BeJsConst in, JsFormat jsFmt) cons
         if (!name.isString()) {
             return false;
         }
-        if (name.isString() && !IsHexadecimalOrNumeric(name.asString())) {
+        if (name.isString() && !IsHexadecimalOrDecimal(name.asString())) {
             LOG.errorv("Value supplied is not a valid decimal or hexadecimal value %s", name.Stringify().c_str());
             return false;
         }
@@ -837,7 +837,7 @@ bool Impl::TryGetId(ECInstanceId& instanceId, BeJsConst in, JsFormat jsFmt) cons
         if (!idJs.isNumeric() && !idJs.isString()) {
             return false;
         }
-        if (idJs.isString() && !IsHexadecimalOrNumeric(idJs.asString())) {
+        if (idJs.isString() && !IsHexadecimalOrDecimal(idJs.asString())) {
             LOG.errorv("Value supplied is not a valid decimal or hexadecimal value %s", idJs.Stringify().c_str());
             return false;
         }
@@ -891,7 +891,7 @@ bool Impl::TryGetClassId(ECN::ECClassId& classId, BeJsConst in, JsFormat jsFmt) 
     if (!idJs.isNumeric() && !idJs.isString()) {
         return false;
     }
-    if (idJs.isString() && !IsHexadecimalOrNumeric(idJs.asString())) {
+    if (idJs.isString() && !IsHexadecimalOrDecimal(idJs.asString())) {
         LOG.errorv("Value supplied is not a valid decimal or hexadecimal value %s", idJs.Stringify().c_str());
         return false;
     }
