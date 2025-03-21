@@ -69,7 +69,7 @@ SET OutFile=%OutDir%BGFBAccessors.ts
 @ECHO -------------------------------------------
 @ECHO Further Instructions (if not already done):
 @ECHO -------------------------------------------
-@ECHO 1. Copy %OutFile% to itwinjs\core\geometry\src\serialization
+@ECHO 1. Copy %OutFile% to itwinjs\core\geometry\src\serialization, then delete %OutDir%
 @ECHO 2. Copy %SrcFile% to PPBase\Geomlibs\serialization\src\FlatBuffer
 @ECHO 3. Run PPBase\Geomlibs\serialization\src\FlatBuffer\CompileFbs.bat
 @ECHO 4. Copy %SrcFile% to imodel02\iModelCore\GeomLibs\serialization\src\FlatBuffer
