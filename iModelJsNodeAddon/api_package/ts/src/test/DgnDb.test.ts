@@ -56,7 +56,7 @@ describe("basic tests", () => {
     const iModelDb = new iModelJsNative.DgnDb();
     iModelDb.openIModel(thisFile, OpenMode.ReadWrite);
     // const arg1 = { id: "0x1b", className: "BisCore:Subject" };
-    const key = { id: "0x1b", className: "BisCore.Subject" };
+    const key = { id: "0x1b", className: "BisCore:Subject" };
     const inst = iModelDb.readInstance(key, {useJsNames: true});
     assert.equal(inst.code.value, "A", "codeValue should be A");
 
@@ -82,7 +82,7 @@ describe("basic tests", () => {
     const iModelDb = new iModelJsNative.DgnDb();
     iModelDb.openIModel(thisFile, OpenMode.ReadWrite);
     // const arg1 = { id: "0x1b", className: "BisCore:Subject" };
-    const key = { id: "0x1b", className: "BisCore.Subject" };
+    const key = { id: "0x1b", className: "BisCore:Subject" };
     const inst = iModelDb.readInstance(key, {useJsNames: true});
     assert.equal(inst.code.value, "A", "codeValue should be A");
     const id = iModelDb.insertInstance({
@@ -90,7 +90,7 @@ describe("basic tests", () => {
       code: {value: "Test Subject", scope: "0x13", spec: "0x1f"},
       useLabel: "Test Subject",
       model: "0x1",
-      parent: { id: "0x13", relClassName: "BisCore.SubjectOwnsSubjects" },
+      parent: { id: "0x13", relClassName: "BisCore:SubjectOwnsSubjects" },
       /* eslint-disable @typescript-eslint/naming-convention */
       jsonProperties: JSON.stringify({"Subject":{"Model":{"Type":"Hierarchy"}}}),
     }, { useJsNames: true });
@@ -105,12 +105,12 @@ describe("basic tests", () => {
     /* eslint-enable @typescript-eslint/naming-convention */
     const jsFormat = {
       id: "0x38",
-      classFullName: "Generic.PhysicalObject",
+      classFullName: "Generic:PhysicalObject",
       model: "0x1f",
       lastMod: "2017-07-25T20:44:59.926Z",
       category: {
         id: "0x17",
-        relClassName: "BisCore.GeometricElement3dIsInCategory",
+        relClassName: "BisCore:GeometricElement3dIsInCategory",
       },
       inSpatialIndex: true,
       placement: {
@@ -169,7 +169,7 @@ describe("basic tests", () => {
     };
 
     it("read instance as js format", () => {
-      const actual = dgndb.readInstance({ id: "0x38", classFullName: "Generic.PhysicalObject" }, {useJsNames: true, wantGeometry: true});
+      const actual = dgndb.readInstance({ id: "0x38", classFullName: "Generic:PhysicalObject" }, {useJsNames: true, wantGeometry: true});
       assert.deepEqual(actual, jsFormat);
     });
   });
