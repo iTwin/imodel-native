@@ -448,9 +448,21 @@ public:
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
         JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
     }
-    Napi::Value GetInstance(NapiInfoCR info) {
+    Napi::Value ReadInstance(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        return JsInterop::GetInstance(db, info);
+        return JsInterop::ReadInstance(db, info);
+    }
+    Napi::Value InsertInstance(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::InsertInstance(db, info);
+    }
+    Napi::Value UpdateInstance(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::UpdateInstance(db, info);
+    }
+    Napi::Value DeleteInstance(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::DeleteInstance(db, info);
     }
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
         if (info.Length() > 0 && info[0].IsObject()) {
@@ -638,7 +650,10 @@ public:
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeECDb::SchemaSyncGetLocalDbInfo),
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeECDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("openDb", &NativeECDb::OpenDb),
-            InstanceMethod("getInstance", &NativeECDb::GetInstance),
+            InstanceMethod("readInstance", &NativeECDb::ReadInstance),
+            InstanceMethod("insertInstance", &NativeECDb::InsertInstance),
+            InstanceMethod("updateInstance", &NativeECDb::UpdateInstance),
+            InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
         });
@@ -1215,6 +1230,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_STRING(0, filename);
         REQUIRE_ARGUMENT_ANY_OBJ(1, props);
         SetDgnDb(*JsInterop::CreateIModel(filename, props)); // CreateIModel throws on errors
+    }
+
+    Napi::Value IsSubClassOf(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, childClassFullName);
+        REQUIRE_ARGUMENT_STRING(1, parentClassFullName);
+        auto& db = GetOpenedDb(info);;
+        return Napi::Boolean::New(Env(), db.Schemas().IsSubClassOf(childClassFullName, parentClassFullName));
     }
 
     Napi::Value GetECClassMetaData(NapiInfoCR info)
@@ -2319,9 +2341,21 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         return Napi::Number::New(Env(), (int)db.ExecuteSql(sql.c_str()));
     }
-    Napi::Value GetInstance(NapiInfoCR info) {
+    Napi::Value ReadInstance(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        return JsInterop::GetInstance(db, info);
+        return JsInterop::ReadInstance(db, info);
+    }
+    Napi::Value InsertInstance(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        return JsInterop::InsertInstance(db, info);
+    }
+    Napi::Value UpdateInstance(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        return JsInterop::UpdateInstance(db, info);
+    }
+    Napi::Value DeleteInstance(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        return JsInterop::DeleteInstance(db, info);
     }
     void ResetBriefcaseId(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
@@ -2778,8 +2812,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getCurrentChangeset", &NativeDgnDb::GetCurrentChangeset),
             InstanceMethod("getCurrentTxnId", &NativeDgnDb::GetCurrentTxnId),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
+            InstanceMethod("isSubClassOf", &NativeDgnDb::IsSubClassOf),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
-            InstanceMethod("getInstance", &NativeDgnDb::GetInstance),
+            InstanceMethod("readInstance", &NativeDgnDb::ReadInstance),
+            InstanceMethod("insertInstance", &NativeDgnDb::InsertInstance),
+            InstanceMethod("updateInstance", &NativeDgnDb::UpdateInstance),
+            InstanceMethod("deleteInstance", &NativeDgnDb::DeleteInstance),
             InstanceMethod("executeSql", &NativeDgnDb::ExecuteSql),
             InstanceMethod("getFilePath", &NativeDgnDb::GetFilePath),
             InstanceMethod("getGeoCoordinatesFromIModelCoordinates", &NativeDgnDb::GetGeoCoordsFromIModelCoords),
@@ -6765,7 +6803,7 @@ static Napi::Value imageBufferFromImageSource(NapiInfoCR info) {
 
     auto srcData = oSrcData.As<Napi::Uint8Array>();
     ImageSource src(static_cast<ImageSource::Format>(iSrcFmt), ByteStream(srcData.Data(), srcData.ByteLength()));
-    
+
     REQUIRE_ARGUMENT_UINTEGER(2, iImgFmt);
     Image::Format imgFmt;
     if (iImgFmt == 255) {
@@ -6813,7 +6851,7 @@ static Napi::Value imageSourceFromImageBuffer(NapiInfoCR info) {
 
     REQUIRE_ARGUMENT_UINTEGER(2, imgWidth);
     REQUIRE_ARGUMENT_UINTEGER(3, imgHeight);
-    
+
     auto imgData = oImgData.As<Napi::Uint8Array>();
     Image img(imgWidth, imgHeight, ByteStream(imgData.Data(), imgData.ByteLength()), static_cast<Image::Format>(iImgFmt));
     if (!img.IsValid()) {
@@ -6835,7 +6873,7 @@ static Napi::Value imageSourceFromImageBuffer(NapiInfoCR info) {
 
     REQUIRE_ARGUMENT_BOOL(5, flipVertically);
     REQUIRE_ARGUMENT_UINTEGER(6, jpegQuality);
-    
+
     ImageSource src(img, srcFmt, jpegQuality, flipVertically ? Image::BottomUp::Yes : Image::BottomUp::No);
     if (!src.IsValid()) {
         return info.Env().Undefined();
