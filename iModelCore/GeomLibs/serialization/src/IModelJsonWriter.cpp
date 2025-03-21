@@ -207,7 +207,7 @@ struct BeCGIModelJsonValueWriter
                 }
             }
         CurveVectorPtr boundaries = bsurf.GetUVBoundaryCurves(false, true);     // preserve trim curves (don't stroke)
-        if (boundaries.IsValid () && boundaries->size () > 0)
+        if (boundaries.IsValid() && boundaries->size() > 0)
             {
             CurveVectorToJson(value["uvBoundaries"], *boundaries);
             if (!bsurf.IsOuterBoundaryActive())
@@ -217,19 +217,15 @@ struct BeCGIModelJsonValueWriter
 
     /* RawImjs
     {"torusPipe":
-    {"center":[1,50,3],
-    "majorRadius":10,
-    "minorRadius":1,
-    "xyVectors":[[0.6989117773223881,-0.3136225207688945,0.6427777547384671],
-    [0.10329524078492897,0.9335692701842065,0.34318873961555296]],
-    "sweepAngle":45,
-    "capped":true
+     {"center":[1,50,3],
+      "majorRadius":10,
+      "minorRadius":1,
+      "xyVectors":[[0.6989117773223881,-0.3136225207688945,0.6427777547384671],[0.10329524078492897,0.9335692701842065,0.34318873961555296]],
+      "sweepAngle":45,
+      "capped":true
+     }
     }
-    }
-    // ** omit sweep if full circle.
-    // ** omit cap if false
     */
-
     void TorusPipeToJson (BeJsValue in, ISolidPrimitiveCR sp)
         {
         auto value = in["torusPipe"];
@@ -238,13 +234,13 @@ struct BeCGIModelJsonValueWriter
         if (sp.TryGetDgnTorusPipeDetail (detail)
             && detail.TryGetConstructiveFrame (localToWorld, worldToLocal))
             {
+            ToJson(value["center"], detail.m_center, m_packIsolatedPoints);
             value["majorRadius"] = detail.m_majorRadius;
             value["minorRadius"] = detail.m_minorRadius;
             if (!Angle::IsFullCircle (detail.m_sweepAngle))
                 value["sweepAngle"] = Angle::RadiansToDegrees (detail.m_sweepAngle);
             if (detail.m_capped)
                 value["capped"] = detail.m_capped;
-            ToJson(value["center"], detail.m_center, m_packIsolatedPoints);
             auto xyVectors = value["xyVectors"];
             ToJson(xyVectors.appendValue(), localToWorld.GetMatrixColumn (0), m_packIsolatedPoints);
             ToJson(xyVectors.appendValue(), localToWorld.GetMatrixColumn (1), m_packIsolatedPoints);
@@ -253,22 +249,18 @@ struct BeCGIModelJsonValueWriter
 
     /* RawImjs
     {"box":
-    {"baseOrigin":[1,2,3],
-    "origin":[1,2,3],
-    "baseX":3,
-    "baseY":2,
-    "capped":true,
-    "topOrigin":[1,2,8],
-    "xyVectors":[[0.984807753012208,0.17364817766693033,0],
-    [-0.17364817766693033,0.984807753012208,0]],
-    "topX":1.5,
-    "topY":1
-    },
-    "xyVectors":[[0.984807753012208,0.17364817766693033,0],
-    [-0.17364817766693033,0.984807753012208,0]]
+     {"baseOrigin":[1,2,3],
+      "origin":[1,2,3],
+      "baseX":3,
+      "baseY":2,
+      "capped":true,
+      "topOrigin":[1,2,8],
+      "xyVectors":[[0.984807753012208,0.17364817766693033,0],[-0.17364817766693033,0.984807753012208,0]],
+      "topX":1.5,
+      "topY":1
+     }
     }
     */
-
     void BoxToJson (BeJsValue in, ISolidPrimitiveCR sp)
         {
         auto value = in["box"];
@@ -278,7 +270,7 @@ struct BeCGIModelJsonValueWriter
             && detail.TryGetConstructiveFrame (localToWorld, worldToLocal))
             {
             ToJson (value["baseOrigin"], detail.m_baseOrigin, m_packIsolatedPoints);
-            ToJson (value["origin"], detail.m_baseOrigin, m_packIsolatedPoints);
+            ToJson (value["origin"], detail.m_baseOrigin, m_packIsolatedPoints);   // both baseOrigin and origin are output, but origin is preferred by reader
             ToJson (value["topOrigin"], detail.m_topOrigin, m_packIsolatedPoints);
             value["baseX"] = detail.m_baseX;
             value["baseY"] = detail.m_baseY;
@@ -298,15 +290,14 @@ struct BeCGIModelJsonValueWriter
 
     /* RawImjs
     {"sphere":
-    {"center":[1,2,3],
-    "zxVectors":[[0,1,0],[0,0,1]],
-    "capped":true,
-    "radius":4,
-    "latitudeStartEnd":[-45,45]
-    }
+     {"center":[1,2,3],
+      "zxVectors":[[0,1,0],[0,0,1]],
+      "capped":true,
+      "radius":4,
+      "latitudeStartEnd":[-45,45]
+     }
     }
     */
-
     void SphereToJson (BeJsValue in, ISolidPrimitiveCR sp)
         {
         DgnSphereDetail detail;
@@ -375,24 +366,22 @@ struct BeCGIModelJsonValueWriter
 
     /* RawImjs
     {"cylinder":
-    {"capped":false,
-    "start":[1,2,1],
-    "end":[2,3,8],
-    "radius":0.5
-    }
-    }
-
+     {"capped":false,
+      "start":[1,2,1],
+      "end":[2,3,8],
+      "radius":0.5
+     }
+    },
     {"cone":
-    {"capped":true,
-    "start":[0,0,0],
-    "end":[0,0,5],
-    "startRadius":1,
-    "endRadius":0.2,
-    "xyVectors":[[1,0,0], [0,1,0]]
-    }
+     {"capped":true,
+      "start":[0,0,0],
+      "end":[0,0,5],
+      "startRadius":1,
+      "endRadius":0.2,
+      "xyVectors":[[1,0,0], [0,1,0]]
+     }
     }
     */
-
     void ConeToJson (BeJsValue in, ISolidPrimitiveCR sp)
         {
         DgnConeDetail detail;
@@ -450,15 +439,14 @@ struct BeCGIModelJsonValueWriter
 
     /* RawImjs
     {"ruledSweep":
-    {"contour":[
-    {"path":<pathContents>}
-    {"path":<pathContents>}
-    ],
-    "capped":false
-    }
+     {"contour":[
+      {"path":<pathContents>}
+      {"path":<pathContents>}
+      ],
+      "capped":false
+     }
     }
     */
-
     void RuledSweepToJson (BeJsValue in, ISolidPrimitiveCR sp)
         {
         DgnRuledSweepDetail detail;
@@ -474,14 +462,13 @@ struct BeCGIModelJsonValueWriter
         }
 
     /* RawImjs
-    {"linearSweep":{
-    "contour":{<CurveVector>},
-    "capped":false,
-    "vector":[0,0,1.234]
-    }
+    {"linearSweep":
+     {"contour":{<CurveVector>},
+      "capped":false,
+      "vector":[0,0,1.234]
+     }
     }
     */
-
     void LinearSweepToJson (BeJsValue in, ISolidPrimitiveCR sp)
         {
         DgnExtrusionDetail detail;
@@ -496,15 +483,14 @@ struct BeCGIModelJsonValueWriter
 
     /* RawImjs
     {"rotationalSweep":
-    {"axis":[0,1,0],
-    "contour":{<CurveVector>},
-    "capped":false,
-    "center":[0,0,0],
-    "sweepAngle":119.99999999999999
-    }
+     {"axis":[0,1,0],
+      "contour":{<CurveVector>},
+      "capped":false,
+      "center":[0,0,0],
+      "sweepAngle":119.99999999999999
+     }
     }
     */
-
     void RotationalSweepToJson (BeJsValue in, ISolidPrimitiveCR sp)
         {
         DgnRotationalSweepDetail detail;
@@ -518,20 +504,6 @@ struct BeCGIModelJsonValueWriter
             value["sweepAngle"] = Angle::RadiansToDegrees (detail.m_sweepAngle);
             }
         }
-
-    /* RawImjs
-    {"indexedMesh":
-    {"color":[10,11,12,13,....,83,84,85,86,87,88,89],
-    "colorIndex":[1,1,1,0,2,2,2,0,3,3,3,0,......80,80,80,0],
-    "point":[[0,0,0], [1,0,0],[2,0,0],  [3,0,0],  [4,0,0],   . . . .   [6,5,0],  [7,5,0],  [8,5,0]],
-    "pointIndex":[  1,2,-11,0,11,10,-1,0,2,3,-12,0,   . . .32,33,-42,0,42,41,-32,0],
-    "paramIndex":{..],
-    "param":[[0,0],[1,0],...],
-    "normalIndex":{..],
-    "normal":[[1,0,0],[0,1,0],..],
-    }
-    }
-    */
 
     /*--------------------------------------------------------------------------------**//**
     * @bsimethod
@@ -577,9 +549,19 @@ struct BeCGIModelJsonValueWriter
         ToJson(value["channels"], in.GetChannels());
         }
 
-    /*--------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +--------------------------------------------------------------------------------------*/
+    /* RawImjs
+    {"indexedMesh":
+     {"color":[10,11,12,13,....,83,84,85,86,87,88,89],
+      "colorIndex":[1,1,1,0,2,2,2,0,3,3,3,0,......80,80,80,0],
+      "point":[[0,0,0], [1,0,0],[2,0,0],  [3,0,0],  [4,0,0],   . . . .   [6,5,0],  [7,5,0],  [8,5,0]],
+      "pointIndex":[  1,2,-11,0,11,10,-1,0,2,3,-12,0,   . . .32,33,-42,0,42,41,-32,0],
+      "paramIndex":[..],
+      "param":[[0,0],[1,0],...],
+      "normalIndex":[..],
+      "normal":[[1,0,0],[0,1,0],..],
+     }
+    }
+    */
     void IndexedPolyfaceToJson(BeJsValue in, PolyfaceHeaderCR mesh)
         {
         if (mesh.GetMeshStyle () != MESH_ELM_STYLE_INDEXED_FACE_LOOPS)
@@ -594,8 +576,9 @@ struct BeCGIModelJsonValueWriter
 
         if (mesh.GetNumPerFace() > 2)
             allData["numPerFace"] = mesh.GetNumPerFace();
-        if (mesh.GetTwoSided())
-            allData["twoSided"] = true;
+
+        allData["twoSided"] = mesh.GetTwoSided();
+
         if (auto expectedClosure = mesh.GetExpectedClosure())
             allData["expectedClosure"] = expectedClosure;
 
@@ -616,8 +599,8 @@ struct BeCGIModelJsonValueWriter
 
         if (mesh.GetFaceDataCP() != nullptr && mesh.GetFaceCount () > 0)
             FaceDataToJson (allData["faceData"], mesh.GetFaceDataCP (), mesh.GetFaceCount ());
-        if (mesh.GetFaceIndexCount () > 0)  // There is a separate GetFaceIndexCount, but it has to match GetPointIndexCount.
-            ToJson (allData["faceIndex"], mesh.GetFaceIndexCP (), mesh.GetPointIndexCount ());
+        if (mesh.GetFaceIndexCP() != nullptr)
+            ToJson (allData["faceIndex"], mesh.GetFaceIndexCP (), indexCount);
 
         auto taggedData = mesh.GetNumericTagsCP();
         if (taggedData && !taggedData->IsZero())
@@ -625,27 +608,31 @@ struct BeCGIModelJsonValueWriter
 
         if(mesh.GetAuxDataCP().IsValid())
             ToJson(allData["auxData"], *mesh.GetAuxDataCP());
+
+        // TODO: currently edgeMateIndex array is ignored for native Polyface
         }
 
     void CurvePrimitiveToJson(BeJsValue in, ICurvePrimitiveCR cp)
         {
         DSegment3d segment;
         DEllipse3d arc;
+        // RawIMJS {"lineSegment":[[0,0,0], [3,3,0]]}
         if (cp.TryGetLine (segment))
             {
-            // RawIMJS {"lineSegment":[[0,0,0], [3,3,0]]}]
             auto value = in["lineSegment"];
             ToJson (value.appendValue(), segment.point[0], m_packIsolatedPoints);
             ToJson (value.appendValue(), segment.point[1], m_packIsolatedPoints);
             return;
             }
-        // RawIMJS
-        // {"arc":
-        // {"center":[0,0,0],
-        //  "vectorX":[3,0,0],
-        //  "vectorY":[0,3,0],
-        //  "sweepStartEnd":[-40,270]
-        // }
+        /* RawIMJS
+        {"arc":
+         {"center":[0,0,0],
+          "vectorX":[3,0,0],
+          "vectorY":[0,3,0],
+          "sweepStartEnd":[-40,270]
+         }
+        }
+        */
         if (cp.TryGetArc (arc))
             {
             auto  value = in["arc"];
@@ -696,15 +683,17 @@ struct BeCGIModelJsonValueWriter
             }
 
         auto spiralPlacement = cp.GetSpiralPlacementCP();
-        /*
-        {"transitionSpiral":{
-        "activeFractionInterval":[0.0,1.0059395557393587],
-        "origin":[0,0,0],
-        "type":"clothoid",
-        "startRadius":0,
-        "endRadius":1000,
-        "startBearing":0,
-        "endBearing":2.8647889756541165}}
+        /* RawIMJS
+        {"transitionSpiral":
+         {"activeFractionInterval":[0.0,1.0059395557393587],
+          "origin":[0,0,0],
+          "type":"clothoid",
+          "startRadius":0,
+          "endRadius":1000,
+          "startBearing":0,
+          "endBearing":2.8647889756541165
+         }
+        }
         */
         if (spiralPlacement != nullptr)
             {
@@ -747,7 +736,6 @@ struct BeCGIModelJsonValueWriter
         auto interpolationCurve = cp.GetInterpolationCurveCP ();
         if (interpolationCurve != nullptr)
             {
-            // RawIMJS {"lineString":[[0,0,0], [1,0,0],  [1,1,0]]},
             auto value = in["interpolationCurve"];
             ToJson(value["fitPoints"], interpolationCurve->fitPoints, interpolationCurve->params.numPoints);
             if (interpolationCurve->knots != nullptr && interpolationCurve->params.numKnots > 0)
@@ -912,12 +900,10 @@ bvector<IGeometryPtr> *invalidGeometry
         invalidGeometry->clear ();
 
     BeCGIModelJsonValueWriter builder;
-    for (auto &g : data)
+    for (auto const& g : data)
         {
-        IGeometryPtr g1 = g;
-        if (GeometryValidator::ValidateAndAppend (s_writeValidator,
-            g1, //static_cast<IGeometryPtr&> (g),
-            validGeometry, invalidGeometry))
+        IGeometryPtr g1 = g;    // cast away const
+        if (GeometryValidator::ValidateAndAppend (s_writeValidator, g1, validGeometry, invalidGeometry))
             builder.GeometryToJson(jsonArray.appendValue(), *g);
         }
     return !jsonArray.isNull ();
@@ -949,8 +935,7 @@ bvector<IGeometryPtr> *validGeometry,
 bvector<IGeometryPtr> *invalidGeometry
 )
     {
-    rapidjson::Document doc;
-    BeJsValue value (doc);
+    BeJsDocument value;
     if (TryGeometryToIModelJsonValue(value, data, validGeometry, invalidGeometry))
         {
         string = value.Stringify ();

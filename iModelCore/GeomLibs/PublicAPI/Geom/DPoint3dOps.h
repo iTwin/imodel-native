@@ -1662,7 +1662,7 @@ bool                    bSignedOneBasedIndices
 );
 
 //!
-//! Triangulate a multiple space loops as viewed in an internally-chosen xy plane.
+//! Triangulate multiple space loops as viewed in an internally-chosen plane.
 //! @param [out] triangleIndices array giving vertex sequence for each exterior loop.
 //! @param [out] exteriorLoopIndices  array of output points, or NULL to disallow adding points at crossings.
 //! @param [out] xyzOut output coordinates.  May have additional points (at self intersections)
@@ -1682,12 +1682,15 @@ TransformR              worldToLocal,
 bvector<bvector<DPoint3d>> const &loops
 );
 
-//! Triangulate a multiple space loops as viewed in an internally-chosen xy plane.
+//! Triangulate multiple space loops as viewed in an internally-chosen plane.
+//! @param [in] loops array of arrays of points traversing loops.
+//! @param [out] triangles triangle coordinates.
 static GEOMDLLIMPEXP bool FixupAndTriangulateSpaceLoops
 (
 bvector<bvector<DPoint3d>> const &loops,
 bvector<DTriangle3d> &triangles
 );
+
 //!
 //! Compute a local to world transformation for a polygon (disconnects allowed)
 //! Favor first polygon CCW for upwards normal.

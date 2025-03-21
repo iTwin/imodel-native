@@ -32,22 +32,16 @@ static BGFBIMPEXP bool IsFlatBufferFormat(Byte const *buffer, size_t bufferSize)
 
 // Convert flatbuffer bytes to geometry instance. If bytes represent an array of geometries, return nullptr.
 static BGFBIMPEXP IGeometryPtr BytesToGeometry(bvector<Byte> const &buffer, bool applyValidation = true);
+
 // Convert flatbuffer bytes to geometry instance. If bytes represent an array of geometries, return nullptr.
 static BGFBIMPEXP IGeometryPtr BytesToGeometrySafe(Byte const *buffer, size_t bufferSize, bool applyValidation = true);
-
 static BGFBIMPEXP ISolidPrimitivePtr BytesToSolidPrimitiveSafe(Byte const *buffer, size_t bufferSize, bool applyValidation = true);
 static BGFBIMPEXP ICurvePrimitivePtr BytesToCurvePrimitiveSafe(Byte const *buffer, size_t bufferSize, bool applyValidation = true);
 static BGFBIMPEXP CurveVectorPtr BytesToCurveVectorSafe(Byte const *buffer, size_t bufferSize, bool applyValidation = true);
 static BGFBIMPEXP PolyfaceHeaderPtr BytesToPolyfaceHeaderSafe(Byte const *buffer, size_t bufferSize, bool applyValidation = true);
 static BGFBIMPEXP MSBsplineSurfacePtr BytesToMSBsplineSurfaceSafe(Byte const *buffer, size_t bufferSize, bool applyValidation = true);
+static BGFBIMPEXP bool BytesToPolyfaceQueryCarrierSafe(Byte const *buffer, size_t bufferSize, PolyfaceQueryCarrier &carrier, bool applyValidation = true);
 
-static BGFBIMPEXP bool BytesToPolyfaceQueryCarrierSafe
-(
-    Byte const *buffer,
-    size_t bufferSize,
-    PolyfaceQueryCarrier &carrier,
-    bool applyValidation = true
-);
 //!
 //! <ul>
 //! <li>Read geometry from the buffer.
@@ -59,38 +53,24 @@ static BGFBIMPEXP bool BytesToPolyfaceQueryCarrierSafe
 //!    </ul>
 //! </ul>
 //!
-static BGFBIMPEXP bool BytesToVectorOfGeometrySafe
-(
-    bvector<Byte> &buffer,
-    bvector<IGeometryPtr> &dest,
-    bool applyValidation = true,
-    bvector<IGeometryPtr> *invalidGeometry = nullptr
-);
-//! NOTE: GeometryToBytes methods ALWAYS apply the validator (see SetFBWriteValidation)
+static BGFBIMPEXP bool BytesToVectorOfGeometrySafe(bvector<Byte> &buffer, bvector<IGeometryPtr> &dest, bool applyValidation = true, bvector<IGeometryPtr> *invalidGeometry = nullptr);
+
+//! NOTE: GeometryToBytes methods ALWAYS apply the validator
 static BGFBIMPEXP void GeometryToBytes (IGeometryCR geometry, bvector<Byte>& buffer);
 static BGFBIMPEXP void GeometryToBytes (PolyfaceQueryCR mesh, bvector<Byte>& buffer);
-
 static BGFBIMPEXP void GeometryToBytes (ICurvePrimitiveCR mesh, bvector<Byte>& buffer);
 static BGFBIMPEXP void GeometryToBytes (MSBsplineSurfaceCR mesh, bvector<Byte>& buffer);
 static BGFBIMPEXP void GeometryToBytes (ISolidPrimitiveCR mesh, bvector<Byte>& buffer);
 static BGFBIMPEXP void GeometryToBytes (CurveVectorCR mesh, bvector<Byte>& buffer);
+
 //!
 //! <ul>
 //! <li>Write geometry to the buffer
-//! <li>If a validator is defined (Set SetFBWriteValidation), test each geometry.
-//!    <ul>
-//!    <li>Invalid geometry is recorded in the (optional) invalidGeometry array, and is NOT written to the FB
-//!    <li>Valid geometry is written to the FB and reported in the (optional) validGeometry array.
-//!    </ul>
-//! <li>If no validator is active, all geometry is written to the FB (dangerous!), and both optional arrays are cleared.
+//! <li>Invalid geometry is recorded in the (optional) invalidGeometry array, and is NOT written to the buffer
+//! <li>Valid geometry is written to the buffer and reported in the (optional) validGeometry array.
 //! </ul>
 //!
-static BGFBIMPEXP void GeometryToBytes (
-    bvector<IGeometryPtr> &geometry,
-    bvector<Byte>& buffer,
-    bvector<IGeometryPtr> *validGeometry = nullptr,
-    bvector<IGeometryPtr> *invalidGeometry = nullptr
-);
+static BGFBIMPEXP void GeometryToBytes(bvector<IGeometryPtr> &geometry, bvector<Byte>& buffer, bvector<IGeometryPtr> *validGeometry = nullptr, bvector<IGeometryPtr> *invalidGeometry = nullptr);
 };
 
 END_BENTLEY_GEOMETRY_NAMESPACE
