@@ -14,6 +14,7 @@ using IClassHandler = InstanceRepository::IClassHandler;
 //---------------------------------------------------------------------------------------
 void InstanceRepository::Reset(bool clearHandlers) {
     BeMutexHolder _(m_mutex);
+    m_reader.Reset();
     if (clearHandlers) {
         m_handlers.clear();
         m_handlerMap.clear();
@@ -219,10 +220,9 @@ DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance
     auto nullValue = BeJsDocument::Null();
     auto& handlers = TryGetHandlers(instKey.GetClassId(), fmt, Operation::Read, nullValue, userOptions);
     InstanceReader::Position pos(instKey.GetInstanceId(), instKey.GetClassId());
-    auto& reader = m_ecdb.GetInstanceReader();
 
     auto rc = BE_SQLITE_ROW;
-    if (!reader.Seek(pos, [&](const InstanceReader::IRowContext& row, PropertyReader::Finder finder) {
+    if (!m_reader.Seek(pos, [&](const InstanceReader::IRowContext& row, PropertyReader::Finder finder) {
             ECSqlRowAdaptor adaptor(m_ecdb);
             adaptor.GetOptions().SetAbbreviateBlobs(false);
             adaptor.GetOptions().SetConvertClassIdsToClassNames(fmt == JsFormat::JsName);
@@ -232,7 +232,7 @@ DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance
                 adaptor.SetCustomHandler([&](BeJsValue out, IECSqlValue const& val) {
                     ECSqlStatus status = ECSqlStatus::Success;
                     for (auto handler : handlers) {
-                        auto result = handler->OnReadECProperty(*val.GetColumnInfo().GetProperty(),  val, out, status);
+                        auto result = handler->OnReadECProperty(*val.GetColumnInfo().GetProperty(), val, out, status);
                         if (result == PropertyHandlerResult::Handled) {
                             return PropertyHandlerResult::Handled;
                         }

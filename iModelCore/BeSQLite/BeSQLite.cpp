@@ -4420,15 +4420,39 @@ ZipErrors SnappyFromBlob::ReadToChunkedArray(ChunkedArray& array, uint32_t bufSi
 SnappyFromMemory::SnappyFromMemory(void*uncompressedBuffer, uint32_t uncompressedBufferSize)
     {
     BeAssert(SNAPPY_UNCOMPRESSED_BUFFER_SIZE == uncompressedBufferSize);
+    BeAssert(uncompressedBuffer != nullptr);
+    BeAssert(uncompressedBufferSize > 0);
 
+    m_ownsUncompressedBuffer = false;
     m_uncompressed = (Byte*)uncompressedBuffer;
     m_uncompressAvail = 0;
     m_uncompressSize = uncompressedBufferSize;
-
     m_blobData = nullptr;
     m_blobOffset = 0;
     m_blobBytesLeft = 0;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SnappyFromMemory::SnappyFromMemory() {
+    BeAssert(SNAPPY_UNCOMPRESSED_BUFFER_SIZE == uncompressedBufferSize);
+
+    m_ownsUncompressedBuffer = true;
+    m_uncompressed = (Byte*)std::malloc(SNAPPY_UNCOMPRESSED_BUFFER_SIZE);
+    m_uncompressAvail = 0;
+    m_uncompressSize = SNAPPY_UNCOMPRESSED_BUFFER_SIZE;
+    m_blobData = nullptr;
+    m_blobOffset = 0;
+    m_blobBytesLeft = 0;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SnappyFromMemory::~SnappyFromMemory() {
+    if (m_ownsUncompressedBuffer)
+        std::free(m_uncompressed);
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

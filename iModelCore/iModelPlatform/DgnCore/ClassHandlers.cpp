@@ -3,29 +3,125 @@
 using IClassHandler = InstanceRepository::IClassHandler;
 
 namespace Handlers {
-    // BE_PROP_NAME(BBoxLow)
-    // BE_PROP_NAME(BBoxHigh)
-    // BE_PROP_NAME(GeometryStream)
-    // BE_JSON_NAME(bbox)
-    // BE_JSON_NAME(geom)
-    // BE_JSON_NAME(geomBinary)
-    // BE_JSON_NAME(elementGeometryBuilderParams)
+
+    ECSqlStatus BindPlacement3d(Placement3dCR placement, PropertyBinder::Finder finder) {
+        ECSqlStatus rc = ECSqlStatus::Success;
+        auto& origin = finder("Origin")->GetBinder();
+        auto& yaw = finder("Yaw")->GetBinder();
+        auto& pitch = finder("Pitch")->GetBinder();
+        auto& roll = finder("Roll")->GetBinder();
+        auto& bboxLow = finder("BBoxLow")->GetBinder();
+        auto& bboxHigh = finder("BBoxHigh")->GetBinder();
+
+        if (placement.IsValid()) {
+            rc = origin.BindPoint3d(placement.GetOrigin());
+            if (rc != ECSqlStatus::Success) {
+                return rc;
+            }
+            rc = yaw.BindDouble(placement.GetAngles().GetYaw().Degrees());
+            if (rc != ECSqlStatus::Success) {
+                return rc;
+            }
+            rc = pitch.BindDouble(placement.GetAngles().GetPitch().Degrees());
+            if (rc != ECSqlStatus::Success) {
+                return rc;
+            }
+            rc = roll.BindDouble(placement.GetAngles().GetRoll().Degrees());
+            if (rc != ECSqlStatus::Success) {
+                return rc;
+            }
+            rc = bboxLow.BindPoint3d(placement.GetElementBox().low);
+            if (rc != ECSqlStatus::Success) {
+                return rc;
+            }
+            rc = bboxHigh.BindPoint3d(placement.GetElementBox().high);
+        } else {
+            origin.BindNull();
+            yaw.BindNull();
+            pitch.BindNull();
+            roll.BindNull();
+            bboxLow.BindNull();
+            bboxHigh.BindNull();
+        }
+        return rc;
+    }
+    /*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+
+    ECSqlStatus BindPlacement2d(Placement2dCR placement, PropertyBinder::Finder finder) {
+        ECSqlStatus rc = ECSqlStatus::Success;
+        auto& origin = finder("Origin")->GetBinder();
+        auto& rotation = finder("Rotation")->GetBinder();
+        auto& bboxLow = finder("BBoxLow")->GetBinder();
+        auto& bboxHigh = finder("BBoxHigh")->GetBinder();
+
+        if (placement.IsValid()) {
+            rc = origin.BindPoint2d(placement.GetOrigin());
+            if (rc != ECSqlStatus::Success) {
+                return rc;
+            }
+            rc = rotation.BindDouble(placement.GetAngle().Degrees());
+            if (rc != ECSqlStatus::Success) {
+                return rc;
+            }
+
+            rc = bboxLow.BindPoint2d(placement.GetElementBox().low);
+            if (rc != ECSqlStatus::Success) {
+                return rc;
+            }
+            rc = bboxHigh.BindPoint2d(placement.GetElementBox().high);
+        } else {
+            origin.BindNull();
+            rotation.BindNull();
+            bboxLow.BindNull();
+            bboxHigh.BindNull();
+        }
+        return rc;
+    }
+    bool ReadPlacement2d(Placement2d& placement, PropertyReader::Finder finder) {
+        auto origin = finder("Origin")->GetReader().GetPoint2d();
+        auto rotation = finder("Rotation")->GetReader().GetDouble();
+        auto boxLow = finder("BBoxLow")->GetReader().GetPoint2d();
+        auto boxHi = finder("BBoxHigh")->GetReader().GetPoint2d();
+        placement = Placement2d(
+            origin,
+            Angle::FromDegrees(rotation),
+            ElementAlignedBox2d(boxLow.x, boxLow.y, boxHi.x, boxHi.y));
+        return placement.IsValid();
+    }
+    bool ReadPlacement3d(Placement3d& placement, PropertyReader::Finder finder) {
+        auto origin = finder("Origin")->GetReader().GetPoint3d();
+        auto yaw = finder("Yaw")->GetReader().GetDouble();
+        auto pitch = finder("Pitch")->GetReader().GetDouble();
+        auto roll = finder("Roll")->GetReader().GetDouble();
+        auto boxLow = finder("BBoxLow")->GetReader().GetPoint3d();
+        auto boxHi = finder("BBoxHigh")->GetReader().GetPoint3d();
+        placement = Placement3d(
+            origin,
+            YawPitchRollAngles(
+                Angle::FromDegrees(yaw),
+                Angle::FromDegrees(pitch),
+                Angle::FromDegrees(roll)),
+            ElementAlignedBox3d(boxLow.x, boxLow.y, boxLow.z, boxHi.x, boxHi.y, boxHi.z));
+        return placement.IsValid();
+    }
     //=======================================================================================
     //! @bsiclass
     //=======================================================================================
-    struct JsGeometrySource3d : public GeometrySource3d {
+    struct JsGeometrySource3d final : public GeometrySource3d {
     private:
         DgnDbR m_db;
         Placement3d m_placement;
         DgnCategoryId m_categoryId;
-        GeometryStream m_geometryStream;
+        GeometryStream m_geometry;
 
     protected:
         DgnDbR _GetSourceDgnDb() const { return m_db; }
         DgnElementCP _ToElement() const { return nullptr; }
         GeometrySource3dCP _GetAsGeometrySource3d() const { return this; }
         DgnCategoryId _GetCategoryId() const { return m_categoryId; }
-        GeometryStreamCR _GetGeometryStream() const { return m_geometryStream; }
+        GeometryStreamCR _GetGeometryStream() const { return m_geometry; }
         Placement3dCR _GetPlacement() const { return m_placement; }
         DgnDbStatus _SetPlacement(Placement3dCR placement) {
             m_placement = placement;
@@ -38,25 +134,44 @@ namespace Handlers {
 
     public:
         JsGeometrySource3d(DgnDbR dgnDb, DgnCategoryId categoryId, Placement3d&& placement, GeometryStream&& geomStream)
-            : m_db(dgnDb), m_placement(std::move(placement)), m_categoryId(categoryId), m_geometryStream(std::move(geomStream)) {}
-    };
+            : m_db(dgnDb), m_placement(std::move(placement)), m_categoryId(categoryId), m_geometry(std::move(geomStream)) {}
 
+        static std::unique_ptr<JsGeometrySource3d> Find(DgnDbR dgnDb, ECInstanceId id) {
+            std::unique_ptr<JsGeometrySource3d> source;
+            auto pos = InstanceReader::Position(id, "BisCore:GeometrySource3d");
+            dgnDb.GetInstanceReader().Seek(pos, [&](const auto& row, auto finder) {
+                Placement3d placement;
+                ReadPlacement3d(placement, finder);
+
+                auto categoryId = finder("Category")->GetReader().GetNavigation<DgnCategoryId>(nullptr);
+                auto& geomReader = finder("GeometryStream")->GetReader();
+                auto geomStream = GeometryStream{};
+                SnappyFromMemory snappyDecompress;
+                auto rc = geomStream.Read(snappyDecompress, dgnDb, geomReader);
+                if (rc != ECSqlStatus::Success) {
+                    return;
+                }
+                source = std::make_unique<JsGeometrySource3d>(dgnDb, categoryId, std::move(placement), std::move(geomStream));
+            });
+            return source;
+        }
+    };
     //=======================================================================================
     // @bsiclass
     //=======================================================================================
-    struct JsGeometrySource2d : public GeometrySource2d {
+    struct JsGeometrySource2d final : public GeometrySource2d {
     private:
         DgnDbR m_db;
         Placement2d m_placement;
         DgnCategoryId m_categoryId;
-        GeometryStream m_geometryStream;
+        GeometryStream m_geometry;
 
     protected:
         DgnDbR _GetSourceDgnDb() const { return m_db; }
         DgnElementCP _ToElement() const { return nullptr; }
         GeometrySource2dCP _GetAsGeometrySource2d() const { return this; }
         DgnCategoryId _GetCategoryId() const { return m_categoryId; }
-        GeometryStreamCR _GetGeometryStream() const { return m_geometryStream; }
+        GeometryStreamCR _GetGeometryStream() const { return m_geometry; }
         Placement2dCR _GetPlacement() const { return m_placement; }
         DgnDbStatus _SetPlacement(Placement2dCR placement) {
             m_placement = placement;
@@ -69,7 +184,62 @@ namespace Handlers {
 
     public:
         JsGeometrySource2d(DgnDbR dgnDb, DgnCategoryId categoryId, Placement2d&& placement, GeometryStream&& geomStream)
-            : m_db(dgnDb), m_placement(std::move(placement)), m_categoryId(categoryId), m_geometryStream(std::move(geomStream)) {}
+            : m_db(dgnDb), m_placement(std::move(placement)), m_categoryId(categoryId), m_geometry(std::move(geomStream)) {}
+
+        static std::unique_ptr<JsGeometrySource2d> Find(DgnDbR dgnDb, ECInstanceId id) {
+            std::unique_ptr<JsGeometrySource2d> source;
+            auto pos = InstanceReader::Position(id, "BisCore:GeometrySource2d");
+            dgnDb.GetInstanceReader().Seek(pos, [&](const auto& row, auto finder) {
+                Placement2d placement;
+                ReadPlacement2d(placement, finder);
+
+                auto categoryId = finder("Category")->GetReader().GetNavigation<DgnCategoryId>(nullptr);
+                auto& geomReader = finder("GeometryStream")->GetReader();
+                auto geomStream = GeometryStream{};
+                SnappyFromMemory snappyDecompress;
+                auto rc = geomStream.Read(snappyDecompress, dgnDb, geomReader);
+                if (rc != ECSqlStatus::Success) {
+                    return;
+                }
+                source = std::make_unique<JsGeometrySource2d>(dgnDb, categoryId, std::move(placement), std::move(geomStream));
+            });
+            return source;
+        }
+    };
+
+    //=======================================================================================
+    // @bsiclass
+    //=======================================================================================
+    struct JsGeometryPart final {
+    private:
+        GeometryStream m_geometry;  //!< Geometry of part
+        ElementAlignedBox3d m_bbox; //!< Bounding box of part geometry
+    public:
+        GeometryStreamCR GetGeometryStream() const { return m_geometry; }
+        ElementAlignedBox3dCR GetBoundingBox() const { return m_bbox; }
+
+        GeometryStreamR GetGeometryStream() { return m_geometry; }
+        ElementAlignedBox3dR GetBoundingBox() { return m_bbox; }
+
+        JsGeometryPart(GeometryStream&& geom, ElementAlignedBox3d&& bbox) : m_geometry(std::move(geom)), m_bbox(std::move(bbox)) {}
+        static std::unique_ptr<JsGeometryPart> Find(DgnDbR db, ECInstanceId id) {
+            std::unique_ptr<JsGeometryPart> part;
+            auto pos = InstanceReader::Position(id, "BisCore:GeometryPart");
+            db.GetInstanceReader().Seek(pos, [&](const auto& row, auto finder) {
+                auto& geomReader = finder("GeometryStream")->GetReader();
+                auto bboxLow = finder("BBoxLow")->GetReader().GetPoint3d();
+                auto bboxHi = finder("BBoxHigh")->GetReader().GetPoint3d();
+
+                ElementAlignedBox3d bbox(bboxLow.x, bboxLow.y, bboxLow.z, bboxHi.x, bboxHi.y, bboxHi.z);
+                auto geomStream = GeometryStream{};
+                auto rc = geomStream.Read(db.Elements().GetSnappyFrom(), db, geomReader);
+                if (rc != ECSqlStatus::Success) {
+                    return;
+                }
+                part = std::make_unique<JsGeometryPart>(std::move(geomStream), std::move(bbox));
+            });
+            return part;
+        }
     };
 
     //=======================================================================================
@@ -91,10 +261,12 @@ namespace Handlers {
                 if (rc != ECSqlStatus::Success) {
                     return PropertyHandlerResult::Handled;
                 }
+
                 rc = finder("CodeScope")->GetBinder().BindNavigation(code.GetScopeElementId(GetDbR<DgnDb>()));
                 if (rc != ECSqlStatus::Success) {
                     return PropertyHandlerResult::Handled;
                 }
+
                 rc = finder("CodeSpec")->GetBinder().BindNavigation(code.GetCodeSpecId());
                 return PropertyHandlerResult::Handled;
             }
@@ -160,91 +332,111 @@ namespace Handlers {
     //=======================================================================================
     struct GeometricElement2d : IClassHandler {
         constexpr static auto ClassName = "BisCore:GeometricElement2d";
-
-        PropertyHandlerResult OnBindECProperty(ECN::ECPropertyCR property, BeJsConst val, IECSqlBinder& binder, ECSqlStatus& rc) {
-            BeAssert(GetFormat() == JsFormat::JsName);
-            if (property.GetName().EqualsIAscii("GeometryStream")) {
-                GeometryStream geomStream;
-                val.GetBinary(geomStream);
-                SnappyToBlob snappy;
-                rc = geomStream.Write(snappy, binder);
-                return PropertyHandlerResult::Handled;
-            }
-            return PropertyHandlerResult::Continue;
-        }
-
-        Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
-        PropertyHandlerResult OnReadECProperty(ECN::ECPropertyCR property, const IECSqlValue& valueReader, BeJsValue val, ECSqlStatus& rc) {
-            BeAssert(GetFormat() == JsFormat::JsName);
-            if (property.GetName().EqualsIAscii("GeometryStream")) {
-                SnappyFromMemory snappy(m_snappyFromBuffer, sizeof(m_snappyFromBuffer));
-                GeometryStream geomStream;
-                rc = geomStream.Read(snappy, GetDbR<DgnDb>(), valueReader);
-                return PropertyHandlerResult::Handled;
-            }
-
-            return PropertyHandlerResult::Continue;
-        }
+        /*---------------------------------------------------------------------------------**/ /**
+        * @bsimethod
+        +---------------+---------------+---------------+---------------+---------------+------*/
         PropertyHandlerResult OnBindUserProperty(Utf8CP property, BeJsConst val, PropertyBinder::Finder finder, ECSqlStatus& rc) {
             BeAssert(GetFormat() == JsFormat::JsName);
             if (BeStringUtilities::StricmpAscii(property, "placement") == 0) {
-                auto& originBinder = finder("Origin")->GetBinder();
-                auto& rotationBinder = finder("Rotation")->GetBinder();
-                auto& bboxLowBinder = finder("BBoxLow")->GetBinder();
-                auto& bboxHighBinder = finder("BBoxHigh")->GetBinder();
-
                 Placement2d newPlacement;
                 newPlacement.FromJson(val);
-                if (!newPlacement.IsValid()) {
-                    originBinder.BindNull();
-                    rotationBinder.BindNull();
-                    bboxLowBinder.BindNull();
-                    bboxHighBinder.BindNull();
-                    return PropertyHandlerResult::Handled;
-                } else {
-                    rc = bboxLowBinder.BindPoint2d(newPlacement.GetElementBox().low);
-                    if (rc != ECSqlStatus::Success) {
-                        SetError("Failed to bind BBoxLow");
-                        return PropertyHandlerResult::Handled;
-                    }
-                    rc = bboxHighBinder.BindPoint2d(newPlacement.GetElementBox().high);
-                    if (rc != ECSqlStatus::Success) {
-                        SetError("Failed to bind BBoxHigh");
-                        return PropertyHandlerResult::Handled;
-                    }
-                    rc = originBinder.BindPoint2d(newPlacement.GetOrigin());
-                    if (rc != ECSqlStatus::Success) {
-                        SetError("Failed to bind Origin");
-                        return PropertyHandlerResult::Handled;
-                    }
-                    rc = rotationBinder.BindDouble(newPlacement.GetAngle().Degrees());
-                    if (rc != ECSqlStatus::Success) {
-                        SetError("Failed to bind Rotation");
+                rc = BindPlacement2d(newPlacement, finder);
+                if (rc != ECSqlStatus::Success) {
+                    SetError("Failed to bind placement");
+                }
+                return PropertyHandlerResult::Handled;
+            }
+            if (BeStringUtilities::StricmpAscii(property, "elementGeometryBuilderParams") == 0) {
+                if (!val.isNull()) {
+                    auto napiValue = val.AsNapiValueRef();
+                    if (nullptr == napiValue) {
+                        SetError("Failed to bind elementGeometryBuilderParams. Only JavaScript is supported");
                         return PropertyHandlerResult::Handled;
                     }
 
+                    auto napiObj = napiValue->m_napiVal.As<Napi::Object>();
+                    if (napiObj.Has("is2dPart")) {
+                        SetError("BuildGeometryStream failed - invalid builder parameter");
+                        return PropertyHandlerResult::Handled;
+                    }
+
+                    auto viewIndependentVal = napiObj.Get("viewIndependent");
+                    auto entryArrayObj = napiObj.Get("entryArray").As<Napi::Array>();
+                    BeAssert(viewIndependentVal.IsUndefined() || viewIndependentVal.IsBoolean());
+                    BeAssert(entryArrayObj.IsArray());
+
+                    GeometryBuilderParams bparams;
+                    bparams.viewIndependent = viewIndependentVal.IsBoolean() && viewIndependentVal.As<Napi::Boolean>().Value();
+
+                    auto source = JsGeometrySource2d::Find(GetDbR<DgnDb>(), ParseInstanceId());
+
+                    GeometryBuilderPtr builder = GeometryBuilder::Create(*source);
+                    if (bparams.viewIndependent)
+                        builder->SetHeaderFlags(GeometryStreamIO::Header::Flags::ViewIndependent);
+
+                    if (0 == entryArrayObj.Length()) {
+                        if (builder->ClearGeometryStream(*source) != SUCCESS) {
+                            SetError("No geometry entries found");
+                            return PropertyHandlerResult::Handled;
+                        }
+                    }
+                    auto status = GeometryStreamIO::BuildGeometryStream(GetDbR<DgnDb>(), *builder, bparams, entryArrayObj.As<Napi::Array>());
+                    if (DgnDbStatus::Success != status) {
+                        SetError("BuildGeometryStream failed");
+                        return PropertyHandlerResult::Handled;
+                    }
                     return PropertyHandlerResult::Handled;
                 }
             }
 
+            if (BeStringUtilities::StricmpAscii(property, "geom") == 0) {
+                if (val.isNull()) {
+                    SetError("Failed to bind geom. Only JavaScript is supported");
+                    return PropertyHandlerResult::Handled;
+                }
+
+                auto source = JsGeometrySource2d::Find(GetDbR<DgnDb>(), ParseInstanceId());
+                GeometryBuilder::UpdateFromJson(*source, val);
+                SnappyToBlob snappy;
+                source->GetGeometryStream().Write(snappy, finder("GeometryStream")->GetBinder());
+
+                return PropertyHandlerResult::Handled;
+            }
+
+            if (BeStringUtilities::StricmpAscii(property, "geomBinary") == 0) {
+                if (val.isNull()) {
+                    SetError("Failed to bind geom. Only JavaScript is supported");
+                    return PropertyHandlerResult::Handled;
+                }
+
+                GeometryStream geomStream;
+                val.GetBinary(geomStream);
+                SnappyToBlob snappy;
+                rc = geomStream.Write(snappy, finder("GeometryStream")->GetBinder());
+                if (rc != ECSqlStatus::Success) {
+                    SetError("Failed to write GeometryStream");
+                    return PropertyHandlerResult::Handled;
+                }
+                return PropertyHandlerResult::Handled;
+            }
             return PropertyHandlerResult::Continue;
         }
+
+        /*---------------------------------------------------------------------------------**/ /**
+        * @bsimethod
+        +---------------+---------------+---------------+---------------+---------------+------*/
         virtual ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder finder) override {
             BeAssert(GetFormat() == JsFormat::JsName);
-            auto origin = finder("Origin")->GetReader().GetPoint2d();
-            auto rotation = finder("Rotation")->GetReader().GetDouble();
-            auto boxLow = finder("BBoxLow")->GetReader().GetPoint2d();
-            auto boxHi = finder("BBoxHigh")->GetReader().GetPoint2d();
 
-            Placement2d placement(
-                origin,
-                Angle::FromDegrees(rotation),
-                ElementAlignedBox2d(boxLow.x, boxLow.y, boxHi.x, boxHi.y));
-
+            Placement2d placement;
+            if (!ReadPlacement2d(placement, finder)) {
+                SetError("Failed to read placement");
+                return ECSqlStatus::Error;
+            }
             placement.ToJson(instance["placement"]);
 
             if (GetUserOptions()["wantGeometry"].asBool()) {
-                SnappyFromMemory snappy(m_snappyFromBuffer, sizeof(m_snappyFromBuffer));
+                SnappyFromMemory snappy;
                 auto categoryId = instance["category"]["id"].GetId64<DgnCategoryId>();
                 auto geometryStream = GeometryStream{};
                 auto rc = geometryStream.Read(snappy, GetDbR<DgnDb>(), finder("GeometryStream")->GetReader());
@@ -267,88 +459,115 @@ namespace Handlers {
     //=======================================================================================
     struct GeometricElement3d : IClassHandler {
         constexpr static auto ClassName = "BisCore:GeometricElement3d";
-        PropertyHandlerResult OnBindECProperty(ECN::ECPropertyCR property, BeJsConst val, IECSqlBinder& binder, ECSqlStatus& rc) {
-            BeAssert(GetFormat() == JsFormat::JsName);
-            return PropertyHandlerResult::Continue;
-        }
-
-        Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
-        PropertyHandlerResult OnReadECProperty(ECN::ECPropertyCR property, const IECSqlValue& valueReader, BeJsValue val, ECSqlStatus& rc) {
-            BeAssert(GetFormat() == JsFormat::JsName);
-
-            return PropertyHandlerResult::Continue;
-        }
+        /*---------------------------------------------------------------------------------**/ /**
+         * @bsimethod
+         +---------------+---------------+---------------+---------------+---------------+------*/
         PropertyHandlerResult OnBindUserProperty(Utf8CP property, BeJsConst val, PropertyBinder::Finder finder, ECSqlStatus& rc) {
             BeAssert(GetFormat() == JsFormat::JsName);
             if (BeStringUtilities::StricmpAscii(property, "placement") == 0) {
-                auto& originBinder = finder("Origin")->GetBinder();
-                auto& yawBinder = finder("Yaw")->GetBinder();
-                auto& pitchBinder = finder("Pitch")->GetBinder();
-                auto& rollBinder = finder("Roll")->GetBinder();
-                auto& bboxLowBinder = finder("BBoxLow")->GetBinder();
-                auto& bboxHighBinder = finder("BBoxHigh")->GetBinder();
-
                 Placement3d newPlacement;
                 newPlacement.FromJson(val);
-                if (!newPlacement.IsValid()) {
-                    originBinder.BindNull();
-                    yawBinder.BindNull();
-                    pitchBinder.BindNull();
-                    rollBinder.BindNull();
-                    bboxLowBinder.BindNull();
-                    bboxHighBinder.BindNull();
+                rc = BindPlacement3d(newPlacement, finder);
+                if (rc != ECSqlStatus::Success) {
+                    SetError("Failed to bind placement");
                     return PropertyHandlerResult::Handled;
-                } else {
-                    rc = originBinder.BindPoint3d(newPlacement.GetOrigin());
-                    if (rc != ECSqlStatus::Success) {
+                }
+            }
+
+            if (BeStringUtilities::StricmpAscii(property, "elementGeometryBuilderParams") == 0) {
+                if (!val.isNull()) {
+                    auto napiValue = val.AsNapiValueRef();
+                    if (nullptr == napiValue) {
+                        SetError("Failed to bind elementGeometryBuilderParams. Only JavaScript is supported");
                         return PropertyHandlerResult::Handled;
                     }
-                    rc = yawBinder.BindDouble(newPlacement.GetAngles().GetYaw().Degrees());
-                    if (rc != ECSqlStatus::Success) {
+
+                    auto napiObj = napiValue->m_napiVal.As<Napi::Object>();
+                    if (napiObj.Has("is2dPart")) {
+                        SetError("BuildGeometryStream failed - invalid builder parameter");
                         return PropertyHandlerResult::Handled;
                     }
-                    rc = pitchBinder.BindDouble(newPlacement.GetAngles().GetPitch().Degrees());
-                    if (rc != ECSqlStatus::Success) {
-                        return PropertyHandlerResult::Handled;
+
+                    auto viewIndependentVal = napiObj.Get("viewIndependent");
+                    auto entryArrayObj = napiObj.Get("entryArray").As<Napi::Array>();
+                    BeAssert(viewIndependentVal.IsUndefined() || viewIndependentVal.IsBoolean());
+                    BeAssert(entryArrayObj.IsArray());
+
+                    GeometryBuilderParams bparams;
+                    bparams.viewIndependent = viewIndependentVal.IsBoolean() && viewIndependentVal.As<Napi::Boolean>().Value();
+
+                    auto source = JsGeometrySource3d::Find(GetDbR<DgnDb>(), ParseInstanceId());
+
+                    GeometryBuilderPtr builder = GeometryBuilder::Create(*source);
+                    if (bparams.viewIndependent)
+                        builder->SetHeaderFlags(GeometryStreamIO::Header::Flags::ViewIndependent);
+
+                    if (0 == entryArrayObj.Length()) {
+                        if (builder->ClearGeometryStream(*source) != SUCCESS) {
+                            SetError("No geometry entries found");
+                            return PropertyHandlerResult::Handled;
+                        }
                     }
-                    rc = rollBinder.BindDouble(newPlacement.GetAngles().GetRoll().Degrees());
-                    if (rc != ECSqlStatus::Success) {
-                        return PropertyHandlerResult::Handled;
-                    }
-                    rc = bboxLowBinder.BindPoint3d(newPlacement.GetElementBox().low);
-                    if (rc != ECSqlStatus::Success) {
-                        return PropertyHandlerResult::Handled;
-                    }
-                    rc = bboxHighBinder.BindPoint3d(newPlacement.GetElementBox().high);
-                    if (rc != ECSqlStatus::Success) {
+                    auto status = GeometryStreamIO::BuildGeometryStream(GetDbR<DgnDb>(), *builder, bparams, entryArrayObj.As<Napi::Array>());
+                    if (DgnDbStatus::Success != status) {
+                        SetError("BuildGeometryStream failed");
                         return PropertyHandlerResult::Handled;
                     }
                     return PropertyHandlerResult::Handled;
                 }
             }
 
+            if (BeStringUtilities::StricmpAscii(property, "geom") == 0) {
+                if (val.isNull()) {
+                    SetError("Failed to bind geom. Only JavaScript is supported");
+                    return PropertyHandlerResult::Handled;
+                }
+
+                auto source = JsGeometrySource2d::Find(GetDbR<DgnDb>(), ParseInstanceId());
+                GeometryBuilder::UpdateFromJson(*source, val);
+                SnappyToBlob snappy;
+                rc = source->GetGeometryStream().Write(snappy, finder("GeometryStream")->GetBinder());
+                if (rc != ECSqlStatus::Success) {
+                    SetError("Failed to write GeometryStream");
+                    return PropertyHandlerResult::Handled;
+                }
+                return PropertyHandlerResult::Handled;
+            }
+
+            if (BeStringUtilities::StricmpAscii(property, "geomBinary") == 0) {
+                if (val.isNull()) {
+                    SetError("Failed to bind geom. Only JavaScript is supported");
+                    return PropertyHandlerResult::Handled;
+                }
+
+                GeometryStream geomStream;
+                val.GetBinary(geomStream);
+                SnappyToBlob snappy;
+                rc = geomStream.Write(snappy, finder("GeometryStream")->GetBinder());
+                if (rc != ECSqlStatus::Success) {
+                    SetError("Failed to write GeometryStream");
+                    return PropertyHandlerResult::Handled;
+                }
+                return PropertyHandlerResult::Handled;
+            }
             return PropertyHandlerResult::Continue;
         }
+
+        /*---------------------------------------------------------------------------------**/ /**
+         * @bsimethod
+         +---------------+---------------+---------------+---------------+---------------+------*/
         virtual ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder finder) override {
             BeAssert(GetFormat() == JsFormat::JsName);
-            auto origin = finder("Origin")->GetReader().GetPoint3d();
-            auto yaw = finder("Yaw")->GetReader().GetDouble();
-            auto pitch = finder("Pitch")->GetReader().GetDouble();
-            auto roll = finder("Roll")->GetReader().GetDouble();
-            auto boxLow = finder("BBoxLow")->GetReader().GetPoint3d();
-            auto boxHi = finder("BBoxHigh")->GetReader().GetPoint3d();
+            Placement3d placement;
+            if (!ReadPlacement3d(placement, finder)) {
+                SetError("Failed to read placement");
+                return ECSqlStatus::Error;
+            }
 
-            Placement3d placement(
-                origin,
-                YawPitchRollAngles(
-                    Angle::FromDegrees(yaw),
-                    Angle::FromDegrees(pitch),
-                    Angle::FromDegrees(roll)),
-                ElementAlignedBox3d(boxLow.x, boxLow.y, boxLow.z, boxHi.x, boxHi.y, boxHi.z));
             placement.ToJson(instance["placement"]);
 
             if (GetUserOptions()["wantGeometry"].asBool()) {
-                SnappyFromMemory snappy(m_snappyFromBuffer, sizeof(m_snappyFromBuffer));
+                SnappyFromMemory snappy;
                 auto categoryId = instance["category"]["id"].GetId64<DgnCategoryId>();
                 auto geometryStream = GeometryStream{};
                 auto rc = geometryStream.Read(snappy, GetDbR<DgnDb>(), finder("GeometryStream")->GetReader());
@@ -371,6 +590,9 @@ namespace Handlers {
     //=======================================================================================
     struct RenderMaterial : IClassHandler {
         constexpr static auto ClassName = "BisCore:RenderMaterial";
+        /*---------------------------------------------------------------------------------**/ /**
+         * @bsimethod
+         +---------------+---------------+---------------+---------------+---------------+------*/
 
         // void RemoveNullValues(BeJsValue& json) {
         //     json.ForEachProperty([&](Utf8CP memberName, BeJsConst memberJson) {

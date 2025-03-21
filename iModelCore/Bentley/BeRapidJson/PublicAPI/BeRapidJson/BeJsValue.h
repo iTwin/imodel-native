@@ -20,6 +20,7 @@
 #include <json/json.h>
 #include <limits>
 #include <cmath>
+#include <optional>
 
 namespace Napi {
 class Value;
@@ -1044,36 +1045,9 @@ private:
         }
         return tokens;
     }
-    static std::optional<BeJsConst> Get(BeJsConst obj, std::vector<Accessor>& path) {
-        if (path.empty()) {
-            return obj;
-        }
-
-        auto current = path.back();
-        path.pop_back();
-
-        if (current.index > 0) {
-            if (!obj.isArray()) {
-                return std::nullopt;
-            }
-            if (current.index >= (int)obj.size()) {
-                return std::nullopt;
-            }
-            return Get(obj[current.index], path);
-        } else {
-            if (!obj.isObject()) {
-                return std::nullopt;
-            }
-            if (!obj.isMember(current.token.c_str())) {
-                return std::nullopt;
-            }
-            if (!obj[current.token.c_str()].isObject()) {
-                return std::nullopt;
-            }
-            return Get(obj[current.token], path);
-        }
-    }
-    static std::optional<BeJsValue> Get(BeJsValue obj, std::vector<Accessor>& path) {
+    template <typename T>
+    static std::optional<T> Get(T obj, std::vector<Accessor>& path) {
+        static_assert(std::is_base_of<BeJsConst, T>::value, "T must be derived from BeJsConst");
         if (path.empty()) {
             return obj;
         }
@@ -1105,15 +1079,12 @@ private:
 
 public:
     BeJsPath() = delete;
-    static std::optional<BeJsConst> Extract(BeJsConst obj, const std::string& path) {
+    template <typename T>
+    static std::optional<T> Extract(T obj, const std::string& path) {
         auto tokens = Parse(path);
         std::reverse(tokens.begin(), tokens.end());
         return Get(obj, tokens);
     }
-    static std::optional<BeJsValue> Extract(BeJsValue obj, const std::string& path) {
-        auto tokens = Parse(path);
-        std::reverse(tokens.begin(), tokens.end());
-        return Get(obj, tokens);
-    }
+
 };
 END_BENTLEY_NAMESPACE

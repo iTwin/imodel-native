@@ -410,6 +410,9 @@ struct GeometryStreamIO
     DGNPLATFORM_EXPORT static DgnDbStatus BuildGeometryStream(DgnElementR, GeometryBuilderParams const& elementGeometryBuilderParams, Napi::Array entryArrayObj);
 
     //! @private
+    DGNPLATFORM_EXPORT static DgnDbStatus BuildGeometryStream(DgnDbR db, GeometryBuilder& builder, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj);
+
+    //! @private
     DGNPLATFORM_EXPORT static DgnDbStatus CreateBRepGeometry(DgnDbR db, Napi::Object const& createProps, Napi::Env env);
 
     //! @private
