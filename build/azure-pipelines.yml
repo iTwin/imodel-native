@@ -11,7 +11,7 @@ pr:
   drafts: false
   branches:
     include:
-      - main
+      - affanK/instance-writer
       - release/*
 
 parameters:
