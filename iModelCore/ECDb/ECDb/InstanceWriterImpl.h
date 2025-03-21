@@ -165,6 +165,7 @@ struct InstanceWriter::Impl final {
         bool UseJsNames() const { return m_options.GetUseJsNames(); }
         ECSqlStatus NotifyUserProperty(Utf8CP prop, BeJsConst val, InstanceWriter::Impl::MruStatementCache::CachedWriteStatement& stmt) const;
         void SetError(const char* fmt, ...);
+        void PrependError(const char* fmt, ...);
         bool HasError() const { return !m_error.empty(); }
         BeJsConst GetInstance() const { return m_instance; }
     };
