@@ -5,12 +5,12 @@ rem   See LICENSE.md in the repository root for full copyright notice.
 rem ------------------------------------------------------------------------------------
 
 : NOTES:
-: * This Windows script compiles the flatbuffer geometry schema allcg.fbs into flatbuffer accessors for Bentley's
+: * This Windows script compiles the flatbuffers geometry schema allcg.fbs into flatbuffers accessors for Bentley's
 :   native, iTwin, and .NET core geometry libraries.
-: * Changes to allcg.fbs and this file must be reflected in all native geomlibs repos: PPBase, imodel-native, imodel02.
-: * Whenever data is added to a geometry type that must be persisted:
-:   * Update allcg.fbs in all 3 locations.
-:   * Run this script in all 3 locations, and follow its directions.
+: * Changes to allcg.fbs and this file must be reflected in all 3 native geomlibs repos: PPBase, imodel-native, imodel02.
+: * Whenever allcg.fbs changes, or whenever the flatbuffers distribution is updated, run this script in all 3
+:   locations, and follow its directions.
+: * The allcg.fbs schema should only be changed by appending new persistent data to a geometry type.
 : * Do not commit %TempDir% and %OutDir%:
 :   * %TempDir% is automatically deleted on successful completion of this script.
 :   * %OutDir% will contain generated file(s) to be manually copied elsewhere.
