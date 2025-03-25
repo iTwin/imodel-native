@@ -3925,7 +3925,7 @@ ECObjectsStatus ECSchemaCache::AddSchema(ECSchemaR ecSchema)
             ECSchemaP existingSchema = result.first->second.get();
             if(existingSchema != referencedSchema)
                 {
-                LOG.warningv(L"ECSchemaCache: Adding schema '%s' which references schema '%s'. However, a different in-memory instance of this referenced schema already exists in the cache. This might indicate a problem with the schema dependencies.",
+                LOG.warningv(L"ECSchemaCache: Adding schema '%s' which references schema '%s'. However, a different in-memory instance of this referenced schema already exists in the cache. This may indicate an issue with the schema graph.",
                      ecSchema.GetSchemaKey().GetFullSchemaName().c_str(), existingSchema->GetSchemaKey().GetFullSchemaName().c_str());
                 }
             }
