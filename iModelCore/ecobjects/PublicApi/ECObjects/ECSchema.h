@@ -2897,6 +2897,7 @@ public:
     int GetCount() const {return (int)m_schemas.size();} //!< Returns the number of schemas currently in the cache
     void Clear() {m_schemas.clear();}; //!< Removes all schemas from the cache
     IECSchemaLocater& GetSchemaLocater() {return *this;} //!< Returns the SchemaCache as an IECSchemaLocater
+    void CheckCleanSchemaGraph(ECSchemaP schema) const; //!< Checks the schema graph for extra schemas of the same name and logs them
     ECOBJECTS_EXPORT bvector<ECSchemaCP> GetSchemas() const;
     ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaP>& schemas) const;
     ECOBJECTS_EXPORT void GetSupplementalSchemasFor(Utf8CP schemaName, bvector<ECSchemaP>& supplementalSchemas) const;
