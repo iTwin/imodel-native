@@ -24,7 +24,6 @@ struct InstanceRepository final {
     struct IClassHandler {
         friend struct InstanceRepository;
 
-
     private:
         bset<Utf8String, AsciiCaseInsensitiveCompare> m_customHandledProperties;
         ECN::ECClassId m_classId;
@@ -39,7 +38,6 @@ struct InstanceRepository final {
         void Reset() { m_class = nullptr; }
 
     protected:
-
         ECN::ECClassId GetClassId() const { return m_classId; }
         ECDbCR GetECDb() const { return *m_db; }
         BeJsConst& GetUserOptions() const { return *m_userOptions; }
@@ -63,10 +61,11 @@ struct InstanceRepository final {
             return *static_cast<const T*>(m_db);
         }
         template <typename T>
-        T& GetDbR() const{
+        T& GetDbR() const {
             static_assert(std::is_base_of<ECDb, T>::value, "T must be derived from ECDb");
             return *static_cast<T*>(const_cast<ECDb*>(m_db));
         }
+
     public:
         IClassHandler() = default;
         virtual ~IClassHandler() = default;
@@ -80,9 +79,10 @@ private:
     mutable Utf8String m_lastError;
     std::vector<IClassHandler*>& TryGetHandlers(ECN::ECClassId classId) const;
     std::vector<IClassHandler*>& TryGetHandlers(ECN::ECClassId classId, JsFormat fmt, Operation operation, BeJsConst& instance, BeJsConst& userOptions) const;
+    InstanceReader m_reader;
 
 public:
-    InstanceRepository(ECDbCR ecdb) : m_ecdb(ecdb) {}
+    InstanceRepository(ECDbCR ecdb) : m_ecdb(ecdb), m_reader(ecdb) {}
     ~InstanceRepository() = default;
     InstanceRepository(InstanceRepository const&) = delete;
     InstanceRepository(InstanceRepository&&) = delete;
@@ -110,7 +110,7 @@ public:
         }
         auto newHandler = std::make_unique<T>();
         newHandler->m_classId = classId;
-        for(auto& prop : customHandledProperties) {
+        for (auto& prop : customHandledProperties) {
             newHandler->m_customHandledProperties.insert(prop);
         }
         m_handlers.push_back(std::move(newHandler));

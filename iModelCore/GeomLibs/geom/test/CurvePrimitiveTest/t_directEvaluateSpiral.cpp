@@ -2216,3 +2216,60 @@ TEST(Spiral, CreateInterpolatingSpiralsPointBearingCurvaturePointBearing)
         }
     Check::ClearGeometry("Spiral.CreateInterpolatingSpiralsPointBearingCurvaturePointBearing");
     }
+
+TEST(Spiral, IFCExample)
+    {
+    DPoint3d startPoint = DPoint3d::From(451581.55191480799, 4538983.4705996597, 0.0);
+    double startRadians = 6.2280619453155204;
+    double startRadius = -288.0;
+    double targetLength = 84.185;
+    double endRadius = 0.0;
+
+    ICurvePrimitivePtr curve = ICurvePrimitive::CreatePseudolSpiralWithTrueRadiusLengthRadius(DSpiral2dBase::TransitionType_Clothoid, startPoint, startRadians, startRadius, targetLength, endRadius);
+    Check::SaveTransformed(*curve);
+    Check::True(curve.IsValid());
+
+    auto placement = curve->GetSpiralPlacementCP();
+    Check::True(placement != nullptr);
+    Check::True(placement->spiral != nullptr);
+
+    // When fracA < fracB, the local spiral defines a segment of the spiral starting at the
+    // origin and extending into the first quadrant (or 4th if negative (CW) curvature).
+    // When fracA > fracB, not only is the curve reversed, but the local spiral sits in
+    // quadrant 3 (or 2) of the full spiral, which is obtained by rotating the half in
+    // quadrant 1 (or 4) 180 degrees about the origin.
+    bool rotateAndReverse = placement->fractionA > placement->fractionB;
+
+    DPoint3d myStartPoint = placement->frame.Origin();
+    DPoint3d myEndPoint; curve->FractionToPoint(rotateAndReverse ? 0.0 : 1.0, myEndPoint);
+    double myTargetLength = placement->spiral->mLength;
+    double myStartRadius = DoubleOps::ValidatedDivideDistance(1.0, placement->spiral->mCurvature0, 0.0);
+    double myEndRadius = DoubleOps::ValidatedDivideDistance(1.0, placement->spiral->mCurvature1, 0.0);
+
+    DVec3d myStartTangent = DVec3d::FromXYAngleAndMagnitude(placement->spiral->mTheta0, 1.0);
+    if (rotateAndReverse)
+        myStartTangent.Scale(-1.0);
+    placement->frame.MultiplyMatrixOnly(myStartTangent);
+    double myStartRadians = myStartTangent.AngleXY();
+
+    DVec3d myEndTangent = DVec3d::FromXYAngleAndMagnitude(placement->spiral->mTheta1, 1.0);
+    if (rotateAndReverse)
+        myEndTangent.Scale(-1.0);
+    placement->frame.MultiplyMatrixOnly(myEndTangent);
+    double myEndRadians = myEndTangent.AngleXY();
+
+    if (rotateAndReverse)
+        {
+        std::swap(myStartRadius, myEndRadius);
+        std::swap(myStartRadians, myEndRadians);
+        std::swap(myStartPoint, myEndPoint);
+        }
+
+    Check::Near(startPoint, myStartPoint);
+    Check::NearPeriodic(myStartRadians, startRadians);
+    Check::Near(myStartRadius, startRadius);
+    Check::Near(targetLength, myTargetLength);
+    Check::Near(myEndRadius, endRadius);
+    
+    Check::ClearGeometry ("Spiral.IFCExample");
+    }

@@ -21,6 +21,7 @@
         <SubPart PartName="google_re2"  PartFile="iModelCore/libsrc/google_re2/google_re2" />
         <SubPart PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
         <SubPart PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
+        <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iTwinSQLite$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)iTwinSQLite$(shlibext)</Assemblies>
@@ -169,6 +170,7 @@
     <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeSQLiteTest -dTEST_COLLECTION_PRODUCT=BeSQLite-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="BeSQLite-Tests"/>
         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/BeSQLiteTest/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/BeSQLiteTest/Assets" />
