@@ -926,6 +926,26 @@ struct BeJsDocument : BeJsValue {
 private:
     rapidjson::Document m_doc;
     BeJsDocument& operator=(BeJsDocument const& rhs) = delete;
+    void PurgeNulls(rapidjson::Value& val) {
+        if (val.IsObject()) {
+            for (auto it = val.MemberBegin(); it != val.MemberEnd(); ++it) {
+                if (it->value.IsNull())
+                    it = val.EraseMember(it);
+                else if (it->value.IsObject() || it->value.IsArray())
+                    PurgeNulls(it->value);
+            }
+        }
+        if (val.IsArray()) {
+            for (auto it = val.Begin(); it != val.End(); ++it) {
+                if (it->IsNull())
+                    it = val.Erase(it);
+                else if (it->IsObject() || it->IsArray())
+                    PurgeNulls(*it);
+            }
+
+        }
+    }
+
 public:
     // allow move but not copy.
     BeJsDocument(rapidjson::Document&& doc) noexcept : m_doc(std::move(doc)) { m_val = new BeRapidJsonValue(&m_doc, m_doc.GetAllocator()); }
@@ -955,7 +975,7 @@ public:
     void Parse(std::string const& jsonString) { Parse(jsonString.c_str()); }
 
     bool hasParseError() { return m_doc.HasParseError(); }
-
+    void PurgeNulls() { PurgeNulls(m_doc); }
     // Obtain a global immutable null document.
     static BeJsConst Null()
         {
