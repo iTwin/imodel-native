@@ -1,3 +1,9 @@
+include:
+  - component: "gitlab.gnome.org/GNOME/citemplates/release-service@master"
+    inputs:
+      dist-job-name: "dist"
+      tarball-artifact-path: "libxml2-dist/libxml2-2.13.6.tar.xz"
+
 .test:
   image: registry.gitlab.gnome.org/gnome/libxml2
   variables:
@@ -18,12 +24,27 @@ gcc:c89:
   extends: .test
   variables:
     CONFIG: "--without-python"
-    CFLAGS: "-O2 -std=c89 -D_XOPEN_SOURCE=700"
+    CFLAGS: "-O2 -std=c89 -D_XOPEN_SOURCE=600"
 
 gcc:minimum:
   extends: .test
   variables:
     BASE_CONFIG: "--with-minimum"
+    CFLAGS: "-O2"
+
+gcc:medium:
+  extends: .test
+  variables:
+    BASE_CONFIG: "--with-minimum"
+    CONFIG: "--with-threads --with-tree --with-xpath --with-output --with-html"
+    CFLAGS: "-O2"
+
+gcc:legacy:
+  extends: .test
+  only:
+    - schedules
+  variables:
+    BASE_CONFIG: "--with-legacy"
     CFLAGS: "-O2"
 
 gcc:static:
@@ -39,7 +60,7 @@ clang:asan:
   variables:
     CONFIG: "--without-python"
     CC: clang
-    CFLAGS: "-O2 -g -fno-omit-frame-pointer -fsanitize=address,undefined,integer -fno-sanitize-recover=all -Wno-error=cast-align"
+    CFLAGS: "-O2 -g -fno-omit-frame-pointer -fsanitize=address,undefined,integer -fno-sanitize-recover=all"
     UBSAN_OPTIONS: "print_stacktrace=1"
     ASAN_SYMBOLIZER_PATH: "$CI_PROJECT_DIR/.gitlab-ci/llvm-symbolizer"
 
@@ -50,7 +71,7 @@ clang:msan:
   variables:
     CONFIG: "--without-python --without-zlib --without-lzma"
     CC: clang
-    CFLAGS: "-O2 -g -fno-omit-frame-pointer -fsanitize=memory -Wno-error=cast-align"
+    CFLAGS: "-O2 -g -fno-omit-frame-pointer -fsanitize=memory"
     MSAN_SYMBOLIZER_PATH: "$CI_PROJECT_DIR/.gitlab-ci/llvm-symbolizer"
 
 .mingw:
@@ -128,7 +149,6 @@ cmake:linux:clang:shared:
   variables:
     BUILD_SHARED_LIBS: "ON"
     CC: clang
-    CFLAGS: "-Wno-error=cast-align"
     SUFFIX: linux-clang-shared
 
 cmake:linux:clang:static:
@@ -138,7 +158,6 @@ cmake:linux:clang:static:
   variables:
     BUILD_SHARED_LIBS: "OFF"
     CC: clang
-    CFLAGS: "-Wno-error=cast-align"
     SUFFIX: linux-clang-static
 
 .cmake:mingw:
@@ -261,12 +280,30 @@ cmake:msvc:v141:x86:static:
     BUILD_SHARED_LIBS: "OFF"
     SUFFIX: static
 
+meson:
+  image: registry.gitlab.gnome.org/gnome/libxml2
+  script:
+    - sh .gitlab-ci/test_meson.sh
+
+cmake:linux:gcc:shared:
+  extends: .cmake:linux
+  variables:
+    BUILD_SHARED_LIBS: "ON"
+    CC: gcc
+    SUFFIX: linux-gcc-shared
+
+dist:
+  image: registry.gitlab.gnome.org/gnome/libxml2
+  script:
+    - sh .gitlab-ci/dist.sh
+  artifacts:
+    paths:
+      - libxml2-dist/*.tar.xz
+
 pages:
   script:
     - mkdir -p public
-    - cp -r doc/devhelp doc/tutorial doc/xmllint.html doc/xmlcatalog.html public
-    - mkdir -p public/examples
-    - cp doc/examples/*.html doc/examples/*.c public/examples
+    - cp -r doc/devhelp doc/xmllint.html doc/xmlcatalog.html public
   artifacts:
     paths:
       - public
