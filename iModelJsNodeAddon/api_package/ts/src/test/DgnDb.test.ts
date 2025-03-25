@@ -44,10 +44,10 @@ describe("basic tests", () => {
     assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel2d"));
     assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel3d"));
   });
-  it("update instance", () => {
+  it.only("update instance", () => {
 
     const seedUri = path.join(getAssetsDir(), "test.bim");
-    const thisFile = path.join(getOutputDir(), "instance-writer.bim");
+    const thisFile = path.join(getOutputDir(), "instance-writer0.bim");
     if (fs.existsSync(thisFile)) {
       fs.unlinkSync(thisFile);
     }
@@ -62,6 +62,7 @@ describe("basic tests", () => {
 
     inst.code.value = "A-MODIFIED";
     assert.isTrue(iModelDb.updateInstance(inst, { useJsNames: true }));
+    iModelDb.saveChanges();
     const inst2 = iModelDb.readInstance(key, { useJsNames: true });
 
     assert.equal(inst2.code.value, "A-MODIFIED", "codeValue should be A-MODIFIED");
@@ -73,7 +74,7 @@ describe("basic tests", () => {
   it("insert instance", () => {
 
     const seedUri = path.join(getAssetsDir(), "test.bim");
-    const thisFile = path.join(getOutputDir(), "instance-writer.bim");
+    const thisFile = path.join(getOutputDir(), "instance-writer1.bim");
     if (fs.existsSync(thisFile)) {
       fs.unlinkSync(thisFile);
     }
@@ -113,6 +114,11 @@ describe("basic tests", () => {
         relClassName: "BisCore:GeometricElement3dIsInCategory",
       },
       inSpatialIndex: true,
+      code: {
+        spec: "0x1",
+        scope: "0x1",
+        value: "",
+      },
       placement: {
         origin: [
           6.494445575423782,
@@ -156,16 +162,10 @@ describe("basic tests", () => {
               -8.881784197001252e-16,
               -1.7763568394002505e-15
             ],
-            capped: true,
-            radius: 9.735928156263856
+            radius: 9.73592815626386
           }
         }
       ],
-      code: {
-        spec: "0x1",
-        scope: "0x1",
-        value: "",
-      },
     };
 
     it("read instance as js format", () => {

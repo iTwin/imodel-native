@@ -409,8 +409,12 @@ struct GeometryStreamIO
     //! @private
     DGNPLATFORM_EXPORT static DgnDbStatus BuildGeometryStream(DgnElementR, GeometryBuilderParams const& elementGeometryBuilderParams, Napi::Array entryArrayObj);
 
+    DGNPLATFORM_EXPORT static DgnDbStatus BuildFromGeometrySource(GeometrySourceR source, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj);
+
+    DGNPLATFORM_EXPORT static DgnDbStatus BuildFroGeometryPart(GeometryPartSource& part, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj);
+
     //! @private
-    DGNPLATFORM_EXPORT static DgnDbStatus BuildGeometryStream(DgnDbR db, GeometryBuilder& builder, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj);
+    static DgnDbStatus BuildGeometryStream(GeometryBuilder& builder, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj, GeometrySourceP source, GeometryPartSourceP part);
 
     //! @private
     DGNPLATFORM_EXPORT static DgnDbStatus CreateBRepGeometry(DgnDbR db, Napi::Object const& createProps, Napi::Env env);
@@ -710,6 +714,8 @@ public:
     //! Saves contents of builder to GeometryStream of supplied GeometrySource and updates the element aligned bounding box.
     //! @note For a builder using CreateWithAutoPlacement this also updates the placement origin/angles(s) using the local coordinate system computed from the first appended GeometricPrimitve.
     DGNPLATFORM_EXPORT BentleyStatus Finish(GeometrySourceR);
+
+    DGNPLATFORM_EXPORT BentleyStatus Finish(GeometryPartSourceR part);
 
     //! Clears GeometryStream of supplied GeometrySource and invalidates the element aligned bounding box.
     DGNPLATFORM_EXPORT BentleyStatus ClearGeometryStream(GeometrySourceR);

@@ -3263,15 +3263,49 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
     if (0 == entryArrayObj.Length() && nullptr != source)
         return (SUCCESS == builder->ClearGeometryStream(*source) ? DgnDbStatus::Success : DgnDbStatus::NoGeometry);
 
-    return BuildGeometryStream(db, *builder, bParams, entryArrayObj);
+    return BuildGeometryStream(*builder, bParams, entryArrayObj, source, part);
 }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnDbR db, GeometryBuilder& builder, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj)
+DgnDbStatus GeometryStreamIO::BuildFromGeometrySource(GeometrySource& source, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj) {
+    GeometryBuilderPtr builder =  GeometryBuilder::Create(source);
+    if (!builder.IsValid())
+        return DgnDbStatus::BadElement;
+
+    if (bParams.viewIndependent)
+        builder->SetHeaderFlags(GeometryStreamIO::Header::Flags::ViewIndependent);
+
+    // A zero length array means clear the geometry stream and invalidate element aligned box...
+    if (0 == entryArrayObj.Length())
+        return (SUCCESS == builder->ClearGeometryStream(source) ? DgnDbStatus::Success : DgnDbStatus::NoGeometry);
+
+    return BuildGeometryStream(*builder, bParams, entryArrayObj, &source, nullptr);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometryStreamIO::BuildFroGeometryPart(GeometryPartSource& part, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj) {
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(part.GetSourceDgnDb(), !bParams.is2dPart);
+    if (!builder.IsValid())
+        return DgnDbStatus::BadElement;
+
+    if (bParams.viewIndependent)
+        builder->SetHeaderFlags(GeometryStreamIO::Header::Flags::ViewIndependent);
+
+
+    return BuildGeometryStream(*builder, bParams, entryArrayObj, nullptr, &part);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometryStreamIO::BuildGeometryStream(GeometryBuilder& builder, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj, GeometrySourceP source, GeometryPartSourceP part)
     {
+
+    auto& db = builder.GetDgnDb();
     GeometryBuilder::CoordSystem coordSys = bParams.isWorld ? GeometryBuilder::CoordSystem::World : GeometryBuilder::CoordSystem::Local;
 
     Render::GeometryParams geomParams = builder.GetGeometryParams();
@@ -5447,6 +5481,46 @@ BentleyStatus GeometryBuilder::GetGeometryStream(GeometryStreamR geom)
         return ERROR;
 
     geom.SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus GeometryBuilder::Finish(GeometryPartSource& part)
+    {
+    if (!m_isPartCreate)
+        return ERROR; // Invalid builder for creating part geometry...
+
+    if (0 == m_writer.m_buffer.size())
+        return ERROR;
+
+    part.GetGeometryStreamR().SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+
+    ElementAlignedBox3d localRange = (m_is3d ? m_placement3d.GetElementBox() : ElementAlignedBox3d(m_placement2d.GetElementBox()));
+
+    // NOTE: GeometryBuilder::CreateGeometryPart doesn't supply range...need to compute it...
+    if (!localRange.IsValid())
+        {
+        GeometryCollection collection(part.GetGeometryStreamR(), m_dgnDb);
+
+        for (auto iter : collection)
+            {
+            GeometricPrimitivePtr geom = iter.GetGeometryPtr();
+            DRange3d range;
+
+            if (geom.IsValid() && geom->GetRange(range))
+                {
+                localRange.Extend(range);
+                }
+            }
+
+        if (!localRange.IsValid())
+            return ERROR;
+        }
+
+    part.SetBoundingBox(localRange);
 
     return SUCCESS;
     }

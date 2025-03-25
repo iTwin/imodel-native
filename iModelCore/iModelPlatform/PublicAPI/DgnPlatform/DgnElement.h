@@ -2152,6 +2152,37 @@ public:
     DgnDbStatus SetPlacement(Placement2dCR placement) {return _SetPlacement(placement);} //!< Change the Placement2d for this element
 };
 
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GeometryPartSource {
+    friend struct GeometryBuilder;
+
+private:
+    virtual ElementAlignedBox3dCR _GetPlacement() const = 0;
+    virtual void _SetPlacement(ElementAlignedBox3dCR bbox) = 0;
+    virtual GeometryStreamCR _GetGeometryStream() const = 0;
+    virtual GeometryStreamR _GetGeometryStreamR() = 0;
+    virtual DgnDbR _GetSourceDgnDb() const = 0;
+protected:
+
+    GeometryStreamR GetGeometryStreamR() {return _GetGeometryStreamR();}
+    void SetBoundingBox(ElementAlignedBox3dCR bbox) {_SetPlacement(bbox);}
+
+public:
+    virtual ~GeometryPartSource() {}
+
+    //! Get the geometry for this part (part local coordinates)
+    GeometryStreamCR GetGeometryStream() const {return _GetGeometryStream();}
+
+    //! Get the bounding box for this part (part local coordinates)
+    ElementAlignedBox3dCR GetBoundingBox() const {return _GetPlacement();}
+
+    //! Get the DgnDb of this part
+    DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
+};
+
 //=======================================================================================
 //! Base class for elements with geometry.
 //! @ingroup GROUP_DgnElement

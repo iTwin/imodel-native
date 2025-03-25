@@ -210,18 +210,20 @@ namespace Handlers {
     //=======================================================================================
     // @bsiclass
     //=======================================================================================
-    struct JsGeometryPart final {
+    struct JsGeometryPart final : GeometryPartSource {
     private:
+        DgnDbR m_db;                //!< Database containing part
         GeometryStream m_geometry;  //!< Geometry of part
         ElementAlignedBox3d m_bbox; //!< Bounding box of part geometry
+    protected:
+        virtual ElementAlignedBox3dCR _GetPlacement() const { return m_bbox; }
+        virtual void _SetPlacement(ElementAlignedBox3dCR bbox) { m_bbox = bbox; }
+        virtual GeometryStreamCR _GetGeometryStream() const { return m_geometry; }
+        virtual GeometryStreamR _GetGeometryStreamR() { return m_geometry; }
+        virtual DgnDbR _GetSourceDgnDb() const { return m_db; }
+
     public:
-        GeometryStreamCR GetGeometryStream() const { return m_geometry; }
-        ElementAlignedBox3dCR GetBoundingBox() const { return m_bbox; }
-
-        GeometryStreamR GetGeometryStream() { return m_geometry; }
-        ElementAlignedBox3dR GetBoundingBox() { return m_bbox; }
-
-        JsGeometryPart(GeometryStream&& geom, ElementAlignedBox3d&& bbox) : m_geometry(std::move(geom)), m_bbox(std::move(bbox)) {}
+        JsGeometryPart(DgnDbR db, GeometryStream&& geom, ElementAlignedBox3d&& bbox) : m_geometry(std::move(geom)), m_bbox(std::move(bbox)), m_db(db) {}
         static std::unique_ptr<JsGeometryPart> Find(DgnDbR db, ECInstanceId id) {
             std::unique_ptr<JsGeometryPart> part;
             auto pos = InstanceReader::Position(id, "BisCore:GeometryPart");
@@ -236,7 +238,7 @@ namespace Handlers {
                 if (rc != ECSqlStatus::Success) {
                     return;
                 }
-                part = std::make_unique<JsGeometryPart>(std::move(geomStream), std::move(bbox));
+                part = std::make_unique<JsGeometryPart>(db, std::move(geomStream), std::move(bbox));
             });
             return part;
         }
@@ -270,11 +272,6 @@ namespace Handlers {
                 rc = finder("CodeSpec")->GetBinder().BindNavigation(code.GetCodeSpecId());
                 return PropertyHandlerResult::Handled;
             }
-            // if (BeStringUtilities::StricmpAscii(property, "jsonProperties") == 0) {
-            //     rc = finder("JsonProperties")->GetBinder().BindText(val.Stringify().c_str(), IECSqlBinder::MakeCopy::Yes);
-            //     return PropertyHandlerResult::Handled;
-            // }
-
             return PropertyHandlerResult::Continue;
         }
 
@@ -294,6 +291,7 @@ namespace Handlers {
             // }
 
             instance["model"] = finder("Model")->GetReader().GetNavigation<ECInstanceId>(nullptr);
+            instance["category"] = finder("Category")->GetReader().GetNavigation<ECInstanceId>(nullptr);
             return ECSqlStatus::Success;
         }
     };
@@ -369,18 +367,7 @@ namespace Handlers {
                     bparams.viewIndependent = viewIndependentVal.IsBoolean() && viewIndependentVal.As<Napi::Boolean>().Value();
 
                     auto source = JsGeometrySource2d::Find(GetDbR<DgnDb>(), ParseInstanceId());
-
-                    GeometryBuilderPtr builder = GeometryBuilder::Create(*source);
-                    if (bparams.viewIndependent)
-                        builder->SetHeaderFlags(GeometryStreamIO::Header::Flags::ViewIndependent);
-
-                    if (0 == entryArrayObj.Length()) {
-                        if (builder->ClearGeometryStream(*source) != SUCCESS) {
-                            SetError("No geometry entries found");
-                            return PropertyHandlerResult::Handled;
-                        }
-                    }
-                    auto status = GeometryStreamIO::BuildGeometryStream(GetDbR<DgnDb>(), *builder, bparams, entryArrayObj.As<Napi::Array>());
+                    auto status = GeometryStreamIO::BuildFromGeometrySource(*source, bparams, entryArrayObj.As<Napi::Array>());
                     if (DgnDbStatus::Success != status) {
                         SetError("BuildGeometryStream failed");
                         return PropertyHandlerResult::Handled;
@@ -495,20 +482,8 @@ namespace Handlers {
 
                     GeometryBuilderParams bparams;
                     bparams.viewIndependent = viewIndependentVal.IsBoolean() && viewIndependentVal.As<Napi::Boolean>().Value();
-
                     auto source = JsGeometrySource3d::Find(GetDbR<DgnDb>(), ParseInstanceId());
-
-                    GeometryBuilderPtr builder = GeometryBuilder::Create(*source);
-                    if (bparams.viewIndependent)
-                        builder->SetHeaderFlags(GeometryStreamIO::Header::Flags::ViewIndependent);
-
-                    if (0 == entryArrayObj.Length()) {
-                        if (builder->ClearGeometryStream(*source) != SUCCESS) {
-                            SetError("No geometry entries found");
-                            return PropertyHandlerResult::Handled;
-                        }
-                    }
-                    auto status = GeometryStreamIO::BuildGeometryStream(GetDbR<DgnDb>(), *builder, bparams, entryArrayObj.As<Napi::Array>());
+                    auto status = GeometryStreamIO::BuildFromGeometrySource(*source, bparams, entryArrayObj.As<Napi::Array>());
                     if (DgnDbStatus::Success != status) {
                         SetError("BuildGeometryStream failed");
                         return PropertyHandlerResult::Handled;
@@ -653,7 +628,8 @@ bool RegisterBisCoreHandlers(DgnDbR db) {
                                                            "CodeValue",
                                                            "CodeScope",
                                                            "CodeSpec",
-                                                           // "JsonProperties",
+                                                           "Model",
+                                                           "Category",
                                                        });
     rc &= repo.RegisterClassHandler<Handlers::GeometricElement3d>(Handlers::GeometricElement3d::ClassName,
                                                                   {"Origin",
