@@ -3919,7 +3919,7 @@ ECObjectsStatus ECSchemaCache::AddSchema(ECSchemaR ecSchema)
             // we did insert a referenced schema into the cache, make sure the tree is clean.
             CheckCleanSchemaGraph(referencedSchema);
             }
-            else
+        else
             {
             // the referenced schema was not inserted because it already exists in the cache. Now we want to verify that the existing one matches the one used by the root schema
             ECSchemaP existingSchema = result.first->second.get();
@@ -3948,13 +3948,10 @@ void ECSchemaCache::CheckCleanSchemaGraph(ECSchemaP schema) const
     Utf8StringCR name = schema->GetName().c_str();
     for (auto const& kvPair : m_schemas)
         {
-        if(kvPair.first.CompareByName(name) == 0)
+        if(kvPair.first.CompareByName(name) == 0 && !schema->GetSchemaKey().Matches(kvPair.first, SchemaMatchType::Exact))
             {
-            if(!schema->GetSchemaKey().Matches(kvPair.first, SchemaMatchType::Exact))
-                {
-                LOG.warningv(L"ECSchemaCache: Attempting to add schema '%s' to the cache while schema '%s' already exists. Typically, only one version of a schema with the same name is expected. This may indicate an issue with the schema graph.",
-                     schema->GetSchemaKey().GetFullSchemaName().c_str(), kvPair.first.GetFullSchemaName().c_str());
-                }
+            LOG.warningv(L"ECSchemaCache: Adding schema '%s' to the cache while schema '%s' already exists. Typically, only one version of a schema with the same name is expected. This may indicate an issue with the schema graph.",
+                    schema->GetSchemaKey().GetFullSchemaName().c_str(), kvPair.first.GetFullSchemaName().c_str());
             }
         }
     }
