@@ -4435,8 +4435,6 @@ SnappyFromMemory::SnappyFromMemory(void*uncompressedBuffer, uint32_t uncompresse
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnappyFromMemory::SnappyFromMemory() {
-    BeAssert(SNAPPY_UNCOMPRESSED_BUFFER_SIZE == uncompressedBufferSize);
-
     m_ownsUncompressedBuffer = true;
     m_uncompressed = (Byte*)std::malloc(SNAPPY_UNCOMPRESSED_BUFFER_SIZE);
     m_uncompressAvail = 0;

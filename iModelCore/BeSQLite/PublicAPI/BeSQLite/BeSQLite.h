@@ -15,6 +15,7 @@
 #include <chrono>
 #include <Bentley/Logging.h>
 #include <optional>
+#include <Napi/napi.h>
 /** @namespace BentleyApi::BeSQLite Classes used to access a SQLite database. */
 
 /****

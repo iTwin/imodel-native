@@ -1047,6 +1047,7 @@ DbResult Impl::Update(BeJsConst inst, InstanceWriter::UpdateOptions const& optio
 
     auto rc = m_cache.WithUpdate(classId, [&](CachedWriteStatement& stmt) {
         ECSqlStatus bindStatus = ECSqlStatus::Success;
+        // m_cache.GetECDb().GetInstanceRepository().Read(ECInstanceKey(classId, id), )
         if (options.GetUseIncrementalUpdate()) {
             // bind any properties missing in the provided instance by reading it from db
             // if these properties are not binded they are otherwise set to null.

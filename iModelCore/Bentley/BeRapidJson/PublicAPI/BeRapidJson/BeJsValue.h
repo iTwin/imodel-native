@@ -1079,6 +1079,7 @@ public:
     template <typename T>
     static std::optional<T> Extract(T obj, const std::string& path) {
         auto tokens = Parse(path);
+        std::reverse(tokens.begin(), tokens.end());
         return Get(obj, tokens);
     }
 
