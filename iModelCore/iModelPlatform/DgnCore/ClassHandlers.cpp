@@ -601,8 +601,7 @@ namespace Handlers {
             if (instance.hasMember("jsonProperties")) {
                 BeJsDocument doc;
                 doc.Parse(instance["jsonProperties"].asCString());
-                // TODO: Remove null values here?
-                // RemoveNullValues(doc);
+                doc.PurgeNulls();
                 auto map = BeJsPath::Extract(doc, "$.materialAssets.renderMaterial.Map");
                 if (map.has_value()) {
                     map.value().ForEachProperty([&](auto memberName, auto memberJson) {
