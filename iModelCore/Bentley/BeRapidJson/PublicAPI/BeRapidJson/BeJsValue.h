@@ -1064,7 +1064,10 @@ private:
             if (!obj.isObject()) {
                 return std::nullopt;
             }
-            if (!obj.isObjectMember(current.token.c_str())) {
+            if (!obj.isMember(current.token.c_str())) {
+                return std::nullopt;
+            }
+            if (!obj[current.token.c_str()].isObject()) {
                 return std::nullopt;
             }
             return Get(obj[current.token], path);
@@ -1090,7 +1093,10 @@ private:
             if (!obj.isObject()) {
                 return std::nullopt;
             }
-            if (!obj.isObjectMember(current.token.c_str())) {
+            if (!obj.isMember(current.token.c_str())) {
+                return std::nullopt;
+            }
+            if (!obj[current.token.c_str()].isObject()) {
                 return std::nullopt;
             }
             return Get(obj[current.token], path);
@@ -1101,10 +1107,12 @@ public:
     BeJsPath() = delete;
     static std::optional<BeJsConst> Extract(BeJsConst obj, const std::string& path) {
         auto tokens = Parse(path);
+        std::reverse(tokens.begin(), tokens.end());
         return Get(obj, tokens);
     }
     static std::optional<BeJsValue> Extract(BeJsValue obj, const std::string& path) {
         auto tokens = Parse(path);
+        std::reverse(tokens.begin(), tokens.end());
         return Get(obj, tokens);
     }
 };
