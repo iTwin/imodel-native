@@ -80,7 +80,13 @@ namespace Handlers {
         return rc;
     }
     bool ReadPlacement2d(Placement2d& placement, PropertyReader::Finder finder) {
-        auto origin = finder("Origin")->GetReader().GetPoint2d();
+        auto& originReader = finder("Origin")->GetReader();
+        if(originReader.IsNull()) {
+            placement = Placement2d();
+            return true;
+        }
+
+        auto origin = originReader.GetPoint2d();
         auto rotation = finder("Rotation")->GetReader().GetDouble();
         auto boxLow = finder("BBoxLow")->GetReader().GetPoint2d();
         auto boxHi = finder("BBoxHigh")->GetReader().GetPoint2d();
@@ -91,7 +97,14 @@ namespace Handlers {
         return placement.IsValid();
     }
     bool ReadPlacement3d(Placement3d& placement, PropertyReader::Finder finder) {
-        auto origin = finder("Origin")->GetReader().GetPoint3d();
+        auto& originReader = finder("Origin")->GetReader();
+
+        if(originReader.IsNull()) {
+            placement = Placement3d();
+            return true;
+        }
+
+        auto origin = originReader.GetPoint3d();
         auto yaw = finder("Yaw")->GetReader().GetDouble();
         auto pitch = finder("Pitch")->GetReader().GetDouble();
         auto roll = finder("Roll")->GetReader().GetDouble();
