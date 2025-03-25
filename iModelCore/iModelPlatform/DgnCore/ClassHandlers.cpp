@@ -98,6 +98,10 @@ namespace Handlers {
                 rc = finder("CodeSpec")->GetBinder().BindNavigation(code.GetCodeSpecId());
                 return PropertyHandlerResult::Handled;
             }
+            // if (BeStringUtilities::StricmpAscii(property, "jsonProperties") == 0) {
+            //     rc = finder("JsonProperties")->GetBinder().BindText(val.Stringify().c_str(), IECSqlBinder::MakeCopy::Yes);
+            //     return PropertyHandlerResult::Handled;
+            // }
 
             return PropertyHandlerResult::Continue;
         }
@@ -108,6 +112,14 @@ namespace Handlers {
             auto specId = finder("CodeSpec")->GetReader().GetNavigation<CodeSpecId>(nullptr);
             auto code = DgnCode::CreateWithDbContext(GetDb<DgnDb>(), specId, scopeElementId, value);
             code.ToJson(instance["code"]);
+            // auto jsonProperties = finder("JsonProperties")->GetReader().GetText();
+            // if (!Utf8String::IsNullOrEmpty(jsonProperties)) {
+            //     BeJsDocument doc;
+            //     doc.Parse(jsonProperties);
+            //     if (!doc.hasParseError()) {
+            //         instance["jsonProperties"].From(doc);
+            //     }
+            // }
 
             instance["model"] = finder("Model")->GetReader().GetNavigation<ECInstanceId>(nullptr);
             return ECSqlStatus::Success;
@@ -360,27 +372,48 @@ namespace Handlers {
     struct RenderMaterial : IClassHandler {
         constexpr static auto ClassName = "BisCore:RenderMaterial";
 
+        // void RemoveNullValues(BeJsValue& json) {
+        //     json.ForEachProperty([&](Utf8CP memberName, BeJsConst memberJson) {
+        //         if (memberJson.isNull()) {
+        //             // Remove the property if it is null
+        //             json.removeMember(memberName);
+        //         } else if (memberJson.isObject() || memberJson.isArray()) {
+        //             // Recursively handle objects or arrays
+        //             RemoveNullValues((BeJsValue&)json.Get(memberName));
+        //         }
+        //         return false; // End of a branch
+        //     });
+        // }
+
         virtual ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder _) override {
             BeAssert(GetFormat() == JsFormat::JsName);
-            auto map = BeJsPath::Extract(instance, "$.jsonProperties.materialAssets.renderMaterial.Map");
-            if (map.has_value()) {
-                map.value().ForEachProperty([&](auto memberName, auto memberJson) {
-                    if (memberJson.isNumericMember("TextureId")) {
-                        // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
-                        auto textureIdAsStringForLogging = memberJson["TextureId"].Stringify();
-                        auto textureId = memberJson["TextureId"].GetId64<DgnTextureId>();
-                        auto textureIdJson = map->Get(memberName)["TextureId"];
-                        (BeJsValue&)textureIdJson = textureId;
-                        if (!textureId.IsValid()) {
-                            ECInstanceId elementId = ParseInstanceId();
-                            if (elementId.IsValid()) {
-                                LOG.warningv("RenderMaterialId: %s, had a TextureId %s which could not be converted to a valid id.", elementId.ToHexStr().c_str(), textureIdAsStringForLogging.c_str());
-                                BeAssert(false && "RenderMaterial had a textureId that we converted to invalid.");
+            // If jsonProperties is present, process it
+            if (instance.hasMember("jsonProperties")) {
+                BeJsDocument doc;
+                doc.Parse(instance["jsonProperties"].asCString());
+                // TODO: Remove null values here?
+                // RemoveNullValues(doc);
+                auto map = BeJsPath::Extract(doc, "$.materialAssets.renderMaterial.Map");
+                if (map.has_value()) {
+                    map.value().ForEachProperty([&](auto memberName, auto memberJson) {
+                        if (memberJson.isNumericMember("TextureId")) {
+                            // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
+                            auto textureIdAsStringForLogging = memberJson["TextureId"].Stringify();
+                            auto textureId = memberJson["TextureId"].GetId64<DgnTextureId>();
+                            auto textureIdJson = map->Get(memberName)["TextureId"];
+                            (BeJsValue&) textureIdJson = textureId.ToHexStr();
+                            if (!textureId.IsValid()) {
+                                ECInstanceId elementId = ParseInstanceId();
+                                if (elementId.IsValid()) {
+                                    LOG.warningv("RenderMaterialId: %s, had a TextureId %s which could not be converted to a valid id.", elementId.ToHexStr().c_str(), textureIdAsStringForLogging.c_str());
+                                    BeAssert(false && "RenderMaterial had a textureId that we converted to invalid.");
+                                }
                             }
                         }
-                    }
-                    return false;
-                });
+                        return false;
+                    });
+                    instance["jsonProperties"] = doc.Stringify();
+                }
             }
             return ECSqlStatus::Success;
         }
@@ -398,8 +431,8 @@ bool RegisterBisCoreHandlers(DgnDbR db) {
                                                            "CodeValue",
                                                            "CodeScope",
                                                            "CodeSpec",
+                                                           // "JsonProperties",
                                                        });
-                                                       
     rc &= repo.RegisterClassHandler<Handlers::GeometricElement3d>(Handlers::GeometricElement3d::ClassName,
                                                                   {"Origin",
                                                                    "Yaw",
