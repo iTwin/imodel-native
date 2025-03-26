@@ -92,9 +92,10 @@ ECSchemaCP SchemaReader::GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSche
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP SchemaReader::GetSchema(ECSchemaId ecSchemaId, bool loadSchemaEntities) const
+ECSchemaCP SchemaReader::GetSchema(ECSchemaId ecSchemaId, bool loadSchemaEntities, ECSchemaReadContextP readContext) const
     {
     Context ctx;
+    ctx.SetReadContext(readContext);
     ECSchemaCP schema = GetSchema(ctx, ecSchemaId, loadSchemaEntities);
     if (schema == nullptr)
         return nullptr;
@@ -1578,10 +1579,14 @@ BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& schemaEntry, Context& ctx
 BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId) const
     {
     BeMutexHolder ecdbLock(GetECDbMutex());
-    if (schemaEntry = m_cache.Find(schemaId))
+    auto readContext = ctx.GetReadContext();
+    if (nullptr == readContext)
         {
-        BeAssert(schemaEntry->m_cachedSchema != nullptr);
-        return SUCCESS;
+        if(schemaEntry = m_cache.Find(schemaId))
+            {
+            BeAssert(schemaEntry->m_cachedSchema != nullptr);
+            return SUCCESS;
+            }
         }
 
     //Following method is not by itself thread safe as it write to cache but
@@ -1611,6 +1616,14 @@ BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEn
 
     for (ECSchemaId referencedSchemaId : referencedSchemaIds)
         {
+        if(readContext != nullptr)
+            {
+            //if we have a read context, so get our referenced schema from there instead of using this reader
+            SchemaKey referencedSchemaKey;
+            ECSchemaPtr locatedReference = readContext->LocateSchema(referencedSchemaKey, SchemaMatchType::LatestWriteCompatible);
+            // TODO Load this SchemaKey, and allow returning an ECSchemaPtr instead of SchemaDbEntry
+            continue;
+            }
         SchemaDbEntry* referenceSchemaKey = nullptr;
         if (SUCCESS != ReadSchemaStubAndReferences(referenceSchemaKey, ctx, referencedSchemaId))
             return ERROR;

@@ -868,7 +868,9 @@ ECSchemaPtr TableSpaceSchemaManager::LocateSchema(ECN::SchemaKeyR key, ECN::Sche
         return nullptr;
 
     ECSchemaP schemaP = const_cast<ECSchemaP> (schema);
-    ctx.GetCache().AddSchema(*schemaP);
+    if(ctx.AddSchema(*schemaP) == ECObjectsStatus::DuplicateSchema)
+        return nullptr; // Same behavior as ECSchena::LocateSchema
+
     return schemaP;
     }
 
