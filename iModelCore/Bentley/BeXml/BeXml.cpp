@@ -192,7 +192,7 @@ static int getDefaultXmlParseOptions ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void XMLCDECL beXmlErrorFunction (void* userArg, xmlErrorPtr xmlParseError)
+void XMLCDECL beXmlErrorFunction (void* userArg, const xmlError *xmlParseError)
     {
     BeXmlDomP   beXmlDom = (BeXmlDomP) userArg;
 
@@ -358,8 +358,8 @@ BeXmlDomPtr BeXmlDom::CreateAndReadFromString (BeXmlStatus& xmlStatus, CharCP so
     if (0 == characterCount)
         characterCount = strlen (source);
 
-    // when passing bufferSize to xmlReadMemory, include the trailing 0.
-    wrapper->m_doc = xmlReadMemory (source, (int)(characterCount + 1), NULL, encoding, getDefaultXmlParseOptions ());
+    // when passing bufferSize to xmlReadMemory, do not include the trailing 0.
+    wrapper->m_doc = xmlReadMemory (source, (int)(characterCount), NULL, encoding, getDefaultXmlParseOptions ());
     if (NULL == wrapper->m_doc)
         {
         // Can we tell more than this?
@@ -420,15 +420,16 @@ BeXmlDomPtr BeXmlDom::CreateAndReadFromString (BeXmlStatus& xmlStatus, Utf16CP s
         characterCount = BeStringUtilities::Utf16Len(source);
 
     // this is here because the semantics of this method was changed from taking "bufferSize" to "characterCount", and I want to make sure all the old callers get an Assert.
-    // It's ok if characterCount includes the zero terminator.
+    // It's ok if characterCount includes the zero terminator although the call to xmlReadMemory must not.
 #if defined (_WIN32)
     // This uses wcslen, which is invalid on UTF-16 strings on non-Win32.
     BeAssert (charCountCloseEnough (characterCount, (WCharCP) source));
 #endif
 
-    size_t numCharsToCopy = ((0 == characterCount) || (source[characterCount - 1])) ? characterCount + 1 : characterCount; // TFS 15586
+    // Subtract if characterCount includes the null terminator.
+    size_t numCharsToCopy = (0 == characterCount || source[characterCount] != '\0') ? characterCount : characterCount - 1; // TFS 15586
 
-    // when passing bufferSize to xmlReadMemory, include the null terminator, account for char size.
+    // when passing bufferSize to xmlReadMemory, do not include the null terminator, account for char size.
     wrapper->m_doc = xmlReadMemory ((CharCP)source, (int) (sizeof (Utf16Char) * numCharsToCopy), NULL, "UTF-16LE", getDefaultXmlParseOptions ());
     if (NULL == wrapper->m_doc)
         {
@@ -469,7 +470,7 @@ BeXmlDomPtr BeXmlDom::CreateAndReadFromString (BeXmlStatus& xmlStatus, WCharCP s
     // libXml no longer supports UTF-32, so convert to UTF-8.
     Utf8String utf8Source;
     BeStringUtilities::WCharToUtf8(utf8Source, source, characterCount);
-    wrapper->m_doc = xmlReadMemory ((CharCP)utf8Source.c_str(), (int) (sizeof (Utf8Char) * (utf8Source.size() + 1)), NULL, "UTF-8", getDefaultXmlParseOptions ());
+    wrapper->m_doc = xmlReadMemory ((CharCP)utf8Source.c_str(), (int) (sizeof (Utf8Char) * (utf8Source.size())), NULL, "UTF-8", getDefaultXmlParseOptions ());
 
     if (NULL == wrapper->m_doc)
         {
@@ -499,7 +500,7 @@ void    BeXmlDom::GetLastErrorString (WStringR errorString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    BeXmlDom::FormatErrorMessage (WStringP errorMsg, xmlErrorPtr xmlError)
+void    BeXmlDom::FormatErrorMessage (WStringP errorMsg, const xmlError *xmlError)
     {
     if ( (NULL == errorMsg) || (NULL == xmlError) )
         return;
