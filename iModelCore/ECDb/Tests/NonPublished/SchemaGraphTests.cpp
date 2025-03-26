@@ -248,6 +248,71 @@ TEST_F(SchemaGraphTestFixture, CircularEmptySchemaReference)
     issues.CompareIssues(expectedIssues);
     }
 
+
+    TEST_F(SchemaGraphTestFixture, CircularEmptySchemaReferenceInDb)
+    {
+    // Provokes the circular schema reference scenario inside ecdb
+    SetupECDbForCurrentTest();
+    SchemaKey fooKey("Foo", 1, 0, 0);
+    Utf8String fooXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="Foo" alias="foo" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="Bar" version="01.00.00" alias="bar" />
+    </ECSchema>)schema");
+
+    SchemaKey barKey("Bar", 1, 0, 0);
+    Utf8String barXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="Bar" alias="bar" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    </ECSchema>)schema");
+
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    StringSchemaLocater locater;
+    locater.AddSchemaString(fooKey, fooXml);
+    locater.AddSchemaString(barKey, barXml);
+    context->AddSchemaLocater(locater);
+
+    ECSchemaPtr foo = context->LocateSchema(fooKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(foo.IsValid());
+    ECSchemaPtr bar = context->LocateSchema(barKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(bar.IsValid());
+
+    SchemaImportResult result = m_ecdb.Schemas().ImportSchemas({ foo.get(), bar.get() });
+    ASSERT_EQ(SchemaImportResult::OK, result);
+    m_ecdb.SaveChanges();
+    AssertECDbSchemaVersion(fooKey);
+    AssertECDbSchemaVersion(barKey);
+    
+    ECSchemaId  fooId, barId;
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT Id FROM ec_Schema WHERE Name='%s'", "Foo")));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    fooId = stmt.GetValueId<ECSchemaId>(0);
+    }
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT Id FROM ec_Schema WHERE Name='%s'", "Bar")));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    barId = stmt.GetValueId<ECSchemaId>(0);
+    }
+    { // Add a reference to foo from bar
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "INSERT INTO ec_SchemaReference(SchemaId, ReferencedSchemaId) VALUES(?, ?)"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, barId));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(2, fooId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    // Now we have a circular reference in the db, try and load the schemas
+    ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
+    context2->SetFinalSchemaLocater(m_ecdb.GetSchemaLocater());
+    ECSchemaPtr foo2 = context2->LocateSchema(fooKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_FALSE(foo2.IsValid());
+    ECSchemaPtr bar2 = context2->LocateSchema(barKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_FALSE(bar2.IsValid()); // TODO: THis actually returns true at the moment, schema is incompletely loaded.
+    }
+
 #define ENABLE_IMPORT_SCHEMAS_FROM_FILES_TEST 1
 
 #if ENABLE_IMPORT_SCHEMAS_FROM_FILES_TEST
