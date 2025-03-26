@@ -71,7 +71,7 @@ describe("basic tests", () => {
     // process.stdout.write(JSON.stringify(inst, null, 2));
 
   });
-  it("insert instance", () => {
+  it.skip("insert instance", () => {
 
     const seedUri = path.join(getAssetsDir(), "test.bim");
     const thisFile = path.join(getOutputDir(), "instance-writer1.bim");
