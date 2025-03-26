@@ -333,3 +333,69 @@ TEST(CrossPlatform, IndexedMeshTopo)
             }
         }
     }
+
+TEST(CrossPlatform, MeshColor)
+    {
+    bvector<TestCase> testCases;
+
+    TestCase fixedSizeMesh; // has color
+    WCharCP testName = L"indexedMesh-fixedSize";
+    fixedSizeMesh.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"fb"));
+    fixedSizeMesh.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(TestCase::NativeRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+    fixedSizeMesh.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"fb"));
+    fixedSizeMesh.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(TestCase::TypeScriptRoot().AppendToPath(testName).AppendExtension(L"imjs"));
+    testCases.push_back(fixedSizeMesh);
+
+    for (size_t iTestCase = 0; iTestCase < testCases.size(); ++iTestCase)
+        {
+        bvector<IGeometryPtr> geometry;
+
+        // deserialize and collect all geometries
+        for (auto platform : { TestCase::Native, TestCase::TypeScript })
+            for (auto fileType : { TestCase::FlatBuffer, TestCase::JSON })
+                for (auto& fileName : testCases[iTestCase].m_fileNames.at(platform).at(fileType))
+                    {
+                    IGeometryPtr geom = deserializeFirstGeom(fileName, fileType);
+                    fileName.GetNameA(buf);
+                    if (Check::True(geom.IsValid(), std::string("deserialized at least one geometry from ").append(buf).c_str()))
+                        geometry.push_back(geom);
+                    }
+
+        // all TestCase geometries should be equivalent
+        if (Check::LessThanOrEqual(4, geometry.size(), "have at least four geometries to compare"))
+            {
+            for (size_t i = 1; i < geometry.size(); ++i)
+                {
+                snprintf(buf, sizeof buf, "testCase[%zu]: geom0 compares to geom%zu", iTestCase, i);
+                Check::True(geometry[0]->IsSameStructureAndGeometry(*geometry[i]), buf);
+                }
+            }
+
+        IGeometryPtr baselineGeom = geometry[0];
+        if (Check::True(baselineGeom.IsValid() && baselineGeom->GetAsPolyfaceHeader().IsValid(), "deserialized geometry is a mesh"))
+            {
+            auto meshWithColor = baselineGeom->GetAsPolyfaceHeader();
+            if (Check::True(meshWithColor->GetColorCount() > 0, "deserialized meshes have color"))
+                {
+                // roundtrip through FB
+                bvector<Byte> fbBytes;
+                BentleyGeometryFlatBuffer::GeometryToBytes(*baselineGeom, fbBytes);
+                if (Check::False(fbBytes.empty(), "exported to flatbuffer"))
+                    {
+                    auto geomFromFB = BentleyGeometryFlatBuffer::BytesToGeometry(fbBytes, true);
+                    if (Check::True(geomFromFB.IsValid(), "imported from flatbuffer"))
+                        Check::True(baselineGeom->IsSameStructureAndGeometry(*geomFromFB), "roundtrip through flatbuffer");
+                    }
+                // roundtrip through JSON
+                Utf8String json;
+                if (Check::True(IModelJson::TryGeometryToIModelJsonString(json, *baselineGeom), "exported to json"))
+                    {
+                    bvector<IGeometryPtr> geomsFromJson;
+                    if (Check::True(IModelJson::TryIModelJsonStringToGeometry(json, geomsFromJson), "imported from json"))
+                        if (Check::True(1 == geomsFromJson.size(), "imported a single geometry"))
+                            Check::True(baselineGeom->IsSameStructureAndGeometry(*geomsFromJson[0]), "roundtrip through json");
+                    }
+                }
+            }
+        }
+    }
