@@ -5,7 +5,7 @@ import { flatbuffers } from "flatbuffers";
 /* eslint-disable @itwin/prefer-get */
 // cspell:word flatbuffers, Akima
 
-/** @packageDocumentation
- * @module Serialization
+/**
+ * @internal
  */
 export namespace BGFBAccessors {
