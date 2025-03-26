@@ -2239,8 +2239,6 @@ TEST(Spiral, IFCExample)
     spirals.push_back({ DPoint3d::From(45.131012322000001, 453.92141917000003, 0.0), Angle::FromDegrees(-152.07498850473402).Radians(), -288.0, 84.185, 0.0 });
     spirals.push_back({ DPoint3d::From(45.132640429999999, 453.91316775000002, 0.0), Angle::FromDegrees(-73.255010821769091).Radians(), -288.0, 84.185, 0.0 });
 
-    Transform frame0, invFrame0;
-    ICurvePrimitivePtr curve0;
     for (size_t i = 0; i < spirals.size(); i++)
         {
         auto const& spiral = spirals[i];
@@ -2254,21 +2252,6 @@ TEST(Spiral, IFCExample)
         Check::True(placement != nullptr);
         Check::True(placement->spiral != nullptr);
 
-        // All these spirals were obtained by faulty IFC exporter code in successive roundtrip; they should be the same.
-        // Try to figure out why they are different by computing the transform that equates them.
-        Transform invFrame = placement->frame.ValidatedInverse().Value();
-        if (i == 0)
-            {
-            curve0 = curve;
-            frame0 = placement->frame;
-            invFrame0 = frame0.ValidatedInverse().Value();
-            }
-        else
-            {
-            auto curveTransformed = curve->Clone(Transform::FromProduct(frame0, invFrame));
-            Check::True(curve0->IsSameStructureAndGeometry(*curveTransformed, DoubleOps::SmallMetricDistance()), "Spirals are the same after rotation");
-            }
-
         // When fracA < fracB, the local spiral defines a segment of the spiral starting at the
         // origin and extending into the first quadrant (or 4th if negative (CW) curvature).
         // When fracA > fracB, not only is the curve reversed, but the local spiral sits in
@@ -2276,8 +2259,11 @@ TEST(Spiral, IFCExample)
         // quadrant 1 (or 4) 180 degrees about the origin.
         bool rotateAndReverse = placement->fractionA > placement->fractionB;
 
-        DPoint3d myStartPoint = placement->frame.Origin();
-        DPoint3d myEndPoint; curve->FractionToPoint(rotateAndReverse ? 0.0 : 1.0, myEndPoint);
+        DPoint3d myStartPoint; curve->FractionToPoint(rotateAndReverse ? placement->fractionB : placement->fractionA, myStartPoint);
+        DPoint3d myEndPoint; curve->FractionToPoint(rotateAndReverse ? placement->fractionA : placement->fractionB, myEndPoint);
+        Check::ExactDouble(placement->fractionA, rotateAndReverse ? 1.0 : 0.0);
+        Check::ExactDouble(placement->fractionB, rotateAndReverse ? 0.0 : 1.0);
+
         double myTargetLength = placement->spiral->mLength;
         double myStartRadius = DoubleOps::ValidatedDivideDistance(1.0, placement->spiral->mCurvature0, 0.0);
         double myEndRadius = DoubleOps::ValidatedDivideDistance(1.0, placement->spiral->mCurvature1, 0.0);
@@ -2298,7 +2284,6 @@ TEST(Spiral, IFCExample)
             {
             std::swap(myStartRadius, myEndRadius);
             std::swap(myStartRadians, myEndRadians);
-            std::swap(myStartPoint, myEndPoint);
             }
 
         Check::Near(myStartPoint, spiral.startPoint);
