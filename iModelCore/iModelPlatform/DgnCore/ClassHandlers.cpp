@@ -602,7 +602,7 @@ namespace Handlers {
                 BeJsDocument doc;
                 doc.Parse(instance["jsonProperties"].asCString());
                 doc.PurgeNulls();
-                auto map = BeJsPath::Extract(doc, "$.materialAssets.renderMaterial.Map");
+                auto map = BeJsPath::Extract(BeJsValue(doc), "$.materialAssets.renderMaterial.Map");
                 if (map.has_value()) {
                     map.value().ForEachProperty([&](auto memberName, auto memberJson) {
                         if (memberJson.isNumericMember("TextureId")) {
