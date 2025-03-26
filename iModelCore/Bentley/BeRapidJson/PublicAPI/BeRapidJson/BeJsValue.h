@@ -1007,7 +1007,7 @@ inline BeJsConst::BeJsConst(RapidJsonValueCR val, rapidjson::MemoryPoolAllocator
 inline BeJsConst::BeJsConst(JsonValueCR val) : m_val(new BeJsonCppValue(val)) {}
 inline void BeJsConst::SaveTo(BeJsValue dest) const { dest.From(*this); }
 
-void BeJsDocument::PurgeNulls(rapidjson::Value& val) {
+inline void BeJsDocument::PurgeNulls(rapidjson::Value& val) {
     if (val.IsObject()) {
         for (auto it = val.MemberBegin(); it != val.MemberEnd(); ++it) {
             if (it->value.IsNull())
