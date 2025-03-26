@@ -24,7 +24,6 @@
 #include <libxml/uri.h>
 #include <libxml/catalog.h>
 #include <libxml/parser.h>
-#include <libxml/globals.h>
 
 #if defined(LIBXML_CATALOG_ENABLED) && defined(LIBXML_OUTPUT_ENABLED)
 static int shell = 0;
@@ -402,6 +401,13 @@ int main(int argc, char **argv) {
 	    if ((ret < 0) && (create)) {
 		xmlCatalogAdd(BAD_CAST "catalog", BAD_CAST argv[i], NULL);
 	    }
+
+            /*
+             * Catalogs are loaded lazily. Make sure that dumping works
+             * by the issuing a dummy request that forces the catalog to
+             * be loaded.
+             */
+            xmlCatalogResolvePublic(BAD_CAST "");
 	}
 	break;
     }
@@ -598,7 +604,6 @@ int main(int argc, char **argv) {
      * Cleanup and check for memory leaks
      */
     xmlCleanupParser();
-    xmlMemoryDump();
     return(exit_value);
 }
 #else

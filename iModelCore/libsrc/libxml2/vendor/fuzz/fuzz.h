@@ -15,8 +15,14 @@
 extern "C" {
 #endif
 
-#if defined(LIBXML_HTML_ENABLED) && defined(LIBXML_OUTPUT_ENABLED)
+#if defined(LIBXML_HTML_ENABLED)
   #define HAVE_HTML_FUZZER
+#endif
+#if 1
+  #define HAVE_LINT_FUZZER
+#endif
+#if defined(LIBXML_READER_ENABLED)
+  #define HAVE_READER_FUZZER
 #endif
 #if defined(LIBXML_REGEXP_ENABLED)
   #define HAVE_REGEXP_FUZZER
@@ -27,19 +33,16 @@ extern "C" {
 #if 1
   #define HAVE_URI_FUZZER
 #endif
-#if defined(LIBXML_VALID_ENABLED) && \
-    defined(LIBXML_READER_ENABLED)
+#if defined(LIBXML_VALID_ENABLED)
   #define HAVE_VALID_FUZZER
 #endif
-#if defined(LIBXML_XINCLUDE_ENABLED) && \
-    defined(LIBXML_READER_ENABLED)
+#if defined(LIBXML_XINCLUDE_ENABLED)
   #define HAVE_XINCLUDE_FUZZER
 #endif
-#if defined(LIBXML_OUTPUT_ENABLED) && \
-    defined(LIBXML_READER_ENABLED)
+#if 1
   #define HAVE_XML_FUZZER
 #endif
-#if defined(LIBXML_XPATH_ENABLED)
+#if defined(LIBXML_XPTR_ENABLED)
   #define HAVE_XPATH_FUZZER
 #endif
 
@@ -59,6 +62,15 @@ xmlFuzzMemSetup(void);
 void
 xmlFuzzMemSetLimit(size_t limit);
 
+int
+xmlFuzzMallocFailed(void);
+
+void
+xmlFuzzResetMallocFailed(void);
+
+void
+xmlFuzzCheckMallocFailure(const char *func, int expect);
+
 void
 xmlFuzzDataInit(const char *data, size_t size);
 
@@ -70,6 +82,9 @@ xmlFuzzWriteInt(FILE *out, size_t v, int size);
 
 size_t
 xmlFuzzReadInt(int size);
+
+size_t
+xmlFuzzBytesRemaining(void);
 
 const char *
 xmlFuzzReadRemaining(size_t *size);
