@@ -33,6 +33,11 @@ TEST_F(SchemaGraphTestFixture, MissingImportSchemaInTheMiddle)
     NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
     NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
 
+    // before the fix, this test logs the following relevant messages:
+    // WARNING  ECObjectsNative      ECSchemaCache: Adding schema 'LinearReferencing.01.00.00' which references schema 'CoreCustomAttributes.01.00.04'. However, a different in-memory instance of this referenced schema already exists in the cache. This may indicate an issue with the schema graph.
+    // WARNING  ECObjectsNative      ECSchemaCache: Adding schema 'BisCore.01.00.00' to the cache while schema 'BisCore.01.00.01' already exists. Typically, only one version of a schema with the same name is expected. This may indicate an issue with the schema graph.
+    // ERROR    ECObjectsNative      Cannot add 'BisCore:ISubModeledElement' as a base class to 'RoadRailPhysical:Corridor' because the base class is a mixin and the derived class does not derive from 'BisCore:Element' which is the applies to constraint
+
     SchemaItem initialBisCoreXml(
     R"schema(<?xml version='1.0' encoding='utf-8' ?>
     <ECSchema schemaName="BisCore" alias="bis" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
