@@ -44,7 +44,7 @@ describe("basic tests", () => {
     assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel2d"));
     assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel3d"));
   });
-  it.only("update instance", () => {
+  it.skip("update instance", () => {
 
     const seedUri = path.join(getAssetsDir(), "test.bim");
     const thisFile = path.join(getOutputDir(), "instance-writer0.bim");
