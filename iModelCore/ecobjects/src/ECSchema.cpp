@@ -3330,6 +3330,20 @@ Utf8String ECSchema::ComputeCheckSum()
     return m_key.m_checksum;
     }
 
+void ReportFailedSchema(SchemaKeyCR key, Utf8StringCR additionalInfo, SchemaReadStatus status, ECSchemaReadContextR schemaContext)
+    {
+    Utf8String keyStr = key.GetFullSchemaName();
+    if (SchemaReadStatus::DuplicateSchema == status)
+        schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0008,
+            "Failed to read XML from string(1st 200 characters approx.): %ls.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema.", keyStr.c_str());
+    else if(SchemaReadStatus::HasReferenceCycle == status)
+        schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0062,
+            "Failed to read Schema. The attempt to load from XML ended up in a circular reference. Schemaname (if available): %s", keyStr.c_str());
+    else
+        schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0009,
+            "Failed to read XML from string (1st 200 characters approx.): %s", additionalInfo.c_str());
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3350,14 +3364,13 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
         AddFilePathToSchemaPaths(schemaContext, ecSchemaXmlFile);
 
     SchemaXmlReader reader(schemaContext, doc);
-    auto status = reader.Deserialize(schemaOut, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForFile(ecSchemaXmlFile).c_str() : nullptr);
+    SchemaKey resolvedKey;
+    SchemaReadStatus status = reader.Deserialize(schemaOut, resolvedKey, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForFile(ecSchemaXmlFile).c_str() : nullptr);
 
     if (SchemaReadStatus::Success != status)
         {
-        if (SchemaReadStatus::DuplicateSchema == status)
-            LOG.errorv(L"Failed to read XML file: %ls.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", ecSchemaXmlFile);
-        else
-            LOG.errorv(L"Failed to read XML file: %ls", ecSchemaXmlFile);
+        Utf8String fileName(ecSchemaXmlFile);
+        ReportFailedSchema(resolvedKey, fileName, status, schemaContext);
 
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
@@ -3387,19 +3400,15 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
         }
 
     SchemaXmlReader reader(schemaContext, xmldoc);
-    status = reader.Deserialize(schemaOut, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForString(ecSchemaXml, stringByteCount).c_str() : nullptr);
+    SchemaKey resolvedKey;
+    status = reader.Deserialize(schemaOut, resolvedKey, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForString(ecSchemaXml, stringByteCount).c_str() : nullptr);
 
     if (SchemaReadStatus::Success != status)
         {
         Utf8Char first200Bytes[201];
         BeStringUtilities::Strncpy(first200Bytes, ecSchemaXml, 200);
         first200Bytes[200] = '\0';
-        if (SchemaReadStatus::DuplicateSchema == status)
-            schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0008,
-                "Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Bytes);
-        else
-            schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0009,
-                "Failed to read XML from string (1st 200 characters approx.): %s", first200Bytes);
+        ReportFailedSchema(resolvedKey, first200Bytes, status, schemaContext);
 
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
@@ -3437,7 +3446,8 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, WCharCP ecS
         }
 
     SchemaXmlReader reader(schemaContext, xmldoc);
-    status = reader.Deserialize(schemaOut, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize / sizeof(WChar)).c_str() : nullptr);
+    SchemaKey resolvedKey;
+    status = reader.Deserialize(schemaOut, resolvedKey, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize / sizeof(WChar)).c_str() : nullptr);
 
     if (SchemaReadStatus::Success != status)
         {
@@ -3446,12 +3456,9 @@ PUSH_DISABLE_DEPRECATION_WARNINGS
         wcsncpy(first200Characters, ecSchemaXml, 200);
 POP_DISABLE_DEPRECATION_WARNINGS
         first200Characters[200] = L'\0';
-        if (SchemaReadStatus::DuplicateSchema == status)
-            LOG.errorv(L"Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Characters);
-        else
-            {
-            LOG.errorv(L"Failed to read XML from string (1st 200 characters): %ls", first200Characters);
-            }
+        Utf8String additionalInfo(first200Characters);
+        ReportFailedSchema(resolvedKey, additionalInfo, status, schemaContext);
+
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }

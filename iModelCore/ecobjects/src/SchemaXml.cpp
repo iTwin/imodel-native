@@ -875,13 +875,12 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t&
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, Utf8CP checksum)
+SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, SchemaKey& schemaKey, Utf8CP checksum)
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
     StopWatch overallTimer("Overall schema de-serialization timer", true);
 
     pugi::xml_node schemaNode;
-    SchemaKey schemaKey;
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     status = ReadSchemaStub(schemaKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, m_xmlDoc);
     if (SchemaReadStatus::Success != status)

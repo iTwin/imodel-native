@@ -13,12 +13,22 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+#define ENABLE_CONSOLE_LOGGING 1
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 struct SchemaGraphTestFixture : public ECDbTestFixture
     {
 public:
+    void SetUp() override
+    {
+        ECDbTestFixture::SetUp();
+        #if ENABLE_CONSOLE_LOGGING
+            NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+            NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+            NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+        #endif
+    }
     std::optional<SchemaKey> ReadSchemaKeyFromDb(Utf8StringCR schemaName)
         {
         ECSqlStatement stmt;
@@ -61,10 +71,6 @@ TEST_F(SchemaGraphTestFixture, MissingImportSchemaInTheMiddle)
     // The db contains an older version of BisCore and LinearReferecing, and the
     // incoming schemas are an updated BisCore plus RoadRailPhysical, but not LinearReferencing.
     // This caused an unclean schema graph with 2 BisCore versions in it.
-
-    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
-    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
-    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
 
     // before the fix, this test logs the following relevant messages:
     // WARNING  ECObjectsNative      ECSchemaCache: Adding schema 'LinearReferencing.01.00.00' which references schema 'CoreCustomAttributes.01.00.04'. However, a different in-memory instance of this referenced schema already exists in the cache. This may indicate an issue with the schema graph.
@@ -167,6 +173,79 @@ TEST_F(SchemaGraphTestFixture, MissingImportSchemaInTheMiddle)
     AssertECDbSchemaVersion(bisCoreKey);
     AssertECDbSchemaVersion(linearReferencingKey);
     AssertECDbSchemaVersion(roadRailPhysicalKey);
+    }
+
+TEST_F(SchemaGraphTestFixture, CircularSchemaReference)
+    {
+    SchemaKey fooKey("Foo", 1, 0, 0);
+    Utf8String fooXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="Foo" alias="foo" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="Bar" version="01.00.00" alias="bar"/>
+        <ECEntityClass typeName="FooEntity">
+            <BaseClass>bar:BarEntity</BaseClass>
+        </ECEntityClass>
+    </ECSchema>)schema");
+
+    SchemaKey barKey("Bar", 1, 0, 0);
+    Utf8String barXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="Bar" alias="bar" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="Foo" version="01.00.00" alias="foo"/>
+        <ECEntityClass typeName="BarEntity">
+            <BaseClass>foo:FooEntity</BaseClass>
+        </ECEntityClass>
+    </ECSchema>)schema");
+
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    StringSchemaLocater locater;
+    locater.AddSchemaString(fooKey, fooXml);
+    locater.AddSchemaString(barKey, barXml);
+    context->AddSchemaLocater(locater);
+
+    // Currently we log an error and refuse to load. That's fine, this test is to make sure we fail gracefully.
+    ECSchemaPtr foo = context->LocateSchema(fooKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_FALSE(foo.IsValid());
+    ECSchemaPtr bar = context->LocateSchema(barKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_FALSE(bar.IsValid());
+    }
+
+TEST_F(SchemaGraphTestFixture, CircularEmptySchemaReference)
+    {
+    SchemaKey fooKey("Foo", 1, 0, 0);
+    Utf8String fooXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="Foo" alias="foo" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="Bar" version="01.00.00" alias="bar" />
+    </ECSchema>)schema");
+
+    SchemaKey barKey("Bar", 1, 0, 0);
+    Utf8String barXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="Bar" alias="bar" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="Foo" version="01.00.00" alias="foo" />
+    </ECSchema>)schema");
+
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    StringSchemaLocater locater;
+    locater.AddSchemaString(fooKey, fooXml);
+    locater.AddSchemaString(barKey, barXml);
+    context->AddSchemaLocater(locater);
+
+    // Currently we log an error and refuse to load. That's fine, this test is to make sure we fail gracefully.
+    TestIssueListener issues;
+    context->Issues().AddListener(issues);
+
+    ECSchemaPtr foo = context->LocateSchema(fooKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_FALSE(foo.IsValid());
+    ECSchemaPtr bar = context->LocateSchema(barKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_FALSE(bar.IsValid());
+
+    bvector<Utf8String> expectedIssues {
+        "Failed to read Schema. The attempt to load from XML ended up in a circular reference. Schemaname (if available): Foo.01.00.00",
+        "Failed to read Schema. The attempt to load from XML ended up in a circular reference. Schemaname (if available): Bar.01.00.00",
+    };
+    issues.CompareIssues(expectedIssues);
     }
 
 #define ENABLE_IMPORT_SCHEMAS_FROM_FILES_TEST 1
