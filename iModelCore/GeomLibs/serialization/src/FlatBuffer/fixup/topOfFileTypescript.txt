@@ -8,5 +8,4 @@ import { flatbuffers } from "flatbuffers";
 /** @packageDocumentation
  * @module Serialization
  */
-
 export namespace BGFBAccessors {
