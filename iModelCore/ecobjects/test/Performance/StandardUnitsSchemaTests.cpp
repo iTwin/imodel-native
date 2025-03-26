@@ -40,7 +40,7 @@ TEST_F(UnitsPerformanceTest, LoadUnitsSchema)
     ECSchema::ReadFromXmlFile(unitsSchema, assetsDir.c_str(), *context);
     timer.Stop();
 
-    EXPECT_EQ(518, unitsSchema->GetUnitCount());
+    EXPECT_EQ(519, unitsSchema->GetUnitCount());
     EXPECT_EQ(79, unitsSchema->GetPhenomenonCount());
     EXPECT_EQ(12, unitsSchema->GetUnitSystemCount());
 

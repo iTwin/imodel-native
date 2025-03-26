@@ -56,9 +56,15 @@ TEST_F(PerformanceTestsECXml, ReadingAndWritingGeneratedSchemas)
     TimeInMemorySchema(GenerateSchema2000Classes10PropsPerClass());
     TimeInMemorySchema(GenerateSchema100Classes200PropsPerClass());
     TimeInMemorySchema(GenerateSchema10Classes2000PropsPerClass());
-    TimeInMemorySchema(GenerateSchema10Root15Deep3Mixin5PropsAndOverrides());
-    TimeInMemorySchema(GenerateSchema300Root3Deep200Props());
-    TimeInMemorySchema(GenerateSchema50Root5Deep3Mixin5Props());
+
+    ECSchemaReadContextPtr schemaContext1 = ECSchemaReadContext::CreateContext();
+    TimeInMemorySchema(GenerateSchema10Root15Deep3Mixin5PropsAndOverrides(schemaContext1));
+
+    ECSchemaReadContextPtr schemaContext2 = ECSchemaReadContext::CreateContext();
+    TimeInMemorySchema(GenerateSchema300Root3Deep200Props(schemaContext2));
+
+    ECSchemaReadContextPtr schemaContext3 = ECSchemaReadContext::CreateContext();
+    TimeInMemorySchema(GenerateSchema50Root5Deep3Mixin5Props(schemaContext3));
     }
 
 //-------------------------------------------------------------------------------------
