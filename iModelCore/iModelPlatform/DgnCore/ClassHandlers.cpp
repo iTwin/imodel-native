@@ -436,7 +436,7 @@ namespace Handlers {
 
             if (GetUserOptions()["wantGeometry"].asBool()) {
                 SnappyFromMemory snappy;
-                auto categoryId = instance["category"]["id"].GetId64<DgnCategoryId>();
+                auto categoryId = instance["category"].GetId64<DgnCategoryId>();
                 auto geometryStream = GeometryStream{};
                 auto rc = geometryStream.Read(snappy, GetDbR<DgnDb>(), finder("GeometryStream")->GetReader());
                 if (rc != ECSqlStatus::Success) {
@@ -556,7 +556,7 @@ namespace Handlers {
 
             if (GetUserOptions()["wantGeometry"].asBool()) {
                 SnappyFromMemory snappy;
-                auto categoryId = instance["category"]["id"].GetId64<DgnCategoryId>();
+                auto categoryId = instance["category"].GetId64<DgnCategoryId>();
                 auto geometryStream = GeometryStream{};
                 auto rc = geometryStream.Read(snappy, GetDbR<DgnDb>(), finder("GeometryStream")->GetReader());
                 if (rc != ECSqlStatus::Success) {
