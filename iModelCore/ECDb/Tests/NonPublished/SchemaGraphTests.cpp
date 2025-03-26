@@ -248,8 +248,7 @@ TEST_F(SchemaGraphTestFixture, CircularEmptySchemaReference)
     issues.CompareIssues(expectedIssues);
     }
 
-
-    TEST_F(SchemaGraphTestFixture, CircularEmptySchemaReferenceInDb)
+TEST_F(SchemaGraphTestFixture, CircularEmptySchemaReferenceInDb)
     {
     // Provokes the circular schema reference scenario inside ecdb
     SetupECDbForCurrentTest();
@@ -311,6 +310,164 @@ TEST_F(SchemaGraphTestFixture, CircularEmptySchemaReference)
     ASSERT_FALSE(foo2.IsValid());
     ECSchemaPtr bar2 = context2->LocateSchema(barKey, SchemaMatchType::LatestReadCompatible);
     ASSERT_FALSE(bar2.IsValid()); // TODO: THis actually returns true at the moment, schema is incompletely loaded.
+    }
+
+TEST_F(SchemaGraphTestFixture, DeepSchemaHierarchyWithNumerousUpdates)
+    {
+    // Import and then load/update a deep hierarchy of schemas
+    SetupECDbForCurrentTest();
+
+    { // Initial setup
+    SchemaKey aKey("A", 1, 0, 0);
+    Utf8String aXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="A" alias="a" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    </ECSchema>)schema");
+
+    SchemaKey bKey("B", 1, 0, 0);
+    Utf8String bXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="B" alias="b" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="A" version="01.00.00" alias="a"/>
+    </ECSchema>)schema");
+
+    SchemaKey cKey("C", 1, 0, 0);
+    Utf8String cXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="C" alias="c" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="B" version="01.00.00" alias="b"/>
+    </ECSchema>)schema");
+
+    SchemaKey dKey("D", 1, 0, 0);
+    Utf8String dXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="D" alias="d" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="C" version="01.00.00" alias="c"/>
+    </ECSchema>)schema");
+
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    StringSchemaLocater locater;
+    locater.AddSchemaString(aKey, aXml);
+    locater.AddSchemaString(bKey, bXml);
+    locater.AddSchemaString(cKey, cXml);
+    locater.AddSchemaString(dKey, dXml);
+    context->AddSchemaLocater(locater);
+
+    ECSchemaPtr a = context->LocateSchema(aKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(a.IsValid());
+    ECSchemaPtr b = context->LocateSchema(bKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(b.IsValid());
+    ECSchemaPtr c = context->LocateSchema(cKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(c.IsValid());
+    ECSchemaPtr d = context->LocateSchema(dKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(d.IsValid());
+    SchemaImportResult result = m_ecdb.Schemas().ImportSchemas({ a.get(), b.get(), c.get(), d.get() });
+    ASSERT_EQ(SchemaImportResult::OK, result);
+    m_ecdb.SaveChanges();
+    }
+
+    { // Update some schemas
+    SchemaKey aKey("A", 1, 0, 0); // left as-is
+    Utf8String aXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="A" alias="a" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    </ECSchema>)schema");
+
+    SchemaKey bKey("B", 1, 0, 0); // not included in update
+
+    SchemaKey cKey("C", 1, 0, 1); // updated
+    Utf8String cXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="C" alias="c" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="B" version="01.00.00" alias="b"/>
+    </ECSchema>)schema");
+
+    SchemaKey dKey("D", 1, 0, 1); // updated, references updated to C1.0.1
+    Utf8String dXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="D" alias="d" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="C" version="01.00.01" alias="c"/>
+    </ECSchema>)schema");
+
+    SchemaKey eKey("E", 1, 0, 0); // new, references all others
+    Utf8String eXml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="E" alias="e" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="A" version="01.00.00" alias="a"/>
+        <ECSchemaReference name="B" version="01.00.00" alias="b"/>
+        <ECSchemaReference name="C" version="01.00.01" alias="c"/>
+        <ECSchemaReference name="D" version="01.00.01" alias="d"/>
+    </ECSchema>)schema");
+
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    StringSchemaLocater locater;
+    locater.AddSchemaString(aKey, aXml);
+    locater.AddSchemaString(cKey, cXml);
+    locater.AddSchemaString(dKey, dXml);
+    locater.AddSchemaString(eKey, eXml);
+    context->AddSchemaLocater(locater);
+
+    ECSchemaPtr a = context->LocateSchema(aKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(a.IsValid());
+    ECSchemaPtr d = context->LocateSchema(dKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(d.IsValid()); // locating d out of order before b and c
+    ECSchemaPtr b = context->LocateSchema(bKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(b.IsValid());
+    ECSchemaPtr c = context->LocateSchema(cKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(c.IsValid());
+    ECSchemaPtr e = context->LocateSchema(eKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(e.IsValid());
+
+    // import schemas and verify their versions
+    SchemaImportResult result = m_ecdb.Schemas().ImportSchemas({ a.get(), c.get(), d.get(), e.get() });
+    ASSERT_EQ(SchemaImportResult::OK, result);
+    m_ecdb.SaveChanges();
+
+    // Assert the stored versions inside ECDb
+    AssertECDbSchemaVersion(aKey);
+    AssertECDbSchemaVersion(bKey);
+    AssertECDbSchemaVersion(cKey);
+    AssertECDbSchemaVersion(dKey);
+    AssertECDbSchemaVersion(eKey);
+
+    // Assert the referened schemas in the tree
+    auto* aFromE = GetReferencedSchema("A", *e);
+    ASSERT_TRUE(aFromE != nullptr);
+    ASSERT_TRUE(aFromE->GetSchemaKey().Matches(aKey, SchemaMatchType::Exact));
+
+    auto* bFromE = GetReferencedSchema("B", *e);
+    ASSERT_TRUE(bFromE != nullptr);
+    ASSERT_TRUE(bFromE->GetSchemaKey().Matches(bKey, SchemaMatchType::Exact));
+
+    auto* cFromE = GetReferencedSchema("C", *e);
+    ASSERT_TRUE(cFromE != nullptr);
+    ASSERT_TRUE(cFromE->GetSchemaKey().Matches(cKey, SchemaMatchType::Exact));
+
+    auto* dFromE = GetReferencedSchema("D", *e);
+    ASSERT_TRUE(dFromE != nullptr);
+    ASSERT_TRUE(dFromE->GetSchemaKey().Matches(dKey, SchemaMatchType::Exact));
+
+    auto* cFromD = GetReferencedSchema("C", *d);
+    ASSERT_TRUE(cFromD != nullptr);
+    ASSERT_TRUE(cFromD->GetSchemaKey().Matches(cKey, SchemaMatchType::Exact));
+
+    auto* bFromC = GetReferencedSchema("B", *c);
+    ASSERT_TRUE(bFromC != nullptr);
+    ASSERT_TRUE(bFromC->GetSchemaKey().Matches(bKey, SchemaMatchType::Exact));
+
+    auto* aFromB = GetReferencedSchema("A", *b);
+    ASSERT_TRUE(aFromB != nullptr);
+    ASSERT_TRUE(aFromB->GetSchemaKey().Matches(aKey, SchemaMatchType::Exact));
+
+    // Confirm in-memory references are the same
+    ASSERT_TRUE(a.get() == aFromE);
+    ASSERT_TRUE(b.get() == bFromE);
+    ASSERT_TRUE(c.get() == cFromE);
+    ASSERT_TRUE(d.get() == dFromE);
+    ASSERT_TRUE(c.get() == cFromD);
+    ASSERT_TRUE(b.get() == bFromC);
+    ASSERT_TRUE(a.get() == aFromB);
+    }
     }
 
 #define ENABLE_IMPORT_SCHEMAS_FROM_FILES_TEST 1
