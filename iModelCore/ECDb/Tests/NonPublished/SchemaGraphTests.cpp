@@ -6,6 +6,7 @@
 #include <set>
 #include <ECObjects/SchemaComparer.h>
 #include <Bentley/BeDirectoryIterator.h>
+#include <optional>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -17,6 +18,38 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 struct SchemaGraphTestFixture : public ECDbTestFixture
     {
+public:
+    std::optional<SchemaKey> ReadSchemaKeyFromDb(Utf8StringCR schemaName)
+        {
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, SqlPrintfString("SELECT VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name='%s'", schemaName.c_str())))
+            {
+            return std::nullopt;
+            }
+    
+        if (stmt.Step() != BE_SQLITE_ROW)
+            return std::nullopt;
+
+        return SchemaKey(schemaName.c_str(), stmt.GetValueInt(0), stmt.GetValueInt(1), stmt.GetValueInt(2));
+        }
+
+    void AssertECDbSchemaVersion(SchemaKeyCR expectedKey)
+        {
+        auto foundKey = ReadSchemaKeyFromDb(expectedKey.GetName());
+        ASSERT_TRUE(foundKey.has_value()) << "Failed to read schema key from the database for schema: " << expectedKey.GetName();
+        ASSERT_TRUE(expectedKey.Matches(foundKey.value(), SchemaMatchType::Exact)) << "Schema key mismatch. Expected: " << expectedKey.GetFullSchemaName().c_str() << ", Found: " << foundKey.value().GetFullSchemaName().c_str();
+        }
+    
+    ECSchemaP GetReferencedSchema(Utf8StringCR name, ECSchemaCR schema)
+        {
+        for (auto& pair : schema.GetReferencedSchemas())
+            {
+            if(pair.first.GetName() == name)
+                return pair.second.get();
+            }
+
+        return nullptr;
+        }
     };
 
 //---------------------------------------------------------------------------------------
@@ -106,13 +139,88 @@ TEST_F(SchemaGraphTestFixture, MissingImportSchemaInTheMiddle)
     </ECSchema>)schema");
     context->AddSchemaLocater(locater);
     context->SetFinalSchemaLocater(m_ecdb.GetSchemaLocater());
+
+    // Load schemas through the context
     SchemaKey bisCoreRequestedKey("BisCore", 1, 0, 0);
     ECSchemaPtr bisCore = context->LocateSchema(bisCoreRequestedKey, SchemaMatchType::LatestReadCompatible);
     ASSERT_TRUE(bisCore.IsValid());
     SchemaKey roadRailPhysicalRequestedKey("RoadRailPhysical", 1, 0, 0);
     ECSchemaPtr roadRailPhysical = context->LocateSchema(roadRailPhysicalRequestedKey, SchemaMatchType::LatestReadCompatible);
-    ASSERT_TRUE(roadRailPhysical.IsValid());
 
+    // Verify the schema graph
+    SchemaKey linearReferencingKey("LinearReferencing", 1, 0, 0);
+    ASSERT_TRUE(roadRailPhysical.IsValid());
+    ASSERT_TRUE(roadRailPhysical->GetSchemaKey().Matches(roadRailPhysicalKey, SchemaMatchType::Exact));
+    ASSERT_TRUE(bisCore->GetSchemaKey().Matches(bisCoreKey, SchemaMatchType::Exact));
+    ASSERT_TRUE(roadRailPhysical->IsSchemaReferenced(*roadRailPhysical, *bisCore));
+    ECSchemaP linearReferencing = GetReferencedSchema("LinearReferencing", *roadRailPhysical);
+    ASSERT_TRUE(linearReferencing != nullptr);
+    ASSERT_TRUE(linearReferencing->GetSchemaKey().Matches(linearReferencingKey, SchemaMatchType::Exact));
+    ECSchemaP bisCoreOfLinearReferencing = GetReferencedSchema("BisCore", *linearReferencing);
+    ASSERT_TRUE(bisCoreOfLinearReferencing != nullptr);
+    ASSERT_TRUE(bisCoreOfLinearReferencing->GetSchemaKey().Matches(bisCoreKey, SchemaMatchType::Exact)); // This was wrong before the fix, returned 1.0.0, should be 1.0.1
+    
+    // Import the schemas
+    SchemaImportResult result = m_ecdb.Schemas().ImportSchemas({ bisCore.get(), roadRailPhysical.get() }, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
+    ASSERT_EQ(SchemaImportResult::OK, result);
+    m_ecdb.SaveChanges();
+    AssertECDbSchemaVersion(bisCoreKey);
+    AssertECDbSchemaVersion(linearReferencingKey);
+    AssertECDbSchemaVersion(roadRailPhysicalKey);
     }
 
+#define ENABLE_IMPORT_SCHEMAS_FROM_FILES_TEST 1
+
+#if ENABLE_IMPORT_SCHEMAS_FROM_FILES_TEST
+TEST_F(SchemaGraphTestFixture, ImportSchemasFromFiles)
+    {
+    // Test is intended to be commented by default. It can be used to analyze schema import calls
+    // It simulates the same procedure that happens during JsInterop.ImportSchemas().
+    // The other tests use SchemaStringLocater, but behavior with files is slightly different as
+    // the files' directory gets added to search paths.
+    BeFileName fileName("/home/rob/test/TargetiModel.bim");
+    OpenECDb(fileName);
+
+    std::vector<Utf8String> fileNames = {
+      "/home/rob/test/ImportSchemas/AdskCivil3dSchema.ecschema.xml",
+      "/home/rob/test/ImportSchemas/BisCore.ecschema.xml",
+      "/home/rob/test/ImportSchemas/DocumentMetadata.ecschema.xml",
+      "/home/rob/test/ImportSchemas/DwgAttributeDefinitions_6039__x0020__Perry__x0020__Worth__x0020__Bldg__x0020__footprint__x0020____x002D____x0020__Copy.ecschema.xml",
+      "/home/rob/test/ImportSchemas/DwgSourceInfo.ecschema.xml",
+      "/home/rob/test/ImportSchemas/ProjectwiseDynamic.ecschema.xml",
+      "/home/rob/test/ImportSchemas/QuantityTakeoffsAspects.ecschema.xml",
+      "/home/rob/test/ImportSchemas/RailPhysical.ecschema.xml",
+      "/home/rob/test/ImportSchemas/Raster.ecschema.xml",
+      "/home/rob/test/ImportSchemas/RoadPhysical.ecschema.xml",
+      "/home/rob/test/ImportSchemas/RoadRailPhysical.ecschema.xml"
+    };
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    schemaContext->SetFinalSchemaLocater(m_ecdb.GetSchemaLocater());
+    // In the node addon, we also use the platform assets directory to find the schema files.
+    // iModelJsNodeAddon/JsInterop.cpp AddFallbackSchemaLocaters()
+
+    bvector<ECSchemaCP> schemas;
+    for (Utf8String schemaSource : fileNames)
+        {
+        ECSchemaPtr schema;
+        SchemaReadStatus schemaStatus;
+        BeFileName schemaFile(schemaSource.c_str(), BentleyCharEncoding::Utf8);
+        ASSERT_TRUE(schemaFile.DoesPathExist());
+
+        schema = ECSchema::LocateSchema(schemaSource.c_str(), *schemaContext, SchemaMatchType::Exact, &schemaStatus);
+
+        if (SchemaReadStatus::DuplicateSchema == schemaStatus)
+            continue;
+
+        ASSERT_EQ(SchemaReadStatus::Success, schemaStatus);
+
+        schemas.push_back(schema.get());
+        }
+
+    SchemaImportResult result = m_ecdb.Schemas().ImportSchemas(schemas, SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade);
+    ASSERT_EQ(SchemaImportResult::OK, result);
+    m_ecdb.SaveChanges();
+    }
+#endif
 END_ECDBUNITTESTS_NAMESPACE

@@ -894,7 +894,7 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
             BeFileName schemaFile(schemaSource.c_str(), BentleyCharEncoding::Utf8);
             if (!schemaFile.DoesPathExist())
                 return BE_SQLITE_ERROR_FileNotFound;
-
+            // This method, first attempts to pull the schema from the context, if it loads the schema, it adds its directory to search paths
             schema = ECSchema::LocateSchema(schemaSource.c_str(), *schemaContext, SchemaMatchType::Exact, &schemaStatus);
             }
         else

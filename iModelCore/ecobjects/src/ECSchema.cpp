@@ -2941,8 +2941,8 @@ ECSchemaPtr ECSchema::LocateSchema(SchemaKeyR key, ECSchemaReadContextR schemaCo
 //---------------+---------------+---------------+---------------+---------------+-------
 static void AddFilePathToSchemaPaths(ECSchemaReadContextR schemaContext, WCharCP ecSchemaXmlFile)
     {
-    BeFileName pathToThisSchema (BeFileName::DevAndDir, ecSchemaXmlFile);
-    schemaContext.AddSchemaPath(pathToThisSchema);
+    BeFileName schemaDirectory (BeFileName::DevAndDir, ecSchemaXmlFile);
+    schemaContext.AddSchemaPath(schemaDirectory);
     }
 
 //---------------------------------------------------------------------------------------
