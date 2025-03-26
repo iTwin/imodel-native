@@ -304,7 +304,6 @@ namespace Handlers {
             // }
 
             instance["model"] = finder("Model")->GetReader().GetNavigation<ECInstanceId>(nullptr);
-            instance["category"] = finder("Category")->GetReader().GetNavigation<ECInstanceId>(nullptr);
             return ECSqlStatus::Success;
         }
     };
@@ -427,7 +426,7 @@ namespace Handlers {
         +---------------+---------------+---------------+---------------+---------------+------*/
         virtual ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder finder) override {
             BeAssert(GetFormat() == JsFormat::JsName);
-
+            instance["category"] = finder("Category")->GetReader().GetNavigation<ECInstanceId>(nullptr);
             Placement2d placement;
             if (!ReadPlacement2d(placement, finder)) {
                 SetError("Failed to read placement");
@@ -546,6 +545,7 @@ namespace Handlers {
          +---------------+---------------+---------------+---------------+---------------+------*/
         virtual ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder finder) override {
             BeAssert(GetFormat() == JsFormat::JsName);
+            instance["category"] = finder("Category")->GetReader().GetNavigation<ECInstanceId>(nullptr);
             Placement3d placement;
             if (!ReadPlacement3d(placement, finder)) {
                 SetError("Failed to read placement");
