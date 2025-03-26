@@ -926,25 +926,7 @@ struct BeJsDocument : BeJsValue {
 private:
     rapidjson::Document m_doc;
     BeJsDocument& operator=(BeJsDocument const& rhs) = delete;
-    void PurgeNulls(rapidjson::Value& val) {
-        if (val.IsObject()) {
-            for (auto it = val.MemberBegin(); it != val.MemberEnd(); ++it) {
-                if (it->value.IsNull())
-                    it = val.EraseMember(it);
-                else if (it->value.IsObject() || it->value.IsArray())
-                    PurgeNulls(it->value);
-            }
-        }
-        if (val.IsArray()) {
-            for (auto it = val.Begin(); it != val.End(); ++it) {
-                if (it->IsNull())
-                    it = val.Erase(it);
-                else if (it->IsObject() || it->IsArray())
-                    PurgeNulls(*it);
-            }
-
-        }
-    }
+    void PurgeNulls(rapidjson::Value& val);
 
 public:
     // allow move but not copy.
@@ -1024,6 +1006,26 @@ inline BeJsConst::BeJsConst(RapidJsonDocumentCR val) : m_val(new BeRapidJsonValu
 inline BeJsConst::BeJsConst(RapidJsonValueCR val, rapidjson::MemoryPoolAllocator<>& alloc) : m_val(new BeRapidJsonValue(&val, alloc)) {}
 inline BeJsConst::BeJsConst(JsonValueCR val) : m_val(new BeJsonCppValue(val)) {}
 inline void BeJsConst::SaveTo(BeJsValue dest) const { dest.From(*this); }
+
+void BeJsDocument::PurgeNulls(rapidjson::Value& val) {
+    if (val.IsObject()) {
+        for (auto it = val.MemberBegin(); it != val.MemberEnd(); ++it) {
+            if (it->value.IsNull())
+                it = val.EraseMember(it);
+            else if (it->value.IsObject() || it->value.IsArray())
+                PurgeNulls(it->value);
+        }
+    }
+    if (val.IsArray()) {
+        for (auto it = val.Begin(); it != val.End(); ++it) {
+            if (it->IsNull())
+                it = val.Erase(it);
+            else if (it->IsObject() || it->IsArray())
+                PurgeNulls(*it);
+        }
+
+    }
+}
 
 struct BeJsPath final {
 private:
