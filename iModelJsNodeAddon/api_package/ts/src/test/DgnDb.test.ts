@@ -109,10 +109,7 @@ describe("basic tests", () => {
       classFullName: "Generic:PhysicalObject",
       model: "0x1f",
       lastMod: "2017-07-25T20:44:59.926Z",
-      category: {
-        id: "0x17",
-        relClassName: "BisCore:GeometricElement3dIsInCategory",
-      },
+      category:"0x17",
       inSpatialIndex: true,
       code: {
         spec: "0x1",
