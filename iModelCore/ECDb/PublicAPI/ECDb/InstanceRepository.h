@@ -25,7 +25,7 @@ struct InstanceRepository final {
         friend struct InstanceRepository;
 
     private:
-        bset<Utf8String, AsciiCaseInsensitiveCompare> m_customHandledProperties;
+        bset<Utf8String> m_customHandledProperties;
         ECN::ECClassId m_classId;
         const ECDb* m_db = nullptr;
         BeJsConst* m_userOptions = nullptr;
@@ -34,9 +34,9 @@ struct InstanceRepository final {
         Operation m_operation;
         Utf8String m_error;
         ECN::ECClassCP m_class = nullptr;
-        void SetContext(ECDbCR db, BeJsConst& instance, BeJsConst& userOptions, JsFormat fmt, Operation operation);
+        void SetContext(ECDbCR db, BeJsConst& instance, BeJsConst& userOptions, JsFormat fmt, Operation operation, ECSqlStatementCache& cache);
         void Reset() { m_class = nullptr; }
-
+        ECSqlStatementCache* m_cache = nullptr;
     protected:
         ECN::ECClassId GetClassId() const { return m_classId; }
         ECDbCR GetECDb() const { return *m_db; }
@@ -49,6 +49,7 @@ struct InstanceRepository final {
         ECDB_EXPORT ECInstanceKey ParseInstanceKey() const;
         ECDB_EXPORT ECN::ECClassId ParseClassId() const;
         ECDB_EXPORT ECInstanceId ParseInstanceId() const;
+        ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(Utf8CP);
         ECDB_EXPORT void SetError(const char* fmt, ...);
         virtual void OnNextId(ECInstanceId&) {};
         virtual PropertyHandlerResult OnBindECProperty(ECN::ECPropertyCR property, BeJsConst val, IECSqlBinder& binder, ECSqlStatus& rc) { return PropertyHandlerResult::Continue; };
@@ -80,9 +81,9 @@ private:
     std::vector<IClassHandler*>& TryGetHandlers(ECN::ECClassId classId) const;
     std::vector<IClassHandler*>& TryGetHandlers(ECN::ECClassId classId, JsFormat fmt, Operation operation, BeJsConst& instance, BeJsConst& userOptions) const;
     InstanceReader m_reader;
-
+    mutable ECSqlStatementCache m_cache;
 public:
-    InstanceRepository(ECDbCR ecdb) : m_ecdb(ecdb), m_reader(ecdb) {}
+    InstanceRepository(ECDbCR ecdb) : m_ecdb(ecdb), m_reader(ecdb),m_cache(20) {}
     ~InstanceRepository() = default;
     InstanceRepository(InstanceRepository const&) = delete;
     InstanceRepository(InstanceRepository&&) = delete;
@@ -147,5 +148,6 @@ public:
         return UnregisterClassHandler<T>(classP->GetId());
     }
 };
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
