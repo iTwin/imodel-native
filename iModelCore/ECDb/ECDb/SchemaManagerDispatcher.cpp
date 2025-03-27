@@ -453,8 +453,8 @@ ECSchemaPtr SchemaManager::Dispatcher::LocateSchema(ECN::SchemaKeyR key, ECN::Sc
                 return schema;
                 }
 
-            //TODO copy schema
             ECSchemaPtr cleanedSchema;
+            // TODO: Instead of the cache we'd like to use the context here
             schema->CopySchema(cleanedSchema, &ctx.GetCache(), false);
             if(!cleanedSchema.IsValid() || ctx.AddSchema(*schema) == ECObjectsStatus::DuplicateSchema)
                 return nullptr; // Same behavior as ECSchena::LocateSchema

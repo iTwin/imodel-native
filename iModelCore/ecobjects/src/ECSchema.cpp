@@ -2016,6 +2016,7 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+//TODO: Why does this take an IECSchemaLocaterP instead of a SchemaContext, and then allocates a local SchemaContext instead of using the one passed in?
 ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater, bool skipValidation) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
