@@ -1009,21 +1009,28 @@ inline void BeJsConst::SaveTo(BeJsValue dest) const { dest.From(*this); }
 
 inline void BeJsDocument::PurgeNulls(rapidjson::Value& val) {
     if (val.IsObject()) {
-        for (auto it = val.MemberBegin(); it != val.MemberEnd(); ++it) {
-            if (it->value.IsNull())
+        auto it = val.MemberBegin();
+        while (it != val.MemberEnd()) {
+            if (it->value.IsNull()) {
                 it = val.EraseMember(it);
-            else if (it->value.IsObject() || it->value.IsArray())
-                PurgeNulls(it->value);
+            } else {
+                if (it->value.IsObject() || it->value.IsArray())
+                    PurgeNulls(it->value);
+                ++it;
+            } 
         }
     }
     if (val.IsArray()) {
-        for (auto it = val.Begin(); it != val.End(); ++it) {
-            if (it->IsNull())
+        auto it = val.Begin();
+        while (it != val.End()) {
+            if (it->IsNull()) {
                 it = val.Erase(it);
-            else if (it->IsObject() || it->IsArray())
-                PurgeNulls(*it);
+            } else {
+                if (it->IsObject() || it->IsArray())
+                    PurgeNulls(*it);
+                ++it;
+            }
         }
-
     }
 }
 
