@@ -698,7 +698,7 @@ bool RegisterBisCoreHandlers(DgnDbR db) {
                                                                    "Roll",
                                                                    "BBoxLow",
                                                                    "BBoxHigh",
-                                                                   "GeometryStream"
+                                                                   "GeometryStream",
                                                                    "Category",
                                                                    });
     rc &= repo.RegisterClassHandler<Handlers::GeometricElement2d>(Handlers::GeometricElement2d::ClassName,
@@ -706,7 +706,7 @@ bool RegisterBisCoreHandlers(DgnDbR db) {
                                                                    "Rotation",
                                                                    "BBoxLow",
                                                                    "BBoxHigh",
-                                                                   "GeometryStream"
+                                                                   "GeometryStream",
                                                                    "Category",
                                                                    });
     rc &= repo.RegisterClassHandler<Handlers::RenderMaterial>(Handlers::RenderMaterial::ClassName);
