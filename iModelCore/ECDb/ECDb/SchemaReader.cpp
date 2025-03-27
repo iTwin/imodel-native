@@ -1559,7 +1559,13 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryCP& cat, Contex
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId, bool loadSchemaEntities) const
     {
-    if (SUCCESS != ReadSchemaStubAndReferences(schemaEntry, ctx, schemaId))
+    BentleyStatus status;
+    if(ctx.GetReadContext() != nullptr)
+        status = ReadSchemaStubAndReferencesWithReadContext(schemaEntry, ctx, schemaId);
+    else
+        status = ReadSchemaStubAndReferences(schemaEntry, ctx, schemaId);
+
+    if (SUCCESS != status)
         return ERROR;
 
     BeAssert(schemaEntry != nullptr);
@@ -1579,14 +1585,10 @@ BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& schemaEntry, Context& ctx
 BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId) const
     {
     BeMutexHolder ecdbLock(GetECDbMutex());
-    auto readContext = ctx.GetReadContext();
-    if (nullptr == readContext)
+    if (schemaEntry = m_cache.Find(schemaId))
         {
-        if(schemaEntry = m_cache.Find(schemaId))
-            {
-            BeAssert(schemaEntry->m_cachedSchema != nullptr);
-            return SUCCESS;
-            }
+        BeAssert(schemaEntry->m_cachedSchema != nullptr);
+        return SUCCESS;
         }
 
     //Following method is not by itself thread safe as it write to cache but
@@ -1616,19 +1618,73 @@ BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEn
 
     for (ECSchemaId referencedSchemaId : referencedSchemaIds)
         {
-        if(readContext != nullptr)
-            {
-            //if we have a read context, so get our referenced schema from there instead of using this reader
-            SchemaKey referencedSchemaKey;
-            ECSchemaPtr locatedReference = readContext->LocateSchema(referencedSchemaKey, SchemaMatchType::LatestWriteCompatible);
-            // TODO Load this SchemaKey, and allow returning an ECSchemaPtr instead of SchemaDbEntry
-            continue;
-            }
         SchemaDbEntry* referenceSchemaKey = nullptr;
         if (SUCCESS != ReadSchemaStubAndReferences(referenceSchemaKey, ctx, referencedSchemaId))
             return ERROR;
 
         ECObjectsStatus s = schemaEntry->m_cachedSchema->AddReferencedSchema(*referenceSchemaKey->m_cachedSchema);
+        if (s != ECObjectsStatus::Success)
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
+* This is the "SchemaReadContext" version of the method. It's kept redundant/separate for more clarity.
+* Other than using the same reader for referenced schemas, this method goes through the front door again, asking
+* the read context to locate the schema. This utilizes the readContext's cache. Schemas loaded this way should not be stored in our internal cache.
+* This ensures we have a clean schema graph instead of polluting it with multiple copies of the same schema.
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaReader::ReadSchemaStubAndReferencesWithReadContext(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId) const
+    {
+    BeMutexHolder ecdbLock(GetECDbMutex());
+    auto readContext = ctx.GetReadContext();
+    BeAssert(readContext != nullptr);
+
+    //Following method is not by itself thread safe as it write to cache but
+    //this is the only call to it which is thread safe.
+    if (SUCCESS != ReadSchemaStub(schemaEntry, ctx, schemaId))
+        return ERROR;
+
+    CachedStatementPtr stmt = GetCachedStatement(SqlPrintfString(
+        "SELECT [s].[Name], [s].[VersionDigit1], [s].[VersionDigit2], [s].[VersionDigit3] FROM [%s]." TABLE_SchemaReference "[ref] JOIN " TABLE_Schema "[s] WHERE [ref].[SchemaId]=? AND [s].[Id]=[ref].[ReferencedSchemaId]",
+         GetTableSpace().GetName().c_str()).GetUtf8CP());
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, schemaId))
+        return ERROR;
+
+    //cache schema ids before loading reference schemas, so that statement can be reused.
+    std::vector<SchemaKey> referencedSchemaKeys;
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        BeAssert(!stmt->IsColumnNull(0));
+        BeAssert(!stmt->IsColumnNull(1));
+        BeAssert(!stmt->IsColumnNull(2));
+        BeAssert(!stmt->IsColumnNull(3));
+        Utf8CP schemaName = stmt->GetValueText(0);
+        int versionDigit1 = stmt->GetValueInt(1);
+        int versionDigit2 = stmt->GetValueInt(2);
+        int versionDigit3 = stmt->GetValueInt(3);
+        referencedSchemaKeys.emplace_back(schemaName, versionDigit1, versionDigit2, versionDigit3);
+        }
+
+    //release stmt so that it can be reused when loading schema reference
+    stmt = nullptr;
+
+    for (SchemaKey& referencedSchemaKey : referencedSchemaKeys)
+        {
+        ECSchemaPtr locatedReference = readContext->LocateSchema(referencedSchemaKey, SchemaMatchType::LatestWriteCompatible);
+        if (locatedReference == nullptr)
+            {
+            LOG.errorv("ECDb: Failed to locate referenced schema '%s', referenced by '%s'", referencedSchemaKey.GetFullSchemaName().c_str(), schemaEntry->m_cachedSchema->GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
+        ECObjectsStatus s = schemaEntry->m_cachedSchema->AddReferencedSchema(*locatedReference);
         if (s != ECObjectsStatus::Success)
             return ERROR;
         }

@@ -66,7 +66,7 @@ struct SchemaReader final
             private:
                 std::vector<ECN::NavigationECProperty*> m_navProps;
                 std::vector<ECN::ECSchema*> m_schemasToLoadCAInstancesFor;
-                ECSchemaReadContextP m_readContext; // if provided, will be used to resolve references
+                ECN::ECSchemaReadContextP m_readContext; // if provided, will be used to resolve references
 
                 //not copyable
                 Context(Context const&) = delete;
@@ -76,8 +76,8 @@ struct SchemaReader final
                 Context() {}
                 void AddNavigationProperty(ECN::NavigationECProperty& navProp) { m_navProps.push_back(&navProp); }
                 void AddSchemaToLoadCAInstanceFor(ECN::ECSchemaR schema) { m_schemasToLoadCAInstancesFor.push_back(&schema); }
-                void SetReadContext(ECSchemaReadContextP readContext) { m_readContext = readContext; }
-                ECSchemaReadContextP GetReadContext() const { return m_readContext; }
+                void SetReadContext(ECN::ECSchemaReadContextP readContext) { m_readContext = readContext; }
+                ECN::ECSchemaReadContextP GetReadContext() const { return m_readContext; }
                 BentleyStatus Postprocess(SchemaReader const&) const;
             };
 
@@ -205,6 +205,7 @@ struct SchemaReader final
 
         BentleyStatus ReadSchema(SchemaDbEntry*&, Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         BentleyStatus ReadSchemaStubAndReferences(SchemaDbEntry*&, Context& ctx, ECN::ECSchemaId) const;
+        BentleyStatus ReadSchemaStubAndReferencesWithReadContext(SchemaDbEntry*&, Context& ctx, ECN::ECSchemaId) const;
         BentleyStatus ReadSchemaStub(SchemaDbEntry*&, Context&, ECN::ECSchemaId) const;
         BentleyStatus ReadSchemaElements(SchemaDbEntry&, Context&, std::set<SchemaDbEntry*>& fullyLoadedSchemas) const;
 
@@ -251,7 +252,7 @@ struct SchemaReader final
          * @param readContext An optional read context to use for schema reading. Defaults to nullptr. If not provided, referenced schemas will be provided from the same reader.
          * @return ECN::ECSchemaCP A constant pointer to the retrieved ECSchema, or nullptr if the schema could not be found.
          */
-        ECN::ECSchemaCP GetSchema(ECN::ECSchemaId, bool loadSchemaEntities, ECSchemaReadContextP readContext = nullptr) const;
+        ECN::ECSchemaCP GetSchema(ECN::ECSchemaId, bool loadSchemaEntities, ECN::ECSchemaReadContextP readContext = nullptr) const;
         ECN::ECSchemaId GetSchemaId(ECN::ECSchemaCR) const;
 
         ECN::ECClassCP GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode) const;
