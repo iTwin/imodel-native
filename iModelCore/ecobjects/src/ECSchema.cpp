@@ -2016,8 +2016,7 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-//TODO: Why does this take an IECSchemaLocaterP instead of a SchemaContext, and then allocates a local SchemaContext instead of using the one passed in?
-ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater, bool skipValidation) const
+ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext, bool skipValidation) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     status = CreateSchema(schemaOut,  GetName().c_str(), GetAlias().c_str(), GetVersionRead(), GetVersionWrite(), GetVersionMinor(), m_ecVersion);
@@ -2032,18 +2031,17 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP s
         schemaOut->SetDisplayLabel(GetInvariantDisplayLabel().c_str());
 
     ECSchemaReferenceListCR referencedSchemas = GetReferencedSchemas();
-    if(schemaLocater == nullptr)
+    if(schemaContext == nullptr)
         {
         for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
             schemaOut->AddReferencedSchema(*iter->second.get());
         }
     else
         {
-        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false, true);
         for (auto& ref : GetReferencedSchemas())
             {
             SchemaKey desiredKey(ref.first);
-            ECSchemaPtr referencedSchema = schemaLocater->LocateSchema(desiredKey, SchemaMatchType::Latest, *schemaContext);
+            ECSchemaPtr referencedSchema = schemaContext->LocateSchema(desiredKey, SchemaMatchType::Latest);
             if(referencedSchema == nullptr)
                 return ECObjectsStatus::SchemaNotFound;
 

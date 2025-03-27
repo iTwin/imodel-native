@@ -379,12 +379,15 @@ bool SchemaManager::Dispatcher::CanLocateSchemaDirectly(ECSchemaPtr schema, ECSc
     auto& locaters = context.GetSchemaLocaters();
     bool found = false;
     for (auto& locater : locaters)
-    {
+        {
         if (locater == thisLocater)
+            {
             found = true;
             break;
+            }
+        
         ++index;
-    }
+        }
 
     //position 0 or 1 is fine, 2 or higher meand other locaters have priority over us
     if (!found || index >= 2)
@@ -455,7 +458,7 @@ ECSchemaPtr SchemaManager::Dispatcher::LocateSchema(ECN::SchemaKeyR key, ECN::Sc
 
             ECSchemaPtr cleanedSchema;
             // TODO: Instead of the cache we'd like to use the context here
-            schema->CopySchema(cleanedSchema, &ctx.GetCache(), false);
+            schema->CopySchema(cleanedSchema, &ctx, false);
             if(!cleanedSchema.IsValid() || ctx.AddSchema(*schema) == ECObjectsStatus::DuplicateSchema)
                 return nullptr; // Same behavior as ECSchena::LocateSchema
             return cleanedSchema;

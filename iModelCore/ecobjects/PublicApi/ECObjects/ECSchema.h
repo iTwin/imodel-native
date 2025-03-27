@@ -2892,7 +2892,7 @@ public:
     //! Iterates through all schemas in the cache and applies the provided callback function to each schema.
     //! Unlike GetSchemas() this method does not have to make a copy of the internal list, so it is more efficient.
     //! @param callback A function or callable object that will be invoked for each schema in the cache.
-    ECOBJECTS_EXPORT void ECSchemaCache::WalkSchemas(const SchemaCallback& callback) const;
+    ECOBJECTS_EXPORT void WalkSchemas(const SchemaCallback& callback) const;
 
     //! Get a requested schema from this cache by case-insensitive name.
     //! @param[in] schemaName    Schema name to match against cached schemas.
@@ -3912,8 +3912,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceFormat, bool copyReferences, Utf8CP newName = nullptr);
 
     //! Copies this schema
+    //! @param schemaOut If successful, will contain a copy of this schema
+    //! @param schemaContext If not nullptr, will be used to locate referenced schemas of the schema.  If nullptr, references will not be copied
     //! @param[out] schemaOut   If successful, will contain a copy of this schema
-    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater = nullptr, bool skipValidation = false) const;
+    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext = nullptr, bool skipValidation = false) const;
 
     //! Get the IECCustomAttributeContainer holding this schema's custom attributes
     IECCustomAttributeContainer& GetCustomAttributeContainer() {return *this;}
