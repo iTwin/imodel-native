@@ -81,7 +81,7 @@ namespace Handlers {
     }
     bool ReadPlacement2d(Placement2d& placement, PropertyReader::Finder finder) {
         auto& originReader = finder("Origin")->GetReader();
-        if(originReader.IsNull()) {
+        if (originReader.IsNull()) {
             placement = Placement2d();
             return true;
         }
@@ -99,7 +99,7 @@ namespace Handlers {
     bool ReadPlacement3d(Placement3d& placement, PropertyReader::Finder finder) {
         auto& originReader = finder("Origin")->GetReader();
 
-        if(originReader.IsNull()) {
+        if (originReader.IsNull()) {
             placement = Placement3d();
             return true;
         }
@@ -610,7 +610,7 @@ namespace Handlers {
                             auto textureIdAsStringForLogging = memberJson["TextureId"].Stringify();
                             auto textureId = memberJson["TextureId"].GetId64<DgnTextureId>();
                             auto textureIdJson = map->Get(memberName)["TextureId"];
-                            (BeJsValue&) textureIdJson = textureId.ToHexStr();
+                            (BeJsValue&)textureIdJson = textureId.ToHexStr();
                             if (!textureId.IsValid()) {
                                 ECInstanceId elementId = ParseInstanceId();
                                 if (elementId.IsValid()) {
@@ -661,7 +661,7 @@ namespace Handlers {
          +---------------+---------------+---------------+---------------+---------------+------*/
         virtual ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder finder) override {
             BeAssert(GetFormat() == JsFormat::JsName);
-            InstanceReader::Position pos (ParseInstanceId(), "BisCore:SubCategory", "Properties");
+            InstanceReader::Position pos(ParseInstanceId(), "BisCore:SubCategory", "Properties");
             GetDb<DgnDb>().GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row, PropertyReader::Finder finder) {
                 BeJsDocument doc(row.GetValue(0).GetText());
                 if (doc.hasParseError()) {
@@ -675,7 +675,46 @@ namespace Handlers {
             return ECSqlStatus::Success;
         }
     };
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
+    struct ViewDefinition : IClassHandler {
+        constexpr static auto ClassName = "BisCore:ViewDefinition";
+        /*---------------------------------------------------------------------------------**/ /**
+         * @bsimethod
+         +---------------+---------------+---------------+---------------+---------------+------*/
+        virtual ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder finder) override {
+            BeAssert(GetFormat() == JsFormat::JsName);
+            auto categoryId = finder("CategorySelector")->GetReader().GetNavigation<ECInstanceId>(nullptr);
+            if (categoryId.IsValid()) {
+                instance["categorySelectorId"] = categoryId;
+            }
 
+            auto displayStyleId = finder("DisplayStyle")->GetReader().GetNavigation<ECInstanceId>(nullptr);
+            if (displayStyleId.IsValid()) {
+                instance["displayStyleId"] = displayStyleId;
+            }
+            return ECSqlStatus::Success;
+        }
+    };
+
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
+    struct SpatialViewDefinition : IClassHandler {
+        constexpr static auto ClassName = "BisCore:SpatialViewDefinition";
+        /*---------------------------------------------------------------------------------**/ /**
+         * @bsimethod
+         +---------------+---------------+---------------+---------------+---------------+------*/
+        virtual ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder finder) override {
+            BeAssert(GetFormat() == JsFormat::JsName);
+            auto modelId = finder("ModelSelector")->GetReader().GetNavigation<ECInstanceId>(nullptr);
+            if (modelId.IsValid()) {
+                instance["modelSelectorId"] = modelId;
+            }
+            return ECSqlStatus::Success;
+        }
+    };
 }
 
 //--------------------------------------------------------------------------------------
@@ -692,28 +731,30 @@ bool RegisterBisCoreHandlers(DgnDbR db) {
                                                            "Model",
                                                        });
     rc &= repo.RegisterClassHandler<Handlers::GeometricElement3d>(Handlers::GeometricElement3d::ClassName,
-                                                                  {"Origin",
-                                                                   "Yaw",
-                                                                   "Pitch",
-                                                                   "Roll",
-                                                                   "BBoxLow",
-                                                                   "BBoxHigh",
-                                                                   "GeometryStream",
-                                                                   "Category",
-                                                                   });
+                                                                  {
+                                                                      "Origin",
+                                                                      "Yaw",
+                                                                      "Pitch",
+                                                                      "Roll",
+                                                                      "BBoxLow",
+                                                                      "BBoxHigh",
+                                                                      "GeometryStream",
+                                                                      "Category",
+                                                                  });
     rc &= repo.RegisterClassHandler<Handlers::GeometricElement2d>(Handlers::GeometricElement2d::ClassName,
-                                                                  {"Origin",
-                                                                   "Rotation",
-                                                                   "BBoxLow",
-                                                                   "BBoxHigh",
-                                                                   "GeometryStream",
-                                                                   "Category",
-                                                                   });
+                                                                  {
+                                                                      "Origin",
+                                                                      "Rotation",
+                                                                      "BBoxLow",
+                                                                      "BBoxHigh",
+                                                                      "GeometryStream",
+                                                                      "Category",
+                                                                  });
     rc &= repo.RegisterClassHandler<Handlers::RenderMaterial>(Handlers::RenderMaterial::ClassName);
     rc &= repo.RegisterClassHandler<Handlers::Model>(Handlers::Model::ClassName);
-rc &= repo.RegisterClassHandler<Handlers::SubCategory>(Handlers::SubCategory::ClassName, {"Properties"});
+    rc &= repo.RegisterClassHandler<Handlers::SubCategory>(Handlers::SubCategory::ClassName, {"Properties"});
     rc &= repo.RegisterClassHandler<Handlers::Category>(Handlers::Category::ClassName);
+    rc &= repo.RegisterClassHandler<Handlers::ViewDefinition>(Handlers::ViewDefinition::ClassName, {"CategorySelector", "DisplayStyle"});
+    rc &= repo.RegisterClassHandler<Handlers::SpatialViewDefinition>(Handlers::SpatialViewDefinition::ClassName, {"ModelSelector"});
     return rc;
 }
-
-
