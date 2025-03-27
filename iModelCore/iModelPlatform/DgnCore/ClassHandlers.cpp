@@ -627,6 +627,55 @@ namespace Handlers {
             return ECSqlStatus::Success;
         }
     };
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
+    struct SubCategory : IClassHandler {
+        constexpr static auto ClassName = "BisCore:SubCategory";
+        /*---------------------------------------------------------------------------------**/ /**
+         * @bsimethod
+         +---------------+---------------+---------------+---------------+---------------+------*/
+        virtual ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder finder) override {
+            BeAssert(GetFormat() == JsFormat::JsName);
+            BeJsDocument doc;
+            auto& propsReader = finder("Properties")->GetReader();
+            Utf8String json = propsReader.GetText();
+            doc.Parse(json);
+            if (doc.hasParseError()) {
+                SetError("Failed to parse appearance");
+                return ECSqlStatus::Error;
+            }
+            DgnSubCategory::Appearance appearance;
+            appearance.FromJson(BeJsValue(doc));
+            appearance.ToJson(instance["appearance"]);
+            return ECSqlStatus::Success;
+        }
+    };
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
+    struct Category : IClassHandler {
+        constexpr static auto ClassName = "BisCore:Category";
+        /*---------------------------------------------------------------------------------**/ /**
+         * @bsimethod
+         +---------------+---------------+---------------+---------------+---------------+------*/
+        virtual ECSqlStatus OnReadComplete(BeJsValue& instance, PropertyReader::Finder finder) override {
+            BeAssert(GetFormat() == JsFormat::JsName);
+            InstanceReader::Position pos (ParseInstanceId(), "BisCore:SubCategory", "Properties");
+            GetDb<DgnDb>().GetInstanceReader().Seek(pos, [&](const InstanceReader::IRowContext& row, PropertyReader::Finder finder) {
+                BeJsDocument doc(row.GetValue(0).GetText());
+                if (doc.hasParseError()) {
+                    SetError("Failed to parse appearance");
+                    return;
+                }
+                DgnSubCategory::Appearance appearance;
+                appearance.FromJson(BeJsValue(doc));
+                appearance.ToJson(instance["appearance"]);
+            });
+            return ECSqlStatus::Success;
+        }
+    };
+
 }
 
 //--------------------------------------------------------------------------------------
@@ -641,7 +690,6 @@ bool RegisterBisCoreHandlers(DgnDbR db) {
                                                            "CodeScope",
                                                            "CodeSpec",
                                                            "Model",
-                                                           "Category",
                                                        });
     rc &= repo.RegisterClassHandler<Handlers::GeometricElement3d>(Handlers::GeometricElement3d::ClassName,
                                                                   {"Origin",
@@ -650,14 +698,22 @@ bool RegisterBisCoreHandlers(DgnDbR db) {
                                                                    "Roll",
                                                                    "BBoxLow",
                                                                    "BBoxHigh",
-                                                                   "GeometryStream"});
+                                                                   "GeometryStream"
+                                                                   "Category",
+                                                                   });
     rc &= repo.RegisterClassHandler<Handlers::GeometricElement2d>(Handlers::GeometricElement2d::ClassName,
                                                                   {"Origin",
                                                                    "Rotation",
                                                                    "BBoxLow",
                                                                    "BBoxHigh",
-                                                                   "GeometryStream"});
+                                                                   "GeometryStream"
+                                                                   "Category",
+                                                                   });
     rc &= repo.RegisterClassHandler<Handlers::RenderMaterial>(Handlers::RenderMaterial::ClassName);
     rc &= repo.RegisterClassHandler<Handlers::Model>(Handlers::Model::ClassName);
+rc &= repo.RegisterClassHandler<Handlers::SubCategory>(Handlers::SubCategory::ClassName, {"Properties"});
+    rc &= repo.RegisterClassHandler<Handlers::Category>(Handlers::Category::ClassName);
     return rc;
 }
+
+

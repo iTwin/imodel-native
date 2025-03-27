@@ -23,6 +23,7 @@ void InstanceRepository::Reset(bool clearHandlers) {
             handler->Reset();
         }
     }
+    m_cache.Empty();
 }
 
 //---------------------------------------------------------------------------------------
@@ -125,7 +126,7 @@ std::vector<IClassHandler*>& InstanceRepository::TryGetHandlers(ECN::ECClassId c
     const {
     auto& handlers = TryGetHandlers(classId);
     for (auto handler : handlers) {
-        handler->SetContext(m_ecdb, instance, userOptions, fmt, operation);
+        handler->SetContext(m_ecdb, instance, userOptions, fmt, operation, m_cache);
     }
     return handlers;
 }
@@ -220,7 +221,8 @@ DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance
     auto nullValue = BeJsDocument::Null();
     auto& handlers = TryGetHandlers(instKey.GetClassId(), fmt, Operation::Read, nullValue, userOptions);
     InstanceReader::Position pos(instKey.GetInstanceId(), instKey.GetClassId());
-
+    InstanceReader::Options options;
+    options.SetForceSeek(true);
     auto rc = BE_SQLITE_ROW;
     if (!m_reader.Seek(pos, [&](const InstanceReader::IRowContext& row, PropertyReader::Finder finder) {
             ECSqlRowAdaptor adaptor(m_ecdb);
@@ -260,7 +262,7 @@ DbResult InstanceRepository::Read(ECInstanceKeyCR instKey, BeJsValue outInstance
                     break;
                 }
             }
-        })) {
+        }, options)) {
         rc = BE_SQLITE_DONE;
     }
     return rc;
@@ -275,6 +277,13 @@ DbResult InstanceRepository::Read(BeJsConst in, BeJsValue outInstance, BeJsConst
         return BE_SQLITE_ERROR;
     }
     return Read(instKey, outInstance, userOptions, fmt);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+CachedECSqlStatementPtr InstanceRepository::IClassHandler::GetPreparedStatement(Utf8CP ecsql) {
+    return m_cache->GetPreparedStatement(*m_db, ecsql);
 }
 
 //---------------------------------------------------------------------------------------
@@ -326,7 +335,7 @@ void InstanceRepository::IClassHandler::SetError(const char* fmt, ...) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void InstanceRepository::IClassHandler::SetContext(ECDbCR db, BeJsConst& instance, BeJsConst& userOptions, JsFormat fmt, Operation operation) {
+void InstanceRepository::IClassHandler::SetContext(ECDbCR db, BeJsConst& instance, BeJsConst& userOptions, JsFormat fmt, Operation operation, ECSqlStatementCache& cache) {
     m_db = &db;
     m_error.clear();
     m_instance = &instance;
@@ -336,6 +345,7 @@ void InstanceRepository::IClassHandler::SetContext(ECDbCR db, BeJsConst& instanc
     if (!m_class) {
         m_class = db.Schemas().GetClass(m_classId);
     }
+    m_cache = &cache;
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
