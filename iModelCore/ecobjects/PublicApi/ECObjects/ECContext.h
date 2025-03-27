@@ -139,6 +139,8 @@ public:
 
     //! Adds a schema locater as first to the current context
     //! @param[in] locater  Locater to add to the current context
+    void AddFirstSchemaLocater(IECSchemaLocaterR locater) { m_locaters.insert(m_locaters.begin() + 1, &locater); ++m_userAddedLocatersCount; }
+    
     //! Returns a const reference to the locaters in the current context
     const bvector<IECSchemaLocaterP>& GetSchemaLocaters() const { return m_locaters; }
 
