@@ -354,6 +354,80 @@ void SchemaManager::Dispatcher::InitMain()
     BeAssert(m_managers.size() == m_orderedManagers.size());
     }
 
+/*
+Explanation:
+ECDb's internal usage of ECSchemas ises a full-internal stack of all referenced schemas that
+come from ECDb as well. That way it can optimize using integer IDs and several caches, it also ensures
+data inside an ECDb is always self-contained.
+
+However, when used with an ECSchemaReadContext, the rules are different.
+There can be multiplie locaters, some of which may take precedence over ECDb.
+Also, some schemas may already be loaded in the context, so when resolving references,
+we should use those instead of our own.
+
+This method wraps a number of checks to determine if we can return an internal schema as is
+using the provided context, or if we have to reload it using schemas provided by the context.
+*/
+bool SchemaManager::Dispatcher::CanLocateSchemaDirectly(ECSchemaPtr schema, ECSchemaReadContextR context) const
+    {
+    ECSchemaReferenceListCR referencedSchemas = schema->GetReferencedSchemas();
+    if (referencedSchemas.empty())
+        return true; // no references, we can use the schema as is
+
+    auto thisLocater = &m_ecdb.GetSchemaLocater();
+    size_t index = 0;
+    auto& locaters = context.GetSchemaLocaters();
+    bool found = false;
+    for (auto& locater : locaters)
+    {
+        if (locater == thisLocater)
+            found = true;
+            break;
+        ++index;
+    }
+
+    //position 0 or 1 is fine, 2 or higher meand other locaters have priority over us
+    if (!found || index >= 2)
+        return false;
+
+    // no schemas in the cache, so we can safely use the schema as is
+    if (context.GetCache().GetCount() == 0)
+        return true; 
+
+    // Next, we check if the cache has any conflicting schema with the graph that we are about to return
+    // For that, first we build a map of all returned schemas keyed by name
+    std::map<Utf8String, ECSchemaP> allReturnedSchemas { {schema->GetName(), schema.get()} };
+    std::function<void(ECSchemaP)> collectReferences = [&](ECSchemaP currentSchema) {
+        for (auto& refSchema : currentSchema->GetReferencedSchemas()) {
+            auto result = allReturnedSchemas.emplace(refSchema.second->GetName(), refSchema.second.get());
+            if (!result.second && refSchema.second.get() != result.first->second) {
+                LOG.errorv("CanLocateSchemaDirectly: Bad schema graph detected, inserting a different memory-reference of schema %s", refSchema.second->GetName().c_str());
+            } else {
+                collectReferences(refSchema.second.get());
+            }
+        }
+    };
+    collectReferences(schema.get());
+
+    // Now we check if any of the schemas in the cache are already in the map we just built
+    bool foundConflictingSchema = false;
+    SchemaCallback callback = [&](ECSchemaCP walkedSchema) {
+        auto it = allReturnedSchemas.find(walkedSchema->GetName());
+        if (it != allReturnedSchemas.end()) {
+            if (it->second != walkedSchema) {
+                LOG.infov("CanLocateSchemaDirectly: Schema cache already has a different reference of %s. We need to reload schema %s.", walkedSchema->GetName().c_str(), schema->GetName().c_str());
+                foundConflictingSchema = true;
+            }
+        }
+    };
+
+    context.GetCache().WalkSchemas(callback);
+    if (foundConflictingSchema) {
+        return false;
+    }
+
+    return true;
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
@@ -370,7 +444,21 @@ ECSchemaPtr SchemaManager::Dispatcher::LocateSchema(ECN::SchemaKeyR key, ECN::Sc
         if (schema != nullptr)
             {
             LOG.debugv("SchemaManager::Dispatcher::LocateSchema - Found schema %s (%s)", schema->GetName().c_str(), schema->GetId().IsValid() ? schema->GetId().ToString().c_str() : "0");
-            return schema;
+            if(CanLocateSchemaDirectly(schema, ctx))
+                {
+                // schema is already in the context, we can use it as is
+                if(ctx.AddSchema(*schema) == ECObjectsStatus::DuplicateSchema)
+                    return nullptr; // Same behavior as ECSchena::LocateSchema
+
+                return schema;
+                }
+
+            //TODO copy schema
+            ECSchemaPtr cleanedSchema;
+            schema->CopySchema(cleanedSchema, &ctx.GetCache(), false);
+            if(!cleanedSchema.IsValid() || ctx.AddSchema(*schema) == ECObjectsStatus::DuplicateSchema)
+                return nullptr; // Same behavior as ECSchena::LocateSchema
+            return cleanedSchema;
             }
         }
 
@@ -868,9 +956,6 @@ ECSchemaPtr TableSpaceSchemaManager::LocateSchema(ECN::SchemaKeyR key, ECN::Sche
         return nullptr;
 
     ECSchemaP schemaP = const_cast<ECSchemaP> (schema);
-    if(ctx.AddSchema(*schemaP) == ECObjectsStatus::DuplicateSchema)
-        return nullptr; // Same behavior as ECSchena::LocateSchema
-
     return schemaP;
     }
 

@@ -4050,6 +4050,17 @@ ECSchemaP ECSchemaCache::FindSchema(const SchemaKeyMatchCallback& predicate) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchemaCache::WalkSchemas(const SchemaCallback& callback) const
+    {
+    for (auto const& kvPair : m_schemas)
+        {
+        callback(kvPair.second.get());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaP ECSchemaCache::FindSchemaByNameI(Utf8CP schemaName) const
     {
     return this->FindSchema([&schemaName](SchemaKeyCR key) 
