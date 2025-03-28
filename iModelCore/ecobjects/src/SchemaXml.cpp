@@ -158,9 +158,12 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
             auto const& references = schemaOut->GetReferencedSchemas();
             if (references.end() != references.find(refSchemaKey))
                 {
+                LOG.debugv("Not adding referenced ECSchema %s, referenced by %s because there already is a copy of it referenced. It is probably referenced multiple times with different alias.",
+                    referencedSchema->GetFullSchemaName().c_str(), schemaOut->GetFullSchemaName().c_str());
                 continue;
                 }
 
+            LOG.debugv("Found referenced ECSchema %s, referenced by %s", referencedSchema->GetFullSchemaName().c_str(), schemaOut->GetFullSchemaName().c_str());
             ECObjectsStatus addRefStatus = schemaOut->AddReferencedSchema(*referencedSchema, alias, m_schemaContext);
             if (ECObjectsStatus::Success != addRefStatus)
                 return ECObjectsStatus::SchemaHasReferenceCycle == addRefStatus ? SchemaReadStatus::HasReferenceCycle : static_cast<SchemaReadStatus> (addRefStatus);
