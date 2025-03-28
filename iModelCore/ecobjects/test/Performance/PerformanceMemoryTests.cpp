@@ -62,7 +62,7 @@ TEST_F(ECSchemaMemoryTests, SizeOfObjects)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECSchemaMemoryTests, BisSchemasUnits) { TestSchema(GetStandardsPath(L"Units.01.00.07.ecschema.xml")); }
+TEST_F(ECSchemaMemoryTests, BisSchemasUnits) { TestSchema(GetStandardsPath(L"Units.01.00.08.ecschema.xml")); }
 TEST_F(ECSchemaMemoryTests, BisSchemasFormats) { TestSchema(GetStandardsPath(L"Formats.01.00.00.ecschema.xml")); }
 
 TEST_F(ECSchemaMemoryTests, BisSchemasBisCore) { TestSchema(GetAssetsGSchemaPath(L"Dgn", L"BisCore.ecschema.xml")); }
@@ -86,9 +86,9 @@ TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest1) { MeasureSchemaMemoryUs
 TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest2) { MeasureSchemaMemoryUsage(PerformanceTestFixture::GenerateSchema2000Classes10PropsPerClass, TEST_FIXTURE_NAME); }
 TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest3) { MeasureSchemaMemoryUsage(PerformanceTestFixture::GenerateSchema100Classes200PropsPerClass, TEST_FIXTURE_NAME); }
 TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest4) { MeasureSchemaMemoryUsage(PerformanceTestFixture::GenerateSchema10Classes2000PropsPerClass, TEST_FIXTURE_NAME); }
-TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest5) { MeasureSchemaMemoryUsage(PerformanceTestFixture::GenerateSchema10Root15Deep3Mixin5PropsAndOverrides, TEST_FIXTURE_NAME); }
-TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest6) { MeasureSchemaMemoryUsage(PerformanceTestFixture::GenerateSchema300Root3Deep200Props, TEST_FIXTURE_NAME); }
-TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest7) { MeasureSchemaMemoryUsage(PerformanceTestFixture::GenerateSchema50Root5Deep3Mixin5Props, TEST_FIXTURE_NAME); }
+TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest5) { MeasureSchemaMemoryUsage(PerformanceTestFixture::GenerateSchema10Root15Deep3Mixin5PropsAndOverridesPublic, TEST_FIXTURE_NAME); }
+TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest6) { MeasureSchemaMemoryUsage(PerformanceTestFixture::GenerateSchema300Root3Deep200PropsPublic, TEST_FIXTURE_NAME); }
+TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest7) { MeasureSchemaMemoryUsage(PerformanceTestFixture::GenerateSchema50Root5Deep3Mixin5PropsPublic, TEST_FIXTURE_NAME); }
 
 
 END_BENTLEY_ECN_TEST_NAMESPACE
