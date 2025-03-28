@@ -607,8 +607,8 @@ namespace Handlers {
                         }
                         return false;
                     });
-                    instance["jsonProperties"] = doc.Stringify();
                 }
+                instance["jsonProperties"] = doc.Stringify();
             }
             return ECSqlStatus::Success;
         }
