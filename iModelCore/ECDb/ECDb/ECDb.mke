@@ -33,7 +33,9 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ConcurrentQueryManager.h \
                 $(publicApiDir)InstanceReader.h \
                 $(publicApiDir)ECDbVirtualTab.h \
-                $(publicApiDir)ECDbExpressionSymbolContext.h
+                $(publicApiDir)InstanceWriter.h \
+                $(publicApiDir)ECDbExpressionSymbolContext.h \
+                $(publicApiDir)InstanceRepository.h
 
 ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
@@ -136,6 +138,7 @@ ECDbAllHeaders = \
                 $(baseDir)DbSchemaPersistenceManager.h \
                 $(baseDir)LightweightCache.h \
                 $(baseDir)SqlNames.h \
+                $(baseDir)InstanceWriterImpl.h \
                 $(baseDir)ClassMapColumnFactory.h \
                 $(baseDir)ClassViews.h
 
@@ -400,6 +403,10 @@ $(o)IntegrityChecker$(oext):                                  $(baseDir)Integrit
 $(o)BuiltInVTabs$(oext):                                      $(baseDir)BuiltInVTabs.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassViews$(oext):                                        $(baseDir)ClassViews.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)InstanceWriterImpl$(oext):                                $(baseDir)InstanceWriterImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)InstanceRepository$(oext):                                $(baseDir)InstanceRepository.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

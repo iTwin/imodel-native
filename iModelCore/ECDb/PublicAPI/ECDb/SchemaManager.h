@@ -439,7 +439,8 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 #endif
 
         ECDB_EXPORT SchemaSync& GetSchemaSync() const;
-
+        ECDB_EXPORT bool IsSubClassOf(Utf8StringCR subClassECSqlName, Utf8StringCR parentClassECSqlName, Utf8CP tableSpace = nullptr) const;
+        ECDB_EXPORT bool IsSubClassOf(ECN::ECClassId subClassId, ECN::ECClassId parentClassId, Utf8CP tableSpace = nullptr) const;
         //! Drop a leaf schema from ecdb as long as it has no instances
         //! @param[in] name  name of schema to be dropped.
         //! @param [in] token Token required to perform ECSchema imports if the
