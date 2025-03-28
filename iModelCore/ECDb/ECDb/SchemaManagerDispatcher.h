@@ -325,6 +325,7 @@ struct SchemaManager::Dispatcher final
 
         Iterable GetIterable(Utf8CP tableSpaceName) const;
         TableSpaceSchemaManager const* GetManager(Utf8CP tableSpaceName) const;
+         bool CanLocateSchemaDirectly(ECN::ECSchemaPtr, ECN::ECSchemaReadContextR) const;
 
     public:
         Dispatcher(ECDbCR ecdb, BeMutex& mutex) : m_ecdb(ecdb), m_mutex(mutex), m_unsupportedClassesLoaded(false), m_unsupportedClassIdCache() { InitMain(); }

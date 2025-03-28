@@ -2698,7 +2698,7 @@ struct  InstanceXmlReader
                 return InstanceReadStatus::ECSchemaPruned;
                 }
 
-            if (NULL == schema)
+            if (schema == nullptr)
                 {
                 LOG.errorv("Failed to locate ECSchema %s", m_fullSchemaName.c_str());
                 return InstanceReadStatus::ECSchemaNotFound;
@@ -2726,7 +2726,7 @@ struct  InstanceXmlReader
                         }
                     }
                 }
-            if (NULL == foundClass)
+            if (nullptr == foundClass)
                 {
                 LOG.errorv("Failed to find ECClass '%s' in '%s'", m_className.c_str(), schema->GetFullSchemaName().c_str());
                 return InstanceReadStatus::ECClassNotFound;

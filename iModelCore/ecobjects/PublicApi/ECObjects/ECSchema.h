@@ -2468,6 +2468,7 @@ struct SchemaKeyLessThan
 
 typedef bmap<SchemaKey , ECSchemaPtr> SchemaMap;
 typedef std::function<bool(SchemaKeyCR)> SchemaKeyMatchCallback;
+typedef std::function<void(ECSchemaCP)> SchemaCallback;
 
 //=======================================================================================
 // @bsistruct
@@ -2887,6 +2888,12 @@ public:
     //! @returns The first matching ECSchema if it is contained in the cache; otherwise nullptr.
     ECOBJECTS_EXPORT ECSchemaP FindSchema(const SchemaKeyMatchCallback& predicate) const;
 
+    
+    //! Iterates through all schemas in the cache and applies the provided callback function to each schema.
+    //! Unlike GetSchemas() this method does not have to make a copy of the internal list, so it is more efficient.
+    //! @param callback A function or callable object that will be invoked for each schema in the cache.
+    ECOBJECTS_EXPORT void WalkSchemas(const SchemaCallback& callback) const;
+
     //! Get a requested schema from this cache by case-insensitive name.
     //! @param[in] schemaName    Schema name to match against cached schemas.
     //! @returns The first matching ECSchema if it is contained in the cache; otherwise nullptr.
@@ -2897,6 +2904,7 @@ public:
     int GetCount() const {return (int)m_schemas.size();} //!< Returns the number of schemas currently in the cache
     void Clear() {m_schemas.clear();}; //!< Removes all schemas from the cache
     IECSchemaLocater& GetSchemaLocater() {return *this;} //!< Returns the SchemaCache as an IECSchemaLocater
+    void CheckCleanSchemaGraph(ECSchemaP schema) const; //!< Checks the schema graph for extra schemas of the same name and logs them
     ECOBJECTS_EXPORT bvector<ECSchemaCP> GetSchemas() const;
     ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaP>& schemas) const;
     ECOBJECTS_EXPORT void GetSupplementalSchemasFor(Utf8CP schemaName, bvector<ECSchemaP>& supplementalSchemas) const;
@@ -3904,8 +3912,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceFormat, bool copyReferences, Utf8CP newName = nullptr);
 
     //! Copies this schema
+    //! @param schemaOut If successful, will contain a copy of this schema
+    //! @param schemaContext If not nullptr, will be used to locate referenced schemas of the schema.  If nullptr, references will not be copied
     //! @param[out] schemaOut   If successful, will contain a copy of this schema
-    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater = nullptr, bool skipValidation = false) const;
+    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext = nullptr, bool skipValidation = false) const;
 
     //! Get the IECCustomAttributeContainer holding this schema's custom attributes
     IECCustomAttributeContainer& GetCustomAttributeContainer() {return *this;}

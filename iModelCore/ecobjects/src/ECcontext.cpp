@@ -59,7 +59,7 @@ bool ECSchemaReadContext::GetStandardPaths(bvector<WString>& searchPaths)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext, bool includeFilesWithNoVerExt)
-    : m_remapper(nullptr), m_standaloneEnablerLocater(enablerLocater), m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch), m_includeFilesWithNoVerExt(includeFilesWithNoVerExt)
+    : m_remapper(nullptr), m_standaloneEnablerLocater(enablerLocater), m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch), m_includeFilesWithNoVerExt(includeFilesWithNoVerExt), m_issueReporter()
     {
     m_knownSchemas = ECSchemaCache::Create();
     m_locaters.push_back(m_knownSchemas.get());
