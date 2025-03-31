@@ -823,7 +823,7 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
         return BE_SQLITE_NOTFOUND;
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-    JsInterop::AddFallbackSchemaLocaters(ecdb, schemaContext);
+    JsInterop::AddFallbackSchemaLocaters(ecdb.GetSchemaLocater(), schemaContext);
 
     ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile(schema, pathname.GetName(), *schemaContext);
@@ -842,10 +842,10 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void JsInterop::AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schemaContext)
+void JsInterop::AddFallbackSchemaLocaters(IECSchemaLocaterCR finalLocater, ECSchemaReadContextPtr schemaContext)
     {
     // Add the db then the standard schema paths as fallback locations to load referenced schemas.
-    schemaContext->SetFinalSchemaLocater(db.GetSchemaLocater());
+    schemaContext->SetFinalSchemaLocater(finalLocater);
     AddFallbackSchemaLocaters(schemaContext);
     }
 
@@ -882,7 +882,8 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     if (schemaContext.IsNull())
         schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
         //TODO: CopyingSchemaLocater
-    JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
+    SanitizingSchemaLocater finalLocater(dgndb.GetSchemaLocater());
+    JsInterop::AddFallbackSchemaLocaters(finalLocater, schemaContext);
     bvector<ECSchemaCP> schemas;
 
     for (Utf8String schemaSource : schemaSources)
