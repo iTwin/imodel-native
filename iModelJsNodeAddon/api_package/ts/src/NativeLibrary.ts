@@ -604,7 +604,8 @@ export declare namespace IModelJsNative {
     public getGeometryContainment(props: object): Promise<GeometryContainmentResponseProps>;
     public getIModelCoordinatesFromGeoCoordinates(points: IModelCoordinatesRequestProps): IModelCoordinatesResponseProps;
     public getIModelId(): GuidString;
-    public getIModelProps(): IModelProps;
+    // when lets getIModelProps know that the extents may have been updated as the result of a pullChanges and should be read directly from the iModel as opposed to the cached extents.
+    public getIModelProps(when?: "pullMerge"): IModelProps;
     public getInstance(args: InstanceArgs): { [key: string]: any };
     public getITwinId(): GuidString;
     public getLastError(): string;
