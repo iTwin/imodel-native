@@ -141,9 +141,6 @@ public:
     //! @param[in] locater  Locater to add to the current context
     void AddFirstSchemaLocater(IECSchemaLocaterR locater) { m_locaters.insert(m_locaters.begin() + 1, &locater); ++m_userAddedLocatersCount; }
     
-    //! Returns a const reference to the locaters in the current context
-    const bvector<IECSchemaLocaterP>& GetSchemaLocaters() const { return m_locaters; }
-
     //! Removes a schema locater from the current context
     //! @param[in] locater  Locater to remove from the current context
     ECOBJECTS_EXPORT void RemoveSchemaLocater(IECSchemaLocaterR locater);

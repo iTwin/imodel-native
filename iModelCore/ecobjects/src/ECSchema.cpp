@@ -3268,6 +3268,26 @@ ECSchemaPtr StringSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType m
     return schemaOut;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr SanitizingSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
+    {
+    ECSchemaReadContextPtr internalContext = ECSchemaReadContext::CreateContext(true, true);
+    internalContext->AddSchemaLocater(GetInnerLocater());
+    //We may want to expose the schemas available in schemaContext to the internalContext. For ECDb that's not necessary, so we don't do it for now.
+    auto innerSchema = internalContext->LocateSchema(key, matchType);
+    if(!innerSchema.IsValid())
+        return nullptr;
+
+    ECSchemaPtr sanitizedSchema;
+    auto status = innerSchema->CopySchema(sanitizedSchema, &schemaContext, false);
+    if(status != ECObjectsStatus::Success || !sanitizedSchema.IsValid() || schemaContext.AddSchema(*sanitizedSchema) == ECObjectsStatus::DuplicateSchema)
+        return nullptr;
+
+    return sanitizedSchema;
+    }
+
 struct ChecksumHelper
 {
     static Utf8String ComputeCheckSumForString(Utf8CP string, size_t len)

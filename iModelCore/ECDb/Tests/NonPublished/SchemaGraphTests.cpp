@@ -144,7 +144,8 @@ TEST_F(SchemaGraphTestFixture, MissingImportSchemaInTheMiddle)
         </ECEntityClass>
     </ECSchema>)schema");
     context->AddSchemaLocater(locater);
-    context->SetFinalSchemaLocater(m_ecdb.GetSchemaLocater());
+    SanitizingSchemaLocater sanitizingLocater(m_ecdb.GetSchemaLocater());
+    context->SetFinalSchemaLocater(sanitizingLocater);
 
     // Load schemas through the context
     SchemaKey bisCoreRequestedKey("BisCore", 1, 0, 0);
@@ -305,7 +306,8 @@ TEST_F(SchemaGraphTestFixture, CircularEmptySchemaReferenceInDb)
 
     // Now we have a circular reference in the db, try and load the schemas
     ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
-    context2->SetFinalSchemaLocater(m_ecdb.GetSchemaLocater());
+    SanitizingSchemaLocater sanitizingLocater(m_ecdb.GetSchemaLocater());
+    context2->SetFinalSchemaLocater(sanitizingLocater);
     ECSchemaPtr foo2 = context2->LocateSchema(fooKey, SchemaMatchType::LatestReadCompatible);
     ASSERT_FALSE(foo2.IsValid());
     ECSchemaPtr bar2 = context2->LocateSchema(barKey, SchemaMatchType::LatestReadCompatible);
@@ -497,7 +499,8 @@ TEST_F(SchemaGraphTestFixture, ImportSchemasFromFiles)
     };
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-    schemaContext->SetFinalSchemaLocater(m_ecdb.GetSchemaLocater());
+    SanitizingSchemaLocater sanitizingLocater(m_ecdb.GetSchemaLocater());
+    schemaContext->SetFinalSchemaLocater(sanitizingLocater);
     // In the node addon, we also use the platform assets directory to find the schema files.
     // iModelJsNodeAddon/JsInterop.cpp AddFallbackSchemaLocaters()
 

@@ -881,7 +881,7 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     ECSchemaReadContextPtr schemaContext = opts.m_customSchemaContext;
     if (schemaContext.IsNull())
         schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-
+        //TODO: CopyingSchemaLocater
     JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
     bvector<ECSchemaCP> schemas;
 

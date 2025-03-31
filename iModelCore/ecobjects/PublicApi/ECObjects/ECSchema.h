@@ -2980,6 +2980,26 @@ enum class ECSchemaElementType
 };
 
 //=======================================================================================
+//! Wraps another schema locater and returns copies of its located schemas.
+//! Intended purpose is to clean a schema graph. For example ecdb always loads
+//! referenced schemas from its internal cache, when we may want to use the read context
+//! to resolve those.
+//! Schemas returned by this locater should always be clean.
+//! The lifetime of the wrapped locater needs to be managed by the caller.
+//! @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SanitizingSchemaLocater : IECSchemaLocater, NonCopyableClass
+{
+private:
+    IECSchemaLocater& m_innerLocater;
+protected:
+    ECOBJECTS_EXPORT ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
+public:
+    IECSchemaLocater& GetInnerLocater() const {return m_innerLocater;} //!< Returns the inner locater
+    SanitizingSchemaLocater(IECSchemaLocater& innerLocater) : m_innerLocater(innerLocater) {}
+};
+
+//=======================================================================================
 //! @bsiclass
 //=======================================================================================
 struct ECSchemaElementsOrder : NonCopyableClass
