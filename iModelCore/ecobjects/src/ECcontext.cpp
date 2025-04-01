@@ -317,7 +317,7 @@ public:
 
     virtual ECObjectsStatus _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const
         {
-        if (key.Matches(m_key, matchType))
+        if (m_key.Matches(key, matchType))
             {
             schema = &m_schema;
             return ECObjectsStatus::Success;
