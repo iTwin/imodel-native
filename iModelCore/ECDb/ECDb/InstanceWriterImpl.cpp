@@ -401,6 +401,7 @@ ECSqlStatus Impl::BindPrimitive(BindContext& ctx, PrimitiveType type, IECSqlBind
         }
         return binder.BindInt64(val.asInt64());
     } else if (type == ECN::PRIMITIVETYPE_Binary) {
+
         if (ExtendedTypeHelper::GetExtendedType(extendType) == ExtendedTypeHelper::ExtendedType::BeGuid && val.isString() && !val.isBinary()) {
             BeGuid guid;
             if (guid.FromString(val.asCString()) != SUCCESS) {
@@ -409,10 +410,24 @@ ECSqlStatus Impl::BindPrimitive(BindContext& ctx, PrimitiveType type, IECSqlBind
             }
             return binder.BindGuid(guid, IECSqlBinder::MakeCopy::Yes);
         }
+
+        if (ExtendedTypeHelper::GetExtendedType(extendType) == ExtendedTypeHelper::ExtendedType::GeometryStream && val.isString() && !val.isBinary()) {
+            return ctx.GetECDb().GetImpl().WithSnappyWriter<ECSqlStatus>([&](SnappyToBlob& writer) {
+                ByteStream bs;
+                val.GetBinary(bs);
+                if (SUCCESS != GeomBlobHeader::Compress(bs, writer, bs)) {
+                    ctx.SetError("Failed to compress geomstream property (%s)", propertyName);
+                    return ECSqlStatus(BE_SQLITE_ERROR);
+                }
+                return binder.BindBlob(bs.GetData(), bs.GetSize(), IECSqlBinder::MakeCopy::Yes);
+            });
+        }
+
         if (!val.isBinary()) {
             ctx.SetError("Expected binary/base64 for property %s, got %s", propertyName, val.Stringify().c_str());
             return ECSqlStatus(BE_SQLITE_ERROR);
         }
+
         ByteStream bs;
         val.GetBinary(bs);
         return binder.BindBlob(bs.GetData(), bs.GetSize(), IECSqlBinder::MakeCopy::Yes);

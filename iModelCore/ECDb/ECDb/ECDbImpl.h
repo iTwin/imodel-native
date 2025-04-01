@@ -172,6 +172,8 @@ private:
     mutable EC::ECSqlConfig m_ecSqlConfig;
     mutable bool m_disableDDLTracking;
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
+    SnappyFromMemory m_snappyReader;
+    SnappyToBlob m_snappyWriter;
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl(ECDbR ecdb);
 
@@ -236,6 +238,18 @@ public:
     IdFactory& GetIdFactory() const;
     DbResult ExecuteDDL(Utf8CP) const;
     PragmaManager& GetPragmaManager() const;
+
+    template<typename T>
+    T WithSnappyReader(std::function<T(SnappyFromMemory&)> func) const {
+        BeMutexHolder holder(m_mutex);
+        return func(m_snappyReader);
+    }
+    template<typename T>
+    T WithSnappyWriter(std::function<T(SnappyToBlob&)> func) const {
+        BeMutexHolder holder(m_mutex);
+        m_snappyWriter.Init();
+        return func(m_snappyWriter);
+    }
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.
     //! E.g. Any existing ECSqlStatement would be invalid after ClearECDbCache and would return
