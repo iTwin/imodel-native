@@ -322,6 +322,17 @@ public:
             schema = &m_schema;
             return ECObjectsStatus::Success;
             }
+
+        auto& references = m_schema.GetReferencedSchemas();
+        auto it = references.Find(key, matchType);
+        if (it != references.end())
+            {
+            schema = it->second.get();
+            return ECObjectsStatus::Success;
+            }
+
+        LOG.errorv("ECSchemaBackedInstanceReadContext - Custom attribute schema %s not found in referenced schemas of %s.", key.GetFullSchemaName().c_str(), m_schema.GetFullSchemaName().c_str());
+
         return ECObjectsStatus::SchemaNotFound;
         }
 };
