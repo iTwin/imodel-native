@@ -276,23 +276,34 @@ BentleyStatus ECSqlRowAdaptor::RenderGeometryProperty(BeJsValue out, IECSqlValue
     return SUCCESS;
 }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus ECSqlRowAdaptor::RenderBinaryProperty(BeJsValue out, IECSqlValue const& in) const {
-    bool isGuid = false;
-    if (in.GetColumnInfo().GetProperty() != nullptr) {
-        const auto prop = in.GetColumnInfo().GetProperty()->GetAsPrimitiveProperty();
-        isGuid = !prop->GetExtendedTypeName().empty() && prop->GetExtendedTypeName().EqualsIAscii("BeGuid");
-    }
+    const auto extendedType =
+        in.GetColumnInfo().GetProperty() == nullptr ?
+            ExtendedTypeHelper::ExtendedType::Unknown :
+            ExtendedTypeHelper::FromProperty(*in.GetColumnInfo().GetProperty());
 
     int size = 0;
-    Byte const* data = (Byte const*)in.GetBlob(&size);
-    if (isGuid && size == sizeof(BeGuid)) {
+    const void* data = in.GetBlob(&size);
+    if (extendedType == ExtendedTypeHelper::ExtendedType::BeGuid && size == sizeof(BeGuid)) {
         BeGuid guid;
         std::memcpy(&guid, data, sizeof(guid));
         out = guid.ToString().c_str();
         return SUCCESS;
+    }
+
+    if (extendedType == ExtendedTypeHelper::ExtendedType::GeometryStream && !m_options.AbbreviateBlobs()) {
+        return m_ecdb.GetImpl().WithSnappyReader<BentleyStatus>([&](SnappyFromMemory& reader) {
+            ByteStream bs;
+            if (SUCCESS != GeomBlobHeader::Decompress(in, reader, bs)){
+                out.SetBinary(bs.GetDataP(), bs.GetSize());
+                return SUCCESS;
+            }
+            return ERROR;
+        });
     }
 
     // Abbreviate blobs as a json of their size; i.e., "{bytes:123}"
@@ -303,7 +314,7 @@ BentleyStatus ECSqlRowAdaptor::RenderBinaryProperty(BeJsValue out, IECSqlValue c
         return SUCCESS;
     }
 
-    out.SetBinary(data, (size_t)size);
+    out.SetBinary((Byte*)data, (size_t)size);
     return SUCCESS;
 }
 //---------------------------------------------------------------------------------------
