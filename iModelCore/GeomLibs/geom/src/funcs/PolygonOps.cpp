@@ -871,21 +871,21 @@ bvector<DTriangle3d> &triangles
     bvector<int> exteriorLoopIndices;
     bvector<DPoint3d> xyzA;
     Transform localToWorld, worldToLocal;
-    if (FixupAndTriangulateSpaceLoops (triangleIndices, exteriorLoopIndices, xyzA, localToWorld, worldToLocal, loops))
+    if (!FixupAndTriangulateSpaceLoops (triangleIndices, exteriorLoopIndices, xyzA, localToWorld, worldToLocal, loops))
+        return false;
+
+    for (size_t i = 0; i + 3 < triangleIndices.size ()
+            && triangleIndices[i] != 0
+            && triangleIndices[i+1] != 0
+            && triangleIndices[i+2] != 0
+            && triangleIndices[i+3] == 0; i+= 4)
         {
-        for (size_t i = 0; i + 3 < triangleIndices.size ()
-                && triangleIndices[i] != 0
-                && triangleIndices[i+1] != 0
-                && triangleIndices[i+2] != 0
-                && triangleIndices[i+3] == 0; i+= 4)
-            {
-            int i0 = abs (triangleIndices[i]) - 1;
-            int i1 = abs (triangleIndices[i + 1]) - 1;
-            int i2 = abs (triangleIndices[i + 2]) - 1;
-            triangles.push_back (DTriangle3d (xyzA[i0], xyzA[i1], xyzA[i2]));
-            }
+        int i0 = abs (triangleIndices[i]) - 1;
+        int i1 = abs (triangleIndices[i + 1]) - 1;
+        int i2 = abs (triangleIndices[i + 2]) - 1;
+        triangles.push_back (DTriangle3d (xyzA[i0], xyzA[i1], xyzA[i2]));
         }
-    return false;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
