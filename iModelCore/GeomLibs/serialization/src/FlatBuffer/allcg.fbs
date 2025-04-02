@@ -1,10 +1,3 @@
-//---------------------------------------------------------------------------------------------
-//  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-//  See LICENSE.md in the repository root for full copyright notice.
-//---------------------------------------------------------------------------------------------
-
-//TODO namespace Bentley.Geometry.FB;
-
 //===============================================================================
 // section 1 --- simple hand crafted types
 
@@ -218,7 +211,7 @@ table InterpolationCurve
     isColinearTangents:int;
     isChordLenTangents:int;
     isNaturalTangents:int;
-    startTangent:DPoint3d;
+    startTangent:DVector3d;
     endTangent:DVector3d;
     fitPoints:[double]; // xyz flattened
     knots:[double];
@@ -318,22 +311,22 @@ table DgnRuledSweep
 
 table PolyfaceAuxChannelData
     {
-	input       	:   double;
-	values      	:  [double];
-	}
+    input           :   double;
+    values          :  [double];
+    }
 table PolyfaceAuxChannel
     {
     dataType        :   int;
-	name            :   string;
-	inputName       :   string;
-	data            :  [PolyfaceAuxChannelData];
-	}
+    name            :   string;
+    inputName       :   string;
+    data            :  [PolyfaceAuxChannelData];
+    }
 
 table PolyfaceAuxData
     {
-	indices         : [int];
-	channels        : [PolyfaceAuxChannel];
-	}
+    indices         : [int];
+    channels        : [PolyfaceAuxChannel];
+    }
 // EDL April 26 2021
 // Used as optional entry in the Polyface table.
 table TaggedNumericData
@@ -349,7 +342,7 @@ table Polyface
     param       : [double];     // xy blocked
     normal      : [double];     // xyz blocked
     doubleColor : [double];
-    intColor    : [int];
+    intColor    : [uint];
     pointIndex  : [int];
     paramIndex  : [int];
     normalIndex : [int];
@@ -361,9 +354,10 @@ table Polyface
     twoSided    : bool;
     faceIndex   : [int];
     faceData    : [double];
-	auxData     : PolyfaceAuxData;
+    auxData     : PolyfaceAuxData;
     expectedClosure     : int;      // 0=unknown, 1=sheet, 2=solid
     taggedNumericData  : TaggedNumericData;
+    edgeMateIndex : [int];
     }
 
 struct TransitionSpiralDetail
