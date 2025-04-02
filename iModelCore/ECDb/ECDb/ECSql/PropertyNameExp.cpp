@@ -632,13 +632,11 @@ bool PropertyNameExp::PropertyRef::TryResolvePath(PropertyPath &path) const
     PropertyMap const *propertyMap = TryGetPropertyMap(path);
     if (propertyMap == nullptr)
         return false;
-    
-    if (!propertyMap->GetName().EqualsI(path.Last().GetName()))
+    PropertyMap::Path resolvePath = propertyMap->GetPath();
+    if (resolvePath.size() < path.Size())
         {
         return false;
         }
-    
-    PropertyMap::Path resolvePath = propertyMap->GetPath();
     int n = static_cast<int>(std::min(resolvePath.size(), path.Size()));
     if (n == 0)
         {

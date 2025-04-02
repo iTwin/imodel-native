@@ -259,7 +259,7 @@ TEST_F(ECSqlStatementTestFixture, MultilineStringLiteralOrName) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, dummy)
+TEST_F(ECSqlStatementTestFixture, InvestigatingSQLQueryCrashTest)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("dummy.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
