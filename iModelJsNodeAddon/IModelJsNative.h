@@ -553,7 +553,7 @@ public:
     static BentleyStatus GetGeoCoordsFromIModelCoords(BeJsValue, DgnDbR, BeJsConst);
     static BentleyStatus GetIModelCoordsFromGeoCoords(BeJsValue, DgnDbR, BeJsConst);
 
-    static void GetIModelProps(BeJsValue, DgnDbCR dgndb);
+    static void GetIModelProps(BeJsValue, DgnDbCR dgndb, Utf8StringCR when);
     static DgnElementIdSet FindGeometryPartReferences(bvector<Utf8String> const& partIds, bool is2d, DgnDbR db);
 
     static void ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object request, Napi::Function callback);

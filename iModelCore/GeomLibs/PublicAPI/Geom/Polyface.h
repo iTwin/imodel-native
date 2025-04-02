@@ -771,7 +771,8 @@ GEOMDLLIMPEXP int32_t const*                  GetNormalIndexCP (bool resolveToDe
 //! Return pointer to contiguous face indices.  Optionally use default indices (points)
 GEOMDLLIMPEXP int32_t const*                  GetFaceIndexCP   (bool resolveToDefaults = false) const;
 
-//! Query if facets are considered two sided. (If not, outward normal can be used to cull backfaces)
+//! Query if facets are considered two sided.
+//! If false, the mesh is known to be a closed volume with outward normals that can be used to cull backfaces.
 GEOMDLLIMPEXP bool                          GetTwoSided () const;
 //! Query if the facets have an expected closure.  0=> unknown, 1=> expect sheet, 2=> expect solid
 GEOMDLLIMPEXP uint32_t                          GetExpectedClosure () const;
@@ -1558,8 +1559,6 @@ private:
     FacetFaceDataCP     m_faceDataPtr;
     PolyfaceEdgeChainCP m_edgeChainsPtr;
     PolyfaceAuxDataCPtr m_auxDataPtr;
-
-    //bool              m_twoSided;
     size_t              m_pointCount;
     size_t              m_paramCount;
     size_t              m_normalCount;
@@ -1758,7 +1757,11 @@ public:
     //! In PolyfaceQuery, determine active status from pointers.
     //! This is only valid if the PolyfaceQuery has already been filled !!!
     GEOMDLLIMPEXP void CopyAllActiveFlagsFromQuery (PolyfaceQueryCR source);
-    //! Set the flag for twosided facets
+    //! Set the flag for two-sided facets.
+    //! This flag indicates if the facets are viewable from the back.
+    //! Default value is true.
+    //! Set to false only if the mesh is known to be a closed volume with outward normals,
+    //! indicating it is amenable to backface culling for improved display performance.
     GEOMDLLIMPEXP void  SetTwoSided (bool twoSided);
     //! Set the flag for expected closure
     GEOMDLLIMPEXP void  SetExpectedClosure(uint32_t expectedClosure);
@@ -1865,7 +1868,7 @@ GEOMDLLIMPEXP void Compress(double pointAbsTol, double normalAbsTol = -1.0, doub
 //! Points are active.
 //! Point indices are active if style is MESH_ELM_STYLE_INDEXED_FACE_LOOPS
 //! All other coordinate and index arrays are NOT active.
-//! NOTE: TwoSided is set to true, contrary to the typical default of false.
+//! TwoSided flag is set to the default value (true).
 GEOMDLLIMPEXP void ClearTags (uint32_t numPerFace, uint32_t meshStyle);
 
 //! Add data to index arrays.
@@ -3087,7 +3090,8 @@ GEOMDLLIMPEXP DPoint2dCP                        GetParamCP () const;
 GEOMDLLIMPEXP uint32_t const*                   GetIntColorCP () const;
 //! Get pointer to contiguous FaceData structs
 GEOMDLLIMPEXP FacetFaceDataCP                   GetFaceDataCP () const;
-//! Query two-sided flag
+//! Query the two-sided flag.
+//! This flag indicates if the facets are viewable from the back.
 GEOMDLLIMPEXP bool                              GetTwoSided () const;
 //! Query number of indices per face block.  0 or 1 means 0-terminated variable size blocks.
 GEOMDLLIMPEXP uint32_t                          GetNumPerFace () const;
