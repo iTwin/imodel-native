@@ -612,6 +612,7 @@ export declare namespace IModelJsNative {
     public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
     public patchElementProperties(jsonProps: string):  string;
 
+    public newBeGuid(): GuidString;
     public geomSourceToProps(arg: GeometrySource): GeometryStreamProps;
     public propsToGeomSource(geom: GeometryStreamProps, geomSource: Optional<GeometrySource, "geom">): GeometrySource;
     public builderToGeomSource(builder: ElementGeometryBuilderParams, geomSource: Optional<GeometrySource, "geom">): GeometrySource

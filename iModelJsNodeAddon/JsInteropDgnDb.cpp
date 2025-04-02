@@ -1492,14 +1492,14 @@ public:
 
 static std::unique_ptr<GeometrySource> CreateGeometrySource(DgnDbR db, Napi::Object jsGeomSource) {
     auto env = jsGeomSource.Env();
-    auto jsGeom = jsGeomSource.Get("geomProps").As<Napi::TypedArrayOf<uint8_t>>();
+    auto jsGeom = jsGeomSource.HasOwnProperty("geom") ? jsGeomSource.Get("geom").As<Napi::TypedArrayOf<uint8_t>>() : env.Undefined().As<Napi::TypedArrayOf<uint8_t>>();
     if (jsGeom.TypedArrayType() != napi_uint8_array) {
             BeNapi::ThrowJsException(env, "Invalid geometry stream properties. Expecting uint8array");
     }
 
     auto jsIs2d = jsGeomSource.Get("is2d").As<Napi::Boolean>().Value();
-    auto jsPlacement = jsGeomSource.Get("placement");
-    auto jsCategoryId = jsGeomSource.Get("categoryId");
+    auto jsPlacement = jsGeomSource.HasOwnProperty("placement") ? jsGeomSource.Get("placement") : env.Undefined();
+    auto jsCategoryId = jsGeomSource.HasOwnProperty("categoryId") ? jsGeomSource.Get("categoryId") : env.Undefined();
 
     DgnCategoryId categoryId;
     Placement2d placement2d;
@@ -1522,7 +1522,7 @@ static std::unique_ptr<GeometrySource> CreateGeometrySource(DgnDbR db, Napi::Obj
     }
 
     if (jsCategoryId.IsString()) {
-        categoryId.FromString(jsCategoryId.As<Napi::String>().Utf8Value().c_str());
+        BeInt64Id::FromString(categoryId, jsCategoryId.As<Napi::String>().Utf8Value().c_str());
         if (!categoryId.IsValid()) {
             BeNapi::ThrowJsException(env, "Invalid category id");
         }
@@ -1636,7 +1636,7 @@ Napi::Value JsInterop::GeomSourceToProps(DgnDbR db, NapiInfoCR info) {
     */
 
     GeometryCollection collection(*geomSource);
-    BeJsNapiObject outGeom(info.Env());
+    auto outGeom = Napi::Array::New(info.Env());
     collection.ToJson(outGeom);
     return outGeom;
 }
