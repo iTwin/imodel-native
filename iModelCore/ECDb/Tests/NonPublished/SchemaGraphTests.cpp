@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-#define ENABLE_CONSOLE_LOGGING 1
+#define ENABLE_CONSOLE_LOGGING 0
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -408,6 +408,8 @@ TEST_F(SchemaGraphTestFixture, DeepSchemaHierarchyWithNumerousUpdates)
     locater.AddSchemaString(dKey, dXml);
     locater.AddSchemaString(eKey, eXml);
     context->AddSchemaLocater(locater);
+    SanitizingSchemaLocater sanitizingLocater(m_ecdb.GetSchemaLocater());
+    context->SetFinalSchemaLocater(sanitizingLocater);
 
     ECSchemaPtr a = context->LocateSchema(aKey, SchemaMatchType::LatestReadCompatible);
     ASSERT_TRUE(a.IsValid());
@@ -472,7 +474,7 @@ TEST_F(SchemaGraphTestFixture, DeepSchemaHierarchyWithNumerousUpdates)
     }
     }
 
-#define ENABLE_IMPORT_SCHEMAS_FROM_FILES_TEST 1
+#define ENABLE_IMPORT_SCHEMAS_FROM_FILES_TEST 0
 
 #if ENABLE_IMPORT_SCHEMAS_FROM_FILES_TEST
 TEST_F(SchemaGraphTestFixture, ImportSchemasFromFiles)
