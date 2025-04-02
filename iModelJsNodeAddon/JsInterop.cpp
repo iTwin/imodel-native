@@ -1038,6 +1038,38 @@ Napi::Value JsInterop::ReadInstance(ECDbR db, NapiInfoCR info) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+Napi::Value JsInterop::DeserializeJsonProps(BeJsValue props, NapiInfoCR info) {
+    if (!props.isMember("jsonProperties"))
+        THROW_JS_EXCEPTION("jsonProperties is missing");
+
+    // Remove Null values from jsonProps
+    BeJsDocument doc;
+    doc.Parse(props["jsonProperties"].asCString());
+    doc.PurgeNulls();
+
+    // Handle renderMaterial TextureIds
+    auto map = BeJsPath::Extract(BeJsValue(doc), "$.materialAssets.renderMaterial.Map");
+    if (map.has_value()) {
+        map.value().ForEachProperty([&](auto memberName, auto memberJson) {
+            if (memberJson.isNumericMember("TextureId")) {
+                // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
+                auto textureIdAsStringForLogging = memberJson["TextureId"].Stringify();
+                auto textureId = memberJson["TextureId"].GetId64<DgnTextureId>();
+                auto textureIdJson = map->Get(memberName)["TextureId"];
+                (BeJsValue&)textureIdJson = textureId.ToHexStr();
+                if (!textureId.IsValid()) {
+                    THROW_JS_EXCEPTION(("RenderMaterial had a textureId %s that was invalid.", textureIdAsStringForLogging.c_str()));
+                }
+            }
+            return false;
+        });
+    }
+    return Napi::Value::From(info.Env(), doc.Stringify());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult JsInterop::ImportFunctionalSchema(DgnDbR db)
     {
     return SchemaStatus::Success == FunctionalDomain::GetDomain().ImportSchema(db) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
