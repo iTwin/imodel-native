@@ -14,15 +14,16 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
  */
 
 import type {
-  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode,
+  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode, Optional,
 } from "@itwin/core-bentley";
 import type {
   ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
+  ElementGeometryBuilderParams,
   ElementGraphicsRequestProps, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
-  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
+  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, GeometryStreamProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
+  ModelProps, PlacementProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
 } from "@itwin/core-common";
 import type { Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
@@ -499,6 +500,13 @@ export declare namespace IModelJsNative {
     readonly parentChangesetIndex?: string;
   }
 
+  interface GeometrySource {
+    geom: Uint8Array;
+    is2d: boolean;
+    placement?: PlacementProps;
+    categoryId?: Id64String;
+  }
+
   // ###TODO import from core-common
   interface ModelExtentsResponseProps {
     id: Id64String;
@@ -602,6 +610,12 @@ export declare namespace IModelJsNative {
     public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
     public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
     public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+
+    public geomSourceToProps(arg: GeometrySource): GeometryStreamProps;
+    public propsToGeomSource(geom: GeometryStreamProps, geomSource: Optional<GeometrySource, "geom">): GeometrySource;
+    public builderToGeomSource(builder: ElementGeometryBuilderParams, geomSource: Optional<GeometrySource, "geom">): GeometrySource
+
+
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;

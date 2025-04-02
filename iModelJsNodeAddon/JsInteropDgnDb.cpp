@@ -1100,7 +1100,7 @@ void JsInterop::ComputeRangeForText(BeJsValue result, DgnDbR db, Utf8StringCR te
         layoutContext.m_drawSize = DPoint2d::From(height, height * widthFactor);
         layoutContext.m_isBold = TextEmphasis::None != (emphasis & TextEmphasis::Bold);
         layoutContext.m_isItalic = TextEmphasis::None != (emphasis & TextEmphasis::Italic);
-        
+
         GlyphLayoutResult layoutResult;
         if (SUCCESS == font.LayoutGlyphs(layoutResult, layoutContext)) {
             layoutRange = layoutResult.m_range;
@@ -1432,3 +1432,211 @@ void JsInterop::WriteAffectedElementDependencyGraphToFile(DgnDbR db, Utf8StringC
     ElementDependency::Graph graph(db.Txns());
     graph.WriteAffectedGraphToFile(BeFileName(dotFileName.c_str(), true), changedIds, {});
     }
+
+
+struct NativeGeometrySource2d final : public GeometrySource2d {
+private:
+    DgnDbR m_db;
+    Placement2d m_placement;
+    DgnCategoryId m_categoryId;
+    GeometryStream m_geometry;
+
+protected:
+    DgnDbR _GetSourceDgnDb() const { return m_db; }
+    DgnElementCP _ToElement() const { return nullptr; }
+    GeometrySource2dCP _GetAsGeometrySource2d() const { return this; }
+    DgnCategoryId _GetCategoryId() const { return m_categoryId; }
+    GeometryStreamCR _GetGeometryStream() const { return m_geometry; }
+    Placement2dCR _GetPlacement() const { return m_placement; }
+    DgnDbStatus _SetPlacement(Placement2dCR placement) {
+        m_placement = placement;
+        return DgnDbStatus::Success;
+    }
+    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {
+        m_categoryId = categoryId;
+        return DgnDbStatus::Success;
+    }
+
+public:
+    NativeGeometrySource2d(DgnDbR dgnDb, DgnCategoryId categoryId, Placement2d&& placement, GeometryStream&& geomStream)
+        : m_db(dgnDb), m_placement(std::move(placement)), m_categoryId(categoryId), m_geometry(std::move(geomStream)) {}
+};
+
+struct NativeGeometrySource3d final : public GeometrySource3d {
+private:
+    DgnDbR m_db;
+    Placement3d m_placement;
+    DgnCategoryId m_categoryId;
+    GeometryStream m_geometry;
+
+protected:
+    DgnDbR _GetSourceDgnDb() const { return m_db; }
+    DgnElementCP _ToElement() const { return nullptr; }
+    GeometrySource3dCP _GetAsGeometrySource3d() const { return this; }
+    DgnCategoryId _GetCategoryId() const { return m_categoryId; }
+    GeometryStreamCR _GetGeometryStream() const { return m_geometry; }
+    Placement3dCR _GetPlacement() const { return m_placement; }
+    DgnDbStatus _SetPlacement(Placement3dCR placement) {
+        m_placement = placement;
+        return DgnDbStatus::Success;
+    }
+    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {
+        m_categoryId = categoryId;
+        return DgnDbStatus::Success;
+    }
+
+public:
+    NativeGeometrySource3d(DgnDbR dgnDb, DgnCategoryId categoryId, Placement3d&& placement, GeometryStream&& geomStream)
+        : m_db(dgnDb), m_placement(std::move(placement)), m_categoryId(categoryId), m_geometry(std::move(geomStream)) {}
+};
+
+static std::unique_ptr<GeometrySource> CreateGeometrySource(DgnDbR db, Napi::Object jsGeomSource) {
+    auto env = jsGeomSource.Env();
+    auto jsGeom = jsGeomSource.Get("geomProps").As<Napi::TypedArrayOf<uint8_t>>();
+    if (jsGeom.TypedArrayType() != napi_uint8_array) {
+            BeNapi::ThrowJsException(env, "Invalid geometry stream properties. Expecting uint8array");
+    }
+
+    auto jsIs2d = jsGeomSource.Get("is2d").As<Napi::Boolean>().Value();
+    auto jsPlacement = jsGeomSource.Get("placement");
+    auto jsCategoryId = jsGeomSource.Get("categoryId");
+
+    DgnCategoryId categoryId;
+    Placement2d placement2d;
+    Placement3d placement3d;
+
+    const auto hasPlacement = jsPlacement.IsObject();
+    if (hasPlacement) {
+        if (jsIs2d) {
+            placement2d.FromJson(jsPlacement);
+            if (!placement2d.IsValid()) {
+                BeNapi::ThrowJsException(env, "Invalid placement");
+            }
+        } else {
+
+            placement3d.FromJson(jsPlacement);
+            if (!placement3d.IsValid()) {
+                BeNapi::ThrowJsException(env, "Invalid placement");
+            }
+        }
+    }
+
+    if (jsCategoryId.IsString()) {
+        categoryId.FromString(jsCategoryId.As<Napi::String>().Utf8Value().c_str());
+        if (!categoryId.IsValid()) {
+            BeNapi::ThrowJsException(env, "Invalid category id");
+        }
+    }
+
+    GeometryStream geomStream;
+    if (!jsGeom.IsUndefined()) {
+        uint8_t* data = jsGeom.Data();
+        size_t size = jsGeom.ElementLength();
+        geomStream.Append(data, static_cast<uint32_t>(size));
+    }
+
+    if (jsIs2d) {
+        return std::make_unique<NativeGeometrySource2d>(db, categoryId, std::move(placement2d), std::move(geomStream));
+    } else {
+        return std::make_unique<NativeGeometrySource3d>(db, categoryId, std::move(placement3d), std::move(geomStream));
+    }
+
+}
+void GeometrySourceToJson(GeometrySourceR geomSource, BeJsValue outGeom){
+    if (!outGeom.isObject()) {
+        BeAssert(false);
+    }
+
+    outGeom["geom"].SetBinary(geomSource.GetGeometryStream().data(), geomSource.GetGeometryStream().size());
+    if (geomSource.Is2d()) {
+        outGeom["is2d"] = true;
+        auto geom2d = geomSource.GetAsGeometrySource2d();
+        if (geom2d->GetPlacement().IsValid()) {
+            geom2d->GetPlacement().ToJson(outGeom["placement"]);
+        }
+    } else {
+        auto geom3d = geomSource.GetAsGeometrySource3d();
+        if (geom3d->GetPlacement().IsValid()) {
+            geom3d->GetPlacement().ToJson(outGeom["placement"]);
+        }
+    }
+
+    if (geomSource.GetCategoryId().IsValid()) {
+        outGeom["categoryId"] = geomSource.GetCategoryId();
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::PropsToGeomSource(DgnDbR db, NapiInfoCR info) {
+     REQUIRE_ARGUMENT_ANY_OBJ(0, jsGeomProps);
+     REQUIRE_ARGUMENT_ANY_OBJ(1, jsGeomSource);
+
+    auto geomSource = CreateGeometrySource(db, jsGeomSource);
+    if (geomSource == nullptr) {
+        BeNapi::ThrowJsException(info.Env(), "Invalid geometry source");
+    }
+
+    GeometryBuilder::UpdateFromJson(*geomSource, jsGeomProps);
+    BeJsNapiObject outGeom(info.Env());
+    GeometrySourceToJson(*geomSource, outGeom);
+    return outGeom;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::BuilderToGeomSource(DgnDbR db, NapiInfoCR info) {
+     REQUIRE_ARGUMENT_ANY_OBJ(0, jsGeomBuilder);
+     REQUIRE_ARGUMENT_ANY_OBJ(1, jsGeomSource);
+
+    auto geomSource = CreateGeometrySource(db, jsGeomSource);
+    if (geomSource == nullptr) {
+        BeNapi::ThrowJsException(info.Env(), "Invalid geometry source");
+    }
+
+    if (!jsGeomBuilder.IsObject()) {
+        BeNapi::ThrowJsException(info.Env(), "Invalid geometry builder");
+    }
+
+    if (jsGeomBuilder.Has("is2dPart")) {
+        BeNapi::ThrowJsException(info.Env(), "BuildGeometryStream failed - invalid builder parameter");
+    }
+
+    auto viewIndependentVal = jsGeomBuilder.Get("viewIndependent");
+    auto entryArrayObj = jsGeomBuilder.Get("entryArray").As<Napi::Array>();
+    BeAssert(viewIndependentVal.IsUndefined() || viewIndependentVal.IsBoolean());
+    BeAssert(entryArrayObj.IsArray());
+
+    GeometryBuilderParams bparams;
+    bparams.viewIndependent = viewIndependentVal.IsBoolean() && viewIndependentVal.As<Napi::Boolean>().Value();
+    auto status = GeometryStreamIO::BuildFromGeometrySource(*geomSource, bparams, entryArrayObj.As<Napi::Array>());
+    if (DgnDbStatus::Success != status) {
+        BeNapi::ThrowJsException(info.Env(), "BuildGeometryStream failed");
+    }
+
+    BeJsNapiObject outGeom(info.Env());
+    GeometrySourceToJson(*geomSource, outGeom);
+    return outGeom;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::GeomSourceToProps(DgnDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, jsGeomSource);
+    auto geomSource = CreateGeometrySource(db, jsGeomSource);
+    if (geomSource == nullptr) {
+        BeNapi::ThrowJsException(info.Env(), "Invalid geometry source");
+    }
+    /**
+     * THINNING_WIP GeometryCollection::ToJson() will access DgnElement API.categoryId
+     * Unless we move parsing into JS it will be not possiable to avoid this case.
+    */
+
+    GeometryCollection collection(*geomSource);
+    BeJsNapiObject outGeom(info.Env());
+    collection.ToJson(outGeom);
+    return outGeom;
+}

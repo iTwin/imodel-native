@@ -189,8 +189,6 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
     if (DisqualifyTypeIndexForBisCoreExternalSourceAspect() != BE_SQLITE_OK)
         return BE_SQLITE_ERROR;
 
-
-    RegisterBisCoreHandlers(*this);
     return BE_SQLITE_OK;
     }
 
@@ -699,7 +697,6 @@ DbResult DgnDb::CreateNewIModel(BeFileNameCR inFileName, CreateDgnDbParams const
         return rc;
 
     InitializeDgnDb(params);
-    RegisterBisCoreHandlers(*this);
     return BE_SQLITE_OK;
 }
 
