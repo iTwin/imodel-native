@@ -67,8 +67,11 @@ TEST_F(PerformanceTestsECJson, SerializeFlatSchemasToJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceTestsECJson, SerializeDeepHierarchySchemasToJson)
     {
-    SerializeSchemaToJson(GenerateSchema10Root15Deep3Mixin5PropsAndOverrides());
-    SerializeSchemaToJson(GenerateSchema300Root3Deep200Props());
+    ECSchemaReadContextPtr schemaContext1 = ECSchemaReadContext::CreateContext();
+    SerializeSchemaToJson(GenerateSchema10Root15Deep3Mixin5PropsAndOverrides(schemaContext1));
+
+    ECSchemaReadContextPtr schemaContext2 = ECSchemaReadContext::CreateContext();
+    SerializeSchemaToJson(GenerateSchema300Root3Deep200Props(schemaContext2));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -76,7 +79,8 @@ TEST_F(PerformanceTestsECJson, SerializeDeepHierarchySchemasToJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceTestsECJson, SerializeWithCustomAttributes)
     {
-    SerializeSchemaToJson(GenerateSchema50Root5Deep3Mixin5Props());
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SerializeSchemaToJson(GenerateSchema50Root5Deep3Mixin5Props(schemaContext));
     }
 
 
@@ -86,7 +90,7 @@ TEST_F(PerformanceTestsECJson, SerializeWithCustomAttributes)
 TEST_F(PerformanceTestsECJson, SerializeBisSchemas)
     {
 
-    SerializeBisSchemaToJson(GetStandardsPath(L"Units.01.00.07.ecschema.xml"));
+    SerializeBisSchemaToJson(GetStandardsPath(L"Units.01.00.08.ecschema.xml"));
     SerializeBisSchemaToJson(GetStandardsPath(L"Formats.01.00.00.ecschema.xml"));
 
     SerializeBisSchemaToJson(GetAssetsGSchemaPath(L"Dgn", L"BisCore.ecschema.xml"));
