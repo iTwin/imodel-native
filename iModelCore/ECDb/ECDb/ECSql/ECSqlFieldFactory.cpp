@@ -299,15 +299,11 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
 //static
 ECSqlColumnInfo ECSqlFieldFactory::CreateTopLevelColumnInfo(IssueDataSource const& issues, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECSqlColumnInfo::RootClass const& rootClass, ECPropertyCP originalProperty, bool isDynamic)
     {
-    DateTime::Info dateTimeInfo;
-    ECStructClassCP structType = nullptr;
     BeAssert(propertyPath.Size() > 0);
     ECPropertyCP ecProperty = propertyPath.GetLeafEntry().GetProperty();
-    //BeAssert(ecProperty != nullptr);
-    if (ecProperty == nullptr)
-        {
-        return ECSqlColumnInfo(ECTypeDescriptor(), dateTimeInfo, structType, ecProperty, originalProperty, isSystemProperty, isGeneratedProperty, propertyPath, rootClass, isDynamic);
-        }
+    BeAssert(ecProperty != nullptr);
+    DateTime::Info dateTimeInfo;
+    ECStructClassCP structType = nullptr;
     ECTypeDescriptor typeDescriptor = DetermineDataType(dateTimeInfo, structType, issues, *ecProperty);
     return ECSqlColumnInfo(typeDescriptor, dateTimeInfo, structType, ecProperty, originalProperty, isSystemProperty, isGeneratedProperty, propertyPath, rootClass, isDynamic);
     }

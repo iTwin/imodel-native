@@ -273,7 +273,7 @@ TEST_F(ECSqlStatementTestFixture, dummy)
                 </ECSchema>)xml")));
 
     ECSqlStatement stmt2;
-    ASSERT_EQ(ECSqlStatus::Success, stmt2.Prepare(m_ecdb, "SELECT p2d.X FROM (SELECT * FROM (SELECT * FROM aps.TestElement LIMIT 1))"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt2.Prepare(m_ecdb, "SELECT p2d.X FROM (SELECT * FROM (SELECT * FROM aps.TestElement))"));
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod

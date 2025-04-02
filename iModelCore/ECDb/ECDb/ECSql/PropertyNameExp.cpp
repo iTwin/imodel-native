@@ -421,7 +421,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         m_resolvedPropertyPath = match.ResolvedPath();
         if (!GetPropertyRef()->IsComputedExp() && GetPropertyRef()->TryGetVirtualProperty() == nullptr) {
             if ( !GetPropertyRef()->TryResolvePath(m_resolvedPropertyPath)) {
-                BeAssert(false && "Programmer Error: Unable to resolve path");
+                return ERROR;
             }
         }
     } else {
@@ -632,7 +632,12 @@ bool PropertyNameExp::PropertyRef::TryResolvePath(PropertyPath &path) const
     PropertyMap const *propertyMap = TryGetPropertyMap(path);
     if (propertyMap == nullptr)
         return false;
-
+    
+    if (!propertyMap->GetName().EqualsI(path.Last().GetName()))
+        {
+        return false;
+        }
+    
     PropertyMap::Path resolvePath = propertyMap->GetPath();
     int n = static_cast<int>(std::min(resolvePath.size(), path.Size()));
     if (n == 0)
