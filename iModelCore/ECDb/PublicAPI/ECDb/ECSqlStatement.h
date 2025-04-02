@@ -796,6 +796,9 @@ struct JsReadOptions final {
                 m_useClassFullNameInsteadofClassName == other.m_useClassFullNameInsteadofClassName;
         }
 
+        bool operator != (JsReadOptions const& other) const {
+            return !(*this == other);
+        }
         bool AbbreviateBlobs() const { return m_abbreviateBlobs; }
         bool ConvertClassIdsToClassNames() const { return m_classIdToClassNames; }
         bool UseJsNames() const { return m_useJsName; }
@@ -809,7 +812,6 @@ struct JsReadOptions final {
     JsReadOptions& SetDoNotConvertClassIdsToClassNamesWhenAliased(bool v) { m_doNotConvertClassIdsToClassNamesWhenAliased = v; return *this; }
     JsReadOptions& SetSkipReadOnlyProperties(bool v) { m_skipReadOnlyProperties = v; return *this; }
     JsReadOptions& SetUseClassFullNameInsteadofClassName(bool v) { m_useClassFullNameInsteadofClassName = v; return *this; }
-
 
     ECDB_EXPORT void FromJson(BeJsValue opts);
     ECDB_EXPORT void ToJson(BeJsValue opts) const;
