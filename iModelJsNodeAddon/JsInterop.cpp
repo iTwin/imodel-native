@@ -842,7 +842,7 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void JsInterop::AddFallbackSchemaLocaters(IECSchemaLocaterCR finalLocater, ECSchemaReadContextPtr schemaContext)
+void JsInterop::AddFallbackSchemaLocaters(IECSchemaLocaterR finalLocater, ECSchemaReadContextPtr schemaContext)
     {
     // Add the db then the standard schema paths as fallback locations to load referenced schemas.
     schemaContext->SetFinalSchemaLocater(finalLocater);
