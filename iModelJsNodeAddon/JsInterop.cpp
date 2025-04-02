@@ -1035,17 +1035,15 @@ Napi::Value JsInterop::ReadInstance(ECDbR db, NapiInfoCR info) {
     return outInstance;
 }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Napi::Value JsInterop::DeserializeJsonProps(BeJsValue props, NapiInfoCR info) {
-    if (!props.isMember("jsonProperties"))
-        THROW_JS_EXCEPTION("jsonProperties is missing");
+Napi::Value JsInterop::PatchElementProperties(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, jsonProps);
 
     // Remove Null values from jsonProps
     BeJsDocument doc;
-    doc.Parse(props["jsonProperties"].asCString());
+    doc.Parse(jsonProps.c_str());
     doc.PurgeNulls();
 
     // Handle renderMaterial TextureIds

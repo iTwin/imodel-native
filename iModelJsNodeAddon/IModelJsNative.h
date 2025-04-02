@@ -540,12 +540,11 @@ public:
     static Napi::Value InsertInstance(ECDbR db, NapiInfoCR info);
     static Napi::Value UpdateInstance(ECDbR db, NapiInfoCR info);
     static Napi::Value DeleteInstance(ECDbR db, NapiInfoCR info);
-    static Napi::Value DeserializeJsonProps(BeJsValue props, NapiInfoCR info);
+    static Napi::Value PatchElementProperties(NapiInfoCR info);
 
     static Napi::Value BuilderToGeomSource(DgnDbR db, NapiInfoCR info);
     static Napi::Value PropsToGeomSource(DgnDbR db, NapiInfoCR info);
     static Napi::Value GeomSourceToProps(DgnDbR db, NapiInfoCR info);
-
 
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
