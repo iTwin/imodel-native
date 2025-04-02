@@ -348,6 +348,13 @@ describe("basic tests", () => {
     b2.closeFile();
   });
 
+  it("PatchElementProperties", () => {
+    const jsonProps = "{\"materialAssets\":{\"renderMaterial\":{\"HasBaseColor\":false,\"color\":null,\"HasSpecularColor\":false,\"specular_color\":null,\"HasFinish\":false,\"finish\":null,\"HasTransmit\":false,\"transmit\":null,\"HasDiffuse\":false,\"diffuse\":null,\"HasSpecular\":false,\"specular\":null,\"HasReflect\":false,\"reflect\":null,\"HasReflectColor\":false,\"reflect_color\":null,\"Map\":{\"Diffuse\":{\"TextureId\":9223372036854775807},\"Bump\":{\"TextureId\":18446744073709551615},\"Finish\":{\"TextureId\":13835058055282163712}},\"pbr_normal\":null}}}"
+    const expectedProps = "{\"materialAssets\":{\"renderMaterial\":{\"HasBaseColor\":false,\"HasSpecularColor\":false,\"HasFinish\":false,\"HasTransmit\":false,\"HasDiffuse\":false,\"HasSpecular\":false,\"HasReflect\":false,\"HasReflectColor\":false,\"Map\":{\"Diffuse\":{\"TextureId\":\"0x7fffffffffffffff\"},\"Bump\":{\"TextureId\":\"0xffffffffffffffff\"},\"Finish\":{\"TextureId\":\"0xc000000000000000\"}}}}}";
+    const deserializedProps = dgndb.patchElementProperties(jsonProps);
+    expect(deserializedProps).to.not.be.undefined;
+    expect(deserializedProps).to.equal(expectedProps);
+  });
   // verify that throwing javascript exceptions from C++ works
   it("testExceptions", () => {
     // first try a function
