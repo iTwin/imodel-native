@@ -298,7 +298,7 @@ BentleyStatus ECSqlRowAdaptor::RenderBinaryProperty(BeJsValue out, IECSqlValue c
     if (extendedType == ExtendedTypeHelper::ExtendedType::GeometryStream && !m_options.AbbreviateBlobs()) {
         return m_ecdb.GetImpl().WithSnappyReader<BentleyStatus>([&](SnappyFromMemory& reader) {
             ByteStream bs;
-            if (SUCCESS != GeomBlobHeader::Decompress(in, reader, bs)){
+            if (SUCCESS == GeomBlobHeader::Decompress(in, reader, bs)){
                 out.SetBinary(bs.GetDataP(), bs.GetSize());
                 return SUCCESS;
             }

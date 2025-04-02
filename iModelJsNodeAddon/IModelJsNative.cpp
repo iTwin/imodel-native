@@ -2342,6 +2342,18 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         return Napi::Number::New(Env(), (int)db.ExecuteSql(sql.c_str()));
     }
+    Napi::Value GeomSourceToProps(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::GeomSourceToProps(db, info);
+    }
+    Napi::Value BuilderToGeomSource(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::BuilderToGeomSource(db, info);
+    }
+    Napi::Value PropsToGeomSource(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::PropsToGeomSource(db, info);
+    }
     Napi::Value ReadInstance(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         return JsInterop::ReadInstance(db, info);
@@ -2815,6 +2827,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
             InstanceMethod("isSubClassOf", &NativeDgnDb::IsSubClassOf),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
+            InstanceMethod("geomSourceToProps", &NativeDgnDb::GeomSourceToProps),
+            InstanceMethod("propsToGeomSource", &NativeDgnDb::PropsToGeomSource),
+            InstanceMethod("builderToGeomSource", &NativeDgnDb::BuilderToGeomSource),
             InstanceMethod("readInstance", &NativeDgnDb::ReadInstance),
             InstanceMethod("insertInstance", &NativeDgnDb::InsertInstance),
             InstanceMethod("updateInstance", &NativeDgnDb::UpdateInstance),

@@ -34,6 +34,7 @@ struct GeomBlobHeader {
             return ERROR;
         }
 
+        out.Resize(header.m_size);
         uint32_t actuallyRead;
         auto readStatus = reader._Read(out.GetDataP(), out.GetSize(), actuallyRead);
         if (ZIP_SUCCESS != readStatus || actuallyRead != out.GetSize()) {
@@ -44,7 +45,7 @@ struct GeomBlobHeader {
     }
     static BentleyStatus Decompress(const IECSqlValue& val, SnappyFromMemory& reader, ByteStreamR out) {
         auto const& colInfo = val.GetColumnInfo().GetDataType();
-        if (!colInfo.IsPrimitive() || colInfo.GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Binary) {
+        if (!colInfo.IsPrimitive() || colInfo.GetPrimitiveType() != ECN::PrimitiveType::PRIMITIVETYPE_Binary) {
             BeAssert(false);
             return ERROR;
         }

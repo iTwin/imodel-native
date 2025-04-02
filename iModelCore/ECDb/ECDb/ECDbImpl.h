@@ -172,8 +172,8 @@ private:
     mutable EC::ECSqlConfig m_ecSqlConfig;
     mutable bool m_disableDDLTracking;
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
-    SnappyFromMemory m_snappyReader;
-    SnappyToBlob m_snappyWriter;
+    mutable SnappyFromMemory m_snappyReader;
+    mutable SnappyToBlob m_snappyWriter;
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl(ECDbR ecdb);
 
