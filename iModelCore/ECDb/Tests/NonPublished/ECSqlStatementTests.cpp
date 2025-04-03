@@ -261,7 +261,7 @@ TEST_F(ECSqlStatementTestFixture, MultilineStringLiteralOrName) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, NestedQueriesWithoutAlias)
     {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("dummy.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NestedQueriesWithoutAlias.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2" schemaName="AllProperties" alias="aps" version="01.00.00">
                         <ECEntityClass typeName="TestElement" modifier="None">
@@ -274,8 +274,8 @@ TEST_F(ECSqlStatementTestFixture, NestedQueriesWithoutAlias)
 
     ECSqlStatement stmt;
     //Nested queries with multiple levels of subqueries without aliases are currently not supported and will fail to prepare.
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT p2d.X FROM (SELECT * FROM (SELECT * FROM aps.TestElement))"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select p2d.X from (with tmp as (SELECT e.p2d FROM aps.TestElement e LIMIT 1) select p2d from tmp)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT p2d.X FROM (SELECT * FROM (SELECT * FROM aps.TestElement))"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select p2d.X from (with tmp as (SELECT e.p2d FROM aps.TestElement e LIMIT 1) select p2d from tmp)"));
 
     }
 //---------------------------------------------------------------------------------------
