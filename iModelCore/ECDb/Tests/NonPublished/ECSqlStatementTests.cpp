@@ -273,7 +273,10 @@ TEST_F(ECSqlStatementTestFixture, InvestigatingSQLQueryCrashTest)
                 </ECSchema>)xml")));
 
     ECSqlStatement stmt2;
+    //Nested queries with multiple levels of subqueries without aliases are currently not supported and will fail to prepare.
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt2.Prepare(m_ecdb, "SELECT p2d.X FROM (SELECT * FROM (SELECT * FROM aps.TestElement))"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt2.Prepare(m_ecdb, "select p2d.X from (with tmp as (SELECT e.p2d FROM aps.TestElement e LIMIT 1) select p2d from tmp)"));
+
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod
