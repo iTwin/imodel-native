@@ -122,6 +122,9 @@ struct VirtualSchemaManager : ECN::IECSchemaLocater {
         // The numberOfClasses parameter gives us the exact number of classes found which can be used for more personalized error message
         ECN::ECClassCP FindClass(Utf8StringCR className, size_t& numberOfClasses) const; 
         BentleyStatus Add(Utf8StringCR schemaXml) const;
+        Utf8String GetDescription() const override {
+            return Utf8PrintfString("ECDb:VirtualSchemaManager %s", m_ecdb.GetDbFileName());
+        }
 };
 //=======================================================================================
 // @bsiclass
