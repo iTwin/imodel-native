@@ -1,0 +1,1713 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="BuildStrategy">
+        <xs:annotation>
+            <xs:documentation>
+                A build strategy is a collection of XML files that control how build parts are processed by BentleyBuild.
+                It is typically split into a repository list, a repository tag list, and a strategy file, although splitting is not required.
+                Build strategies customize the build process for a particular purpose, and contain rules that define where source code comes from and goes to, as well as what to build.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice minOccurs="1" maxOccurs="unbounded">
+                <xs:element name ="RemoteRepositoryList" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            This is obsolete. RemoteRepository elements should live in the root element and the RemoteRepositoryList should be removed.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name ="RemoteRepository" minOccurs="1" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            A remote repository specifies the remote server address for a given repository name, and for CVS, a path in the repository.
+                            Every remote repository should have a matching LocalRespository element later in the document.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The unique name for this repository.
+                                    This name must coincide with LocalRepository's, RepositoryTag's, RepositoryOption's, RepositoryStrategy's, and strategy specifications.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Address" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The server address of the remote repository.
+                                    If using CVS, you can also specify the Path attribute.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Version" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    (Rsync-only) Specify a string with glob-style wildcarding such as "2-2-3-*" which will be used in place of $(version) in the Path.
+                                    This allows the version to appear anywhere in the path and get picked up. For example, Path="LKGOutput\DgnClientSdk\$(version)\Products\Winx64"
+                                    If it is only at the end of the path, the RepositoryTag element can be used.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Path" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    (CVS-only) The path in the repository to use.
+                                    We anticipate that you will often want to get pieces of a CVS repository, so this concession is made to allow that.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="CheckoutOptions" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    (CVS-only) Checkout options.
+                                    The most common checkout option is '-l' to only check out one subdirectory.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="TransKitDirectory" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            A TransKitDirectory maps a ProductDirectoryName in a Binding statement to sub-directory in the Transkit tree.
+                            This is used when creating the transkit that is sent to translators, who then use it to create Language Packs.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Name corresponding to the ProductDirectoryName attribute of a Binding.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Path" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    This is the name of the folder to create in the TransKit tree.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="RepositoryTag" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            (CVS-only) Specifies a tag to check out against for a given repository.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies the unique repository name (see /BuildStrategy/RemoteRepositoryList/RemoteRepository[@Name]).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Tag" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies the named tag.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="PullOnce" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Prevents BentleyBuild from attempting to pull the repository more than once if the local copy is at the specified tag.
+                                    This is a useful performance optimization, but cannot be used if the tag is intended to move.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="ForceBranch" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    [Deprecated] Use RepositoryOptions.
+                                    If set to true forces a clean repository pull by stashing changes.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="RepositoryOptions" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Repository handling options. Mostly for Git but PullToTip and SkipPull works for Hg as well. In BentleyBuild internals the implementation is merged with RepositoryTag.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies the unique repository name (see /BuildStrategy/RemoteRepositoryList/RemoteRepository[@Name]).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Tag" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies the named tag.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Branch" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies the branch.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Revision" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies the revision.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="ForceCheckout" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Forced checkout
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="PullToTip" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Always pull this repository to the tip. I.E. Ignore Revision from this element, TeamRevisionList and Strategy BDF (a.k.a. UseLastKnownGood).
+                                    The only revision it will not override is from a command line BDF and the named Tag.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="SkipPull" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Allows a strategy to prevent cloning or pulling a repo. This is useful in TFS/ADO builds that already pull a repo for you; default=False.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="LocalRepository" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The element correlates a repository name (and remote repository) to a local directory for checkout.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies the unique repository name (see /BuildStrategy/RemoteRepositoryList/RemoteRepository[@Name]).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Type" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The type of the repository.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="Hg" />
+                                    <xs:enumeration value="Cvs" />
+                                    <xs:enumeration value="FileShare" />
+                                    <xs:enumeration value="Rsync" />
+                                    <xs:enumeration value="Git" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="Directory" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies the absolute path to a directory on the local computer to use as the working copy.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="PullToTip" type="xs:boolean" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    [Deprecated] Use RepositoryOptions.
+                                    Always pull this repository to the tip. Miscdev-eula is a place where this is necessary.
+                                    Use with caution.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="SkipPull" type="xs:boolean" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    [Deprecated] Use RepositoryOptions.
+                                    Allows a strategy to prevent cloning or pulling a repo. This is useful in TFS/VSTS builds that already pull a repo for you; default=False.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="LastKnownGoodSource" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Defines a remote location where LastKnownGoods (LKG's) can be pulled from.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    A unique name for this LKG source.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Type" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Which of the servers to use
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="dev" />
+                                    <xs:enumeration value="firebug" />
+                                    <xs:enumeration value="prg" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="DevServer" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The name of the LastKnownGoodServer element for Development
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="FirebugServer" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Obsolete
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="PrgServer" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The name of the LastKnownGoodServer element for PRG
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Version" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    A speicific version of the LKG to use when pulling from PRG.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Platforms" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    A list comma-seperated of platforms that the LKGs support.  It is useful for LKGs that support just one Windows platform.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="LastKnownGoodServer" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Defines a remote location where LastKnownGoods (LKG's) can be pulled from.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    A unique name for this LKG Server.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Type" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The protocol to use for transfer. Also affects the Address specification.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="azurebuildartifact" />
+                                    <xs:enumeration value="fileshare" />
+                                    <xs:enumeration value="rsync" />
+                                    <xs:enumeration value="local" />
+                                    <xs:enumeration value="nuget" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="Address" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The remote address from which to pull LKGs.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Versioned" type="xs:boolean" use="optional" default="false">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Set if the LKG server stores all versions of LKGs (i.e. PRG, ADO). We no longer have unversioned LKGs.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="CredentialProvider" type="CredentialProviderType" use="optional" default="Basic" />
+                    </xs:complexType>
+                </xs:element>
+
+              <xs:element name="SdkSource" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                  <xs:documentation>
+                    Defines a remote location from where SdkSources can be pulled.  Skd Sources
+                    aren't as good as LKGs, but they provide a means to reach into another stream.
+                  </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="Name" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        A unique name for this LKG Component source.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Type" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        Which of the servers to use
+                      </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:enumeration value="dev" />
+                        <xs:enumeration value="firebug" />
+                        <xs:enumeration value="prg" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="DevServer" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The name of the LastKnownGoodServer element for Development
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="FirebugServer" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        Obsolete.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="PrgServer" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The name of the LastKnownGoodServer element for PRG
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Version" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        A speicific version of the LKG to use when pulling from PRG.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Stream" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        Obsolete
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="PrgOutputDir" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The name of the top-level PRG output directory associated with this LKG.  It is the directory name on \\builds\prgbuilds\lkgoutput.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="ProductName" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The name of the product.  Used to construct the full directory path from lkgoutput.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Platforms" type="xs:string" use="optional">
+                      <xs:annotation>
+                          <xs:documentation>
+                              A list comma-seperated of platforms that the SdkSources support.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="NuGetSource" minOccurs="0" maxOccurs="unbounded">
+                  <xs:annotation>
+                      <xs:documentation>
+                          Defines a dependency list for NuGet package sources.
+                      </xs:documentation>
+                  </xs:annotation>
+                  <xs:complexType>
+                      <xs:attribute name="Alias" type="xs:string" use="optional">
+                          <xs:annotation>
+                              <xs:documentation>
+                                  A unique name for this NuGet package
+                              </xs:documentation>
+                          </xs:annotation>
+                      </xs:attribute>
+                      <xs:attribute name="Name" type="xs:string" use="required">
+                          <xs:annotation>
+                              <xs:documentation>
+                                  A name for this NuGet package
+                              </xs:documentation>
+                          </xs:annotation>
+                      </xs:attribute>
+                      <xs:attribute name="Version" type="xs:string" use="required">
+                          <xs:annotation>
+                              <xs:documentation>
+                                  A speicific version of the NuGet package n pulling from PRG.
+                              </xs:documentation>
+                          </xs:annotation>
+                      </xs:attribute>
+                      <xs:attribute name="Platforms" type="xs:string" use="optional">
+                          <xs:annotation>
+                              <xs:documentation>
+                                  A list comma-seperated of platforms that the NuGetSources support.
+                              </xs:documentation>
+                          </xs:annotation>
+                      </xs:attribute>
+                    <xs:attribute name="Feed" type="xs:string" use="optional">
+                      <xs:annotation>
+                        <xs:documentation>
+                          The name of the feed for this package. By default uses whatever is DefaultNugetFeed for Pull.
+                        </xs:documentation>
+                      </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Multiplatform" type="xs:boolean" use="optional" default="false">
+                        <xs:annotation>
+                            <xs:documentation>
+                                If true, the package name will be transformed to name_platform in PRG and
+                                name_stream_platform otherwise. This is intended for use with bb-created NuGet
+                                packages that make the same transformation at package-creation time. Note that
+                                your build strategy will need to have definitions for the transformed names
+                                with all streams and platforms that your product might build against, and the 
+                                respective nuget packages will have to exist on Bentley's NuGet server.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="FromBB" type="xs:boolean" use="optional" default="false">
+                        <xs:annotation>
+                            <xs:documentation>
+                                This is obsolete and will cause an error. Use Multiplatform instead.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                  </xs:complexType>
+              </xs:element>
+              <xs:element name="ToolPart" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines a ToolPart for output binding.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:attribute name="Repository" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Repository where the part file is located
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="PartFile" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The part file to use when referencing the PartName attribute's value; must be in the repository specified by the Repository attribute.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="PartName" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The name of the part to use for tools; it will contain UPacks and NuGets.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Platforms" type="xs:string" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The list of platforms for which this applies. By filtering the platforms here the partfile will not be read if the default platform is not in the list.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="IncludeInTranskit" type="xs:boolean" use="optional">
+                      <xs:annotation>
+                        <xs:documentation>
+                          If true, copies the tool to the transkit.
+                        </xs:documentation>
+                      </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="ToolPackage" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines a ToolPart that's in a package for output binding.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:attribute name="PkgType" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Package type being used
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Name" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Package name
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="PartFile" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The part file to use when referencing the PartName attribute's value; must be in the package specified by the Name attribute.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="PartName" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The name of the part to use for tools; it will contain UPacks and NuGets.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Platforms" type="xs:string" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The list of platforms for which this applies. By filtering the platforms here the partfile will not be read if the default platform is not in the list.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="IncludeInTranskit" type="xs:boolean" use="optional">
+                      <xs:annotation>
+                        <xs:documentation>
+                          If true, copies the tool to the transkit.
+                        </xs:documentation>
+                      </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="NuGetFeed" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                  <xs:documentation>
+                    Defines a feed for nuget packages.
+                  </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="Name" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        A unique name for this NuGet feed, used in NuGetSource 
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Address" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The URL of the feed
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="CredentialProvider" type="CredentialProviderType" use="optional" default="Basic" />
+                  <xs:attribute name="Type" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The type of feed:
+                          http:  A normal NuGet server over http or https
+                          fileshare: A directory on disk that contains subdirectories for packages with the files laid out already. This is convenient for using the output of other builds/
+                          localpkg: A directory on disk that contains NuGet package(s)
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="DefaultNuGetFeed" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                  <xs:documentation>
+                    Defines the default feeds for pushing and pulling Nuget packages.
+                  </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="Pull" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The default NuGet feed to pull from. The matching NuGetFeed must already have been defined.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Push" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The default NuGet feed to push to. The matching NuGetFeed must already have been defined.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="NpmFeed" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                  <xs:documentation>
+                    Defines a feed for Npm packages.
+                  </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="Name" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        A unique name for this Npm feed
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Address" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The URL of the feed
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="CredentialProvider" type="CredentialProviderType" use="optional" default="Basic" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="DefaultNpmFeed" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                  <xs:documentation>
+                    Defines the default feeds for pushing and pulling Npm packages.
+                  </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="Pull" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The default Npm feed to pull from. The matching NpmFeed must already have been defined.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Push" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The default Npm feed to push to. The matching NpmFeed must already have been defined.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="UpackSource" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                  <xs:documentation>
+                    Defines a dependency list for Upack package sources.
+                  </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="Alias" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        A unique name for this Upack package
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Name" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        A name for this Upack package
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Version" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        A speicific version of the Upack package n pulling from PRG.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Platforms" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        A list comma-seperated of platforms that the UpackSources support. This only applies when using it as a Upack rather than as a SubPackage.
+                        See Multiplatform when using it as a SubPackage.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Feed" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The name of the feed for this package. By default uses whatever is DefaultUpackFeed for Pull.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="PartFile" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The name of a partfile in the Universal Package. Must also specify PartName.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="PartName" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The name of a part in the PartFile in the Universal Package. This part will appear as a subpart and the makefile and bindings will run as usual.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Multiplatform" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        True if the package is saved with multiple platform extensions that match the options in bb (_x64, _LinuxX64, etc) so that whatever part
+                        includes the SubPackage will dictate which platform it will pull. This only applies when using the SubPackge and not as as Upack.
+                        See Platforms for information when using it as a UPack.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="ADOBuildArtifactSource" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                      Defines ADO Build Artifact that can be downloaded.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:attribute name="Alias" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                A unique alias for this ADO build artifact
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="ArtifactName" type="xs:string" use="required">
+                        <xs:annotation>
+                          <xs:documentation>
+                            ADO build artifact name
+                          </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Version" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                ADO build version
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="DefinitionId" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                DefinitionId of the ADO Pipeline.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Project" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                ADO Project guid or name that has the ADO pipeline.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Organization" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Organization name that has the ADO Project.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="UpackFeed" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                  <xs:documentation>
+                    Defines a feed for nuget packages.
+                  </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="Name" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        A unique name for this Upack feed, used in UpackSource
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Address" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The URL of the feed, also known as the "organization" in Azure CLI.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Feed" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The feed name, which is the same as the "feed" in Azure CLI.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Type" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The feed type: azurecli or fileshare. Azure is the default. Fileshare is used to work with local packages.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="DefaultUpackFeed" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                  <xs:documentation>
+                    Defines the default feeds for pushing and pulling Upack packages.
+                  </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="Pull" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The default Upack feed to pull from. The matching UPkgFeed must already have been defined.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Push" type="xs:string" use="optional">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The default Upack feed to push to. The matching UPkgFeed must already have been defined.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="ForceLastKnownGood" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Forces all LKGs to come from a particular server set.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Type" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The protocol to use for transfer. Also affects the Address specification.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="dev" />
+                                    <xs:enumeration value="firebug" />
+                                    <xs:enumeration value="prg" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+
+              <xs:element name="StrategyAlias" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                  <xs:documentation>
+                    The alias to use.
+                  </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="Name" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        The build strategy(ies) to reference. A repository can be referenced with "Reponame:". Multiple concatenated strategies
+                        which are read as if the last one imports the preveious one can be used as "stratA;stratB". Multiple strategies that should
+                        be run sequentially (but not redoing common parts) would be "mstrat1+mstrat2". These can be combined: "repo1:mstrat1+stratA;stratB"
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="Alias" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        Specifies the named tag.
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="ImportStrategy" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Acts similar to #include in C, where you import all information from another stategy file, and any later re-definitions win (last-in wins).
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The name of the strategy to import; this matches the root filename of the strategy (e.g. without the .BuildStrategy.xml suffix).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Repository" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Repository where the strategy file is located
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="SubDir" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Repository subdirectory where the strategy file is located
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="DefaultPartOptions" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Defines default values used when getting/building a part.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="BuildFromSource" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies whether to build any source present (as opposed to using LKG's).
+                                    This allows the developer to check out and view source, but not spend time building it.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="Always" />
+                                    <xs:enumeration value="Never" />
+                                    <xs:enumeration value="Once" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="OnError" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies what to do when an error is encountered while building a part.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="Stop" />
+                                    <xs:enumeration value="UseLKG" />
+                                    <xs:enumeration value="Continue" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="SaveLKG" type="xs:string" use="optional" default="true">
+                            <xs:annotation>
+                                <xs:documentation>
+                                  Prevents the savelkg command from making a last known good for parts. This can be "true" or "false" or a list of platforms
+                                  such as "x86,x64,WinRTx86" or "*" to mean all platforms.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="LastKnownGoodSource" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Describes the name of the last known good source for parts.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="PartStrategy" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Defines the strategy to be used for a specific part or group of parts.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="BuildFromSource" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies whether to build any source present (as opposed to using LKG's).
+                                    This allows the developer to check out and view source, but not spend time building it.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="Always" />
+                                    <xs:enumeration value="Never" />
+                                    <xs:enumeration value="Once" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="OnError" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies what to do when an error is encountered while building a part.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="Stop" />
+                                    <xs:enumeration value="UseLKG" />
+                                    <xs:enumeration value="Continue" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="SaveLKG" type="xs:string" use="optional" default="true">
+                            <xs:annotation>
+                                <xs:documentation>
+                                  Prevents the savelkg command from making a last known good for parts. This can be "true" or "false" or a list of platforms
+                                  such as "x86,x64,WinRTx86" or "*" to mean all platforms.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="LastKnownGoodSource" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Describes the name of the last known good source for parts.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="PartName" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Name of the part that these settings describe.
+                                    Can have wildcards.
+                                    Must correlate to a part name in a part file.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="PartFile" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Name of the part file that contains the part(s) referenced in PartName.
+                                    Can have wildcards.
+                                    PartFile names must be unique, and thus a repository is not required.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Locked" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Lock a specific option that cannot be changed until the matching Unlocked attribute
+                                    is supplied.  For example, this is used to force certain things to always come from 
+                                    from LKGs even if a later strategy supplies a *,* partstrategy that says to build once.
+                                    Locking happens after all items on the line are set.
+                                    Multiple options can be locked using a comma-seperated list.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Unlocked" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Unlock a specific option that was Locked.  Unlocking happens before anything in the elememt is set.
+                                    Multiple options can be unlocked using a comma-seperated list.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Version" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Version of the part to be set. Version should be in the form '12-34-56-78'
+                                    If the version contains the wildcard character '*' it will be filled with a value inherited from the parent.
+                                    No further characters should follow the '*' character (i.e. '12-34-*' is valid, but '12-34-*-78' is not).
+                                    Environmental variables are accepted wrapped between '${...}'.
+                                    Child parts inherit versions from parents if the children do not have their own versions set and if all parents have the same version.
+                                    If parent versions differ and the child has no version set, the version of the root part will be chosen.
+                                    In the case that the root part strategy has no version set, it will be retrieved from the environment.
+                                    If any of the 4 version fields are not set in the environment, the field will be defaulted to 99.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Exclude" type="xs:string" use="optional" default="false">
+                            <xs:annotation>
+                                <xs:documentation>
+                                  Exclude this part from the build and ignore all subparts. The part will not get added to the 
+                                  build graph, and thus subparts are not processed however if the subparts are reached froma different Part
+                                  then they will still be part of the build. Note that this can cause problems with LKGs since the parts
+                                  won't be available for consumers and thus should be avoided in anything that is consumed via LKGs. 
+                                  Any consumers would have to match the same exclusions.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="RepositoryLists" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Specifies what repository list to pull from and push to.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="PullFromList" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies the repository list (see /BuildStrategy/RemoteRepositoryList[@Name]) to pull from.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="PushToList" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies the repository list (see /BuildStrategy/RemoteRepositoryList[@Name]) to push to.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="DeferStrategy" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Use this to defer or skip certain catagories of parts. The parts must be marked with a DeferType that matches the Name here.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies a DeferType, as used on a Part Element. Can also contain a wildcard such as *test*.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="BuildPass" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Choose to build normally, defer to the end, or skip entirely. The options are a number or "Never".
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="DefaultProvenance" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The default method of handling mis-matching provenances (e.g. you have mixed LKG's).
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="OnError" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Describes what to do when a provenance mismatch occurs.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="Warn" />
+                                    <xs:enumeration value="Stop" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Provenance" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Repository-specific method for handling mis-matching provenances.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Repository" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The repository where the provenance mismatch occurs.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="OnError" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Describes what to do when a provenance mismatch occurs.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="Warn" />
+                                    <xs:enumeration value="Stop" />
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="DefaultLastKnownGoodSource" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The default LastKnownGoodSource for parts that do not specify one explicitly.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The name of the LKG source.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="BDFServer" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    When pulling to a BDF file we need to reset all the LKGs to come from the PRG server.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="DefaultTarget" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Describes the default values to use for BentleyBuild commands.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Repository" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies the unique repository name (see /BuildStrategy/RemoteRepositoryList/RemoteRepository[@Name]) to use when referencing the PartFile attribute's value.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="PartFile" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The part file to use when referencing the PartName attribute's value; must be in the repository specified by the Repository attribute.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="PartName" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The part name to use when issuing the 'build' command.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="OutputRootDir" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The absolute path to a directory on the local computer to write output files to.
+                                    This will be used for log files, build contexts, and actual build output.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Platform" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The platform to build.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="LKGPlatforms" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The platform(s) to use when pulling LKGs.  By default it will pull all LKGs for a given architecture; i.e. both WinX86 and WinX64.
+                                    In general developers need to be able to switch between these platforms to be able to fix problems in either build, and they do not
+                                    want to have to do a get based on the other platform.  However, there are some cases where using this makes sense. If OnlyPlatforms 
+                                    or ExcludePlatforms are set then they will limit the platforms but LKGPlatforms will override them.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="OnlyPlatforms" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Limit any builds to just these platforms. If the strategy is called with a non-listed platform then the build will simply exit.
+                                    The primary use case for this is building multiple strategies with multiple platforms where a single set of source is desirable
+                                    so pulling with ane encompassing set of strategies and platforms is a good tactic. OnlyPlatforms will override ExcludePlatforms
+                                    so you should not specify both.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="ExcludePlatforms" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Limit any builds to avoid these platforms. If the strategy is called with a non-listed platform then the build will simply exit.
+                                    The primary use case for this is building multiple strategies with multiple platforms where a single set of source is desirable
+                                    so pulling with ane encompassing set of strategies and platforms is a good tactic. OnlyPlatforms will override ExcludePlatforms
+                                    so you should not specify both.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="PartThreads" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The number of threads to use by default when doing per-part operations such as build or pull.  This is the same as the '-N'
+                                    parameter to bb and if that parameter is set it will override the strategy value.  Typically this is used by folks who are
+                                    transitioning to the parallel bb but haven't adjusted fixed all the dependencies yet.  It will not affect the threads used 
+                                    for per-repository actions like stat or push.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="VersionSource" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    This is a way to specify a version source that will be used during the build. Generally PRG sets REL_V, MAJ_V, MIN_V, and SUBMIN_V
+                                    which are used in the makefiles. However that does not work when building multiple strategies (bb -s foo+bar+baz) where each one
+                                    has to take a different version. The VersionSource can be a base version like "1.2.3.*" which specifies a branch and we look up the
+                                    next version from the BDF server. It can also be a filename that starts with ${SrcRoot} or ${strategy.defaultRepo} or some other environment
+                                    variable. The file must contain a string with the full version "1.2.3.4". Finally, if it doesn't start with a digit or an environment
+                                    reference then it's considered to be an environment variable containing a version (1.2.3.4). If the version contains a wildcard (1.2.3.*) then 
+                                    the BDF server will be consulted to get the next version number for that branch. It is not valid to fully specify the version in the build
+                                    strategy file; it would be unlikely everyone would remember to commit to BuildStrategies before each build.
+
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Languages" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    TODO
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="BuildControl" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Used to control aspects of the build so that Pipelines/PRG can always make the same calls
+                            and the specific build can choose what to do.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="SaveInstallSetToLKG" type="xs:boolean" use="optional" default="false">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Setting this to true will cause MSI packages created in InstallSetContext
+                                    to be saved in LKG. "bb bundlebuild save" is always run in PRG, but it will do nothing if this is not set to true.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="SaveNugetProducts" type="xs:boolean" use="optional" default="false">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Setting this to true will cause "bb savenuget" to create NuGetProduct packages and possibly push 
+                                    them to the NuGet server. PRG will always run bb savenuget but 
+                                    individual products can decide whether to do anything based on the BuildStrategy
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="SaveLkgsNuGet" type="xs:boolean" use="optional" default="false">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Setting this to true will cause "bb savelkgs" to create LKGs as NuGet packages and push them to the NuGet
+                                    server. The default is false. Libraries need to save LKGs, products do not. PRG will always
+                                    run bb savelkgs but individual products can decide whether to do anything based on the BuildStrategy.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="SaveLkgsLegacy" type="xs:boolean" use="optional" default="false">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Setting this to true will cause "bb savelkgs" to create LKGs in the legacy fashion. The default is false.
+                                    Libraries need to save LKGs, products do not. PRG will always run bb savelkgs but individual
+                                    products can decide whether to do anything based on the BuildStrategy.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="SaveProducts" type="xs:boolean" use="optional" default="false">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Setting this to true will cause "bb saveproducts" to save off the things listed in the partfile
+                                    as Products to the LKG server. The default is false. Currently this is used for SDK sources. 
+                                    Libraries may need to save LKGs, but actual products like MicroStation should not use this command
+                                    as it does not save the real build or installset. PRG will always run bb saveproduct but 
+                                    individual products can decide whether to do anything based on the BuildStrategy.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="BundleBuild" type="xs:boolean" use="optional" default="false">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Setting this to true will cause Bundling of packages. "bb bundlebuild build" is always run in PRG, but if this is not set to true then it will do nothing.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="DeployLanguagesToProductsAndInstallers" type="xs:boolean" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    TODO
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="PullUsingPartPlatforms" type="xs:boolean" use="optional" default="false">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Pulls LKGs by using part platforms instead of trying all platforms defined on the LastKnownGoodSource.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="IncludeSubProductBundles" type="xs:boolean" use="optional" default="true">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Doing bundle build includes sub product bundles into the parent product build.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="UseUpgradeCodeInComponentGuidSeed" type="xs:boolean" use="optional" default="false">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Include the build install set part's upgrade code in the seed of the component GUIDs.
+                                    This is useful if two parts share a component that could result in having the same seed
+                                    thus generating the same GUID for the two parts.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="UseLKGTryLocalBDFFirst" type="xs:boolean" use="optional" default="false">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Set to true, so that when resolving BDF with UseLastKnownGood, BentleyBuild would search for it in the Local LKG location first and only then would contact the server.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="ToolsetPart" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Describes the default values to use for BentleyBuild commands.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Repository" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies the unique repository name (see /BuildStrategy/RemoteRepositoryList/RemoteRepository[@Name]) to use when referencing the PartFile attribute's value.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="PartFile" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The part file to use when referencing the PartName attribute's value; must be in the repository specified by the Repository attribute.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="PartName" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The part name of the toolset part.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="DefaultToolset" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The default compiler for a given platform. Using this multiple products on the same stream can build with different compilers
+                            without having to modify every makefile.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Platform" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The platform that this toolset is for. This is limited to the same values that can be used in a partfile.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Toolset" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The toolset to use. It is a string that is passed to the makefiles as DEFAULT_TOOLSET so it needs to match 
+                                    whatever the makefiles understand. 
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                      <xs:attribute name="ToolVersion" use="optional">
+                        <xs:annotation>
+                          <xs:documentation>
+                            The toolversion to use. It is a string that is passed to the makefiles as TOOLSET_VERSION so it gets the 
+                            required toolset version.
+                          </xs:documentation>
+                        </xs:annotation>
+                      </xs:attribute>
+                      <xs:attribute name="TargetDotNetRuntime" use="optional">
+                        <xs:annotation>
+                          <xs:documentation>
+                            The .NET runtime to target for C# compilation, e.g. v4.7.2. It is a string that is passed to the makefiles as DEFAULT_TARGET_FRAMEWORK_VERSION.
+                            Only works starting with VS 2019 and newer Toolset.
+                          </xs:documentation>
+                        </xs:annotation>
+                      </xs:attribute>
+                      <xs:attribute name="TargetWindowsSDKVersion" use="optional">
+                        <xs:annotation>
+                          <xs:documentation>
+                            The Windows SDK version to use for C++ compiler.
+                            Only works starting with VS 2019 and newer Toolset.
+                          </xs:documentation>
+                        </xs:annotation>
+                      </xs:attribute>
+                        <xs:attribute name="LibType" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Which LibType to use based on the toolset. The default is dynamic. 
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="FirebugJob" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Obsolete.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Obsolete.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="PullToBuildDescriptionFile" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The name of a BuildDescriptionFile to determine the versions for the pull.  
+                            Typically this is from ${SrcRoot}BuildDescriptions.  It is the similar to the argument to "bb pull -r"
+                            and specifying that command line argument will override this value.  However, it differs from the 
+                            command line argument because it will use not use the BDF file for everything. If the item in the BDF
+                            is coming from the current stream then it will be pulled to the GUID; otherwise it will be pulled to 
+                            the tip. This makes it useful for building to match a PRG build on the main stream.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The Name of the Build Description file.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="IgnoreRepositories" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    A list (comma-seperated) of repositories to exclude from this BDF.  Each ignored repository will be pulled
+                                    as if PullToBuildDescriptionFile element was not specified.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="UseLastKnownGood" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>'
+                            UseLastKnownGood will get the BDF for the specified build and mark all parts of the current build that exist in the LKG
+                            as coming from LKGs. It is possible to override specific parts after this by adding PartStrategy elements. If you need a 
+                            specific Version it can be specified on a LastKnownGoodSource element (which can be added to your local Strategy file).
+                            The UseLastKnownGood replaces the PullToBuildDescription element plus the "part=* useLastKnownGood=PowerPlatform" lines.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="LastKnownGoodSource" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The name LastKnownGoodSource element to use. 
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="MatchLkgs" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    If the name of a LastKnownGoodSource corresponding to another UseLastKnownGood element is provided then
+                                    bb will try to match the subparts of this LKG with the subparts of listed LKG to find something that uses
+                                    the same versions and thus won't cause provenance problems. If there are no products that match then
+                                    an error will be thrown.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="EnvVariable" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>'
+                            Strategy EnvVariable is a environment variable that is passed/added to a build environment.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The name of environment variable. 
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Value" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The value of environment variable. 
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="L10nProduct" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>'
+                            Defines the localization product that will be used to pull and push resources to.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Name" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The name of the product that has Git l10n repositories defined.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:simpleType name="CredentialProviderType">
+        <xs:annotation>
+            <xs:documentation>
+                The credential provider used to authenticate with the package feed. Defaults to Auto.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Basic">
+                <xs:annotation>
+                    <xs:documentation>
+                        No specific provider will be used, authentication using default behavior.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="Token">
+                <xs:annotation>
+                    <xs:documentation>
+                        Use authentication token from an environment variable {Uppercase LastKnownGoodServer Name}_AUTH if set.
+                        The authentication token should be defined as a base 64 encoded string: ":{PersonalAccessToken}" (WARNING: The colon also needs to be encoded)
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="MicrosoftCredentialProvider">
+                <xs:annotation>
+                    <xs:documentation>
+                        Use the Microsoft Credential Provider to authenticate.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="AzureCli">
+                <xs:annotation>
+                    <xs:documentation>
+                        Use Azure CLI to authenticate.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="Auto">
+                <xs:annotation>
+                    <xs:documentation>
+                        Use a Token if that is set, then use Azure CLI. The former typically works on a ADO pipeline while the latter works for developers.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>
