@@ -102,6 +102,16 @@ describe("basic tests", () => {
     // process.stdout.write(JSON.stringify(inst, null, 2));
 
   });
+  it("resolveInstanceKey", () => {
+    const r0 = dgndb.resolveInstanceKey({
+      partialKey: {
+        id: "0x1b",
+        baseClassName: "BisCore:Element",
+      }
+    });
+    assert.equal(r0.id, "0x1b", "id should be 0x1b");
+    assert.equal(r0.classFullName, "BisCore:Subject", "className should be BisCore:Subject");
+  });
   describe("getInstance()", () => {
     /* eslint-enable @typescript-eslint/naming-convention */
     const jsFormat = {

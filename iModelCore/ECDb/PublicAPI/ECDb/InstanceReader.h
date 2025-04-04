@@ -35,7 +35,7 @@ struct InstanceReader final {
     public:
     constexpr static unsigned FLAGS_UseJsPropertyNames = 0x1u;
     constexpr static unsigned FLAGS_DoNotTruncateBlobs = 0x2u;
-;
+
     struct IRowContext : IECSqlRow {
        public:
             virtual BeJsValue GetJson(JsReadOptions const& param = JsReadOptions()) const = 0;
