@@ -3285,6 +3285,8 @@ ECSchemaPtr SanitizingSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchTy
     if(status != ECObjectsStatus::Success || !sanitizedSchema.IsValid() || schemaContext.AddSchema(*sanitizedSchema) == ECObjectsStatus::DuplicateSchema)
         return nullptr;
 
+    // For unknown reasons, CopySchema does not preserve this. But there is a comment suggesting it does that on purpose. So we do it here outside.
+    sanitizedSchema->SetOriginalECXmlVersion(innerSchema->GetOriginalECXmlVersionMajor(), innerSchema->GetOriginalECXmlVersionMinor());
     return sanitizedSchema;
     }
 
