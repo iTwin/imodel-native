@@ -20,6 +20,10 @@ protected:
         ECSchema::CreateSchema(schema, "TestSchema1", "ts1", 1, 0, 0);
         return schema;
         }
+public:
+    Utf8String GetDescription() const override {
+        return Utf8PrintfString("TestSchemaLocater1");
+    }
     };
 
 struct TestSchemaLocater2 : IECSchemaLocater, NonCopyableClass
@@ -30,6 +34,10 @@ protected:
         ECSchemaPtr schema;
         ECSchema::CreateSchema(schema, "TestSchema2", "ts2", 2, 0, 0);
         return schema;
+        }
+public:
+    Utf8String GetDescription() const override {
+            return Utf8PrintfString("TestSchemaLocater2");
         }
     };
 

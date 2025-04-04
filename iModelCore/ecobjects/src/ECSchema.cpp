@@ -2941,7 +2941,7 @@ ECSchemaPtr ECSchema::LocateSchema(SchemaKeyR key, ECSchemaReadContextR schemaCo
 static void AddFilePathToSchemaPaths(ECSchemaReadContextR schemaContext, WCharCP ecSchemaXmlFile)
     {
     BeFileName schemaDirectory (BeFileName::DevAndDir, ecSchemaXmlFile);
-    schemaContext.AddSchemaPath(schemaDirectory);
+    schemaContext.AddSchemaPath(schemaDirectory, true); // We always add the last path we used to the top in the priority list, if it does not exist yet
     }
 
 //---------------------------------------------------------------------------------------

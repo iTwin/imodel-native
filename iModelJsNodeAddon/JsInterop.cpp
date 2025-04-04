@@ -842,10 +842,10 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void JsInterop::AddFallbackSchemaLocaters(IECSchemaLocaterR finalLocater, ECSchemaReadContextPtr schemaContext)
+void JsInterop::AddFallbackSchemaLocaters(IECSchemaLocaterR ecdbLocater, ECSchemaReadContextPtr schemaContext)
     {
     // Add the db then the standard schema paths as fallback locations to load referenced schemas.
-    schemaContext->SetFinalSchemaLocater(finalLocater);
+    schemaContext->AddFirstSchemaLocater(ecdbLocater);
     AddFallbackSchemaLocaters(schemaContext);
     }
 
@@ -859,15 +859,13 @@ void JsInterop::AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext)
     rootDir.AppendToPath(L"ECSchemas");
     BeFileName dgnPath = rootDir;
     dgnPath.AppendToPath(L"Dgn").AppendSeparator();
+
     BeFileName domainPath = rootDir;
     domainPath.AppendToPath(L"Domain").AppendSeparator();
     BeFileName ecdbPath = rootDir;
     ecdbPath.AppendToPath(L"ECDb").AppendSeparator();
-    bvector<WString> searchPaths;
-    searchPaths.push_back(dgnPath);
-    searchPaths.push_back(domainPath);
-    searchPaths.push_back(ecdbPath);
-    schemaContext->AddFinalSchemaPaths(searchPaths);
+    bvector<WString> paths {dgnPath, domainPath, ecdbPath};
+    schemaContext->AddFinalSchemaPaths(paths);
     }
 
 //---------------------------------------------------------------------------------------
@@ -878,12 +876,17 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     if (0 == schemaSources.size())
         return BE_SQLITE_ERROR;
 
+    NativeLogging::CategoryLogger logger("JsInterop");
+
     ECSchemaReadContextPtr schemaContext = opts.m_customSchemaContext;
     if (schemaContext.IsNull())
         schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
         //TODO: CopyingSchemaLocater
     SanitizingSchemaLocater finalLocater(dgndb.GetSchemaLocater());
     JsInterop::AddFallbackSchemaLocaters(finalLocater, schemaContext);
+    Utf8String contextDesc = schemaContext->GetDescription();
+    logger.warningv("ImportSchemas with %d schemas and context:\n%s", schemaSources.size(), contextDesc.c_str());
+        // Change this into debugv after debugging is done
     bvector<ECSchemaCP> schemas;
 
     for (Utf8String schemaSource : schemaSources)
@@ -905,7 +908,11 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
             continue;
 
         if (SchemaReadStatus::Success != schemaStatus)
+            {
+            Utf8String contextDesc = schemaContext->GetDescription();
+            logger.errorv("Failed to read schema from %s. Context setup: %s", schemaSource.c_str(), contextDesc.c_str());
             return BE_SQLITE_ERROR;
+            }
 
         schemas.push_back(schema.get());
         }
@@ -915,7 +922,11 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 
     SchemaStatus status = dgndb.ImportSchemas(schemas, opts.m_schemaLockHeld, DgnDb::SyncDbUri(opts.m_schemaSyncDbUri.c_str())); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
     if (status != SchemaStatus::Success)
+        {
+        Utf8String contextDesc = schemaContext->GetDescription();
+        logger.errorv("ImportSchemas returned non-success code. Context setup: %s", contextDesc.c_str());
         return DgnDb::SchemaStatusToDbResult(status, true);
+        }
 
     return dgndb.SaveChanges();
     }

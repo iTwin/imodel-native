@@ -150,7 +150,7 @@ void ECSchemaReadContext::RemoveSchemaLocater(IECSchemaLocaterR locator)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaReadContext::AddSchemaPath(WCharCP path)
+void ECSchemaReadContext::AddSchemaPath(WCharCP path, bool addOnTop)
     {
     BeFileName pathStr(path);
     pathStr.AppendSeparator();
@@ -163,8 +163,23 @@ void ECSchemaReadContext::AddSchemaPath(WCharCP path)
     SearchPathSchemaFileLocaterPtr locator = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(pathVector, m_includeFilesWithNoVerExt);
 
     m_searchPaths.insert(pathStr.GetName());
-    m_locaters.insert(m_locaters.begin() + m_userAddedLocatersCount + ++m_searchPathLocatersCount, locator.get());
+    int offset = 1;
+    m_searchPathLocatersCount++;
+    if(!addOnTop)
+        offset = m_userAddedLocatersCount + m_searchPathLocatersCount;
+
+    m_locaters.insert(m_locaters.begin() + offset, locator.get());
     m_ownedLocators.push_back(locator);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSchemaReadContext::AddFirstSchemaPaths(bvector<WString> const& searchPaths)
+    {
+    auto locater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths, m_includeFilesWithNoVerExt);
+    AddFirstSchemaLocater(*locater);
+    m_ownedLocators.push_back(locater);
     }
 
 //---------------------------------------------------------------------------------------
@@ -300,6 +315,23 @@ void ECSchemaReadContext::ClearAliasesToPruneForSchema(Utf8StringCR schemaName)
     auto it = m_schemasToPruneAliases.find(schemaName);
     if (it != m_schemasToPruneAliases.end())
         m_schemasToPruneAliases.erase(it);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String ECSchemaReadContext::GetDescription() const
+    {
+    Utf8String description = "ECSchemaReadContext, locaters listed in priority order: ";
+    int i = 0;
+    for (auto const& locater : m_locaters)
+        {
+        Utf8String locaterDesc = locater->GetDescription();
+        Utf8PrintfString part("\n[%d]: %s", i++, locaterDesc.c_str());
+        description.append(part);
+        }
+
+    return description;
     }
 
 /*---------------------------------------------------------------------------------**//**

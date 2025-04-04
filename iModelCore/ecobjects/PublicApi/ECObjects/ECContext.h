@@ -145,9 +145,10 @@ public:
     //! @param[in] locater  Locater to remove from the current context
     ECOBJECTS_EXPORT void RemoveSchemaLocater(IECSchemaLocaterR locater);
 
-    //! Adds a file path that should be used to search for a matching schema name
+    //! Adds a file path that should be used to search for a matching schema name. This method prevents adding duplicates if the path is already in the list.
     //! @param[in] path Path to the directory where schemas can be found
-    ECOBJECTS_EXPORT void AddSchemaPath(WCharCP path);
+    //! @param[in] addOnTop If true, the path will be added to the top of the list of search paths. Otherwise, it will be added using legacy positioning.
+    ECOBJECTS_EXPORT void AddSchemaPath(WCharCP path, bool addOnTop = false);
 
     //! Adds a file path that should be used to search for a matching conversion schemas
     //! @param[in] path Path to the directory where conversion schemas can be found
@@ -160,6 +161,10 @@ public:
     //! Adds the input search paths to a new schema locater added as the last locater in the current list of locaters
     //! @param[in] searchPaths  Directories to search for schemas
     ECOBJECTS_EXPORT void AddFinalSchemaPaths(bvector<WString> const& searchPaths);
+
+    //! Adds the input search paths to a new schema locater added as the first locater in the current list of locaters
+    //! @param[in] searchPaths  Directories to search for schemas
+    ECOBJECTS_EXPORT void AddFirstSchemaPaths(bvector<WString> const& searchPaths);
 
     //! Find the schema matching the schema key and using matchType as the match criteria. This uses the prioritized list of locators to find the schema.
     //! @param[in] key  The SchemaKey that defines the schema (name and version information) that is being looked for
@@ -195,6 +200,9 @@ public:
 
     //! Clears any aliases in the list of aliases to prune for the input schemaName, does not clear the list of schemas to prune.
     ECOBJECTS_EXPORT void ClearAliasesToPruneForSchema(Utf8StringCR schemaName);
+
+    //! Returns a description of the current setup of this context, useful for logging and troubleshooting
+    ECOBJECTS_EXPORT Utf8String GetDescription() const;
 
     IssueReporter& Issues() { return m_issueReporter; }
 };

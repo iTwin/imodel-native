@@ -2840,6 +2840,10 @@ public:
     //! @param[in] schemaContext    Contains the information of where to look for referenced schemas
     //! @returns A valid ECSchemaPtr if the schema was located
     ECSchemaPtr LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) {return _LocateSchema(key, matchType, schemaContext);}
+
+    //! Abstract method to get a description of the schema locater.
+    //! This should include internal information like lookup paths, cached schemas etc.
+    virtual Utf8String GetDescription() const = 0;
 };
 
 typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
@@ -2888,7 +2892,10 @@ public:
     //! @returns The first matching ECSchema if it is contained in the cache; otherwise nullptr.
     ECOBJECTS_EXPORT ECSchemaP FindSchema(const SchemaKeyMatchCallback& predicate) const;
 
-    
+    Utf8String GetDescription() const override {
+        return Utf8PrintfString("ECSchemaCache with %d schemas", m_schemas.size()).c_str();
+    }
+
     //! Iterates through all schemas in the cache and applies the provided callback function to each schema.
     //! Unlike GetSchemas() this method does not have to make a copy of the internal list, so it is more efficient.
     //! @param callback A function or callable object that will be invoked for each schema in the cache.
@@ -2947,6 +2954,15 @@ public:
     bvector<WString>const& GetSearchPath() const {return m_searchPaths;}
     //! Create a new SearchPathSchemaFileLocater using the input paths as schema search paths
     ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt=false);
+
+    Utf8String GetDescription() const override {
+        Utf8String searchPaths;
+        for (auto const& path : m_searchPaths) {
+              Utf8PrintfString str("\n    %S", path.c_str());
+              searchPaths.append(str);
+            }
+        return Utf8PrintfString("SearchPathSchemaFileLocater with %d search paths:%s", m_searchPaths.size(), searchPaths.c_str());
+    };
 };
 
 //=======================================================================================
@@ -2960,6 +2976,10 @@ protected:
     ECOBJECTS_EXPORT ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 public:
     ECOBJECTS_EXPORT void AddSchemaString(SchemaKeyCR schemaKey, Utf8StringCR schemaXml) {m_schemaStrings[schemaKey] = schemaXml;}
+
+    Utf8String GetDescription() const override {
+        return Utf8PrintfString("StringSchemaLocater with %d schemas", m_schemaStrings.size()).c_str();
+    }
 };
 
 struct SupplementalSchemaInfo;
@@ -2997,6 +3017,10 @@ protected:
 public:
     IECSchemaLocater& GetInnerLocater() const {return m_innerLocater;} //!< Returns the inner locater
     SanitizingSchemaLocater(IECSchemaLocater& innerLocater) : m_innerLocater(innerLocater) {}
+
+    Utf8String GetDescription() const override {
+        return Utf8PrintfString("SanitizingSchemaLocater. Inner locater: %s", m_innerLocater.GetDescription().c_str());
+    }
 };
 
 //=======================================================================================
