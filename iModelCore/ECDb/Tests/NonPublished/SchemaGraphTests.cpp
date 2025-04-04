@@ -244,7 +244,7 @@ TEST_F(SchemaGraphTestFixture, CircularEmptySchemaReference)
 
     bvector<Utf8String> expectedIssues {
         "Failed to read Schema 'Foo.01.00.00'. The attempt to load from XML ended up in a circular reference.",
-        "Failed to read Schema. 'Bar.01.00.00'. The attempt to load from XML ended up in a circular reference.",
+        "Failed to read Schema 'Bar.01.00.00'. The attempt to load from XML ended up in a circular reference."
     };
     issues.CompareIssues(expectedIssues);
     }
