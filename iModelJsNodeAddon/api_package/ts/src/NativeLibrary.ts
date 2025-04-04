@@ -616,20 +616,22 @@ export declare namespace IModelJsNative {
     public getGeometryContainment(props: object): Promise<GeometryContainmentResponseProps>;
     public getIModelCoordinatesFromGeoCoordinates(points: IModelCoordinatesRequestProps): IModelCoordinatesResponseProps;
     public getIModelId(): GuidString;
-    public getIModelProps(): IModelProps;
     public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
+
+    /* WIP thining <<<<< */
     public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
     public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
     public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
     public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
     public patchElementProperties(jsonProps: string):  string;
-
     public newBeGuid(): GuidString;
     public geomSourceToProps(arg: GeometrySource): GeometryStreamProps;
     public propsToGeomSource(geom: GeometryStreamProps, geomSource: Optional<GeometrySource, "geom">): GeometrySource;
     public builderToGeomSource(builder: ElementGeometryBuilderParams, geomSource: Optional<GeometrySource, "geom">): GeometrySource
-
-
+    /* WIP thining >>>> */
+    
+    // when lets getIModelProps know that the extents may have been updated as the result of a pullChanges and should be read directly from the iModel as opposed to the cached extents.
+    public getIModelProps(when?: "pullMerge"): IModelProps;
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;

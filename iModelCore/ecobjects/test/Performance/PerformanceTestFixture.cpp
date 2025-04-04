@@ -320,7 +320,7 @@ void addPropertyOverrides (ECClassP currentClass)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECSchemaPtr PerformanceTestFixture::GenerateDeepHierarchyTestSchema(size_t numberOfClassHierarchies, size_t numberOfClassesPerHierarchy, size_t numberOfMixinsPerHierarchy, size_t numberOfPropertiesPerClass, bool overrideProperties)
+ECSchemaPtr PerformanceTestFixture::GenerateDeepHierarchyTestSchema(size_t numberOfClassHierarchies, size_t numberOfClassesPerHierarchy, size_t numberOfMixinsPerHierarchy, size_t numberOfPropertiesPerClass, bool overrideProperties, ECSchemaReadContextPtr schemaContext)
     {
     ECSchemaPtr schema;
     Utf8PrintfString schemaName("HierarchSchema_%zuH_%zuC_%zuM_%zuP", numberOfClassHierarchies, numberOfClassesPerHierarchy, numberOfMixinsPerHierarchy, numberOfPropertiesPerClass);
@@ -356,7 +356,6 @@ ECSchemaPtr PerformanceTestFixture::GenerateDeepHierarchyTestSchema(size_t numbe
                 baseClass = currentClass;
             }
 
-        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
         for (size_t nMixin = 0; nMixin < numberOfMixinsPerHierarchy; nMixin++) 
             {
             ECEntityClassP mixin;

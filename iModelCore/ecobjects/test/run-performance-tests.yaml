@@ -12,97 +12,56 @@ schedules:
     - master
   always: true
 
+resources:
+  repositories:
+    - repository: imodel-native-internal
+      type: github
+      endpoint: imodel-native
+      name: iTwin/imodel-native-internal
+
 stages:
 
   - stage: build
     displayName: Build
 
     variables:
-      - name: bbSrcRoot
-        value: '$(Agent.BuildDirectory)/bbsrc'
+      BB_V: '-v 4'
+      BB_ARCH: x64
+      PY_EXE: py -3
+      BB_OUT_ROOT: $(Build.BinariesDirectory)
+      BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
+      BB: $(BB_SRC_ROOT)/BentleyBuild/BentleyBuild.py
+      STRATEGY: 'iModelCore;SkipPull_imodel-native-internal'
+      BB_ARGS: '-p ECObjects-PerformanceGtest -f iModelCore/ECObjects/ECObjects -r imodel-native -s $(STRATEGY) -a $(BB_ARCH) --srcroot=$(BB_SRC_ROOT) --outputroot=$(BB_OUT_ROOT)'
 
     jobs:
       - job:
         displayName: Pull and build for Windows
 
         pool:
-          name: iModelTechCI
+          name: imodelNative-Win11-VS2022
           demands:
-          - Agent.OS -equals Windows_NT
           - Cmd
 
         steps:
-        - checkout: self
+        - checkout: imodel-native-internal
 
-        - task: PythonScript@0
-          displayName: Environment
-          inputs:
-            scriptSource: inline
-            script: |
-              import os
-              # TFS pushes its variables into the environment CAPITALIZED. Don't pretend you can get it correct here.
-              def set_vsts_env(key, value): print(key + ' = ' + str(value) + '\n##vso[task.setvariable variable={0}]{1}'.format(key, value))
+        - template: build/templates/prebuild.yml@imodel-native-internal
+          parameters:
+            otherRepo: imodel-native-internal
+            nativePR: 'main'
 
-              bbSrcRoot = os.environ['BBSRCROOT'].replace('\\', os.path.sep)
-              set_vsts_env('BBSRCROOT', bbSrcRoot) # Update for later use by things like the BentleyBootstrap command
-
-              set_vsts_env('PYTHONUNBUFFERED', '1')
-              set_vsts_env('BSISRC', bbSrcRoot + os.path.sep)
-              set_vsts_env('BSIOUT', os.environ['BUILD_BINARIESDIRECTORY'] + os.path.sep)
-              set_vsts_env('BUILDSTRATEGY', 'iModelCore')
-
-              # If running concurrent jobs, like on an agent, make a unique mspdbsrv.exe per job to alleviate linker PDB issues if another gets killed.
-              set_vsts_env('_MSPDBSRV_ENDPOINT_ ', os.environ['BUILD_BUILDID'])
-
-              if 'SUBNET_PRG' in os.environ:
-                set_vsts_env('PRG_RSIGN_ARGS', '-r currentUser -s my -sha1 ' + os.environ['PRG_LATEST_CERT_HASH'])
-                set_vsts_env('PRG_RSIGN_RC1_ARGS', '-r currentUser -s my -cn "Bentley Systems Inc RC1"')
-                set_vsts_env('PRG_SIGNCODE_ARGS', 'sign /v /sha1 ' + os.environ['PRG_LATEST_CERT_HASH'])
-            arguments: '$(bbSrcRoot) x64'
-
-        - task: bentleysystemsinternal.bentley-build-tasks.bentleybootstrap.bentleybootstrap@0
-          displayName: BentleyBootstrap
-          inputs:
-            streamname: 'imodel02'
-            srcroot: '$(bbSrcRoot)'
-
-        - task: bentleysystemsinternal.iModel-Utilities-tasks.createsymlink.createsymlink@0
-          displayName: 'Link imodel02'
-          inputs:
-            linkPath: $(bbSrcRoot)/imodel02
-            linkTarget: $(Agent.BuildDirectory)/s
-
-        - task: PythonScript@0
-          displayName: 'Shared Shell'
-          inputs:
-            scriptPath: '$(bbSrcRoot)/imodel02/build/capture_env.py'
-            arguments: '$(bbSrcRoot)/bsicommon/shell/SharedShellEnv.bat'
-
-        - task: PythonScript@0
-          displayName: 'Validate Environment'
-          inputs:
-            scriptPath: '$(bbSrcRoot)/imodel02/build/validate_env.py'
-
-        - task: PythonScript@0
-          displayName: 'Purge stale source'
-          inputs:
-            scriptPath: '$(bbSrcRoot)/imodel02/build/prune_srcroot.py'
-
-        - task: PythonScript@0
+        - script: $(PY_EXE) $(BB) $(BB_ARGS) pull
           displayName: Pull
-          inputs:
-            scriptPath: '$(bbSrcRoot)/BentleyBuild/BentleyBuild.py'
-            arguments: '-v 4 -a x64 -r imodel02 -f iModelCore/ECObjects/ECObjects -p ECObjects-PerformanceGtest pull'
           env:
             AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
 
-        - task: PythonScript@0
+        - script: $(PY_EXE) $(BB) $(BB_ARGS) build
           displayName: Build
-          inputs:
-            scriptPath: '$(bbSrcRoot)/BentleyBuild/BentleyBuild.py'
-            arguments: '-v 4 -a x64 -r imodel02 -f iModelCore/ECObjects/ECObjects -p ECObjects-PerformanceGtest build --tmrbuild --noprompt'
+          env:
+            AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
 
-        - publish: $(Build.BinariesDirectory)/Winx64/Product/ECObjects-PerformanceGtest
+        - publish: $(BB_OUT_ROOT)/Winx64/Product/ECObjects-PerformanceGtest
           artifact: 'PerfTestsECObjects'
 
   - stage: run
@@ -141,7 +100,7 @@ stages:
           - task: bentleysystemsinternal.iModel-Utilities-tasks.PerfData.PerfData@1
             displayName: 'Upload report data to DB: Time'
             inputs:
-              AppId: imodel02
+              AppId: ECObjects Native Library
               CsvPath: $(Pipeline.Workspace)\PerfTestsECObjects\run\Output\PerfTestResults\PerfResults.csv
               BuildId: $(Build.BuildId)
               DbName: imodeljsperfdata.database.windows.net
@@ -180,7 +139,7 @@ stages:
           - task: bentleysystemsinternal.iModel-Utilities-tasks.PerfData.PerfData@1
             displayName: 'Upload report data to DB: Memory'
             inputs:
-              AppId: imodel02
+              AppId: ECObjects Native Library
               CsvPath: $(Pipeline.Workspace)\PerfTestsECObjects\run\Output\PerfTestResults\PerfResults.csv
               BuildId: $(Build.BuildId)
               DbName: imodeljsperfdata.database.windows.net
@@ -219,7 +178,7 @@ stages:
           - task: bentleysystemsinternal.iModel-Utilities-tasks.PerfData.PerfData@1
             displayName: 'Upload report data to DB: PeakMemory'
             inputs:
-              AppId: imodel02
+              AppId: ECObjects Native Library
               CsvPath: $(Pipeline.Workspace)\PerfTestsECObjects\run\Output\PerfTestResults\PerfResults.csv
               BuildId: $(Build.BuildId)
               DbName: imodeljsperfdata.database.windows.net
