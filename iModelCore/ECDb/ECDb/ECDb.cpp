@@ -18,6 +18,10 @@ ECDb::ECDb() : Db(), m_pimpl(new Impl(*this)) {}
 //---------------+---------------+---------------+---------------+---------------+------
 InstanceReader& ECDb::GetInstanceReader() const { return m_pimpl->GetInstanceReader(); }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+RelatedInstanceFinder const& ECDb::GetRelatedInstanceFinder() const { return m_pimpl->GetRelatedInstanceFinder(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
