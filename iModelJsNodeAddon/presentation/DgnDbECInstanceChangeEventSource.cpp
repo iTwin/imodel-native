@@ -184,8 +184,8 @@ void DgnDbECInstanceChangeEventSource::_OnCommitted(Dgn::TxnManager& txns)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDbECInstanceChangeEventSource::_OnAppliedChangesCommitted(Dgn::TxnManager& txns)
     {
-    // NotifyECInstancesChanged(txns.GetDgnDb(), m_changes);
-    // m_changes.clear();
+    NotifyECInstancesChanged(txns.GetDgnDb(), m_changes);
+    m_changes.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
