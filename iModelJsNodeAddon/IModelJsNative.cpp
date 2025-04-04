@@ -2363,6 +2363,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         BeGuid guid(true);
         return toJsString(Env(), guid.ToString());
     }
+    Napi::Value ResolveInstanceKey(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::ResolveInstanceKey(db, info);
+    }
     Napi::Value ReadInstance(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         return JsInterop::ReadInstance(db, info);
@@ -2841,6 +2845,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("builderToGeomSource", &NativeDgnDb::BuilderToGeomSource),
             InstanceMethod("patchElementProperties", &NativeDgnDb::PatchElementProperties),
             InstanceMethod("newBeGuid", &NativeDgnDb::NewBeGuid),
+            InstanceMethod("resolveInstanceKey", &NativeDgnDb::ResolveInstanceKey),
             InstanceMethod("readInstance", &NativeDgnDb::ReadInstance),
             InstanceMethod("insertInstance", &NativeDgnDb::InsertInstance),
             InstanceMethod("updateInstance", &NativeDgnDb::UpdateInstance),

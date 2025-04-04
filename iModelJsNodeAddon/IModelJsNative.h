@@ -545,6 +545,7 @@ public:
     static Napi::Value BuilderToGeomSource(DgnDbR db, NapiInfoCR info);
     static Napi::Value PropsToGeomSource(DgnDbR db, NapiInfoCR info);
     static Napi::Value GeomSourceToProps(DgnDbR db, NapiInfoCR info);
+    static Napi::Value ResolveInstanceKey(DgnDbR dgndb, NapiInfoCR info);
 
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);

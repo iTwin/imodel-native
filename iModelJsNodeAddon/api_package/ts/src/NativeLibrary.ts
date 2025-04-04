@@ -17,7 +17,7 @@ import type {
   BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode, Optional,
 } from "@itwin/core-bentley";
 import type {
-  ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
+  ChangesetIndexAndId, CodeProps, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
   ElementGeometryBuilderParams,
   ElementGraphicsRequestProps, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
@@ -404,6 +404,17 @@ export declare namespace IModelJsNative {
     diameter?: number;
   }
 
+  interface ResolveInstanceKeyArgs {
+    partialKey?: { id: Id64String, baseClassName: string };
+    federationGuid?: GuidString;
+    code?: CodeProps;
+  }
+
+  interface ResolveInstanceKeyResult {
+    id: Id64String;
+    classFullName: string;
+  }
+
   enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }
 
   interface FontFaceProps {
@@ -606,6 +617,7 @@ export declare namespace IModelJsNative {
     public getIModelCoordinatesFromGeoCoordinates(points: IModelCoordinatesRequestProps): IModelCoordinatesResponseProps;
     public getIModelId(): GuidString;
     public getIModelProps(when?: "pullMerge"): IModelProps;
+    public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
     public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
     public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
     public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
@@ -776,6 +788,7 @@ export declare namespace IModelJsNative {
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
+    public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
     public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
     public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
     public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;

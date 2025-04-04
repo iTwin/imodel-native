@@ -304,7 +304,120 @@ DgnDbStatus JsInterop::GetSchemaItem(BeJsValue mjson, DgnDbR dgndb, Utf8CP schem
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
+//------------------------------------`---------------------------------------------------
+Napi::Value JsInterop::ResolveInstanceKey(DgnDbR dgndb, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, args);
+    BeJsConst inJson(args);
+    if (inJson.isNull()) {
+        BeNapi::ThrowJsException(info.Env(), "invalid input", (int)DgnDbStatus::BadArg);
+    }
+
+    auto composeResponse = [&](ECInstanceKeyCR resolvedKey) -> Napi::Value {
+        auto outObj = Napi::Object::New(info.Env());
+        auto outVal = BeJsValue(outObj);
+        outVal["id"] = resolvedKey.GetInstanceId();
+        outVal["classId"] = resolvedKey.GetClassId().ToHexStr();
+        auto classFullName = outVal["classFullName"];
+        auto classCP = dgndb.Schemas().GetClass(resolvedKey.GetClassId());
+        if (classCP == nullptr) {
+            BeNapi::ThrowJsException(info.Env(), "failed to resolve class", (int)DgnDbStatus::NotFound);
+        }
+        ECN::ECJsonUtilities::ClassNameToJson(classFullName, *classCP, true);
+        return outObj;
+    };
+
+    if (inJson.isObjectMember("partialKey")) {
+        auto partialKeyJson = inJson["partialKey"];
+        if (!partialKeyJson.isStringMember("id")) {
+            BeNapi::ThrowJsException(info.Env(), "missing id", (int)DgnDbStatus::BadArg);
+        }
+
+        auto id = partialKeyJson["id"].GetId64<ECInstanceId>();
+        if (!id.IsValid()) {
+            BeNapi::ThrowJsException(info.Env(), "invalid id", (int)DgnDbStatus::BadArg);
+        }
+
+        if (!partialKeyJson.isStringMember("baseClassName")) {
+            BeNapi::ThrowJsException(info.Env(), "missing baseClassName", (int)DgnDbStatus::BadArg);
+        }
+
+        Utf8String baseClassName = partialKeyJson["baseClassName"].asCString();
+        if (baseClassName.empty()) {
+            BeNapi::ThrowJsException(info.Env(), "invalid baseClassName", (int)DgnDbStatus::BadArg);
+        }
+
+        ECInstanceKey resolvedKey;
+        auto pos = InstanceReader::Position(id, baseClassName.c_str());
+        if (!dgndb.GetInstanceReader().Seek(pos,
+            [&](InstanceReader::IRowContext const& row, auto _) {
+                resolvedKey = ECInstanceKey(row.GetValue(1).GetId<ECClassId>(), id);
+            })) {
+            BeNapi::ThrowJsException(info.Env(), "failed to resolve instance key", (int)DgnDbStatus::NotFound);
+        }
+        return composeResponse(resolvedKey);
+    }
+
+    if (inJson.isStringMember("federationGuid")){
+        auto stmt = dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [FederationGuid]=?");
+        if (!stmt.IsValid()) {
+            BeNapi::ThrowJsException(info.Env(), "failed to prepare statement", (int)DgnDbStatus::BadArg);
+        }
+        BeGuid federationGuid;
+        federationGuid.FromString(inJson["federationGuid"].asCString());
+        stmt->BindGuid(1, federationGuid);
+        if (stmt->Step() != BE_SQLITE_ROW) {
+            BeNapi::ThrowJsException(info.Env(), "failed to resolve element from federationGuid", (int)DgnDbStatus::NotFound);
+        }
+
+        ECInstanceKey resolvedKey(stmt->GetValueId<ECClassId>(1), stmt->GetValueId<ECInstanceId>(0));
+        return composeResponse(resolvedKey);
+    }
+
+    if (inJson.isObjectMember("code")) {
+        auto codeJson = inJson["code"];
+        if (!codeJson.isStringMember("spec")) {
+            BeNapi::ThrowJsException(info.Env(), "missing spec", (int)DgnDbStatus::BadArg);
+        }
+
+        auto specId= codeJson["spec"].GetId64<ECInstanceId>();
+
+        if (!codeJson.isStringMember("scope")) {
+            BeNapi::ThrowJsException(info.Env(), "missing type", (int)DgnDbStatus::BadArg);
+        }
+
+        auto scopeId = codeJson["scope"].GetId64<ECInstanceId>();
+
+        if (!codeJson.isStringMember("value")) {
+            BeNapi::ThrowJsException(info.Env(), "missing value", (int)DgnDbStatus::BadArg);
+        }
+
+        auto codeValue = codeJson["value"].asString();
+        auto stmt = codeValue.empty() ?
+            dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [Spec].[Id]=? AND [Scope].[Id]=? AND [CodeValue] IS NULL") :
+            dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [Spec].[Id]=? AND [Scope].[Id]=? AND [CodeValue]=?");
+
+        if (!stmt.IsValid()) {
+            BeNapi::ThrowJsException(info.Env(), "failed to prepare statement", (int)DgnDbStatus::BadArg);
+        }
+
+        stmt->BindId(1, specId);
+        stmt->BindId(2, scopeId);
+        if (!codeValue.empty()) {
+            stmt->BindText(3, codeValue.c_str(), IECSqlBinder::MakeCopy::No);
+        }
+
+        if (stmt->Step() != BE_SQLITE_ROW) {
+            BeNapi::ThrowJsException(info.Env(), "failed to resolve element from code", (int)DgnDbStatus::NotFound);
+        }
+
+        ECInstanceKey resolvedKey(stmt->GetValueId<ECClassId>(1), stmt->GetValueId<ECInstanceId>(0));
+        return composeResponse(resolvedKey);
+    }
+    BeNapi::ThrowJsException(info.Env(), "must provide partialKey, federationGuid or ", (int)DgnDbStatus::BadArg);
+}
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//------------------------------------`---------------------------------------------------
 DgnDbStatus JsInterop::GetElement(BeJsValue elementJson, DgnDbR dgndb, Napi::Object obj) {
     BeJsConst inOpts(obj);
     DgnElementCPtr elem;
