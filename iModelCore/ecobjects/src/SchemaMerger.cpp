@@ -317,7 +317,11 @@ ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<EC
     SchemaComparer comparer;
     SchemaComparer::Options comparerOptions = SchemaComparer::Options(SchemaComparer::DetailLevel::NoSchemaElements, SchemaComparer::DetailLevel::NoSchemaElements);
     SchemaDiff diff;
-    if (comparer.Compare(diff, result.GetResults(), right, comparerOptions) != BentleyStatus::SUCCESS)
+    // Have to sort schemas again because the SchemaMap in results somehow does not preserve the order of the schemas in which they were added.
+    auto resultSchemas = result.GetResults();
+    ECSchema::SortSchemasInDependencyOrder(resultSchemas, doNotMergeReferences);
+
+    if (comparer.Compare(diff, resultSchemas, right, comparerOptions) != BentleyStatus::SUCCESS)
         {
         result.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0013, "SchemaComparer comparison failed.");
         return ECObjectsStatus::Error;
