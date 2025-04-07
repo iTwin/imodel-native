@@ -71,7 +71,13 @@
     <SubProduct ProductName="iModelJsNative-Windows" />
     <SubProduct ProductName="iModelJsNative-Linux" />
     <SubProduct ProductName="iModelJsNative-Darwin" />
+    <SubUPackProduct UPackProductName="iModelNativeVisualizationUPack"/>
   </Product>
+	
+  <UPackProduct Name="iModelNativeVisualizationUPack" Description="iModel Native Visualization" OnlyPlatforms="linux*,x64">
+    <SubPart PartName="iModelJsNativeLibCommon"/>
+    <Directories DirectoryListName="iModelCoreNugetDirs" PartFile="iModelCore/iModelCore" />
+  </UPackProduct>
 
   <Product Name="iModelJsNative-Windows">
     <SubPart PartName="iModelJsNative-Dynamic" LibType="Dynamic" />
