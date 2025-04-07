@@ -3356,13 +3356,13 @@ void ReportFailedSchema(SchemaKeyCR key, Utf8StringCR additionalInfo, SchemaRead
     Utf8String keyStr = key.GetFullSchemaName();
     if (SchemaReadStatus::DuplicateSchema == status)
         schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0008,
-            "Failed to read Schema '%s'.\nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema.", keyStr.c_str());
+            "Failed to read schema '%s'.\nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema.", keyStr.c_str());
     else if(SchemaReadStatus::HasReferenceCycle == status)
         schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0062,
-            "Failed to read Schema '%s'. The attempt to load from XML ended up in a circular reference.", keyStr.c_str());
+            "Failed to read schema '%s'. The attempt to load from XML ended up in a circular reference.", keyStr.c_str());
     else
         schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0009,
-            "Failed to read Schema '%s'.\n%s", keyStr.c_str(), additionalInfo.c_str());
+            "Failed to read schema '%s'.\n%s", keyStr.c_str(), additionalInfo.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
