@@ -44,7 +44,8 @@
 
     <UPackProduct Name="iModelNativeUPack" Description="iModel Native SDK" OnlyPlatforms="linux*,x64">
         <Directories DirectoryListName="iModelCoreNugetDirs"/>
-        <SubPart PartName="iModelCore"/>
+        <SubPart PartName="iModelCore"/> 
+				<SubPart PartName="iModelJsNativeLibCommon" PartFile="iModelJsNodeAddon/iModelJsNodeAddon"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="PSBRepGeometry" PartFile="iModelCore/PSBRepGeometry/PSBRepGeometry" Repository="imodel-native-internal"/>
     </UPackProduct>
