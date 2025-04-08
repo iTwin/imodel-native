@@ -490,7 +490,7 @@ private:
     static void GetRowAsJson(BeJsValue json, BeSQLite::EC::ECSqlStatement &);
     static void RegisterOptionalDomains();
     static void InitializeSolidKernel();
-    static void AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schemaContext);
+    static void AddFallbackSchemaLocaters(IECSchemaLocaterR finalLocater, ECSchemaReadContextPtr schemaContext);
     static void AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext);
 public:
     static void HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
@@ -553,7 +553,7 @@ public:
     static BentleyStatus GetGeoCoordsFromIModelCoords(BeJsValue, DgnDbR, BeJsConst);
     static BentleyStatus GetIModelCoordsFromGeoCoords(BeJsValue, DgnDbR, BeJsConst);
 
-    static void GetIModelProps(BeJsValue, DgnDbCR dgndb);
+    static void GetIModelProps(BeJsValue, DgnDbCR dgndb, Utf8StringCR when);
     static DgnElementIdSet FindGeometryPartReferences(bvector<Utf8String> const& partIds, bool is2d, DgnDbR db);
 
     static void ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object request, Napi::Function callback);

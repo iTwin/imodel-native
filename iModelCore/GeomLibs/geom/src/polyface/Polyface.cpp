@@ -1635,7 +1635,7 @@ PolyfaceAuxDataPtr&                 PolyfaceHeader::AuxData()           { return
 void PolyfaceHeader::ClearTags (uint32_t numPerFace, uint32_t meshStyle)
     {
     SetNumPerFace (numPerFace);
-    SetTwoSided (true); // This was a mistake, but we are stuck with it.
+    SetTwoSided (true); // default value is true!
     SetMeshStyle (meshStyle);
     bool activePointIndex = meshStyle == MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
     uint32_t b = numPerFace > 1 ? numPerFace : 1;
