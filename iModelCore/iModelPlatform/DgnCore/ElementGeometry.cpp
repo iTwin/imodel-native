@@ -7125,6 +7125,24 @@ bool GeometryBuilder::FromJson(BeJsConst input)
 
     return true;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::UpdateFromJson(GeometryPartSourceR part, BeJsConst input, bool is3d)
+    {
+    if (!input.isArray())
+        return false;
+
+    GeometryBuilderPtr builder = CreateGeometryPart(part.GetSourceDgnDb(), is3d); // NEEDSWORK...supply 2d/3d in opts?
+
+    if (!builder.IsValid())
+        return false;
+
+    if (!builder->FromJson(input))
+        return false;
+
+    return (SUCCESS == builder->Finish(part));
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

@@ -831,7 +831,7 @@ public:
     //! @param[in] value GeometryStream json value.
     //! @param[in] opts options for update.
     DGNPLATFORM_EXPORT static bool UpdateFromJson(GeometrySourceR source, BeJsConst value);
-
+    DGNPLATFORM_EXPORT static bool UpdateFromJson(GeometryPartSourceR part, BeJsConst input, bool is3d = true);
     //! @private Append GeometryStream entries supplied as json flatbuffer entry array values.
     DGNPLATFORM_EXPORT static bool UpdateFromJsonEntryArray(GeometrySourceR source, BeJsConst value);
 
