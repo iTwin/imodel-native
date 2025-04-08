@@ -399,7 +399,6 @@ struct DropSchemaResult {
 struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
     {
     public:
-
         //! Schema import options. Not needed by regular callers. They are specific to certain
         //! exceptional workflows and therefore only used by them.
         enum class SchemaImportOptions
@@ -671,6 +670,10 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 
         //! Called after any schema changes are applied or if apply process failed
         ECDB_EXPORT SchemaChangeEvent& OnAfterSchemaChanges() const;
+
+        Utf8String GetDescription() const override {
+            return Utf8PrintfString("ECDb");
+        }
 
 #if !defined (DOCUMENTATION_GENERATOR)
         //! Truncates and repopulates ECDb's cache tables.
