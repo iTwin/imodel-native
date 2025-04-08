@@ -2345,17 +2345,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         return Napi::Number::New(Env(), (int)db.ExecuteSql(sql.c_str()));
     }
-    Napi::Value GeomSourceToProps(NapiInfoCR info) {
+    Napi::Value ConvertOrUpdateGeometrySource(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        return JsInterop::GeomSourceToProps(db, info);
+        return JsInterop::ConvertOrUpdateGeometrySource(db, info);
     }
-    Napi::Value BuilderToGeomSource(NapiInfoCR info) {
+    Napi::Value ConvertOrUpdateGeometryPart(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        return JsInterop::BuilderToGeomSource(db, info);
-    }
-    Napi::Value PropsToGeomSource(NapiInfoCR info) {
-        auto& db = GetOpenedDb(info);
-        return JsInterop::PropsToGeomSource(db, info);
+        return JsInterop::ConvertOrUpdateGeometryPart(db, info);
     }
     Napi::Value PatchElementProperties(NapiInfoCR info) {
         return JsInterop::PatchElementProperties(info);
@@ -2840,9 +2836,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
             InstanceMethod("isSubClassOf", &NativeDgnDb::IsSubClassOf),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
-            InstanceMethod("geomSourceToProps", &NativeDgnDb::GeomSourceToProps),
-            InstanceMethod("propsToGeomSource", &NativeDgnDb::PropsToGeomSource),
-            InstanceMethod("builderToGeomSource", &NativeDgnDb::BuilderToGeomSource),
+            InstanceMethod("convertOrUpdateGeometrySource", &NativeDgnDb::ConvertOrUpdateGeometrySource),
+            InstanceMethod("convertOrUpdateGeometryPart", &NativeDgnDb::ConvertOrUpdateGeometryPart),
+            InstanceMethod("newBeGuid", &NativeDgnDb::NewBeGuid),
             InstanceMethod("patchElementProperties", &NativeDgnDb::PatchElementProperties),
             InstanceMethod("newBeGuid", &NativeDgnDb::NewBeGuid),
             InstanceMethod("resolveInstanceKey", &NativeDgnDb::ResolveInstanceKey),

@@ -14,18 +14,19 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
  */
 
 import type {
-  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode, Optional,
+  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode
 } from "@itwin/core-bentley";
 import type {
   ChangesetIndexAndId, CodeProps, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
   ElementGeometryBuilderParams,
+  ElementGeometryBuilderParamsForPart,
   ElementGraphicsRequestProps, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, GeometryStreamProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
   ModelProps, PlacementProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
 } from "@itwin/core-common";
-import type { Range2dProps, Range3dProps } from "@itwin/core-geometry";
+import type { LowAndHighXYZProps, Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-syntax */
@@ -511,12 +512,25 @@ export declare namespace IModelJsNative {
     readonly parentChangesetIndex?: string;
   }
 
-  interface GeometrySource {
-    geom: Uint8Array;
-    is2d: boolean;
+  type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
+  interface IGeometrySource {
+    geom?: Uint8Array | GeometryStreamProps;
+    builder?: ElementGeometryBuilderParams;
     placement?: PlacementProps;
     categoryId?: Id64String;
+    is2d: boolean;
   }
+
+
+  interface IGeometryPart {
+    geom?: Uint8Array | GeometryStreamProps;
+    builder?: ElementGeometryBuilderParamsForPart;
+    is2d: boolean;
+    bbox?: LowAndHighXYZProps;
+  }
+
+
+
 
   // ###TODO import from core-common
   interface ModelExtentsResponseProps {
@@ -625,11 +639,13 @@ export declare namespace IModelJsNative {
     public patchElementProperties(jsonProps: string):  string;
 
     public newBeGuid(): GuidString;
-    public geomSourceToProps(arg: GeometrySource): GeometryStreamProps;
-    public propsToGeomSource(geom: GeometryStreamProps, geomSource: Optional<GeometrySource, "geom">): GeometrySource;
-    public builderToGeomSource(builder: ElementGeometryBuilderParams, geomSource: Optional<GeometrySource, "geom">): GeometrySource
 
+    public convertOrUpdateGeometrySource(arg: IGeometrySource, outFmt: GeometryOutputFormat): IGeometrySource;
+    public convertOrUpdateGeometryPart(arg: IGeometryPart, outFmt: GeometryOutputFormat): IGeometryPart;
 
+    /* WIP thining >>>> */
+
+    // when lets getIModelProps know that the extents may have been updated as the result of a pullChanges and should be read directly from the iModel as opposed to the cached extents.
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
