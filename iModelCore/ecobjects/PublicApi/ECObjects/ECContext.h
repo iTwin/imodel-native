@@ -147,7 +147,7 @@ public:
 
     //! Adds a file path that should be used to search for a matching schema name. This method prevents adding duplicates if the path is already in the list.
     //! @param[in] path Path to the directory where schemas can be found
-    //! @param[in] addOnTop If true, the path will be added to the top of the list of search paths. Otherwise, it will be added using legacy positioning.
+    //! @param[in] addOnTop If true, the path will be added with the highest priority. Otherwise, it will be added after all existing user-added and searchPath locaters.
     ECOBJECTS_EXPORT void AddSchemaPath(WCharCP path, bool addOnTop = false);
 
     //! Adds a file path that should be used to search for a matching conversion schemas
