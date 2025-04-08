@@ -134,6 +134,11 @@ struct ECOBJECTS_EXPORT ECIssueId
     static IssueId EC_0058;
     static IssueId EC_0059;
     static IssueId EC_0060;
+<<<<<<< HEAD
+=======
+    static IssueId EC_0061;
+    static IssueId EC_0062;
+>>>>>>> 23721f0f (Fix imodel-transformation schema import issue (#1056))
     };
 
 //=======================================================================================

@@ -232,7 +232,7 @@ bool SchemaMergeResult::ContainsSchema(Utf8CP schemaName) const
 //---------------+---------------+---------------+---------------+---------------+-------
 ECSchemaP SchemaMergeResult::GetSchema(Utf8CP schemaName) const
     {
-    return m_schemaCache.FindSchemaByNameI(schemaName);
+    return m_schemaReadContext->GetCache().FindSchemaByNameI(schemaName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -272,7 +272,12 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
             if(!result.ContainsSchema(schema->GetName().c_str()))
                 {
                 ECSchemaPtr copiedSchema;
+<<<<<<< HEAD
                 if(schema->CopySchema(copiedSchema, !doNotMergeReferences ? &result.GetSchemaCache() : nullptr) != ECObjectsStatus::Success)
+=======
+                auto status = schema->CopySchema(copiedSchema, !doNotMergeReferences ? result.GetSchemaReadContext().get() : nullptr, options.GetSkipValidation());
+                if(status != ECObjectsStatus::Success)
+>>>>>>> 23721f0f (Fix imodel-transformation schema import issue (#1056))
                     {
                     result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
                         "Schema '%s' from %s side failed to be copied.", schema->GetFullSchemaName().c_str(), side);
