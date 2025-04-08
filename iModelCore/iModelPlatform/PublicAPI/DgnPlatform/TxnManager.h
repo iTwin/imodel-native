@@ -66,6 +66,7 @@ struct TxnMonitor {
     virtual ~TxnMonitor() { }
     virtual void _OnCommit(TxnManager&) {}
     virtual void _OnCommitted(TxnManager&) {}
+    virtual void _OnAppliedChangesCommitted(TxnManager&) {}
     virtual void _OnAppliedChanges(TxnManager&) {}
     virtual void _OnUndoRedo(TxnManager&, TxnAction) {}
     virtual void _OnGeometricModelChanges(TxnManager&, BeJsConst) {}
