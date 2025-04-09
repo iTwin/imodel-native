@@ -393,8 +393,8 @@ Napi::Value JsInterop::ResolveInstanceKey(DgnDbR dgndb, NapiInfoCR info) {
 
         auto codeValue = codeJson["value"].asString();
         auto stmt = codeValue.empty() ?
-            dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [Spec].[Id]=? AND [Scope].[Id]=? AND [CodeValue] IS NULL") :
-            dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [Spec].[Id]=? AND [Scope].[Id]=? AND [CodeValue]=?");
+            dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [CodeSpec].[Id]=? AND [CodeScope].[Id]=? AND ([CodeValue] IS NULL OR  [CodeValue] = '')") :
+            dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [CodeSpec].[Id]=? AND [CodeScope].[Id]=? AND [CodeValue]=?");
 
         if (!stmt.IsValid()) {
             BeNapi::ThrowJsException(info.Env(), "failed to prepare statement", (int)DgnDbStatus::BadArg);
