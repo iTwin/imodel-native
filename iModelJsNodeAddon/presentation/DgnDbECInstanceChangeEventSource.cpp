@@ -164,15 +164,22 @@ void DgnDbECInstanceChangeEventSource::_OnCommit(Dgn::TxnManager& txns)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDbECInstanceChangeEventSource::_OnAppliedChanges(TxnManager& txns)
     {
-    bvector<ECInstanceChangeEventSource::ChangedECInstance> changes;
-    AddChanges(changes, txns);
-    NotifyECInstancesChanged(txns.GetDgnDb(), changes);
+    AddChanges(m_changes, txns);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDbECInstanceChangeEventSource::_OnCommitted(Dgn::TxnManager& txns)
+    {
+    NotifyECInstancesChanged(txns.GetDgnDb(), m_changes);
+    m_changes.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDbECInstanceChangeEventSource::_OnAppliedChangesCommitted(Dgn::TxnManager& txns)
     {
     NotifyECInstancesChanged(txns.GetDgnDb(), m_changes);
     m_changes.clear();

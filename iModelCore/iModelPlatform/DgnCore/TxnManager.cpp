@@ -898,6 +898,10 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
 
         if (status == ChangesetStatus::Success) {
             result = m_dgndb.SaveChanges();
+            if (BE_SQLITE_OK == result) {
+                CallMonitors([&](TxnMonitor& monitor) { monitor._OnAppliedChangesCommitted(*this); });
+            }
+
             // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one.
             // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
             // the merged changes are lost after this routine and cannot be used for change propagation anymore.
