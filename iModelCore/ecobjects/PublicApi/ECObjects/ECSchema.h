@@ -3957,11 +3957,7 @@ public:
     //! @param schemaOut If successful, will contain a copy of this schema
     //! @param schemaContext If not nullptr, will be used to locate referenced schemas of the schema.  If nullptr, references will not be copied
     //! @param[out] schemaOut   If successful, will contain a copy of this schema
-<<<<<<< HEAD
-    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater = nullptr) const;
-=======
     ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext = nullptr, bool skipValidation = false) const;
->>>>>>> 23721f0f (Fix imodel-transformation schema import issue (#1056))
 
     //! Get the IECCustomAttributeContainer holding this schema's custom attributes
     IECCustomAttributeContainer& GetCustomAttributeContainer() {return *this;}
