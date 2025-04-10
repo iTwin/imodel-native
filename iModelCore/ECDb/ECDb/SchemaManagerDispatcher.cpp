@@ -858,7 +858,7 @@ ECSchemaPtr TableSpaceSchemaManager::LocateSchema(ECN::SchemaKeyR key, ECN::Sche
         return nullptr;
 
     ECSchemaP schemaP = const_cast<ECSchemaP> (schema);
-    ctx.GetCache().AddSchema(*schemaP);
+    ctx.GetCache().AddSchema(*schemaP); // TODO: Adding to cache directly and always returning the schema despite the status code is nonstandard behavior. This should be fixed in the future.
     return schemaP;
     }
 
