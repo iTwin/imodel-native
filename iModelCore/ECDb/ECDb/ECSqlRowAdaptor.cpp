@@ -314,7 +314,7 @@ BentleyStatus ECSqlRowAdaptor::RenderBinaryProperty(BeJsValue out, IECSqlValue c
         return SUCCESS;
     }
 
-    out.SetBinary((Byte*)data, (size_t)size);
+    out.SetBinary((Byte const*)data, (size_t)size);
     return SUCCESS;
 }
 //---------------------------------------------------------------------------------------
