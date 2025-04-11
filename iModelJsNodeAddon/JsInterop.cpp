@@ -1038,12 +1038,14 @@ Napi::Value JsInterop::ReadInstance(ECDbR db, NapiInfoCR info) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Napi::Value JsInterop::PatchElementProperties(NapiInfoCR info) {
+Napi::Value JsInterop::PatchJsonProperties(NapiInfoCR info) {
     REQUIRE_ARGUMENT_STRING(0, jsonProps);
 
     // Remove Null values from jsonProps
     BeJsDocument doc;
     doc.Parse(jsonProps.c_str());
+    if (doc.hasParseError())
+        return Napi::Value::From(info.Env(), jsonProps);
     doc.PurgeNulls();
 
     // Handle renderMaterial TextureIds
@@ -1058,7 +1060,23 @@ Napi::Value JsInterop::PatchElementProperties(NapiInfoCR info) {
                 (BeJsValue&)textureIdJson = textureId.ToHexStr();
                 if (!textureId.IsValid()) {
                     Utf8PrintfString msg("RenderMaterial had a textureId %s that was invalid.", textureIdAsStringForLogging.c_str());
-                    THROW_JS_EXCEPTION(msg.c_str());
+                }
+            }
+            return false;
+        });
+    }
+    // Handle DisplayStyle subcategory overrides
+    auto subCategoryOvr = BeJsPath::Extract(BeJsValue(doc), "$.styles.subCategoryOvr");
+    if (subCategoryOvr.has_value()) {
+        subCategoryOvr.value().ForEachArrayMember([&](auto index, auto memberJson) {
+            if (memberJson.isNumericMember("subCategory")) {
+                // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
+                auto subcategoryAsStringForLogging = memberJson["subCategory"].Stringify();
+                auto subcategoryId = memberJson["subCategory"].template GetId64<DgnTextureId>();
+                auto subcategoryJson = subCategoryOvr->Get(index)["subCategory"];
+                (BeJsValue&)subcategoryJson = subcategoryId.ToHexStr();
+                if (!subcategoryId.IsValid()) {
+                    Utf8PrintfString msg("Style had a subCategory Override %s that was invalid.", subcategoryAsStringForLogging.c_str());
                 }
             }
             return false;
