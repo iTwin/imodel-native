@@ -20,7 +20,7 @@ import type {
   ChangesetIndexAndId, CodeProps, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
   ElementGeometryBuilderParams,
   ElementGeometryBuilderParamsForPart,
-  ElementGraphicsRequestProps, ElementLoadProps, ElementMeshRequestProps, ElementProps,
+  ElementGraphicsRequestProps, ElementLoadOptions, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, GeometryStreamProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
@@ -640,8 +640,8 @@ export declare namespace IModelJsNative {
 
     public newBeGuid(): GuidString;
 
-    public convertOrUpdateGeometrySource(arg: IGeometrySource, outFmt: GeometryOutputFormat): IGeometrySource;
-    public convertOrUpdateGeometryPart(arg: IGeometryPart, outFmt: GeometryOutputFormat): IGeometryPart;
+    public convertOrUpdateGeometrySource(arg: IGeometrySource, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometrySource;
+    public convertOrUpdateGeometryPart(arg: IGeometryPart, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometryPart;
 
     /* WIP thining >>>> */
 

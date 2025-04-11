@@ -1641,6 +1641,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
 
     REQUIRE_ARGUMENT_ANY_OBJ(0, args);
     REQUIRE_ARGUMENT_STRING(1, fmt);
+    REQUIRE_ARGUMENT_ANY_OBJ(2, opts);
 
     DgnCategoryId categoryId;
     Placement2d placement2d;
@@ -1777,7 +1778,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
         } else {
             GeometryCollection collection(geomSource->GetGeometryStream(), db);
             auto outGeom = Napi::Array::New(info.Env());
-            collection.ToJson(outGeom);
+            collection.ToJson(outGeom, opts);
             outResult["geom"] = outGeom;
         }
     }
@@ -1796,6 +1797,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info) {
 
     REQUIRE_ARGUMENT_ANY_OBJ(0, args);
     REQUIRE_ARGUMENT_STRING(1, fmt);
+    REQUIRE_ARGUMENT_ANY_OBJ(2, opts);
 
     DgnCategoryId categoryId;
     ElementAlignedBox3d bbox3d;
@@ -1877,7 +1879,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info) {
     } else {
         GeometryCollection collection(geomSource->GetGeometryStream(), db);
         auto outGeom = Napi::Array::New(info.Env());
-        collection.ToJson(outGeom);
+        collection.ToJson(outGeom, opts);
         outResult["geom"] = outGeom;
     }
 
