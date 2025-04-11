@@ -77,7 +77,7 @@ private:
 
 public:
     SchemaXmlReader(ECSchemaReadContextR context, pugi::xml_document& xmlDoc) : m_schemaContext(context), m_xmlDoc(xmlDoc) {}
-    SchemaReadStatus Deserialize(ECSchemaPtr& ecSchema, Utf8CP checksum = nullptr);
+    SchemaReadStatus Deserialize(ECSchemaPtr& ecSchema, SchemaKey& schemaKey, Utf8CP checksum = nullptr);
 
     static void SetErrorHandling(bool doAssert);
 

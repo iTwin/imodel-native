@@ -199,6 +199,27 @@ ECClassCP VirtualSchemaManager::GetClass(Utf8StringCR schemaName, Utf8StringCR c
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP VirtualSchemaManager::FindClass(Utf8StringCR className, size_t& numberOfClasses) const{
+    BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
+    std::vector<ECClassCP> v;
+    for(auto it = m_schemas.begin(); it != m_schemas.end(); ++it)
+    {
+        ECClassCP tempClass = GetClass(it->first, className);
+        if(tempClass != nullptr)
+            v.push_back(tempClass);
+    }
+    numberOfClasses = v.size();
+    if(v.size() == 0)
+        return nullptr;
+    else if(v.size() == 1)
+        return v[0];
+    else
+        return nullptr;
+}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus VirtualSchemaManager::Add(Utf8StringCR schemaXml) const{
     return AddAndValidateVirtualSchema(schemaXml, true);
 }
@@ -252,6 +273,16 @@ SchemaManager::Dispatcher::Iterable SchemaManager::Dispatcher::GetIterable(Utf8C
 
     return Iterable(*manager);
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaManager::Dispatcher::ExistsManager(Utf8StringCR tableSpace) const
+    {
+    BeMutexHolder lock(m_mutex);
+    return m_managers.find(tableSpace) != m_managers.end();
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -837,7 +868,7 @@ ECSchemaPtr TableSpaceSchemaManager::LocateSchema(ECN::SchemaKeyR key, ECN::Sche
         return nullptr;
 
     ECSchemaP schemaP = const_cast<ECSchemaP> (schema);
-    ctx.GetCache().AddSchema(*schemaP);
+    ctx.GetCache().AddSchema(*schemaP); // TODO: Adding to cache directly and always returning the schema despite the status code is nonstandard behavior. This should be fixed in the future.
     return schemaP;
     }
 

@@ -684,7 +684,7 @@ void ECSqlExpPreparer::RemovePropertyRefs(ECSqlPrepareContext& ctx, ClassRefExp 
         if (propertyNameExp->IsPropertyRef())
             continue;
         if (propertyNameExp->IsVirtualProperty())
-            break;
+            continue;
 
         const RangeClassRefExp* classRefExp = propertyNameExp->GetClassRefExp();
         if (&exp == classRefExp)
@@ -826,6 +826,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, TableValuedFunctionExp const& exp) {
+    
+    if (exp.GetFunctionExp()->GetFunctionName().EqualsI(IdSetModule::NAME) && !QueryOptionExperimentalFeaturesEnabled(ctx.GetECDb(), exp))
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0737, "'%s' virtual table is experimental feature and disabled by default.", IdSetModule::NAME);
+        return ECSqlStatus::InvalidECSql;
+        }
+    
     NativeSqlBuilder builder;
     builder.Append(exp.GetFunctionExp()->GetFunctionName());
     builder.AppendParenLeft();

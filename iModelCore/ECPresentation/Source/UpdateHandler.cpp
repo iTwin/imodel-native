@@ -556,12 +556,12 @@ private:
         if (newProvider.GetContext().GetPhysicalParentNode().IsNull())
             return;
 
-        // update parent hierarchy level if nodes count changed from/to 0
+        // update parent hierarchy level if nodes count changed from/to 0 or if parent node is a grouping node
         bool newProviderHasNodes = newProvider.HasNodes();
-        if (oldProviderHasNodes == newProviderHasNodes)
-            return;
-
         auto parent = newProvider.GetContext().GetPhysicalParentNode();
+        if (oldProviderHasNodes == newProviderHasNodes && !(parent.IsValid() && parent->GetKey()->AsGroupingNodeKey()))
+            return;
+        
         auto grandParent = parent.IsValid()
             ? m_nodesCache->GetPhysicalParentNode(parent->GetNodeId(), newProvider.GetContext().GetRulesetVariables(), newProvider.GetContext().GetInstanceFilter())
             : nullptr;

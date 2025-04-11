@@ -119,7 +119,12 @@ struct VirtualSchemaManager : ECN::IECSchemaLocater {
         bool IsValidVirtualSchema(ECN::ECSchemaR schema, Utf8StringR err) const;
         ECN::ECSchemaCP GetSchema(Utf8StringCR schemaName) const;
         ECN::ECClassCP GetClass(Utf8StringCR schemaName, Utf8StringCR className) const;
+        // The numberOfClasses parameter gives us the exact number of classes found which can be used for more personalized error message
+        ECN::ECClassCP FindClass(Utf8StringCR className, size_t& numberOfClasses) const; 
         BentleyStatus Add(Utf8StringCR schemaXml) const;
+        Utf8String GetDescription() const override {
+            return Utf8PrintfString("ECDb:VirtualSchemaManager %s", m_ecdb.GetDbFileName());
+        }
 };
 //=======================================================================================
 // @bsiclass
@@ -331,6 +336,7 @@ struct SchemaManager::Dispatcher final
         MainSchemaManager const& Main() const { BeAssert(m_main != nullptr); return *m_main; }
         BentleyStatus AddManager(DbTableSpace const&) const;
         BentleyStatus RemoveManager(DbTableSpace const&) const;
+        bool ExistsManager(Utf8StringCR tableSpace) const;
         bool OwnsSchema(ECN::ECSchemaCR schema) const;
         bvector<ECN::ECSchemaCP> GetSchemas(bool loadSchemaEntities, Utf8CP tableSpace) const;
         ECN::ECSchemaPtr LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR, Utf8CP tableSpace) const;
