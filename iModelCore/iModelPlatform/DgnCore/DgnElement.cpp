@@ -1455,7 +1455,7 @@ GeometrySource3dCP DgnElement::ToGeometrySource3d() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize)
+DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR db, void const* blob, int blobSize)
     {
     if (0 == blobSize && nullptr == blob)
         return DgnDbStatus::Success;
@@ -4064,6 +4064,28 @@ DgnDbStatus GeometricElement::WriteGeomStream() const
     DgnDbR db = GetDgnDb();
     return GeometryStream::WriteGeometryStream(db.Elements().GetSnappyTo(), db, GetElementId(), _GetGeometryColumnClassName(), prop_GeometryStream());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlStatus GeometryStream::Write(BeSQLite::SnappyToBlob& snappy, IECSqlBinder& binder) const {
+    snappy.Init();
+    snappy.Write(data(), (uint32_t)size());
+    ByteStream stream;
+    snappy.SaveTo(stream);
+    return binder.BindBlob(stream.data(), (int)stream.size(), IECSqlBinder::MakeCopy::Yes);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlStatus GeometryStream::Read(BeSQLite::SnappyFromMemory& snappy, DgnDbR db, const IECSqlValue& valueReader) {
+    int sz;
+    auto blob = valueReader.GetBlob(&sz);
+    if (ReadGeometryStream(snappy, db, blob, sz)!= DgnDbStatus::Success)
+        return ECSqlStatus::Error;
+    return ECSqlStatus::Success;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
