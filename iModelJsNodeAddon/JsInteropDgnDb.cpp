@@ -1740,8 +1740,9 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
     if (jsIs2d) {
         auto source = geomSource->GetAsGeometrySource2d();
         if (source->GetPlacement().IsValid()) {
-            auto placement = outResult["placement"];
+            auto placement = Napi::Object::New(info.Env());
             source->GetPlacement().ToJson(BeJsValue(placement));
+            outResult["placement"] = placement;
         }
 
         if (source->GetCategoryId().IsValid()) {
