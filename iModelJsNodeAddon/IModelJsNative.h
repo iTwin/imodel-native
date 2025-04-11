@@ -540,7 +540,7 @@ public:
     static Napi::Value InsertInstance(ECDbR db, NapiInfoCR info);
     static Napi::Value UpdateInstance(ECDbR db, NapiInfoCR info);
     static Napi::Value DeleteInstance(ECDbR db, NapiInfoCR info);
-    static Napi::Value PatchElementProperties(NapiInfoCR info);
+    static Napi::Value PatchJsonProperties(NapiInfoCR info);
     static Napi::Value ResolveInstanceKey(DgnDbR db, NapiInfoCR info);
     static Napi::Value ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info);
     static Napi::Value ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info);
