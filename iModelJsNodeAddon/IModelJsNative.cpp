@@ -448,8 +448,8 @@ public:
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
         JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
     }
-    Napi::Value PatchElementProperties(NapiInfoCR info) {
-        return JsInterop::PatchElementProperties(info);
+    Napi::Value PatchJsonProperties(NapiInfoCR info) {
+        return JsInterop::PatchJsonProperties(info);
     }
     Napi::Value ReadInstance(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
@@ -2353,11 +2353,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         return JsInterop::ConvertOrUpdateGeometryPart(db, info);
     }
-    Napi::Value PatchElementProperties(NapiInfoCR info) {
-        return JsInterop::PatchElementProperties(info);
     Napi::Value NewBeGuid(NapiInfoCR info) {
         BeGuid guid(true);
         return toJsString(Env(), guid.ToString());
+    }
+    Napi::Value PatchJsonProperties(NapiInfoCR info) {
+        return JsInterop::PatchJsonProperties(info);
     }
     Napi::Value ResolveInstanceKey(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
@@ -2839,8 +2840,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("convertOrUpdateGeometrySource", &NativeDgnDb::ConvertOrUpdateGeometrySource),
             InstanceMethod("convertOrUpdateGeometryPart", &NativeDgnDb::ConvertOrUpdateGeometryPart),
             InstanceMethod("newBeGuid", &NativeDgnDb::NewBeGuid),
-            InstanceMethod("patchElementProperties", &NativeDgnDb::PatchElementProperties),
-            InstanceMethod("newBeGuid", &NativeDgnDb::NewBeGuid),
+            InstanceMethod("patchJsonProperties", &NativeDgnDb::PatchJsonProperties),
             InstanceMethod("resolveInstanceKey", &NativeDgnDb::ResolveInstanceKey),
             InstanceMethod("readInstance", &NativeDgnDb::ReadInstance),
             InstanceMethod("insertInstance", &NativeDgnDb::InsertInstance),

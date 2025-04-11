@@ -636,8 +636,7 @@ export declare namespace IModelJsNative {
     public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
     public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
     public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
-    public patchElementProperties(jsonProps: string):  string;
-
+    public patchJsonProperties(jsonProps: string):  string;
     public newBeGuid(): GuidString;
 
     public convertOrUpdateGeometrySource(arg: IGeometrySource, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometrySource;
