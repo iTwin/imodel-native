@@ -1099,7 +1099,7 @@ private:
             if (!obj.isMember(current.token.c_str())) {
                 return std::nullopt;
             }
-            if (!obj[current.token.c_str()].isObject()) {
+            if (!obj[current.token.c_str()].isObject() && !obj[current.token.c_str()].isArray()) {
                 return std::nullopt;
             }
             return Get(obj[current.token], path);
