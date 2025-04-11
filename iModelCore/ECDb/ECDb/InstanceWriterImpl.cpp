@@ -653,7 +653,7 @@ ECSqlStatus Impl::BindPrimitiveArrayProperty(BindContext& ctx, PrimitiveArrayECP
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus Impl::BindStructArrayProperty(BindContext& ctx, StructArrayECPropertyCR const& prop, IECSqlBinder& binder, BeJsConst val) {
+ECSqlStatus Impl::BindStructArrayProperty(BindContext& ctx, StructArrayECPropertyCR prop, IECSqlBinder& binder, BeJsConst val) {
     if (val.isNull()) {
         return binder.BindNull();
     }
@@ -702,7 +702,7 @@ namespace {
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-ECSqlStatus Impl::BindNavigationProperty(BindContext& ctx, NavigationECPropertyCR const& prop, IECSqlBinder& binder, BeJsConst val) {
+ECSqlStatus Impl::BindNavigationProperty(BindContext& ctx, NavigationECPropertyCR prop, IECSqlBinder& binder, BeJsConst val) {
     if (val.isNull()) {
         return binder.BindNull();
     }

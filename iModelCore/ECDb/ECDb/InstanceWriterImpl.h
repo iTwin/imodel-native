@@ -175,13 +175,13 @@ private:
     Utf8String m_error;
 
     static ECSqlStatus BindDataProperty(BindContext& ctx, ECPropertyCR propMap, IECSqlBinder& binder, BeJsConst val);
-    static ECSqlStatus BindNavigationProperty(BindContext& ctx, NavigationECPropertyCR const& prop, IECSqlBinder& binder, BeJsConst val);
+    static ECSqlStatus BindNavigationProperty(BindContext& ctx, NavigationECPropertyCR prop, IECSqlBinder& binder, BeJsConst val);
     static ECSqlStatus BindPrimitive(BindContext& ctx, PrimitiveType type, IECSqlBinder& binder, BeJsConst val, Utf8CP propertyName, Utf8StringCR extendType);
     static ECSqlStatus BindPrimitiveArrayProperty(BindContext& ctx, PrimitiveArrayECProperty const& prop, IECSqlBinder& binder, BeJsConst val);
     static ECSqlStatus BindPrimitiveProperty(BindContext& ctx, PrimitiveECPropertyCR prop, IECSqlBinder& binder, BeJsConst val);
     static ECSqlStatus BindRootProperty(BindContext& ctx, PropertyMap const& propMap, IECSqlBinder& binder, BeJsConst val);
     static ECSqlStatus BindStruct(BindContext& ctx, ECStructClassCR structClass, IECSqlBinder& binder, BeJsConst val);
-    static ECSqlStatus BindStructArrayProperty(BindContext& ctx, StructArrayECPropertyCR const& prop, IECSqlBinder& binder, BeJsConst val);
+    static ECSqlStatus BindStructArrayProperty(BindContext& ctx, StructArrayECPropertyCR prop, IECSqlBinder& binder, BeJsConst val);
     static ECSqlStatus BindStructProperty(BindContext& ctx, StructECPropertyCR prop, IECSqlBinder& binder, BeJsConst val);
     static ECSqlStatus BindSystemProperty(BindContext& ctx, SystemPropertyMap const& prop, IECSqlBinder& binder, BeJsConst val);
 

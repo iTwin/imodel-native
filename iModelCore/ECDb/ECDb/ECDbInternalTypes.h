@@ -68,7 +68,7 @@ struct GeomBlobHeader {
         writer.Init();
         GeomBlobHeader header(out);
         writer.Write((Byte const*)&header, sizeof(header));
-        writer.Write((Byte*) pData, nSize);
+        writer.Write((Byte const*) pData, nSize);
         writer.SaveTo(out);
         return SUCCESS;
     }
