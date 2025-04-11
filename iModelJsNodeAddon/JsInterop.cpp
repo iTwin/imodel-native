@@ -1053,11 +1053,12 @@ Napi::Value JsInterop::PatchElementProperties(NapiInfoCR info) {
             if (memberJson.isNumericMember("TextureId")) {
                 // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
                 auto textureIdAsStringForLogging = memberJson["TextureId"].Stringify();
-                auto textureId = memberJson["TextureId"].GetId64<DgnTextureId>();
+                auto textureId = memberJson["TextureId"].template GetId64<DgnTextureId>();
                 auto textureIdJson = map->Get(memberName)["TextureId"];
                 (BeJsValue&)textureIdJson = textureId.ToHexStr();
                 if (!textureId.IsValid()) {
-                    THROW_JS_EXCEPTION(("RenderMaterial had a textureId %s that was invalid.", textureIdAsStringForLogging.c_str()));
+                    Utf8PrintfString msg("RenderMaterial had a textureId %s that was invalid.", textureIdAsStringForLogging.c_str());
+                    THROW_JS_EXCEPTION(msg.c_str());
                 }
             }
             return false;
