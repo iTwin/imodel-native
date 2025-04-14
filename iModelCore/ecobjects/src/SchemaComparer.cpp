@@ -459,24 +459,25 @@ BentleyStatus SchemaComparer::Compare(SchemaDiff& diff, bvector<ECN::ECSchemaCP>
     {
     m_options = options;
     bmap<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> oldSchemaMap, newSchemaMap;
-    bset<Utf8CP, CompareIUtf8Ascii> allSchemas;
+    bvector<Utf8CP> allSchemaNames;
 
     for (ECSchemaCP schema : oldSchemas)
         {
         Utf8CP schemaName = schema->GetName().c_str();
         oldSchemaMap[schemaName] = schema;
-        allSchemas.insert(schemaName);
+        if (allSchemaNames.end() == std::find_if(allSchemaNames.begin(), allSchemaNames.end(), [schemaName] (Utf8CP asName) ->bool { return BeStringUtilities::StricmpAscii(schemaName, asName) == 0; }))
+        allSchemaNames.push_back(schemaName);
         }
 
     for (ECSchemaCP schema : newSchemas)
         {
         Utf8CP schemaName = schema->GetName().c_str();
         newSchemaMap[schemaName] = schema;
-        allSchemas.insert(schemaName);
+        if (allSchemaNames.end() == std::find_if(allSchemaNames.begin(), allSchemaNames.end(), [schemaName] (Utf8CP asName) ->bool { return BeStringUtilities::StricmpAscii(schemaName, asName) == 0; }))
+        allSchemaNames.push_back(schemaName);
         }
 
-
-    for (Utf8CP schemaName : allSchemas)
+    for (Utf8CP schemaName : allSchemaNames)
         {
         auto oldIt = oldSchemaMap.find(schemaName);
         auto newIt = newSchemaMap.find(schemaName);

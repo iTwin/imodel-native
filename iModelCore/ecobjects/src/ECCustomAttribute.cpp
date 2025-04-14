@@ -627,7 +627,7 @@ bool copyReferences
                     }
                 }
             }
-        else if (!ECSchema::IsSchemaReferenced(*destContainer.GetContainerSchema(), sourceCustomAttributeSchema))
+        else if (!ECSchema::IsSchemaReferenced(*destContainer.GetContainerSchema(), sourceCustomAttributeSchema, SchemaMatchType::Latest)) // latest, or we would add multiple references to the same schema
             {
             status = destContainer.GetContainerSchema()->AddReferencedSchema(const_cast<ECSchemaR>(sourceCustomAttributeSchema));
             if (ECObjectsStatus::Success != status)
