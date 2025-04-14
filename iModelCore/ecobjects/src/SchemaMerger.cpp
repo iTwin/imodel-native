@@ -234,7 +234,7 @@ bool SchemaMergeResult::ContainsSchema(Utf8CP schemaName) const
 //---------------+---------------+---------------+---------------+---------------+-------
 ECSchemaP SchemaMergeResult::GetSchema(Utf8CP schemaName) const
     {
-    return m_schemaCache.FindSchemaByNameI(schemaName);
+    return m_schemaReadContext->GetCache().FindSchemaByNameI(schemaName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -273,7 +273,7 @@ ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<EC
             if(!result.ContainsSchema(schema->GetName().c_str()))
                 {
                 ECSchemaPtr copiedSchema;
-                auto status = schema->CopySchema(copiedSchema, !doNotMergeReferences ? &result.GetSchemaCache() : nullptr, options.GetSkipValidation());
+                auto status = schema->CopySchema(copiedSchema, !doNotMergeReferences ? result.GetSchemaReadContext().get() : nullptr, options.GetSkipValidation());
                 if(status != ECObjectsStatus::Success)
                     {
                     result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
@@ -317,7 +317,11 @@ ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<EC
     SchemaComparer comparer;
     SchemaComparer::Options comparerOptions = SchemaComparer::Options(SchemaComparer::DetailLevel::NoSchemaElements, SchemaComparer::DetailLevel::NoSchemaElements);
     SchemaDiff diff;
-    if (comparer.Compare(diff, result.GetResults(), right, comparerOptions) != BentleyStatus::SUCCESS)
+    // Have to sort schemas again because the SchemaMap in results somehow does not preserve the order of the schemas in which they were added.
+    auto resultSchemas = result.GetResults();
+    ECSchema::SortSchemasInDependencyOrder(resultSchemas, doNotMergeReferences);
+
+    if (comparer.Compare(diff, resultSchemas, right, comparerOptions) != BentleyStatus::SUCCESS)
         {
         result.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0013, "SchemaComparer comparison failed.");
         return ECObjectsStatus::Error;

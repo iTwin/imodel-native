@@ -32,15 +32,19 @@ struct SchemaMergeResult final
     {
     friend struct SchemaMerger;
 private:
-    ECSchemaCache m_schemaCache;
+    ECSchemaReadContextPtr m_schemaReadContext;
     IssueReporter m_issueReporter; //Once ECobjects issue reporting is available
     bvector<ECSchemaP> m_modifiedSchemas;
 
 public:
-    SchemaMergeResult() : m_schemaCache(), m_issueReporter() {}
+    SchemaMergeResult() 
+        : m_issueReporter(), 
+          m_schemaReadContext(ECSchemaReadContext::CreateContext(false, true))
+        {}
 
-    bvector<ECSchemaCP> GetResults() const { return m_schemaCache.GetSchemas(); }
-    ECSchemaCache& GetSchemaCache() { return m_schemaCache; }
+    bvector<ECSchemaCP> GetResults() const { return m_schemaReadContext->GetCache().GetSchemas(); }
+    ECSchemaCacheR GetSchemaCache() { return m_schemaReadContext->GetCache(); }
+    ECSchemaReadContextPtr GetSchemaReadContext() { return m_schemaReadContext; }
     ECOBJECTS_EXPORT bool ContainsSchema(Utf8CP schemaName) const;
     ECOBJECTS_EXPORT ECSchemaP GetSchema(Utf8CP schemaName) const;
     IssueReporter const& Issues() const { return m_issueReporter; }

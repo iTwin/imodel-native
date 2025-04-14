@@ -59,7 +59,7 @@ bool ECSchemaReadContext::GetStandardPaths(bvector<WString>& searchPaths)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext, bool includeFilesWithNoVerExt)
-    : m_remapper(nullptr), m_standaloneEnablerLocater(enablerLocater), m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch), m_includeFilesWithNoVerExt(includeFilesWithNoVerExt)
+    : m_remapper(nullptr), m_standaloneEnablerLocater(enablerLocater), m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch), m_includeFilesWithNoVerExt(includeFilesWithNoVerExt), m_issueReporter()
     {
     m_knownSchemas = ECSchemaCache::Create();
     m_locaters.push_back(m_knownSchemas.get());
@@ -150,7 +150,7 @@ void ECSchemaReadContext::RemoveSchemaLocater(IECSchemaLocaterR locator)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaReadContext::AddSchemaPath(WCharCP path)
+void ECSchemaReadContext::AddSchemaPath(WCharCP path, bool addOnTop)
     {
     BeFileName pathStr(path);
     pathStr.AppendSeparator();
@@ -163,8 +163,23 @@ void ECSchemaReadContext::AddSchemaPath(WCharCP path)
     SearchPathSchemaFileLocaterPtr locator = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(pathVector, m_includeFilesWithNoVerExt);
 
     m_searchPaths.insert(pathStr.GetName());
-    m_locaters.insert(m_locaters.begin() + m_userAddedLocatersCount + ++m_searchPathLocatersCount, locator.get());
+    int offset = 1;
+    m_searchPathLocatersCount++;
+    if(!addOnTop)
+        offset = m_userAddedLocatersCount + m_searchPathLocatersCount;
+
+    m_locaters.insert(m_locaters.begin() + offset, locator.get());
     m_ownedLocators.push_back(locator);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSchemaReadContext::AddFirstSchemaPaths(bvector<WString> const& searchPaths)
+    {
+    auto locater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths, m_includeFilesWithNoVerExt);
+    AddFirstSchemaLocater(*locater);
+    m_ownedLocators.push_back(locater);
     }
 
 //---------------------------------------------------------------------------------------
@@ -302,6 +317,23 @@ void ECSchemaReadContext::ClearAliasesToPruneForSchema(Utf8StringCR schemaName)
         m_schemasToPruneAliases.erase(it);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String ECSchemaReadContext::GetDescription() const
+    {
+    Utf8String description = "ECSchemaReadContext, locaters listed in priority order: ";
+    int i = 0;
+    for (auto const& locater : m_locaters)
+        {
+        Utf8String locaterDesc = locater->GetDescription();
+        Utf8PrintfString part("\n[%d]: %s", i++, locaterDesc.c_str());
+        description.append(part);
+        }
+
+    return description;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -317,11 +349,22 @@ public:
 
     virtual ECObjectsStatus _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const
         {
-        if (key.Matches(m_key, matchType))
+        if (m_key.Matches(key, matchType))
             {
             schema = &m_schema;
             return ECObjectsStatus::Success;
             }
+
+        auto& references = m_schema.GetReferencedSchemas();
+        auto it = references.Find(key, matchType);
+        if (it != references.end())
+            {
+            schema = it->second.get();
+            return ECObjectsStatus::Success;
+            }
+
+        LOG.errorv("ECSchemaBackedInstanceReadContext - Custom attribute schema %s not found in referenced schemas of %s.", key.GetFullSchemaName().c_str(), m_schema.GetFullSchemaName().c_str());
+
         return ECObjectsStatus::SchemaNotFound;
         }
 };
