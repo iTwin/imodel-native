@@ -389,7 +389,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
 
 
     const BooleanSqlOperator logicalCompoundOp = DetermineCompoundLogicalOpForCompoundExpressions(op);
-    const bool wrapInParens = exp.HasParentheses() || nativeSqlSnippetCount > 1;
+    size_t validSnippetCount = 0;
+    for (size_t i = 0; i < nativeSqlSnippetCount; i++) 
+    {
+        if (!(lhsNativeSqlSnippets[i].GetSql().Equals("[Element].[ParentRelECClassId]") && rhsNativeSqlSnippets[i].GetSql().Equals("NULL")))
+            validSnippetCount++;
+    }
+    const bool wrapInParens = exp.HasParentheses() || validSnippetCount > 1;
 
     NativeSqlBuilder sqlBuilder;
     if (wrapInParens)
@@ -416,19 +422,26 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
         bool isFirstSnippet = true;
         for (size_t i = 0; i < nativeSqlSnippetCount; i++)
             {
-            if (!isFirstSnippet)
-                sqlBuilder.AppendSpace().Append(ExpHelper::ToSql(logicalCompoundOp)).AppendSpace();
+            if (!(lhsNativeSqlSnippets[i].GetSql().Equals("[Element].[ParentRelECClassId]") && rhsNativeSqlSnippets[i].GetSql().Equals("NULL")))
+                {
+                    if (!isFirstSnippet)
+                        sqlBuilder.AppendSpace().Append(ExpHelper::ToSql(logicalCompoundOp)).AppendSpace();
 
-            sqlBuilder.Append(lhsNativeSqlSnippets[i]);
-            if (wrapOpInSpaces)
-                sqlBuilder.AppendSpace();
+                    sqlBuilder.Append(lhsNativeSqlSnippets[i]);
+                    if (wrapOpInSpaces)
+                        sqlBuilder.AppendSpace();
 
-            sqlBuilder.Append(ExpHelper::ToSql(op));
-            if (wrapOpInSpaces)
-                sqlBuilder.AppendSpace();
+                    sqlBuilder.Append(ExpHelper::ToSql(op));
+                    if (wrapOpInSpaces)
+                        sqlBuilder.AppendSpace();
 
-            sqlBuilder.Append(rhsNativeSqlSnippets[i]);
-            isFirstSnippet = false;
+                    sqlBuilder.Append(rhsNativeSqlSnippets[i]);
+                        isFirstSnippet = false;
+                }
+            if (isFirstSnippet)  // Ensure SQL is not empty if all snippets are skipped
+                {
+                    sqlBuilder.Append("TRUE");
+                } 
             }
         }
     if (wrapInParens)

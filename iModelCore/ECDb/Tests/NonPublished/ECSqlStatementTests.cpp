@@ -24,6 +24,20 @@ struct ECSqlStatementTestFixture : ECDbTestFixture {};
                                                                         ASSERT_EQ(STEPSTATUS, stmt.Step());\
                                                                    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
+* ECSqlStatementTestFixture.BugFix
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, CountSpatialCategory)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    auto query = R"(select 1 from bis.Element where Parent is NULL)";
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT 1 FROM (SELECT [bis_Element].[Id] ECInstanceId,[bis_Element].[ECClassId],[bis_Element].[ParentId],(CASE WHEN [bis_Element].[ParentId] IS NULL THEN NULL ELSE [bis_Element].[ParentRelECClassId] END) [ParentRelECClassId] FROM [main].[bis_Element]) [Element] WHERE [Element].[ParentId] IS NULL");
+    stmt.Finalize();
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
