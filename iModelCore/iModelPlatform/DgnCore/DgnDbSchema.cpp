@@ -3,7 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
-#include "ClassHandlers.h"
+
 bmap<ECN::ECClassCP, bvector<ECN::ECPropertyCP>> AutoHandledPropertiesCollection::s_orphanCustomHandledProperties;
 
 /*---------------------------------------------------------------------------------**//**
