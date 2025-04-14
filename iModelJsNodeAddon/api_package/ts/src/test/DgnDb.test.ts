@@ -392,6 +392,22 @@ describe("basic tests", () => {
     expect(deserializedProps).to.equal(JSON.stringify(JSON.parse(expectedProps)));
   });
 
+  it("PatchJsonProperties relClassName", () => {
+    const jsonProps = `{
+    "styles": {
+        "relClassName": "BisCore.ElementRefersToElements"
+      }
+    }`;
+    const expectedProps = `{
+    "styles": {
+        "relClassName": "BisCore:ElementRefersToElements"
+      }
+    }`;
+    const deserializedProps = dgndb.patchJsonProperties(jsonProps);
+    expect(deserializedProps).to.not.be.undefined;
+    expect(deserializedProps).to.equal(JSON.stringify(JSON.parse(expectedProps)));
+  });
+
   // verify that throwing javascript exceptions from C++ works
   it("testExceptions", () => {
     // first try a function

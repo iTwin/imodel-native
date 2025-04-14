@@ -1048,6 +1048,22 @@ Napi::Value JsInterop::PatchJsonProperties(NapiInfoCR info) {
         return Napi::Value::From(info.Env(), jsonProps);
     doc.PurgeNulls();
 
+    // Handle relClassNames
+    auto relClassNames = BeJsPath::Extract(BeJsValue(doc), "$");
+    if (relClassNames.has_value()) {
+        relClassNames.value().ForEachProperty([&](auto memberName, auto memberJson) {
+            if (memberJson.isStringMember("relClassName")) {
+                // Fix Class Names that were not converted to the TS format
+                auto relClassName = memberJson["relClassName"];
+                auto relClassNameJson = relClassNames->Get(memberName)["relClassName"];
+                Utf8String correctedRelClassName = relClassName.Stringify();
+                correctedRelClassName.DropQuotes();
+                correctedRelClassName.ReplaceAll(".", ":");
+                (BeJsValue&)relClassNameJson = correctedRelClassName;
+            }
+            return false;
+        });
+    }
     // Handle renderMaterial TextureIds
     auto map = BeJsPath::Extract(BeJsValue(doc), "$.materialAssets.renderMaterial.Map");
     if (map.has_value()) {
