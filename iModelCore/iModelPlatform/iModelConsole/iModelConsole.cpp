@@ -3,7 +3,13 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "iModelConsole.h"
+
 #include <fstream>
+#include <random>
+#include <sstream>
+#include <ctime>
+#include <mutex>
+
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeThread.h>
 
@@ -169,6 +175,12 @@ bool SessionFile::IsAttached(Utf8StringCR tableSpaceName) const
 IModelConsole* IModelConsole::s_singleton = new IModelConsole();
 BeMutex IModelConsole::s_consoleMutex;
 
+WString GenerateUniqueTempDir() {
+    std::wostringstream woss;
+    woss << L"imodel_fuzzing_temp_" << std::time(nullptr) << L"_" << std::rand();
+    return WString(woss.str().c_str());
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -248,69 +260,113 @@ int IModelConsole::Run(int argc, WCharCP argv[])
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-int IModelConsole::ExecuteSampleQuery(char* bimFilePath, char* sampleBytes)
+BeFileName IModelConsole::CreateTempDirectory()
     {
-    //Initialize iModelConsole and print out banner
-    Setup();
+    BeFileName tempDir;
+    Desktop::FileSystem::BeGetTempPath(tempDir);
 
-    // Helper lambda to run commands
+    // Generate a unique directory name
+    WString uniqueDirName = GenerateUniqueTempDir();
+    BeFileName tempFuzzDir = tempDir;
+    tempFuzzDir.AppendToPath(uniqueDirName.c_str());
+
+    WriteLine("Starting fuzzing session with temporary directory: %s", tempFuzzDir.GetNameUtf8().c_str());
+
+    // Remove the directory if it already exists
+    if (tempFuzzDir.DoesPathExist())
+        {
+        WriteLine("Removing existing temp directory: %s", tempFuzzDir.GetNameUtf8().c_str());
+        BeFileName::EmptyAndRemoveDirectory(tempFuzzDir.GetName());
+        }
+
+    // Create the directory
+    BeFileName::CreateNewDirectory(tempFuzzDir.GetName());
+    return tempFuzzDir;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void IModelConsole::CleanupTempDirectory(const BeFileName& tempDir)
+    {
+    if (tempDir.DoesPathExist())
+        {
+        WriteLine("Cleaning up temporary directory: %s", tempDir.GetNameUtf8().c_str());
+        BeFileName::EmptyAndRemoveDirectory(tempDir.GetName());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool IModelConsole::CopyBimFile(const BeFileName& source, const BeFileName& destination)
+    {
+    if (destination.DoesPathExist())
+        {
+        WriteLine("Deleting existing temp file: %s", destination.GetNameUtf8().c_str());
+        BeFileName::BeDeleteFile(destination.GetName());
+        }
+
+    BeFileNameStatus copyStatus = BeFileName::BeCopyFile(source, destination, false);
+    if (copyStatus != BeFileNameStatus::Success)
+        {
+        WriteErrorLine("Error: Failed to copy BIM file to temp location");
+        return false;
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void IModelConsole::ExecuteCommands(const std::string& tempBimPath, const char* sampleBytes)
+    {
     auto runCommand = [this](const char* commandName, const char* args) {
-        WriteLine(Utf8PrintfString("Executing: %s \n", commandName).c_str());
+        WriteLine("Executing: %s", commandName);
         Command const* command = GetCommand(commandName);
         BeAssert(command != nullptr);
         command->Run(m_session, args);
     };
 
-    // Create temp file path using BeFileName
-    BeFileName tempDir;
-    Desktop::FileSystem::BeGetTempPath(tempDir);
-    
-    // Create a unique temp directory name using timestamp and process ID
-    BeFileName tempFuzzDir = tempDir;
-    char uniqueDirName[64];
-    time_t now = time(nullptr);
-    uint64_t processId = BeThreadUtilities::GetCurrentProcessId();
-    snprintf(uniqueDirName, sizeof(uniqueDirName), "imodel_fuzzing_temp_%lld_%llu", (long long)now, processId);
-    tempFuzzDir.AppendToPath(WString(uniqueDirName, BentleyCharEncoding::Utf8).c_str());
-
-    WriteLine("\nStarting fuzzing session with temporary directory:\n  %s\n", tempFuzzDir.GetNameUtf8().c_str());
-
-    // If temp directory exists (shouldn't, but just in case), remove it completely
-    if (tempFuzzDir.DoesPathExist()) {
-        WriteLine("Removing existing temp directory: %s", tempFuzzDir.GetNameUtf8().c_str());
-        BeFileName::EmptyAndRemoveDirectory(tempFuzzDir.GetName());
-    }
-
-    // Create the temp directory
-    BeFileName::CreateNewDirectory(tempFuzzDir.GetName());
-
-    // Create paths for the temp BIM file
-    BeFileName tempBimFile = tempFuzzDir;
-    tempBimFile.AppendToPath(L"temp_fuzzing.bim");
-    std::string tempBimPath = std::string(tempBimFile.GetNameUtf8());
-
-    // Delete temp file if it exists
-    if (tempBimFile.DoesPathExist()) {
-        WriteLine("Deleting existing temp file: %s", tempBimPath.c_str());
-        BeFileName::BeDeleteFile(tempBimFile.GetName());
-    }
-
-    // Copy input BIM file to temp location using BeFileName
-    BeFileName sourceBimFile(bimFilePath);
-    BeFileNameStatus copyStatus = BeFileName::BeCopyFile(sourceBimFile, tempBimFile, false);
-    if (copyStatus != BeFileNameStatus::Success) {
-        WriteErrorLine("Error: Failed to copy BIM file to temp location");
-        return 1;
-    }
-
-    // Open the temp bim file
+    // Open the temp BIM file
     runCommand(".open", tempBimPath.c_str());
 
     // Run the sample command
     runCommand(".parse", sampleBytes);
 
-    // Close the temp bim file
+    // Close the temp BIM file
     runCommand(".close", "");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+int IModelConsole::ExecuteSampleQuery(char* bimFilePath, char* sampleBytes)
+    {
+    //Initialize iModelConsole and print out banner
+    Setup();
+
+    // Create a temporary directory
+    BeFileName tempDir = CreateTempDirectory();
+
+    // Create paths for the temp BIM file
+    BeFileName tempBimFile = tempDir;
+    tempBimFile.AppendToPath(L"temp_fuzzing.bim");
+
+    // Copy the input BIM file to the temp location
+    BeFileName sourceBimFile(bimFilePath);
+    if (!CopyBimFile(sourceBimFile, tempBimFile))
+        {
+        CleanupTempDirectory(tempDir);
+        return 1;
+        }
+
+    // Execute commands
+    ExecuteCommands(tempBimFile.GetNameUtf8(), sampleBytes);
+
+    // Clean up the temporary directory
+    CleanupTempDirectory(tempDir);
 
     return 0;
     }
@@ -577,7 +633,6 @@ void IModelConsole::WriteErrorLine(Utf8CP format, ...)
 //---------------------------------------------------------------------------------------
 void IModelConsole::Write(FILE* stream, Utf8CP format, va_list args)
     {
-    s_consoleMutex.Enter();
+    std::lock_guard<BeMutex> lock(s_consoleMutex); // Automatically locks and unlocks
     vfprintf(stream, format, args);
-    s_consoleMutex.Leave();
     }

@@ -252,6 +252,12 @@ struct IModelConsole final : Dgn::PlatformLib::Host
         static FILE* GetOut();
         static FILE* GetErr();
 
+        // Helper methods for ExecuteSampleQuery
+        BeFileName CreateTempDirectory();
+        void CleanupTempDirectory(const BeFileName& tempDir);
+        bool CopyBimFile(const BeFileName& source, const BeFileName& destination);
+        void ExecuteCommands(const std::string& tempBimPath, const char* sampleBytes);
+
     public:
         static IModelConsole& Singleton() { return *s_singleton; }
 

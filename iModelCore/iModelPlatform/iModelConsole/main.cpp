@@ -30,9 +30,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 void fuzz(char *bimFilePath, char *sqlFilePath);
 
 void SafeLog(const std::string& message) {
-    IModelConsole::GetConsoleMutex().Enter();
+    std::lock_guard<BeMutex> lock(IModelConsole::GetConsoleMutex());
     std::cerr << message << std::endl;
-    IModelConsole::GetConsoleMutex().Leave();
 }
 
 std::string convertWCharToString(WCharCP wstr) {
