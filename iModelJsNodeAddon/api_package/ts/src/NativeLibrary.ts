@@ -632,7 +632,6 @@ export declare namespace IModelJsNative {
     public getIModelId(): GuidString;
     public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
 
-    /* WIP thining <<<<< */
     public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
     public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
     public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
@@ -642,8 +641,6 @@ export declare namespace IModelJsNative {
 
     public convertOrUpdateGeometrySource(arg: IGeometrySource, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometrySource;
     public convertOrUpdateGeometryPart(arg: IGeometryPart, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometryPart;
-
-    /* WIP thining >>>> */
 
     // when lets getIModelProps know that the extents may have been updated as the result of a pullChanges and should be read directly from the iModel as opposed to the cached extents.
     public getIModelProps(when?: "pullMerge"): IModelProps;

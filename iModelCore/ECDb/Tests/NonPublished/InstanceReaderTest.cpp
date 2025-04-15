@@ -688,7 +688,8 @@ TEST_F(InstanceReaderFixture, check_option_DO_NOT_TRUNCATE_BLOB) {
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         BeJsDocument actualDoc;
         actualDoc.Parse(stmt.GetValueText(0));
-        ASSERT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str());
+
+        ASSERT_TRUE(expectedDoc.isExactEqual(actualDoc)) << "Expected:\n" + expectedDoc.Stringify() + "\nBut was:\n" + actualDoc.Stringify();
         stmt.Finalize();
     }
 }
