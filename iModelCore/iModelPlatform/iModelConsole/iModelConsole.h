@@ -223,6 +223,7 @@ struct IModelConsole final : Dgn::PlatformLib::Host
         static const Utf8Char COMMAND_PREFIX = '.';
 
         static IModelConsole* s_singleton;
+        static BeMutex s_consoleMutex;
 
         Session m_session;
         Utf8Char m_readBuffer[5000];
@@ -254,9 +255,12 @@ struct IModelConsole final : Dgn::PlatformLib::Host
     public:
         static IModelConsole& Singleton() { return *s_singleton; }
 
+        static BeMutex& GetConsoleMutex() { return s_consoleMutex; }
+        
+
         int Run(int argc, WCharCP argv[]);
 
-        int ExecuteSampleQuery(char *sample_bytes);
+        int ExecuteSampleQuery(char* bimFilePath, char* sampleBytes);
 
         static size_t FindNextToken(Utf8String& token, WStringCR inputString, size_t startIndex, WChar delimiter, WChar delimiterEscapeChar = L'\0');
 

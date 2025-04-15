@@ -14,6 +14,10 @@
 #include <vector>
 #include <cstdlib>
 #include <ctime>
+#include <mutex>
+
+// Maximum size for input files (8MB)
+#define MAX_INPUT_SIZE (8 * 1024 * 1024)
 
 #ifdef COMMENT_OUT_UNUSED_VARIABLE
 static WCharCP s_configFileName = L"logging.config.xml";
@@ -23,7 +27,13 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 // Function declaration
-void fuzz(char *name);
+void fuzz(char *bimFilePath, char *sqlFilePath);
+
+void SafeLog(const std::string& message) {
+    IModelConsole::GetConsoleMutex().Enter();
+    std::cerr << message << std::endl;
+    IModelConsole::GetConsoleMutex().Leave();
+}
 
 std::string convertWCharToString(WCharCP wstr) {
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
@@ -53,32 +63,67 @@ void InitLogging(BeFileNameCR exeDir)
     {
     }
 
-// actual target function
-void fuzz(char *name) {
-    std::cout << "Inside Fuzz function" << std::endl;
-    char *sample_bytes = NULL;
-    uint32_t sample_size = 0; 
-    
-    // read the sample either from file
-    FILE *fp = NULL;
-    if (fopen_s(&fp, name, "rb") != 0 || !fp) {
-        printf("Error opening %s\n", name);
+// Fuzzing target function
+void fuzz(char *bimFilePath, char *sqlFilePath) {
+    if (!bimFilePath || !sqlFilePath) {
+        SafeLog("Error: Null input path(s)");
         return;
     }
+
+    SafeLog("INFO: Processing BIM file: " + std::string(bimFilePath));
+    SafeLog("INFO: Processing SQL file: " + std::string(sqlFilePath));
+    
+    FILE *fp = NULL;
+    char *sample_bytes = NULL;
+    
+    // Open and read SQL file
+    if (fopen_s(&fp, sqlFilePath, "rb") != 0 || !fp) {
+        SafeLog("Error opening SQL file: " + std::string(sqlFilePath));
+        return;
+    }
+
+    // Get file size
     fseek(fp, 0, SEEK_END);
-    sample_size = ftell(fp);
+    long file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
-    sample_bytes = (char *)malloc(sample_size);
-    fread(sample_bytes, 1, sample_size, fp);
-    // Process the SQL input
-    printf("Sample Data: %s\n", sample_bytes);
 
-    IModelConsole::Singleton().ExecuteSampleQuery(sample_bytes);
+    // Safety checks
+    if (file_size <= 0) {
+        SafeLog("Error: Empty or invalid SQL file");
+        fclose(fp);
+        return;
+    }
 
-    fclose(fp);
+    if (file_size > MAX_INPUT_SIZE) {
+        SafeLog("Error: SQL file too large");
+        fclose(fp);
+        return;
+    }
 
-    if(sample_bytes)
+    // Allocate buffer and read file
+    sample_bytes = (char *)malloc(file_size);
+    if (!sample_bytes) {
+        SafeLog("Error: Memory allocation failed");
+        fclose(fp);
+        return;
+    }
+
+    size_t bytes_read = fread(sample_bytes, 1, file_size, fp);
+    if (bytes_read != (size_t)file_size) {
+        SafeLog("Error: Failed to read entire SQL file");
         free(sample_bytes);
+        fclose(fp);
+        return;
+    }
+
+    SafeLog("INFO: Processing SQL of size: " + std::to_string(file_size) + " bytes");
+
+    // Execute query with both BIM file path and SQL query
+    IModelConsole::Singleton().ExecuteSampleQuery(bimFilePath, sample_bytes);
+
+    // Clean up resources in reverse order of allocation
+    free(sample_bytes);     // Free memory first
+    fclose(fp);             // Close file last
 }
 
 //---------------------------------------------------------------------------------------
@@ -94,12 +139,16 @@ int wmain(int argc, WCharCP argv[])
 #endif
 #endif
 
-    BeFileName exeDir = Desktop::FileSystem::GetExecutableDir();
-    if (!exeDir.DoesPathExist())
-        {
-        BeAssert(false && "Exe path's directory should always exist.");
+    if (argc != 3) {
+        std::cerr << "Usage: " << convertWCharToString(argv[0]) << " <bim_file_path> <sql_file_path>" << std::endl;
         return 1;
-        }
+    }
+
+    BeFileName exeDir = Desktop::FileSystem::GetExecutableDir();
+    if (!exeDir.DoesPathExist()) {
+        std::cerr << "Error: Executable directory not found" << std::endl;
+        return 1;
+    }
 
     InitLogging(exeDir);
 
@@ -118,12 +167,22 @@ int wmain(int argc, WCharCP argv[])
 
     Dgn::PlatformLib::Initialize(IModelConsole::Singleton());
 
-    std::string inputFileName = convertWCharToString(argv[1]);
-    fuzz(const_cast<char*>(inputFileName.c_str()));
+    // Convert both file paths
+    std::string bimFilePath = convertWCharToString(argv[1]);
+    std::string sqlFilePath = convertWCharToString(argv[2]);
+    
+    std::cerr << "INFO: BIM file path: " << bimFilePath << std::endl;
+    std::cerr << "INFO: SQL file path: " << sqlFilePath << std::endl;
 
-    return 0;
-    // return IModelConsole::Singleton().ExecuteSampleQuery(argc, argv);
+    // For Jackalope fuzzing - handle @@ placeholder
+    if (sqlFilePath == "@@") {
+        std::cerr << "Error: Direct @@ placeholder passed. This should be replaced by Jackalope." << std::endl;
+        return 1;
     }
+
+    fuzz(const_cast<char*>(bimFilePath.c_str()), const_cast<char*>(sqlFilePath.c_str()));
+    return 0;
+}
 
 #ifdef __unix__
 extern "C" int main(int argc, char** argv) {

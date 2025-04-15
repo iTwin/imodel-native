@@ -5,6 +5,7 @@
 #include "iModelConsole.h"
 #include <fstream>
 #include <Bentley/BeTimeUtilities.h>
+#include <Bentley/BeThread.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -166,6 +167,7 @@ bool SessionFile::IsAttached(Utf8StringCR tableSpaceName) const
 //---------------------------------------------------------------------------------------
 //static
 IModelConsole* IModelConsole::s_singleton = new IModelConsole();
+BeMutex IModelConsole::s_consoleMutex;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -173,12 +175,8 @@ IModelConsole* IModelConsole::s_singleton = new IModelConsole();
 void IModelConsole::Setup()
     {
     WriteLine(" --------------------------------------------------------------------------- ");
-    WriteLine(" iModelConsole v1.0");
-    WriteLine(" Copyright (c) Bentley Systems. All rights reserved. www.Bentley.com.");
+    WriteLine(" iModelConsole Harness For Fuzzer v1.0");
     WriteLine(" ----------------------------------------------------------------------------");
-    WriteLine();
-    WriteLine("    .help for help, .exit to exit program");
-    WriteLine();
     auto helpCommand = std::make_shared<HelpCommand>(m_commands);
     AddCommand(helpCommand);
     AddCommand(".h", helpCommand); //add same command with alternative command name
@@ -250,46 +248,69 @@ int IModelConsole::Run(int argc, WCharCP argv[])
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-int IModelConsole::ExecuteSampleQuery(char *sample_bytes)
+int IModelConsole::ExecuteSampleQuery(char* bimFilePath, char* sampleBytes)
     {
     //Initialize iModelConsole and print out banner
     Setup();
 
     // Helper lambda to run commands
     auto runCommand = [this](const char* commandName, const char* args) {
-        IModelConsole::WriteLine(Utf8PrintfString("Executing: %s \n", commandName).c_str());
+        WriteLine(Utf8PrintfString("Executing: %s \n", commandName).c_str());
         Command const* command = GetCommand(commandName);
         BeAssert(command != nullptr);
         command->Run(m_session, args);
     };
 
-    // Helper function to remove files
-    auto removeFiles = [](const std::string& baseFilePath) {
-        std::remove((baseFilePath + "-journal").c_str());
-        std::remove((baseFilePath + "-wal").c_str());
-        std::remove((baseFilePath + "-shm").c_str());
-        std::remove(baseFilePath.c_str());
-    };
+    // Create temp file path using BeFileName
+    BeFileName tempDir;
+    Desktop::FileSystem::BeGetTempPath(tempDir);
+    
+    // Create a unique temp directory name using timestamp and process ID
+    BeFileName tempFuzzDir = tempDir;
+    char uniqueDirName[64];
+    time_t now = time(nullptr);
+    uint64_t processId = BeThreadUtilities::GetCurrentProcessId();
+    snprintf(uniqueDirName, sizeof(uniqueDirName), "imodel_fuzzing_temp_%lld_%llu", (long long)now, processId);
+    tempFuzzDir.AppendToPath(WString(uniqueDirName, BentleyCharEncoding::Utf8).c_str());
 
-    std::string filePath = "D:\\test.bim";
+    WriteLine("\nStarting fuzzing session with temporary directory:\n  %s\n", tempFuzzDir.GetNameUtf8().c_str());
 
-    // 1. Close the bim file
-    runCommand(".close", filePath.c_str());
+    // If temp directory exists (shouldn't, but just in case), remove it completely
+    if (tempFuzzDir.DoesPathExist()) {
+        WriteLine("Removing existing temp directory: %s", tempFuzzDir.GetNameUtf8().c_str());
+        BeFileName::EmptyAndRemoveDirectory(tempFuzzDir.GetName());
+    }
 
-    // 2. Delete the bim file if it exists
-    removeFiles(filePath);
+    // Create the temp directory
+    BeFileName::CreateNewDirectory(tempFuzzDir.GetName());
 
-    // 3. Create a new bim file
-    runCommand(".create", ("ecdb " + filePath).c_str());
+    // Create paths for the temp BIM file
+    BeFileName tempBimFile = tempFuzzDir;
+    tempBimFile.AppendToPath(L"temp_fuzzing.bim");
+    std::string tempBimPath = std::string(tempBimFile.GetNameUtf8());
 
-    // 4. Run the sample command
-    runCommand(".parse", sample_bytes);
+    // Delete temp file if it exists
+    if (tempBimFile.DoesPathExist()) {
+        WriteLine("Deleting existing temp file: %s", tempBimPath.c_str());
+        BeFileName::BeDeleteFile(tempBimFile.GetName());
+    }
 
-    // 5. Close the bim file
-    runCommand(".close", filePath.c_str());
+    // Copy input BIM file to temp location using BeFileName
+    BeFileName sourceBimFile(bimFilePath);
+    BeFileNameStatus copyStatus = BeFileName::BeCopyFile(sourceBimFile, tempBimFile, false);
+    if (copyStatus != BeFileNameStatus::Success) {
+        WriteErrorLine("Error: Failed to copy BIM file to temp location");
+        return 1;
+    }
 
-    // 6. Delete the bim file
-    removeFiles(filePath);
+    // Open the temp bim file
+    runCommand(".open", tempBimPath.c_str());
+
+    // Run the sample command
+    runCommand(".parse", sampleBytes);
+
+    // Close the temp bim file
+    runCommand(".close", "");
 
     return 0;
     }
@@ -554,4 +575,9 @@ void IModelConsole::WriteErrorLine(Utf8CP format, ...)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void IModelConsole::Write(FILE* stream, Utf8CP format, va_list args) { vfprintf(stream, format, args); }
+void IModelConsole::Write(FILE* stream, Utf8CP format, va_list args)
+    {
+    s_consoleMutex.Enter();
+    vfprintf(stream, format, args);
+    s_consoleMutex.Leave();
+    }
