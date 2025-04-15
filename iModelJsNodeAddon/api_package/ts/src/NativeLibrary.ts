@@ -642,8 +642,6 @@ export declare namespace IModelJsNative {
     public convertOrUpdateGeometrySource(arg: IGeometrySource, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometrySource;
     public convertOrUpdateGeometryPart(arg: IGeometryPart, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometryPart;
 
-    /* WIP thining >>>> */
-
     // when lets getIModelProps know that the extents may have been updated as the result of a pullChanges and should be read directly from the iModel as opposed to the cached extents.
     public getITwinId(): GuidString;
     public getLastError(): string;
