@@ -1059,8 +1059,6 @@ bvector<bvector<DRange2d>> *knotRanges
     bvector<DPoint3d> cps;
     bvector<double> cws;
     DPoint3d point;
-    // TODO: patch is non-trivially copyable, so this is not safe. sizeof(patch) is not guaranteed to be correct.
-    memset ((void*)&patch, 0, sizeof (patch));
 
     while (jPatch<num)
         {
