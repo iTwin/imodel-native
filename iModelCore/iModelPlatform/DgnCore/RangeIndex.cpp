@@ -449,7 +449,9 @@ bool Tree::LeafNode::DropElement(DgnElementId id, TreeR root)
 
         FBox range = curr->m_range;
         if (curr+1 < m_endChild)
-            memmove(curr, curr+1, (m_endChild - curr) * sizeof(Entry));
+            memmove((void*)curr, (void*)(curr + 1), (m_endChild - curr) * sizeof(Entry));
+        // TODO: Entry is not trivially copyable, so using memmove here is potentially unsafe. 
+        // This should be revisited to ensure proper handling of non-trivial members or replaced with a safer alternative.
 
         --m_endChild;
 

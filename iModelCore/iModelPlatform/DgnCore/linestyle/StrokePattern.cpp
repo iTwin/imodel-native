@@ -1321,7 +1321,10 @@ void            LsStrokePatternComponent::DeleteStroke (size_t index)
     if (m_nStrokes > index)
         {
         m_nStrokes--;
-        memcpy (m_strokes+index, m_strokes+index+1, m_nStrokes-index);
+        
+        memcpy((void*)(m_strokes + index), (void*)(m_strokes + index + 1), m_nStrokes - index);
+        // TODO: This struct is not trivially copyable, so using memcpy here is potentially unsafe. 
+        // This should be revisited to ensure proper handling of non-trivial members or replaced with a safer alternative.
         }
     }
 

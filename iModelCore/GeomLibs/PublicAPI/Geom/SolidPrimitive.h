@@ -1056,11 +1056,11 @@ double sweepLatitude        //!< [in] latitude sweep for partial sphere.
 
 
 //! A DgnExtrusionDetail is a linear sweep of a base CurveVector.  All points on the base are swept by the same vector.
-struct DgnExtrusionDetail : ZeroInit<DgnExtrusionDetail>
+struct DgnExtrusionDetail
 {
-CurveVectorPtr m_baseCurve; // Curve to be swept.
-DVec3d m_extrusionVector; // Vector from base to target curve
-bool m_capped; // true if end cap is enabled
+CurveVectorPtr m_baseCurve{}; // Curve to be swept.
+DVec3d m_extrusionVector{}; // Vector from base to target curve
+bool m_capped{}; // true if end cap is enabled
 
 //! Detail consructor with complete field list as parameters ...
 //! @param [in] baseCurve Curve to be swept. This pointer is captured (not cloned) into the extrusion.
@@ -1221,13 +1221,13 @@ GEOMDLLIMPEXP bool SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves)
 
 
 //! A DgnExtrusionDetail is a rotational sweep of a base CurveVector.
-struct DgnRotationalSweepDetail : ZeroInit<DgnRotationalSweepDetail>
+struct DgnRotationalSweepDetail
 {
-CurveVectorPtr m_baseCurve; // Curve to be swept.
-DRay3d  m_axisOfRotation;
-double m_sweepAngle; // major circle sweep angle
-bool m_capped; // true if end cap is enabled
-size_t m_numVRules; // Number of v rules (radial around) to display in wireframe.
+CurveVectorPtr m_baseCurve{}; // Curve to be swept.
+DRay3d  m_axisOfRotation{};
+double m_sweepAngle{}; // major circle sweep angle
+bool m_capped{}; // true if end cap is enabled
+size_t m_numVRules{}; // Number of v rules (radial around) to display in wireframe.
 
 //! Detail consructor with complete field list as parameters ...
 //! @param [in] baseCurve Curve to be swept. This pointer is captured (not cloned) into the extrusion.
@@ -1440,10 +1440,10 @@ GEOMDLLIMPEXP bool   SetRadius (double radius, RadiusType type);
 
 
 //! A DgnRuledSweepDetail is a ruled surface between corresponding points of CurveVectors.
-struct DgnRuledSweepDetail  : ZeroInit<DgnRuledSweepDetail>
+struct DgnRuledSweepDetail
 {
-bvector<CurveVectorPtr> m_sectionCurves; // Successive section curves
-bool m_capped; // true if end cap is enabled
+bvector<CurveVectorPtr> m_sectionCurves{}; // Successive section curves
+bool m_capped{}; // true if end cap is enabled
 
 //! Detail consructor with complete field list as parameters ...
 //! @param [in] sectionCurves Successive section curves
