@@ -21,6 +21,7 @@ ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, Ut
     m_preferredDisplayType(preferredDisplayType), m_contentFlags(contentFlags), m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier), m_inputNodeKeys(&inputKeys),
     m_exclusiveIncludePaths(exclusiveIncludePaths)
     {
+    BeAssert(m_nodesLocater);
     Init();
     }
 
