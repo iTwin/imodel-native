@@ -1762,7 +1762,9 @@ bool ECValue::ConvertToPrimitiveFromString(PrimitiveType primitiveType)
             if (!convertStringToByteArray(bytes, str))
                 return false;
 
-            SetBinary(&bytes.front(), bytes.size(), true);
+            // convertStringToByteArray returns true if the input string only has valid chars, but we can still get an empty array
+            // in that case we cannot access bytes.front()
+            SetBinary(bytes.empty() ? nullptr : &bytes.front(), bytes.size(), true);
             }
             break;
             case PRIMITIVETYPE_Boolean:
