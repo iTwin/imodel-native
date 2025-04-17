@@ -653,7 +653,9 @@ void            ECValue::ConstructUninitialized()
     {
 #ifndef NDEBUG
     int size = sizeof(ECValue);
-    memset(this, 0xBAADF00D, size); // avoid accidental misinterpretation of uninitialized data
+    // TODO: ECValue has members or properties (e.g., constructors, destructors, or assignment operators) that make it unsafe to overwrite its memory directly with memset.
+    // Casting to void* to ignore this for now. But we should revisit this in the future.
+    memset((void*)this, 0xBAADF00D, size); // avoid accidental misinterpretation of uninitialized data
 #endif
     m_valueKind = VALUEKIND_Uninitialized;
     m_stateFlags = ECVALUE_STATE_IsNull;
@@ -671,7 +673,9 @@ void            ECValue::ShallowCopy(ECValueCR v)
     if (this == &v)
         return;
 
-    memcpy(this, &v, sizeof(ECValue));
+    // TODO: ECValue has members or properties (e.g., constructors, destructors, or assignment operators) that make it unsafe to overwrite its memory directly with memcpy.
+    // Casting to void* to ignore this for now. But we should revisit this in the future.
+    memcpy((void*)this, &v, sizeof(ECValue));
 
     if (IsNull())
         return;
@@ -809,7 +813,9 @@ ECValue::~ECValue()
     {
     FreeMemory();
 #ifndef NDEBUG
-    memset(this, 0xBAADF00D, sizeof(ECValue)); // try to make use of destructed values more obvious
+    // TODO: ECValue has members or properties (e.g., constructors, destructors, or assignment operators) that make it unsafe to overwrite its memory directly with memset.
+    // Casting to void* to ignore this for now. But we should revisit this in the future.
+    memset((void*)this, 0xBAADF00D, sizeof(ECValue)); // try to make use of destructed values more obvious
 #endif
     }
 

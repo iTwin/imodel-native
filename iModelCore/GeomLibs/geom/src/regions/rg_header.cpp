@@ -43,7 +43,10 @@ void
 )
     {
     RG_Header *pRG = (RG_Header *)BSIBaseGeom::Malloc (sizeof (RG_Header));
-    memset (pRG, 0, sizeof (RG_Header));
+    // TODO: This is dangerous. RG_Header is not trivially-copyable, so using sizeof(RG_Header) is not guaranteed to return the actual
+    // size of the object. We should use the constructor to allocate the object instead. For now casting to void* to silence the warning because
+    // fixing requires many changes across this library.
+    memset ((void*)pRG, 0, sizeof (RG_Header));
     pRG->pGraph = jmdlMTGGraph_newGraph ();
     pRG->vertexLabelIndex   = jmdlMTGGraph_defineLabel
                             (
