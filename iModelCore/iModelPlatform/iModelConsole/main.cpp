@@ -30,7 +30,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 void fuzz(char *bimFilePath, char *sqlFilePath);
 
 void SafeLog(const std::string& message) {
-    std::lock_guard<BeMutex> lock(IModelConsole::GetConsoleMutex());
+    std::mutex& consoleMutex = IModelConsole::GetConsoleMutex();
+    std::lock_guard<std::mutex> lock(consoleMutex);
     std::cerr << message << std::endl;
 }
 
@@ -69,8 +70,7 @@ void fuzz(char *bimFilePath, char *sqlFilePath) {
         return;
     }
 
-    SafeLog("INFO: Processing BIM file: " + std::string(bimFilePath));
-    SafeLog("INFO: Processing SQL file: " + std::string(sqlFilePath));
+    SafeLog("INFO: Processing BIM file: " + std::string(bimFilePath) + ", SQL file: " + std::string(sqlFilePath));
     
     FILE *fp = NULL;
     char *sample_bytes = NULL;
@@ -115,8 +115,6 @@ void fuzz(char *bimFilePath, char *sqlFilePath) {
         return;
     }
 
-    SafeLog("INFO: Processing SQL of size: " + std::to_string(file_size) + " bytes");
-
     // Execute query with both BIM file path and SQL query
     IModelConsole::Singleton().ExecuteSampleQuery(bimFilePath, sample_bytes);
 
@@ -139,13 +137,13 @@ int wmain(int argc, WCharCP argv[])
 #endif
 
     if (argc != 3) {
-        std::cerr << "Usage: " << convertWCharToString(argv[0]) << " <bim_file_path> <sql_file_path>" << std::endl;
+        SafeLog("Usage: " + convertWCharToString(argv[0]) + " <bim_file_path> <sql_file_path>");
         return 1;
     }
 
     BeFileName exeDir = Desktop::FileSystem::GetExecutableDir();
     if (!exeDir.DoesPathExist()) {
-        std::cerr << "Error: Executable directory not found" << std::endl;
+        SafeLog("Error: Executable directory not found");
         return 1;
     }
 
@@ -169,13 +167,10 @@ int wmain(int argc, WCharCP argv[])
     // Convert both file paths
     std::string bimFilePath = convertWCharToString(argv[1]);
     std::string sqlFilePath = convertWCharToString(argv[2]);
-    
-    std::cerr << "INFO: BIM file path: " << bimFilePath << std::endl;
-    std::cerr << "INFO: SQL file path: " << sqlFilePath << std::endl;
 
     // For Jackalope fuzzing - handle @@ placeholder
     if (sqlFilePath == "@@") {
-        std::cerr << "Error: Direct @@ placeholder passed. This should be replaced by Jackalope." << std::endl;
+        SafeLog("Error: Direct @@ placeholder passed. This should be replaced by Jackalope.");
         return 1;
     }
 

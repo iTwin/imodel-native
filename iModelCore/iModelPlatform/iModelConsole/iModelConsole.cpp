@@ -8,7 +8,6 @@
 #include <random>
 #include <sstream>
 #include <ctime>
-#include <mutex>
 
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeThread.h>
@@ -173,7 +172,7 @@ bool SessionFile::IsAttached(Utf8StringCR tableSpaceName) const
 //---------------------------------------------------------------------------------------
 //static
 IModelConsole* IModelConsole::s_singleton = new IModelConsole();
-BeMutex IModelConsole::s_consoleMutex;
+std::mutex IModelConsole::s_consoleMutex;
 
 WString GenerateUniqueTempDir() {
     std::wostringstream woss;
@@ -186,9 +185,7 @@ WString GenerateUniqueTempDir() {
 //---------------------------------------------------------------------------------------
 void IModelConsole::Setup()
     {
-    WriteLine(" --------------------------------------------------------------------------- ");
     WriteLine(" iModelConsole Harness For Fuzzer v1.0");
-    WriteLine(" ----------------------------------------------------------------------------");
     auto helpCommand = std::make_shared<HelpCommand>(m_commands);
     AddCommand(helpCommand);
     AddCommand(".h", helpCommand); //add same command with alternative command name
@@ -270,12 +267,9 @@ BeFileName IModelConsole::CreateTempDirectory()
     BeFileName tempFuzzDir = tempDir;
     tempFuzzDir.AppendToPath(uniqueDirName.c_str());
 
-    WriteLine("Starting fuzzing session with temporary directory: %s", tempFuzzDir.GetNameUtf8().c_str());
-
     // Remove the directory if it already exists
     if (tempFuzzDir.DoesPathExist())
         {
-        WriteLine("Removing existing temp directory: %s", tempFuzzDir.GetNameUtf8().c_str());
         BeFileName::EmptyAndRemoveDirectory(tempFuzzDir.GetName());
         }
 
@@ -291,7 +285,6 @@ void IModelConsole::CleanupTempDirectory(const BeFileName& tempDir)
     {
     if (tempDir.DoesPathExist())
         {
-        WriteLine("Cleaning up temporary directory: %s", tempDir.GetNameUtf8().c_str());
         BeFileName::EmptyAndRemoveDirectory(tempDir.GetName());
         }
     }
@@ -303,7 +296,6 @@ bool IModelConsole::CopyBimFile(const BeFileName& source, const BeFileName& dest
     {
     if (destination.DoesPathExist())
         {
-        WriteLine("Deleting existing temp file: %s", destination.GetNameUtf8().c_str());
         BeFileName::BeDeleteFile(destination.GetName());
         }
 
@@ -323,7 +315,6 @@ bool IModelConsole::CopyBimFile(const BeFileName& source, const BeFileName& dest
 void IModelConsole::ExecuteCommands(const std::string& tempBimPath, const char* sampleBytes)
     {
     auto runCommand = [this](const char* commandName, const char* args) {
-        WriteLine("Executing: %s", commandName);
         Command const* command = GetCommand(commandName);
         BeAssert(command != nullptr);
         command->Run(m_session, args);
@@ -633,6 +624,6 @@ void IModelConsole::WriteErrorLine(Utf8CP format, ...)
 //---------------------------------------------------------------------------------------
 void IModelConsole::Write(FILE* stream, Utf8CP format, va_list args)
     {
-    std::lock_guard<BeMutex> lock(s_consoleMutex); // Automatically locks and unlocks
+    std::lock_guard<std::mutex> lock(s_consoleMutex); // Automatically locks and unlocks
     vfprintf(stream, format, args);
     }

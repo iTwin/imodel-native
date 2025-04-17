@@ -9,6 +9,8 @@
 #include <Bentley/Desktop/FileSystem.h>
 #include "Command.h"
 
+#include <mutex>
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
@@ -223,7 +225,7 @@ struct IModelConsole final : Dgn::PlatformLib::Host
         static const Utf8Char COMMAND_PREFIX = '.';
 
         static IModelConsole* s_singleton;
-        static BeMutex s_consoleMutex;
+        static std::mutex s_consoleMutex;
 
         Session m_session;
         Utf8Char m_readBuffer[5000];
@@ -261,7 +263,7 @@ struct IModelConsole final : Dgn::PlatformLib::Host
     public:
         static IModelConsole& Singleton() { return *s_singleton; }
 
-        static BeMutex& GetConsoleMutex() { return s_consoleMutex; }
+        static std::mutex& GetConsoleMutex() { return s_consoleMutex; }
         
 
         int Run(int argc, WCharCP argv[]);
