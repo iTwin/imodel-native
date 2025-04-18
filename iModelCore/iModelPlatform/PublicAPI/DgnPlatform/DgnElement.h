@@ -2071,10 +2071,12 @@ public:
 struct GeometryStream : ByteStream {
 public:
     bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
-    DGNPLATFORM_EXPORT DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize); //!< @private
+    DGNPLATFORM_EXPORT DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR, void const* blob, int blobSize); //!< @private
     static DgnDbStatus WriteGeometryStream(BeSQLite::SnappyToBlob&, DgnDbR, DgnElementId, Utf8CP className, Utf8CP propertyName); //!< @private
     DgnDbStatus BindGeometryStream(bool& multiChunkGeometryStream, BeSQLite::SnappyToBlob&, BeSQLite::EC::ECSqlStatement&, Utf8CP parameterName) const; //!< @private
     DGNPLATFORM_EXPORT bool IsViewIndependent() const;
+    BeSQLite::EC::ECSqlStatus Write(BeSQLite::SnappyToBlob&, BeSQLite::EC::IECSqlBinder& binder) const;
+    BeSQLite::EC::ECSqlStatus Read(BeSQLite::SnappyFromMemory&, DgnDbR,const BeSQLite::EC::IECSqlValue& valueReader);
 };
 
 //=======================================================================================
@@ -2148,6 +2150,37 @@ protected:
 public:
     Placement2dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement2d of this element
     DgnDbStatus SetPlacement(Placement2dCR placement) {return _SetPlacement(placement);} //!< Change the Placement2d for this element
+};
+
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GeometryPartSource {
+    friend struct GeometryBuilder;
+
+private:
+    virtual ElementAlignedBox3dCR _GetPlacement() const = 0;
+    virtual void _SetPlacement(ElementAlignedBox3dCR bbox) = 0;
+    virtual GeometryStreamCR _GetGeometryStream() const = 0;
+    virtual GeometryStreamR _GetGeometryStreamR() = 0;
+    virtual DgnDbR _GetSourceDgnDb() const = 0;
+protected:
+
+    GeometryStreamR GetGeometryStreamR() {return _GetGeometryStreamR();}
+    void SetBoundingBox(ElementAlignedBox3dCR bbox) {_SetPlacement(bbox);}
+
+public:
+    virtual ~GeometryPartSource() {}
+
+    //! Get the geometry for this part (part local coordinates)
+    GeometryStreamCR GetGeometryStream() const {return _GetGeometryStream();}
+
+    //! Get the bounding box for this part (part local coordinates)
+    ElementAlignedBox3dCR GetBoundingBox() const {return _GetPlacement();}
+
+    //! Get the DgnDb of this part
+    DgnDbR GetSourceDgnDb() const {return _GetSourceDgnDb();}
 };
 
 //=======================================================================================
