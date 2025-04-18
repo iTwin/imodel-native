@@ -48,7 +48,7 @@ SolidPrimitiveType_DgnRuledSweep,
 typedef RefCountedPtr<ISolidPrimitive> ISolidPrimitivePtr;
 
 //! A DgnTorusPipeDetail represents a pipe elbow as a torus with partial sweep in the major circle and full circle of pipe.
-struct DgnTorusPipeDetail : ZeroInit<DgnTorusPipeDetail>
+struct DgnTorusPipeDetail
 {
 DPoint3d        m_center;       //!< Center of primary circle
 DVec3d          m_vectorX;      //!< X vector of primary circle
@@ -58,7 +58,7 @@ double          m_minorRadius;  //!< radius of pipe section
 double          m_sweepAngle;   //!< major circle sweep angle
 bool            m_capped;       //!< cap surface present (e.g. for incomplete sweep)
 
-//! Detail consructor with complete field list as parameters ...
+//! Detail constructor with complete field list as parameters ...
 //! @param [in] center Center of primary circle
 //! @param [in] vectorX X vector of primary circle
 //! @param [in] vectorY Y vector of primary circle
@@ -77,7 +77,7 @@ GEOMDLLIMPEXP DgnTorusPipeDetail
     bool        capped
     );
 
-//! Detail consructor with complete field list as parameters ...
+//! Detail constructor with complete field list as parameters ...
 //! @param [in] arc primary arc.
 //! @param [in] minorRadius radius of pipe section
 //! @param [in] capped true for solid
@@ -87,7 +87,6 @@ GEOMDLLIMPEXP DgnTorusPipeDetail
     double      minorRadius,
     bool        capped
     );
-
 
 //! Default value constructor.
 GEOMDLLIMPEXP DgnTorusPipeDetail ();
@@ -254,7 +253,7 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
 
-//! Return curves which are silhoutte curves OTHER than hard edges
+//! Return curves which are silhouette curves OTHER than hard edges
 //! @return return false if not implemented.   return true if implemented -- but curves may still be empty.
 GEOMDLLIMPEXP bool SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const;
 //! Return all intersection points of a curve with the pipe body
@@ -288,9 +287,8 @@ static GEOMDLLIMPEXP double GetVector90Sign ();
 static GEOMDLLIMPEXP bool GetReverseVector90 ();
 };
 
-
 //! A DgnConeDetail represents a (frustum of a) cone.
-struct DgnConeDetail : ZeroInit<DgnConeDetail>
+struct DgnConeDetail
 {
 DPoint3d    m_centerA;  // Center of base circle
 DPoint3d    m_centerB;  // Center of top circle
@@ -300,7 +298,7 @@ double      m_radiusA;  // radius at base (centerA)
 double      m_radiusB;  // radius at top (centerB)
 bool        m_capped;   // true if end cap is enabled
 
-//! Detail consructor with complete field list as parameters ...
+//! Detail constructor with complete field list as parameters ...
 //! @param [in] centerA Center of base circle
 //! @param [in] centerB Center of top circle
 //! @param [in] radiusA radius at base (centerA)
@@ -315,7 +313,7 @@ GEOMDLLIMPEXP DgnConeDetail
     bool        capped
     );
 
-//! Detail consructor with complete field list as parameters ...
+//! Detail constructor with complete field list as parameters ...
 //! @param [in] centerA Center of base circle
 //! @param [in] centerB Center of top circle
 //! @param [in] axes x and y columns give base, top circle parameterization.
@@ -332,7 +330,7 @@ GEOMDLLIMPEXP DgnConeDetail
     bool            capped
     );
 
-//! Detail consructor with complete field list as parameters ...
+//! Detail constructor with complete field list as parameters ...
 //! @param [in] centerA Center of base circle
 //! @param [in] centerB Center of top circle
 //! @param [in] vectorX
@@ -534,7 +532,7 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
 
-//! Return curves which are silhoutte curves OTHER than hard edges
+//! Return curves which are silhouette curves OTHER than hard edges
 //! @return return false if not implemented.   return true if implemented -- but curves may still be empty.
 GEOMDLLIMPEXP bool SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const;
 
@@ -577,9 +575,8 @@ double      r1             //!< [in] cone radius at w=1
 );
 };
 
-
-//! A DgnBoxDetail represents a boxlike surface with two paralell rectangular faces (bottom and top) and ruled side surfaces.
-struct DgnBoxDetail : ZeroInit<DgnBoxDetail>
+//! A DgnBoxDetail represents a boxlike surface with two parallel rectangular faces (bottom and top) and ruled side surfaces.
+struct DgnBoxDetail
 {
 DPoint3d m_baseOrigin; // origin of base rectangle
 DPoint3d m_topOrigin; // origin of Top rectangle
@@ -780,7 +777,7 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
 
-//! Return curves which are silhoutte curves OTHER than hard edges
+//! Return curves which are silhouette curves OTHER than hard edges
 //! @return return false if not implemented.   return true if implemented -- but curves may still be empty.
 GEOMDLLIMPEXP bool SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const;
 
@@ -795,13 +792,14 @@ GEOMDLLIMPEXP bool IsBlock (DPoint3dR origin, RotMatrixR unitAxes, DVec3dR local
 };
 
 //! A DgnSphereDetail represents an ellipsoid, possibly truncated on two planes parallel to the equator.
-struct DgnSphereDetail : ZeroInit<DgnSphereDetail>
+struct DgnSphereDetail
 {
 Transform m_localToWorld;   // origin is sphere center.  columns x,y to equator at 0 and 90 degrees latitude.  column z is to north pole.
 double m_startLatitude; // latitude for truncation plane parallel to the equator
 double m_latitudeSweep; // latitude difference from start truncation plane to end truncation plane
 bool m_capped;  // cap surface present (e.g. for partial latitude sweep)
-//! Detail consructor with complete field list as parameters ...
+
+//! Detail constructor with complete field list as parameters ...
 //! @param [in] center Sphere center
 //! @param [in] vectorX X vector of base plane
 //! @param [in] vectorZ Vector towards north pole
@@ -822,7 +820,7 @@ GEOMDLLIMPEXP DgnSphereDetail
     bool            capped
     );
 
-//! Detail consructor for complete true sphere
+//! Detail constructor for complete true sphere
 //! @param [in] center Sphere center
 //! @param [in] axes x,y,z axes
 //! @param [in] radius radius
@@ -1026,7 +1024,7 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
 
-//! Return curves which are silhoutte curves OTHER than hard edges
+//! Return curves which are silhouette curves OTHER than hard edges
 //! @return return false if not implemented.   return true if implemented -- but curves may still be empty.
 GEOMDLLIMPEXP bool SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const;
 
@@ -1054,15 +1052,14 @@ double sweepLatitude        //!< [in] latitude sweep for partial sphere.
 );
 };
 
-
 //! A DgnExtrusionDetail is a linear sweep of a base CurveVector.  All points on the base are swept by the same vector.
 struct DgnExtrusionDetail
 {
-CurveVectorPtr m_baseCurve{}; // Curve to be swept.
-DVec3d m_extrusionVector{}; // Vector from base to target curve
-bool m_capped{}; // true if end cap is enabled
+CurveVectorPtr m_baseCurve; // Curve to be swept.
+DVec3d m_extrusionVector; // Vector from base to target curve
+bool m_capped; // true if end cap is enabled
 
-//! Detail consructor with complete field list as parameters ...
+//! Detail constructor with complete field list as parameters ...
 //! @param [in] baseCurve Curve to be swept. This pointer is captured (not cloned) into the extrusion.
 //! @param [in] extrusionVector Vector from base to target curve
 //! @param [in] capped true if end cap is enabled
@@ -1070,7 +1067,6 @@ GEOMDLLIMPEXP DgnExtrusionDetail (
     CurveVectorPtr const &baseCurve,
     DVec3dCR extrusionVector,
     bool capped);
-
 
 //! Default value constructor.
 GEOMDLLIMPEXP DgnExtrusionDetail ();
@@ -1213,23 +1209,22 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
 
-//! Return curves which are silhoutte curves OTHER than hard edges
+//! Return curves which are silhouette curves OTHER than hard edges
 //! @return return false if not implemented.   return true if implemented -- but curves may still be empty.
 GEOMDLLIMPEXP bool SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const;
 
 };
 
-
 //! A DgnExtrusionDetail is a rotational sweep of a base CurveVector.
 struct DgnRotationalSweepDetail
 {
-CurveVectorPtr m_baseCurve{}; // Curve to be swept.
-DRay3d  m_axisOfRotation{};
-double m_sweepAngle{}; // major circle sweep angle
-bool m_capped{}; // true if end cap is enabled
-size_t m_numVRules{}; // Number of v rules (radial around) to display in wireframe.
+CurveVectorPtr m_baseCurve; // Curve to be swept.
+DRay3d  m_axisOfRotation;
+double m_sweepAngle; // major circle sweep angle
+bool m_capped; // true if end cap is enabled
+size_t m_numVRules; // Number of v rules (radial around) to display in wireframe.
 
-//! Detail consructor with complete field list as parameters ...
+//! Detail constructor with complete field list as parameters ...
 //! @param [in] baseCurve Curve to be swept. This pointer is captured (not cloned) into the extrusion.
 //! @param [in] center Center of rotation
 //! @param [in] axis axis of rotation.
@@ -1397,7 +1392,7 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
 
-//! Return curves which are silhoutte curves OTHER than hard edges
+//! Return curves which are silhouette curves OTHER than hard edges
 //! @return return false if not implemented.   return true if implemented -- but curves may still be empty.
 GEOMDLLIMPEXP bool SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const;
 
@@ -1437,15 +1432,13 @@ GEOMDLLIMPEXP bool   SetRadius (double radius, RadiusType type);
 
 }; // DgnRotationalSweepDetail
 
-
-
 //! A DgnRuledSweepDetail is a ruled surface between corresponding points of CurveVectors.
 struct DgnRuledSweepDetail
 {
-bvector<CurveVectorPtr> m_sectionCurves{}; // Successive section curves
-bool m_capped{}; // true if end cap is enabled
+bvector<CurveVectorPtr> m_sectionCurves; // Successive section curves
+bool m_capped; // true if end cap is enabled
 
-//! Detail consructor with complete field list as parameters ...
+//! Detail constructor with complete field list as parameters ...
 //! @param [in] sectionCurves Successive section curves
 //! @param [in] capped true if end cap is enabled
 GEOMDLLIMPEXP DgnRuledSweepDetail (
@@ -1453,7 +1446,7 @@ GEOMDLLIMPEXP DgnRuledSweepDetail (
     bool capped);
 
 
-//! Detail consructor for common case with exactly 2 sections.
+//! Detail constructor for common case with exactly 2 sections.
 //! @param [in] sectionA First section curve
 //! @param [in] sectionB Second section curve
 //! @param [in] capped true if end cap is enabled
@@ -1615,7 +1608,7 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
 
-//! Return curves which are silhoutte curves OTHER than hard edges
+//! Return curves which are silhouette curves OTHER than hard edges
 //! @return return false if not implemented.   return true if implemented -- but curves may still be empty.
 GEOMDLLIMPEXP bool SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const;
 
@@ -2018,7 +2011,7 @@ GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, D
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (DMatrix4dR worldProducts) const;
 
-//! Return curves which are silhoutte curves OTHER than hard edges
+//! Return curves which are silhouette curves OTHER than hard edges
 //! @param [in] eyePoint For flat view, the view direction with weight=0.  For perspective, the eye point with weight=1.
 //! @param [in] curves silhouette curves.
 //! @return return false if not implemented.   return true if implemented -- but curves may still be empty.

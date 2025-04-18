@@ -398,19 +398,6 @@ struct  GeometryValidator : public RefCountedBase
 
 };
 
-//=======================================================================================
-//! Inlinable template for initial zeroing an object of size T.
-//!@bsiclass
-//=======================================================================================
-template<typename T> struct ZeroInit
-{
-    ZeroInit() 
-        {
-        static_assert(std::is_trivially_copyable<T>::value, 
-                      "ZeroInit can only be used with trivially copyable types.");
-        memset(this, 0, sizeof(T));
-        }
-};
 //! POD struct for pair of size_t values
 struct SizeSize
 {
