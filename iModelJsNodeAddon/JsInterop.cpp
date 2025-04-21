@@ -1104,6 +1104,13 @@ Napi::Value JsInterop::PatchJsonProperties(NapiInfoCR info) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+void JsInterop::ClearECDbCache(ECDbR db, NapiInfoCR info) {
+    db.ClearECDbCache();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult JsInterop::ImportFunctionalSchema(DgnDbR db)
     {
     return SchemaStatus::Success == FunctionalDomain::GetDomain().ImportSchema(db) ? BE_SQLITE_OK : BE_SQLITE_ERROR;

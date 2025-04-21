@@ -448,6 +448,10 @@ public:
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
         JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
     }
+    void ClearECDbCache(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::ClearECDbCache(db, info);
+    }
     Napi::Value PatchJsonProperties(NapiInfoCR info) {
         return JsInterop::PatchJsonProperties(info);
     }
@@ -2357,6 +2361,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         BeGuid guid(true);
         return toJsString(Env(), guid.ToString());
     }
+    void ClearECDbCache(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::ClearECDbCache(db, info);
+    }
     Napi::Value PatchJsonProperties(NapiInfoCR info) {
         return JsInterop::PatchJsonProperties(info);
     }
@@ -2841,6 +2849,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("convertOrUpdateGeometryPart", &NativeDgnDb::ConvertOrUpdateGeometryPart),
             InstanceMethod("newBeGuid", &NativeDgnDb::NewBeGuid),
             InstanceMethod("patchJsonProperties", &NativeDgnDb::PatchJsonProperties),
+            InstanceMethod("clearECDbCache", &NativeDgnDb::ClearECDbCache),
             InstanceMethod("resolveInstanceKey", &NativeDgnDb::ResolveInstanceKey),
             InstanceMethod("readInstance", &NativeDgnDb::ReadInstance),
             InstanceMethod("insertInstance", &NativeDgnDb::InsertInstance),

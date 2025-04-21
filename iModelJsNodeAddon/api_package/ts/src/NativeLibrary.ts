@@ -639,6 +639,8 @@ export declare namespace IModelJsNative {
     public patchJsonProperties(jsonProps: string):  string;
     public newBeGuid(): GuidString;
 
+    public clearECDbCache(): void;
+
     public convertOrUpdateGeometrySource(arg: IGeometrySource, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometrySource;
     public convertOrUpdateGeometryPart(arg: IGeometryPart, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometryPart;
 
