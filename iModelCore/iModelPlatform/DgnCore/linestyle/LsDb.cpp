@@ -664,8 +664,9 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
         {
         //  *** TBD: Check if the line style definitions match. If not, rename and remap
         context.AddLineStyleId(DgnStyleId(this->GetElementId().GetValue()), dstStyleId);
-        context.AddElementId(this->GetElementId(), DgnElementId(dstStyleId.GetValue()));
-        return nullptr;
+        DgnElementId elemId = context.AddElementId(this->GetElementId(), DgnElementId(dstStyleId.GetValue()));
+        
+        return context.GetDestinationDb().Elements().GetForEdit<LineStyleElement>(elemId);
         }
 
     Utf8String  srcData (this->GetData());
