@@ -3287,7 +3287,7 @@ DgnDbStatus GeometryStreamIO::BuildFromGeometrySource(GeometrySource& source, Ge
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStreamIO::BuildFroGeometryPart(GeometryPartSource& part, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj) {
+DgnDbStatus GeometryStreamIO::BuildFromGeometryPart(GeometryPartSource& part, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj) {
     GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(part.GetSourceDgnDb(), !bParams.is2dPart);
     if (!builder.IsValid())
         return DgnDbStatus::BadElement;

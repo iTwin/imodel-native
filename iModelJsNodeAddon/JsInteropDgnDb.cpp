@@ -1858,7 +1858,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info) {
 
         GeometryBuilderParams bparams;
         bparams.viewIndependent = viewIndependentVal.IsBoolean() && viewIndependentVal.As<Napi::Boolean>().Value();
-        auto status = GeometryStreamIO::BuildFroGeometryPart(*geomSource, bparams, entryArrayObj.As<Napi::Array>());
+        auto status = GeometryStreamIO::BuildFromGeometryPart(*geomSource, bparams, entryArrayObj.As<Napi::Array>());
         if (DgnDbStatus::Success != status) {
             BeNapi::ThrowJsException(info.Env(), "BuildGeometryStream failed");
         }

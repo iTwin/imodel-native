@@ -411,7 +411,7 @@ struct GeometryStreamIO
 
     DGNPLATFORM_EXPORT static DgnDbStatus BuildFromGeometrySource(GeometrySourceR source, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj);
 
-    DGNPLATFORM_EXPORT static DgnDbStatus BuildFroGeometryPart(GeometryPartSource& part, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj);
+    DGNPLATFORM_EXPORT static DgnDbStatus BuildFromGeometryPart(GeometryPartSource& part, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj);
 
     //! @private
     static DgnDbStatus BuildGeometryStream(GeometryBuilder& builder, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj, GeometrySourceP source, GeometryPartSourceP part);
