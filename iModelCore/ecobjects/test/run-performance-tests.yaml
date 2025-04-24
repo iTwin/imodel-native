@@ -9,7 +9,7 @@ schedules:
   displayName: Sunday midnight build
   branches:
     include:
-    - master
+    - main
   always: true
 
 resources:
