@@ -3689,9 +3689,13 @@ DEFINE_SCHEMA(LoadsPolymorphicallyBackwardRelatedPropertiesForInstancesOfSpecifi
             <Class class="ElementUniqueAspect"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="MyElement">
+    <ECEntityClass typeName="MyElement1">
         <BaseClass>Element</BaseClass>
-        <ECProperty propertyName="ElementName" typeName="string" />
+        <ECProperty propertyName="ElementName1" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyElement2">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="ElementName2" typeName="string" />
     </ECEntityClass>
     <ECEntityClass typeName="MyAspect">
         <BaseClass>ElementUniqueAspect</BaseClass>
@@ -3702,13 +3706,17 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyBackwar
     {
     // set up data set
     ECClassCP baseElementClass = GetClass("Element");
-    ECClassCP elementClass = GetClass("MyElement");
+    ECClassCP elementClass1 = GetClass("MyElement1");
+    ECClassCP elementClass2 = GetClass("MyElement2");
     ECClassCP baseAspectClass = GetClass("ElementUniqueAspect");
     ECClassCP aspectClass = GetClass("MyAspect");
     ECRelationshipClassCP elementOwnsUniqueAspectRelationship = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
-    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("my element"));});
+
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass1, [](IECInstanceR instance){instance.SetValue("ElementName1", ECValue("my element 1"));});
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass2, [](IECInstanceR instance){instance.SetValue("ElementName2", ECValue("my element 2"));});
     IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass, [](IECInstanceR instance){instance.SetValue("AspectName", ECValue("my aspect"));});
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element, *aspect);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element1, *aspect);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element2, *aspect);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
@@ -3726,7 +3734,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyBackwar
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-    ASSERT_EQ(1, descriptor->GetVisibleFields().size()); // rel_ElementUniqueAspect_MyElement_ElementName
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // rel_ElementUniqueAspect_MyElement1, rel_ElementUniqueAspect_MyElement2
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -3747,17 +3755,35 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyBackwar
             },
             "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}],
             "Values": {
-                "%s": "my element"
+                "%s": "my element 1"
             },
             "DisplayValues": {
-                "%s": "my element"
+                "%s": "my element 1"
+            },
+            "MergedFieldNames": []
+        }],
+        "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
+            "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}],
+            "Values": {
+                "%s": "my element 2"
+            },
+            "DisplayValues": {
+                "%s": "my element 2"
             },
             "MergedFieldNames": []
         }]
     })",
-        NESTED_CONTENT_FIELD_NAME(baseAspectClass, elementClass),
-        elementClass->GetId().ToString().c_str(), element->GetInstanceId().c_str(),
-        FIELD_NAME(elementClass, "ElementName"), FIELD_NAME(elementClass, "ElementName")
+        NESTED_CONTENT_FIELD_NAME(baseAspectClass, elementClass1),
+        elementClass1->GetId().ToString().c_str(), element1->GetInstanceId().c_str(),
+        FIELD_NAME(elementClass1, "ElementName1"), FIELD_NAME(elementClass1, "ElementName1"),
+        NESTED_CONTENT_FIELD_NAME(baseAspectClass, elementClass2),
+        elementClass2->GetId().ToString().c_str(), element2->GetInstanceId().c_str(),
+        FIELD_NAME(elementClass2, "ElementName2"), FIELD_NAME(elementClass2, "ElementName2")
     ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
