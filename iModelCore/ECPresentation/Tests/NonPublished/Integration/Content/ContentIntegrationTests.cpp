@@ -7031,6 +7031,43 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Pri
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyDisplayOverride_Priorities_AppliesHigherPriorityHideOverrideAppliedToAllProperties, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Property1" typeName="string" />
+        <ECProperty propertyName="Property2" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Priorities_AppliesHigherPriorityHideOverrideAppliedToAllProperties)
+    {
+    ECClassCP classA = GetClass("A");
+
+    // set up the dataset
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("Property1", ECValue("Test")); });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("*", 1000, "", nullptr, false));
+    modifier->AddPropertyOverride(*new PropertySpecification("Property1", 900, "", nullptr, true));
+    modifier->AddPropertyOverride(*new PropertySpecification("Property2", 900, "", nullptr, true));
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(0, descriptor->GetVisibleFields().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(PropertyDisplayOverride_Priorities_AppliesByOrderOfDefinitionIfPrioritiesEqual, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="Property1" typeName="int" />
