@@ -881,12 +881,9 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     ECSchemaReadContextPtr schemaContext = opts.m_customSchemaContext;
     if (schemaContext.IsNull())
         schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-        //TODO: CopyingSchemaLocater
+
     SanitizingSchemaLocater finalLocater(dgndb.GetSchemaLocater());
     JsInterop::AddFallbackSchemaLocaters(finalLocater, schemaContext);
-    Utf8String contextDesc = schemaContext->GetDescription();
-    logger.warningv("ImportSchemas with %d schemas and context:\n%s", schemaSources.size(), contextDesc.c_str());
-        // Change this into debugv after debugging is done
     bvector<ECSchemaCP> schemas;
 
     for (Utf8String schemaSource : schemaSources)
