@@ -38,7 +38,7 @@ PropertyMap* DbMappingManager::Classes::ProcessProperty(Context& ctx, ECProperty
     if (baseLineTable != nullptr && baseLineTable->GetType() == DbTable::Type::Overflow) {
         ctx.m_classMap.GetColumnFactory().EnsurePropertyGoesToOverflow(property.GetName(), *ctx.m_importCtx);
     }
-    
+
     RefCountedPtr<PropertyMap> propertyMap = nullptr;
     if (auto primitiveProperty = property.GetAsPrimitiveProperty())
         propertyMap = MapPrimitiveProperty(ctx, *primitiveProperty, nullptr);
@@ -100,7 +100,7 @@ PropertyMap* DbMappingManager::Classes::ProcessProperty(Context& ctx, ECProperty
 // @bsimethod
 //+===============+===============+===============+===============+===============+======
 BentleyStatus DbMappingManager::Classes::MoveProperty(Context& ctx, ECPropertyCR property, CompoundDataPropertyMapDiff& diff) {
-    LOG.infov("Moving property %s to overflow table.", property.GetTypeFullName().c_str());
+    LOG.infov("Moving struct property %s to overflow table as it does not fit into current table in which its mapped", property.GetTypeFullName().c_str());
     // This function is only called if sharedColumn strategy is enabled. So columnType and accessString has no effect.
     if(!Enum::Contains(PropertyMap::Type::Struct, diff.GetPropertyMap().GetType())) {
         BeAssert("Expecting struct property");
