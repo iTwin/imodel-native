@@ -592,7 +592,7 @@
             <Class class="GraphicalType2d"/>
         </Target>
     </ECRelationshipClass>
-
+    
     <ECRelationshipClass typeName="GeometricElement3dHasTypeDefinition" strength="referencing" modifier="Abstract">
         <!-- @see GeometricElement3d.TypeDefinition ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
@@ -739,7 +739,7 @@
     <ECEntityClass typeName="LinkElement" modifier="Abstract" displayLabel="Link" description="An information element that specifies a link.">
         <BaseClass>InformationReferenceElement</BaseClass>
     </ECEntityClass>
-
+    
     <ECEntityClass typeName="UrlLink" displayLabel="URL Link" description="An information element that specifies a URL link.">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
@@ -1150,7 +1150,7 @@
             <Class class="TextAnnotationData"/>
         </Target>
     </ECRelationshipClass>
-
+    
     <ECEntityClass typeName="TextAnnotation3d" displayLabel="3D Text Annotation">
         <BaseClass>GraphicalElement3d</BaseClass>
         <ECCustomAttributes>
@@ -1334,7 +1334,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
             <ClassMap xmlns="ECDbMap.2.0">
-                <!-- We must insist that all instances of all possible subclasses are stored together in a single table.
+                <!-- We must insist that all instances of all possible subclasses are stored together in a single table. 
                      TxnManager knows about this table, and expects to find all instances this kind of relationship there. -->
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
@@ -1444,7 +1444,7 @@
         </ECCustomAttributes>
         <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
-
+    
     <ECEntityClass typeName="RenderMaterial" modifier="Sealed" displayLabel="Render Material">
         <!-- Marked as "Sealed" because JsonProperties will be used to persist data. This allows a single instance to "morph" between a DgnV8 render material and a future PBR material. -->
         <BaseClass>DefinitionElement</BaseClass>
@@ -1821,7 +1821,7 @@
             <Class class="LinkElement"/>
         </Target>
     </ECRelationshipClass>
-
+    
     <ECEntityClass typeName="RoleElement" modifier="Abstract" displayLabel="Role Element" description="A real world entity is modeled as a Role Element when a set of external circumstances define an important role (one that is worth tracking) that is not intrinsic to the entity playing the role. For example, a person can play the role of a teacher or a rock can play the role of a boundary marker.">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
