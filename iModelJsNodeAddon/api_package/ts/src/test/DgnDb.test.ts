@@ -44,64 +44,6 @@ describe("basic tests", () => {
     assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel2d"));
     assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel3d"));
   });
-  it.skip("update instance", () => {
-
-    const seedUri = path.join(getAssetsDir(), "test.bim");
-    const thisFile = path.join(getOutputDir(), "instance-writer0.bim");
-    if (fs.existsSync(thisFile)) {
-      fs.unlinkSync(thisFile);
-    }
-    fs.copyFileSync(seedUri, thisFile);
-
-    const iModelDb = new iModelJsNative.DgnDb();
-    iModelDb.openIModel(thisFile, OpenMode.ReadWrite);
-    // const arg1 = { id: "0x1b", className: "BisCore:Subject" };
-    const key = { id: "0x1b", className: "BisCore:Subject" };
-    const inst = iModelDb.readInstance(key, {useJsNames: true});
-    assert.equal(inst.code.value, "A", "codeValue should be A");
-
-    inst.code.value = "A-MODIFIED";
-    assert.isTrue(iModelDb.updateInstance(inst, { useJsNames: true }));
-    iModelDb.saveChanges();
-    const inst2 = iModelDb.readInstance(key, { useJsNames: true });
-
-    assert.equal(inst2.code.value, "A-MODIFIED", "codeValue should be A-MODIFIED");
-    iModelDb.saveChanges();
-    iModelDb.closeFile();
-    // process.stdout.write(JSON.stringify(inst, null, 2));
-
-  });
-  it.skip("insert instance", () => {
-
-    const seedUri = path.join(getAssetsDir(), "test.bim");
-    const thisFile = path.join(getOutputDir(), "instance-writer1.bim");
-    if (fs.existsSync(thisFile)) {
-      fs.unlinkSync(thisFile);
-    }
-    fs.copyFileSync(seedUri, thisFile);
-
-    const iModelDb = new iModelJsNative.DgnDb();
-    iModelDb.openIModel(thisFile, OpenMode.ReadWrite);
-    // const arg1 = { id: "0x1b", className: "BisCore:Subject" };
-    const key = { id: "0x1b", className: "BisCore:Subject" };
-    const inst = iModelDb.readInstance(key, {useJsNames: true});
-    assert.equal(inst.code.value, "A", "codeValue should be A");
-    const id = iModelDb.insertInstance({
-      classFullName: "BisCore.Subject",
-      code: {value: "Test Subject", scope: "0x13", spec: "0x1f"},
-      useLabel: "Test Subject",
-      model: "0x1",
-      parent: { id: "0x13", relClassName: "BisCore:SubjectOwnsSubjects" },
-      /* eslint-disable @typescript-eslint/naming-convention */
-      jsonProperties: JSON.stringify({"Subject":{"Model":{"Type":"Hierarchy"}}}),
-    }, { useJsNames: true });
-
-    assert.isDefined(id);
-    iModelDb.saveChanges();
-    iModelDb.closeFile();
-    // process.stdout.write(JSON.stringify(inst, null, 2));
-
-  });
   it("resolveInstanceKey", () => {
     const r0 = dgndb.resolveInstanceKey({
       partialKey: {
@@ -111,74 +53,6 @@ describe("basic tests", () => {
     });
     assert.equal(r0.id, "0x1b", "id should be 0x1b");
     assert.equal(r0.classFullName, "BisCore:Subject", "className should be BisCore:Subject");
-  });
-  describe("getInstance()", () => {
-    /* eslint-enable @typescript-eslint/naming-convention */
-    const jsFormat = {
-      id: "0x38",
-      classFullName: "Generic:PhysicalObject",
-      model: "0x1f",
-      lastMod: "2017-07-25T20:44:59.926Z",
-      category:"0x17",
-      inSpatialIndex: true,
-      code: {
-        spec: "0x1",
-        scope: "0x1",
-        value: "",
-      },
-      placement: {
-        origin: [
-          6.494445575423782,
-          19.89784647571006,
-          8.020100502512559
-        ],
-        angles: {
-          yaw: 25.949359512071446,
-          pitch: 4.770832022195274e-15,
-          roll: 114.77826277695058
-        },
-        bbox: {
-          low: [
-            -9.735928156263862,
-            -9.735928156263864,
-            -9.735928156263858
-          ],
-          high: [
-            9.735928156263858,
-            9.73592815626386,
-            9.735928156263855
-          ]
-        }
-      },
-      geom: [
-        {
-          header: {
-            flags: 0
-          }
-        },
-        {
-          appearance: {
-            color: 61440,
-            weight: 0
-          }
-        },
-        {
-          sphere: {
-            center: [
-              -1.0423484277031034e-15,
-              -8.881784197001252e-16,
-              -1.7763568394002505e-15
-            ],
-            radius: 9.73592815626386
-          }
-        }
-      ],
-    };
-
-    it.skip("read instance as js format", () => {
-      const actual = dgndb.readInstance({ id: "0x38", classFullName: "Generic:PhysicalObject" }, {useJsNames: true, wantGeometry: true});
-      assert.deepEqual(actual, jsFormat);
-    });
   });
   it("compress/decompress", () => {
     const assertCompressAndThenDecompress = (sourceData: Uint8Array) => {
