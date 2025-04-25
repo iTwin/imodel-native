@@ -669,7 +669,9 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
     DgnStyleId dstStyleId = QueryId(context.GetDestinationDb(), this->GetName().c_str());
     if (dstStyleId.IsValid())
         {
-        LineStyleElementPtr dstElem = context.GetDestinationDb().Elements().GetForEdit<LineStyleElement>(dstStyleId);
+        // If Line style element already exists in destinationDb, get component Id from existing element
+        // else import new component Id and set it to the new element
+        LineStyleElementCPtr dstElem = LineStyleElement::Get(context.GetDestinationDb(), dstStyleId);
         Utf8String  dstData (dstElem->GetData());
 
         Json::Value  dstJsonObj (Json::objectValue);
