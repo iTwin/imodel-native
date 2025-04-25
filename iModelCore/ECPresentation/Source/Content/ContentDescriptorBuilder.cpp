@@ -160,7 +160,7 @@ private:
                 parentCategory = GetParentCategory(true);
                 continue;
                 }
-            
+
             if (auto schemaCategoryRef = categoryRef->AsSchemaCategoryRef())
                 {
                 auto propertyCategory = m_context.GetDescriptorBuilderContext().GetSchemaHelper().GetECPropertyCategory(schemaCategoryRef->GetCategoryName().c_str());
@@ -834,13 +834,11 @@ private:
         if (fieldPath.back().IsForwardRelationship() != path.back().IsForwardRelationship())
             return false;
 
-        if (fieldPath.back().IsForwardRelationship()
-            && &fieldPath.back().GetTargetClass().GetClass() == &path.back().GetTargetClass().GetClass()
+        if (&fieldPath.back().GetTargetClass().GetClass() == &path.back().GetTargetClass().GetClass()
             && fieldPath.back().GetTargetClass().IsSelectPolymorphic() == path.back().GetTargetClass().IsSelectPolymorphic())
+            {
             return true;
-
-        if (!fieldPath.back().IsForwardRelationship() && fieldPath.back().GetSourceClass() == path.back().GetSourceClass())
-            return true;
+            }
 
         return false;
         }
