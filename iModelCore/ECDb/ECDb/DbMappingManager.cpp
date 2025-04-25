@@ -32,6 +32,13 @@ PropertyMap* DbMappingManager::Classes::ProcessProperty(Context& ctx, ECProperty
     if (useColumnReservation)
         ctx.m_classMap.GetColumnFactory().EvaluateIfPropertyGoesToOverflow(property.GetName(), *ctx.m_importCtx);
 
+    // any new property of struct should go into overflow table if
+    // previsouly older properties were mapped into overflow
+    auto baseLineTable = compoundPropDiff.GetBaselineTable();
+    if (baseLineTable != nullptr && baseLineTable->GetType() == DbTable::Type::Overflow) {
+        ctx.m_classMap.GetColumnFactory().EnsurePropertyGoesToOverflow(property.GetName(), *ctx.m_importCtx);
+    }
+    
     RefCountedPtr<PropertyMap> propertyMap = nullptr;
     if (auto primitiveProperty = property.GetAsPrimitiveProperty())
         propertyMap = MapPrimitiveProperty(ctx, *primitiveProperty, nullptr);
