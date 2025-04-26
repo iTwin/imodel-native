@@ -931,114 +931,181 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Napi::Value JsInterop::GetInstance(ECDbR db, NapiInfoCR info) {
-    constexpr auto kUseJsName = "useJsNames";
-    constexpr auto kClassId = "classId";
-    constexpr auto kClassIdsToClassNames = "classIdsToClassNames";
-    constexpr auto kAbbreviateBlobs = "abbreviateBlobs";
-    constexpr auto kId = "id";
-    constexpr auto kSerializationMethod = "serializationMethod";
-    enum SerializationMethod {
-        JsonParse = 0,
-        BeJsNapi = 1
-    };
+Napi::Value JsInterop::InsertInstance(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, instanceObj);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+    // it hold write token
+    auto& repo = db.GetInstanceRepository();
+    auto inst = BeJsValue(instanceObj);
+    auto args = BeJsValue(argsObj);
 
-    REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
-    ECInstanceId instanceId;
-    ECClassId classId;
-    SerializationMethod serializationMethod = SerializationMethod::JsonParse;
-    auto abbreviateBlobs = true;
-    auto classIdsToClassNames = false;
-    auto useJsNames = false;
-
-    auto jsId = argsObj.Get(kId);
-    if (!jsId.IsString()) {
-        THROW_JS_EXCEPTION("'id' property is not optional and must be of type Id64String");
-    } else {
-        ECInstanceId::FromString(instanceId, jsId.ToString().Utf8Value().c_str());
+    auto fmt = JsFormat::Standard;
+    if (args.isBoolMember("useJsNames") && args.asBool(false)){
+        fmt = JsFormat::JsName;
     }
 
-    auto jsClassId = argsObj.Get(kClassId);
-    if (!jsClassId.IsString()) {
-        THROW_JS_EXCEPTION("'classId' property is not optional and must be of type Id64String");
-    } else{
-        ECClassId::FromString(classId, jsClassId.ToString().Utf8Value().c_str());
-    }
-
-    auto jsSerializationMethod = argsObj.Get(kSerializationMethod);
-    if (jsSerializationMethod.IsNumber()) {
-        int method = jsSerializationMethod.ToNumber().Int32Value();
-        if (method == SerializationMethod::JsonParse || method == SerializationMethod::BeJsNapi) {
-            serializationMethod = static_cast<SerializationMethod>(method);
-        } else {
-            THROW_JS_EXCEPTION("'serializationMethod' property must be either 0 or 1");
+    ECInstanceKey newKey;
+    auto rc = repo.Insert(inst, args, fmt, newKey);
+    if (rc != BE_SQLITE_DONE) {
+        if (repo.GetLastError().empty()) {
+            THROW_JS_EXCEPTION("Failed to insert instance");
         }
+        THROW_JS_EXCEPTION(repo.GetLastError().c_str());
     }
 
-    auto jsAbbreviateBlobs = argsObj.Get(kAbbreviateBlobs);
-    if (jsAbbreviateBlobs.IsBoolean()) {
-        abbreviateBlobs = jsAbbreviateBlobs.ToBoolean().Value();
+    return Napi::Value::From(info.Env(), newKey.GetInstanceId().ToHexStr());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, instanceObj);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+
+    auto& repo = db.GetInstanceRepository();
+    auto inst = BeJsValue(instanceObj);
+    auto args = BeJsValue(argsObj);
+
+    auto fmt = JsFormat::Standard;
+    if (args.isBoolMember("useJsNames") && args.asBool(false)){
+        fmt = JsFormat::JsName;
     }
 
-    auto jsClassIdsToClassNames = argsObj.Get(kClassIdsToClassNames);
-    if (jsClassIdsToClassNames.IsBoolean()) {
-        classIdsToClassNames = jsClassIdsToClassNames.ToBoolean().Value();
-    }
-
-    auto jsUseJsNames = argsObj.Get(kUseJsName);
-    if (jsUseJsNames.IsBoolean()) {
-        useJsNames = jsUseJsNames.ToBoolean().Value();
-    }
-
-    if (!instanceId.IsValid()){
-        THROW_JS_EXCEPTION("Invalid instanceId");
-    }
-
-    if (!classId.IsValid()) {
-        THROW_JS_EXCEPTION("Invalid classId");
-    }
-
-    auto& instanceReader = db.GetInstanceReader();
-    InstanceReader::Options options;
-    options.SetForceSeek(true);
-    auto position = InstanceReader::Position{instanceId, classId, nullptr};
-    if (serializationMethod == SerializationMethod::JsonParse) {
-        Napi::Value val;
-        if (!instanceReader.Seek(position,
-            [&](InstanceReader::IRowContext const& row) {
-                InstanceReader::JsonParams params;
-                params.SetUseJsName(useJsNames);
-                params.SetAbbreviateBlobs(abbreviateBlobs);
-                params.SetClassIdToClassNames(classIdsToClassNames);
-                auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
-                auto obj = Napi::String::New(Env(), row.GetJson(params).Stringify());
-                val = parse({ obj });
-            },
-            options
-        )) {
-            THROW_JS_EXCEPTION("instance not found");
+    auto rc = repo.Update(inst, args, fmt);
+    if (rc != BE_SQLITE_DONE) {
+        if (repo.GetLastError().empty()) {
+            THROW_JS_EXCEPTION("Failed to insert instance");
         }
-        return val;
+        THROW_JS_EXCEPTION(repo.GetLastError().c_str());
     }
-    if (serializationMethod == SerializationMethod::BeJsNapi) {
-        BeJsNapiObject val(info.Env());
-        if (!instanceReader.Seek(position,
-            [&](InstanceReader::IRowContext const& row) {
-                ECSqlRowAdaptor adaptor(db);
-                adaptor.GetOptions().SetAbbreviateBlobs(abbreviateBlobs);
-                adaptor.GetOptions().SetConvertClassIdsToClassNames(classIdsToClassNames);
-                adaptor.GetOptions().UseJsNames(useJsNames);
-                if (ERROR == adaptor.RenderRowAsObject(val, row)) {
-                    THROW_JS_EXCEPTION("Failed to render instance");
+    return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, keyObj);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+
+    auto& repo = db.GetInstanceRepository();
+    auto key = BeJsValue(keyObj);
+    auto args = BeJsValue(argsObj);
+
+    auto fmt = JsFormat::Standard;
+    if (args.isBoolMember("useJsNames") && args.asBool(false)){
+        fmt = JsFormat::JsName;
+    }
+
+    auto rc = repo.Delete(key, args, fmt);
+    if (rc != BE_SQLITE_DONE) {
+        if (repo.GetLastError().empty()) {
+            THROW_JS_EXCEPTION("Failed to insert instance");
+        }
+        THROW_JS_EXCEPTION(repo.GetLastError().c_str());
+    }
+    return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::ReadInstance(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, keyObj);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+
+    auto& repo = db.GetInstanceRepository();
+    auto key = BeJsValue(keyObj);
+    auto args = BeJsValue(argsObj);
+
+    auto fmt = JsFormat::Standard;
+    if (args.isBoolMember("useJsNames") && args.asBool(false)){
+        fmt = JsFormat::JsName;
+    }
+
+    auto outInstance = BeJsNapiObject(info.Env());
+    auto rc = repo.Read(key, outInstance, args, fmt);
+    if (rc != BE_SQLITE_ROW) {
+        if (repo.GetLastError().empty()) {
+            THROW_JS_EXCEPTION("Failed to read instance");
+        }
+        THROW_JS_EXCEPTION(repo.GetLastError().c_str());
+    }
+    return outInstance;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::PatchJsonProperties(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, jsonProps);
+
+    // Remove Null values from jsonProps
+    BeJsDocument doc;
+    doc.Parse(jsonProps.c_str());
+    if (doc.hasParseError())
+        return Napi::Value::From(info.Env(), jsonProps);
+    doc.PurgeNulls();
+
+    // Handle relClassNames
+    auto relClassNames = BeJsPath::Extract(BeJsValue(doc), "$");
+    if (relClassNames.has_value()) {
+        relClassNames.value().ForEachProperty([&](auto memberName, auto memberJson) {
+            if (memberJson.isStringMember("relClassName")) {
+                // Fix Class Names that were not converted to the TS format
+                auto relClassName = memberJson["relClassName"];
+                auto relClassNameJson = relClassNames->Get(memberName)["relClassName"];
+                Utf8String correctedRelClassName = relClassName.Stringify();
+                correctedRelClassName.DropQuotes();
+                correctedRelClassName.ReplaceAll(".", ":");
+                (BeJsValue&)relClassNameJson = correctedRelClassName;
+            }
+            return false;
+        });
+    }
+    // Handle renderMaterial TextureIds
+    auto map = BeJsPath::Extract(BeJsValue(doc), "$.materialAssets.renderMaterial.Map");
+    if (map.has_value()) {
+        map.value().ForEachProperty([&](auto memberName, auto memberJson) {
+            if (memberJson.isNumericMember("TextureId")) {
+                // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
+                auto textureIdAsStringForLogging = memberJson["TextureId"].Stringify();
+                auto textureId = memberJson["TextureId"].template GetId64<DgnTextureId>();
+                auto textureIdJson = map->Get(memberName)["TextureId"];
+                (BeJsValue&)textureIdJson = textureId.ToHexStr();
+                if (!textureId.IsValid()) {
+                    Utf8PrintfString msg("RenderMaterial had a textureId %s that was invalid.", textureIdAsStringForLogging.c_str());
                 }
-            },
-            options
-        )) {
-            THROW_JS_EXCEPTION("instance not found");
-        }
-        return val;
+            }
+            return false;
+        });
     }
-    THROW_JS_EXCEPTION("unknown serialization method");
+    // Handle DisplayStyle subcategory overrides
+    auto subCategoryOvr = BeJsPath::Extract(BeJsValue(doc), "$.styles.subCategoryOvr");
+    if (subCategoryOvr.has_value()) {
+        subCategoryOvr.value().ForEachArrayMember([&](auto index, auto memberJson) {
+            if (memberJson.isNumericMember("subCategory")) {
+                // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
+                auto subcategoryAsStringForLogging = memberJson["subCategory"].Stringify();
+                auto subcategoryId = memberJson["subCategory"].template GetId64<DgnTextureId>();
+                auto subcategoryJson = subCategoryOvr->Get(index)["subCategory"];
+                (BeJsValue&)subcategoryJson = subcategoryId.ToHexStr();
+                if (!subcategoryId.IsValid()) {
+                    Utf8PrintfString msg("Style had a subCategory Override %s that was invalid.", subcategoryAsStringForLogging.c_str());
+                }
+            }
+            return false;
+        });
+    }
+    return Napi::Value::From(info.Env(), doc.Stringify());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void JsInterop::ClearECDbCache(ECDbR db, NapiInfoCR info) {
+    db.ClearECDbCache();
 }
 
 //---------------------------------------------------------------------------------------
