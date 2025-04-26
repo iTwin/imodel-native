@@ -3426,6 +3426,7 @@ public:
     //! change the size of a blob.
     //! @see sqlite3_blob_open, sqlite3_blob_write, sqlite3_blob_close
     BE_SQLITE_EXPORT DbResult SaveToRow(BlobIO& blobIO);
+    BE_SQLITE_EXPORT void SaveTo(ByteStream& buffer);
 
     //! Obtain a thread-local SnappyToBlob. The returned object is deleted when the calling thread exits and should never be shared between threads.
     BE_SQLITE_EXPORT static SnappyToBlob& GetForThread();
@@ -3448,22 +3449,24 @@ struct SnappyReader
 //! Utility to read Snappy-compressed data from memory, typically from an image of a blob.
 // @bsiclass
 //=======================================================================================
-struct SnappyFromMemory : SnappyReader
+struct SnappyFromMemory final: SnappyReader
 {
 private:
-    Byte*   m_uncompressed;
-    Byte*   m_uncompressCurr;
+    Byte*    m_uncompressed;
+    Byte*    m_uncompressCurr;
     uint16_t m_uncompressAvail;
     uint16_t m_uncompressSize;
-    Byte*   m_blobData;
+    Byte*    m_blobData;
     uint32_t m_blobOffset;
     uint32_t m_blobBytesLeft;
-
+    bool     m_ownsUncompressedBuffer;
     ZipErrors ReadNextChunk();
     ZipErrors TransferFromBlob(void* data, uint32_t numBytes, int offset);
 
 public:
     BE_SQLITE_EXPORT SnappyFromMemory(void* uncompressedBuffer, uint32_t uncompressedBufferSize);
+    BE_SQLITE_EXPORT SnappyFromMemory();
+    BE_SQLITE_EXPORT ~SnappyFromMemory();
     BE_SQLITE_EXPORT void Init(void* blobBuffer, uint32_t blobBufferSize);
     BE_SQLITE_EXPORT virtual ZipErrors _Read(Byte* data, uint32_t size, uint32_t& actuallyRead) override;
 
@@ -3475,13 +3478,13 @@ public:
 //! Utility to read Snappy-compressed data from a blob in a database.
 // @bsiclass
 //=======================================================================================
-struct SnappyFromBlob : SnappyReader
+struct SnappyFromBlob final: SnappyReader
 {
 private:
-    Byte*   m_uncompressed;
-    Byte*   m_uncompressCurr;
-    Byte*   m_blobData;
-    BlobIO  m_blobIO;
+    Byte*    m_uncompressed;
+    Byte*    m_uncompressCurr;
+    Byte*    m_blobData;
+    BlobIO   m_blobIO;
     uint32_t m_blobBufferSize;
     uint32_t m_blobOffset;
     uint32_t m_blobBytesLeft;

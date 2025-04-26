@@ -409,6 +409,13 @@ struct GeometryStreamIO
     //! @private
     DGNPLATFORM_EXPORT static DgnDbStatus BuildGeometryStream(DgnElementR, GeometryBuilderParams const& elementGeometryBuilderParams, Napi::Array entryArrayObj);
 
+    DGNPLATFORM_EXPORT static DgnDbStatus BuildFromGeometrySource(GeometrySourceR source, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj);
+
+    DGNPLATFORM_EXPORT static DgnDbStatus BuildFromGeometryPart(GeometryPartSource& part, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj);
+
+    //! @private
+    static DgnDbStatus BuildGeometryStream(GeometryBuilder& builder, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj, GeometrySourceP source, GeometryPartSourceP part);
+
     //! @private
     DGNPLATFORM_EXPORT static DgnDbStatus CreateBRepGeometry(DgnDbR db, Napi::Object const& createProps, Napi::Env env);
 
@@ -708,6 +715,8 @@ public:
     //! @note For a builder using CreateWithAutoPlacement this also updates the placement origin/angles(s) using the local coordinate system computed from the first appended GeometricPrimitve.
     DGNPLATFORM_EXPORT BentleyStatus Finish(GeometrySourceR);
 
+    DGNPLATFORM_EXPORT BentleyStatus Finish(GeometryPartSourceR part);
+
     //! Clears GeometryStream of supplied GeometrySource and invalidates the element aligned bounding box.
     DGNPLATFORM_EXPORT BentleyStatus ClearGeometryStream(GeometrySourceR);
 
@@ -822,7 +831,7 @@ public:
     //! @param[in] value GeometryStream json value.
     //! @param[in] opts options for update.
     DGNPLATFORM_EXPORT static bool UpdateFromJson(GeometrySourceR source, BeJsConst value);
-
+    DGNPLATFORM_EXPORT static bool UpdateFromJson(GeometryPartSourceR part, BeJsConst input, bool is3d = true);
     //! @private Append GeometryStream entries supplied as json flatbuffer entry array values.
     DGNPLATFORM_EXPORT static bool UpdateFromJsonEntryArray(GeometrySourceR source, BeJsConst value);
 

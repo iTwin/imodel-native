@@ -536,7 +536,15 @@ public:
     static DgnDbStatus QueryDefinitionElementUsage(BeJsValue usageInfo, DgnDbR db, bvector<Utf8String> const& idStringArray);
     static void UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents);
     static void UpdateIModelProps(DgnDbR dgndb, BeJsConst);
-    static Napi::Value GetInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value ReadInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value InsertInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value UpdateInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value DeleteInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value PatchJsonProperties(NapiInfoCR info);
+    static Napi::Value ResolveInstanceKey(DgnDbR db, NapiInfoCR info);
+    static Napi::Value ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info);
+    static Napi::Value ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info);
+    static void ClearECDbCache(ECDbR db, NapiInfoCR info);
 
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
