@@ -397,6 +397,9 @@ void ConnectionCache::Interrupt(bool reset_conn, bool detach_dbs) {
         std::this_thread::yield();
     }
     if (reset_conn) {
+        if(m_syncConn)
+            m_syncConn->Reset(detach_dbs);
+
         for (auto& it : m_conns) {
             it->Reset(detach_dbs);
         }
