@@ -1149,4 +1149,60 @@ TEST_F(ConcurrentQueryFixture, CommentAtEndOfECSql) {
 
 }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, ImportSchemaShouldClearQueryCache) {
+    // There was a bug that importing a schema did not clean the cached prepared statements for concurrent queries.
+    // So running a query that is cached would result in an error because the query needs to be reprepared.
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDbForCurrentTest(SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="testEntity">
+                    <ECProperty propertyName="entity_id" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.testEntity(entity_id) VALUES(?)"));
+    stmt.BindInt(1, 1);
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    m_ecdb.SaveChanges();
+
+    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+
+    {
+        auto req = ECSqlRequest::MakeRequest("SELECT entity_id FROM ts.testEntity");
+        req->SetUsePrimaryConnection(true);
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+
+        auto res = ((ECSqlResponse*) r.get());
+        BeJsDocument resJson;
+        res->ToJs(resJson, true);
+        ASSERT_EQ(res->asJsonString(), "[[1]]");
+    }
+
+    // Import a new schema to clear the cache
+    SchemaItem updatedSchema(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECEntityClass typeName="testEntity">
+            <ECProperty propertyName="entity_id" typeName="int" />
+            <ECProperty propertyName="new_prop" typeName="int" />
+        </ECEntityClass>
+    </ECSchema>)xml");
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(updatedSchema));
+    // Run an identical query again
+    {
+        auto req = ECSqlRequest::MakeRequest("SELECT entity_id FROM ts.testEntity");
+        req->SetUsePrimaryConnection(true);
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+
+        auto res = ((ECSqlResponse*) r.get());
+        BeJsDocument resJson;
+        res->ToJs(resJson, true);
+        ASSERT_EQ(res->asJsonString(), "[[1]]");
+    }
+}
+
 END_ECDBUNITTESTS_NAMESPACE
