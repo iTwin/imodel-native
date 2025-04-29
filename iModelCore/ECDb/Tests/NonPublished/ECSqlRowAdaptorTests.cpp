@@ -145,7 +145,7 @@ public:
     const char* expected_ClassOwnsLocalProperties_TargetECInstanceId = R"("0x1")";
     const char* expected_Schema_Value_Id = R"({"Id":"0x1","RelECClassId":"0x26"})";
     const char* expected_Schema_Value_Name = R"({"Id":"0x1","RelECClassId":"ECDbMeta.SchemaOwnsClasses"})";
-    using Options = ECSqlRowAdaptor::Options;
+    using Options = JsReadOptions;
     Utf8String GetValue(Utf8CP ecsql, Options options = Options()) {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql)) << "Failed to prepare statement: " << ecsql;
@@ -231,7 +231,7 @@ TEST_F(ECSqlRowAdaptorFixture, class_id_rendering_with_class_ids_to_class_names)
 TEST_F(ECSqlRowAdaptorFixture, class_id_rendering_with_js_name_option) {
     SetupECDb("test.ecdb");
     Options opts;
-    opts.UseJsNames(true);
+    opts.SetUseJsNames(true);
     for (auto const& ecsqlTemplate : ECSqlTemplates::GetTemplates()) {
         const auto ecsql = ecsqlTemplate.Format({{"$c", "meta.ECClassDef"}, {"$p", "ECClassId"}});
         EXPECT_STREQ(expected_ECClassDef_Name, GetValue(ecsql.c_str(), opts).c_str())

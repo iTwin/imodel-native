@@ -68,7 +68,7 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (field) field->SetDynamicColumnInfo(ECSqlColumnInfo());
     m_ecdb.GetInstanceReader().Seek(
         InstanceReader::Position(instanceId, classId, accessStringVal.GetValueText()),
-        [&](InstanceReader::IRowContext const& row){
+        [&](InstanceReader::IRowContext const& row, auto _){
         auto& val = row.GetValue(0);
         if (val.IsNull()) {
             return;
@@ -111,8 +111,8 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
             }
         }
 
-        InstanceReader::JsonParams params;
-        params.SetUseJsName(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
+        JsReadOptions params;
+        params.SetUseJsNames(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
         params.SetAbbreviateBlobs(!(jsonFlags & InstanceReader::FLAGS_DoNotTruncateBlobs));
 
         const auto json = row.GetJson(params).Stringify();
@@ -155,11 +155,11 @@ void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
         }
     }
 
-    InstanceReader::JsonParams params;
-    params.SetUseJsName(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
+    JsReadOptions params;
+    params.SetUseJsNames(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
     params.SetAbbreviateBlobs(!(jsonFlags & InstanceReader::FLAGS_DoNotTruncateBlobs));
 
-    auto setResult = [&](InstanceReader::IRowContext const& row){
+    auto setResult = [&](InstanceReader::IRowContext const& row, auto _) {
         const auto json = row.GetJson(params).Stringify();
         ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
     };
@@ -735,7 +735,7 @@ void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         }
 
     DbValue const& idValue = args[0];
-    if (idValue.IsNull() || idValue.GetValueType() != DbValueType::IntegerVal) 
+    if (idValue.IsNull() || idValue.GetValueType() != DbValueType::IntegerVal)
         {
         ctx.SetResultNull();
         return;
@@ -750,7 +750,7 @@ void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         }
 
     DbValue const& xmlValue = args[1];
-    if (xmlValue.IsNull() || xmlValue.GetValueType() != DbValueType::TextVal) 
+    if (xmlValue.IsNull() || xmlValue.GetValueType() != DbValueType::TextVal)
         {
         ctx.SetResultNull();
         return;

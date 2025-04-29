@@ -3240,11 +3240,11 @@ DgnDbStatus GeometryStreamIO::ProcessGeometryStream(DgnDbR db, Napi::Object cons
     return ProcessGeometryStream(*element, requestProps, env);
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj)
-    {
+DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj) {
     auto& db = element.GetDgnDb();
 
     GeometrySourceP source = element.ToGeometrySourceP();
@@ -3263,9 +3263,52 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
     if (0 == entryArrayObj.Length() && nullptr != source)
         return (SUCCESS == builder->ClearGeometryStream(*source) ? DgnDbStatus::Success : DgnDbStatus::NoGeometry);
 
+    return BuildGeometryStream(*builder, bParams, entryArrayObj, source, part);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometryStreamIO::BuildFromGeometrySource(GeometrySource& source, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj) {
+    GeometryBuilderPtr builder =  GeometryBuilder::Create(source);
+    if (!builder.IsValid())
+        return DgnDbStatus::BadElement;
+
+    if (bParams.viewIndependent)
+        builder->SetHeaderFlags(GeometryStreamIO::Header::Flags::ViewIndependent);
+
+    // A zero length array means clear the geometry stream and invalidate element aligned box...
+    if (0 == entryArrayObj.Length())
+        return (SUCCESS == builder->ClearGeometryStream(source) ? DgnDbStatus::Success : DgnDbStatus::NoGeometry);
+
+    return BuildGeometryStream(*builder, bParams, entryArrayObj, &source, nullptr);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometryStreamIO::BuildFromGeometryPart(GeometryPartSource& part, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj) {
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(part.GetSourceDgnDb(), !bParams.is2dPart);
+    if (!builder.IsValid())
+        return DgnDbStatus::BadElement;
+
+    if (bParams.viewIndependent)
+        builder->SetHeaderFlags(GeometryStreamIO::Header::Flags::ViewIndependent);
+
+
+    return BuildGeometryStream(*builder, bParams, entryArrayObj, nullptr, &part);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometryStreamIO::BuildGeometryStream(GeometryBuilder& builder, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj, GeometrySourceP source, GeometryPartSourceP part)
+    {
+
+    auto& db = builder.GetDgnDb();
     GeometryBuilder::CoordSystem coordSys = bParams.isWorld ? GeometryBuilder::CoordSystem::World : GeometryBuilder::CoordSystem::Local;
 
-    Render::GeometryParams geomParams = builder->GetGeometryParams();
+    Render::GeometryParams geomParams = builder.GetGeometryParams();
     Reader reader(db);
 
     for (uint32_t index = 0, nEntries = entryArrayObj.Length(); index < nEntries; ++index)
@@ -3286,7 +3329,7 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
                 if (!reader.Get(egOp, geomParams))
                     return DgnDbStatus::BadArg;
 
-                if (!builder->Append(geomParams, coordSys))
+                if (!builder.Append(geomParams, coordSys))
                     return DgnDbStatus::BadArg;
                 break;
                 }
@@ -3313,7 +3356,7 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
                     }
 
                 if (hasMultipleGeom)
-                    builder->SetAppendAsSubGraphics(); // This will do nothing if a GeometryPart is being created, or a GeometryPart instance is being inserted...
+                    builder.SetAppendAsSubGraphics(); // This will do nothing if a GeometryPart is being created, or a GeometryPart instance is being inserted...
                 break;
                 }
 
@@ -3325,7 +3368,7 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
                 if (!reader.Get(egOp, geomPartId, geomToSource))
                     return DgnDbStatus::BadArg;
 
-                if (!builder->Append(geomPartId, geomToSource))
+                if (!builder.Append(geomPartId, geomToSource))
                     return DgnDbStatus::BadArg;
                 break;
                 }
@@ -3339,7 +3382,7 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
                 if (!reader.Get(egOp, geom, true))
                     return DgnDbStatus::BadArg;
 
-                if (!builder->Append(*geom, coordSys))
+                if (!builder.Append(*geom, coordSys))
                     return DgnDbStatus::BadArg;
                 break;
                 }
@@ -3348,12 +3391,12 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
 
     if (nullptr != source)
         {
-        if (SUCCESS != builder->Finish(*source))
+        if (SUCCESS != builder.Finish(*source))
             return DgnDbStatus::NoGeometry;
         }
     else
         {
-        if (SUCCESS != builder->Finish(*part))
+        if (SUCCESS != builder.Finish(*part))
             return DgnDbStatus::NoGeometry;
         }
 
@@ -5445,6 +5488,46 @@ BentleyStatus GeometryBuilder::GetGeometryStream(GeometryStreamR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus GeometryBuilder::Finish(GeometryPartSource& part)
+    {
+    if (!m_isPartCreate)
+        return ERROR; // Invalid builder for creating part geometry...
+
+    if (0 == m_writer.m_buffer.size())
+        return ERROR;
+
+    part.GetGeometryStreamR().SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+
+    ElementAlignedBox3d localRange = (m_is3d ? m_placement3d.GetElementBox() : ElementAlignedBox3d(m_placement2d.GetElementBox()));
+
+    // NOTE: GeometryBuilder::CreateGeometryPart doesn't supply range...need to compute it...
+    if (!localRange.IsValid())
+        {
+        GeometryCollection collection(part.GetGeometryStreamR(), m_dgnDb);
+
+        for (auto iter : collection)
+            {
+            GeometricPrimitivePtr geom = iter.GetGeometryPtr();
+            DRange3d range;
+
+            if (geom.IsValid() && geom->GetRange(range))
+                {
+                localRange.Extend(range);
+                }
+            }
+
+        if (!localRange.IsValid())
+            return ERROR;
+        }
+
+    part.SetBoundingBox(localRange);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus GeometryBuilder::Finish(DgnGeometryPartR part)
     {
     if (!m_isPartCreate)
@@ -7041,6 +7124,24 @@ bool GeometryBuilder::FromJson(BeJsConst input)
         }
 
     return true;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::UpdateFromJson(GeometryPartSourceR part, BeJsConst input, bool is3d)
+    {
+    if (!input.isArray())
+        return false;
+
+    GeometryBuilderPtr builder = CreateGeometryPart(part.GetSourceDgnDb(), is3d); // NEEDSWORK...supply 2d/3d in opts?
+
+    if (!builder.IsValid())
+        return false;
+
+    if (!builder->FromJson(input))
+        return false;
+
+    return (SUCCESS == builder->Finish(part));
     }
 
 /*---------------------------------------------------------------------------------**//**
