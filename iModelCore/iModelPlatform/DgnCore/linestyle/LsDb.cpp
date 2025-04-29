@@ -659,28 +659,30 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
     if(!context.IsBetweenDbs())
         return newElem;
 
+    Json::Value  jsonObj (Json::objectValue);
+
+    Utf8String  srcData (this->GetData());
+    if (!Json::Reader::Parse(srcData, jsonObj))
+      return newElem;
+    LsComponentId compId = LsDefinition::GetComponentId (jsonObj);
+    
     DgnStyleId dstStyleId = QueryId(context.GetDestinationDb(), this->GetName().c_str());
     if (dstStyleId.IsValid())
         {
-        //  *** TBD: Check if the line style definitions match. If not, rename and remap
-        context.AddLineStyleId(DgnStyleId(this->GetElementId().GetValue()), dstStyleId);
-        context.AddElementId(this->GetElementId(), DgnElementId(dstStyleId.GetValue()));
-        return nullptr;
+        // If Line style element already exists in destinationDb, get component Id from existing element
+        // else import new component Id and set it to the new element
+        LineStyleElementCPtr dstElem = LineStyleElement::Get(context.GetDestinationDb(), dstStyleId);
+        Utf8String  dstData (dstElem->GetData());
+
+        Json::Value  dstJsonObj (Json::objectValue);
+        if (!Json::Reader::Parse(dstData, dstJsonObj))
+          return newElem;
+
+        compId = LsDefinition::GetComponentId (dstJsonObj);
         }
-
-    Utf8String  srcData (this->GetData());
-
-    Json::Value  jsonObj (Json::objectValue);
-    if (!Json::Reader::Parse(srcData, jsonObj))
-        return newElem;
-
-    LsComponentId compId = LsDefinition::GetComponentId (jsonObj);
-    compId = LsComponent::Import(compId, context);
-    if (!compId.IsValid())
+    else
         {
-        //  *** TBD: Check if the line style definitions match. If not, rename and remap
-        BeAssert(false && "unable to import component for line style");
-        return newElem;
+        compId = LsComponent::Import(compId, context);
         }
 
     LsDefinition::InitializeJsonObject(jsonObj, compId, LsDefinition::GetAttributes(jsonObj), LsDefinition::GetUnitDef(jsonObj));
