@@ -26,6 +26,17 @@ struct PragmaExplainQuery : PragmaManager::GlobalHandler {
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct PragmaDbList : PragmaManager::GlobalHandler {
+    PragmaDbList():GlobalHandler("db_list","List all attach dbs"){}
+    ~PragmaDbList(){}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&,  PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaDbList>(); }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct DisqualifyTypeIndex : PragmaManager::ClassHandler {
     std::set<ECClassId> m_disqualifiedClassSet;
     DisqualifyTypeIndex():ClassHandler("disqualify_type_index","set/get disqualify_type_index flag for a given ECClass"){}

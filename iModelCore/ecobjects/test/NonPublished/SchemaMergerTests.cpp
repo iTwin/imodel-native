@@ -34,10 +34,10 @@ ECSchemaReadContextPtr InitializeReadContextWithAllSchemas(bvector<Utf8CP> const
     return readContext;
     }
 
-void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult& actualResult, bool dumpFullSchemaOnError = false)
+void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult& actualResult, bool dumpFullSchemaOnError = false, ECVersion ecXmlVersion = ECVersion::Latest, bool skipValidation = false)
     {
     bvector<ECSchemaCP> expectedSchemas;
-    ECSchemaReadContextPtr context = InitializeReadContextWithAllSchemas(expectedSchemasXml, &expectedSchemas);
+    ECSchemaReadContextPtr context = InitializeReadContextWithAllSchemas(expectedSchemasXml, &expectedSchemas, skipValidation);
     
     SchemaComparer comparer;
     SchemaComparer::Options options = SchemaComparer::Options(SchemaComparer::DetailLevel::NoSchemaElements, SchemaComparer::DetailLevel::NoSchemaElements);
@@ -63,7 +63,7 @@ void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult
             for(auto result : actualResult.GetResults())
               {
               Utf8String schemaXml;
-              result->WriteToXmlString(schemaXml);
+              result->WriteToXmlString(schemaXml, ecXmlVersion);
               LOG.error(schemaXml.c_str());
               }
             }
@@ -103,7 +103,7 @@ TEST_F(SchemaMergerTests, Classes)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -150,7 +150,7 @@ TEST_F(SchemaMergerTests, UpdateSchemaAndClassDescriptions)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -199,7 +199,7 @@ TEST_F(SchemaMergerTests, Properties)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -250,7 +250,7 @@ TEST_F(SchemaMergerTests, UpdatePropertyValues)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -298,7 +298,7 @@ TEST_F(SchemaMergerTests, PropertyWithDifferentCase)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -348,7 +348,7 @@ TEST_F(SchemaMergerTests, UpdatePropertyCategoryOnProperty)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -407,7 +407,7 @@ TEST_F(SchemaMergerTests, SetEnumAndCategoryWithDifferentCase)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -470,7 +470,7 @@ TEST_F(SchemaMergerTests, UpdateKindOfQuantityOnProperty)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -527,7 +527,7 @@ TEST_F(SchemaMergerTests, EnumerationValues)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -580,7 +580,7 @@ TEST_F(SchemaMergerTests, EnumerationValuesSameSchemaVersion)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -633,7 +633,7 @@ TEST_F(SchemaMergerTests, EnumerationsFromBothSides)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -688,7 +688,7 @@ TEST_F(SchemaMergerTests, EnumeratorValues)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -739,7 +739,7 @@ TEST_F(SchemaMergerTests, EnumeratorDuplicateValues)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Enumeration 'MySchema:MyEnum' ends up having duplicate enumerator values after merge, which is not allowed. Name of new Enumerator: DifferentNameSameValue2" };
@@ -780,7 +780,7 @@ TEST_F(SchemaMergerTests, ChangeEnumerationType_ShouldFail)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -811,7 +811,7 @@ TEST_F(SchemaMergerTests, PropertyCategoryValues)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -853,7 +853,7 @@ TEST_F(SchemaMergerTests, PropertyCategoryFromBothSides)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -897,7 +897,7 @@ TEST_F(SchemaMergerTests, PhenomenonValues)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -940,7 +940,7 @@ TEST_F(SchemaMergerTests, PhenomenonFromBothSides)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -983,7 +983,7 @@ TEST_F(SchemaMergerTests, UnitSystemValues)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -1025,7 +1025,7 @@ TEST_F(SchemaMergerTests, UnitSystemFromBothSides)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -1084,7 +1084,7 @@ TEST_F(SchemaMergerTests, UnitValues)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -1144,7 +1144,7 @@ TEST_F(SchemaMergerTests, InvertingUnitValues)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -1201,7 +1201,7 @@ TEST_F(SchemaMergerTests, UnitsWithReversedDependencyOrder) //Checks that stuff 
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -1257,7 +1257,7 @@ TEST_F(SchemaMergerTests, UpdateSystemOnUnit)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Unit 'MySchema:M' has its UnitSystem changed. This is not supported." };
@@ -1298,7 +1298,7 @@ TEST_F(SchemaMergerTests, UpdatePhenomenonOnUnit)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Unit 'MySchema:M' has its Phenomenon changed. This is not supported." };
@@ -1339,7 +1339,7 @@ TEST_F(SchemaMergerTests, UpdateDefinitionOnUnit)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Unit 'MySchema:M' has its Definition changed. This is not supported." };
@@ -1380,7 +1380,7 @@ TEST_F(SchemaMergerTests, UpdateNumeratorOnUnit)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Unit 'MySchema:M' has its Numerator changed. This is not supported." };
@@ -1421,7 +1421,7 @@ TEST_F(SchemaMergerTests, UpdateDenominatorOnUnit)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Unit 'MySchema:M' has its Denominator changed. This is not supported." };
@@ -1462,7 +1462,7 @@ TEST_F(SchemaMergerTests, UpdateOffsetOnUnit)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Unit 'MySchema:M' has its Offset changed. This is not supported." };
@@ -1501,7 +1501,7 @@ TEST_F(SchemaMergerTests, UnitFromBothSides)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -1559,7 +1559,7 @@ TEST_F(SchemaMergerTests, BaseClassAndPropertyWithDifferentCase)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -1621,7 +1621,7 @@ TEST_F(SchemaMergerTests, EntityWithMultipleBaseClasses)
 
     // Merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -1675,7 +1675,7 @@ TEST_F(SchemaMergerTests, DescriptionAndLabelDifferentCaseName)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -1730,7 +1730,7 @@ TEST_F(SchemaMergerTests, AddBaseProperty)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -1788,7 +1788,7 @@ TEST_F(SchemaMergerTests, AddBaseProperty2Levels)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -1860,7 +1860,7 @@ TEST_F(SchemaMergerTests, ReferencesInCorrectOrder)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -1947,7 +1947,7 @@ TEST_F(SchemaMergerTests, ReferencesInWrongOrder) //we expect the merger to sort
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2032,7 +2032,7 @@ TEST_F(SchemaMergerTests, NotIncludedReferencedSchema) // We expect the merger t
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2101,7 +2101,7 @@ TEST_F(SchemaMergerTests, AddBaseClass)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2161,7 +2161,7 @@ TEST_F(SchemaMergerTests, AddBaseClassBelow) //checks that the order in which th
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2217,7 +2217,7 @@ TEST_F(SchemaMergerTests, AddNewClassWithBaseClass)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2274,7 +2274,7 @@ TEST_F(SchemaMergerTests, AddNewClassWithBaseClassInReverseOrder)
 
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2339,7 +2339,7 @@ TEST_F(SchemaMergerTests, InjectBaseClassInHierarchy)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2392,7 +2392,7 @@ TEST_F(SchemaMergerTests, NullReferencedItemPropertyCategory)
 
     // Merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2442,7 +2442,7 @@ TEST_F(SchemaMergerTests, NullReferencedItemKindOfQuantity)
 
     // Merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2500,7 +2500,7 @@ TEST_F(SchemaMergerTests, KindOfQuantityFromBothSides)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2556,7 +2556,7 @@ TEST_F(SchemaMergerTests, KindOfQuantityValues)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2611,7 +2611,7 @@ TEST_F(SchemaMergerTests, UpdatePersistenceUnitOnKindOfQuantity)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2671,7 +2671,7 @@ TEST_F(SchemaMergerTests, MergePresentationFormatsOnKindOfQuantity)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2720,7 +2720,7 @@ TEST_F(SchemaMergerTests, FormatFromBothSides)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2763,7 +2763,7 @@ TEST_F(SchemaMergerTests, FormatValues)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2809,7 +2809,7 @@ TEST_F(SchemaMergerTests, FormatNumericSpecValues)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2865,7 +2865,7 @@ TEST_F(SchemaMergerTests, AddReferenceToNewSchema)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -2936,7 +2936,7 @@ TEST_F(SchemaMergerTests, AddReferenceToExistingSchema)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -3003,7 +3003,7 @@ TEST_F(SchemaMergerTests, ClassesWithReversedDependencyOrder)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -3090,7 +3090,7 @@ TEST_F(SchemaMergerTests, ModifiedSchemasOnResult)
     
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -3155,7 +3155,7 @@ TEST_F(SchemaMergerTests, MergeSchemaVersion)
           bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
 
           SchemaMergeResult result;
-          EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+          EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
           auto merged = result.GetSchema("MySchema");
           return merged->GetSchemaKey().GetVersionString();
           };
@@ -3195,7 +3195,7 @@ TEST_F(SchemaMergerTests, KeepSchemaVersion)
           SchemaMergeResult result;
           SchemaMergeOptions options;
           options.SetKeepVersion(true);
-          EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+          EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
           auto merged = result.GetSchema("MySchema");
           return merged->GetSchemaKey().GetVersionString();
           };
@@ -3243,7 +3243,7 @@ TEST_F(SchemaMergerTests, Property_ChangeType)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<ReportedIssue> expectedIssues { ReportedIssue(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0043, "Property MySchema:MyEntity:A has its type changed from string to int.")};
@@ -3255,7 +3255,7 @@ TEST_F(SchemaMergerTests, Property_ChangeType)
     result.AddIssueListener(issues);
     SchemaMergeOptions options;
     options.SetIgnoreIncompatiblePropertyTypeChanges(true);
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -3314,7 +3314,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_ChangePropertyToEnumeration)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Property MySchema:MyEntity:A has its type changed from int to MyEnum." };
@@ -3356,7 +3356,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_PrimitiveAndArrayProperty)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Property MySchema:MyEntity:A is of a different kind between both sides. IsPrimitive changed from true to false IsPrimitiveArray changed from false to true " };
@@ -3398,7 +3398,7 @@ TEST_F(SchemaMergerTests, SchemaItemNameConflict_Enumeration)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Another item with name MySchema:MyConflict already exists in the merged schema MySchema.01.00.01. RenameSchemaItemOnConflict is set to false." };
@@ -3408,7 +3408,7 @@ TEST_F(SchemaMergerTests, SchemaItemNameConflict_Enumeration)
     SchemaMergeResult result2;
     SchemaMergeOptions options;
     options.SetRenameSchemaItemOnConflict(true);
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -3460,7 +3460,7 @@ TEST_F(SchemaMergerTests, SchemaItemNameConflict_PropertyCategory)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Another item with name MySchema:MyConflict already exists in the merged schema MySchema.01.00.01. RenameSchemaItemOnConflict is set to false." };
@@ -3470,7 +3470,7 @@ TEST_F(SchemaMergerTests, SchemaItemNameConflict_PropertyCategory)
     SchemaMergeResult result2;
     SchemaMergeOptions options;
     options.SetRenameSchemaItemOnConflict(true);
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -3519,7 +3519,7 @@ TEST_F(SchemaMergerTests, SchemaItemNameConflict_Class)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Another item with name MySchema:MyConflict already exists in the merged schema MySchema.01.00.01. RenameSchemaItemOnConflict is set to false." };
@@ -3529,7 +3529,7 @@ TEST_F(SchemaMergerTests, SchemaItemNameConflict_Class)
     SchemaMergeResult result2;
     SchemaMergeOptions options;
     options.SetRenameSchemaItemOnConflict(true);
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -3580,7 +3580,7 @@ TEST_F(SchemaMergerTests, SchemaItemNameConflict_EntityAndStruct)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Cannot merge class MySchema:MyConflict because the type of class is different." };
@@ -3593,7 +3593,7 @@ TEST_F(SchemaMergerTests, SchemaItemNameConflict_EntityAndStruct)
     result2.AddIssueListener(issues2);
     SchemaMergeOptions options;
     options.SetRenameSchemaItemOnConflict(true);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
 
     // Compare issues
     bvector<Utf8String> expectedIssues2 { "Cannot merge class MySchema:MyConflict because the type of class is different." };
@@ -3640,7 +3640,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_DisconnectedClasses)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MySchema:MyConflict because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
@@ -3650,7 +3650,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_DisconnectedClasses)
     SchemaMergeResult result2;
     SchemaMergeOptions options;
     options.SetRenamePropertyOnConflict(true);
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -3715,7 +3715,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_ConnectBaseClass)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "New base class MySchema:MyBase is incompatible with properties on MySchema:MyConflict or its derived classes." };
@@ -3759,7 +3759,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddBaseClassWithIncomingProperty)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "New base class MySchema:MyBase is incompatible with properties on MySchema:MyConflict or its derived classes." };
@@ -3769,7 +3769,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddBaseClassWithIncomingProperty)
     SchemaMergeResult result2;
     SchemaMergeOptions options;
     options.SetRenamePropertyOnConflict(true);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
     //  We do not support this case for now, so there is no option to automatically rename/resolve this.
     }
 
@@ -3811,7 +3811,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddDerivedClassWithIncomingProper
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to copy class MySchema:MyConflict into merged schema" }; //TODO: This needs a better check!
@@ -3855,7 +3855,7 @@ TEST_F(SchemaMergerTests, EnumerationTypeConflict)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Enumeration 'MySchema:MyEnum' has its Type changed. This is not supported." };
@@ -3899,7 +3899,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddBaseProperty)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MySchema:MyBase because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
@@ -3943,7 +3943,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddDerivedProperty)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MySchema:MyConflict because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
@@ -3953,7 +3953,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddDerivedProperty)
     SchemaMergeResult result2;
     SchemaMergeOptions options;
     options.SetRenamePropertyOnConflict(true);
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -4019,7 +4019,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddBaseProperty2Levels)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MySchema:MyBaseBase because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
@@ -4029,7 +4029,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddBaseProperty2Levels)
     SchemaMergeResult result2;
     SchemaMergeOptions options;
     options.SetRenamePropertyOnConflict(true);
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -4098,7 +4098,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddDerivedProperty2Levels)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MySchema:MyConflict because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
@@ -4109,7 +4109,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddDerivedProperty2Levels)
     SchemaMergeResult result2;
     SchemaMergeOptions options;
     options.SetRenamePropertyOnConflict(true);
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -4189,7 +4189,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddBasePropertyInReferencedSchema
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MyBaseSchema:MyBase because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
@@ -4246,7 +4246,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddDerivedPropertyForReferencedSc
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MySchema:MyConflict because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
@@ -4287,7 +4287,7 @@ TEST_F(SchemaMergerTests, ChangePropertyFromBinaryToIGeometry)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Property MySchema:MyClass:A has its type changed from binary to Bentley.Geometry.Common.IGeometry." };
@@ -4297,7 +4297,7 @@ TEST_F(SchemaMergerTests, ChangePropertyFromBinaryToIGeometry)
     SchemaMergeResult result2;
     SchemaMergeOptions options;
     options.SetIgnoreIncompatiblePropertyTypeChanges(true);
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, options));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -4360,7 +4360,7 @@ TEST_F(SchemaMergerTests, ChangeRoleLabel_KeepLeft)
     bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
     
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -4451,7 +4451,7 @@ TEST_F(SchemaMergerTests, MergeRelationshipConstraints)
     bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
     
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -4490,6 +4490,428 @@ TEST_F(SchemaMergerTests, MergeRelationshipConstraints)
     CompareResults(expectedSchemasXml, result);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, MergeSchemasBothHavingIllegalRC)
+    {
+    //In the test case name RC is short for Relationship Class
+    Utf8CP schemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Joey" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Fastener" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Bolt" >
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECClass typeName="Weld" >
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+    
+            <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0,1)" polymorphic="true" roleLabel = "JointHasRandomThings">
+                  <Class class="Joey"/>
+              </Source>
+              <Target cardinality="(0,N)" polymorphic="true" roleLabel = "JointHasRandomThings (Reversed)">
+                  <Class class="Fastener"/>
+                  <Class class="Bolt"/>
+                  <Class class="Weld"/>
+              </Target>
+            </ECRelationshipClass>
+      </ECSchema>)xml";
+  
+    Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+          <ECClass typeName="Joey" isDomainClass="True">
+              <ECProperty propertyName="n" typeName="int"/>
+          </ECClass>
+          <ECClass typeName="Chandler" isDomainClass="True">
+              <ECProperty propertyName="n" typeName="int"/>
+          </ECClass>
+          <ECClass typeName="Nicks" >
+              <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+          </ECClass>
+          <ECClass typeName="RuleAll" >
+              <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+          </ECClass>
+    
+          <ECRelationshipClass typeName="ILikeFriendsObviously" isDomainClass="True" strength="referencing" strengthDirection="forward">
+            <Source cardinality="(0,1)" polymorphic="true" roleLabel = "ILikeFriendsObviously">
+                <Class class="Joey"/>
+            </Source>
+            <Target cardinality="(0,N)" polymorphic="true" roleLabel = "ILikeFriendsObviously (Reversed)">
+                <Class class="Chandler"/>
+                <Class class="Nicks"/>
+                <Class class="RuleAll"/>
+            </Target>
+          </ECRelationshipClass>
+      </ECSchema>)xml";
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas({schemaXml1}, nullptr, true);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas({schemaXml2}, nullptr, true);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    auto schemaMergeOptions = SchemaMergeOptions();
+    SchemaMergeResult result1;
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, SchemaMerger::MergeSchemas(result1, leftSchemas, rightSchemas, schemaMergeOptions));
+    schemaMergeOptions.SetSkipValidation(true);
+    SchemaMergeResult result2;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, schemaMergeOptions));
+
+    bvector<Utf8CP> expectedSchemasXml = {
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Weld" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECClass typeName="Bolt" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECClass typeName="Chandler" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Fastener" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Joey" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Nicks" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECClass typeName="RuleAll" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECRelationshipClass typeName="ILikeFriendsObviously" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="referencing">
+                <Source cardinality="(0,1)" polymorphic="true" roleLabel = "ILikeFriendsObviously">
+                    <Class class="Joey"/>
+                </Source>
+                <Target cardinality="(0,N)" polymorphic="true" roleLabel = "ILikeFriendsObviously (Reversed)">
+                    <Class class="Chandler"/>
+                    <Class class="Nicks"/>
+                    <Class class="RuleAll"/>
+                </Target>
+            </ECRelationshipClass>
+            
+            <ECRelationshipClass typeName="JointHasRandomThings" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="referencing">
+                <Source cardinality="(0,1)" polymorphic="true" roleLabel = "JointHasRandomThings">
+                    <Class class="Joey"/>
+                </Source>
+                <Target cardinality="(0,N)" polymorphic="true" roleLabel = "JointHasRandomThings (Reversed)">
+                    <Class class="Fastener"/>
+                    <Class class="Bolt"/>
+                    <Class class="Weld"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml"
+    };
+    
+    //Compare actual and expected xml schemas
+    CompareResults(expectedSchemasXml, result2, true, ECVersion::V2_0, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, MergeSchemasOneHavingIllegalRC)
+    {
+    //In the test case name RC is short for Relationship Class
+    Utf8CP schemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+          <ECClass typeName="Joint" isDomainClass="True">
+              <ECProperty propertyName="n" typeName="int"/>
+          </ECClass>
+          <ECClass typeName="Fastener" isDomainClass="True">
+              <ECProperty propertyName="n" typeName="int"/>
+          </ECClass>
+          <ECClass typeName="Bolt" >
+              <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+          </ECClass>
+          <ECClass typeName="Weld" >
+              <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+          </ECClass>
+  
+          <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+            <Source cardinality="(0,1)" polymorphic="True">
+                <Class class="Joint" />
+            </Source>
+            <Target cardinality="(0,N)" polymorphic="True">
+                <Class class="Fastener"/>
+                <Class class="Bolt"/>
+                <Class class="Weld"/>
+            </Target>
+        </ECRelationshipClass>
+        <ECClass typeName="Zulu" isDomainClass="True">
+            <BaseClass>Joint</BaseClass>
+        </ECClass>
+    </ECSchema>)xml";
+
+    Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+          <ECClass typeName="Voodoo" isDomainClass="True">
+              <ECProperty propertyName="n" typeName="int"/>
+          </ECClass>
+    </ECSchema>)xml";
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas({schemaXml1}, nullptr, true);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas({schemaXml2}, nullptr, true);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    auto schemaMergeOptions = SchemaMergeOptions();
+    SchemaMergeResult result1;
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, SchemaMerger::MergeSchemas(result1, leftSchemas, rightSchemas, schemaMergeOptions));
+    schemaMergeOptions.SetSkipValidation(true);
+    SchemaMergeResult result2;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, schemaMergeOptions));
+
+    bvector<Utf8CP> expectedSchemasXml = {
+      R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECClass typeName="Bolt" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+            <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+        </ECClass>
+        <ECClass typeName="Fastener" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+            <ECProperty propertyName="n" typeName="int"/>
+        </ECClass>
+        <ECClass typeName="Joint" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+            <ECProperty propertyName="n" typeName="int"/>
+        </ECClass>
+        <ECClass typeName="Weld" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+            <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+        </ECClass>
+        <ECRelationshipClass typeName="JointHasRandomThings" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="referencing">
+            <Source cardinality="(0,1)" polymorphic="true">
+                <Class class="Joint"/>
+            </Source>
+            <Target cardinality="(0,N)" polymorphic="true">
+                <Class class="Fastener"/>
+                <Class class="Bolt"/>
+                <Class class="Weld"/>
+            </Target>
+        </ECRelationshipClass>
+        <ECClass typeName="Voodoo" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+            <ECProperty propertyName="n" typeName="int"/>
+        </ECClass>
+        <ECClass typeName="Zulu" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+            <BaseClass>Joint</BaseClass>
+        </ECClass>
+    </ECSchema>)xml"
+    };
+
+    //Compare actual and expected xml schemas
+    CompareResults(expectedSchemasXml, result2, true, ECVersion::V2_0, true);
+    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, MergeIdenticalSchemasHavingIllegalRC)
+    {
+      //In the test case name RC is short for Relationship Class
+      Utf8CP schemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Joint" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Fastener" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Bolt" >
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECClass typeName="Weld" >
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+    
+            <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0,1)" polymorphic="True">
+                  <Class class="Joint" />
+              </Source>
+              <Target cardinality="(0,N)" polymorphic="True">
+                  <Class class="Fastener"/>
+                  <Class class="Bolt"/>
+                  <Class class="Weld"/>
+              </Target>
+          </ECRelationshipClass>
+          <ECClass typeName="Zulu" isDomainClass="True">
+              <BaseClass>Joint</BaseClass>
+          </ECClass>
+      </ECSchema>)xml";
+  
+      Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Joint" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Fastener" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Bolt" >
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+            <ECClass typeName="Weld" >
+                <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+            </ECClass>
+    
+            <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0,1)" polymorphic="True">
+                  <Class class="Joint" />
+              </Source>
+              <Target cardinality="(0,N)" polymorphic="True">
+                  <Class class="Fastener"/>
+                  <Class class="Bolt"/>
+                  <Class class="Weld"/>
+              </Target>
+          </ECRelationshipClass>
+          <ECClass typeName="Zulu" isDomainClass="True">
+              <BaseClass>Joint</BaseClass>
+          </ECClass>
+      </ECSchema>)xml";
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas({schemaXml1}, nullptr, true);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas({schemaXml2}, nullptr, true);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    auto schemaMergeOptions = SchemaMergeOptions();
+    SchemaMergeResult result1;
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, SchemaMerger::MergeSchemas(result1, leftSchemas, rightSchemas, schemaMergeOptions));
+    schemaMergeOptions.SetSkipValidation(true);
+    SchemaMergeResult result2;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, schemaMergeOptions));
+
+    bvector<Utf8CP> expectedSchemasXml = {
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+          <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+              <ECClass typeName="Joint" isDomainClass="True">
+                  <ECProperty propertyName="n" typeName="int"/>
+              </ECClass>
+              <ECClass typeName="Fastener" isDomainClass="True">
+                  <ECProperty propertyName="n" typeName="int"/>
+              </ECClass>
+              <ECClass typeName="Bolt" >
+                  <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+              </ECClass>
+              <ECClass typeName="Weld" >
+                  <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+              </ECClass>
+      
+              <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                <Source cardinality="(0,1)" polymorphic="True">
+                    <Class class="Joint" />
+                </Source>
+                <Target cardinality="(0,N)" polymorphic="True">
+                    <Class class="Fastener"/>
+                    <Class class="Bolt"/>
+                    <Class class="Weld"/>
+                </Target>
+              </ECRelationshipClass>
+              <ECClass typeName="Zulu" isDomainClass="True">
+                  <BaseClass>Joint</BaseClass>
+              </ECClass>
+          </ECSchema>)xml"
+    };
+
+    //Compare actual and expected xml schemas
+    CompareResults(expectedSchemasXml, result2, true, ECVersion::V2_0, true);
+    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, MergeSchemasWhereResultWillHaveIllegalRC)
+    {
+      //In the test case name RC is short for Relationship Class
+      Utf8CP schemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Joint" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Weld" >
+                <ECProperty propertyName="p" typeName="int"/>
+            </ECClass>
+    
+            <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0,1)" polymorphic="True">
+                  <Class class="Joint" />
+              </Source>
+              <Target cardinality="(0,N)" polymorphic="True">
+                  <Class class="Weld"/>
+              </Target>
+          </ECRelationshipClass>
+      </ECSchema>)xml";
+  
+      Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Joint" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Fastener">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+    
+            <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0,1)" polymorphic="True">
+                  <Class class="Joint" />
+              </Source>
+              <Target cardinality="(0,N)" polymorphic="True">
+                  <Class class="Fastener"/>
+              </Target>
+          </ECRelationshipClass>
+      </ECSchema>)xml";
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas({schemaXml1}, nullptr, true);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas({schemaXml2}, nullptr, true);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    auto schemaMergeOptions = SchemaMergeOptions();
+    SchemaMergeResult result1;
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, SchemaMerger::MergeSchemas(result1, leftSchemas, rightSchemas, schemaMergeOptions));
+    schemaMergeOptions.SetSkipValidation(true);
+    SchemaMergeResult result2;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result2, leftSchemas, rightSchemas, schemaMergeOptions));
+
+    bvector<Utf8CP> expectedSchemasXml = {
+      R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Joint" isDomainClass="True">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Weld" >
+                <ECProperty propertyName="p" typeName="int"/>
+            </ECClass>
+            <ECClass typeName="Fastener">
+                <ECProperty propertyName="n" typeName="int"/>
+            </ECClass>
+    
+            <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+              <Source cardinality="(0,1)" polymorphic="True">
+                  <Class class="Joint" />
+              </Source>
+              <Target cardinality="(0,N)" polymorphic="True">
+                  <Class class="Weld"/>
+                  <Class class="Fastener"/>
+              </Target>
+          </ECRelationshipClass>
+      </ECSchema>)xml"
+    };
+
+    //Compare actual and expected xml schemas
+    CompareResults(expectedSchemasXml, result2, true, ECVersion::V2_0, true);
+    
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4550,7 +4972,7 @@ TEST_F(SchemaMergerTests, ChangeAbstractConstraint)
     bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
     
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -4641,7 +5063,7 @@ TEST_F(SchemaMergerTests, ChangeAbstractConstraint_InvalidCase)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Setting AbstractConstraint on MySchema:MyRelationshipClass failed. Was trying to set to MySchema:ABase2." };
@@ -4714,7 +5136,7 @@ TEST_F(SchemaMergerTests, UnableToFindAbstractConstraint)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<ReportedIssue> expectedIssues { ReportedIssue(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025, "Schema 'Test2.01.00.01' from right side failed to be copied.") };
@@ -4786,7 +5208,7 @@ TEST_F(SchemaMergerTests, RelationshipConstraintNotCompatibleProblem)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<ReportedIssue> expectedIssues { ReportedIssue(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0024, "Setting ConstraintClass on Test2:MyRelationshipClass failed. Was trying to set to Test2:Lemon.") };
@@ -4867,7 +5289,7 @@ TEST_F(SchemaMergerTests, RelationshipConstraintOnLeftSchema)
     TestIssueListener issues;
     result.AddIssueListener(issues);
     logger.Clear();
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     logger.ValidateMessageAtIndex(0, SEVERITY::LOG_ERROR,
       "Cannot add class Test2:FASTENER to target-constraint on Test2:JOINT_HAS_FASTENER. There is no abstract constraint defined, so adding this class would render the schema invalid.");
@@ -4931,7 +5353,7 @@ TEST_F(SchemaMergerTests, ChangeStrength)
     bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
     
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -5012,7 +5434,7 @@ TEST_F(SchemaMergerTests, AddBaseRelationship)
     bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
     
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -5101,7 +5523,7 @@ TEST_F(SchemaMergerTests, AddBaseRelationshipAndChangeStrength)
     bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
     
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -5196,7 +5618,7 @@ TEST_F(SchemaMergerTests, ChangeStrengthIllegal)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "The setter for StrengthType on item MySchema:ElementGroupsMembers returned an error." };
@@ -5207,7 +5629,7 @@ TEST_F(SchemaMergerTests, ChangeStrengthIllegal)
     SchemaMergeResult result;
     SchemaMergeOptions options;
     options.SetIgnoreStrengthChangeProblems(true);
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -5277,7 +5699,7 @@ TEST_F(SchemaMergerTests, OriginalXmlVersion)
     //merge the schemas
     {
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, schemas32, schemas31));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, schemas32, schemas31));
 
     auto mergedSchema = result.GetSchema("SchemaMergeA");
     EXPECT_EQ(3, mergedSchema->GetOriginalECXmlVersionMajor());
@@ -5286,7 +5708,7 @@ TEST_F(SchemaMergerTests, OriginalXmlVersion)
 
     {
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, schemas31, schemas32));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, schemas31, schemas32));
 
     auto mergedSchema = result.GetSchema("SchemaMergeA");
     EXPECT_EQ(3, mergedSchema->GetOriginalECXmlVersionMajor());
@@ -5306,7 +5728,7 @@ TEST_F(SchemaMergerTests, OriginalXmlVersion)
 
     {
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, schemas31, schemas31_));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, schemas31, schemas31_));
 
     auto mergedSchema = result.GetSchema("SchemaMergeA");
     EXPECT_EQ(3, mergedSchema->GetOriginalECXmlVersionMajor());
@@ -5384,7 +5806,7 @@ TEST_F(SchemaMergerTests, CustomAttributesAddedFromReferencedSchema)
 
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     result.GetSchemaCache().DropSchema(result.GetSchema("CoreCustomAttributes")->GetSchemaKey());
     // Compare result
@@ -5494,7 +5916,7 @@ TEST_F(SchemaMergerTests, CustomAttributesAddedLocalSchema)
 
     //merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     result.GetSchemaCache().DropSchema(result.GetSchema("CoreCustomAttributes")->GetSchemaKey());
     // Compare result
@@ -5628,7 +6050,7 @@ TEST_F(SchemaMergerTests, TestPreferRightSideDisplayLabelSchemaMergerFlag)
     // Test Case 1 : OverwriteDisplayLabel not specified (defaults to false)
     // Result : Display label should NOT be overwritten.
     SchemaMergeResult testCase1Result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(testCase1Result, leftSchema, rightSchema));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(testCase1Result, leftSchema, rightSchema));
     CompareResults({expectedSchemaXmlLabelNotUpdated}, testCase1Result);
 
     // Test Case 2 : OverwriteDisplayLabel set to true
@@ -5636,14 +6058,14 @@ TEST_F(SchemaMergerTests, TestPreferRightSideDisplayLabelSchemaMergerFlag)
     SchemaMergeResult testCase2Result;
     SchemaMergeOptions options;
     options.SetPreferRightSideDisplayLabel(true);
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(testCase2Result, leftSchema, rightSchema, options));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(testCase2Result, leftSchema, rightSchema, options));
     CompareResults({expectedSchemaXmlLabelUpdated}, testCase2Result);
 
     // Test Case 3 : OverwriteDisplayLabel set to false
     // Result : Display label should NOT be overwritten.
     SchemaMergeResult testCase3Result;
     options.SetPreferRightSideDisplayLabel(false);
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(testCase3Result, leftSchema, rightSchema, options));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(testCase3Result, leftSchema, rightSchema, options));
     CompareResults({expectedSchemaXmlLabelNotUpdated}, testCase3Result);
     }
 
@@ -5688,7 +6110,7 @@ TEST_F(SchemaMergerTests, TestBaseClassAdditionAndRemoval)
   SchemaMergeResult result;
   TestIssueListener issues;
   result.AddIssueListener(issues);
-  EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchema, rightSchema));
+  EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchema, rightSchema));
 
   // Compare result
   bvector<Utf8CP> expectedSchemasXml {
@@ -5745,7 +6167,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesMergeResultLeftNameCaps)
 
     // Merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -5795,7 +6217,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesMergeRightNameCaps)
 
     // Merge the schemas
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -5871,7 +6293,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesLeftMergeNoReferences)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "The schema name entry MyOtherSchema is non-unique in the left schema list. The schemas names are case-insensitive.",
@@ -5937,7 +6359,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesRightMergeNoReferences)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "The schema name entry MyOtherSchema is non-unique in the right schema list. The schemas names are case-insensitive.",
@@ -6001,7 +6423,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesLeftAndRightMergeNoReferences)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "The schema name entry myschema1 is non-unique in the left schema list. The schemas names are case-insensitive.", 
@@ -6084,7 +6506,7 @@ TEST_F(SchemaMergerTests, UncleanSchemaGraphNoReferences)
     SchemaMergeOptions options;
     options.SetDoNotMergeReferences(true);
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
 
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
@@ -6188,11 +6610,114 @@ TEST_F(SchemaMergerTests, UncleanSchemaGraphMergedWithReferences)
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    EXPECT_EQ(ECObjectsStatus::Error, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to find item with name MyCategory in right schema TestReference.01.00.07. This usually indicates a dirty schema graph where multiple memory references of the same schema with different contents are provided." };
     issues.CompareIssues(expectedIssues);
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, SchemaAlphabeticalSortIssue)
+    {
+    // There was a bug where we internally stored differencing schemas in a bset with ascii comparator which put them into alphabetical order instead of dependency order.
+    // This test reproduces the issue and ensures it no longer happens
+
+    Utf8CP leftRefXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="ZRefSchema" alias="refSch" version="01.00.00" displayLabel="Raised Floor" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00.04" alias="CoreCA"/>
+        <ECCustomAttributes>
+            <DynamicSchema xmlns="CoreCustomAttributes.01.00.04"/>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="PlateElementAspect" displayLabel="Base Plate">
+        </ECEntityClass>
+    </ECSchema>)xml";
+
+    Utf8CP leftXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="testSchema" version="01.00.00" displayLabel="Raised Floor (Parametric Modeling)" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00.04" alias="CoreCA"/>
+        <ECSchemaReference name="ZRefSchema" version="01.00.00" alias="refSch"/>
+        <ECCustomAttributes>
+            <DynamicSchema xmlns="CoreCustomAttributes.01.00.04"/>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="Plate_DgnActiveParametersElementAspect" displayLabel="Base Plate">
+            <BaseClass>refSch:PlateElementAspect</BaseClass>
+        </ECEntityClass>
+    </ECSchema>)xml";
+
+    BentleyApi::bvector<BentleyApi::WString> schemaDirs;
+    BentleyApi::BeFileName assetsDir;
+    BentleyApi::BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsDir);
+    assetsDir = assetsDir.AppendToPath(L"ECSchemas");
+    schemaDirs.push_back(assetsDir.AppendToPath(L"Standard"));
+    SearchPathSchemaFileLocaterPtr locater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(schemaDirs, true);
+
+    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(*locater);
+    schemaContext->SetSkipValidation(true);
+
+    BentleyApi::bvector<ECSchemaCP> existingSchemas, incomingSchemas;
+    ECSchemaPtr refSchema;
+    ECSchema::ReadFromXmlString(refSchema, leftRefXml, *schemaContext);
+    existingSchemas.push_back(refSchema.get());
+    ECSchemaPtr ecSchema;
+    ECSchema::ReadFromXmlString(ecSchema, leftXml, *schemaContext);
+    existingSchemas.push_back(ecSchema.get());
+
+    Utf8CP rightRefXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="ZRefSchema" alias="refSch" version="01.00.00" displayLabel="Raised Floor" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.04" alias="CoreCA"/>
+            <ECCustomAttributes>
+                <DynamicSchema xmlns="CoreCustomAttributes.01.00.04"/>
+            </ECCustomAttributes>
+            <ECEntityClass typeName="Plate" displayLabel="Base Plate">
+            </ECEntityClass>
+            <ECEntityClass typeName="PlateElementAspect" displayLabel="Base Plate">
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    Utf8CP rightXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="testSchema" version="01.00.00" displayLabel="Raised Floor (Parametric Modeling)" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.04" alias="CoreCA"/>
+            <ECSchemaReference name="ZRefSchema" version="01.00.00" alias="refSch"/>
+            <ECCustomAttributes>
+                <DynamicSchema xmlns="CoreCustomAttributes.01.00.04"/>
+            </ECCustomAttributes>
+            <ECEntityClass typeName="Plate_DgnActiveParameters" displayLabel="Base Plate">
+                <BaseClass>refSch:Plate</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="Plate_DgnActiveParametersElementAspect" displayLabel="Base Plate">
+                <BaseClass>refSch:PlateElementAspect</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaReadContextPtr  schemaContext2 = ECSchemaReadContext::CreateContext();
+    SearchPathSchemaFileLocaterPtr locater2 = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(schemaDirs, true);
+
+    schemaContext2->AddSchemaLocater(*locater2);
+    schemaContext2->SetSkipValidation(true);
+    ECSchemaPtr refSchema2;
+    ECSchema::ReadFromXmlString(refSchema2, rightRefXml, *schemaContext2);
+    incomingSchemas.push_back(refSchema2.get());
+    ECSchemaPtr ecSchema2;
+    ECSchema::ReadFromXmlString(ecSchema2, rightXml, *schemaContext2);
+    incomingSchemas.push_back(ecSchema2.get());
+
+    SchemaMergeResult result;
+    SchemaMergeOptions options;
+    options.SetKeepVersion(true);
+    options.SetRenamePropertyOnConflict(true);
+    options.SetRenameSchemaItemOnConflict(true);
+    options.SetMergeOnlyDynamicSchemas(true);
+    options.SetIgnoreIncompatiblePropertyTypeChanges(true);
+
+    ECSchema::SortSchemasInDependencyOrder(existingSchemas);
+    ECSchema::SortSchemasInDependencyOrder(incomingSchemas);
+
+    auto mergeStatus = SchemaMerger::MergeSchemas(result, existingSchemas, incomingSchemas, options);
+    EXPECT_EQ(ECObjectsStatus::Success, mergeStatus);
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

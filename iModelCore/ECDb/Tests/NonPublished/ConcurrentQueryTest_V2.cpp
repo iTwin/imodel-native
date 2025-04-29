@@ -18,6 +18,7 @@ struct ConcurrentQueryFixture : ECDbTestFixture {
     void SetUp() override {
          // ConsoleLogger::SetSeverity("ECDb.ConcurrentQuery", BentleyApi::NativeLogging::LOG_TRACE);
         ECDbTestFixture::SetUp();
+        ConcurrentQueryMgr::Config::Reset(std::nullopt);
     }
 };
 struct SleepFunc : BeSQLite::ScalarFunction {
@@ -280,7 +281,7 @@ TEST_F(ConcurrentQueryFixture, Blob_Metadata) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, Blob_NotAbbreviatedByDefault) {
     const uint8_t bin[] = {0x1, 0x1, 0x1};
-    
+
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Blob_NotAbbreviatedByDefault.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="testEntity"
@@ -439,10 +440,10 @@ TEST_F(ConcurrentQueryFixture, BlobColumnInfoRepeated) {
 TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
 
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
-    auto config = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    auto config = ConcurrentQueryMgr::Config::Get();
     config.SetQuota(QueryQuota(std::chrono::seconds(2), 1024));
     config.SetIgnoreDelay(false);
-    ConcurrentQueryMgr::ResetConfig(m_ecdb, config);
+    ConcurrentQueryMgr::Config::Reset(config);
 
     const auto delay = std::chrono::milliseconds(5000);
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
@@ -458,9 +459,9 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
 TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
 
-    auto config = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    auto config = ConcurrentQueryMgr::Config::Get();
     config.SetQuota(QueryQuota(std::chrono::seconds(10), 1000));
-    ConcurrentQueryMgr::ResetConfig(m_ecdb, config);
+    ConcurrentQueryMgr::Config::Reset(config);
 
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest(
@@ -476,9 +477,9 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
 TEST_F(ConcurrentQueryFixture, InterruptCheck_TimeLimitExceeded) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
 
-    auto config = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    auto config = ConcurrentQueryMgr::Config::Get();
     config.SetQuota(QueryQuota(std::chrono::seconds(1), 1000));
-    ConcurrentQueryMgr::ResetConfig(m_ecdb, config);
+    ConcurrentQueryMgr::Config::Reset(config);
 
     m_ecdb.AddFunction(SleepFunc::Instance());
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
@@ -724,9 +725,9 @@ TEST_F(ConcurrentQueryFixture, sqlite_only_eval_function_with_no_arg_or_constant
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, DelayRequest) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
-    ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::Config::Get();
     conf.SetIgnoreDelay(false);
-    ConcurrentQueryMgr::ResetConfig(m_ecdb, conf);
+    ConcurrentQueryMgr::Config::Reset(conf);
 
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
@@ -742,9 +743,9 @@ TEST_F(ConcurrentQueryFixture, DelayRequest) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, RestartToken) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("conn_query.ecdb"));
-    ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    ConcurrentQueryMgr::Config conf = ConcurrentQueryMgr::Config::Get();
     conf.SetIgnoreDelay(false);
-    ConcurrentQueryMgr::ResetConfig(m_ecdb, conf);
+    ConcurrentQueryMgr::Config::Reset(conf);
 
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
     const auto sql = "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt";
@@ -1163,14 +1164,14 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
         idSet.insert(BeInt64Id(40));
         int vsRowCount = 0;
 
-        ECSqlReader  vsReaderIdSet(mgr, "select id from ECVLib.IdSet(?)",
+        ECSqlReader  vsReaderIdSet(mgr, "select id from IdSet(?)",
             ECSqlParams().BindIdSet(1, idSet));
 
         int i = 1;
         while(vsReaderIdSet.Next()) {
         auto classRow = vsReaderIdSet.GetRow();
         ASSERT_EQ(i*10, BeStringUtilities::ParseHex(classRow[0].asString().c_str()));
-        i++; 
+        i++;
         vsRowCount++;
         }
         ASSERT_EQ(vsRowCount,4);
@@ -1184,14 +1185,14 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
         idSet.insert(BeInt64Id(40));
         int vsRowCount = 0;
 
-        ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, ECVLib.IdSet(?) where ECInstanceId = id",
+        ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, IdSet(?) where ECInstanceId = id",
             ECSqlParams().BindIdSet(1, idSet));
 
         int i = 1;
         while(vsReaderIdSet.Next()) {
         auto classRow = vsReaderIdSet.GetRow();
         ASSERT_EQ(i*10, BeStringUtilities::ParseHex(classRow[0].asString().c_str()));
-        i++; 
+        i++;
         vsRowCount++;
         }
         ASSERT_EQ(vsRowCount,4);
@@ -1200,7 +1201,7 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
         auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
         int vsRowCount = 0;
 
-        ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, ECVLib.IdSet(?) where ECInstanceId = id",
+        ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, IdSet(?) where ECInstanceId = id",
             ECSqlParams().BindId(1, BeInt64Id(33)));
 
         while(vsReaderIdSet.Next())
@@ -1220,7 +1221,7 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
         idSet.insert(BeInt64Id(40));
         int vsRowCount = 0;
 
-        ECSqlReader  vsReaderIdSet(mgr, "select id from ECVLib.IdSet(?)",
+        ECSqlReader  vsReaderIdSet(mgr, "select id from IdSet(?)",
             ECSqlParams().BindIdSet(1, idSet));
 
         try{
@@ -1231,6 +1232,62 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
             ASSERT_EQ(vsRowCount,0);
             }
         }
+}
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, ImportSchemaShouldClearQueryCache) {
+    // There was a bug that importing a schema did not clean the cached prepared statements for concurrent queries.
+    // So running a query that is cached would result in an error because the query needs to be reprepared.
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDbForCurrentTest(SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="testEntity">
+                    <ECProperty propertyName="entity_id" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.testEntity(entity_id) VALUES(?)"));
+    stmt.BindInt(1, 1);
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    m_ecdb.SaveChanges();
+
+    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+
+    {
+        auto req = ECSqlRequest::MakeRequest("SELECT entity_id FROM ts.testEntity");
+        req->SetUsePrimaryConnection(true);
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+
+        auto res = ((ECSqlResponse*) r.get());
+        BeJsDocument resJson;
+        res->ToJs(resJson, true);
+        ASSERT_EQ(res->asJsonString(), "[[1]]");
+    }
+
+    // Import a new schema to clear the cache
+    SchemaItem updatedSchema(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECEntityClass typeName="testEntity">
+            <ECProperty propertyName="entity_id" typeName="int" />
+            <ECProperty propertyName="new_prop" typeName="int" />
+        </ECEntityClass>
+    </ECSchema>)xml");
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(updatedSchema));
+    // Run an identical query again
+    {
+        auto req = ECSqlRequest::MakeRequest("SELECT entity_id FROM ts.testEntity");
+        req->SetUsePrimaryConnection(true);
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+
+        auto res = ((ECSqlResponse*) r.get());
+        BeJsDocument resJson;
+        res->ToJs(resJson, true);
+        ASSERT_EQ(res->asJsonString(), "[[1]]");
+    }
 }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -393,6 +393,21 @@ enum class WalCheckpointMode {
     Truncate=3, /* Like RESTART but also truncate WAL */
 };
 
+enum class AttachFileType {
+    Unknown,
+    Main,
+    Temp,
+    SchemaSync,
+    ECChangeCache
+};
+
+struct AttachFileInfo final {
+public:
+    Utf8String m_fileName;
+    Utf8String m_alias;
+    AttachFileType m_type;
+};
+
 //=======================================================================================
 //! A 4-digit number that specifies the version of the "profile" (schema) of a Db
 // @bsiclass
@@ -2935,6 +2950,7 @@ public:
     //! Detach a previously attached database. This method is necessary for the same reason AttachDb is necessary.
     //! @param[in] alias The alias by which the database was attached.
     BE_SQLITE_EXPORT DbResult DetachDb(Utf8CP alias) const;
+    BE_SQLITE_EXPORT std::vector<AttachFileInfo> GetAttachedDbs() const;
 
     //! Execute a single SQL statement on this Db.
     //! This merely binds, steps, and finalizes the statement. It is no more efficient than performing those steps individually,
@@ -3410,6 +3426,7 @@ public:
     //! change the size of a blob.
     //! @see sqlite3_blob_open, sqlite3_blob_write, sqlite3_blob_close
     BE_SQLITE_EXPORT DbResult SaveToRow(BlobIO& blobIO);
+    BE_SQLITE_EXPORT void SaveTo(ByteStream& buffer);
 
     //! Obtain a thread-local SnappyToBlob. The returned object is deleted when the calling thread exits and should never be shared between threads.
     BE_SQLITE_EXPORT static SnappyToBlob& GetForThread();
@@ -3432,22 +3449,24 @@ struct SnappyReader
 //! Utility to read Snappy-compressed data from memory, typically from an image of a blob.
 // @bsiclass
 //=======================================================================================
-struct SnappyFromMemory : SnappyReader
+struct SnappyFromMemory final: SnappyReader
 {
 private:
-    Byte*   m_uncompressed;
-    Byte*   m_uncompressCurr;
+    Byte*    m_uncompressed;
+    Byte*    m_uncompressCurr;
     uint16_t m_uncompressAvail;
     uint16_t m_uncompressSize;
-    Byte*   m_blobData;
+    Byte*    m_blobData;
     uint32_t m_blobOffset;
     uint32_t m_blobBytesLeft;
-
+    bool     m_ownsUncompressedBuffer;
     ZipErrors ReadNextChunk();
     ZipErrors TransferFromBlob(void* data, uint32_t numBytes, int offset);
 
 public:
     BE_SQLITE_EXPORT SnappyFromMemory(void* uncompressedBuffer, uint32_t uncompressedBufferSize);
+    BE_SQLITE_EXPORT SnappyFromMemory();
+    BE_SQLITE_EXPORT ~SnappyFromMemory();
     BE_SQLITE_EXPORT void Init(void* blobBuffer, uint32_t blobBufferSize);
     BE_SQLITE_EXPORT virtual ZipErrors _Read(Byte* data, uint32_t size, uint32_t& actuallyRead) override;
 
@@ -3459,13 +3478,13 @@ public:
 //! Utility to read Snappy-compressed data from a blob in a database.
 // @bsiclass
 //=======================================================================================
-struct SnappyFromBlob : SnappyReader
+struct SnappyFromBlob final: SnappyReader
 {
 private:
-    Byte*   m_uncompressed;
-    Byte*   m_uncompressCurr;
-    Byte*   m_blobData;
-    BlobIO  m_blobIO;
+    Byte*    m_uncompressed;
+    Byte*    m_uncompressCurr;
+    Byte*    m_blobData;
+    BlobIO   m_blobIO;
     uint32_t m_blobBufferSize;
     uint32_t m_blobOffset;
     uint32_t m_blobBytesLeft;

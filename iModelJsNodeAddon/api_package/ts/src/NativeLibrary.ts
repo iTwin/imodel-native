@@ -14,17 +14,19 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
  */
 
 import type {
-  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode,
+  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode
 } from "@itwin/core-bentley";
 import type {
-  ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
-  ElementGraphicsRequestProps, ElementLoadProps, ElementMeshRequestProps, ElementProps,
+  ChangesetIndexAndId, CodeProps, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
+  ElementGeometryBuilderParams,
+  ElementGeometryBuilderParamsForPart,
+  ElementGraphicsRequestProps, ElementLoadOptions, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
-  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
+  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, GeometryStreamProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
+  ModelProps, PlacementProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
 } from "@itwin/core-common";
-import type { Range2dProps, Range3dProps } from "@itwin/core-geometry";
+import type { LowAndHighXYZProps, Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-syntax */
@@ -119,13 +121,6 @@ export class NativeLibrary {
     return this._nativeLib;
   }
 }
-/** Use GetInstance() method
- * @internal
- */
-export const enum InstanceSerializationMethod {
-  JsonParse = 0,
-  BeJsNapi = 1
-}
 
 /** WAL checkpoint mode
  * @internal
@@ -212,6 +207,23 @@ export declare namespace IModelJsNative {
 
   function getTrueTypeFontMetadata(fileName: LocalFileName): TrueTypeFontMetadata;
   function isRscFontData(blob: Uint8Array): boolean;
+
+  function imageBufferFromImageSource(
+    sourceFormat: ImageSourceFormat.Png | ImageSourceFormat.Jpeg,
+    sourceData: Uint8Array,
+    targetFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba | 255,
+    flipVertically: boolean
+  ): Pick<ImageBuffer, "data" | "format" | "width"> | undefined;
+
+  function imageSourceFromImageBuffer(
+    imageFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba,
+    imageData: Uint8Array,
+    imageWidth: number,
+    imageHeight: number,
+    targetFormat: ImageSourceFormat.Png | ImageSourceFormat.Jpeg | 255,
+    flipVertically: boolean,
+    jpegQuality: number
+  ): { format: ImageSourceFormat.Jpeg | ImageSourceFormat.Png, data: Uint8Array } | undefined;
 
   /** Get the SHA1 hash of a Schema XML file, possibly including its referenced Schemas */
   function computeSchemaChecksum(arg: {
@@ -393,16 +405,15 @@ export declare namespace IModelJsNative {
     diameter?: number;
   }
 
-  /**
-   * Represents the arguments for reading an instance.
-   */
-  interface InstanceArgs {
+  interface ResolveInstanceKeyArgs {
+    partialKey?: { id: Id64String, baseClassName: string };
+    federationGuid?: GuidString;
+    code?: CodeProps;
+  }
+
+  interface ResolveInstanceKeyResult {
     id: Id64String;
-    classId: Id64String;
-    serializationMethod: InstanceSerializationMethod;
-    abbreviateBlobs?: boolean;
-    classIdsToClassNames?: boolean;
-    useJsNames?: boolean;
+    classFullName: string;
   }
 
   enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }
@@ -501,6 +512,26 @@ export declare namespace IModelJsNative {
     readonly parentChangesetIndex?: string;
   }
 
+  type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
+  interface IGeometrySource {
+    geom?: Uint8Array | GeometryStreamProps;
+    builder?: ElementGeometryBuilderParams;
+    placement?: PlacementProps;
+    categoryId?: Id64String;
+    is2d: boolean;
+  }
+
+
+  interface IGeometryPart {
+    geom?: Uint8Array | GeometryStreamProps;
+    builder?: ElementGeometryBuilderParamsForPart;
+    is2d: boolean;
+    bbox?: LowAndHighXYZProps;
+  }
+
+
+
+
   // ###TODO import from core-common
   interface ModelExtentsResponseProps {
     id: Id64String;
@@ -521,6 +552,8 @@ export declare namespace IModelJsNative {
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
+    public attachDb(filename: string, alias: string): void;
+    public detachDb(alias: string): void;
     public getNoCaseCollation(): NoCaseCollation;
     public setNoCaseCollation(collation: NoCaseCollation): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
@@ -597,8 +630,21 @@ export declare namespace IModelJsNative {
     public getGeometryContainment(props: object): Promise<GeometryContainmentResponseProps>;
     public getIModelCoordinatesFromGeoCoordinates(points: IModelCoordinatesRequestProps): IModelCoordinatesResponseProps;
     public getIModelId(): GuidString;
-    public getIModelProps(): IModelProps;
-    public getInstance(args: InstanceArgs): { [key: string]: any };
+    public getIModelProps(when?: "pullMerge"): IModelProps;
+    public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
+    public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
+    public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
+    public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    public patchJsonProperties(jsonProps: string):  string;
+    public newBeGuid(): GuidString;
+
+    public clearECDbCache(): void;
+
+    public convertOrUpdateGeometrySource(arg: IGeometrySource, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometrySource;
+    public convertOrUpdateGeometryPart(arg: IGeometryPart, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometryPart;
+
+    // when lets getIModelProps know that the extents may have been updated as the result of a pullChanges and should be read directly from the iModel as opposed to the cached extents.
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
@@ -637,6 +683,7 @@ export declare namespace IModelJsNative {
     public isProfilerRunning(): boolean;
     public isReadonly(): boolean;
     public isRedoPossible(): boolean;
+    public isSubClassOf(childClassFullName: string, parentClassFullName: string): boolean;
     public isTxnIdValid(txnId: TxnIdString): boolean;
     public isUndoPossible(): boolean;
     public logTxnError(fatal: boolean): void;
@@ -756,7 +803,11 @@ export declare namespace IModelJsNative {
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
-    public getInstance(args: InstanceArgs): { [key: string]: any };
+    public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
+    public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
+    public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
+    public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
     public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
@@ -768,6 +819,9 @@ export declare namespace IModelJsNative {
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
+    public attachDb(filename: string, alias: string): void;
+    public detachDb(alias: string): void;
+
   }
 
   class ChangedElementsECDb implements IDisposable {

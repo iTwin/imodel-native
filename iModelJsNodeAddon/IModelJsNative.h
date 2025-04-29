@@ -490,7 +490,7 @@ private:
     static void GetRowAsJson(BeJsValue json, BeSQLite::EC::ECSqlStatement &);
     static void RegisterOptionalDomains();
     static void InitializeSolidKernel();
-    static void AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schemaContext);
+    static void AddFallbackSchemaLocaters(IECSchemaLocaterR finalLocater, ECSchemaReadContextPtr schemaContext);
     static void AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext);
 public:
     static void HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
@@ -536,7 +536,15 @@ public:
     static DgnDbStatus QueryDefinitionElementUsage(BeJsValue usageInfo, DgnDbR db, bvector<Utf8String> const& idStringArray);
     static void UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents);
     static void UpdateIModelProps(DgnDbR dgndb, BeJsConst);
-    static Napi::Value GetInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value ReadInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value InsertInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value UpdateInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value DeleteInstance(ECDbR db, NapiInfoCR info);
+    static Napi::Value PatchJsonProperties(NapiInfoCR info);
+    static Napi::Value ResolveInstanceKey(DgnDbR db, NapiInfoCR info);
+    static Napi::Value ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info);
+    static Napi::Value ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info);
+    static void ClearECDbCache(ECDbR db, NapiInfoCR info);
 
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
@@ -553,12 +561,12 @@ public:
     static BentleyStatus GetGeoCoordsFromIModelCoords(BeJsValue, DgnDbR, BeJsConst);
     static BentleyStatus GetIModelCoordsFromGeoCoords(BeJsValue, DgnDbR, BeJsConst);
 
-    static void GetIModelProps(BeJsValue, DgnDbCR dgndb);
+    static void GetIModelProps(BeJsValue, DgnDbCR dgndb, Utf8StringCR when);
     static DgnElementIdSet FindGeometryPartReferences(bvector<Utf8String> const& partIds, bool is2d, DgnDbR db);
 
     static void ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object request, Napi::Function callback);
-    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, ECDbCR, Napi::Object);
-    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, ECDbCR);
+    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, Napi::Object);
+    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env);
     static void GetTileTree(ICancellableP, DgnDbR db, Utf8StringCR id, Napi::Function& callback);
     static void GetTileContent(ICancellableP, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
     static void SetMaxTileCacheSize(uint64_t maxBytes);

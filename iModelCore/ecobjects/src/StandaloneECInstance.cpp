@@ -461,19 +461,15 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StructValueIdentifier MemoryECInstanceBase::GetMaxStructValueIdentifier () const
+StructValueIdentifier MemoryECInstanceBase::GetMaxStructValueIdentifier() const
     {
-    if (!m_structInstances)
+    if (!m_structInstances || m_structInstances->empty())
         return 0;
 
-    size_t numEntries =  m_structInstances->size();
-    StructArrayEntry const* instanceArray = &(*m_structInstances)[0];
-
-    // we cannot simply use the size of the array because structs may have been removed at some point - so we must walk the array and find the highest ID
+    // Walk the array to find the highest ID
     StructValueIdentifier maxId = 0;
-    for (size_t i = 0; i < numEntries; i++)
+    for (const StructArrayEntry& entry : *m_structInstances)
         {
-        StructArrayEntry const& entry = instanceArray[i];
         if (entry.structValueIdentifier > maxId)
             maxId = entry.structValueIdentifier;
         }
@@ -484,23 +480,18 @@ StructValueIdentifier MemoryECInstanceBase::GetMaxStructValueIdentifier () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StructArrayEntry const* MemoryECInstanceBase::GetAddressOfStructArrayEntry (StructValueIdentifier key) const
+StructArrayEntry const* MemoryECInstanceBase::GetAddressOfStructArrayEntry(StructValueIdentifier key) const
     {
-    if (!m_structInstances)
-        return NULL;
+    if (!m_structInstances || m_structInstances->empty())
+        return nullptr;
 
-    StructArrayEntry const* instanceArray = &(*m_structInstances)[0];
-    size_t numEntries = m_structInstances->size();
-
-    for (size_t i = 0; i<numEntries; i++)
+    for (const StructArrayEntry& entry : *m_structInstances)
         {
-        StructArrayEntry const& entry = instanceArray[i];
-        if (entry.structValueIdentifier != key)
-            continue;
-        return &entry;
+        if (entry.structValueIdentifier == key)
+            return &entry;
         }
 
-    return NULL;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

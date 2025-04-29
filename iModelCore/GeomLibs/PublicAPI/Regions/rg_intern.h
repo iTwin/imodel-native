@@ -114,6 +114,7 @@ struct _RG_Header
                                                 search is required to determine
                                                 its contained or containing faces.
                                         */
+    _RG_Header();
     };
 
 struct _RG_Intersection

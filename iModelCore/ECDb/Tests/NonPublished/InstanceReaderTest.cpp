@@ -683,12 +683,13 @@ TEST_F(InstanceReaderFixture, check_option_DO_NOT_TRUNCATE_BLOB) {
                 "y": 9.73592815626386,
                 "z": 9.735928156263856
             },
-            "geometryStream": "encoding=base64;ywCAAjAABgAA+AAAAAEAAAAIDQgBAUAEAAAAMAAAABwAAAAYABQADAUeEQEIBgAHBRgBAQwBAQDwASQJAUALAAAAqAAAAGJnMDAwMWZiEAUXEAoADgAHBUIACgUQCAAHDAUIyAYAfAAEAAYAAAC8t0aTy3gjQNTy0dk2l6Q8BOGMD2d0zbxZPdLR+8bSvLS6W8O77KW8vQ0oBT8IANg8CQgg0LyQPKeSAhKeERAEPLoyKAAk4LwYLURU+yH5vwkIJAlAAQAAAAAAAAA="
+            "geometryStream": "encoding=base64;AQAAAAgAAAABAAAAAAAAAAQAAAAwAAAAHAAAABgAFAAMAAgAAAAAAAAAAAAAAAYABwAAABgAAAAAAAEBAPAAABgAAAAAAAAACwAAAKgAAABiZzAwMDFmYhAAAAAAAAoADgAHAAgAAAAKAAAAAAAABwwAAAAAAAYAfAAEAAYAAAC8t0aTy3gjQNTy0dk2l6Q8BOGMD2d0zbxZPdLR+8bSvLS6W8O77KW8vbdGk8t4I0AAAAAAAADYPAAAAAAAANC8kDynkgISnjwAAAAAAADQPLq3RpPLeCNAAAAAAAAA4LwYLURU+yH5vxgtRFT7IQlAAQAAAAAAAAA="
         })x");
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         BeJsDocument actualDoc;
         actualDoc.Parse(stmt.GetValueText(0));
-        ASSERT_STRCASEEQ(expectedDoc.Stringify(StringifyFormat::Indented).c_str(), actualDoc.Stringify(StringifyFormat::Indented).c_str());
+
+        ASSERT_TRUE(expectedDoc.isExactEqual(actualDoc)) << "Expected:\n" + expectedDoc.Stringify() + "\nBut was:\n" + actualDoc.Stringify();
         stmt.Finalize();
     }
 }
@@ -1106,6 +1107,49 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, ecsql_read_instance_after_cache_clean) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
+        SELECT ECClassId, ECInstanceId, EXTRACT_INST('meta.ecClassDef',ECInstanceId,0x0) FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'
+    )sql"));
+
+    BeJsDocument doc;
+    //! HARD_CODED_IDS
+    doc.Parse(R"json({
+        "ECInstanceId": "0x35",
+        "ECClassId": "0x25",
+        "Schema": {
+            "Id": "0x4",
+            "RelECClassId": "0x26"
+        },
+        "Name": "PropertyHasCategory",
+        "Description": "Relates the property to its PropertyCategory.",
+        "Type": 1,
+        "Modifier": 2,
+        "RelationshipStrength": 0,
+        "RelationshipStrengthDirection": 1
+    })json");
+    auto& reader = m_ecdb.GetInstanceReader();
+    if(stmt.Step() == BE_SQLITE_ROW) {
+        ECInstanceKey instanceKey (stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
+        auto pos = InstanceReader::Position(stmt.GetValueId<ECInstanceId>(1), stmt.GetValueId<ECClassId>(0));
+        ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row, auto _){
+            EXPECT_STRCASEEQ(doc.Stringify(StringifyFormat::Indented).c_str(), row.GetJson().Stringify(StringifyFormat::Indented).c_str());
+        }));
+
+        m_ecdb.ClearECDbCache();
+
+        ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row, auto _){
+            EXPECT_STRCASEEQ(doc.Stringify(StringifyFormat::Indented).c_str(), row.GetJson().Stringify(StringifyFormat::Indented).c_str());
+        }));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, ecsql_read_property) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
 
@@ -1225,8 +1269,8 @@ TEST_F(InstanceReaderFixture, ecsql_read_array_property){
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
-        SELECT 
-            $-> array_i, 
+        SELECT
+            $-> array_i,
             $->array_l,
             $->array_d,
             $->array_b,
@@ -1238,7 +1282,7 @@ TEST_F(InstanceReaderFixture, ecsql_read_array_property){
             $->array_g
         FROM ts.TestClass
     )sql"));
-    
+
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ(stmt.GetValueText(0), "[1,2,3]");
     ASSERT_STREQ(stmt.GetValueText(1), "[10000.0,-20000.0,30000.0]");
@@ -1346,7 +1390,7 @@ TEST_F(InstanceReaderFixture, instance_reader) {
     if(stmt.Step() == BE_SQLITE_ROW) {
         ECInstanceKey instanceKey (stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
         auto pos = InstanceReader::Position(stmt.GetValueId<ECInstanceId>(1), stmt.GetValueId<ECClassId>(0));
-        ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row){
+        ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row, auto _){
             EXPECT_STRCASEEQ(doc.Stringify(StringifyFormat::Indented).c_str(), row.GetJson().Stringify(StringifyFormat::Indented).c_str());
         }));
     }
@@ -1724,6 +1768,81 @@ TEST_F(InstanceReaderFixture, dynamic_meta_data) {
             }
         }
     }
+}
+
+TEST_F(InstanceReaderFixture, ResetDynamicMetadata) {
+    ASSERT_EQ(SUCCESS, SetupECDb("ResetDynamicMetadata.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECEntityClass typeName='A'>
+            </ECEntityClass>
+            <ECEntityClass typeName='B'>
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName='prop' typeName='int' />
+            </ECEntityClass>
+            <ECEntityClass typeName='C'>
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName='prop' typeName='double' />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    auto exec = [&](Utf8CP ecsql) {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+        m_ecdb.SaveChanges();
+    };
+
+    auto assertDefault = [](ECSqlStatement& stmt, int cl, Utf8CP displayLabel, Utf8CP propertyName) {
+        ECSqlColumnInfo const* ci;
+        PrimitiveECPropertyCP pr;
+        Utf8CP className = "DynamicECSqlSelectClause";
+        ci = &stmt.GetColumnInfo(cl);
+        EXPECT_TRUE(ci->IsDynamic());
+        EXPECT_TRUE(ci->GetDataType().IsPrimitive());
+        pr = ci->GetProperty()->GetAsPrimitiveProperty();
+        EXPECT_FALSE(pr->HasId());
+        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, pr->GetType());
+        EXPECT_STRCASEEQ(className                   , pr->GetClass().GetName().c_str());
+        EXPECT_STRCASEEQ(propertyName                , pr->GetName().c_str());
+        EXPECT_STRCASEEQ(""                          , pr->GetDescription().c_str());
+        EXPECT_STRCASEEQ(displayLabel                , pr->GetDisplayLabel().c_str());
+        EXPECT_STRCASEEQ("json"                      , pr->GetExtendedTypeName().c_str());
+    };
+
+    auto assertDynamic = [](ECSqlStatement& stmt, int cl, Utf8CP displayLabel, Utf8CP propertyName, Utf8CP description, Utf8CP className, PrimitiveType t) {
+        ECSqlColumnInfo const* ci;
+        PrimitiveECPropertyCP pr;
+        ci = &stmt.GetColumnInfo(cl);
+        EXPECT_TRUE(ci->IsDynamic());
+        EXPECT_TRUE(ci->GetDataType().IsPrimitive());
+        pr = ci->GetProperty()->GetAsPrimitiveProperty();
+        EXPECT_TRUE(pr->HasId());
+        EXPECT_EQ(t                  , pr->GetType());
+        EXPECT_STRCASEEQ(className   , pr->GetClass().GetName().c_str());
+        EXPECT_STRCASEEQ(propertyName, pr->GetName().c_str());
+        EXPECT_STRCASEEQ(description , pr->GetDescription().c_str());
+        EXPECT_STRCASEEQ(displayLabel, pr->GetDisplayLabel().c_str());
+        EXPECT_STRCASEEQ(""          , pr->GetExtendedTypeName().c_str());
+    };
+
+    exec("insert into ts.B ( ecInstanceId, B.prop ) values ( 10, 100 )");
+    exec("insert into ts.C ( ecInstanceId, C.prop ) values ( 11, 101 )");
+
+    const auto sql = R"x(
+        select
+            $->prop
+        from ts.A
+    )x";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
+    assertDefault(stmt, 0 , "$->prop", "__x0024____x002D____x003E__prop");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    assertDynamic(stmt, 0 , "prop", "prop", "", "B", PrimitiveType::PRIMITIVETYPE_Integer);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    assertDynamic(stmt, 0 , "prop", "prop", "", "C", PrimitiveType::PRIMITIVETYPE_Double);
+    stmt.Reset();
+    assertDefault(stmt, 0 , "$->prop", "__x0024____x002D____x003E__prop");
 }
 
 //---------------------------------------------------------------------------------------
@@ -2206,9 +2325,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
             "2019-01-11T00:00:00.000"
         ],
         "dtUtc_array": [
-            "2017-01-17T00:00:00.000",
-            "2018-01-11T00:00:00.000",
-            "2019-01-10T00:00:00.000"
+            "2017-01-17T00:00:00.000Z",
+            "2018-01-11T00:00:00.000Z",
+            "2019-01-10T00:00:00.000Z"
         ],
         "i_array": [
             3842,
@@ -2354,9 +2473,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
                 "2019-01-11T00:00:00.000"
             ],
             "dtUtc_array": [
-                "2017-01-17T00:00:00.000",
-                "2018-01-11T00:00:00.000",
-                "2019-01-10T00:00:00.000"
+                "2017-01-17T00:00:00.000Z",
+                "2018-01-11T00:00:00.000Z",
+                "2019-01-10T00:00:00.000Z"
             ],
             "geom_array": [
                 {
@@ -2755,7 +2874,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
     if ("check out instance reader with complex data") {
         auto& reader = m_ecdb.GetInstanceReader();
         auto pos = InstanceReader::Position(instKey.GetInstanceId(), instKey.GetClassId());
-        ASSERT_EQ(true, reader.Seek(pos, [&](InstanceReader::IRowContext const& row) {
+        ASSERT_EQ(true, reader.Seek(pos, [&](InstanceReader::IRowContext const& row, auto _) {
             EXPECT_STRCASEEQ(expected.Stringify(StringifyFormat::Indented).c_str(), row.GetJson().Stringify(StringifyFormat::Indented).c_str());
         }));
     }
@@ -2904,7 +3023,7 @@ TEST_F(InstanceReaderFixture, InstanceReaderForceSeek) {
 
     // Test for expected value and load same row and schema into InstanceReader
     auto pos = InstanceReader::Position(key.GetInstanceId(), key.GetClassId());
-    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row) {
+    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row, auto _) {
         EXPECT_STRCASEEQ(expectedPostInsert.c_str(), row.GetJson().Stringify().c_str());
     }));
 
@@ -2922,14 +3041,14 @@ TEST_F(InstanceReaderFixture, InstanceReaderForceSeek) {
     Utf8PrintfString expectedPostUpdate ("{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"%s\",\"StructProp\":{\"DoubleProp\":9.1,\"StringProp\":\"NewValue\"},\"PrimitiveProp\":20.01}", classId.c_str());
 
     // Test for unchanged expected value after update due to same row and schema optimization
-    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row) {
+    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row, auto _) {
         EXPECT_STRCASEEQ(expectedPostInsert.c_str(), row.GetJson().Stringify().c_str());
     }));
 
     // Test for updated expected value with force seek flag set to be toggled on
     InstanceReader::Options opt;
     opt.SetForceSeek(true);
-    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row) {
+    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row, auto _) {
         EXPECT_STRCASEEQ(expectedPostUpdate.c_str(), row.GetJson().Stringify().c_str());
     }, opt));
 }

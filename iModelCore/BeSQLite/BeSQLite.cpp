@@ -1430,7 +1430,7 @@ void Statement::DumpResults()
 
     Reset();
     }
-    
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2785,6 +2785,36 @@ DbResult Db::DetachDb(Utf8CP alias) const
 
     return rc;
     }
+
+/*---------------------------------------------------------------------------------**//**
+*
++---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<AttachFileInfo> Db::GetAttachedDbs() const {
+    if (!IsDbOpen())
+        return {};
+
+    std::vector<AttachFileInfo> result;
+    Statement stmt;
+    stmt.Prepare(*this, "PRAGMA database_list");
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        AttachFileInfo info;
+        info.m_alias = stmt.GetValueText(1);
+        info.m_fileName = stmt.GetValueText(2);
+        if (info.m_alias.EqualsIAscii("main")) {
+            info.m_type = AttachFileType::Main;
+        } else if (info.m_alias.EqualsIAscii("schema_sync_db")){
+            info.m_type = AttachFileType::SchemaSync;
+        } else if (info.m_alias.EqualsIAscii("ecchange")){
+            info.m_type = AttachFileType::ECChangeCache;
+        } else if (info.m_alias.EqualsIAscii("temp")){
+            info.m_type = AttachFileType::Temp;
+        } else {
+            info.m_type = AttachFileType::Unknown;
+        }
+        result.push_back(info);
+    }
+    return result;
+}
 
 /*---------------------------------------------------------------------------------**//**
 *
@@ -4390,15 +4420,37 @@ ZipErrors SnappyFromBlob::ReadToChunkedArray(ChunkedArray& array, uint32_t bufSi
 SnappyFromMemory::SnappyFromMemory(void*uncompressedBuffer, uint32_t uncompressedBufferSize)
     {
     BeAssert(SNAPPY_UNCOMPRESSED_BUFFER_SIZE == uncompressedBufferSize);
+    BeAssert(uncompressedBuffer != nullptr);
+    BeAssert(uncompressedBufferSize > 0);
 
+    m_ownsUncompressedBuffer = false;
     m_uncompressed = (Byte*)uncompressedBuffer;
     m_uncompressAvail = 0;
     m_uncompressSize = uncompressedBufferSize;
-
     m_blobData = nullptr;
     m_blobOffset = 0;
     m_blobBytesLeft = 0;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SnappyFromMemory::SnappyFromMemory() {
+    m_ownsUncompressedBuffer = true;
+    m_uncompressed = (Byte*)std::malloc(SNAPPY_UNCOMPRESSED_BUFFER_SIZE);
+    m_uncompressAvail = 0;
+    m_uncompressSize = SNAPPY_UNCOMPRESSED_BUFFER_SIZE;
+    m_blobData = nullptr;
+    m_blobOffset = 0;
+    m_blobBytesLeft = 0;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+SnappyFromMemory::~SnappyFromMemory() {
+    if (m_ownsUncompressedBuffer)
+        std::free(m_uncompressed);
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -4602,6 +4654,16 @@ DbResult SnappyToBlob::SaveToRow(DbR db, Utf8CP tableName, Utf8CP column, int64_
 
     return SaveToRow(blobIO);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SnappyToBlob::SaveTo(ByteStream& buffer) {
+    Finish();
+    for (uint32_t i = 0; i < m_currChunk; ++i) {
+        buffer.Append((uint8_t*)m_chunks[i]->m_data, m_chunks[i]->GetChunkSize());
+    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

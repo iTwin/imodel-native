@@ -1459,12 +1459,15 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
 
     FlatBufferBuilder fbb;
 
-    auto entityData = fbb.CreateVector(buffer, bufferSize);
-    auto faceSymb = 0 != fbSymbVec.size() ? fbb.CreateVectorOfStructs(&fbSymbVec.front(), fbSymbVec.size()) : 0;
+    uint8_t* entityBuf = nullptr;
+    auto entityData = fbb.CreateUninitializedVector(bufferSize, &entityBuf);
+    BeAssert(nullptr != entityBuf && "Unable to write b-rep data to FB!");
+    memcpy(entityBuf, buffer, bufferSize);
+    auto faceSymb = (0 != fbSymbVec.size() ? fbb.CreateVectorOfStructs(fbSymbVec.data(), fbSymbVec.size()) : 0);
 
     FB::BRepDataBuilder builder(fbb);
     Transform entityTransform = entity.GetEntityTransform();
-
+    // TODO Don't write identity transform?
     builder.add_entityTransform((FB::Transform*) &entityTransform);
     builder.add_brepType((FB::BRepType) entity.GetEntityType()); // Allow possibility of checking type w/o expensive restore of brep...
     builder.add_entityData(entityData);
@@ -1632,15 +1635,15 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
 
         if (0 != pattern->GetDwgHatchDef().size())
             {
-            for (auto defLine : pattern->GetDwgHatchDef())
+            for (const auto& defLine : pattern->GetDwgHatchDef())
                 {
-                FB::DwgHatchDefLineBuilder dashBuilder(fbb);
-
                 auto dashes = fbb.CreateVector(defLine.m_dashes, defLine.m_nDashes);
 
+                FB::DwgHatchDefLineBuilder dashBuilder(fbb);
+
                 dashBuilder.add_angle(defLine.m_angle);
-                dashBuilder.add_through((FB::DPoint2d*) &defLine.m_through);
-                dashBuilder.add_offset((FB::DPoint2d*) &defLine.m_offset);
+                dashBuilder.add_through((FB::DPoint2d const*) &defLine.m_through);
+                dashBuilder.add_offset((FB::DPoint2d const*) &defLine.m_offset);
                 dashBuilder.add_dashes(dashes);
 
                 defLineOffsets.push_back(dashBuilder.Finish());
@@ -2030,14 +2033,15 @@ IBRepEntityPtr GeometryStreamIO::Reader::ReadBRepEntity(uint8_t const* data)
     if (SUCCESS != T_HOST.GetBRepGeometryAdmin()._RestoreEntityFromMemory(entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), *((TransformCP) ppfb->entityTransform())))
         return nullptr;
 
-    if (!ppfb->has_symbology())
+    auto fbSymbology = ppfb->symbology();
+    if (nullptr == fbSymbology)
         return entity;
 
     T_FaceAttachmentsVec faceAttachmentsVec;
 
-    for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
+    for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
         {
-        FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
+        FB::FaceSymbology const* fbSymb = fbSymbology->Get(iSymb);
         FaceAttachment attachment;
 
         if (fbSymb->useColor())
@@ -2049,7 +2053,8 @@ IBRepEntityPtr GeometryStreamIO::Reader::ReadBRepEntity(uint8_t const* data)
         faceAttachmentsVec.push_back(attachment);
         }
 
-    if (!ppfb->has_symbologyIndex())
+    auto fbSymbologyIndex = ppfb->symbologyIndex();
+    if (nullptr == fbSymbologyIndex)
         {
         entity->SetFaceMaterialAttachments(faceAttachmentsVec);
 
@@ -2059,9 +2064,9 @@ IBRepEntityPtr GeometryStreamIO::Reader::ReadBRepEntity(uint8_t const* data)
     // Support for older BRep that didn't have face attachment index attrib and add the attributes now...
     T_FaceIndexToAttachmentIndexVec faceIndexAttVec;
 
-    for (size_t iSymbIndex=0; iSymbIndex < ppfb->symbologyIndex()->Length(); iSymbIndex++)
+    for (flatbuffers::uoffset_t iSymbIndex = 0; iSymbIndex < fbSymbologyIndex->Length(); iSymbIndex++)
         {
-        FB::FaceSymbologyIndex const* fbSymbIndex = ((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->Data())+iSymbIndex;
+        FB::FaceSymbologyIndex const* fbSymbIndex = fbSymbologyIndex->Get(iSymbIndex);
         FaceIndexToAttachmentIndex faceAttIndex;
 
         faceAttIndex.m_faceIndex = fbSymbIndex->faceIndex();
@@ -2325,13 +2330,13 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     {
                     DwgHatchDefLine line;
 
-                    line.m_angle   = fbDefLine.angle();
-                    line.m_through = *((DPoint2dCP) fbDefLine.through());
-                    line.m_offset  = *((DPoint2dCP) fbDefLine.offset());
-                    line.m_nDashes = static_cast<short>(fbDefLine.dashes()->Length());
+                    line.m_angle   = fbDefLine->angle();
+                    line.m_through = *((DPoint2dCP) fbDefLine->through());
+                    line.m_offset  = *((DPoint2dCP) fbDefLine->offset());
+                    line.m_nDashes = static_cast<short>(fbDefLine->dashes()->Length());
 
                     if (0 != line.m_nDashes)
-                        memcpy(line.m_dashes, fbDefLine.dashes()->Data(), line.m_nDashes * sizeof(double));
+                        memcpy(line.m_dashes, fbDefLine->dashes()->Data(), line.m_nDashes * sizeof(double));
 
                     defLines.push_back(line);
                     }
@@ -2763,7 +2768,8 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
 
-                if (!ppfb->has_symbology())
+                auto fbSymbology = ppfb->symbology();
+                if (nullptr == fbSymbology)
                     {
                     writer.Append(egOp);
                     break;
@@ -2771,9 +2777,9 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
                 bvector<FB::FaceSymbology> remappedFaceSymbVec;
 
-                for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
+                for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
                     {
-                    FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
+                    FB::FaceSymbology const* fbSymb = fbSymbology->Get(iSymb);
 
                     if (fbSymb->useMaterial())
                         {
@@ -2794,8 +2800,11 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                     }
 
                 FlatBufferBuilder remappedfbb;
-                auto remappedEntityData = remappedfbb.CreateVector(ppfb->entityData()->Data(), ppfb->entityData()->Length());
-                auto remappedFaceSymb = remappedfbb.CreateVectorOfStructs(&remappedFaceSymbVec.front(), remappedFaceSymbVec.size());
+                uint8_t* remappedEntityBuf = nullptr;
+                auto remappedEntityData = remappedfbb.CreateUninitializedVector(ppfb->entityData()->Length(), &remappedEntityBuf);
+                BeAssert(nullptr != remappedEntityBuf && "Unable to deep-copy b-rep data!");
+                memcpy(remappedEntityBuf, ppfb->entityData()->Data(), ppfb->entityData()->Length());
+                auto remappedFaceSymb = remappedfbb.CreateVectorOfStructs(remappedFaceSymbVec.data(), remappedFaceSymbVec.size());
                 auto remappedFaceSymbIndex = ppfb->has_symbologyIndex() ? remappedfbb.CreateVectorOfStructs((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->Data(), ppfb->symbologyIndex()->Length()) : 0;
                 auto mloc = FB::CreateBRepData(remappedfbb, ppfb->entityTransform(), ppfb->brepType(), remappedEntityData, remappedFaceSymb, remappedFaceSymbIndex);
                 remappedfbb.Finish(mloc);
@@ -2920,11 +2929,12 @@ void DefinitionElementUsageInfo::ScanGeometryStream(GeometryStreamCR geometryStr
                 if (!m_renderMaterialIds.empty())
                     {
                     auto brepFB = flatbuffers::GetRoot<FB::BRepData>(entry.m_data);
-                    if (brepFB->has_symbology())
+                    auto fbSymbology = brepFB->symbology();
+                    if (nullptr != fbSymbology)
                         {
-                        for (size_t iSymb=0; iSymb < brepFB->symbology()->Length(); iSymb++)
+                        for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
                             {
-                            FB::FaceSymbology const* faceSymbologyFB = ((FB::FaceSymbology const*) brepFB->symbology()->Data())+iSymb;
+                            FB::FaceSymbology const* faceSymbologyFB = fbSymbology->Get(iSymb);
 
                             if (faceSymbologyFB->useMaterial())
                                 {
@@ -3230,11 +3240,11 @@ DgnDbStatus GeometryStreamIO::ProcessGeometryStream(DgnDbR db, Napi::Object cons
     return ProcessGeometryStream(*element, requestProps, env);
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj)
-    {
+DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj) {
     auto& db = element.GetDgnDb();
 
     GeometrySourceP source = element.ToGeometrySourceP();
@@ -3253,9 +3263,52 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
     if (0 == entryArrayObj.Length() && nullptr != source)
         return (SUCCESS == builder->ClearGeometryStream(*source) ? DgnDbStatus::Success : DgnDbStatus::NoGeometry);
 
+    return BuildGeometryStream(*builder, bParams, entryArrayObj, source, part);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometryStreamIO::BuildFromGeometrySource(GeometrySource& source, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj) {
+    GeometryBuilderPtr builder =  GeometryBuilder::Create(source);
+    if (!builder.IsValid())
+        return DgnDbStatus::BadElement;
+
+    if (bParams.viewIndependent)
+        builder->SetHeaderFlags(GeometryStreamIO::Header::Flags::ViewIndependent);
+
+    // A zero length array means clear the geometry stream and invalidate element aligned box...
+    if (0 == entryArrayObj.Length())
+        return (SUCCESS == builder->ClearGeometryStream(source) ? DgnDbStatus::Success : DgnDbStatus::NoGeometry);
+
+    return BuildGeometryStream(*builder, bParams, entryArrayObj, &source, nullptr);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometryStreamIO::BuildFromGeometryPart(GeometryPartSource& part, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj) {
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(part.GetSourceDgnDb(), !bParams.is2dPart);
+    if (!builder.IsValid())
+        return DgnDbStatus::BadElement;
+
+    if (bParams.viewIndependent)
+        builder->SetHeaderFlags(GeometryStreamIO::Header::Flags::ViewIndependent);
+
+
+    return BuildGeometryStream(*builder, bParams, entryArrayObj, nullptr, &part);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometryStreamIO::BuildGeometryStream(GeometryBuilder& builder, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj, GeometrySourceP source, GeometryPartSourceP part)
+    {
+
+    auto& db = builder.GetDgnDb();
     GeometryBuilder::CoordSystem coordSys = bParams.isWorld ? GeometryBuilder::CoordSystem::World : GeometryBuilder::CoordSystem::Local;
 
-    Render::GeometryParams geomParams = builder->GetGeometryParams();
+    Render::GeometryParams geomParams = builder.GetGeometryParams();
     Reader reader(db);
 
     for (uint32_t index = 0, nEntries = entryArrayObj.Length(); index < nEntries; ++index)
@@ -3276,7 +3329,7 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
                 if (!reader.Get(egOp, geomParams))
                     return DgnDbStatus::BadArg;
 
-                if (!builder->Append(geomParams, coordSys))
+                if (!builder.Append(geomParams, coordSys))
                     return DgnDbStatus::BadArg;
                 break;
                 }
@@ -3303,7 +3356,7 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
                     }
 
                 if (hasMultipleGeom)
-                    builder->SetAppendAsSubGraphics(); // This will do nothing if a GeometryPart is being created, or a GeometryPart instance is being inserted...
+                    builder.SetAppendAsSubGraphics(); // This will do nothing if a GeometryPart is being created, or a GeometryPart instance is being inserted...
                 break;
                 }
 
@@ -3315,7 +3368,7 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
                 if (!reader.Get(egOp, geomPartId, geomToSource))
                     return DgnDbStatus::BadArg;
 
-                if (!builder->Append(geomPartId, geomToSource))
+                if (!builder.Append(geomPartId, geomToSource))
                     return DgnDbStatus::BadArg;
                 break;
                 }
@@ -3329,7 +3382,7 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
                 if (!reader.Get(egOp, geom, true))
                     return DgnDbStatus::BadArg;
 
-                if (!builder->Append(*geom, coordSys))
+                if (!builder.Append(*geom, coordSys))
                     return DgnDbStatus::BadArg;
                 break;
                 }
@@ -3338,12 +3391,12 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
 
     if (nullptr != source)
         {
-        if (SUCCESS != builder->Finish(*source))
+        if (SUCCESS != builder.Finish(*source))
             return DgnDbStatus::NoGeometry;
         }
     else
         {
-        if (SUCCESS != builder->Finish(*part))
+        if (SUCCESS != builder.Finish(*part))
             return DgnDbStatus::NoGeometry;
         }
 
@@ -5123,13 +5176,13 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
                         {
                         DwgHatchDefLine line;
 
-                        line.m_angle   = fbDefLine.angle();
-                        line.m_through = *((DPoint2dCP) fbDefLine.through());
-                        line.m_offset  = *((DPoint2dCP) fbDefLine.offset());
-                        line.m_nDashes = static_cast<short>(fbDefLine.dashes()->Length());
+                        line.m_angle   = fbDefLine->angle();
+                        line.m_through = *((DPoint2dCP) fbDefLine->through());
+                        line.m_offset  = *((DPoint2dCP) fbDefLine->offset());
+                        line.m_nDashes = static_cast<short>(fbDefLine->dashes()->Length());
 
                         if (0 != line.m_nDashes)
-                            memcpy(line.m_dashes, fbDefLine.dashes()->Data(), line.m_nDashes * sizeof(double));
+                            memcpy(line.m_dashes, fbDefLine->dashes()->Data(), line.m_nDashes * sizeof(double));
 
                         defLines.push_back(line);
                         }
@@ -5269,15 +5322,16 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
                 if (!entityTransform.IsIdentity())
                     BeJsGeomUtils::TransformToJson(value["transform"], entityTransform);
 
-                if (ppfb->has_symbology())
+                auto fbSymbology = ppfb->symbology();
+                if (nullptr != fbSymbology)
                     {
                     // NOTE: Ignoring older breps w/o face attachment index attrib, not worth the hassle...don't want to add it here...
                     if (!ppfb->has_symbologyIndex())
                         {
                         auto array = value["faceSymbology"];
-                        for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
+                        for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
                             {
-                            FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
+                            FB::FaceSymbology const* fbSymb = fbSymbology->Get(iSymb);
                             auto faceValue = array.appendValue();
 
                             if (fbSymb->useColor())
@@ -5427,6 +5481,46 @@ BentleyStatus GeometryBuilder::GetGeometryStream(GeometryStreamR geom)
         return ERROR;
 
     geom.SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus GeometryBuilder::Finish(GeometryPartSource& part)
+    {
+    if (!m_isPartCreate)
+        return ERROR; // Invalid builder for creating part geometry...
+
+    if (0 == m_writer.m_buffer.size())
+        return ERROR;
+
+    part.GetGeometryStreamR().SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+
+    ElementAlignedBox3d localRange = (m_is3d ? m_placement3d.GetElementBox() : ElementAlignedBox3d(m_placement2d.GetElementBox()));
+
+    // NOTE: GeometryBuilder::CreateGeometryPart doesn't supply range...need to compute it...
+    if (!localRange.IsValid())
+        {
+        GeometryCollection collection(part.GetGeometryStreamR(), m_dgnDb);
+
+        for (auto iter : collection)
+            {
+            GeometricPrimitivePtr geom = iter.GetGeometryPtr();
+            DRange3d range;
+
+            if (geom.IsValid() && geom->GetRange(range))
+                {
+                localRange.Extend(range);
+                }
+            }
+
+        if (!localRange.IsValid())
+            return ERROR;
+        }
+
+    part.SetBoundingBox(localRange);
 
     return SUCCESS;
     }
@@ -7030,6 +7124,24 @@ bool GeometryBuilder::FromJson(BeJsConst input)
         }
 
     return true;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::UpdateFromJson(GeometryPartSourceR part, BeJsConst input, bool is3d)
+    {
+    if (!input.isArray())
+        return false;
+
+    GeometryBuilderPtr builder = CreateGeometryPart(part.GetSourceDgnDb(), is3d); // NEEDSWORK...supply 2d/3d in opts?
+
+    if (!builder.IsValid())
+        return false;
+
+    if (!builder->FromJson(input))
+        return false;
+
+    return (SUCCESS == builder->Finish(part));
     }
 
 /*---------------------------------------------------------------------------------**//**

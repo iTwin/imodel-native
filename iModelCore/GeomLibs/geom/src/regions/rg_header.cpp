@@ -9,9 +9,7 @@
 #include <stdio.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
-
 static int s_globalNoisy = 0;
-
 
 /*---------------------------------------------------------------------------------**//**
 *
@@ -33,6 +31,29 @@ static int s_globalNoisy = 0;
 +---------------+---------------+---------------+---------------+---------------+------*/
 
 /*---------------------------------------------------------------------------------**//**
+* Construct an invalid instance with all members zeroed.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+RG_Header::_RG_Header(): funcs(), markSet(), graphRange()
+    {
+    pGraph = nullptr;
+    aborted = false;
+    pOutputLinestringFunc = nullptr;
+    pDebugContext = nullptr;
+    pVertexArray = nullptr;
+    vertexLabelIndex = 0;
+    edgeLabelIndex = 0;
+    parentLabelIndex = 0;
+    relTol = 0.0;
+    tolerance = 0.0;
+    minimumTolerance = 0.0;
+    pEdgeRangeTree = nullptr;
+    pFaceRangeTree = nullptr;
+    incrementalEdgeRanges = false;
+    pFaceHoleNodeIdArray = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Allocate a new region header.  This should be returned to jmdlRG_free
 * @return pointer to region header.
 * @bsimethod
@@ -42,8 +63,8 @@ Public RG_Header    *jmdlRG_new
 void
 )
     {
-    RG_Header *pRG = (RG_Header *)BSIBaseGeom::Malloc (sizeof (RG_Header));
-    memset (pRG, 0, sizeof (RG_Header));
+    RG_Header* pRG = new RG_Header();
+
     pRG->pGraph = jmdlMTGGraph_newGraph ();
     pRG->vertexLabelIndex   = jmdlMTGGraph_defineLabel
                             (
@@ -99,7 +120,7 @@ RG_Header       *pRG
         if (pRG->pFaceHoleNodeIdArray)
             jmdlEmbeddedIntArray_free (pRG->pFaceHoleNodeIdArray);
 
-        BSIBaseGeom::Free (pRG);
+        delete pRG;
         }
     }
 

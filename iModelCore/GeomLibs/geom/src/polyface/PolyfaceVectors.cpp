@@ -70,7 +70,7 @@ PolyfaceVectors::PolyfaceVectors() :
     m_faceIndex         (1, 1, 0, 0, 0, false),
     m_faceData (),
     m_numPerFace (0),
-    m_twoSided (false),
+    m_twoSided (true), // default is true!
     m_meshStyle (MESH_ELM_STYLE_INDEXED_FACE_LOOPS),
     m_expectedClosure (0),
     m_numericTags (0,0)

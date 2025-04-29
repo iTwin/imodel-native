@@ -20,6 +20,22 @@ void bspsurf_setTimerControl (int select, int count)
     s_timerCount = count;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BSurfPatch::BSurfPatch()
+{
+xyzw.clear();
+uKnots.clear();
+vKnots.clear();
+uOrder = vOrder = uIndex = vIndex = 0;
+uMin = uMax = vMin = vMax = 0.0;
+isNullU = isNullV = false;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DPoint2d BSurfPatch::PatchUVToKnotUV (DPoint2dCR patchUV) const
     {
     return DPoint2d::From (
@@ -28,7 +44,9 @@ DPoint2d BSurfPatch::PatchUVToKnotUV (DPoint2dCR patchUV) const
             );
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void GetBasePole (size_t select, bool closed, double *knots, size_t order, size_t numPoles, size_t &basePole, size_t &maxBasePole)
     {
     basePole = select;
@@ -713,8 +731,6 @@ bool BSurfPatch::Evaluate (DPoint2dCR uv, DPoint3dR xyz) const
     xyz.Zero ();
     return false;
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
