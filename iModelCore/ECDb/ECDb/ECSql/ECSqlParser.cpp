@@ -2814,11 +2814,10 @@ BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<RowValueConstruc
         std::vector<std::unique_ptr<ValueExp>> valueExpList; 
         if (SUCCESS != ParseRowValueConstructorCommalist(valueExpList, *listNode))
             return ERROR;
-        
-        // @todo - naron: double check on IssueId
+
         if (valueExpList.size() == 0)
             {
-            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0493, "Empty list within row value constructor list");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739, "Empty list within row value constructor list");
             return ERROR;
             }
 
@@ -2826,7 +2825,7 @@ BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<RowValueConstruc
         if (i > 0 && valueExpList.size() != rowValuesExpList[0]->GetChildrenCount())
             {
             // BeAssert(false && "All rows in VALUES clause must have the same number of elements");
-            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0492, "All rows in VALUES clause must have the same number of elements");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740, "All rows in VALUES clause must have the same number of elements");
             return ERROR;
             }
         
@@ -2835,7 +2834,7 @@ BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<RowValueConstruc
     
     if (rowValuesExpList.size() == 0)
         {
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0493, "Empty row value constructor list");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0741, "Empty row value constructor list");
         return ERROR;
         }
     
@@ -3474,7 +3473,7 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                 case OSQLParseNode::value_creation_fct:
                     return ParseValueCreationFuncExp(valueExp, parseNode);
                 default:
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0737, // @todo - naron: what issue id should be here
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0493,
                         "ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
                     return ERROR;
 
