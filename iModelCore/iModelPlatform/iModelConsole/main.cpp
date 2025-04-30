@@ -27,7 +27,7 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 // Function declaration
-void fuzz(char *bimFilePath, char *sqlFilePath);
+extern "C" __declspec(dllexport) void fuzz(char *bimFilePath, char *sqlFilePath);
 
 void SafeLog(const std::string& message) {
     std::mutex& consoleMutex = IModelConsole::GetConsoleMutex();
