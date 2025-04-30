@@ -1617,7 +1617,12 @@ BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEn
 
         ECObjectsStatus s = schemaEntry->m_cachedSchema->AddReferencedSchema(*referenceSchemaKey->m_cachedSchema);
         if (s != ECObjectsStatus::Success)
+            {
+            // Failed to add reference — remove both from cache to avoid returning incomplete schemas
+            m_cache.RemoveSchema(schemaEntry->GetId());
+            m_cache.RemoveSchema(referenceSchemaKey->GetId());
             return ERROR;
+            }
         }
 
     return SUCCESS;
@@ -2857,6 +2862,22 @@ bool SchemaReader::ReaderCache::Insert(std::unique_ptr<SchemaDbEntry> entry) con
     BeAssert(id.IsValid());
     auto itor = m_schemaCache.insert(std::make_pair(id, std::move(entry)));
     return itor.second;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool SchemaReader::ReaderCache::RemoveSchema(ECN::ECSchemaId id) const
+    {
+    BeAssert(id.IsValid());
+    auto itor = m_schemaCache.find(id);
+    if (itor != m_schemaCache.end())
+        {
+        m_schemaCache.erase(itor);
+        return true;
+        }
+
+    return false;
     }
 
 //-----------------------------------------------------------------------------------------

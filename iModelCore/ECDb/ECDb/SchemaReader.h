@@ -175,6 +175,7 @@ struct SchemaReader final
                 void Insert(ECN::PhenomenonCR ph) const { m_phenomenonCache.insert(std::make_pair(ph.GetId(), &ph)); }
                 void Insert(ECN::ECUnitCR unit) const { m_unitCache.insert(std::make_pair(unit.GetId(), &unit)); }
                 void Insert(ECN::ECFormatCR format) const { m_formatCache.insert(std::make_pair(format.GetId(), &format)); }
+                bool RemoveSchema(ECN::ECSchemaId id) const;
 
                 LegacyUnitsHelper const& GetLegacyUnitsHelper() const { return m_legacyUnitsHelper; }
             };
