@@ -2489,7 +2489,9 @@ TEST_F(VersionCompareTestFixture, DeleteIntermediaryNestedPropertyPaths)
 
     // Changeset 1 - Delete type that has the link to the aspect
     TestPhysicalTypePtr typeForEdit = m_db->Elements().GetForEdit<TestPhysicalType>(testType->GetElementId());
-    m_db->Elements().Delete(*typeForEdit);
+    m_db->BeginPurgeOperation();
+    ASSERT_EQ(DgnDbStatus::Success, m_db->Elements().Delete(*typeForEdit));
+    m_db->EndPurgeOperation();
     bvector<Utf8String> props;
     // Aspect property that will no longer be shown in the element
     props.push_back("TestUniqueAspectProperty");
