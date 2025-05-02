@@ -158,14 +158,6 @@ DgnDbStatus ViewDefinition::_OnInsert()
     return T_Super::_OnInsert();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_OnDelete() const
-    {
-    // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -729,15 +721,6 @@ DgnDbStatus CategorySelector::_OnUpdate(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CategorySelector::_OnDelete() const
-    {
-    // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus CategorySelector::WriteCategories()
     {
     if (!GetElementId().IsValid())
@@ -851,15 +834,6 @@ DgnDbStatus ModelSelector::_OnUpdate(DgnElementCR el)
         }
 
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::_OnDelete() const
-    {
-    // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1533,15 +1507,6 @@ void DisplayStyle::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     m_viewFlags = other.m_viewFlags;
     m_subCategories = other.m_subCategories;
     m_subCategoryOverrides = other.m_subCategoryOverrides;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DisplayStyle::_OnDelete() const
-    {
-    // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
     }
 
 /*---------------------------------------------------------------------------------**//**

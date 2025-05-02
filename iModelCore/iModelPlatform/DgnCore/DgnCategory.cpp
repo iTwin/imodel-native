@@ -82,14 +82,6 @@ DgnCategoryId DgnCategory::QueryCategoryId(DgnDbR db, DgnCodeCR code)
     return DgnCategoryId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnCategory::_OnDelete() const
-    {
-    // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -399,14 +391,6 @@ DgnDbStatus DgnSubCategory::_OnInsert()
     return cat.IsValid() ? T_Super::_OnInsert() : DgnDbStatus::InvalidParent;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnSubCategory::_OnDelete() const
-    {
-    // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

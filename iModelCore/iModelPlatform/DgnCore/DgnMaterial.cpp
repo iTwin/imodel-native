@@ -24,7 +24,7 @@ void RenderMaterial::_OnLoadedJsonProperties()
             BeJsValue map = materialAssets["renderMaterial"]["Map"];
             map.ForEachProperty([&](Utf8CP memberName, BeJsConst memberJson)
                 {
-                if (memberJson.isNumericMember("TextureId")) 
+                if (memberJson.isNumericMember("TextureId"))
                     {
                     // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
                     auto textureIdAsStringForLogging = memberJson["TextureId"].Stringify();
@@ -42,19 +42,11 @@ void RenderMaterial::_OnLoadedJsonProperties()
                 });
             }
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RenderMaterial::_OnDelete() const
-    {
-    // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RenderMaterial::_SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) 
+DgnDbStatus RenderMaterial::_SetParentId(DgnElementId parentId, DgnClassId parentRelClassId)
     {
     if (parentId.IsValid())
         {
