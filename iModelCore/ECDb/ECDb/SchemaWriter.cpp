@@ -2742,7 +2742,7 @@ BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContain
 BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, ECContainerId containerId, CustomAttributeChanges& caChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
     {
     if (caChanges.IsEmpty() || caChanges.GetStatus() == ECChange::Status::Done)
-    return SUCCESS;
+        return SUCCESS;
 
     int customAttributeIndex = 0;
     CachedStatementPtr stmt = ctx.GetCachedStatement("SELECT MAX(Ordinal) from main. " TABLE_CustomAttribute " WHERE ContainerId = ? AND ContainerType = ?");
@@ -2751,9 +2751,6 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
 
     stmt->BindId(1, containerId);
     stmt->BindInt(2, Enum::ToInt(containerType));
-
-    if (caChanges.IsEmpty() || caChanges.GetStatus() == ECChange::Status::Done)
-        return SUCCESS;
 
     if (stmt->Step() != BE_SQLITE_ROW)
         {
