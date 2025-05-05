@@ -397,6 +397,9 @@ void ConnectionCache::Interrupt(bool reset_conn, bool detach_dbs) {
         std::this_thread::yield();
     }
     if (reset_conn) {
+        if(m_syncConn)
+            m_syncConn->Reset(detach_dbs);
+
         for (auto& it : m_conns) {
             it->Reset(detach_dbs);
         }
@@ -1123,8 +1126,8 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     auto& options = adaptor.GetOptions();
     options.SetAbbreviateBlobs(abbreviateBlobs);
     options.SetConvertClassIdsToClassNames(classIdToClassNames);
-    options.UseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
-    options.DoNotConvertClassIdsToClassNamesWhenAliased(doNotConvertClassIdsToClassNamesWhenAliased);
+    options.SetUseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
+    options.SetDoNotConvertClassIdsToClassNamesWhenAliased(doNotConvertClassIdsToClassNamesWhenAliased);
     ECSqlRowProperty::List props;
     if (includeMetaData) {
         adaptor.GetMetaData(props ,stmt);
@@ -1785,8 +1788,8 @@ void ECSqlRequest::FromJs(BeJsConst const& val) {
     if (val.isNumericMember(JValueFormat)) {
         m_valueFmt = (ECSqlValueFormat)val[JValueFormat].asInt();
     }
-    if (val.isBoolMember(ECSqlRowAdaptor::Options::JDoNotConvertClassIdsToClassNamesWhenAliased)) {
-        m_doNotConvertClassIdsToClassNamesWhenAliased = val[ECSqlRowAdaptor::Options::JDoNotConvertClassIdsToClassNamesWhenAliased].asBool();
+    if (val.isBoolMember(JsReadOptions::JDoNotConvertClassIdsToClassNamesWhenAliased)) {
+        m_doNotConvertClassIdsToClassNamesWhenAliased = val[JsReadOptions::JDoNotConvertClassIdsToClassNamesWhenAliased].asBool();
     }
 }
 //---------------------------------------------------------------------------------------

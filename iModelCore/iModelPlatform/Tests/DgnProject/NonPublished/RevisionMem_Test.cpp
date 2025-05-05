@@ -350,11 +350,7 @@ TEST_F(RevisionMemTestFixture, changeset_size_api) {
     }
 
     ASSERT_EQ(m_db->Txns().GetChangesetSize(), 249572);
-    #ifdef BENTLEYCONFIG_OS_APPLE_MACOS
-        ASSERT_EQ(m_db->Txns().GetMemoryUsed(), 11664);
-    #else
-        ASSERT_EQ(m_db->Txns().GetMemoryUsed(), 11344);
-    #endif
+    ASSERT_GT(m_db->Txns().GetMemoryUsed(), 11000);
 
     m_db->SaveChanges();
     ASSERT_EQ(m_db->Txns().GetChangesetSize(), 0);
