@@ -1570,7 +1570,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSearchConditionExp(NativeSqlBuilder& native
 ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, SubqueryExp const& exp)
     {
     ctx.GetSqlBuilder().AppendParenLeft();
-    SelectStatementExp const* selectSubquery =  exp.GetQuery<SelectStatementExp>();
+    SelectStatementExp const* selectSubquery = exp.GetQuery<SelectStatementExp>();
     if(selectSubquery != nullptr)
         {
         ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
@@ -1579,7 +1579,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, Subqu
         ctx.GetSqlBuilder().AppendParenRight();
         return stat;
         }
-    CommonTableExp const* cteSubquery =  exp.GetQuery<CommonTableExp>();
+    CommonTableExp const* cteSubquery = exp.GetQuery<CommonTableExp>();
     if(cteSubquery != nullptr)
     {
         ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
@@ -1588,7 +1588,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, Subqu
         ctx.GetSqlBuilder().AppendParenRight();
         return stat;
     }
-    RowValueConstructorListExp const* rowValuesSubquery =  exp.GetQuery<RowValueConstructorListExp>();
+    RowValueConstructorListExp const* rowValuesSubquery = exp.GetQuery<RowValueConstructorListExp>();
     if(rowValuesSubquery != nullptr)
         {
         NativeSqlBuilder::List nativeSqlSnippets;
@@ -1600,7 +1600,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, Subqu
         return stat;
         }
     
-    BeAssert(false && "ECSqlExpPreparer::PrepareSubqueryExp> SubqueryExp must have a child of type either SelectStatementExp or CommonTableExp.");
+    BeAssert(false && "ECSqlExpPreparer::PrepareSubqueryExp> SubqueryExp must have a child of type either SelectStatementExp, CommonTableExp or RowValueConstructorListExp.");
     return ECSqlStatus::Error;
     }
 

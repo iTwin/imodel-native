@@ -169,11 +169,11 @@ TEST_F(ECSqlStatementTestFixture, RowValConstructor) {
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (VALUES(1,2), (3,4))"));
-    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K0],[K1] FROM (SELECT 1 [K0],2 [K1] UNION ALL SELECT 3,4)");
+    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT column1,column2 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4)))");
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (VALUES(1,2), (3,4), (5,1))"));
-    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K0],[K1] FROM (SELECT 1 [K0],2 [K1] UNION ALL SELECT 3,4 UNION ALL SELECT 5,1)");
+    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT column1,column2 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4),(5,1)))");
     stmt.Finalize();
 }
 /*---------------------------------------------------------------------------------**//**
@@ -13016,6 +13016,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement simpleSelect;
     std::string query = "select column1 from (values(1), (2), (3))";
     ASSERT_EQ(ECSqlStatus::Success, simpleSelect.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(simpleSelect.GetNativeSql(), "SELECT column1 FROM (SELECT column1 FROM (VALUES (1),(2),(3)))");
     
     EXPECT_EQ(BE_SQLITE_ROW, simpleSelect.Step());
     ASSERT_EQ(1, simpleSelect.GetColumnCount());
@@ -13034,6 +13035,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement selectOneColumn;
     std::string query = "SELECT column1 FROM (VALUES(1,2), (3,4))";
     ASSERT_EQ(ECSqlStatus::Success, selectOneColumn.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(selectOneColumn.GetNativeSql(), "SELECT column1 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4)))");
 
     EXPECT_EQ(BE_SQLITE_ROW, selectOneColumn.Step());
     ASSERT_EQ(1, selectOneColumn.GetColumnCount());
@@ -13050,6 +13052,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement multipleRows;
     std::string query = "SELECT column1, column2 FROM (VALUES(1,2), (3,4))";
     ASSERT_EQ(ECSqlStatus::Success, multipleRows.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(multipleRows.GetNativeSql(), "SELECT column1,column2 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4)))");
 
     EXPECT_EQ(BE_SQLITE_ROW, multipleRows.Step());
     ASSERT_EQ(2, multipleRows.GetColumnCount());
@@ -13070,6 +13073,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement tableAlias;
     std::string query = "SELECT a.column1, a.column2 FROM (VALUES(1,2), (3,4)) a"; 
     ASSERT_EQ(ECSqlStatus::Success, tableAlias.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(tableAlias.GetNativeSql(), "SELECT a.column1,a.column2 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4))) [a]");
 
     EXPECT_EQ(BE_SQLITE_ROW, tableAlias.Step());
     ASSERT_EQ(2, tableAlias.GetColumnCount());
@@ -13090,6 +13094,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement asteriskExpansion;
     std::string query = "SELECT * FROM (VALUES(1), (2), (3))";
     ASSERT_EQ(ECSqlStatus::Success, asteriskExpansion.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(asteriskExpansion.GetNativeSql(), "SELECT column1 FROM (SELECT column1 FROM (VALUES (1),(2),(3)))");
 
     EXPECT_EQ(BE_SQLITE_ROW, asteriskExpansion.Step());
     ASSERT_EQ(1, asteriskExpansion.GetColumnCount());
@@ -13108,6 +13113,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement asteriskWithMultipleColumns;
     std::string query = "SELECT * FROM (VALUES(1,2,3,4,5), (6,7,8,9,10))";
     ASSERT_EQ(ECSqlStatus::Success, asteriskWithMultipleColumns.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(asteriskWithMultipleColumns.GetNativeSql(), "SELECT column1,column2,column3,column4,column5 FROM (SELECT column1,column2,column3,column4,column5 FROM (VALUES (1,2,3,4,5),(6,7,8,9,10)))");
 
     EXPECT_EQ(BE_SQLITE_ROW, asteriskWithMultipleColumns.Step());
     ASSERT_EQ(5, asteriskWithMultipleColumns.GetColumnCount());
@@ -13129,21 +13135,13 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
         {
         ASSERT_EQ(i + 6, asteriskWithMultipleColumns.GetValueInt(i));
         }
-
-    }
-
-    {
-    // ECSqlStatement asteriskWithMultipleTables;
-    // query = "SELECT * FROM (VALUES(1), (2)), (VALUES(3), (4))";
-    // ASSERT_EQ(ECSqlStatus::Success, asteriskWithMultipleTables.Prepare(m_ecdb, query.c_str()));
-    // this one fails becuz when its trying to add the second classRef in ECSqlParser::ParseFromClause, the code think theres duplicate className
-    // this statement also fails in previous ecsql execution, but wotks in sqlite
     }
 
     {
     ECSqlStatement asteriskWithMultipleSubqueryAlias;
     std::string query = "SELECT * FROM (VALUES(1), (2)) a, (VALUES(3), (4)) b";
     ASSERT_EQ(ECSqlStatus::Success, asteriskWithMultipleSubqueryAlias.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(asteriskWithMultipleSubqueryAlias.GetNativeSql(), "SELECT a.column1,b.column1 FROM (SELECT column1 FROM (VALUES (1),(2))) [a],(SELECT column1 FROM (VALUES (3),(4))) [b]");
 
     EXPECT_EQ(BE_SQLITE_ROW, asteriskWithMultipleSubqueryAlias.Step());
     ASSERT_EQ(2, asteriskWithMultipleSubqueryAlias.GetColumnCount());
@@ -13174,6 +13172,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement multipleInlineTables;
     std::string query = "SELECT d.column1, d.column2, x.column1, x.column2 FROM (VALUES(1,2), (3,4)) d, (VALUES(5,6), (7,8)) x";
     ASSERT_EQ(ECSqlStatus::Success, multipleInlineTables.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(multipleInlineTables.GetNativeSql(), "SELECT d.column1,d.column2,x.column1,x.column2 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4))) [d],(SELECT column1,column2 FROM (VALUES (5,6),(7,8))) [x]");
 
     EXPECT_EQ(BE_SQLITE_ROW, multipleInlineTables.Step());
     ASSERT_EQ(4, multipleInlineTables.GetColumnCount());
@@ -13216,6 +13215,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement withColumnAlias;
     std::string query = "SELECT column1 myColumn FROM (VALUES(1), (2))";
     ASSERT_EQ(ECSqlStatus::Success, withColumnAlias.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(withColumnAlias.GetNativeSql(), "SELECT column1 [myColumn] FROM (SELECT column1 FROM (VALUES (1),(2)))");
 
     EXPECT_EQ(BE_SQLITE_ROW, withColumnAlias.Step());
     ECSqlColumnInfo const& colInfo1 = withColumnAlias.GetColumnInfo(0);
@@ -13226,6 +13226,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement nestedValues;
     std::string query = "SELECT column1 FROM (SELECT column1 FROM (VALUES(1), (2), (3)))";
     ASSERT_EQ(ECSqlStatus::Success, nestedValues.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(nestedValues.GetNativeSql(), "SELECT [K1] FROM (SELECT column1 [K1] FROM (SELECT column1 FROM (VALUES (1),(2),(3))))");
 
     EXPECT_EQ(BE_SQLITE_ROW, nestedValues.Step());
     ASSERT_EQ(1, nestedValues.GetColumnCount());
@@ -13245,6 +13246,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement tripleNestedValues;
     std::string query = "SELECT column1 FROM (SELECT column1 FROM (SELECT column1 FROM (VALUES(1), (2), (3))))";
     ASSERT_EQ(ECSqlStatus::Success, tripleNestedValues.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(tripleNestedValues.GetNativeSql(), "SELECT [K2] FROM (SELECT [K1] [K2] FROM (SELECT column1 [K1] FROM (SELECT column1 FROM (VALUES (1),(2),(3)))))");
 
     EXPECT_EQ(BE_SQLITE_ROW, tripleNestedValues.Step());
     ASSERT_EQ(1, tripleNestedValues.GetColumnCount());
@@ -13264,6 +13266,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement nestedValuesWithAsterisk;
     std::string query = "SELECT * FROM (SELECT * FROM (VALUES(1), (2), (3)))";
     ASSERT_EQ(ECSqlStatus::Success, nestedValuesWithAsterisk.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(nestedValuesWithAsterisk.GetNativeSql(), "SELECT [K1] FROM (SELECT column1 [K1] FROM (SELECT column1 FROM (VALUES (1),(2),(3))))");
 
     EXPECT_EQ(BE_SQLITE_ROW, nestedValuesWithAsterisk.Step());
     ASSERT_EQ(1, nestedValuesWithAsterisk.GetColumnCount());
@@ -13283,6 +13286,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement selectColumnInNestedValuesWithAsterisk;
     std::string query = "SELECT column2 FROM (SELECT * FROM (VALUES(1, 2), (2, 3), (3, 4)))";
     ASSERT_EQ(ECSqlStatus::Success, selectColumnInNestedValuesWithAsterisk.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(selectColumnInNestedValuesWithAsterisk.GetNativeSql(), "SELECT [column2] FROM (SELECT column1,column2 [column2] FROM (SELECT column1,column2 FROM (VALUES (1,2),(2,3),(3,4))))");
 
     EXPECT_EQ(BE_SQLITE_ROW, selectColumnInNestedValuesWithAsterisk.Step());
     ASSERT_EQ(1, selectColumnInNestedValuesWithAsterisk.GetColumnCount());
@@ -13302,6 +13306,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement nestedValuesWithAlias;
     std::string query = "SELECT a.col1 FROM (SELECT b.column1 col1 from (VALUES(1), (2), (3)) b) a";
     ASSERT_EQ(ECSqlStatus::Success, nestedValuesWithAlias.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(nestedValuesWithAlias.GetNativeSql(), "SELECT [K1] FROM (SELECT b.column1 [K1] FROM (SELECT column1 FROM (VALUES (1),(2),(3))) [b]) [a]");
 
     EXPECT_EQ(BE_SQLITE_ROW, nestedValuesWithAlias.Step());
     ASSERT_EQ(1, nestedValuesWithAlias.GetColumnCount());
@@ -13321,6 +13326,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement tripleNestedValuesWithAlias;
     std::string query = "SELECT a.col1 FROM (SELECT b.col1 FROM (SELECT c.column1 col1 FROM (VALUES(1), (2), (3)) c) b) a";
     ASSERT_EQ(ECSqlStatus::Success, tripleNestedValuesWithAlias.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(tripleNestedValuesWithAlias.GetNativeSql(), "SELECT [K2] FROM (SELECT [K1] [K2] FROM (SELECT c.column1 [K1] FROM (SELECT column1 FROM (VALUES (1),(2),(3))) [c]) [b]) [a]");
 
     EXPECT_EQ(BE_SQLITE_ROW, tripleNestedValuesWithAlias.Step());
     ASSERT_EQ(1, tripleNestedValuesWithAlias.GetColumnCount());
@@ -13360,6 +13366,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ECSqlStatement selectVaiousPrimitivves;
     std::string query = "SELECT * FROM (VALUES(1, 2.5, 'test', 3.14, TRUE))";
     ASSERT_EQ(ECSqlStatus::Success, selectVaiousPrimitivves.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(selectVaiousPrimitivves.GetNativeSql(), "SELECT column1,column2,column3,column4,column5 FROM (SELECT column1,column2,column3,column4,column5 FROM (VALUES (1,2.5,'test',3.14,1)))");
 
     EXPECT_EQ(BE_SQLITE_ROW, selectVaiousPrimitivves.Step());
     ASSERT_EQ(5, selectVaiousPrimitivves.GetColumnCount());
@@ -13371,9 +13378,6 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     ASSERT_EQ(true, selectVaiousPrimitivves.GetValueBoolean(4));
     }
 
-
-    // there should be a case where select * from (values(1), (2)), ms_myclass?
-    // its not able to handle calculation inside the values clause now, might log it as a different issue
     {
     // Failure case
     ECSqlStatement unequalNumberOfColumns;
