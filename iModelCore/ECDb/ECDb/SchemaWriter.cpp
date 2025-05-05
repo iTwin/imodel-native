@@ -2741,6 +2741,9 @@ BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContain
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, ECContainerId containerId, CustomAttributeChanges& caChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
     {
+    if (caChanges.IsEmpty() || caChanges.GetStatus() == ECChange::Status::Done)
+    return SUCCESS;
+
     int customAttributeIndex = 0;
     CachedStatementPtr stmt = ctx.GetCachedStatement("SELECT MAX(Ordinal) from main. " TABLE_CustomAttribute " WHERE ContainerId = ? AND ContainerType = ?");
     if (stmt == nullptr)
@@ -2757,9 +2760,6 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
         return ERROR;
         }
     customAttributeIndex = stmt->GetValueInt(0);
-
-    if (caChanges.IsEmpty() || caChanges.GetStatus() == ECChange::Status::Done)
-        return SUCCESS;
 
     BeAssert(caChanges.GetParent() != nullptr);
     const bool caContainerIsNew = caChanges.GetParent()->GetOpCode() == ECChange::OpCode::New;
