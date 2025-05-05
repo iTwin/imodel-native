@@ -2756,14 +2756,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
         {
         return ERROR;
         }
-    customAttributeIndex = static_cast<int>(stmt->GetValueInt64(0));
-    ECCustomAttributeInstanceIterable customAttributes = oldContainer.GetCustomAttributes(false);
-    auto itor = customAttributes.begin();
-    while (itor != customAttributes.end())
-        {
-        customAttributeIndex++;
-        ++itor;
-        }
+    customAttributeIndex = stmt->GetValueInt(0);
 
     if (caChanges.IsEmpty() || caChanges.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
