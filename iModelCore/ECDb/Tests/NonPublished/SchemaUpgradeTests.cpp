@@ -302,6 +302,23 @@ TEST_F(SchemaUpgradeTestFixture, CustomAttributeOrdinal){
     </ECSchema>)xml";
 
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(testSchemaXmlV3)));
+    
+    ReopenECDb(); // Close and reopen the DB to simulate persisted state
+ 
+    auto pipeClass = m_ecdb.Schemas().GetClass("TestSchema", "Pipe");
+    ASSERT_NE(nullptr, pipeClass) << "Pipe class not found in TestSchema";
+ 
+    auto prop = pipeClass->GetPropertyP("p4");
+    ASSERT_NE(nullptr, prop) << "Property p4 not found in Pipe class";
+ 
+    auto ca1 = prop->GetCustomAttributeLocal("TestCA", "TestCA1");
+    ASSERT_NE(nullptr, ca1) << "TestCA1 not found on property";
+ 
+    auto ca2 = prop->GetCustomAttributeLocal("TestCA", "TestCA2");
+    ASSERT_NE(nullptr, ca2) << "TestCA2 not found on property";
+ 
+    auto ca3 = prop->GetCustomAttributeLocal("TestCA", "TestCA3");
+    ASSERT_NE(nullptr, ca3) << "TestCA3 not found on property";
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
