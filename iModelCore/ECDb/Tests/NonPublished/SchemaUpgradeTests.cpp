@@ -246,6 +246,66 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, CustomAttributeOrdinal){
+    auto testCaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestCA" alias="tsca" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECCustomAttributeClass typeName="TestCA1" modifier="Sealed" appliesTo="Any"/>
+        <ECCustomAttributeClass typeName="TestCA2" modifier="Sealed" appliesTo="Any"/>
+        <ECCustomAttributeClass typeName="TestCA3" modifier="Sealed" appliesTo="Any"/>
+    </ECSchema>)xml";
+
+    auto testSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="TestCA" version="01.00.00" alias="tsca"/>
+        <ECEntityClass typeName="Pipe">
+            <ECProperty propertyName="p4" typeName="int">
+                <ECCustomAttributes>
+                    <TestCA1 xmlns="TestCA.01.00"/>
+                    <TestCA2 xmlns="TestCA.01.00"/>
+                    <TestCA3 xmlns="TestCA.01.00"/>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECEntityClass>
+    </ECSchema>)xml";
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ca_ordinal.ecdb", SchemaItem(testCaXml)));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(testSchemaXml)));
+
+    // remove the first two custom attributes
+    auto testSchemaXmlV2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="TestCA" version="01.00.00" alias="tsca"/>
+        <ECEntityClass typeName="Pipe">
+            <ECProperty propertyName="p4" typeName="int">
+                <ECCustomAttributes>
+                    <TestCA3 xmlns="TestCA.01.00"/>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECEntityClass>
+    </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(testSchemaXmlV2)));
+
+    // now add a new custom attribute
+    auto testSchemaXmlV3 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="TestCA" version="01.00.00" alias="tsca"/>
+        <ECEntityClass typeName="Pipe">
+            <ECProperty propertyName="p4" typeName="int">
+                <ECCustomAttributes>
+                    <TestCA1 xmlns="TestCA.01.00"/>
+                    <TestCA2 xmlns="TestCA.01.00"/>
+                    <TestCA3 xmlns="TestCA.01.00"/>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECEntityClass>
+    </ECSchema>)xml";
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(testSchemaXmlV3)));
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, DeleteSchema_VerifyCustomAttributesAreDeletedAsWell) {
     //This test simulate a case where there is orphan custom attribute instance and expect schema import to fail;
     auto testCaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
