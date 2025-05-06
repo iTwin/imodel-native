@@ -2741,17 +2741,22 @@ BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContain
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, ECContainerId containerId, CustomAttributeChanges& caChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
     {
-    int customAttributeIndex = 0;
-    ECCustomAttributeInstanceIterable customAttributes = oldContainer.GetCustomAttributes(false);
-    auto itor = customAttributes.begin();
-    while (itor != customAttributes.end())
-        {
-        customAttributeIndex++;
-        ++itor;
-        }
-
     if (caChanges.IsEmpty() || caChanges.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
+
+    int customAttributeIndex = 0;
+    CachedStatementPtr stmt = ctx.GetCachedStatement("SELECT MAX(Ordinal) from main. " TABLE_CustomAttribute " WHERE ContainerId = ? AND ContainerType = ?");
+    if (stmt == nullptr)
+        return ERROR;
+
+    stmt->BindId(1, containerId);
+    stmt->BindInt(2, Enum::ToInt(containerType));
+
+    if (stmt->Step() != BE_SQLITE_ROW)
+        {
+        return ERROR;
+        }
+    customAttributeIndex = stmt->GetValueInt(0);
 
     BeAssert(caChanges.GetParent() != nullptr);
     const bool caContainerIsNew = caChanges.GetParent()->GetOpCode() == ECChange::OpCode::New;

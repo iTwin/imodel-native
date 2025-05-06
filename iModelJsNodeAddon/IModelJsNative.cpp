@@ -3020,7 +3020,9 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         bool extentIsValid = ARGUMENT_IS_ANY_OBJ(0);
         if (extentIsValid)
             BeJsGeomUtils::DRange2dFromJson(extentRange, info[0].As<Napi::Object>());
-        bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr );
+        
+        bool includeWorld = ARGUMENT_IS_BOOL(1) ? info[1].As<Napi::Boolean>().Value() : false;
+        bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr, includeWorld );
 
         uint32_t index = 0;
         auto ret = Napi::Array::New(info.Env(), listOfCRS.size());
