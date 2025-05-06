@@ -1529,10 +1529,11 @@ TEST_F(RevisionTestFixture, IterateOverRedundantSchemaChange)
     ASSERT_TRUE(revisionPtrs[2].IsValid());
 
     // Revision 3 (Delete elements from schema)
+    m_db->BeginPurgeOperation();
     EXPECT_EQ(DgnDbStatus::Success, persistedElement->Delete());
     EXPECT_EQ(DgnDbStatus::Success, testModel->Delete());
     EXPECT_EQ(DgnDbStatus::Success, testPartition->Delete());
-
+    m_db->EndPurgeOperation();
     EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Revision 3"));
     revisionPtrs[3] = CreateRevision("-cs4");
     ASSERT_TRUE(revisionPtrs[3].IsValid());
