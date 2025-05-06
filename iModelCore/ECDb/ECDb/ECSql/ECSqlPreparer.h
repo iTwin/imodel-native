@@ -82,6 +82,7 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareUnaryPredicateExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, UnaryPredicateExp const&);
         static ECSqlStatus PrepareUnaryValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, UnaryValueExp const&);
         static ECSqlStatus PrepareValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, ValueExp const&);
+        static ECSqlStatus PrepareRowValueConstructorListExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, RowValueConstructorListExp const&);
         static ECSqlStatus PrepareValueExpListExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, ValueExpListExp const&, bool encloseInParentheses);
         static ECSqlStatus PrepareValueExpListExp(NativeSqlBuilder::ListOfLists&, ECSqlPrepareContext&, ValueExpListExp const&, NativeSqlBuilder::ListOfLists& targetNativeSqlSnippetLists);
         static ECSqlStatus PrepareWhereExp(NativeSqlBuilder&, ECSqlPrepareContext&, WhereExp const&);

@@ -214,6 +214,7 @@ struct Exp
             Select,
             Selection,
             SingleSelect,
+            SqlColumnName,
             Subquery,
             SubqueryRef,
             SubqueryTest,

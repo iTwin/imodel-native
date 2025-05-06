@@ -44,6 +44,7 @@ struct PropertyNameExp final : ValueExp
             PropertyMap const *TryGetPropertyMap() const;
             PropertyMap const *TryGetPropertyMap(PropertyPath const& testPath) const;
             bool IsComputedExp() const;
+            bool IsSqlColumnNameExp() const;
             bool ReferToAlias() const;
             bool TryResolvePath(PropertyPath &path) const;
         };
