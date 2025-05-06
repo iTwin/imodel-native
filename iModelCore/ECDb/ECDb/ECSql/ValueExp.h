@@ -570,19 +570,18 @@ struct UnaryValueExp final : ValueExp
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SqlColumnNameExp : ValueExp
-{
+    {
     private:
         Utf8String m_columnName;
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-        
+
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
-        
+
         Utf8String _ToString() const override { return "SqlColumnName"; }
 
     public:
         SqlColumnNameExp(Utf8StringCR columnName) : ValueExp(Type::SqlColumnName), m_columnName(columnName) {}
         Utf8StringCR GetColumnName() const { return m_columnName; }
-
-};
+    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

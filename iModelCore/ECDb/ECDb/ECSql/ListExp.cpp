@@ -205,7 +205,7 @@ RowValueConstructorListExp::RowValueConstructorListExp(std::vector<std::unique_p
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus RowValueConstructorListExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-        return FinalizeParseStatus::Completed;
+    return FinalizeParseStatus::Completed;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -213,18 +213,18 @@ Exp::FinalizeParseStatus RowValueConstructorListExp::_FinalizeParsing(ECSqlParse
 //+---------------+---------------+---------------+---------------+---------------+--------
 void RowValueConstructorListExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-        ctx.AppendToECSql("(");
-        
-        bool isFirstItem = true;
-        for (Exp const* childExp : GetChildren())
+    ctx.AppendToECSql("(");
+
+    bool isFirstItem = true;
+    for (Exp const* childExp : GetChildren())
         {
-            if (!isFirstItem)
-                ctx.AppendToECSql(", ");
-            ctx.AppendToECSql(*childExp);
-            isFirstItem = false;
+        if (!isFirstItem)
+            ctx.AppendToECSql(", ");
+        ctx.AppendToECSql(*childExp);
+        isFirstItem = false;
         }
 
-        ctx.AppendToECSql("(");
+    ctx.AppendToECSql("(");
     }
     
 //-----------------------------------------------------------------------------------------
@@ -232,9 +232,9 @@ void RowValueConstructorListExp::_ToECSql(ECSqlRenderContext& ctx) const
 //+---------------+---------------+---------------+---------------+---------------+--------
 void RowValueConstructorListExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const
     {
-        val.SetEmptyArray();
-        for (Exp const* childExp : GetChildren())
-            childExp->ToJson(val.appendValue(), fmt);
+    val.SetEmptyArray();
+    for (Exp const* childExp : GetChildren())
+        childExp->ToJson(val.appendValue(), fmt);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -242,10 +242,11 @@ void RowValueConstructorListExp::_ToJson(BeJsValue val, JsonFormat const& fmt) c
 //+---------------+---------------+---------------+---------------+---------------+--------
 void RowValueConstructorListExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
     {
-        for (Exp const* expr : GetSelection()->GetChildren()){
-            DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
-            std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp);
-            expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
+    for (Exp const* expr : GetSelection()->GetChildren())
+        {
+        DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
+        std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp);
+        expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
         }
     }
 
@@ -256,7 +257,7 @@ PropertyMatchResult RowValueConstructorListExp::_FindProperty(ECSqlParseContext&
     {
     if (propertyPath.IsEmpty())
         return PropertyMatchResult::NotFound();
-    
+
     Utf8String subqueryAlias = GetParent()->GetParent()->GetAs<SubqueryRefExp>().GetAlias();
 
     // if subquery dooesn't have alias
@@ -270,7 +271,7 @@ PropertyMatchResult RowValueConstructorListExp::_FindProperty(ECSqlParseContext&
             }
         }
     // if subquery has alias
-    else{
+    else {
         if (propertyPath.First().GetName() == subqueryAlias && propertyPath.Size() == 2)
             {
             for (size_t i = 0; i <  GetSelection()->GetChildrenCount(); i++)
@@ -282,7 +283,6 @@ PropertyMatchResult RowValueConstructorListExp::_FindProperty(ECSqlParseContext&
             }
         }
 
-    
     return PropertyMatchResult::NotFound();
     }
 
@@ -291,12 +291,11 @@ PropertyMatchResult RowValueConstructorListExp::_FindProperty(ECSqlParseContext&
 //+---------------+---------------+---------------+---------------+---------------+--------
 std::vector<ValueExpListExp const*> RowValueConstructorListExp::GetRowValues() const
     {
-        std::vector<ValueExpListExp const*> rowValues;
-        for (size_t i = 1; i < GetChildrenCount(); i++)
-            rowValues.push_back(GetChild<ValueExpListExp>(i));
-        return rowValues;
+    std::vector<ValueExpListExp const*> rowValues;
+    for (size_t i = 1; i < GetChildrenCount(); i++)
+        rowValues.push_back(GetChild<ValueExpListExp>(i));
+    return rowValues;
     }
-
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod

@@ -2824,22 +2824,20 @@ BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<RowValueConstruc
         // return error if each valueExpList dont have the same number of elements
         if (i > 0 && valueExpList.size() != rowValuesExpList[0]->GetChildrenCount())
             {
-            // BeAssert(false && "All rows in VALUES clause must have the same number of elements");
             Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740, "All rows in VALUES clause must have the same number of elements");
             return ERROR;
             }
-        
+
         rowValuesExpList.push_back(std::make_unique<ValueExpListExp>(valueExpList));
         }
-    
+
     if (rowValuesExpList.size() == 0)
         {
         Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0741, "Empty row value constructor list");
         return ERROR;
         }
-    
+
     exp = std::make_unique<RowValueConstructorListExp>(rowValuesExpList);
-    
     return SUCCESS;
     }
 
