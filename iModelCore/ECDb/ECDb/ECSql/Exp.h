@@ -420,7 +420,7 @@ struct Exp
 
     private:
         Type m_type;
-        Exp* m_parent = nullptr;
+        Exp const* m_parent = nullptr;
         mutable Exp::Collection m_children;
         bool m_isComplete = false;
 
@@ -493,6 +493,35 @@ struct Exp
         Exp const* FindParent(Exp::Type) const;
         bool Contains(Type candidateType) const;
         std::vector<Exp const*> Find(Type candidateType, bool recursive) const;
+        int IndexOf(Exp const& exp) const
+            {
+            for (size_t i = 0; i < m_children.m_collection.size(); i++)
+                {
+                if (m_children.m_collection[i].get() == &exp)
+                    return static_cast<int>(i);
+                }
+            return UNSET_CHILDINDEX;
+            }
+
+        template<typename TExp>
+        bool ReplaceChild(size_t i, std::function<std::unique_ptr<Exp>(std::unique_ptr<TExp>)> cb) const
+            {
+            auto& exp = m_children.m_collection[i];
+            if (dynamic_cast<TExp*>(exp.get()) == nullptr)
+                return false;
+
+            // now way to downcast unique_ptr
+            auto uniquePtr = std::unique_ptr<TExp>{};
+            uniquePtr.reset(static_cast<TExp*>(exp.release()));
+            auto newExp = cb(std::move(uniquePtr));
+            if (newExp == nullptr)
+                throw std::runtime_error("callback must return a valid expression");
+
+            newExp->m_parent = this;
+            m_children.m_collection[i] = std::move(newExp);
+            return true;
+            }
+
     };
 
 typedef Exp const* ExpCP;
