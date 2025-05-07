@@ -283,7 +283,13 @@ CloudResult CloudContainer::Disconnect(bool isDetach, bool fromCacheDtor) {
     if (nullptr == m_cache)
         return CloudResult();
 
+#ifdef __APPLE__
+    // On macOS (and probably iOS), OnDisconnect() crashes when called from the cache destructor.
+    if (!fromCacheDtor)
+        OnDisconnect(isDetach);
+#else // __APPLE__
     OnDisconnect(isDetach);
+#endif // __APPLE__
     m_onDisconnect.RaiseEvent(this);
 
     CloseDbIfOpen();
@@ -297,7 +303,13 @@ CloudResult CloudContainer::Disconnect(bool isDetach, bool fromCacheDtor) {
         if (entry != containers.end())
             containers.erase(entry);
     }
+#ifdef __APPLE__
+    // On macOS (and probably iOS), OnDisconnected() crashes when called from the cache destructor.
+    if (!fromCacheDtor)
+        OnDisconnected(isDetach);
+#else // __APPLE__
     OnDisconnected(isDetach);
+#endif // __APPLE__
 
     return isDetach ? thisCache->CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_detach(thisCache->m_vfs, m_alias.c_str(), msg); }, "detach") :  CloudResult();
 }
