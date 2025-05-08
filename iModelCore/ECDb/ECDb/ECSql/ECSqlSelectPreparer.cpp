@@ -137,8 +137,8 @@ void DetectAndDisqualifyJoinForExternalSourceAspectOnElementId(ECDbCR db, Exp co
 
     for(auto searchExp : searchFilters) {
         auto bve = const_cast<BinaryBooleanExp*>(searchExp->GetAsCP<BinaryBooleanExp>());
-        if (bve->GetOperator() != BooleanSqlOperator::EqualTo &&
-            bve->GetLeftOperand()->GetType() != Exp::Type::PropertyName &&
+        if (bve->GetOperator() != BooleanSqlOperator::EqualTo ||
+            bve->GetLeftOperand()->GetType() != Exp::Type::PropertyName ||
             bve->GetRightOperand()->GetType() != Exp::Type::PropertyName)
             continue;
 
