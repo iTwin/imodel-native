@@ -1112,8 +1112,8 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         Nullable<Utf8String> m_description;
         ECN::UnitSystemCP m_unitSystem = nullptr;
 
-        InvertedUnitInfo(ECN::UnitId id, SchemaDbEntry& schema, Utf8CP name, ECN::UnitId invertingUnitId, Utf8CP displayLabel, Utf8CP description, UnitSystemCR system) :
-            m_id(id), m_schema(&schema), m_name(name), m_invertingUnitId(invertingUnitId), m_unitSystem(&system)
+        InvertedUnitInfo(ECN::UnitId id, std::shared_ptr<SchemaDbEntry> schema, Utf8CP name, ECN::UnitId invertingUnitId, Utf8CP displayLabel, Utf8CP description, UnitSystemCR system) :
+            m_id(id), m_schema(schema), m_name(name), m_invertingUnitId(invertingUnitId), m_unitSystem(&system)
             {
             if (displayLabel != nullptr)
                 m_displayLabel = Utf8String(displayLabel);
@@ -1158,7 +1158,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
             UnitId invertingUnitId = stmt->GetValueId<UnitId>(colIndexes.m_invertingUnitId);
             BeAssert(stmt->IsColumnNull(colIndexes.m_definition) && stmt->IsColumnNull(colIndexes.m_numerator) && stmt->IsColumnNull(colIndexes.m_denominator) && stmt->IsColumnNull(colIndexes.m_offset));
             PUSH_STATIC_ANALYSIS_WARNING(6011); // NEEDS WORK STATIC ANALYSIS - Dereferencing NULL pointer 'us' - shouldn't we check us != nullptr? is that an error, and should we bail out if so?
-            invertedUnitInfos.push_back(InvertedUnitInfo(id, *schema, name, invertingUnitId, displayLabel, description, *us));
+            invertedUnitInfos.push_back(InvertedUnitInfo(id, schema, name, invertingUnitId, displayLabel, description, *us));
             POP_STATIC_ANALYSIS_WARNING
             continue;
             }
@@ -1210,7 +1210,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
     //now load inverted units as their inverting units have been loaded now
     for (InvertedUnitInfo const& invertedUnitInfo : invertedUnitInfos)
         {
-        SchemaDbEntry& schema = *invertedUnitInfo.m_schema;
+        std::shared_ptr<SchemaDbEntry> schema = invertedUnitInfo.m_schema;
         ECUnitCP invertingUnit = m_cache.Find(invertedUnitInfo.m_invertingUnitId);
         if (invertingUnit == nullptr)
             {
@@ -1219,7 +1219,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
             }
 
         ECUnitP newUnit = nullptr;
-        if (ECObjectsStatus::Success != schema.m_cachedSchema->CreateInvertedUnit(newUnit, *invertingUnit, invertedUnitInfo.m_name.c_str(), *invertedUnitInfo.m_unitSystem,
+        if (ECObjectsStatus::Success != schema->m_cachedSchema->CreateInvertedUnit(newUnit, *invertingUnit, invertedUnitInfo.m_name.c_str(), *invertedUnitInfo.m_unitSystem,
                                                                                   invertedUnitInfo.GetDisplayLabel(), invertedUnitInfo.GetDescription()))
             {
             return ERROR;
@@ -1227,7 +1227,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
 
         newUnit->SetId(invertedUnitInfo.m_id);
         m_cache.Insert(*newUnit);
-        schema.m_loadedTypeCount++;
+        schema->m_loadedTypeCount++;
         }
 
     return SUCCESS;
