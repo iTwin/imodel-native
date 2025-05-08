@@ -136,7 +136,7 @@ struct SchemaReader final
 
             private:
                 ECDb const& m_ecdb;
-                mutable std::map<ECN::ECSchemaId, std::unique_ptr<SchemaDbEntry>> m_schemaCache;
+                mutable std::map<ECN::ECSchemaId, std::shared_ptr<SchemaDbEntry>> m_schemaCache;
                 mutable std::map<ECN::ECClassId, std::unique_ptr<ClassDbEntry>> m_classCache;
                 mutable std::map<ECN::ECEnumerationId, ECN::ECEnumerationCP> m_enumCache;
                 mutable std::map<ECN::KindOfQuantityId, ECN::KindOfQuantityCP> m_koqCache;
@@ -152,7 +152,7 @@ struct SchemaReader final
             public:
                 ReaderCache(ECDb const& ecdb, DbTableSpace const& tableSpace) : m_ecdb(ecdb), m_legacyUnitsHelper(ecdb, tableSpace) {}
                 void Clear() const;
-                SchemaDbEntry* Find(ECN::ECSchemaId) const;
+                std::shared_ptr<SchemaDbEntry> Find(ECN::ECSchemaId) const;
                 ClassDbEntry* Find(ECN::ECClassId) const;
                 ECN::ECEnumerationCP Find(ECN::ECEnumerationId id) const { auto it = m_enumCache.find(id); return it != m_enumCache.end() ? it->second : nullptr; }
                 ECN::KindOfQuantityCP Find(ECN::KindOfQuantityId id) const { auto it = m_koqCache.find(id); return it != m_koqCache.end() ? it->second : nullptr; }
@@ -166,7 +166,7 @@ struct SchemaReader final
                 bool HasClassEntry(ECN::ECClassId id) const;
                 void SetClassEntryToNull(ECN::ECClassId id) const;
                 bool Insert(Utf8StringCR schemaName, Utf8StringCR className, ECN::ECClassId id) const;
-                bool Insert(std::unique_ptr<SchemaDbEntry> entry) const;
+                bool Insert(std::shared_ptr<SchemaDbEntry> entry) const;
                 bool Insert(std::unique_ptr<ClassDbEntry> entry) const;
                 void Insert(ECN::ECEnumerationCR ecEnum) const { m_enumCache.insert(std::make_pair(ecEnum.GetId(), &ecEnum)); }
                 void Insert(ECN::KindOfQuantityCR koq) const { m_koqCache.insert(std::make_pair(koq.GetId(), &koq)); }
@@ -201,10 +201,10 @@ struct SchemaReader final
         ECN::ECSchemaCP GetSchema(Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         ECN::ECClassP GetClass(Context&, ECN::ECClassId) const;
 
-        BentleyStatus ReadSchema(SchemaDbEntry*&, Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
-        BentleyStatus ReadSchemaStubAndReferences(SchemaDbEntry*&, Context& ctx, ECN::ECSchemaId) const;
-        BentleyStatus ReadSchemaStub(SchemaDbEntry*&, Context&, ECN::ECSchemaId) const;
-        BentleyStatus ReadSchemaElements(SchemaDbEntry&, Context&, std::set<SchemaDbEntry*>& fullyLoadedSchemas) const;
+        BentleyStatus ReadSchema(std::shared_ptr<SchemaDbEntry>&, Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
+        BentleyStatus ReadSchemaStubAndReferences(std::shared_ptr<SchemaDbEntry>&, Context& ctx, ECN::ECSchemaId) const;
+        BentleyStatus ReadSchemaStub(std::shared_ptr<SchemaDbEntry>&, Context&, ECN::ECSchemaId) const;
+        BentleyStatus ReadSchemaElements(std::shared_ptr<SchemaDbEntry>&, Context&, std::set<std::shared_ptr<SchemaDbEntry>>& fullyLoadedSchemas) const;
 
         BentleyStatus ReadEnumeration(ECN::ECEnumerationCP&, Context&, ECN::ECEnumerationId) const;
 
