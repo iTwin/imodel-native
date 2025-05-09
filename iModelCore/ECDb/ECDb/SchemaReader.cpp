@@ -110,7 +110,7 @@ ECSchemaCP SchemaReader::GetSchema(ECSchemaId ecSchemaId, bool loadSchemaEntitie
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP SchemaReader::GetSchema(Context& ctx, ECSchemaId ecSchemaId, bool loadSchemaEntities) const
     {
-    std::shared_ptr<SchemaDbEntry> outECSchemaKey = nullptr;
+    SchemaDbEntry* outECSchemaKey = nullptr;
     if (SUCCESS != ReadSchema(outECSchemaKey, ctx, ecSchemaId, loadSchemaEntities))
         return nullptr;
 
@@ -231,7 +231,7 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
     Nullable<ECClassType> classType = SchemaPersistenceHelper::ToClassType(stmt->GetValueInt(typeColIx));
     Nullable<ECClassModifier> classModifier = SchemaPersistenceHelper::ToClassModifier(stmt->GetValueInt(modifierColIx));
 
-    std::shared_ptr<SchemaDbEntry> schemaKey = nullptr;
+    SchemaDbEntry* schemaKey = nullptr;
     if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
         return nullptr;
 
@@ -945,7 +945,7 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationCP& ecEnum, Context& ct
         return ERROR;
 
     const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(schemaIdIx);
-    std::shared_ptr<SchemaDbEntry> schemaKey = nullptr;
+    SchemaDbEntry* schemaKey = nullptr;
     if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
         return ERROR;
 
@@ -1011,7 +1011,7 @@ BentleyStatus SchemaReader::ReadUnitSystems(Context& ctx) const
         const UnitSystemId id = stmt->GetValueId<UnitSystemId>(0);
 
         const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(1);
-        std::shared_ptr<SchemaDbEntry> schemaKey = nullptr;
+        SchemaDbEntry* schemaKey = nullptr;
         if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
             return ERROR;
 
@@ -1049,7 +1049,7 @@ BentleyStatus SchemaReader::ReadPhenomena(Context& ctx) const
         const PhenomenonId id = stmt->GetValueId<PhenomenonId>(0);
 
         const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(1);
-        std::shared_ptr<SchemaDbEntry> schemaKey = nullptr;
+        SchemaDbEntry* schemaKey = nullptr;
         if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
             return ERROR;
 
@@ -1105,15 +1105,15 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
     struct InvertedUnitInfo
         {
         ECN::UnitId m_id;
-        std::shared_ptr<SchemaDbEntry> m_schema = nullptr;
+        SchemaDbEntry* m_schema = nullptr;
         Utf8String m_name;
         ECN::UnitId m_invertingUnitId;
         Nullable<Utf8String> m_displayLabel;
         Nullable<Utf8String> m_description;
         ECN::UnitSystemCP m_unitSystem = nullptr;
 
-        InvertedUnitInfo(ECN::UnitId id, std::shared_ptr<SchemaDbEntry> schema, Utf8CP name, ECN::UnitId invertingUnitId, Utf8CP displayLabel, Utf8CP description, UnitSystemCR system) :
-            m_id(id), m_schema(schema), m_name(name), m_invertingUnitId(invertingUnitId), m_unitSystem(&system)
+        InvertedUnitInfo(ECN::UnitId id, SchemaDbEntry& schema, Utf8CP name, ECN::UnitId invertingUnitId, Utf8CP displayLabel, Utf8CP description, UnitSystemCR system) :
+            m_id(id), m_schema(&schema), m_name(name), m_invertingUnitId(invertingUnitId), m_unitSystem(&system)
             {
             if (displayLabel != nullptr)
                 m_displayLabel = Utf8String(displayLabel);
@@ -1132,7 +1132,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         {
         UnitId id = stmt->GetValueId<UnitId>(colIndexes.m_unitId);
         const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(colIndexes.m_schemaId);
-        std::shared_ptr<SchemaDbEntry> schema = nullptr;
+        SchemaDbEntry* schema = nullptr;
         if (SUCCESS != ReadSchema(schema, ctx, schemaId, false))
             return ERROR;
 
@@ -1158,7 +1158,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
             UnitId invertingUnitId = stmt->GetValueId<UnitId>(colIndexes.m_invertingUnitId);
             BeAssert(stmt->IsColumnNull(colIndexes.m_definition) && stmt->IsColumnNull(colIndexes.m_numerator) && stmt->IsColumnNull(colIndexes.m_denominator) && stmt->IsColumnNull(colIndexes.m_offset));
             PUSH_STATIC_ANALYSIS_WARNING(6011); // NEEDS WORK STATIC ANALYSIS - Dereferencing NULL pointer 'us' - shouldn't we check us != nullptr? is that an error, and should we bail out if so?
-            invertedUnitInfos.push_back(InvertedUnitInfo(id, schema, name, invertingUnitId, displayLabel, description, *us));
+            invertedUnitInfos.push_back(InvertedUnitInfo(id, *schema, name, invertingUnitId, displayLabel, description, *us));
             POP_STATIC_ANALYSIS_WARNING
             continue;
             }
@@ -1210,7 +1210,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
     //now load inverted units as their inverting units have been loaded now
     for (InvertedUnitInfo const& invertedUnitInfo : invertedUnitInfos)
         {
-        std::shared_ptr<SchemaDbEntry> schema = invertedUnitInfo.m_schema;
+        SchemaDbEntry& schema = *invertedUnitInfo.m_schema;
         ECUnitCP invertingUnit = m_cache.Find(invertedUnitInfo.m_invertingUnitId);
         if (invertingUnit == nullptr)
             {
@@ -1219,7 +1219,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
             }
 
         ECUnitP newUnit = nullptr;
-        if (ECObjectsStatus::Success != schema->m_cachedSchema->CreateInvertedUnit(newUnit, *invertingUnit, invertedUnitInfo.m_name.c_str(), *invertedUnitInfo.m_unitSystem,
+        if (ECObjectsStatus::Success != schema.m_cachedSchema->CreateInvertedUnit(newUnit, *invertingUnit, invertedUnitInfo.m_name.c_str(), *invertedUnitInfo.m_unitSystem,
                                                                                   invertedUnitInfo.GetDisplayLabel(), invertedUnitInfo.GetDescription()))
             {
             return ERROR;
@@ -1227,7 +1227,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
 
         newUnit->SetId(invertedUnitInfo.m_id);
         m_cache.Insert(*newUnit);
-        schema->m_loadedTypeCount++;
+        schema.m_loadedTypeCount++;
         }
 
     return SUCCESS;
@@ -1258,7 +1258,7 @@ BentleyStatus SchemaReader::ReadFormats(Context& ctx) const
         {
         const FormatId id = stmt->GetValueId<FormatId>(idIx);
         const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(schemaIdIx);
-        std::shared_ptr<SchemaDbEntry> schemaKey = nullptr;
+        SchemaDbEntry* schemaKey = nullptr;
         if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
             return ERROR;
 
@@ -1399,7 +1399,7 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
         return ERROR;
 
     const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(schemaIdIx);
-    std::shared_ptr<SchemaDbEntry> schemaKey = nullptr;
+    SchemaDbEntry* schemaKey = nullptr;
     if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
         return ERROR;
 
@@ -1517,7 +1517,7 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryCP& cat, Contex
         return ERROR;
 
     const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(schemaIdIx);
-    std::shared_ptr<SchemaDbEntry> schemaKey = nullptr;
+    SchemaDbEntry* schemaKey = nullptr;
     if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
         return ERROR;
 
@@ -1556,7 +1556,7 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryCP& cat, Contex
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::ReadSchema(std::shared_ptr<SchemaDbEntry>& schemaEntry, Context& ctx, ECSchemaId schemaId, bool loadSchemaEntities) const
+BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId, bool loadSchemaEntities) const
     {
     if (SUCCESS != ReadSchemaStubAndReferences(schemaEntry, ctx, schemaId))
         {
@@ -1568,8 +1568,8 @@ BentleyStatus SchemaReader::ReadSchema(std::shared_ptr<SchemaDbEntry>& schemaEnt
     BeAssert(schemaEntry != nullptr);
     if (loadSchemaEntities && !schemaEntry->IsFullyLoaded())
         {
-        std::set<std::shared_ptr<SchemaDbEntry>> fullyLoadedSchemas;
-        if (SUCCESS != ReadSchemaElements(schemaEntry, ctx, fullyLoadedSchemas))
+        std::set<SchemaDbEntry*> fullyLoadedSchemas;
+        if (SUCCESS != ReadSchemaElements(*schemaEntry, ctx, fullyLoadedSchemas))
             return ERROR;
         }
 
@@ -1579,7 +1579,7 @@ BentleyStatus SchemaReader::ReadSchema(std::shared_ptr<SchemaDbEntry>& schemaEnt
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::ReadSchemaStubAndReferences(std::shared_ptr<SchemaDbEntry>& schemaEntry, Context& ctx, ECSchemaId schemaId) const
+BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId) const
     {
     BeMutexHolder ecdbLock(GetECDbMutex());
     if (schemaEntry = m_cache.Find(schemaId))
@@ -1615,7 +1615,7 @@ BentleyStatus SchemaReader::ReadSchemaStubAndReferences(std::shared_ptr<SchemaDb
 
     for (ECSchemaId referencedSchemaId : referencedSchemaIds)
         {
-        std::shared_ptr<SchemaDbEntry> referenceSchemaKey = nullptr;
+        SchemaDbEntry* referenceSchemaKey = nullptr;
         if (SUCCESS != ReadSchemaStubAndReferences(referenceSchemaKey, ctx, referencedSchemaId))
             {
             m_cache.RemoveSchema(schemaEntry->GetId());
@@ -1640,7 +1640,7 @@ BentleyStatus SchemaReader::ReadSchemaStubAndReferences(std::shared_ptr<SchemaDb
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::ReadSchemaStub(std::shared_ptr<SchemaDbEntry>& schemaEntry, Context& ctx, ECSchemaId ecSchemaId) const
+BentleyStatus SchemaReader::ReadSchemaStub(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId ecSchemaId) const
     {
     Utf8CP tableSpace = GetTableSpace().GetName().c_str();
     CachedStatementPtr stmt = nullptr;
@@ -1731,8 +1731,8 @@ BentleyStatus SchemaReader::ReadSchemaStub(std::shared_ptr<SchemaDbEntry>& schem
     if (!Utf8String::IsNullOrEmpty(description))
         schema->SetDescription(description);
 
-    schemaEntry = std::make_shared<SchemaDbEntry>(schema, typesInSchema);
-    m_cache.Insert(schemaEntry);
+    schemaEntry = new SchemaDbEntry(schema, typesInSchema);
+    m_cache.Insert(std::unique_ptr<SchemaDbEntry>(schemaEntry));
     ctx.AddSchemaToLoadCAInstanceFor(*schemaEntry->m_cachedSchema);
     // We set a token to ensure we know which connection owns the schema
     ECSchemaOwnershipClaimAppData::TakeOwnership(m_schemaManager.GetECDb(), *schema);
@@ -1743,15 +1743,15 @@ BentleyStatus SchemaReader::ReadSchemaStub(std::shared_ptr<SchemaDbEntry>& schem
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaReader::ReadSchemaElements(std::shared_ptr<SchemaDbEntry>& schemaEntry, Context& ctx, std::set<std::shared_ptr<SchemaDbEntry>>& fullyLoadedSchemas) const
+BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Context& ctx, std::set<SchemaDbEntry*>& fullyLoadedSchemas) const
     {
     BeMutexHolder ecdbLock(GetECDbMutex());
-    if (fullyLoadedSchemas.find(schemaEntry) != fullyLoadedSchemas.end())
+    if (fullyLoadedSchemas.find(&schemaEntry) != fullyLoadedSchemas.end())
         return SUCCESS;
 
     //Accessing cache object not safe. Parent function make sure its a thread safe call
     //Ensure all reference schemas also loaded
-    for (auto& refSchemaKey : schemaEntry->m_cachedSchema->GetReferencedSchemas())
+    for (auto& refSchemaKey : schemaEntry.m_cachedSchema->GetReferencedSchemas())
         {
         if (!refSchemaKey.second->HasId())
             {
@@ -1769,20 +1769,20 @@ BentleyStatus SchemaReader::ReadSchemaElements(std::shared_ptr<SchemaDbEntry>& s
             }
 
         ECSchemaId referenceSchemaId = refSchemaKey.second->GetId();
-        std::shared_ptr<SchemaDbEntry> key = m_cache.Find(referenceSchemaId);
+        SchemaDbEntry* key = m_cache.Find(referenceSchemaId);
         if (key == nullptr)
             {
             BeAssert(false && "Referenced schema is expected to be in cache already at this point");
             return ERROR;
             }
 
-        if (SUCCESS != ReadSchemaElements(key, ctx, fullyLoadedSchemas))
+        if (SUCCESS != ReadSchemaElements(*key, ctx, fullyLoadedSchemas))
             return ERROR;
         }
 
     //Ensure load all the classes in the schema
-    fullyLoadedSchemas.insert(schemaEntry);
-    if (schemaEntry->IsFullyLoaded())
+    fullyLoadedSchemas.insert(&schemaEntry);
+    if (schemaEntry.IsFullyLoaded())
         return SUCCESS;
 
     // Load classes
@@ -1790,7 +1790,7 @@ BentleyStatus SchemaReader::ReadSchemaElements(std::shared_ptr<SchemaDbEntry>& s
     if (stmt == nullptr)
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry->GetId()))
+    if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry.GetId()))
         return ERROR;
 
     while (BE_SQLITE_ROW == stmt->Step())
@@ -1798,12 +1798,12 @@ BentleyStatus SchemaReader::ReadSchemaElements(std::shared_ptr<SchemaDbEntry>& s
         const ECClassId classId = stmt->GetValueId<ECClassId>(0);
         if (nullptr == GetClass(ctx, classId))
             {
-            LOG.errorv("Could not load ECClass with id %" PRIu64 " from schema %s", classId.GetValue(), schemaEntry->m_cachedSchema->GetName().c_str());
+            LOG.errorv("Could not load ECClass with id %" PRIu64 " from schema %s", classId.GetValue(), schemaEntry.m_cachedSchema->GetName().c_str());
             if (!SchemaElementContainsUnknowns(TABLE_Class, classId))
                 return ERROR;
             }
 
-        if (schemaEntry->IsFullyLoaded())
+        if (schemaEntry.IsFullyLoaded())
             return SUCCESS;
         }
 
@@ -1814,7 +1814,7 @@ BentleyStatus SchemaReader::ReadSchemaElements(std::shared_ptr<SchemaDbEntry>& s
     if (stmt == nullptr)
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry->GetId()))
+    if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry.GetId()))
         return ERROR;
 
     while (BE_SQLITE_ROW == stmt->Step())
@@ -1827,7 +1827,7 @@ BentleyStatus SchemaReader::ReadSchemaElements(std::shared_ptr<SchemaDbEntry>& s
             return ERROR;
             }
 
-        if (schemaEntry->IsFullyLoaded())
+        if (schemaEntry.IsFullyLoaded())
             return SUCCESS;
         }
 
@@ -1838,7 +1838,7 @@ BentleyStatus SchemaReader::ReadSchemaElements(std::shared_ptr<SchemaDbEntry>& s
     if (stmt == nullptr)
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry->GetId()))
+    if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry.GetId()))
         return ERROR;
 
     while (BE_SQLITE_ROW == stmt->Step())
@@ -1847,7 +1847,7 @@ BentleyStatus SchemaReader::ReadSchemaElements(std::shared_ptr<SchemaDbEntry>& s
         if (SUCCESS != ReadKindOfQuantity(koq, ctx, stmt->GetValueId<KindOfQuantityId>(0)))
             return ERROR;
 
-        if (schemaEntry->IsFullyLoaded())
+        if (schemaEntry.IsFullyLoaded())
             return SUCCESS;
         }
 
@@ -1858,7 +1858,7 @@ BentleyStatus SchemaReader::ReadSchemaElements(std::shared_ptr<SchemaDbEntry>& s
     if (stmt == nullptr)
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry->GetId()))
+    if (BE_SQLITE_OK != stmt->BindId(1, schemaEntry.GetId()))
         return ERROR;
 
     while (BE_SQLITE_ROW == stmt->Step())
@@ -1867,7 +1867,7 @@ BentleyStatus SchemaReader::ReadSchemaElements(std::shared_ptr<SchemaDbEntry>& s
         if (SUCCESS != ReadPropertyCategory(cat, ctx, stmt->GetValueId<PropertyCategoryId>(0)))
             return ERROR;
 
-        if (schemaEntry->IsFullyLoaded())
+        if (schemaEntry.IsFullyLoaded())
             return SUCCESS;
         }
 
@@ -1885,7 +1885,7 @@ BentleyStatus SchemaReader::ReadSchemaElements(std::shared_ptr<SchemaDbEntry>& s
             if (stmt == nullptr)
                 return ERROR;
 
-            if (BE_SQLITE_OK != stmt->BindId(stmt->GetParameterIndex(":schemaid"), schemaEntry->GetId()))
+            if (BE_SQLITE_OK != stmt->BindId(stmt->GetParameterIndex(":schemaid"), schemaEntry.GetId()))
                 return ERROR;
 
             const bool schemaHasUnits = BE_SQLITE_ROW == stmt->Step();
@@ -1896,7 +1896,7 @@ BentleyStatus SchemaReader::ReadSchemaElements(std::shared_ptr<SchemaDbEntry>& s
                 if (SUCCESS != LoadUnitsAndFormats(ctx))
                     return ERROR;
 
-                if (schemaEntry->IsFullyLoaded())
+                if (schemaEntry.IsFullyLoaded())
                     return SUCCESS;
                 }
             }
@@ -2852,11 +2852,11 @@ void SchemaReader::ReaderCache::Clear() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-std::shared_ptr<SchemaDbEntry> SchemaReader::ReaderCache::Find(ECN::ECSchemaId id) const
+SchemaDbEntry* SchemaReader::ReaderCache::Find(ECN::ECSchemaId id) const
     {
     auto itor = m_schemaCache.find(id);
     if (itor != m_schemaCache.end())
-        return itor->second;
+        return itor->second.get();
 
     return nullptr;
     }
@@ -2864,7 +2864,7 @@ std::shared_ptr<SchemaDbEntry> SchemaReader::ReaderCache::Find(ECN::ECSchemaId i
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool SchemaReader::ReaderCache::Insert(std::shared_ptr<SchemaDbEntry> entry) const
+bool SchemaReader::ReaderCache::Insert(std::unique_ptr<SchemaDbEntry> entry) const
     {
     BeAssert(entry != nullptr);
     const ECN::ECSchemaId id = entry->GetId();
