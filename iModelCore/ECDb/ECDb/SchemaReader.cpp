@@ -1561,7 +1561,7 @@ BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& schemaEntry, Context& ctx
     if (SUCCESS != ReadSchemaStubAndReferences(schemaEntry, ctx, schemaId))
         {
         if (schemaEntry != nullptr)
-            m_cache.RemoveSchema(schemaEntry->GetId());
+            schemaEntry->SetKnownBad();
         return ERROR;
         }
 
@@ -1585,7 +1585,7 @@ BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEn
     if (schemaEntry = m_cache.Find(schemaId))
         {
         BeAssert(schemaEntry->m_cachedSchema != nullptr);
-        return SUCCESS;
+        return (schemaEntry->IsKnownBad() ? ERROR : SUCCESS);
         }
 
     //Following method is not by itself thread safe as it write to cache but
@@ -1618,18 +1618,17 @@ BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEn
         SchemaDbEntry* referenceSchemaKey = nullptr;
         if (SUCCESS != ReadSchemaStubAndReferences(referenceSchemaKey, ctx, referencedSchemaId))
             {
-            m_cache.RemoveSchema(schemaEntry->GetId());
+            schemaEntry->SetKnownBad();
             if (referenceSchemaKey != nullptr)
-                m_cache.RemoveSchema(referenceSchemaKey->GetId());
+                referenceSchemaKey->SetKnownBad();
             return ERROR;
             }
 
         ECObjectsStatus s = schemaEntry->m_cachedSchema->AddReferencedSchema(*referenceSchemaKey->m_cachedSchema);
         if (s != ECObjectsStatus::Success)
             {
-            // Failed to add reference — remove both from cache to avoid returning incomplete schemas
-            m_cache.RemoveSchema(schemaEntry->GetId());
-            m_cache.RemoveSchema(referenceSchemaKey->GetId());
+            schemaEntry->SetKnownBad();
+            referenceSchemaKey->SetKnownBad();
             return ERROR;
             }
         }
@@ -2871,22 +2870,6 @@ bool SchemaReader::ReaderCache::Insert(std::unique_ptr<SchemaDbEntry> entry) con
     BeAssert(id.IsValid());
     auto itor = m_schemaCache.insert(std::make_pair(id, std::move(entry)));
     return itor.second;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool SchemaReader::ReaderCache::RemoveSchema(ECN::ECSchemaId id) const
-    {
-    BeAssert(id.IsValid());
-    auto itor = m_schemaCache.find(id);
-    if (itor != m_schemaCache.end())
-        {
-        m_schemaCache.erase(itor);
-        return true;
-        }
-
-    return false;
     }
 
 //-----------------------------------------------------------------------------------------
