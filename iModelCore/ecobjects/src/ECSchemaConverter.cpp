@@ -1215,14 +1215,17 @@ bool canGetOrCreateAcceptableKindOfQuantity(ECSchemaR schema, Utf8CP newKoqName,
     return kindOfQuantityHasMatchingPresentationUnit(newKOQ, newDisplayUnit, newUnit);
     }
 
-ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, ECPropertyP prop, KindOfQuantityP& newKOQ, IECInstanceR unitSpecCA, ECUnitCP newUnit, ECUnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
+ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, ECPropertyP prop, KindOfQuantityP& newKOQ, IECInstanceR unitSpecCA, ECUnitCP newUnit, ECUnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName, ECSchemaReadContextP context)
     {
     persistenceUnitChanged = false;
     KindOfQuantityCP baseKOQ = prop->GetKindOfQuantity();
     if (baseAndNewUnitAreIncompatible(baseKOQ, newUnit))
         {
-        LOG.errorv("Cannot convert UnitSpecification on '%s.%s' because the base property unit '%s' is not compatible with this properties unit '%s'",
-                   prop->GetClass().GetFullName(), prop->GetName().c_str(), baseKOQ->GetPersistenceUnit()->GetName().c_str(), newUnit->GetName().c_str());
+        context->Issues().ReportV(
+            IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0063,
+            "Cannot convert UnitSpecification on '%s.%s' because the base property unit '%s' is not compatible with this properties unit '%s'",
+                   prop->GetClass().GetFullName(), prop->GetName().c_str(), baseKOQ->GetPersistenceUnit()->GetName().c_str(), newUnit->GetName().c_str()
+        );
         return ECObjectsStatus::KindOfQuantityNotCompatible;
         }
 
@@ -1375,7 +1378,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         }
 
     bool persistenceUnitChanged;
-    ECObjectsStatus status = obtainKindOfQuantity(schema, prop, newKOQ, instance, newUnit, newDisplayUnit, persistenceUnitChanged, newKOQName.c_str());
+    ECObjectsStatus status = obtainKindOfQuantity(schema, prop, newKOQ, instance, newUnit, newDisplayUnit, persistenceUnitChanged, newKOQName.c_str(), context);
     if (ECObjectsStatus::Success != status)
         {
         LOG.errorv("Failed to create KindOfQuantity '%s' for property '%s.%s'", newKOQName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str());
