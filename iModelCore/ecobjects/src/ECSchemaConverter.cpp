@@ -1223,7 +1223,7 @@ ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, ECPropertyP prop, KindOfQ
         {
         context->Issues().ReportV(
             IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0063,
-            "Cannot convert UnitSpecification on '%s.%s' because the base property unit '%s' is not compatible with this properties unit '%s'",
+            "Cannot convert UnitSpecification on '%s.%s' because the base property unit '%s' is not compatible with this property's unit '%s'",
                    prop->GetClass().GetFullName(), prop->GetName().c_str(), baseKOQ->GetPersistenceUnit()->GetName().c_str(), newUnit->GetName().c_str()
         );
         return ECObjectsStatus::KindOfQuantityNotCompatible;
