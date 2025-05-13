@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <set>
 #include <BeRapidJson/BeRapidJson.h>
+#include "iostream"
 
 #define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
 
@@ -13104,6 +13105,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
         setPragma(testCaseNumber, pragmaValue);
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed.";
+        std::cout << "Testing for relClassId: " << ECClassId(static_cast<uint64_t>(std::stoull(relClassId))).ToString().c_str() << std::endl;
     
         EXPECT_EQ(expectedBindingResult, stmt.BindNavigationValue(1, BeInt64Id(testCaseNumber), ECClassId(static_cast<uint64_t>(std::stoull(relClassId))))) << "Test case " << testCaseNumber << " failed.";
         if (expectedBindingResult == ECSqlStatus::Success)
