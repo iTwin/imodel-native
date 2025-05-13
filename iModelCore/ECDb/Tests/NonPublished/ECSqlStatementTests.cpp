@@ -13105,7 +13105,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed.";
     
-        EXPECT_EQ(expectedBindingResult, stmt.BindNavigationValue(1, BeInt64Id(testCaseNumber), ECClassId(std::stoull(relClassId)))) << "Test case " << testCaseNumber << " failed.";
+        EXPECT_EQ(expectedBindingResult, stmt.BindNavigationValue(1, BeInt64Id(testCaseNumber), ECClassId(static_cast<uint64_t>(std::stoull(relClassId))))) << "Test case " << testCaseNumber << " failed.";
         if (expectedBindingResult == ECSqlStatus::Success)
             EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
     
