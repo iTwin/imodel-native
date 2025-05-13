@@ -13123,7 +13123,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
         stmt.Finalize();
 
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Element where Parent=?"));
-        EXPECT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(9999), ECClassId(9999ull)));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(9999), ECClassId(static_cast<uint64_t>(9999ull))));
         EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
         stmt.Finalize();
     }
