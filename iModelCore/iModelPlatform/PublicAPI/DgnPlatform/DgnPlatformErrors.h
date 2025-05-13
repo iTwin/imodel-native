@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
-
+#include <Napi/napi.h>
 #include <Bentley/Bentley.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -21,6 +21,7 @@ enum DgnErrorCategories
     GEOREFERENCE_ERROR_BASE         = 0x13000,
     REPOSITORY_ERROR_BASE           = 0x15000,
     CHANGESET_ERROR_BASE            = 0x16000,
+    IMODELJSNATIVE_ERROR_BASE       = 0x17000,
     };
 
 //=======================================================================================
@@ -54,7 +55,7 @@ enum class DgnDbStatus : int
     InvalidName            = DGNDB_ERROR_BASE + 24,
     InvalidParent          = DGNDB_ERROR_BASE + 25,
     InvalidProfileVersion  = DGNDB_ERROR_BASE + 26,
-    IsCreatingChangeset     = DGNDB_ERROR_BASE + 27,
+    IsCreatingChangeset    = DGNDB_ERROR_BASE + 27,
     LockNotHeld            = DGNDB_ERROR_BASE + 28,
     Mismatch2d3d           = DGNDB_ERROR_BASE + 29,
     MismatchGcs            = DGNDB_ERROR_BASE + 30,  //!< The Geographic Coordinate Systems of the source and target are not based on equivalent projections
@@ -92,8 +93,116 @@ enum class DgnDbStatus : int
     WrongModel             = DGNDB_ERROR_BASE + 64,
     ConstraintNotUnique    = DGNDB_ERROR_BASE + 65,
     NoGeoLocation          = DGNDB_ERROR_BASE + 66,
+    TimeoutFailed          = DGNDB_ERROR_BASE + 67,
     Aborted                = DGNDB_ERROR_BASE + 72,
     };
+
+class DgnDbStatusHelper {
+    public:
+        static iTwinErrorId GetITwinError(DgnDbStatus status) {
+            switch (status)
+                {
+                case DgnDbStatus::Success: return { "dgn-db", "Success" };
+                case DgnDbStatus::AlreadyLoaded: return { "dgn-db", "AlreadyLoaded" };
+                case DgnDbStatus::AlreadyOpen: return { "dgn-db", "AlreadyOpen" };
+                case DgnDbStatus::BadArg: return { "dgn-db", "BadArg" };
+                case DgnDbStatus::BadElement: return { "dgn-db", "BadElement" };
+                case DgnDbStatus::BadModel: return { "dgn-db", "BadModel" };
+                case DgnDbStatus::BadRequest: return { "dgn-db", "BadRequest" };
+                case DgnDbStatus::BadSchema: return { "dgn-db", "BadSchema" };
+                case DgnDbStatus::CannotUndo: return { "dgn-db", "CannotUndo" };
+                case DgnDbStatus::CodeNotReserved: return { "dgn-db", "CodeNotReserved" };
+                case DgnDbStatus::DeletionProhibited: return { "dgn-db", "DeletionProhibited" };
+                case DgnDbStatus::DuplicateCode: return { "dgn-db", "DuplicateCode" };
+                case DgnDbStatus::DuplicateName: return { "dgn-db", "DuplicateName" };
+                case DgnDbStatus::ElementBlockedChange: return { "dgn-db", "ElementBlockedChange" };
+                case DgnDbStatus::FileAlreadyExists: return { "dgn-db", "FileAlreadyExists" };
+                case DgnDbStatus::FileNotFound: return { "dgn-db", "FileNotFound" };
+                case DgnDbStatus::FileNotLoaded: return { "dgn-db", "FileNotLoaded" };
+                case DgnDbStatus::ForeignKeyConstraint: return { "dgn-db", "ForeignKeyConstraint" };
+                case DgnDbStatus::IdExists: return { "dgn-db", "IdExists" };
+                case DgnDbStatus::InvalidCategory: return { "dgn-db", "InvalidCategory" };
+                case DgnDbStatus::InvalidCode: return { "dgn-db", "InvalidCode" };
+                case DgnDbStatus::InvalidCodeSpec: return { "dgn-db", "InvalidCodeSpec" };
+                case DgnDbStatus::InvalidId: return { "dgn-db", "InvalidId" };
+                case DgnDbStatus::InvalidName: return { "dgn-db", "InvalidName" };
+                case DgnDbStatus::InvalidParent: return { "dgn-db", "InvalidParent" };
+                case DgnDbStatus::InvalidProfileVersion: return { "dgn-db", "InvalidProfileVersion" };
+                case DgnDbStatus::IsCreatingChangeset: return { "dgn-db", "IsCreatingChangeset" };
+                case DgnDbStatus::LockNotHeld: return { "dgn-db", "LockNotHeld" };
+                case DgnDbStatus::Mismatch2d3d: return { "dgn-db", "Mismatch2d3d" };
+                case DgnDbStatus::MismatchGcs: return { "dgn-db", "MismatchGcs" };
+                case DgnDbStatus::MissingDomain: return { "dgn-db", "MissingDomain" };
+                case DgnDbStatus::MissingHandler: return { "dgn-db", "MissingHandler" };
+                case DgnDbStatus::MissingId: return { "dgn-db", "MissingId" };
+                case DgnDbStatus::NoGeometry: return { "dgn-db", "NoGeometry" };
+                case DgnDbStatus::NoMultiTxnOperation: return { "dgn-db", "NoMultiTxnOperation" };
+                case DgnDbStatus::NotEnabled: return { "dgn-db", "NotEnabled" };
+                case DgnDbStatus::NotFound: return { "dgn-db", "NotFound" };
+                case DgnDbStatus::NotOpen: return { "dgn-db", "NotOpen" };
+                case DgnDbStatus::NotOpenForWrite: return { "dgn-db", "NotOpenForWrite" };
+                case DgnDbStatus::NotSameUnitBase: return { "dgn-db", "NotSameUnitBase" };
+                case DgnDbStatus::NothingToRedo: return { "dgn-db", "NothingToRedo" };
+                case DgnDbStatus::NothingToUndo: return { "dgn-db", "NothingToUndo" };
+                case DgnDbStatus::ParentBlockedChange: return { "dgn-db", "ParentBlockedChange" };
+                case DgnDbStatus::ReadError: return { "dgn-db", "ReadError" };
+                case DgnDbStatus::ReadOnly: return { "dgn-db", "ReadOnly" };
+                case DgnDbStatus::ReadOnlyDomain: return { "dgn-db", "ReadOnlyDomain" };
+                case DgnDbStatus::SQLiteError: return { "dgn-db", "SQLiteError" };
+                case DgnDbStatus::TransactionActive: return { "dgn-db", "TransactionActive" };
+                case DgnDbStatus::UnitsMissing: return { "dgn-db", "UnitsMissing" };
+                case DgnDbStatus::UnknownFormat: return { "dgn-db", "UnknownFormat" };
+                case DgnDbStatus::UpgradeFailed: return { "dgn-db", "UpgradeFailed" };
+                case DgnDbStatus::ValidationFailed: return { "dgn-db", "ValidationFailed" };
+                case DgnDbStatus::VersionTooNew: return { "dgn-db", "VersionTooNew" };
+                case DgnDbStatus::VersionTooOld: return { "dgn-db", "VersionTooOld" };
+                case DgnDbStatus::ViewNotFound: return { "dgn-db", "ViewNotFound" };
+                case DgnDbStatus::WriteError: return { "dgn-db", "WriteError" };
+                case DgnDbStatus::WrongClass: return { "dgn-db", "WrongClass" };
+                case DgnDbStatus::WrongDgnDb: return { "dgn-db", "WrongDgnDb" };
+                case DgnDbStatus::WrongDomain: return { "dgn-db", "WrongDomain" };
+                case DgnDbStatus::WrongElement: return { "dgn-db", "WrongElement" };
+                case DgnDbStatus::WrongHandler: return { "dgn-db", "WrongHandler" };
+                case DgnDbStatus::WrongModel: return { "dgn-db", "WrongModel" };
+                case DgnDbStatus::ConstraintNotUnique: return { "dgn-db", "ConstraintNotUnique" };
+                case DgnDbStatus::NoGeoLocation: return { "dgn-db", "NoGeoLocation" };
+                case DgnDbStatus::TimeoutFailed: return { "dgn-db", "TimeoutFailed" };
+                case DgnDbStatus::Aborted: return { "dgn-db", "Aborted" };
+                default: return { "dgn-db", "UnknownDgnDbStatus" };
+                }
+        }
+};
+
+//! iTwin Error Keys for iModelJsNative
+enum class IModelJsNativeErrorKey : int
+{
+    BadArg = IMODELJSNATIVE_ERROR_BASE + 1,
+    FontError,
+    SchemaError,
+    ChangesetError,
+    TypeError,
+    CompressionError,
+    ElementGeometryCacheError,
+    LockNotHeld
+};
+
+class IModelJsNativeErrorKeyHelper {
+    public:
+    static iTwinErrorId GetITwinError(IModelJsNativeErrorKey key) {
+        switch (key)
+            {
+            case IModelJsNativeErrorKey::BadArg: return {"imodel-js-native", "BadArg"};
+            case IModelJsNativeErrorKey::FontError: return {"imodel-js-native", "FontError"};
+            case IModelJsNativeErrorKey::SchemaError: return {"imodel-js-native", "SchemaError"};
+            case IModelJsNativeErrorKey::ChangesetError: return {"imodel-js-native", "ChangesetError"};
+            case IModelJsNativeErrorKey::TypeError: return {"imodel-js-native", "TypeError"};
+            case IModelJsNativeErrorKey::CompressionError: return {"imodel-js-native", "CompressionError"};
+            case IModelJsNativeErrorKey::ElementGeometryCacheError: return {"imodel-js-native", "ElementGeometryCacheError"};
+            case IModelJsNativeErrorKey::LockNotHeld: return {"imodel-js-native", "LockNotHeld"};
+            default: return {"imodel-js-native", "UnknownIModelJsNativeErrorKey"};
+            }
+    }
+};
 
 //! Status Values for DgnViewport methods
 enum class ViewportStatus : int
