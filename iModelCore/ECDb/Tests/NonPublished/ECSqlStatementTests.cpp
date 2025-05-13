@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <set>
 #include <BeRapidJson/BeRapidJson.h>
+#include "iostream"
 
 #define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
 
@@ -13106,6 +13107,9 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
 
         ECClassId relClassId;
         ASSERT_EQ(BentleyStatus::SUCCESS, ECClassId::FromString(relClassId, relClassIdStr.c_str())) << "Test case " << testCaseNumber << " failed to convert string to ECClassId.";
+
+        std::cout << "Class Value: " << relClassIdStr.c_str() << std::endl;
+        std::cout << "Converted Class Value: " << relClassId.ToString().c_str() << std::endl;
     
         EXPECT_EQ(expectedBindingResult, stmt.BindNavigationValue(1, BeInt64Id(testCaseNumber), relClassId)) << "Test case " << testCaseNumber << " failed to bind value.";
         if (expectedBindingResult == ECSqlStatus::Success)
@@ -13117,7 +13121,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
 
     ECClassId relClassId;
     ASSERT_EQ(BentleyStatus::SUCCESS, ECClassId::FromString(relClassId, "9999"));
-    
+
     // Make sure the pragma only works for insert statements
     for (const auto& pragmaValue : { false, true}) {
         setPragma(__LINE__, pragmaValue);
