@@ -124,10 +124,11 @@ struct ECSqlConfig {
     private:
         DisableSqlFunctions m_disabledFunctions;
         bool m_experimentalFeaturesEnabled;
+        bool m_validateInsertValues;
         mutable std::unordered_map<OptimizationOptions, bool> m_optimisationOptionsMap;
 
     public:
-        ECSqlConfig(): m_experimentalFeaturesEnabled(false) {
+        ECSqlConfig(): m_experimentalFeaturesEnabled(false), m_validateInsertValues(false) {
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForClassIds] = true;
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForNestedSelectQuery] = true;
         }
@@ -138,6 +139,9 @@ struct ECSqlConfig {
         void SetOptimizationOption(OptimizationOptions option, bool flag) {m_optimisationOptionsMap[option] = flag;}
         bool GetExperimentalFeaturesEnabled() const { return m_experimentalFeaturesEnabled; }
         void SetExperimentalFeaturesEnabled(bool v)  { m_experimentalFeaturesEnabled = v; }
+
+        bool IsInsertValueValidationEnabled() const { return m_validateInsertValues; }
+        void SetInsertValueValidation(const bool v) { m_validateInsertValues = v; }
 };
 
 //=======================================================================================

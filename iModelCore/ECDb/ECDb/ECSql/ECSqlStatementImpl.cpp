@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <regex>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -176,6 +177,17 @@ ECSqlStatus ECSqlStatement::Impl::ClearBindings()
         return stat;
 
     return GetPreparedStatementP()->ClearBindings();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool ECSqlStatement::Impl::IsInsertStatement() const
+    {
+    if (!IsPrepared())
+        return std::regex_match(GetECSql(), std::regex(R"(^\s*INSERT\s+(INTO)?\s*(\[?\w+\]?\s*\.\s*)?(\[?\w+\]?))"));
+
+    return GetPreparedStatementP()->GetType() == ECSqlType::Insert;
     }
 
 //---------------------------------------------------------------------------------------

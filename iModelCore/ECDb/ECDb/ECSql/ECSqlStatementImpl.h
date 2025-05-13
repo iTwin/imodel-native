@@ -67,6 +67,7 @@ struct ECSqlStatement::Impl final
         ECSqlStatus Prepare(ECDbCR, Db const* dataSourceECDb, Utf8CP, ECCrudWriteToken const*, bool logOnError);
 
         bool IsPrepared() const { return m_preparedStatement != nullptr; }
+        bool IsInsertStatement() const;
 
         IECSqlBinder& GetBinder(int parameterIndex) const;
         int GetParameterIndex(Utf8CP parameterName) const;

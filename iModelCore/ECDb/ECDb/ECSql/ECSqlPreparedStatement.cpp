@@ -617,6 +617,49 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             prepareInfo.AddParameterIndex(paramIndex, *table);
             }
 
+        if (ctx.GetECDb().GetECSqlConfig().IsInsertValueValidationEnabled() && propertyMap->GetType() == PropertyMap::Type::NavigationRelECClassId)
+            {
+            const auto valueExp = propNameValueInfo.m_valueExp;
+        
+            // Validate the value expression
+            if (!valueExp || valueExp->GetType() == Exp::Type::UnaryValue)
+                {
+                ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
+                    "The ECSql INSERT statement contains an invalid or missing relationship class id.");
+                return ECSqlStatus::InvalidECSql;
+                }
+        
+            // Extract and validate the class ID value
+            Utf8String classIdValue = (valueExp->GetType() == Exp::Type::LiteralValue) ? valueExp->GetAs<LiteralValueExp>().GetRawValue() : "";
+            if (classIdValue.empty() || classIdValue == "NULL")
+                {
+                ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
+                    "The ECSql INSERT statement contains an invalid relationship class id.");
+                return ECSqlStatus::InvalidECSql;
+                }
+        
+            // Convert and validate the ECClassId
+            ECClassId ecClassId;
+            try 
+                {
+                ecClassId = ECClassId(std::stoull(classIdValue.c_str()));
+                }
+            catch (const std::exception&)
+                {
+                ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
+                    Utf8PrintfString("The ECSql INSERT statement contains an invalid relationship class id '%s'. Unable to convert to ECClassId.", classIdValue.c_str()).c_str());
+                return ECSqlStatus::InvalidECSql;
+                }
+        
+            const auto ecClass = ctx.GetECDb().Schemas().GetClass(ecClassId);
+            if (!ecClass || !ecClass->IsRelationshipClass())
+                {
+                ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
+                    Utf8PrintfString("The ECSql INSERT statement contains an invalid relationship class id '%s'. The id does not correspond to a valid ECRelationship class.", classIdValue.c_str()).c_str());
+                return ECSqlStatus::InvalidECSql;
+                }
+            }
+
         prepareInfo.AddPropNameValueInfo(propNameValueInfo, *table);
         }
 

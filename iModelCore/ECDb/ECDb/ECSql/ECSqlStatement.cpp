@@ -75,6 +75,11 @@ bool ECSqlStatement::IsPrepared() const { return m_pimpl->IsPrepared(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+bool ECSqlStatement::IsInsertStatement() const { return m_pimpl->IsInsertStatement(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 IECSqlBinder& ECSqlStatement::GetBinder(int parameterIndex) { return m_pimpl->GetBinder(parameterIndex); }
 
 //---------------------------------------------------------------------------------------
@@ -153,5 +158,30 @@ uint64_t ECSqlStatement::GetHashCode() const { return m_pimpl->GetHashCode(); }
 // @bsimethod
 //---------------------------------------------------------------------------------------
 uint64_t ECSqlStatement::GetHashCode(Utf8CP ecsql) { return ECSqlStatement::Impl::GetHashCode(ecsql); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlStatement::BindNavigationValue(int parameterIndex, BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId) {
+    // Validate the relationship class ID if the ECSQL is an INSERT statement and validation is enabled
+    if (IsInsertStatement() && GetECDb()->GetECSqlConfig().IsInsertValueValidationEnabled()) {
+        const auto ecClass = GetECDb()->Schemas().GetClass(relationshipECClassId);
+
+        if (!ecClass) {
+            LOG.errorv("The ECSql INSERT statement contains an invalid relationship class ID '%s'. The ID does not correspond to any EC class.", 
+                       relationshipECClassId.ToString().c_str());
+            return ECSqlStatus::InvalidECSql;
+        }
+
+        if (!ecClass->IsRelationshipClass()) {
+            LOG.errorv("The ECSql INSERT statement contains an invalid relationship class ID '%s'. The ID does not correspond to a valid ECRelationship class.", 
+                       relationshipECClassId.ToString().c_str());
+            return ECSqlStatus::InvalidECSql;
+        }
+    }
+
+    // Bind the navigation value
+    return GetBinder(parameterIndex).BindNavigation(relatedInstanceId, relationshipECClassId);
+}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
