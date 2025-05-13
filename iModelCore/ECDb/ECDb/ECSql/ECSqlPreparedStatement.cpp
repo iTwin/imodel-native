@@ -642,7 +642,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             ECClassId ecClassId;
             try 
                 {
-                ecClassId = ECClassId(std::stoull(classIdValue.c_str()));
+                ecClassId = ECClassId(static_cast<uint64_t>(std::stoull(classIdValue.c_str())));
                 }
             catch (const std::exception&)
                 {
