@@ -505,15 +505,15 @@ static void sha3Func(
   sqlite3_value **argv
 ){
   SHA3Context cx;
-  int eType = sqlite3_value_type(argv[0]);
-  int nByte = sqlite3_value_bytes(argv[0]);
+  int eType = bentley_sqlite3_value_type(argv[0]);
+  int nByte = bentley_sqlite3_value_bytes(argv[0]);
   int iSize;
   if( argc==1 ){
     iSize = 256;
   }else{
-    iSize = sqlite3_value_int(argv[1]);
+    iSize = bentley_sqlite3_value_int(argv[1]);
     if( iSize!=224 && iSize!=256 && iSize!=384 && iSize!=512 ){
-      sqlite3_result_error(context, "SHA3 size should be one of: 224 256 "
+      bentley_sqlite3_result_error(context, "SHA3 size should be one of: 224 256 "
                                     "384 512", -1);
       return;
     }
@@ -521,14 +521,14 @@ static void sha3Func(
   if( eType==SQLITE_NULL ) return;
   SHA3Init(&cx, iSize);
   if( eType==SQLITE_BLOB ){
-    SHA3Update(&cx, sqlite3_value_blob(argv[0]), nByte);
+    SHA3Update(&cx, bentley_sqlite3_value_blob(argv[0]), nByte);
   }else{
-    SHA3Update(&cx, sqlite3_value_text(argv[0]), nByte);
+    SHA3Update(&cx, bentley_sqlite3_value_text(argv[0]), nByte);
   }
-  sqlite3_result_blob(context, SHA3Final(&cx), iSize/8, SQLITE_TRANSIENT);
+  bentley_sqlite3_result_blob(context, SHA3Final(&cx), iSize/8, SQLITE_TRANSIENT);
 }
 
-/* Compute a string using sqlite3_vsnprintf() with a maximum length
+/* Compute a string using bentley_sqlite3_vsnprintf() with a maximum length
 ** of 50 bytes and add it to the hash.
 */
 static void sha3_step_vformat(
@@ -540,7 +540,7 @@ static void sha3_step_vformat(
   int n;
   char zBuf[50];
   va_start(ap, zFormat);
-  sqlite3_vsnprintf(sizeof(zBuf),zBuf,zFormat,ap);
+  bentley_sqlite3_vsnprintf(sizeof(zBuf),zBuf,zFormat,ap);
   va_end(ap);
   n = (int)strlen(zBuf);
   SHA3Update(p, (unsigned char*)zBuf, n);
@@ -583,8 +583,8 @@ static void sha3QueryFunc(
   int argc,
   sqlite3_value **argv
 ){
-  sqlite3 *db = sqlite3_context_db_handle(context);
-  const char *zSql = (const char*)sqlite3_value_text(argv[0]);
+  sqlite3 *db = bentley_sqlite3_context_db_handle(context);
+  const char *zSql = (const char*)bentley_sqlite3_value_text(argv[0]);
   sqlite3_stmt *pStmt = 0;
   int nCol;                   /* Number of columns in the result set */
   int i;                      /* Loop counter */
@@ -597,9 +597,9 @@ static void sha3QueryFunc(
   if( argc==1 ){
     iSize = 256;
   }else{
-    iSize = sqlite3_value_int(argv[1]);
+    iSize = bentley_sqlite3_value_int(argv[1]);
     if( iSize!=224 && iSize!=256 && iSize!=384 && iSize!=512 ){
-      sqlite3_result_error(context, "SHA3 size should be one of: 224 256 "
+      bentley_sqlite3_result_error(context, "SHA3 size should be one of: 224 256 "
                                     "384 512", -1);
       return;
     }
@@ -607,24 +607,24 @@ static void sha3QueryFunc(
   if( zSql==0 ) return;
   SHA3Init(&cx, iSize);
   while( zSql[0] ){
-    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zSql);
+    rc = bentley_sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zSql);
     if( rc ){
-      char *zMsg = sqlite3_mprintf("error SQL statement [%s]: %s",
-                                   zSql, sqlite3_errmsg(db));
-      sqlite3_finalize(pStmt);
-      sqlite3_result_error(context, zMsg, -1);
-      sqlite3_free(zMsg);
+      char *zMsg = bentley_sqlite3_mprintf("error SQL statement [%s]: %s",
+                                   zSql, bentley_sqlite3_errmsg(db));
+      bentley_sqlite3_finalize(pStmt);
+      bentley_sqlite3_result_error(context, zMsg, -1);
+      bentley_sqlite3_free(zMsg);
       return;
     }
-    if( !sqlite3_stmt_readonly(pStmt) ){
-      char *zMsg = sqlite3_mprintf("non-query: [%s]", sqlite3_sql(pStmt));
-      sqlite3_finalize(pStmt);
-      sqlite3_result_error(context, zMsg, -1);
-      sqlite3_free(zMsg);
+    if( !bentley_sqlite3_stmt_readonly(pStmt) ){
+      char *zMsg = bentley_sqlite3_mprintf("non-query: [%s]", bentley_sqlite3_sql(pStmt));
+      bentley_sqlite3_finalize(pStmt);
+      bentley_sqlite3_result_error(context, zMsg, -1);
+      bentley_sqlite3_free(zMsg);
       return;
     }
-    nCol = sqlite3_column_count(pStmt);
-    z = sqlite3_sql(pStmt);
+    nCol = bentley_sqlite3_column_count(pStmt);
+    z = bentley_sqlite3_sql(pStmt);
     if( z ){
       n = (int)strlen(z);
       sha3_step_vformat(&cx,"S%d:",n);
@@ -632,10 +632,10 @@ static void sha3QueryFunc(
     }
 
     /* Compute a hash over the result of the query */
-    while( SQLITE_ROW==sqlite3_step(pStmt) ){
+    while( SQLITE_ROW==bentley_sqlite3_step(pStmt) ){
       SHA3Update(&cx,(const unsigned char*)"R",1);
       for(i=0; i<nCol; i++){
-        switch( sqlite3_column_type(pStmt,i) ){
+        switch( bentley_sqlite3_column_type(pStmt,i) ){
           case SQLITE_NULL: {
             SHA3Update(&cx, (const unsigned char*)"N",1);
             break;
@@ -644,7 +644,7 @@ static void sha3QueryFunc(
             sqlite3_uint64 u;
             int j;
             unsigned char x[9];
-            sqlite3_int64 v = sqlite3_column_int64(pStmt,i);
+            sqlite3_int64 v = bentley_sqlite3_column_int64(pStmt,i);
             memcpy(&u, &v, 8);
             for(j=8; j>=1; j--){
               x[j] = u & 0xff;
@@ -658,7 +658,7 @@ static void sha3QueryFunc(
             sqlite3_uint64 u;
             int j;
             unsigned char x[9];
-            double r = sqlite3_column_double(pStmt,i);
+            double r = bentley_sqlite3_column_double(pStmt,i);
             memcpy(&u, &r, 8);
             for(j=8; j>=1; j--){
               x[j] = u & 0xff;
@@ -669,15 +669,15 @@ static void sha3QueryFunc(
             break;
           }
           case SQLITE_TEXT: {
-            int n2 = sqlite3_column_bytes(pStmt, i);
-            const unsigned char *z2 = sqlite3_column_text(pStmt, i);
+            int n2 = bentley_sqlite3_column_bytes(pStmt, i);
+            const unsigned char *z2 = bentley_sqlite3_column_text(pStmt, i);
             sha3_step_vformat(&cx,"T%d:",n2);
             SHA3Update(&cx, z2, n2);
             break;
           }
           case SQLITE_BLOB: {
-            int n2 = sqlite3_column_bytes(pStmt, i);
-            const unsigned char *z2 = sqlite3_column_blob(pStmt, i);
+            int n2 = bentley_sqlite3_column_bytes(pStmt, i);
+            const unsigned char *z2 = bentley_sqlite3_column_blob(pStmt, i);
             sha3_step_vformat(&cx,"B%d:",n2);
             SHA3Update(&cx, z2, n2);
             break;
@@ -685,9 +685,9 @@ static void sha3QueryFunc(
         }
       }
     }
-    sqlite3_finalize(pStmt);
+    bentley_sqlite3_finalize(pStmt);
   }
-  sqlite3_result_blob(context, SHA3Final(&cx), iSize/8, SQLITE_TRANSIENT);
+  bentley_sqlite3_result_blob(context, SHA3Final(&cx), iSize/8, SQLITE_TRANSIENT);
 }
 
 
@@ -702,21 +702,21 @@ int sqlite3_shathree_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "sha3", 1,
+  rc = bentley_sqlite3_create_function(db, "sha3", 1,
                       SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
                       0, sha3Func, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha3", 2,
+    rc = bentley_sqlite3_create_function(db, "sha3", 2,
                       SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
                       0, sha3Func, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha3_query", 1,
+    rc = bentley_sqlite3_create_function(db, "sha3_query", 1,
                       SQLITE_UTF8 | SQLITE_DIRECTONLY,
                       0, sha3QueryFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha3_query", 2,
+    rc = bentley_sqlite3_create_function(db, "sha3_query", 2,
                       SQLITE_UTF8 | SQLITE_DIRECTONLY,
                       0, sha3QueryFunc, 0, 0);
   }

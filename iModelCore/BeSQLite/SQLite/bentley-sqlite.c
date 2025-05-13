@@ -85,17 +85,17 @@ int checkNoActiveStatements(sqlite3* db)
     if (0 == db->nVdbeActive)
         return SQLITE_OK;
 
-    for (stmt = db->pVdbe; stmt != NULL; stmt = sqlite3_next_stmt(db, stmt))
+    for (stmt = db->pVdbe; stmt != NULL; stmt = bentley_sqlite3_next_stmt(db, stmt))
         {
         if (stmt->eVdbeState != VDBE_RUN_STATE)
             {
-            sqlite3_log(SQLITE_BUSY, "Active statement: %s", stmt->zSql);
+            bentley_sqlite3_log(SQLITE_BUSY, "Active statement: %s", stmt->zSql);
             //assert(0);
             return SQLITE_ERROR;
             }
         }
 
-    sqlite3_log(SQLITE_BUSY, "nVdbeActive=%d but no active statements detected?!)", db->nVdbeActive);
+    bentley_sqlite3_log(SQLITE_BUSY, "nVdbeActive=%d but no active statements detected?!)", db->nVdbeActive);
     return SQLITE_ERROR;
     }
 #endif

@@ -38,7 +38,7 @@ struct SQLiteMsg {
     Utf8P m_msg = nullptr;
     ~SQLiteMsg() {
         if (m_msg) {
-            sqlite3_free(m_msg);
+            bentley_sqlite3_free(m_msg);
         }
     }
 };
@@ -241,7 +241,7 @@ int CloudCache::FindToken(Utf8CP storage, Utf8CP baseUri, Utf8CP containerName, 
     if (nullptr == container)
         return SQLITE_AUTH;
 
-    *token = sqlite3_mprintf("%s", container->m_accessToken.c_str());
+    *token = bentley_sqlite3_mprintf("%s", container->m_accessToken.c_str());
     return SQLITE_OK;
 }
 

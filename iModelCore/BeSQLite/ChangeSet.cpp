@@ -61,7 +61,7 @@ DbResult ChangeGroup::AddChange(Changes::Change const& change) {
     if (m_changegroup == nullptr || change.m_iter == nullptr)
         return BE_SQLITE_ERROR;
 
-    return (DbResult)sqlite3changegroup_add_change((sqlite3_changegroup*)m_changegroup, (sqlite3_changeset_iter*)change.m_iter);
+    return (DbResult)bentley_sqlite3changegroup_add_change((sqlite3_changegroup*)m_changegroup, (sqlite3_changeset_iter*)change.m_iter);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,14 +170,14 @@ DbResult ChangeTracker::CreateSession()
         return  BE_SQLITE_ERROR;
         }
 
-    DbResult result = (DbResult) sqlite3session_create(m_db->GetSqlDb(), "main", &m_session);
+    DbResult result = (DbResult) bentley_sqlite3session_create(m_db->GetSqlDb(), "main", &m_session);
     BeAssert(BE_SQLITE_OK == result);
 
     if (BE_SQLITE_OK == result) {
-        sqlite3session_table_filter(m_session, filterCaller, this); // set up auto-attach for all tables
-        result = (DbResult)sqlite3session_object_config(m_session, SQLITE_SESSION_OBJCONFIG_SIZE, &m_enableChangesetSizeStats);
+        bentley_sqlite3session_table_filter(m_session, filterCaller, this); // set up auto-attach for all tables
+        result = (DbResult)bentley_sqlite3session_object_config(m_session, SQLITE_SESSION_OBJCONFIG_SIZE, &m_enableChangesetSizeStats);
         if (result != BE_SQLITE_OK) {
-            sqlite3session_delete(m_session);
+            bentley_sqlite3session_delete(m_session);
             m_session = nullptr;
             return result;
         }
@@ -194,7 +194,7 @@ void ChangeTracker::EndTracking()
     {
     if (m_session)
         {
-        sqlite3session_delete(m_session);
+        bentley_sqlite3session_delete(m_session);
         m_session = nullptr;
         }
     m_ddlChanges.Clear();
@@ -209,7 +209,7 @@ bool ChangeTracker::EnableTracking(bool yesNo)
     if (m_isTracking == yesNo)
         return m_isTracking;
     CreateSession();
-    sqlite3session_enable(m_session, yesNo);
+    bentley_sqlite3session_enable(m_session, yesNo);
     m_isTracking = yesNo;
     return !yesNo;
     }
@@ -219,7 +219,7 @@ bool ChangeTracker::EnableTracking(bool yesNo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangeTracker::Mode ChangeTracker::GetMode() const
     {
-    return nullptr != m_session && 0 != sqlite3session_indirect(m_session, -1) ? Mode::Indirect : Mode::Direct;
+    return nullptr != m_session && 0 != bentley_sqlite3session_indirect(m_session, -1) ? Mode::Indirect : Mode::Direct;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -228,7 +228,7 @@ ChangeTracker::Mode ChangeTracker::GetMode() const
 void ChangeTracker::SetMode(Mode mode)
     {
     if (nullptr != m_session)
-        sqlite3session_indirect(m_session, static_cast<int>(mode));
+        bentley_sqlite3session_indirect(m_session, static_cast<int>(mode));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -236,7 +236,7 @@ void ChangeTracker::SetMode(Mode mode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChangeTracker::HasDataChanges() const
     {
-    return m_session && 0 == sqlite3session_isempty(m_session);
+    return m_session && 0 == bentley_sqlite3session_isempty(m_session);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -252,7 +252,7 @@ bool ChangeTracker::HasChanges() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 int64_t ChangeTracker::GetMemoryUsed() const
     {
-    return m_session ? sqlite3session_memory_used(m_session) : 0;
+    return m_session ? bentley_sqlite3session_memory_used(m_session) : 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -260,7 +260,7 @@ int64_t ChangeTracker::GetMemoryUsed() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 int64_t ChangeTracker::GetChangesetSize() const
     {
-    return m_session ? sqlite3session_changeset_size(m_session) : 0;
+    return m_session ? bentley_sqlite3session_changeset_size(m_session) : 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -270,7 +270,7 @@ DbResult ChangeTracker::EnableChangesetSizeStats(bool enabled) const
     {
     m_enableChangesetSizeStats =  enabled ? 1 : 0;
     if (m_session)
-        return (DbResult)sqlite3session_object_config(m_session, SQLITE_SESSION_OBJCONFIG_SIZE, &m_enableChangesetSizeStats );
+        return (DbResult)bentley_sqlite3session_object_config(m_session, SQLITE_SESSION_OBJCONFIG_SIZE, &m_enableChangesetSizeStats );
 
     return BE_SQLITE_OK;
     }
@@ -314,7 +314,7 @@ DbResult ChangeTracker::DifferenceToDb(Utf8StringP errMsgOut, BeFileNameCR baseF
         {
         Utf8CP tableName = tablesStmt.GetValueText(0);
         char* errMsg = nullptr;
-        result = (DbResult) sqlite3session_diff(GetSqlSession(), "base", tableName, &errMsg);
+        result = (DbResult) bentley_sqlite3session_diff(GetSqlSession(), "base", tableName, &errMsg);
         if (BE_SQLITE_OK != result)
             {
             if (errMsgOut != nullptr)
@@ -343,7 +343,7 @@ DbResult ChangeSet::Invert() {
 
     ChangeSet saved = std::move(*this);
     ChangeSet::Reader reader(saved);
-    return (DbResult)sqlite3changeset_invert_strm(ChangeSet::Reader::ReadCallback, &reader, AppendCallback, this);
+    return (DbResult)bentley_sqlite3changeset_invert_strm(ChangeSet::Reader::ReadCallback, &reader, AppendCallback, this);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -353,7 +353,7 @@ void Changes::Finalize() const {
     m_reader = nullptr;
 
     if (nullptr != m_iter) {
-        sqlite3changeset_finalize(m_iter);
+        bentley_sqlite3changeset_finalize(m_iter);
         m_iter = nullptr;
     }
 }
@@ -368,12 +368,12 @@ Changes::Change Changes::begin() const
     m_reader = m_changeStream._GetReader();
     Reader* reader = m_reader.get();
     if (nullptr != reader)
-        sqlite3changeset_start_v2_strm(&m_iter, Changes::Reader::ReadCallback, (void*) reader, m_invert ? SQLITE_CHANGESETSTART_INVERT : 0);
+        bentley_sqlite3changeset_start_v2_strm(&m_iter, Changes::Reader::ReadCallback, (void*) reader, m_invert ? SQLITE_CHANGESETSTART_INVERT : 0);
 
     if (nullptr == m_iter)
         return Change(0, false);
 
-    DbResult result = (DbResult) sqlite3changeset_next(m_iter);
+    DbResult result = (DbResult) bentley_sqlite3changeset_next(m_iter);
     return Change(m_iter, result==BE_SQLITE_ROW);
     }
 
@@ -381,16 +381,16 @@ Changes::Change Changes::begin() const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Changes::~Changes() { Finalize(); }
-DbResult Changes::Change::GetOperation(Utf8CP* tableName, int* nCols, DbOpcode* opcode, int* indirect) const { return (DbResult)sqlite3changeset_op(m_iter, tableName, nCols, (int*)opcode, indirect); }
-DbResult Changes::Change::GetPrimaryKeyColumns(Byte** cols, int* nCols) const { return (DbResult)sqlite3changeset_pk(m_iter, cols, nCols); }
-DbResult Changes::Change::GetFKeyConflicts(int* nConflicts) const { return (DbResult)sqlite3changeset_fk_conflicts(m_iter, nConflicts); }
+DbResult Changes::Change::GetOperation(Utf8CP* tableName, int* nCols, DbOpcode* opcode, int* indirect) const { return (DbResult)bentley_sqlite3changeset_op(m_iter, tableName, nCols, (int*)opcode, indirect); }
+DbResult Changes::Change::GetPrimaryKeyColumns(Byte** cols, int* nCols) const { return (DbResult)bentley_sqlite3changeset_pk(m_iter, cols, nCols); }
+DbResult Changes::Change::GetFKeyConflicts(int* nConflicts) const { return (DbResult)bentley_sqlite3changeset_fk_conflicts(m_iter, nConflicts); }
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbValue Changes::Change::GetOldValue(int colNum) const {
     SqlValueP val = nullptr;
-    int rc = sqlite3changeset_old(m_iter, colNum, &val);
+    int rc = bentley_sqlite3changeset_old(m_iter, colNum, &val);
     BeAssert(rc == BE_SQLITE_OK);
     UNUSED_VARIABLE(rc);
     return DbValue(val);
@@ -401,7 +401,7 @@ DbValue Changes::Change::GetOldValue(int colNum) const {
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbValue  Changes::Change::GetNewValue(int colNum) const {
     SqlValueP val = nullptr;
-    int rc = sqlite3changeset_new(m_iter, colNum, &val);
+    int rc = bentley_sqlite3changeset_new(m_iter, colNum, &val);
     BeAssert(rc == BE_SQLITE_OK);
     UNUSED_VARIABLE(rc);
     return DbValue(val);
@@ -455,7 +455,7 @@ bool Changes::Change::IsPrimaryKeyColumn(int colNum) const {
 +---------------+---------------+---------------+---------------+---------------+------*/
 Changes::Change& Changes::Change::operator++()
     {
-    m_isValid = (BE_SQLITE_ROW == (DbResult) sqlite3changeset_next(m_iter));
+    m_isValid = (BE_SQLITE_ROW == (DbResult) bentley_sqlite3changeset_next(m_iter));
     LoadOperation();
     return  *this;
     }
@@ -720,7 +720,7 @@ void Changes::Change::DumpCurrentValuesOfChangedColumns(Db const& db) const
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangeGroup::ChangeGroup() { sqlite3changegroup_new((sqlite3_changegroup**)&m_changegroup); }
+ChangeGroup::ChangeGroup() { bentley_sqlite3changegroup_new((sqlite3_changegroup**)&m_changegroup); }
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
@@ -729,15 +729,15 @@ void ChangeGroup::Finalize() {
     if (m_changegroup == nullptr)
         return;
 
-    sqlite3changegroup_delete((sqlite3_changegroup*)m_changegroup);
+    bentley_sqlite3changegroup_delete((sqlite3_changegroup*)m_changegroup);
     m_changegroup = nullptr;
     }
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangeGroup::ChangeGroup(DbCR db, Utf8CP zDb) {
-    sqlite3changegroup_new((sqlite3_changegroup**)&m_changegroup);
-    sqlite3changegroup_schema((sqlite3_changegroup*)m_changegroup, (sqlite3*)db.GetSqlDb(), zDb);
+    bentley_sqlite3changegroup_new((sqlite3_changegroup**)&m_changegroup);
+    bentley_sqlite3changegroup_schema((sqlite3_changegroup*)m_changegroup, (sqlite3*)db.GetSqlDb(), zDb);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -759,9 +759,9 @@ int ChangeStream::FilterTableCallback(void* pCtx, Utf8CP tableName) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeStream::FromChangeTrack(ChangeTracker& session, ChangeSet::SetType setType) {
     if (ChangeSet::SetType::Full == setType)
-        return (DbResult)sqlite3session_changeset_strm(session.GetSqlSession(), AppendCallback, this);
+        return (DbResult)bentley_sqlite3session_changeset_strm(session.GetSqlSession(), AppendCallback, this);
 
-    return (DbResult)sqlite3session_patchset_strm(session.GetSqlSession(), AppendCallback, this);
+    return (DbResult)bentley_sqlite3session_patchset_strm(session.GetSqlSession(), AppendCallback, this);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -772,7 +772,7 @@ DbResult ChangeStream::FromChangeGroup(ChangeGroupCR changeGroup) {
     if (changeGroupP == nullptr)
         return BE_SQLITE_ERROR;
 
-    return (DbResult)sqlite3changegroup_output_strm(changeGroupP, AppendCallback, this);
+    return (DbResult)bentley_sqlite3changegroup_output_strm(changeGroupP, AppendCallback, this);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -784,7 +784,7 @@ DbResult ChangeStream::AddToChangeGroup(ChangeGroup& changeGroup) {
         return BE_SQLITE_ERROR;
 
     auto reader = _GetReader();
-    return (DbResult)sqlite3changegroup_add_strm(changeGroupP, Changes::Reader::ReadCallback, (void*)reader.get());
+    return (DbResult)bentley_sqlite3changegroup_add_strm(changeGroupP, Changes::Reader::ReadCallback, (void*)reader.get());
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -819,7 +819,7 @@ DbResult ChangeStream::ApplyChanges(DbR db, Rebase* rebase, bool invert, bool ig
     if(fkNoAction)
         flags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
     auto reader = _GetReader();
-    DbResult result = (DbResult) sqlite3changeset_apply_v2_strm(db.GetSqlDb(), Changes::Reader::ReadCallback, (void*) reader.get(), FilterTableCallback, ConflictCallback, (void*) this,
+    DbResult result = (DbResult) bentley_sqlite3changeset_apply_v2_strm(db.GetSqlDb(), Changes::Reader::ReadCallback, (void*) reader.get(), FilterTableCallback, ConflictCallback, (void*) this,
         rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, flags);
     return result;
     }
@@ -839,7 +839,7 @@ DbResult ChangeStream::ApplyChanges(DbR db, ApplyChangesArgs const& args) const
     auto reader = _GetReader();
     m_args = &args;
 
-    DbResult result = (DbResult) sqlite3changeset_apply_v2_strm(
+    DbResult result = (DbResult) bentley_sqlite3changeset_apply_v2_strm(
         db.GetSqlDb(),
         Changes::Reader::ReadCallback,
         (void*) reader.get(),
@@ -879,7 +879,7 @@ DbResult ChangeStream::ReadFrom(Changes::Reader& inStream)  {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeStream::InvertFrom(Changes::Reader& reader) {
-    return (DbResult)sqlite3changeset_invert_strm(Changes::Reader::ReadCallback, &reader, AppendCallback, this);
+    return (DbResult)bentley_sqlite3changeset_invert_strm(Changes::Reader::ReadCallback, &reader, AppendCallback, this);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -889,7 +889,7 @@ DbResult ChangeStream::FromConcatenatedChangeStreams(ChangeStream const& inStrea
     auto reader1 = inStream1._GetReader();
     auto reader2 = inStream2._GetReader();
 
-    return (DbResult)sqlite3changeset_concat_strm(Changes::Reader::ReadCallback, reader1.get(), Changes::Reader::ReadCallback, reader2.get(), AppendCallback, this);
+    return (DbResult)bentley_sqlite3changeset_concat_strm(Changes::Reader::ReadCallback, reader1.get(), Changes::Reader::ReadCallback, reader2.get(), AppendCallback, this);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -904,13 +904,13 @@ DbResult ChangeSet::ConcatenateWith(ChangeSet const& second)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Rebaser::Rebaser() { sqlite3rebaser_create(&m_rebaser); }
-Rebaser::~Rebaser() { sqlite3rebaser_delete(m_rebaser); }
-DbResult Rebaser::AddRebase(Rebase const& rebase) { return (DbResult)sqlite3rebaser_configure(m_rebaser, rebase.GetSize(), rebase.GetData()); }
-DbResult Rebaser::AddRebase(void const* data, int count) { return (DbResult)sqlite3rebaser_configure(m_rebaser, count, data); }
+Rebaser::Rebaser() { bentley_sqlite3rebaser_create(&m_rebaser); }
+Rebaser::~Rebaser() { bentley_sqlite3rebaser_delete(m_rebaser); }
+DbResult Rebaser::AddRebase(Rebase const& rebase) { return (DbResult)bentley_sqlite3rebaser_configure(m_rebaser, rebase.GetSize(), rebase.GetData()); }
+DbResult Rebaser::AddRebase(void const* data, int count) { return (DbResult)bentley_sqlite3rebaser_configure(m_rebaser, count, data); }
 DbResult Rebaser::DoRebase(ChangeStream const& in, ChangeStream& out) {
     auto reader = in._GetReader();
-    return (DbResult)sqlite3rebaser_rebase_strm(m_rebaser, Changes::Reader::ReadCallback, reader.get(), out.AppendCallback, &out);
+    return (DbResult)bentley_sqlite3rebaser_rebase_strm(m_rebaser, Changes::Reader::ReadCallback, reader.get(), out.AppendCallback, &out);
 }
 Rebase::~Rebase() {
     if (m_data) BeSQLiteLib::FreeMem(m_data);

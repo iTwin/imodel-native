@@ -142,8 +142,8 @@ extern "C" {
 ** been edited in any way since it was last checked in, then the last
 ** four hexadecimal digits of the hash may be modified.
 **
-** See also: [sqlite3_libversion()],
-** [sqlite3_libversion_number()], [sqlite3_sourceid()],
+** See also: [bentley_sqlite3_libversion()],
+** [bentley_sqlite3_libversion_number()], [bentley_sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
 #define SQLITE_VERSION        "3.49.1"
@@ -152,7 +152,7 @@ extern "C" {
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
-** KEYWORDS: sqlite3_version sqlite3_sourceid
+** KEYWORDS: bentley_sqlite3_version bentley_sqlite3_sourceid
 **
 ** These interfaces provide the same information as the [SQLITE_VERSION],
 ** [SQLITE_VERSION_NUMBER], and [SQLITE_SOURCE_ID] C preprocessor macros
@@ -163,18 +163,18 @@ extern "C" {
 ** compiled with matching library and header files.
 **
 ** <blockquote><pre>
-** assert( sqlite3_libversion_number()==SQLITE_VERSION_NUMBER );
-** assert( strncmp(sqlite3_sourceid(),SQLITE_SOURCE_ID,80)==0 );
-** assert( strcmp(sqlite3_libversion(),SQLITE_VERSION)==0 );
+** assert( bentley_sqlite3_libversion_number()==SQLITE_VERSION_NUMBER );
+** assert( strncmp(bentley_sqlite3_sourceid(),SQLITE_SOURCE_ID,80)==0 );
+** assert( strcmp(bentley_sqlite3_libversion(),SQLITE_VERSION)==0 );
 ** </pre></blockquote>)^
 **
-** ^The sqlite3_version[] string constant contains the text of [SQLITE_VERSION]
-** macro.  ^The sqlite3_libversion() function returns a pointer to the
-** to the sqlite3_version[] string constant.  The sqlite3_libversion()
+** ^The bentley_sqlite3_version[] string constant contains the text of [SQLITE_VERSION]
+** macro.  ^The bentley_sqlite3_libversion() function returns a pointer to the
+** to the bentley_sqlite3_version[] string constant.  The bentley_sqlite3_libversion()
 ** function is provided for use in DLLs since DLL users usually do not have
 ** direct access to string constants within the DLL.  ^The
-** sqlite3_libversion_number() function returns an integer equal to
-** [SQLITE_VERSION_NUMBER].  ^(The sqlite3_sourceid() function returns
+** bentley_sqlite3_libversion_number() function returns an integer equal to
+** [SQLITE_VERSION_NUMBER].  ^(The bentley_sqlite3_sourceid() function returns
 ** a pointer to a string constant whose value is the same as the
 ** [SQLITE_SOURCE_ID] C preprocessor macro.  Except if SQLite is built
 ** using an edited copy of [the amalgamation], then the last four characters
@@ -182,45 +182,45 @@ extern "C" {
 **
 ** See also: [sqlite_version()] and [sqlite_source_id()].
 */
-SQLITE_API SQLITE_EXTERN const char sqlite3_version[];
-SQLITE_API const char *sqlite3_libversion(void);
-SQLITE_API const char *sqlite3_sourceid(void);
-SQLITE_API int sqlite3_libversion_number(void);
+SQLITE_API SQLITE_EXTERN const char bentley_sqlite3_version[];
+SQLITE_API const char *bentley_sqlite3_libversion(void);
+SQLITE_API const char *bentley_sqlite3_sourceid(void);
+SQLITE_API int bentley_sqlite3_libversion_number(void);
 
 /*
 ** CAPI3REF: Run-Time Library Compilation Options Diagnostics
 **
-** ^The sqlite3_compileoption_used() function returns 0 or 1
+** ^The bentley_sqlite3_compileoption_used() function returns 0 or 1
 ** indicating whether the specified option was defined at
 ** compile time.  ^The SQLITE_ prefix may be omitted from the
-** option name passed to sqlite3_compileoption_used().
+** option name passed to bentley_sqlite3_compileoption_used().
 **
-** ^The sqlite3_compileoption_get() function allows iterating
+** ^The bentley_sqlite3_compileoption_get() function allows iterating
 ** over the list of options that were defined at compile time by
 ** returning the N-th compile time option string.  ^If N is out of range,
-** sqlite3_compileoption_get() returns a NULL pointer.  ^The SQLITE_
+** bentley_sqlite3_compileoption_get() returns a NULL pointer.  ^The SQLITE_
 ** prefix is omitted from any strings returned by
-** sqlite3_compileoption_get().
+** bentley_sqlite3_compileoption_get().
 **
-** ^Support for the diagnostic functions sqlite3_compileoption_used()
-** and sqlite3_compileoption_get() may be omitted by specifying the
+** ^Support for the diagnostic functions bentley_sqlite3_compileoption_used()
+** and bentley_sqlite3_compileoption_get() may be omitted by specifying the
 ** [SQLITE_OMIT_COMPILEOPTION_DIAGS] option at compile time.
 **
 ** See also: SQL functions [sqlite_compileoption_used()] and
 ** [sqlite_compileoption_get()] and the [compile_options pragma].
 */
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
-SQLITE_API int sqlite3_compileoption_used(const char *zOptName);
-SQLITE_API const char *sqlite3_compileoption_get(int N);
+SQLITE_API int bentley_sqlite3_compileoption_used(const char *zOptName);
+SQLITE_API const char *bentley_sqlite3_compileoption_get(int N);
 #else
-# define sqlite3_compileoption_used(X) 0
-# define sqlite3_compileoption_get(X)  ((void*)0)
+# define bentley_sqlite3_compileoption_used(X) 0
+# define bentley_sqlite3_compileoption_get(X)  ((void*)0)
 #endif
 
 /*
 ** CAPI3REF: Test To See If The Library Is Threadsafe
 **
-** ^The sqlite3_threadsafe() function returns zero if and only if
+** ^The bentley_sqlite3_threadsafe() function returns zero if and only if
 ** SQLite was compiled with mutexing code omitted due to the
 ** [SQLITE_THREADSAFE] compile-time option being set to 0.
 **
@@ -243,17 +243,17 @@ SQLITE_API const char *sqlite3_compileoption_get(int N);
 ** This interface only reports on the compile-time mutex setting
 ** of the [SQLITE_THREADSAFE] flag.  If SQLite is compiled with
 ** SQLITE_THREADSAFE=1 or =2 then mutexes are enabled by default but
-** can be fully or partially disabled using a call to [sqlite3_config()]
+** can be fully or partially disabled using a call to [bentley_sqlite3_config()]
 ** with the verbs [SQLITE_CONFIG_SINGLETHREAD], [SQLITE_CONFIG_MULTITHREAD],
 ** or [SQLITE_CONFIG_SERIALIZED].  ^(The return value of the
-** sqlite3_threadsafe() function shows only the compile-time setting of
+** bentley_sqlite3_threadsafe() function shows only the compile-time setting of
 ** thread safety, not any run-time changes to that setting made by
-** sqlite3_config(). In other words, the return value from sqlite3_threadsafe()
-** is unchanged by calls to sqlite3_config().)^
+** bentley_sqlite3_config(). In other words, the return value from bentley_sqlite3_threadsafe()
+** is unchanged by calls to bentley_sqlite3_config().)^
 **
 ** See the [threading mode] documentation for additional information.
 */
-SQLITE_API int sqlite3_threadsafe(void);
+SQLITE_API int bentley_sqlite3_threadsafe(void);
 
 /*
 ** CAPI3REF: Database Connection Handle
@@ -261,12 +261,12 @@ SQLITE_API int sqlite3_threadsafe(void);
 **
 ** Each open SQLite database is represented by a pointer to an instance of
 ** the opaque structure named "sqlite3".  It is useful to think of an sqlite3
-** pointer as an object.  The [sqlite3_open()], [sqlite3_open16()], and
-** [sqlite3_open_v2()] interfaces are its constructors, and [sqlite3_close()]
-** and [sqlite3_close_v2()] are its destructors.  There are many other
+** pointer as an object.  The [bentley_sqlite3_open()], [bentley_sqlite3_open16()], and
+** [bentley_sqlite3_open_v2()] interfaces are its constructors, and [bentley_sqlite3_close()]
+** and [bentley_sqlite3_close_v2()] are its destructors.  There are many other
 ** interfaces (such as
-** [sqlite3_prepare_v2()], [sqlite3_create_function()], and
-** [sqlite3_busy_timeout()] to name but three) that are methods on an
+** [bentley_sqlite3_prepare_v2()], [bentley_sqlite3_create_function()], and
+** [bentley_sqlite3_busy_timeout()] to name but three) that are methods on an
 ** sqlite3 object.
 */
 typedef struct sqlite3 sqlite3;
@@ -316,42 +316,42 @@ typedef sqlite_uint64 sqlite3_uint64;
 ** CAPI3REF: Closing A Database Connection
 ** DESTRUCTOR: sqlite3
 **
-** ^The sqlite3_close() and sqlite3_close_v2() routines are destructors
+** ^The bentley_sqlite3_close() and bentley_sqlite3_close_v2() routines are destructors
 ** for the [sqlite3] object.
-** ^Calls to sqlite3_close() and sqlite3_close_v2() return [SQLITE_OK] if
+** ^Calls to bentley_sqlite3_close() and bentley_sqlite3_close_v2() return [SQLITE_OK] if
 ** the [sqlite3] object is successfully destroyed and all associated
 ** resources are deallocated.
 **
-** Ideally, applications should [sqlite3_finalize | finalize] all
-** [prepared statements], [sqlite3_blob_close | close] all [BLOB handles], and
-** [sqlite3_backup_finish | finish] all [sqlite3_backup] objects associated
+** Ideally, applications should [bentley_sqlite3_finalize | finalize] all
+** [prepared statements], [bentley_sqlite3_blob_close | close] all [BLOB handles], and
+** [bentley_sqlite3_backup_finish | finish] all [sqlite3_backup] objects associated
 ** with the [sqlite3] object prior to attempting to close the object.
 ** ^If the database connection is associated with unfinalized prepared
 ** statements, BLOB handlers, and/or unfinished sqlite3_backup objects then
-** sqlite3_close() will leave the database connection open and return
-** [SQLITE_BUSY]. ^If sqlite3_close_v2() is called with unfinalized prepared
+** bentley_sqlite3_close() will leave the database connection open and return
+** [SQLITE_BUSY]. ^If bentley_sqlite3_close_v2() is called with unfinalized prepared
 ** statements, unclosed BLOB handlers, and/or unfinished sqlite3_backups,
 ** it returns [SQLITE_OK] regardless, but instead of deallocating the database
 ** connection immediately, it marks the database connection as an unusable
 ** "zombie" and makes arrangements to automatically deallocate the database
 ** connection after all prepared statements are finalized, all BLOB handles
-** are closed, and all backups have finished. The sqlite3_close_v2() interface
+** are closed, and all backups have finished. The bentley_sqlite3_close_v2() interface
 ** is intended for use with host languages that are garbage collected, and
 ** where the order in which destructors are called is arbitrary.
 **
 ** ^If an [sqlite3] object is destroyed while a transaction is open,
 ** the transaction is automatically rolled back.
 **
-** The C parameter to [sqlite3_close(C)] and [sqlite3_close_v2(C)]
+** The C parameter to [bentley_sqlite3_close(C)] and [bentley_sqlite3_close_v2(C)]
 ** must be either a NULL
 ** pointer or an [sqlite3] object pointer obtained
-** from [sqlite3_open()], [sqlite3_open16()], or
-** [sqlite3_open_v2()], and not previously closed.
-** ^Calling sqlite3_close() or sqlite3_close_v2() with a NULL pointer
+** from [bentley_sqlite3_open()], [bentley_sqlite3_open16()], or
+** [bentley_sqlite3_open_v2()], and not previously closed.
+** ^Calling bentley_sqlite3_close() or bentley_sqlite3_close_v2() with a NULL pointer
 ** argument is a harmless no-op.
 */
-SQLITE_API int sqlite3_close(sqlite3*);
-SQLITE_API int sqlite3_close_v2(sqlite3*);
+SQLITE_API int bentley_sqlite3_close(sqlite3*);
+SQLITE_API int bentley_sqlite3_close_v2(sqlite3*);
 
 /*
 ** The type for a callback function.
@@ -364,49 +364,49 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** CAPI3REF: One-Step Query Execution Interface
 ** METHOD: sqlite3
 **
-** The sqlite3_exec() interface is a convenience wrapper around
-** [sqlite3_prepare_v2()], [sqlite3_step()], and [sqlite3_finalize()],
+** The bentley_sqlite3_exec() interface is a convenience wrapper around
+** [bentley_sqlite3_prepare_v2()], [bentley_sqlite3_step()], and [bentley_sqlite3_finalize()],
 ** that allows an application to run multiple statements of SQL
 ** without having to use a lot of C code.
 **
-** ^The sqlite3_exec() interface runs zero or more UTF-8 encoded,
+** ^The bentley_sqlite3_exec() interface runs zero or more UTF-8 encoded,
 ** semicolon-separate SQL statements passed into its 2nd argument,
 ** in the context of the [database connection] passed in as its 1st
 ** argument.  ^If the callback function of the 3rd argument to
-** sqlite3_exec() is not NULL, then it is invoked for each result row
+** bentley_sqlite3_exec() is not NULL, then it is invoked for each result row
 ** coming out of the evaluated SQL statements.  ^The 4th argument to
-** sqlite3_exec() is relayed through to the 1st argument of each
-** callback invocation.  ^If the callback pointer to sqlite3_exec()
+** bentley_sqlite3_exec() is relayed through to the 1st argument of each
+** callback invocation.  ^If the callback pointer to bentley_sqlite3_exec()
 ** is NULL, then no callback is ever invoked and result rows are
 ** ignored.
 **
 ** ^If an error occurs while evaluating the SQL statements passed into
-** sqlite3_exec(), then execution of the current statement stops and
-** subsequent statements are skipped.  ^If the 5th parameter to sqlite3_exec()
+** bentley_sqlite3_exec(), then execution of the current statement stops and
+** subsequent statements are skipped.  ^If the 5th parameter to bentley_sqlite3_exec()
 ** is not NULL then any error message is written into memory obtained
-** from [sqlite3_malloc()] and passed back through the 5th parameter.
-** To avoid memory leaks, the application should invoke [sqlite3_free()]
+** from [bentley_sqlite3_malloc()] and passed back through the 5th parameter.
+** To avoid memory leaks, the application should invoke [bentley_sqlite3_free()]
 ** on error message strings returned through the 5th parameter of
-** sqlite3_exec() after the error message string is no longer needed.
-** ^If the 5th parameter to sqlite3_exec() is not NULL and no errors
-** occur, then sqlite3_exec() sets the pointer in its 5th parameter to
+** bentley_sqlite3_exec() after the error message string is no longer needed.
+** ^If the 5th parameter to bentley_sqlite3_exec() is not NULL and no errors
+** occur, then bentley_sqlite3_exec() sets the pointer in its 5th parameter to
 ** NULL before returning.
 **
-** ^If an sqlite3_exec() callback returns non-zero, the sqlite3_exec()
+** ^If an bentley_sqlite3_exec() callback returns non-zero, the bentley_sqlite3_exec()
 ** routine returns SQLITE_ABORT without invoking the callback again and
 ** without running any subsequent SQL statements.
 **
-** ^The 2nd argument to the sqlite3_exec() callback function is the
-** number of columns in the result.  ^The 3rd argument to the sqlite3_exec()
+** ^The 2nd argument to the bentley_sqlite3_exec() callback function is the
+** number of columns in the result.  ^The 3rd argument to the bentley_sqlite3_exec()
 ** callback is an array of pointers to strings obtained as if from
-** [sqlite3_column_text()], one for each column.  ^If an element of a
+** [bentley_sqlite3_column_text()], one for each column.  ^If an element of a
 ** result row is NULL then the corresponding string pointer for the
-** sqlite3_exec() callback is a NULL pointer.  ^The 4th argument to the
-** sqlite3_exec() callback is an array of pointers to strings where each
+** bentley_sqlite3_exec() callback is a NULL pointer.  ^The 4th argument to the
+** bentley_sqlite3_exec() callback is an array of pointers to strings where each
 ** entry represents the name of corresponding result column as obtained
-** from [sqlite3_column_name()].
+** from [bentley_sqlite3_column_name()].
 **
-** ^If the 2nd parameter to sqlite3_exec() is a NULL pointer, a pointer
+** ^If the 2nd parameter to bentley_sqlite3_exec() is a NULL pointer, a pointer
 ** to an empty string, or a pointer that contains only whitespace and/or
 ** SQL comments, then no SQL statements are evaluated and the database
 ** is not changed.
@@ -414,17 +414,17 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** Restrictions:
 **
 ** <ul>
-** <li> The application must ensure that the 1st parameter to sqlite3_exec()
+** <li> The application must ensure that the 1st parameter to bentley_sqlite3_exec()
 **      is a valid and open [database connection].
 ** <li> The application must not close the [database connection] specified by
-**      the 1st parameter to sqlite3_exec() while sqlite3_exec() is running.
+**      the 1st parameter to bentley_sqlite3_exec() while bentley_sqlite3_exec() is running.
 ** <li> The application must not modify the SQL statement text passed into
-**      the 2nd parameter of sqlite3_exec() while sqlite3_exec() is running.
+**      the 2nd parameter of bentley_sqlite3_exec() while bentley_sqlite3_exec() is running.
 ** <li> The application must not dereference the arrays or string pointers
 **       passed as the 3rd and 4th callback parameters after it returns.
 ** </ul>
 */
-SQLITE_API int sqlite3_exec(
+SQLITE_API int bentley_sqlite3_exec(
   sqlite3*,                                  /* An open database */
   const char *sql,                           /* SQL to be evaluated */
   int (*callback)(void*,int,char**,char**),  /* Callback function */
@@ -453,10 +453,10 @@ SQLITE_API int sqlite3_exec(
 #define SQLITE_LOCKED       6   /* A table in the database is locked */
 #define SQLITE_NOMEM        7   /* A malloc() failed */
 #define SQLITE_READONLY     8   /* Attempt to write a readonly database */
-#define SQLITE_INTERRUPT    9   /* Operation terminated by sqlite3_interrupt()*/
+#define SQLITE_INTERRUPT    9   /* Operation terminated by bentley_sqlite3_interrupt()*/
 #define SQLITE_IOERR       10   /* Some kind of disk I/O error occurred */
 #define SQLITE_CORRUPT     11   /* The database disk image is malformed */
-#define SQLITE_NOTFOUND    12   /* Unknown opcode in sqlite3_file_control() */
+#define SQLITE_NOTFOUND    12   /* Unknown opcode in bentley_sqlite3_file_control() */
 #define SQLITE_FULL        13   /* Insertion failed because database is full */
 #define SQLITE_CANTOPEN    14   /* Unable to open the database file */
 #define SQLITE_PROTOCOL    15   /* Database lock protocol error */
@@ -471,10 +471,10 @@ SQLITE_API int sqlite3_exec(
 #define SQLITE_FORMAT      24   /* Not used */
 #define SQLITE_RANGE       25   /* 2nd parameter to sqlite3_bind out of range */
 #define SQLITE_NOTADB      26   /* File opened that is not a database file */
-#define SQLITE_NOTICE      27   /* Notifications from sqlite3_log() */
-#define SQLITE_WARNING     28   /* Warnings from sqlite3_log() */
-#define SQLITE_ROW         100  /* sqlite3_step() has another row ready */
-#define SQLITE_DONE        101  /* sqlite3_step() has finished executing */
+#define SQLITE_NOTICE      27   /* Notifications from bentley_sqlite3_log() */
+#define SQLITE_WARNING     28   /* Warnings from bentley_sqlite3_log() */
+#define SQLITE_ROW         100  /* bentley_sqlite3_step() has another row ready */
+#define SQLITE_DONE        101  /* bentley_sqlite3_step() has finished executing */
 /* end-of-error-codes */
 
 /*
@@ -490,9 +490,9 @@ SQLITE_API int sqlite3_exec(
 ** support for additional result codes that provide more detailed information
 ** about errors. These [extended result codes] are enabled or disabled
 ** on a per database connection basis using the
-** [sqlite3_extended_result_codes()] API.  Or, the extended code for
+** [bentley_sqlite3_extended_result_codes()] API.  Or, the extended code for
 ** the most recent error can be obtained using
-** [sqlite3_extended_errcode()].
+** [bentley_sqlite3_extended_errcode()].
 */
 #define SQLITE_ERROR_MISSING_COLLSEQ   (SQLITE_ERROR | (1<<8))
 #define SQLITE_ERROR_RETRY             (SQLITE_ERROR | (2<<8))
@@ -576,30 +576,30 @@ SQLITE_API int sqlite3_exec(
 ** CAPI3REF: Flags For File Open Operations
 **
 ** These bit values are intended for use in the
-** 3rd parameter to the [sqlite3_open_v2()] interface and
+** 3rd parameter to the [bentley_sqlite3_open_v2()] interface and
 ** in the 4th parameter to the [sqlite3_vfs.xOpen] method.
 **
-** Only those flags marked as "Ok for sqlite3_open_v2()" may be
-** used as the third argument to the [sqlite3_open_v2()] interface.
-** The other flags have historically been ignored by sqlite3_open_v2(),
+** Only those flags marked as "Ok for bentley_sqlite3_open_v2()" may be
+** used as the third argument to the [bentley_sqlite3_open_v2()] interface.
+** The other flags have historically been ignored by bentley_sqlite3_open_v2(),
 ** though future versions of SQLite might change so that an error is
-** raised if any of the disallowed bits are passed into sqlite3_open_v2().
+** raised if any of the disallowed bits are passed into bentley_sqlite3_open_v2().
 ** Applications should not depend on the historical behavior.
 **
 ** Note in particular that passing the SQLITE_OPEN_EXCLUSIVE flag into
-** [sqlite3_open_v2()] does *not* cause the underlying database file
+** [bentley_sqlite3_open_v2()] does *not* cause the underlying database file
 ** to be opened using O_EXCL.  Passing SQLITE_OPEN_EXCLUSIVE into
-** [sqlite3_open_v2()] has historically be a no-op and might become an
+** [bentley_sqlite3_open_v2()] has historically be a no-op and might become an
 ** error in future versions of SQLite.
 */
-#define SQLITE_OPEN_READONLY         0x00000001  /* Ok for sqlite3_open_v2() */
-#define SQLITE_OPEN_READWRITE        0x00000002  /* Ok for sqlite3_open_v2() */
-#define SQLITE_OPEN_CREATE           0x00000004  /* Ok for sqlite3_open_v2() */
+#define SQLITE_OPEN_READONLY         0x00000001  /* Ok for bentley_sqlite3_open_v2() */
+#define SQLITE_OPEN_READWRITE        0x00000002  /* Ok for bentley_sqlite3_open_v2() */
+#define SQLITE_OPEN_CREATE           0x00000004  /* Ok for bentley_sqlite3_open_v2() */
 #define SQLITE_OPEN_DELETEONCLOSE    0x00000008  /* VFS only */
 #define SQLITE_OPEN_EXCLUSIVE        0x00000010  /* VFS only */
 #define SQLITE_OPEN_AUTOPROXY        0x00000020  /* VFS only */
-#define SQLITE_OPEN_URI              0x00000040  /* Ok for sqlite3_open_v2() */
-#define SQLITE_OPEN_MEMORY           0x00000080  /* Ok for sqlite3_open_v2() */
+#define SQLITE_OPEN_URI              0x00000040  /* Ok for bentley_sqlite3_open_v2() */
+#define SQLITE_OPEN_MEMORY           0x00000080  /* Ok for bentley_sqlite3_open_v2() */
 #define SQLITE_OPEN_MAIN_DB          0x00000100  /* VFS only */
 #define SQLITE_OPEN_TEMP_DB          0x00000200  /* VFS only */
 #define SQLITE_OPEN_TRANSIENT_DB     0x00000400  /* VFS only */
@@ -607,12 +607,12 @@ SQLITE_API int sqlite3_exec(
 #define SQLITE_OPEN_TEMP_JOURNAL     0x00001000  /* VFS only */
 #define SQLITE_OPEN_SUBJOURNAL       0x00002000  /* VFS only */
 #define SQLITE_OPEN_SUPER_JOURNAL    0x00004000  /* VFS only */
-#define SQLITE_OPEN_NOMUTEX          0x00008000  /* Ok for sqlite3_open_v2() */
-#define SQLITE_OPEN_FULLMUTEX        0x00010000  /* Ok for sqlite3_open_v2() */
-#define SQLITE_OPEN_SHAREDCACHE      0x00020000  /* Ok for sqlite3_open_v2() */
-#define SQLITE_OPEN_PRIVATECACHE     0x00040000  /* Ok for sqlite3_open_v2() */
+#define SQLITE_OPEN_NOMUTEX          0x00008000  /* Ok for bentley_sqlite3_open_v2() */
+#define SQLITE_OPEN_FULLMUTEX        0x00010000  /* Ok for bentley_sqlite3_open_v2() */
+#define SQLITE_OPEN_SHAREDCACHE      0x00020000  /* Ok for bentley_sqlite3_open_v2() */
+#define SQLITE_OPEN_PRIVATECACHE     0x00040000  /* Ok for bentley_sqlite3_open_v2() */
 #define SQLITE_OPEN_WAL              0x00080000  /* VFS only */
-#define SQLITE_OPEN_NOFOLLOW         0x01000000  /* Ok for sqlite3_open_v2() */
+#define SQLITE_OPEN_NOFOLLOW         0x01000000  /* Ok for bentley_sqlite3_open_v2() */
 #define SQLITE_OPEN_EXRESCODE        0x02000000  /* Extended result codes */
 
 /* Reserved:                         0x00F00000 */
@@ -785,7 +785,7 @@ struct sqlite3_file {
 **
 ** The xFileControl() method is a generic interface that allows custom
 ** VFS implementations to directly control an open file using the
-** [sqlite3_file_control()] interface.  The second "op" argument is an
+** [bentley_sqlite3_file_control()] interface.  The second "op" argument is an
 ** integer opcode.  The third argument is a generic pointer intended to
 ** point to a structure that may contain arguments or space in which to
 ** write return values.  Potential uses for xFileControl() might be
@@ -874,7 +874,7 @@ struct sqlite3_io_methods {
 ** KEYWORDS: {file control opcodes} {file control opcode}
 **
 ** These integer constants are opcodes for the xFileControl method
-** of the [sqlite3_io_methods] object and for the [sqlite3_file_control()]
+** of the [sqlite3_io_methods] object and for the [bentley_sqlite3_file_control()]
 ** interface.
 **
 ** <ul>
@@ -896,7 +896,7 @@ struct sqlite3_io_methods {
 **
 ** <li>[[SQLITE_FCNTL_SIZE_LIMIT]]
 ** The [SQLITE_FCNTL_SIZE_LIMIT] opcode is used by in-memory VFS that
-** implements [sqlite3_deserialize()] to set an upper bound on the size
+** implements [bentley_sqlite3_deserialize()] to set an upper bound on the size
 ** of the in-memory database.  The argument is a pointer to a [sqlite3_int64].
 ** If the integer pointed to is negative, then it is filled in with the
 ** current limit.  Otherwise the limit is set to the larger of the value
@@ -906,7 +906,7 @@ struct sqlite3_io_methods {
 ** <li>[[SQLITE_FCNTL_CHUNK_SIZE]]
 ** The [SQLITE_FCNTL_CHUNK_SIZE] opcode is used to request that the VFS
 ** extends and truncates the database file in chunks of a size specified
-** by the user. The fourth argument to [sqlite3_file_control()] should
+** by the user. The fourth argument to [bentley_sqlite3_file_control()] should
 ** point to an integer (type int) containing the new chunk-size to use
 ** for the nominated database. Allocating database file space in large
 ** chunks (say 1MB at a time), may reduce file-system fragmentation and
@@ -937,7 +937,7 @@ struct sqlite3_io_methods {
 ** as part of a multi-database commit, the argument points to a nul-terminated
 ** string containing the transactions super-journal file name. VFSes that
 ** do not need this signal should silently ignore this opcode. Applications
-** should not call [sqlite3_file_control()] with this opcode as doing so may
+** should not call [bentley_sqlite3_file_control()] with this opcode as doing so may
 ** disrupt the operation of the specialized VFSes that do require it.
 **
 ** <li>[[SQLITE_FCNTL_COMMIT_PHASETWO]]
@@ -945,7 +945,7 @@ struct sqlite3_io_methods {
 ** and sent to the VFS after a transaction has been committed immediately
 ** but before the database is unlocked. VFSes that do not need this signal
 ** should silently ignore this opcode. Applications should not call
-** [sqlite3_file_control()] with this opcode as doing so may disrupt the
+** [bentley_sqlite3_file_control()] with this opcode as doing so may disrupt the
 ** operation of the specialized VFSes that do require it.
 **
 ** <li>[[SQLITE_FCNTL_WIN32_AV_RETRY]]
@@ -976,7 +976,7 @@ struct sqlite3_io_methods {
 ** have write permission on the directory containing the database file want
 ** to read the database file, as the WAL and shared memory files must exist
 ** in order for the database to be readable.  The fourth parameter to
-** [sqlite3_file_control()] for this opcode should be a pointer to an integer.
+** [bentley_sqlite3_file_control()] for this opcode should be a pointer to an integer.
 ** That integer is 0 to disable persistent WAL mode or 1 to enable persistent
 ** WAL mode.  If the integer is -1, then it is overwritten with the current
 ** WAL persistence setting.
@@ -986,7 +986,7 @@ struct sqlite3_io_methods {
 ** persistent "powersafe-overwrite" or "PSOW" setting.  The PSOW setting
 ** determines the [SQLITE_IOCAP_POWERSAFE_OVERWRITE] bit of the
 ** xDeviceCharacteristics methods. The fourth parameter to
-** [sqlite3_file_control()] for this opcode should be a pointer to an integer.
+** [bentley_sqlite3_file_control()] for this opcode should be a pointer to an integer.
 ** That integer is 0 to disable zero-damage mode or 1 to enable zero-damage
 ** mode.  If the integer is -1, then it is overwritten with the current
 ** zero-damage mode setting.
@@ -1001,8 +1001,8 @@ struct sqlite3_io_methods {
 ** ^The [SQLITE_FCNTL_VFSNAME] opcode can be used to obtain the names of
 ** all [VFSes] in the VFS stack.  The names are of all VFS shims and the
 ** final bottom-level VFS are written into memory obtained from
-** [sqlite3_malloc()] and the result is stored in the char* variable
-** that the fourth parameter of [sqlite3_file_control()] points to.
+** [bentley_sqlite3_malloc()] and the result is stored in the char* variable
+** that the fourth parameter of [bentley_sqlite3_file_control()] points to.
 ** The caller is responsible for freeing the memory when done.  As with
 ** all file-control actions, there is no guarantee that this will actually
 ** do anything.  Callers should initialize the char* variable to a NULL
@@ -1012,7 +1012,7 @@ struct sqlite3_io_methods {
 ** <li>[[SQLITE_FCNTL_VFS_POINTER]]
 ** ^The [SQLITE_FCNTL_VFS_POINTER] opcode finds a pointer to the top-level
 ** [VFSes] currently in use.  ^(The argument X in
-** sqlite3_file_control(db,SQLITE_FCNTL_VFS_POINTER,X) must be
+** bentley_sqlite3_file_control(db,SQLITE_FCNTL_VFS_POINTER,X) must be
 ** of type "[sqlite3_vfs] **".  This opcodes will set *X
 ** to a pointer to the top-level VFS.)^
 ** ^When there are multiple VFS shims in the stack, this opcode finds the
@@ -1027,7 +1027,7 @@ struct sqlite3_io_methods {
 ** is the name of the pragma and the third element is the argument to the
 ** pragma or NULL if the pragma has no argument.  ^The handler for an
 ** [SQLITE_FCNTL_PRAGMA] file control can optionally make the first element
-** of the char** argument point to a string obtained from [sqlite3_mprintf()]
+** of the char** argument point to a string obtained from [bentley_sqlite3_mprintf()]
 ** or the equivalent and that string will become the result of the pragma or
 ** the error message if the pragma fails. ^If the
 ** [SQLITE_FCNTL_PRAGMA] file control returns [SQLITE_NOTFOUND], then normal
@@ -1061,8 +1061,8 @@ struct sqlite3_io_methods {
 ** temporary filename using the same algorithm that is followed to generate
 ** temporary filenames for TEMP tables and other internal uses.  The
 ** argument should be a char** which will be filled with the filename
-** written into memory obtained from [sqlite3_malloc()].  The caller should
-** invoke [sqlite3_free()] on the result to avoid a memory leak.
+** written into memory obtained from [bentley_sqlite3_malloc()].  The caller should
+** invoke [bentley_sqlite3_free()] on the result to avoid a memory leak.
 **
 ** <li>[[SQLITE_FCNTL_MMAP_SIZE]]
 ** The [SQLITE_FCNTL_MMAP_SIZE] file control is used to query or set the
@@ -1170,11 +1170,11 @@ struct sqlite3_io_methods {
 ** "data version" changes whenever any change occurs to the corresponding
 ** database file, either through SQL statements on the same database
 ** connection or through transactions committed by separate database
-** connections possibly in other processes. The [sqlite3_total_changes()]
+** connections possibly in other processes. The [bentley_sqlite3_total_changes()]
 ** interface can be used to find if any database on the connection has changed,
 ** but that interface responds to changes on TEMP as well as MAIN and does
 ** not provide a mechanism to detect changes to MAIN only.  Also, the
-** [sqlite3_total_changes()] interface responds to internal changes only and
+** [bentley_sqlite3_total_changes()] interface responds to internal changes only and
 ** omits changes made by other database connections.  The
 ** [PRAGMA data_version] command provides a mechanism to detect changes to
 ** a single attached database that occur due to other database connections,
@@ -1274,7 +1274,7 @@ struct sqlite3_io_methods {
 ** at the internal representation of an [sqlite3_mutex].  It only
 ** deals with pointers to the [sqlite3_mutex] object.
 **
-** Mutexes are created using [sqlite3_mutex_alloc()].
+** Mutexes are created using [bentley_sqlite3_mutex_alloc()].
 */
 typedef struct sqlite3_mutex sqlite3_mutex;
 
@@ -1297,13 +1297,13 @@ typedef struct sqlite3_api_routines sqlite3_api_routines;
 ** may also be passed to special APIs such as:
 **
 ** <ul>
-** <li>  sqlite3_filename_database()
-** <li>  sqlite3_filename_journal()
-** <li>  sqlite3_filename_wal()
-** <li>  sqlite3_uri_parameter()
-** <li>  sqlite3_uri_boolean()
-** <li>  sqlite3_uri_int64()
-** <li>  sqlite3_uri_key()
+** <li>  bentley_sqlite3_filename_database()
+** <li>  bentley_sqlite3_filename_journal()
+** <li>  bentley_sqlite3_filename_wal()
+** <li>  bentley_sqlite3_uri_parameter()
+** <li>  bentley_sqlite3_uri_boolean()
+** <li>  bentley_sqlite3_uri_int64()
+** <li>  bentley_sqlite3_uri_key()
 ** </ul>
 */
 typedef const char *sqlite3_filename;
@@ -1334,9 +1334,9 @@ typedef const char *sqlite3_filename;
 ** a pathname in this VFS.
 **
 ** Registered sqlite3_vfs objects are kept on a linked list formed by
-** the pNext pointer.  The [sqlite3_vfs_register()]
-** and [sqlite3_vfs_unregister()] interfaces manage this list
-** in a thread-safe way.  The [sqlite3_vfs_find()] interface
+** the pNext pointer.  The [bentley_sqlite3_vfs_register()]
+** and [bentley_sqlite3_vfs_unregister()] interfaces manage this list
+** in a thread-safe way.  The [bentley_sqlite3_vfs_find()] interface
 ** searches the list.  Neither the application code nor the VFS
 ** implementation should use the pNext pointer.
 **
@@ -1367,8 +1367,8 @@ typedef const char *sqlite3_filename;
 ** flags parameter will include [SQLITE_OPEN_DELETEONCLOSE].
 **
 ** The flags argument to xOpen() includes all bits set in
-** the flags argument to [sqlite3_open_v2()].  Or if [sqlite3_open()]
-** or [sqlite3_open16()] is used, then flags includes at least
+** the flags argument to [bentley_sqlite3_open_v2()].  Or if [bentley_sqlite3_open()]
+** or [bentley_sqlite3_open16()] is used, then flags includes at least
 ** [SQLITE_OPEN_READWRITE] | [SQLITE_OPEN_CREATE].
 ** If xOpen() opens a file read-only then it sets *pOutFlags to
 ** include [SQLITE_OPEN_READONLY].  Other bits in *pOutFlags may be set.
@@ -1583,137 +1583,137 @@ struct sqlite3_vfs {
 /*
 ** CAPI3REF: Initialize The SQLite Library
 **
-** ^The sqlite3_initialize() routine initializes the
-** SQLite library.  ^The sqlite3_shutdown() routine
-** deallocates any resources that were allocated by sqlite3_initialize().
+** ^The bentley_sqlite3_initialize() routine initializes the
+** SQLite library.  ^The bentley_sqlite3_shutdown() routine
+** deallocates any resources that were allocated by bentley_sqlite3_initialize().
 ** These routines are designed to aid in process initialization and
 ** shutdown on embedded systems.  Workstation applications using
 ** SQLite normally do not need to invoke either of these routines.
 **
-** A call to sqlite3_initialize() is an "effective" call if it is
-** the first time sqlite3_initialize() is invoked during the lifetime of
-** the process, or if it is the first time sqlite3_initialize() is invoked
-** following a call to sqlite3_shutdown().  ^(Only an effective call
-** of sqlite3_initialize() does any initialization.  All other calls
+** A call to bentley_sqlite3_initialize() is an "effective" call if it is
+** the first time bentley_sqlite3_initialize() is invoked during the lifetime of
+** the process, or if it is the first time bentley_sqlite3_initialize() is invoked
+** following a call to bentley_sqlite3_shutdown().  ^(Only an effective call
+** of bentley_sqlite3_initialize() does any initialization.  All other calls
 ** are harmless no-ops.)^
 **
-** A call to sqlite3_shutdown() is an "effective" call if it is the first
-** call to sqlite3_shutdown() since the last sqlite3_initialize().  ^(Only
-** an effective call to sqlite3_shutdown() does any deinitialization.
-** All other valid calls to sqlite3_shutdown() are harmless no-ops.)^
+** A call to bentley_sqlite3_shutdown() is an "effective" call if it is the first
+** call to bentley_sqlite3_shutdown() since the last bentley_sqlite3_initialize().  ^(Only
+** an effective call to bentley_sqlite3_shutdown() does any deinitialization.
+** All other valid calls to bentley_sqlite3_shutdown() are harmless no-ops.)^
 **
-** The sqlite3_initialize() interface is threadsafe, but sqlite3_shutdown()
-** is not.  The sqlite3_shutdown() interface must only be called from a
+** The bentley_sqlite3_initialize() interface is threadsafe, but bentley_sqlite3_shutdown()
+** is not.  The bentley_sqlite3_shutdown() interface must only be called from a
 ** single thread.  All open [database connections] must be closed and all
 ** other SQLite resources must be deallocated prior to invoking
-** sqlite3_shutdown().
+** bentley_sqlite3_shutdown().
 **
-** Among other things, ^sqlite3_initialize() will invoke
-** sqlite3_os_init().  Similarly, ^sqlite3_shutdown()
-** will invoke sqlite3_os_end().
+** Among other things, ^bentley_sqlite3_initialize() will invoke
+** bentley_sqlite3_os_init().  Similarly, ^bentley_sqlite3_shutdown()
+** will invoke bentley_sqlite3_os_end().
 **
-** ^The sqlite3_initialize() routine returns [SQLITE_OK] on success.
-** ^If for some reason, sqlite3_initialize() is unable to initialize
+** ^The bentley_sqlite3_initialize() routine returns [SQLITE_OK] on success.
+** ^If for some reason, bentley_sqlite3_initialize() is unable to initialize
 ** the library (perhaps it is unable to allocate a needed resource such
 ** as a mutex) it returns an [error code] other than [SQLITE_OK].
 **
-** ^The sqlite3_initialize() routine is called internally by many other
+** ^The bentley_sqlite3_initialize() routine is called internally by many other
 ** SQLite interfaces so that an application usually does not need to
-** invoke sqlite3_initialize() directly.  For example, [sqlite3_open()]
-** calls sqlite3_initialize() so the SQLite library will be automatically
-** initialized when [sqlite3_open()] is called if it has not be initialized
+** invoke bentley_sqlite3_initialize() directly.  For example, [bentley_sqlite3_open()]
+** calls bentley_sqlite3_initialize() so the SQLite library will be automatically
+** initialized when [bentley_sqlite3_open()] is called if it has not be initialized
 ** already.  ^However, if SQLite is compiled with the [SQLITE_OMIT_AUTOINIT]
-** compile-time option, then the automatic calls to sqlite3_initialize()
-** are omitted and the application must call sqlite3_initialize() directly
+** compile-time option, then the automatic calls to bentley_sqlite3_initialize()
+** are omitted and the application must call bentley_sqlite3_initialize() directly
 ** prior to using any other SQLite interface.  For maximum portability,
-** it is recommended that applications always invoke sqlite3_initialize()
+** it is recommended that applications always invoke bentley_sqlite3_initialize()
 ** directly prior to using any other SQLite interface.  Future releases
 ** of SQLite may require this.  In other words, the behavior exhibited
 ** when SQLite is compiled with [SQLITE_OMIT_AUTOINIT] might become the
 ** default behavior in some future release of SQLite.
 **
-** The sqlite3_os_init() routine does operating-system specific
-** initialization of the SQLite library.  The sqlite3_os_end()
-** routine undoes the effect of sqlite3_os_init().  Typical tasks
+** The bentley_sqlite3_os_init() routine does operating-system specific
+** initialization of the SQLite library.  The bentley_sqlite3_os_end()
+** routine undoes the effect of bentley_sqlite3_os_init().  Typical tasks
 ** performed by these routines include allocation or deallocation
 ** of static resources, initialization of global variables,
 ** setting up a default [sqlite3_vfs] module, or setting up
-** a default configuration using [sqlite3_config()].
+** a default configuration using [bentley_sqlite3_config()].
 **
-** The application should never invoke either sqlite3_os_init()
-** or sqlite3_os_end() directly.  The application should only invoke
-** sqlite3_initialize() and sqlite3_shutdown().  The sqlite3_os_init()
-** interface is called automatically by sqlite3_initialize() and
-** sqlite3_os_end() is called by sqlite3_shutdown().  Appropriate
-** implementations for sqlite3_os_init() and sqlite3_os_end()
+** The application should never invoke either bentley_sqlite3_os_init()
+** or bentley_sqlite3_os_end() directly.  The application should only invoke
+** bentley_sqlite3_initialize() and bentley_sqlite3_shutdown().  The bentley_sqlite3_os_init()
+** interface is called automatically by bentley_sqlite3_initialize() and
+** bentley_sqlite3_os_end() is called by bentley_sqlite3_shutdown().  Appropriate
+** implementations for bentley_sqlite3_os_init() and bentley_sqlite3_os_end()
 ** are built into SQLite when it is compiled for Unix, Windows, or OS/2.
 ** When [custom builds | built for other platforms]
 ** (using the [SQLITE_OS_OTHER=1] compile-time
 ** option) the application must supply a suitable implementation for
-** sqlite3_os_init() and sqlite3_os_end().  An application-supplied
-** implementation of sqlite3_os_init() or sqlite3_os_end()
+** bentley_sqlite3_os_init() and bentley_sqlite3_os_end().  An application-supplied
+** implementation of bentley_sqlite3_os_init() or bentley_sqlite3_os_end()
 ** must return [SQLITE_OK] on success and some other [error code] upon
 ** failure.
 */
-SQLITE_API int sqlite3_initialize(void);
-SQLITE_API int sqlite3_shutdown(void);
-SQLITE_API int sqlite3_os_init(void);
-SQLITE_API int sqlite3_os_end(void);
+SQLITE_API int bentley_sqlite3_initialize(void);
+SQLITE_API int bentley_sqlite3_shutdown(void);
+SQLITE_API int bentley_sqlite3_os_init(void);
+SQLITE_API int bentley_sqlite3_os_end(void);
 
 /*
 ** CAPI3REF: Configuring The SQLite Library
 **
-** The sqlite3_config() interface is used to make global configuration
+** The bentley_sqlite3_config() interface is used to make global configuration
 ** changes to SQLite in order to tune SQLite to the specific needs of
 ** the application.  The default configuration is recommended for most
 ** applications and so this routine is usually not necessary.  It is
 ** provided to support rare applications with unusual needs.
 **
-** <b>The sqlite3_config() interface is not threadsafe. The application
+** <b>The bentley_sqlite3_config() interface is not threadsafe. The application
 ** must ensure that no other SQLite interfaces are invoked by other
-** threads while sqlite3_config() is running.</b>
+** threads while bentley_sqlite3_config() is running.</b>
 **
-** The first argument to sqlite3_config() is an integer
+** The first argument to bentley_sqlite3_config() is an integer
 ** [configuration option] that determines
 ** what property of SQLite is to be configured.  Subsequent arguments
 ** vary depending on the [configuration option]
 ** in the first argument.
 **
-** For most configuration options, the sqlite3_config() interface
+** For most configuration options, the bentley_sqlite3_config() interface
 ** may only be invoked prior to library initialization using
-** [sqlite3_initialize()] or after shutdown by [sqlite3_shutdown()].
+** [bentley_sqlite3_initialize()] or after shutdown by [bentley_sqlite3_shutdown()].
 ** The exceptional configuration options that may be invoked at any time
 ** are called "anytime configuration options".
-** ^If sqlite3_config() is called after [sqlite3_initialize()] and before
-** [sqlite3_shutdown()] with a first argument that is not an anytime
-** configuration option, then the sqlite3_config() call will return SQLITE_MISUSE.
-** Note, however, that ^sqlite3_config() can be called as part of the
-** implementation of an application-defined [sqlite3_os_init()].
+** ^If bentley_sqlite3_config() is called after [bentley_sqlite3_initialize()] and before
+** [bentley_sqlite3_shutdown()] with a first argument that is not an anytime
+** configuration option, then the bentley_sqlite3_config() call will return SQLITE_MISUSE.
+** Note, however, that ^bentley_sqlite3_config() can be called as part of the
+** implementation of an application-defined [bentley_sqlite3_os_init()].
 **
-** ^When a configuration option is set, sqlite3_config() returns [SQLITE_OK].
+** ^When a configuration option is set, bentley_sqlite3_config() returns [SQLITE_OK].
 ** ^If the option is unknown or SQLite is unable to set the option
 ** then this routine returns a non-zero [error code].
 */
-SQLITE_API int sqlite3_config(int, ...);
+SQLITE_API int bentley_sqlite3_config(int, ...);
 
 /*
 ** CAPI3REF: Configure database connections
 ** METHOD: sqlite3
 **
-** The sqlite3_db_config() interface is used to make configuration
+** The bentley_sqlite3_db_config() interface is used to make configuration
 ** changes to a [database connection].  The interface is similar to
-** [sqlite3_config()] except that the changes apply to a single
+** [bentley_sqlite3_config()] except that the changes apply to a single
 ** [database connection] (specified in the first argument).
 **
-** The second argument to sqlite3_db_config(D,V,...)  is the
+** The second argument to bentley_sqlite3_db_config(D,V,...)  is the
 ** [SQLITE_DBCONFIG_LOOKASIDE | configuration verb] - an integer code
 ** that indicates what aspect of the [database connection] is being configured.
 ** Subsequent arguments vary depending on the configuration verb.
 **
-** ^Calls to sqlite3_db_config() return SQLITE_OK if and only if
+** ^Calls to bentley_sqlite3_db_config() return SQLITE_OK if and only if
 ** the call is considered successful.
 */
-SQLITE_API int sqlite3_db_config(sqlite3*, int op, ...);
+SQLITE_API int bentley_sqlite3_db_config(sqlite3*, int op, ...);
 
 /*
 ** CAPI3REF: Memory Allocation Routines
@@ -1723,10 +1723,10 @@ SQLITE_API int sqlite3_db_config(sqlite3*, int op, ...);
 **
 ** This object is used in only one place in the SQLite interface.
 ** A pointer to an instance of this object is the argument to
-** [sqlite3_config()] when the configuration option is
+** [bentley_sqlite3_config()] when the configuration option is
 ** [SQLITE_CONFIG_MALLOC] or [SQLITE_CONFIG_GETMALLOC].
 ** By creating an instance of this object
-** and passing it to [sqlite3_config]([SQLITE_CONFIG_MALLOC])
+** and passing it to [bentley_sqlite3_config]([SQLITE_CONFIG_MALLOC])
 ** during configuration, an application can specify an alternative
 ** memory allocation subsystem for SQLite to use for all of its
 ** dynamic memory needs.
@@ -1753,20 +1753,20 @@ SQLITE_API int sqlite3_db_config(sqlite3*, int op, ...);
 ** a memory allocation given a particular requested size.  Most memory
 ** allocators round up memory allocations at least to the next multiple
 ** of 8.  Some allocators round up to a larger multiple or to a power of 2.
-** Every memory allocation request coming in through [sqlite3_malloc()]
-** or [sqlite3_realloc()] first calls xRoundup.  If xRoundup returns 0,
+** Every memory allocation request coming in through [bentley_sqlite3_malloc()]
+** or [bentley_sqlite3_realloc()] first calls xRoundup.  If xRoundup returns 0,
 ** that causes the corresponding memory allocation to fail.
 **
 ** The xInit method initializes the memory allocator.  For example,
 ** it might allocate any required mutexes or initialize internal data
 ** structures.  The xShutdown method is invoked (indirectly) by
-** [sqlite3_shutdown()] and should deallocate any resources acquired
+** [bentley_sqlite3_shutdown()] and should deallocate any resources acquired
 ** by xInit.  The pAppData pointer is used as the only parameter to
 ** xInit and xShutdown.
 **
 ** SQLite holds the [SQLITE_MUTEX_STATIC_MAIN] mutex when it invokes
 ** the xInit method, so the xInit method need not be threadsafe.  The
-** xShutdown method is only called from [sqlite3_shutdown()] so it does
+** xShutdown method is only called from [bentley_sqlite3_shutdown()] so it does
 ** not need to be threadsafe either.  For all other methods, SQLite
 ** holds the [SQLITE_MUTEX_STATIC_MEM] mutex as long as the
 ** [SQLITE_CONFIG_MEMSTATUS] configuration option is turned on (which
@@ -1795,15 +1795,15 @@ struct sqlite3_mem_methods {
 ** KEYWORDS: {configuration option}
 **
 ** These constants are the available integer configuration options that
-** can be passed as the first argument to the [sqlite3_config()] interface.
+** can be passed as the first argument to the [bentley_sqlite3_config()] interface.
 **
-** Most of the configuration options for sqlite3_config()
-** will only work if invoked prior to [sqlite3_initialize()] or after
-** [sqlite3_shutdown()].  The few exceptions to this rule are called
+** Most of the configuration options for bentley_sqlite3_config()
+** will only work if invoked prior to [bentley_sqlite3_initialize()] or after
+** [bentley_sqlite3_shutdown()].  The few exceptions to this rule are called
 ** "anytime configuration options".
-** ^Calling [sqlite3_config()] with a first argument that is not an
-** anytime configuration option in between calls to [sqlite3_initialize()] and
-** [sqlite3_shutdown()] is a no-op that returns SQLITE_MISUSE.
+** ^Calling [bentley_sqlite3_config()] with a first argument that is not an
+** anytime configuration option in between calls to [bentley_sqlite3_initialize()] and
+** [bentley_sqlite3_shutdown()] is a no-op that returns SQLITE_MISUSE.
 **
 ** The set of anytime configuration options can change (by insertions
 ** and/or deletions) from one release of SQLite to the next.
@@ -1816,8 +1816,8 @@ struct sqlite3_mem_methods {
 **
 ** New configuration options may be added in future releases of SQLite.
 ** Existing configuration options might be discontinued.  Applications
-** should check the return code from [sqlite3_config()] to make sure that
-** the call worked.  The [sqlite3_config()] interface will return a
+** should check the return code from [bentley_sqlite3_config()] to make sure that
+** the call worked.  The [bentley_sqlite3_config()] interface will return a
 ** non-zero [error code] if a discontinued or unsupported configuration option
 ** is invoked.
 **
@@ -1829,7 +1829,7 @@ struct sqlite3_mem_methods {
 ** by a single thread.   ^If SQLite is compiled with
 ** the [SQLITE_THREADSAFE | SQLITE_THREADSAFE=0] compile-time option then
 ** it is not possible to change the [threading mode] from its default
-** value of Single-thread and so [sqlite3_config()] will return
+** value of Single-thread and so [bentley_sqlite3_config()] will return
 ** [SQLITE_ERROR] if called with the SQLITE_CONFIG_SINGLETHREAD
 ** configuration option.</dd>
 **
@@ -1844,7 +1844,7 @@ struct sqlite3_mem_methods {
 ** [database connection] at the same time.  ^If SQLite is compiled with
 ** the [SQLITE_THREADSAFE | SQLITE_THREADSAFE=0] compile-time option then
 ** it is not possible to set the Multi-thread [threading mode] and
-** [sqlite3_config()] will return [SQLITE_ERROR] if called with the
+** [bentley_sqlite3_config()] will return [SQLITE_ERROR] if called with the
 ** SQLITE_CONFIG_MULTITHREAD configuration option.</dd>
 **
 ** [[SQLITE_CONFIG_SERIALIZED]] <dt>SQLITE_CONFIG_SERIALIZED</dt>
@@ -1860,7 +1860,7 @@ struct sqlite3_mem_methods {
 ** ^If SQLite is compiled with
 ** the [SQLITE_THREADSAFE | SQLITE_THREADSAFE=0] compile-time option then
 ** it is not possible to set the Serialized [threading mode] and
-** [sqlite3_config()] will return [SQLITE_ERROR] if called with the
+** [bentley_sqlite3_config()] will return [SQLITE_ERROR] if called with the
 ** SQLITE_CONFIG_SERIALIZED configuration option.</dd>
 **
 ** [[SQLITE_CONFIG_MALLOC]] <dt>SQLITE_CONFIG_MALLOC</dt>
@@ -1870,7 +1870,7 @@ struct sqlite3_mem_methods {
 ** alternative low-level memory allocation routines to be used in place of
 ** the memory allocation routines built into SQLite.)^ ^SQLite makes
 ** its own private copy of the content of the [sqlite3_mem_methods] structure
-** before the [sqlite3_config()] call returns.</dd>
+** before the [bentley_sqlite3_config()] call returns.</dd>
 **
 ** [[SQLITE_CONFIG_GETMALLOC]] <dt>SQLITE_CONFIG_GETMALLOC</dt>
 ** <dd> ^(The SQLITE_CONFIG_GETMALLOC option takes a single argument which
@@ -1897,11 +1897,11 @@ struct sqlite3_mem_methods {
 ** memory allocation statistics. ^(When memory allocation statistics are
 ** disabled, the following SQLite interfaces become non-operational:
 **   <ul>
-**   <li> [sqlite3_hard_heap_limit64()]
-**   <li> [sqlite3_memory_used()]
-**   <li> [sqlite3_memory_highwater()]
-**   <li> [sqlite3_soft_heap_limit64()]
-**   <li> [sqlite3_status64()]
+**   <li> [bentley_sqlite3_hard_heap_limit64()]
+**   <li> [bentley_sqlite3_memory_used()]
+**   <li> [bentley_sqlite3_memory_highwater()]
+**   <li> [bentley_sqlite3_soft_heap_limit64()]
+**   <li> [bentley_sqlite3_status64()]
 **   </ul>)^
 ** ^Memory allocation statistics are enabled by default unless SQLite is
 ** compiled with [SQLITE_DEFAULT_MEMSTATUS]=0 in which case memory
@@ -1931,15 +1931,15 @@ struct sqlite3_mem_methods {
 ** aligned block of memory of at least sz*N bytes, otherwise
 ** subsequent behavior is undefined.
 ** ^When pMem is not NULL, SQLite will strive to use the memory provided
-** to satisfy page cache needs, falling back to [sqlite3_malloc()] if
+** to satisfy page cache needs, falling back to [bentley_sqlite3_malloc()] if
 ** a page cache line is larger than sz bytes or if all of the pMem buffer
 ** is exhausted.
 ** ^If pMem is NULL and N is non-zero, then each database connection
 ** does an initial bulk allocation for page cache memory
-** from [sqlite3_malloc()] sufficient for N cache lines if N is positive or
+** from [bentley_sqlite3_malloc()] sufficient for N cache lines if N is positive or
 ** of -1024*N bytes if N is negative, . ^If additional
 ** page cache memory is needed beyond what is provided by the initial
-** allocation, then SQLite goes to [sqlite3_malloc()] separately for each
+** allocation, then SQLite goes to [bentley_sqlite3_malloc()] separately for each
 ** additional cache line. </dd>
 **
 ** [[SQLITE_CONFIG_HEAP]] <dt>SQLITE_CONFIG_HEAP</dt>
@@ -1968,10 +1968,10 @@ struct sqlite3_mem_methods {
 ** The argument specifies alternative low-level mutex routines to be used
 ** in place the mutex routines built into SQLite.)^  ^SQLite makes a copy of
 ** the content of the [sqlite3_mutex_methods] structure before the call to
-** [sqlite3_config()] returns. ^If SQLite is compiled with
+** [bentley_sqlite3_config()] returns. ^If SQLite is compiled with
 ** the [SQLITE_THREADSAFE | SQLITE_THREADSAFE=0] compile-time option then
 ** the entire mutexing subsystem is omitted from the build and hence calls to
-** [sqlite3_config()] with the SQLITE_CONFIG_MUTEX configuration option will
+** [bentley_sqlite3_config()] with the SQLITE_CONFIG_MUTEX configuration option will
 ** return [SQLITE_ERROR].</dd>
 **
 ** [[SQLITE_CONFIG_GETMUTEX]] <dt>SQLITE_CONFIG_GETMUTEX</dt>
@@ -1984,7 +1984,7 @@ struct sqlite3_mem_methods {
 ** profiling or testing, for example.   ^If SQLite is compiled with
 ** the [SQLITE_THREADSAFE | SQLITE_THREADSAFE=0] compile-time option then
 ** the entire mutexing subsystem is omitted from the build and hence calls to
-** [sqlite3_config()] with the SQLITE_CONFIG_GETMUTEX configuration option will
+** [bentley_sqlite3_config()] with the SQLITE_CONFIG_GETMUTEX configuration option will
 ** return [SQLITE_ERROR].</dd>
 **
 ** [[SQLITE_CONFIG_LOOKASIDE]] <dt>SQLITE_CONFIG_LOOKASIDE</dt>
@@ -1994,7 +1994,7 @@ struct sqlite3_mem_methods {
 ** size of each lookaside buffer slot and the second is the number of
 ** slots allocated to each database connection.)^  ^(SQLITE_CONFIG_LOOKASIDE
 ** sets the <i>default</i> lookaside size. The [SQLITE_DBCONFIG_LOOKASIDE]
-** option to [sqlite3_db_config()] can be used to change the lookaside
+** option to [bentley_sqlite3_db_config()] can be used to change the lookaside
 ** configuration on individual connections.)^ </dd>
 **
 ** [[SQLITE_CONFIG_PCACHE2]] <dt>SQLITE_CONFIG_PCACHE2</dt>
@@ -2014,15 +2014,15 @@ struct sqlite3_mem_methods {
 ** (^The SQLITE_CONFIG_LOG option takes two arguments: a pointer to a
 ** function with a call signature of void(*)(void*,int,const char*),
 ** and a pointer to void. ^If the function pointer is not NULL, it is
-** invoked by [sqlite3_log()] to process each logging event.  ^If the
-** function pointer is NULL, the [sqlite3_log()] interface becomes a no-op.
+** invoked by [bentley_sqlite3_log()] to process each logging event.  ^If the
+** function pointer is NULL, the [bentley_sqlite3_log()] interface becomes a no-op.
 ** ^The void pointer that is the second argument to SQLITE_CONFIG_LOG is
 ** passed through as the first parameter to the application-defined logger
 ** function whenever that function is invoked.  ^The second parameter to
 ** the logger function is a copy of the first parameter to the corresponding
-** [sqlite3_log()] call and is intended to be a [result code] or an
+** [bentley_sqlite3_log()] call and is intended to be a [result code] or an
 ** [extended result code].  ^The third parameter passed to the logger is
-** log message after formatting via [sqlite3_snprintf()].
+** log message after formatting via [bentley_sqlite3_snprintf()].
 ** The SQLite logging interface is not reentrant; the logger function
 ** supplied by the application must not invoke any SQLite interface.
 ** In a multi-threaded application, the application-defined logger
@@ -2032,8 +2032,8 @@ struct sqlite3_mem_methods {
 ** <dd>^(The SQLITE_CONFIG_URI option takes a single argument of type int.
 ** If non-zero, then URI handling is globally enabled. If the parameter is zero,
 ** then URI handling is globally disabled.)^ ^If URI handling is globally
-** enabled, all filenames passed to [sqlite3_open()], [sqlite3_open_v2()],
-** [sqlite3_open16()] or
+** enabled, all filenames passed to [bentley_sqlite3_open()], [bentley_sqlite3_open_v2()],
+** [bentley_sqlite3_open16()] or
 ** specified as part of [ATTACH] commands are interpreted as URIs, regardless
 ** of whether or not the [SQLITE_OPEN_URI] flag is set when the database
 ** connection is opened. ^If it is globally disabled, filenames are
@@ -2152,9 +2152,9 @@ struct sqlite3_mem_methods {
 ** <dt>SQLITE_CONFIG_MEMDB_MAXSIZE
 ** <dd>The SQLITE_CONFIG_MEMDB_MAXSIZE option accepts a single parameter
 ** [sqlite3_int64] parameter which is the default maximum size for an in-memory
-** database created using [sqlite3_deserialize()].  This default maximum
+** database created using [bentley_sqlite3_deserialize()].  This default maximum
 ** size can be adjusted up or down for individual databases using the
-** [SQLITE_FCNTL_SIZE_LIMIT] [sqlite3_file_control|file-control].  If this
+** [SQLITE_FCNTL_SIZE_LIMIT] [bentley_sqlite3_file_control|file-control].  If this
 ** configuration setting is never used, then the default maximum is determined
 ** by the [SQLITE_MEMDB_DEFAULT_MAXSIZE] compile-time option.  If that
 ** compile-time option is not set, then the default maximum is 1073741824.
@@ -2211,20 +2211,20 @@ struct sqlite3_mem_methods {
 ** CAPI3REF: Database Connection Configuration Options
 **
 ** These constants are the available integer configuration options that
-** can be passed as the second parameter to the [sqlite3_db_config()] interface.
+** can be passed as the second parameter to the [bentley_sqlite3_db_config()] interface.
 **
-** The [sqlite3_db_config()] interface is a var-args functions.  It takes a
+** The [bentley_sqlite3_db_config()] interface is a var-args functions.  It takes a
 ** variable number of parameters, though always at least two.  The number of
-** parameters passed into sqlite3_db_config() depends on which of these
+** parameters passed into bentley_sqlite3_db_config() depends on which of these
 ** constants is given as the second parameter.  This documentation page
 ** refers to parameters beyond the second as "arguments".  Thus, when this
 ** page says "the N-th argument" it means "the N-th parameter past the
-** configuration option" or "the (N+2)-th parameter to sqlite3_db_config()".
+** configuration option" or "the (N+2)-th parameter to bentley_sqlite3_db_config()".
 **
 ** New configuration options may be added in future releases of SQLite.
 ** Existing configuration options might be discontinued.  Applications
-** should check the return code from [sqlite3_db_config()] to make sure that
-** the call worked.  ^The [sqlite3_db_config()] interface will return a
+** should check the return code from [bentley_sqlite3_db_config()] to make sure that
+** the call worked.  ^The [bentley_sqlite3_db_config()] interface will return a
 ** non-zero [error code] if a discontinued or unsupported configuration option
 ** is invoked.
 **
@@ -2237,13 +2237,13 @@ struct sqlite3_mem_methods {
 ** The arguments to the SQLITE_DBCONFIG_LOOKASIDE option are <i>not</i>
 ** in the [DBCONFIG arguments|usual format].
 ** The SQLITE_DBCONFIG_LOOKASIDE option takes three arguments, not two,
-** so that a call to [sqlite3_db_config()] that uses SQLITE_DBCONFIG_LOOKASIDE
+** so that a call to [bentley_sqlite3_db_config()] that uses SQLITE_DBCONFIG_LOOKASIDE
 ** should have a total of five parameters.
-** ^The first argument (the third parameter to [sqlite3_db_config()] is a
+** ^The first argument (the third parameter to [bentley_sqlite3_db_config()] is a
 ** pointer to a memory buffer to use for lookaside memory.
 ** ^The first argument after the SQLITE_DBCONFIG_LOOKASIDE verb
 ** may be NULL in which case SQLite will allocate the
-** lookaside buffer itself using [sqlite3_malloc()]. ^The second argument is the
+** lookaside buffer itself using [bentley_sqlite3_malloc()]. ^The second argument is the
 ** size of each lookaside buffer slot.  ^The third argument is the number of
 ** slots.  The size of the buffer in the first argument must be greater than
 ** or equal to the product of the second and third arguments.  The buffer
@@ -2253,7 +2253,7 @@ struct sqlite3_mem_methods {
 ** configuration for a database connection can only be changed when that
 ** connection is not currently using lookaside memory, or in other words
 ** when the "current value" returned by
-** [sqlite3_db_status](D,[SQLITE_DBSTATUS_LOOKASIDE_USED],...) is zero.
+** [bentley_sqlite3_db_status](D,[SQLITE_DBSTATUS_LOOKASIDE_USED],...) is zero.
 ** Any attempt to change the lookaside memory configuration when lookaside
 ** memory is in use leaves the configuration unchanged and returns
 ** [SQLITE_BUSY].)^</dd>
@@ -2320,10 +2320,10 @@ struct sqlite3_mem_methods {
 **
 ** [[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION</dt>
-** <dd> ^This option is used to enable or disable the [sqlite3_load_extension()]
+** <dd> ^This option is used to enable or disable the [bentley_sqlite3_load_extension()]
 ** interface independently of the [load_extension()] SQL function.
-** The [sqlite3_enable_load_extension()] API enables or disables both the
-** C-API [sqlite3_load_extension()] and the SQL function [load_extension()].
+** The [bentley_sqlite3_enable_load_extension()] API enables or disables both the
+** C-API [bentley_sqlite3_load_extension()] and the SQL function [load_extension()].
 ** There must be two additional arguments.
 ** When the first argument to this interface is 1, then only the C-API is
 ** enabled and the SQL function remains disabled.  If the first argument to
@@ -2331,7 +2331,7 @@ struct sqlite3_mem_methods {
 ** If the first argument is -1, then no changes are made to state of either the
 ** C-API or the SQL function.
 ** The second parameter is a pointer to an integer into which
-** is written 0 or 1 to indicate whether [sqlite3_load_extension()] interface
+** is written 0 or 1 to indicate whether [bentley_sqlite3_load_extension()] interface
 ** is disabled or enabled following this call.  The second parameter may
 ** be a NULL pointer, in which case the new setting is not reported back.
 ** </dd>
@@ -2341,7 +2341,7 @@ struct sqlite3_mem_methods {
 ** schema.  This option does not follow the
 ** [DBCONFIG arguments|usual SQLITE_DBCONFIG argument format].
 ** This option takes exactly one additional argument so that the
-** [sqlite3_db_config()] call has a total of three parameters.  The
+** [bentley_sqlite3_db_config()] call has a total of three parameters.  The
 ** extra argument must be a pointer to a constant UTF8 string which
 ** will become the new schema name in place of "main".  ^SQLite does
 ** not make a copy of the new main schema name string, so the application
@@ -2358,7 +2358,7 @@ struct sqlite3_mem_methods {
 ** then SQLite performs a [checkpoint] before closing the connection and
 ** deletes the WAL file.  The SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE option can
 ** be used to override that behavior. The first argument passed to this
-** operation (the third parameter to [sqlite3_db_config()]) is an integer
+** operation (the third parameter to [bentley_sqlite3_db_config()]) is an integer
 ** which is positive to disable checkpoints-on-close, or zero (the default)
 ** to enable them, and negative to leave the setting unchanged.
 ** The second argument (the fourth parameter) is a pointer to an integer
@@ -2402,13 +2402,13 @@ struct sqlite3_mem_methods {
 ** <ol>
 ** <li> If the database connection is newly opened, make sure it has read the
 **      database schema by preparing then discarding some query against the
-**      database, or calling sqlite3_table_column_metadata(), ignoring any
+**      database, or calling bentley_sqlite3_table_column_metadata(), ignoring any
 **      errors.  This step is only necessary if the application desires to keep
 **      the database in WAL mode after the reset if it was in WAL mode before
 **      the reset.
-** <li> sqlite3_db_config(db, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
-** <li> [sqlite3_exec](db, "[VACUUM]", 0, 0, 0);
-** <li> sqlite3_db_config(db, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
+** <li> bentley_sqlite3_db_config(db, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
+** <li> [bentley_sqlite3_exec](db, "[VACUUM]", 0, 0, 0);
+** <li> bentley_sqlite3_db_config(db, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
 ** </ol>
 ** Because resetting a database is destructive and irreversible, the
 ** process requires the use of this obscure API and multiple steps to
@@ -2600,8 +2600,8 @@ struct sqlite3_mem_methods {
 ** [[DBCONFIG arguments]] <h3>Arguments To SQLITE_DBCONFIG Options</h3>
 **
 ** <p>Most of the SQLITE_DBCONFIG options take two arguments, so that the
-** overall call to [sqlite3_db_config()] has a total of four parameters.
-** The first argument (the third parameter to sqlite3_db_config()) is a integer.
+** overall call to [bentley_sqlite3_db_config()] has a total of four parameters.
+** The first argument (the third parameter to bentley_sqlite3_db_config()) is a integer.
 ** The second argument is a pointer to an integer.  If the first argument is 1,
 ** then the option becomes enabled.  If the first integer argument is 0, then the
 ** option is disabled.  If the first argument is -1, then the option setting
@@ -2645,11 +2645,11 @@ struct sqlite3_mem_methods {
 ** CAPI3REF: Enable Or Disable Extended Result Codes
 ** METHOD: sqlite3
 **
-** ^The sqlite3_extended_result_codes() routine enables or disables the
+** ^The bentley_sqlite3_extended_result_codes() routine enables or disables the
 ** [extended result codes] feature of SQLite. ^The extended result
 ** codes are disabled by default for historical compatibility.
 */
-SQLITE_API int sqlite3_extended_result_codes(sqlite3*, int onoff);
+SQLITE_API int bentley_sqlite3_extended_result_codes(sqlite3*, int onoff);
 
 /*
 ** CAPI3REF: Last Insert Rowid
@@ -2663,16 +2663,16 @@ SQLITE_API int sqlite3_extended_result_codes(sqlite3*, int onoff);
 ** the table has a column of type [INTEGER PRIMARY KEY] then that column
 ** is another alias for the rowid.
 **
-** ^The sqlite3_last_insert_rowid(D) interface usually returns the [rowid] of
+** ^The bentley_sqlite3_last_insert_rowid(D) interface usually returns the [rowid] of
 ** the most recent successful [INSERT] into a rowid table or [virtual table]
 ** on database connection D. ^Inserts into [WITHOUT ROWID] tables are not
 ** recorded. ^If no successful [INSERT]s into rowid tables have ever occurred
-** on the database connection D, then sqlite3_last_insert_rowid(D) returns
+** on the database connection D, then bentley_sqlite3_last_insert_rowid(D) returns
 ** zero.
 **
 ** As well as being set automatically as rows are inserted into database
 ** tables, the value returned by this function may be set explicitly by
-** [sqlite3_set_last_insert_rowid()]
+** [bentley_sqlite3_set_last_insert_rowid()]
 **
 ** Some virtual table implementations may INSERT rows into rowid tables as
 ** part of committing a transaction (e.g. to flush data accumulated in memory
@@ -2680,7 +2680,7 @@ SQLITE_API int sqlite3_extended_result_codes(sqlite3*, int onoff);
 ** associated with these internal INSERT operations, which leads to
 ** unintuitive results. Virtual table implementations that do write to rowid
 ** tables in this way can avoid this problem by restoring the original
-** rowid value using [sqlite3_set_last_insert_rowid()] before returning
+** rowid value using [bentley_sqlite3_set_last_insert_rowid()] before returning
 ** control to the user.
 **
 ** ^(If an [INSERT] occurs within a trigger then this routine will
@@ -2705,23 +2705,23 @@ SQLITE_API int sqlite3_extended_result_codes(sqlite3*, int onoff);
 ** [last_insert_rowid() SQL function].
 **
 ** If a separate thread performs a new [INSERT] on the same
-** database connection while the [sqlite3_last_insert_rowid()]
+** database connection while the [bentley_sqlite3_last_insert_rowid()]
 ** function is running and thus changes the last insert [rowid],
-** then the value returned by [sqlite3_last_insert_rowid()] is
+** then the value returned by [bentley_sqlite3_last_insert_rowid()] is
 ** unpredictable and might not equal either the old or the new
 ** last insert [rowid].
 */
-SQLITE_API sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
+SQLITE_API sqlite3_int64 bentley_sqlite3_last_insert_rowid(sqlite3*);
 
 /*
 ** CAPI3REF: Set the Last Insert Rowid value.
 ** METHOD: sqlite3
 **
-** The sqlite3_set_last_insert_rowid(D, R) method allows the application to
-** set the value returned by calling sqlite3_last_insert_rowid(D) to R
+** The bentley_sqlite3_set_last_insert_rowid(D, R) method allows the application to
+** set the value returned by calling bentley_sqlite3_last_insert_rowid(D) to R
 ** without inserting a row into the database.
 */
-SQLITE_API void sqlite3_set_last_insert_rowid(sqlite3*,sqlite3_int64);
+SQLITE_API void bentley_sqlite3_set_last_insert_rowid(sqlite3*,sqlite3_int64);
 
 /*
 ** CAPI3REF: Count The Number Of Rows Modified
@@ -2733,7 +2733,7 @@ SQLITE_API void sqlite3_set_last_insert_rowid(sqlite3*,sqlite3_int64);
 ** The two functions are identical except for the type of the return value
 ** and that if the number of rows modified by the most recent INSERT, UPDATE,
 ** or DELETE is greater than the maximum value supported by type "int", then
-** the return value of sqlite3_changes() is undefined. ^Executing any other
+** the return value of bentley_sqlite3_changes() is undefined. ^Executing any other
 ** type of SQL statement does not modify the value returned by these functions.
 ** For the purposes of this interface, a CREATE TABLE AS SELECT statement
 ** does not count as an INSERT, UPDATE or DELETE statement and hence the rows
@@ -2746,24 +2746,24 @@ SQLITE_API void sqlite3_set_last_insert_rowid(sqlite3*,sqlite3_int64);
 **
 ** Changes to a view that are intercepted by
 ** [INSTEAD OF trigger | INSTEAD OF triggers] are not counted. ^The value
-** returned by sqlite3_changes() immediately after an INSERT, UPDATE or
+** returned by bentley_sqlite3_changes() immediately after an INSERT, UPDATE or
 ** DELETE statement run on a view is always zero. Only changes made to real
 ** tables are counted.
 **
-** Things are more complicated if the sqlite3_changes() function is
+** Things are more complicated if the bentley_sqlite3_changes() function is
 ** executed while a trigger program is running. This may happen if the
 ** program uses the [changes() SQL function], or if some other callback
-** function invokes sqlite3_changes() directly. Essentially:
+** function invokes bentley_sqlite3_changes() directly. Essentially:
 **
 ** <ul>
 **   <li> ^(Before entering a trigger program the value returned by
-**        sqlite3_changes() function is saved. After the trigger program
+**        bentley_sqlite3_changes() function is saved. After the trigger program
 **        has finished, the original value is restored.)^
 **
 **   <li> ^(Within a trigger program each INSERT, UPDATE and DELETE
-**        statement sets the value returned by sqlite3_changes()
+**        statement sets the value returned by bentley_sqlite3_changes()
 **        upon completion as normal. Of course, this value will not include
-**        any changes performed by sub-triggers, as the sqlite3_changes()
+**        any changes performed by sub-triggers, as the bentley_sqlite3_changes()
 **        value will be saved and restored after each sub-trigger has run.)^
 ** </ul>
 **
@@ -2775,19 +2775,19 @@ SQLITE_API void sqlite3_set_last_insert_rowid(sqlite3*,sqlite3_int64);
 ** previous INSERT, UPDATE or DELETE statement within the same trigger.
 **
 ** If a separate thread makes changes on the same database connection
-** while [sqlite3_changes()] is running then the value returned
+** while [bentley_sqlite3_changes()] is running then the value returned
 ** is unpredictable and not meaningful.
 **
 ** See also:
 ** <ul>
-** <li> the [sqlite3_total_changes()] interface
+** <li> the [bentley_sqlite3_total_changes()] interface
 ** <li> the [count_changes pragma]
 ** <li> the [changes() SQL function]
 ** <li> the [data_version pragma]
 ** </ul>
 */
-SQLITE_API int sqlite3_changes(sqlite3*);
-SQLITE_API sqlite3_int64 sqlite3_changes64(sqlite3*);
+SQLITE_API int bentley_sqlite3_changes(sqlite3*);
+SQLITE_API sqlite3_int64 bentley_sqlite3_changes64(sqlite3*);
 
 /*
 ** CAPI3REF: Total Number Of Rows Modified
@@ -2799,16 +2799,16 @@ SQLITE_API sqlite3_int64 sqlite3_changes64(sqlite3*);
 ** part of trigger programs. The two functions are identical except for the
 ** type of the return value and that if the number of rows modified by the
 ** connection exceeds the maximum value supported by type "int", then
-** the return value of sqlite3_total_changes() is undefined. ^Executing
+** the return value of bentley_sqlite3_total_changes() is undefined. ^Executing
 ** any other type of SQL statement does not affect the value returned by
-** sqlite3_total_changes().
+** bentley_sqlite3_total_changes().
 **
 ** ^Changes made as part of [foreign key actions] are included in the
 ** count, but those made as part of REPLACE constraint resolution are
 ** not. ^Changes to a view that are intercepted by INSTEAD OF triggers
 ** are not counted.
 **
-** The [sqlite3_total_changes(D)] interface only reports the number
+** The [bentley_sqlite3_total_changes(D)] interface only reports the number
 ** of rows that changed due to SQL statement run against database
 ** connection D.  Any changes by other database connections are ignored.
 ** To detect changes against a database file from other database
@@ -2816,20 +2816,20 @@ SQLITE_API sqlite3_int64 sqlite3_changes64(sqlite3*);
 ** [SQLITE_FCNTL_DATA_VERSION] [file control].
 **
 ** If a separate thread makes changes on the same database connection
-** while [sqlite3_total_changes()] is running then the value
+** while [bentley_sqlite3_total_changes()] is running then the value
 ** returned is unpredictable and not meaningful.
 **
 ** See also:
 ** <ul>
-** <li> the [sqlite3_changes()] interface
+** <li> the [bentley_sqlite3_changes()] interface
 ** <li> the [count_changes pragma]
 ** <li> the [changes() SQL function]
 ** <li> the [data_version pragma]
 ** <li> the [SQLITE_FCNTL_DATA_VERSION] [file control]
 ** </ul>
 */
-SQLITE_API int sqlite3_total_changes(sqlite3*);
-SQLITE_API sqlite3_int64 sqlite3_total_changes64(sqlite3*);
+SQLITE_API int bentley_sqlite3_total_changes(sqlite3*);
+SQLITE_API sqlite3_int64 bentley_sqlite3_total_changes64(sqlite3*);
 
 /*
 ** CAPI3REF: Interrupt A Long-Running Query
@@ -2844,10 +2844,10 @@ SQLITE_API sqlite3_int64 sqlite3_total_changes64(sqlite3*);
 ** ^It is safe to call this routine from a thread different from the
 ** thread that is currently running the database operation.  But it
 ** is not safe to call this routine with a [database connection] that
-** is closed or might close before sqlite3_interrupt() returns.
+** is closed or might close before bentley_sqlite3_interrupt() returns.
 **
 ** ^If an SQL operation is very nearly finished at the time when
-** sqlite3_interrupt() is called, then it might not have an opportunity
+** bentley_sqlite3_interrupt() is called, then it might not have an opportunity
 ** to be interrupted and might continue to completion.
 **
 ** ^An SQL operation that is interrupted will return [SQLITE_INTERRUPT].
@@ -2855,23 +2855,23 @@ SQLITE_API sqlite3_int64 sqlite3_total_changes64(sqlite3*);
 ** that is inside an explicit transaction, then the entire transaction
 ** will be rolled back automatically.
 **
-** ^The sqlite3_interrupt(D) call is in effect until all currently running
+** ^The bentley_sqlite3_interrupt(D) call is in effect until all currently running
 ** SQL statements on [database connection] D complete.  ^Any new SQL statements
-** that are started after the sqlite3_interrupt() call and before the
+** that are started after the bentley_sqlite3_interrupt() call and before the
 ** running statement count reaches zero are interrupted as if they had been
-** running prior to the sqlite3_interrupt() call.  ^New SQL statements
+** running prior to the bentley_sqlite3_interrupt() call.  ^New SQL statements
 ** that are started after the running statement count reaches zero are
-** not effected by the sqlite3_interrupt().
-** ^A call to sqlite3_interrupt(D) that occurs when there are no running
+** not effected by the bentley_sqlite3_interrupt().
+** ^A call to bentley_sqlite3_interrupt(D) that occurs when there are no running
 ** SQL statements is a no-op and has no effect on SQL statements
-** that are started after the sqlite3_interrupt() call returns.
+** that are started after the bentley_sqlite3_interrupt() call returns.
 **
-** ^The [sqlite3_is_interrupted(D)] interface can be used to determine whether
+** ^The [bentley_sqlite3_is_interrupted(D)] interface can be used to determine whether
 ** or not an interrupt is currently in effect for [database connection] D.
 ** It returns 1 if an interrupt is currently in effect, or 0 otherwise.
 */
-SQLITE_API void sqlite3_interrupt(sqlite3*);
-SQLITE_API int sqlite3_is_interrupted(sqlite3*);
+SQLITE_API void bentley_sqlite3_interrupt(sqlite3*);
+SQLITE_API int bentley_sqlite3_is_interrupted(sqlite3*);
 
 /*
 ** CAPI3REF: Determine If An SQL Statement Is Complete
@@ -2894,8 +2894,8 @@ SQLITE_API int sqlite3_is_interrupted(sqlite3*);
 ** ^These routines do not parse the SQL statements thus
 ** will not detect syntactically incorrect SQL.
 **
-** ^(If SQLite has not been initialized using [sqlite3_initialize()] prior
-** to invoking sqlite3_complete16() then sqlite3_initialize() is invoked
+** ^(If SQLite has not been initialized using [bentley_sqlite3_initialize()] prior
+** to invoking sqlite3_complete16() then bentley_sqlite3_initialize() is invoked
 ** automatically by sqlite3_complete16().  If that initialization fails,
 ** then the return value from sqlite3_complete16() will be non-zero
 ** regardless of whether or not the input SQL is complete.)^
@@ -2914,20 +2914,20 @@ SQLITE_API int sqlite3_complete16(const void *sql);
 ** KEYWORDS: {busy-handler callback} {busy handler}
 ** METHOD: sqlite3
 **
-** ^The sqlite3_busy_handler(D,X,P) routine sets a callback function X
+** ^The bentley_sqlite3_busy_handler(D,X,P) routine sets a callback function X
 ** that might be invoked with argument P whenever
 ** an attempt is made to access a database table associated with
 ** [database connection] D when another thread
 ** or process has the table locked.
-** The sqlite3_busy_handler() interface is used to implement
-** [sqlite3_busy_timeout()] and [PRAGMA busy_timeout].
+** The bentley_sqlite3_busy_handler() interface is used to implement
+** [bentley_sqlite3_busy_timeout()] and [PRAGMA busy_timeout].
 **
 ** ^If the busy callback is NULL, then [SQLITE_BUSY]
 ** is returned immediately upon encountering the lock.  ^If the busy callback
 ** is not NULL, then the callback might be invoked with two arguments.
 **
 ** ^The first argument to the busy handler is a copy of the void* pointer which
-** is the third argument to sqlite3_busy_handler().  ^The second argument to
+** is the third argument to bentley_sqlite3_busy_handler().  ^The second argument to
 ** the busy handler callback is the number of times that the busy handler has
 ** been invoked previously for the same locking event.  ^If the
 ** busy callback returns 0, then no additional attempts are made to
@@ -2956,7 +2956,7 @@ SQLITE_API int sqlite3_complete16(const void *sql);
 **
 ** ^(There can only be a single busy handler defined for each
 ** [database connection].  Setting a new busy handler clears any
-** previously set handler.)^  ^Note that calling [sqlite3_busy_timeout()]
+** previously set handler.)^  ^Note that calling [bentley_sqlite3_busy_timeout()]
 ** or evaluating [PRAGMA busy_timeout=N] will change the
 ** busy handler and thus clear any previously set busy handler.
 **
@@ -2968,17 +2968,17 @@ SQLITE_API int sqlite3_complete16(const void *sql);
 ** A busy handler must not close the database connection
 ** or [prepared statement] that invoked the busy handler.
 */
-SQLITE_API int sqlite3_busy_handler(sqlite3*,int(*)(void*,int),void*);
+SQLITE_API int bentley_sqlite3_busy_handler(sqlite3*,int(*)(void*,int),void*);
 
 /*
 ** CAPI3REF: Set A Busy Timeout
 ** METHOD: sqlite3
 **
-** ^This routine sets a [sqlite3_busy_handler | busy handler] that sleeps
+** ^This routine sets a [bentley_sqlite3_busy_handler | busy handler] that sleeps
 ** for a specified amount of time when a table is locked.  ^The handler
 ** will sleep multiple times until at least "ms" milliseconds of sleeping
 ** have accumulated.  ^After at least "ms" milliseconds of sleeping,
-** the handler returns 0 which causes [sqlite3_step()] to return
+** the handler returns 0 which causes [bentley_sqlite3_step()] to return
 ** [SQLITE_BUSY].
 **
 ** ^Calling this routine with an argument less than or equal to zero
@@ -2986,12 +2986,12 @@ SQLITE_API int sqlite3_busy_handler(sqlite3*,int(*)(void*,int),void*);
 **
 ** ^(There can only be a single busy handler for a particular
 ** [database connection] at any given moment.  If another busy handler
-** was defined  (using [sqlite3_busy_handler()]) prior to calling
+** was defined  (using [bentley_sqlite3_busy_handler()]) prior to calling
 ** this routine, that other busy handler is cleared.)^
 **
 ** See also:  [PRAGMA busy_timeout]
 */
-SQLITE_API int sqlite3_busy_timeout(sqlite3*, int ms);
+SQLITE_API int bentley_sqlite3_busy_timeout(sqlite3*, int ms);
 
 /*
 ** CAPI3REF: Convenience Routines For Running Queries
@@ -3001,7 +3001,7 @@ SQLITE_API int sqlite3_busy_timeout(sqlite3*, int ms);
 ** Use of this interface is not recommended.
 **
 ** Definition: A <b>result table</b> is memory data structure created by the
-** [sqlite3_get_table()] interface.  A result table records the
+** [bentley_sqlite3_get_table()] interface.  A result table records the
 ** complete query results from one or more queries.
 **
 ** The table conceptually has a number of rows and columns.  But
@@ -3014,11 +3014,11 @@ SQLITE_API int sqlite3_busy_timeout(sqlite3*, int ms);
 ** to zero-terminated strings that  contain the names of the columns.
 ** The remaining entries all point to query results.  NULL values result
 ** in NULL pointers.  All other values are in their UTF-8 zero-terminated
-** string representation as returned by [sqlite3_column_text()].
+** string representation as returned by [bentley_sqlite3_column_text()].
 **
 ** A result table might consist of one or more memory allocations.
-** It is not safe to pass a result table directly to [sqlite3_free()].
-** A result table should be deallocated using [sqlite3_free_table()].
+** It is not safe to pass a result table directly to [bentley_sqlite3_free()].
+** A result table should be deallocated using [bentley_sqlite3_free_table()].
 **
 ** ^(As an example of the result table format, suppose a query result
 ** is as follows:
@@ -3046,27 +3046,27 @@ SQLITE_API int sqlite3_busy_timeout(sqlite3*, int ms);
 **        azResult&#91;7] = "21";
 ** </pre></blockquote>)^
 **
-** ^The sqlite3_get_table() function evaluates one or more
+** ^The bentley_sqlite3_get_table() function evaluates one or more
 ** semicolon-separated SQL statements in the zero-terminated UTF-8
 ** string of its 2nd parameter and returns a result table to the
 ** pointer given in its 3rd parameter.
 **
-** After the application has finished with the result from sqlite3_get_table(),
-** it must pass the result table pointer to sqlite3_free_table() in order to
+** After the application has finished with the result from bentley_sqlite3_get_table(),
+** it must pass the result table pointer to bentley_sqlite3_free_table() in order to
 ** release the memory that was malloced.  Because of the way the
-** [sqlite3_malloc()] happens within sqlite3_get_table(), the calling
-** function must not try to call [sqlite3_free()] directly.  Only
-** [sqlite3_free_table()] is able to release the memory properly and safely.
+** [bentley_sqlite3_malloc()] happens within bentley_sqlite3_get_table(), the calling
+** function must not try to call [bentley_sqlite3_free()] directly.  Only
+** [bentley_sqlite3_free_table()] is able to release the memory properly and safely.
 **
-** The sqlite3_get_table() interface is implemented as a wrapper around
-** [sqlite3_exec()].  The sqlite3_get_table() routine does not have access
+** The bentley_sqlite3_get_table() interface is implemented as a wrapper around
+** [bentley_sqlite3_exec()].  The bentley_sqlite3_get_table() routine does not have access
 ** to any internal data structures of SQLite.  It uses only the public
 ** interface defined here.  As a consequence, errors that occur in the
-** wrapper layer outside of the internal [sqlite3_exec()] call are not
-** reflected in subsequent calls to [sqlite3_errcode()] or
-** [sqlite3_errmsg()].
+** wrapper layer outside of the internal [bentley_sqlite3_exec()] call are not
+** reflected in subsequent calls to [bentley_sqlite3_errcode()] or
+** [bentley_sqlite3_errmsg()].
 */
-SQLITE_API int sqlite3_get_table(
+SQLITE_API int bentley_sqlite3_get_table(
   sqlite3 *db,          /* An open database */
   const char *zSql,     /* SQL to be evaluated */
   char ***pazResult,    /* Results of the query */
@@ -3074,7 +3074,7 @@ SQLITE_API int sqlite3_get_table(
   int *pnColumn,        /* Number of result columns written here */
   char **pzErrmsg       /* Error msg written here */
 );
-SQLITE_API void sqlite3_free_table(char **result);
+SQLITE_API void bentley_sqlite3_free_table(char **result);
 
 /*
 ** CAPI3REF: Formatted String Printing Functions
@@ -3086,40 +3086,40 @@ SQLITE_API void sqlite3_free_table(char **result);
 ** plus some additional non-standard formats ([%q], [%Q], [%w], and [%z]).
 ** See the [built-in printf()] documentation for details.
 **
-** ^The sqlite3_mprintf() and sqlite3_vmprintf() routines write their
-** results into memory obtained from [sqlite3_malloc64()].
+** ^The bentley_sqlite3_mprintf() and bentley_sqlite3_vmprintf() routines write their
+** results into memory obtained from [bentley_sqlite3_malloc64()].
 ** The strings returned by these two routines should be
-** released by [sqlite3_free()].  ^Both routines return a
-** NULL pointer if [sqlite3_malloc64()] is unable to allocate enough
+** released by [bentley_sqlite3_free()].  ^Both routines return a
+** NULL pointer if [bentley_sqlite3_malloc64()] is unable to allocate enough
 ** memory to hold the resulting string.
 **
-** ^(The sqlite3_snprintf() routine is similar to "snprintf()" from
+** ^(The bentley_sqlite3_snprintf() routine is similar to "snprintf()" from
 ** the standard C library.  The result is written into the
 ** buffer supplied as the second parameter whose size is given by
 ** the first parameter. Note that the order of the
 ** first two parameters is reversed from snprintf().)^  This is an
 ** historical accident that cannot be fixed without breaking
-** backwards compatibility.  ^(Note also that sqlite3_snprintf()
+** backwards compatibility.  ^(Note also that bentley_sqlite3_snprintf()
 ** returns a pointer to its buffer instead of the number of
 ** characters actually written into the buffer.)^  We admit that
 ** the number of characters written would be a more useful return
-** value but we cannot change the implementation of sqlite3_snprintf()
+** value but we cannot change the implementation of bentley_sqlite3_snprintf()
 ** now without breaking compatibility.
 **
-** ^As long as the buffer size is greater than zero, sqlite3_snprintf()
+** ^As long as the buffer size is greater than zero, bentley_sqlite3_snprintf()
 ** guarantees that the buffer is always zero-terminated.  ^The first
 ** parameter "n" is the total size of the buffer, including space for
 ** the zero terminator.  So the longest string that can be completely
 ** written will be n-1 characters.
 **
-** ^The sqlite3_vsnprintf() routine is a varargs version of sqlite3_snprintf().
+** ^The bentley_sqlite3_vsnprintf() routine is a varargs version of bentley_sqlite3_snprintf().
 **
 ** See also:  [built-in printf()], [printf() SQL function]
 */
-SQLITE_API char *sqlite3_mprintf(const char*,...);
-SQLITE_API char *sqlite3_vmprintf(const char*, va_list);
-SQLITE_API char *sqlite3_snprintf(int,char*,const char*, ...);
-SQLITE_API char *sqlite3_vsnprintf(int,char*,const char*, va_list);
+SQLITE_API char *bentley_sqlite3_mprintf(const char*,...);
+SQLITE_API char *bentley_sqlite3_vmprintf(const char*, va_list);
+SQLITE_API char *bentley_sqlite3_snprintf(int,char*,const char*, ...);
+SQLITE_API char *bentley_sqlite3_vsnprintf(int,char*,const char*, va_list);
 
 /*
 ** CAPI3REF: Memory Allocation Subsystem
@@ -3129,105 +3129,105 @@ SQLITE_API char *sqlite3_vsnprintf(int,char*,const char*, va_list);
 ** does not include operating-system specific [VFS] implementation.  The
 ** Windows VFS uses native malloc() and free() for some operations.
 **
-** ^The sqlite3_malloc() routine returns a pointer to a block
+** ^The bentley_sqlite3_malloc() routine returns a pointer to a block
 ** of memory at least N bytes in length, where N is the parameter.
-** ^If sqlite3_malloc() is unable to obtain sufficient free
+** ^If bentley_sqlite3_malloc() is unable to obtain sufficient free
 ** memory, it returns a NULL pointer.  ^If the parameter N to
-** sqlite3_malloc() is zero or negative then sqlite3_malloc() returns
+** bentley_sqlite3_malloc() is zero or negative then bentley_sqlite3_malloc() returns
 ** a NULL pointer.
 **
-** ^The sqlite3_malloc64(N) routine works just like
-** sqlite3_malloc(N) except that N is an unsigned 64-bit integer instead
+** ^The bentley_sqlite3_malloc64(N) routine works just like
+** bentley_sqlite3_malloc(N) except that N is an unsigned 64-bit integer instead
 ** of a signed 32-bit integer.
 **
-** ^Calling sqlite3_free() with a pointer previously returned
-** by sqlite3_malloc() or sqlite3_realloc() releases that memory so
-** that it might be reused.  ^The sqlite3_free() routine is
+** ^Calling bentley_sqlite3_free() with a pointer previously returned
+** by bentley_sqlite3_malloc() or bentley_sqlite3_realloc() releases that memory so
+** that it might be reused.  ^The bentley_sqlite3_free() routine is
 ** a no-op if is called with a NULL pointer.  Passing a NULL pointer
-** to sqlite3_free() is harmless.  After being freed, memory
+** to bentley_sqlite3_free() is harmless.  After being freed, memory
 ** should neither be read nor written.  Even reading previously freed
 ** memory might result in a segmentation fault or other severe error.
 ** Memory corruption, a segmentation fault, or other severe error
-** might result if sqlite3_free() is called with a non-NULL pointer that
-** was not obtained from sqlite3_malloc() or sqlite3_realloc().
+** might result if bentley_sqlite3_free() is called with a non-NULL pointer that
+** was not obtained from bentley_sqlite3_malloc() or bentley_sqlite3_realloc().
 **
-** ^The sqlite3_realloc(X,N) interface attempts to resize a
+** ^The bentley_sqlite3_realloc(X,N) interface attempts to resize a
 ** prior memory allocation X to be at least N bytes.
-** ^If the X parameter to sqlite3_realloc(X,N)
+** ^If the X parameter to bentley_sqlite3_realloc(X,N)
 ** is a NULL pointer then its behavior is identical to calling
-** sqlite3_malloc(N).
-** ^If the N parameter to sqlite3_realloc(X,N) is zero or
+** bentley_sqlite3_malloc(N).
+** ^If the N parameter to bentley_sqlite3_realloc(X,N) is zero or
 ** negative then the behavior is exactly the same as calling
-** sqlite3_free(X).
-** ^sqlite3_realloc(X,N) returns a pointer to a memory allocation
+** bentley_sqlite3_free(X).
+** ^bentley_sqlite3_realloc(X,N) returns a pointer to a memory allocation
 ** of at least N bytes in size or NULL if insufficient memory is available.
 ** ^If M is the size of the prior allocation, then min(N,M) bytes
 ** of the prior allocation are copied into the beginning of buffer returned
-** by sqlite3_realloc(X,N) and the prior allocation is freed.
-** ^If sqlite3_realloc(X,N) returns NULL and N is positive, then the
+** by bentley_sqlite3_realloc(X,N) and the prior allocation is freed.
+** ^If bentley_sqlite3_realloc(X,N) returns NULL and N is positive, then the
 ** prior allocation is not freed.
 **
-** ^The sqlite3_realloc64(X,N) interfaces works the same as
-** sqlite3_realloc(X,N) except that N is a 64-bit unsigned integer instead
+** ^The bentley_sqlite3_realloc64(X,N) interfaces works the same as
+** bentley_sqlite3_realloc(X,N) except that N is a 64-bit unsigned integer instead
 ** of a 32-bit signed integer.
 **
-** ^If X is a memory allocation previously obtained from sqlite3_malloc(),
-** sqlite3_malloc64(), sqlite3_realloc(), or sqlite3_realloc64(), then
-** sqlite3_msize(X) returns the size of that memory allocation in bytes.
-** ^The value returned by sqlite3_msize(X) might be larger than the number
+** ^If X is a memory allocation previously obtained from bentley_sqlite3_malloc(),
+** bentley_sqlite3_malloc64(), bentley_sqlite3_realloc(), or bentley_sqlite3_realloc64(), then
+** bentley_sqlite3_msize(X) returns the size of that memory allocation in bytes.
+** ^The value returned by bentley_sqlite3_msize(X) might be larger than the number
 ** of bytes requested when X was allocated.  ^If X is a NULL pointer then
-** sqlite3_msize(X) returns zero.  If X points to something that is not
+** bentley_sqlite3_msize(X) returns zero.  If X points to something that is not
 ** the beginning of memory allocation, or if it points to a formerly
 ** valid memory allocation that has now been freed, then the behavior
-** of sqlite3_msize(X) is undefined and possibly harmful.
+** of bentley_sqlite3_msize(X) is undefined and possibly harmful.
 **
-** ^The memory returned by sqlite3_malloc(), sqlite3_realloc(),
-** sqlite3_malloc64(), and sqlite3_realloc64()
+** ^The memory returned by bentley_sqlite3_malloc(), bentley_sqlite3_realloc(),
+** bentley_sqlite3_malloc64(), and bentley_sqlite3_realloc64()
 ** is always aligned to at least an 8 byte boundary, or to a
 ** 4 byte boundary if the [SQLITE_4_BYTE_ALIGNED_MALLOC] compile-time
 ** option is used.
 **
-** The pointer arguments to [sqlite3_free()] and [sqlite3_realloc()]
+** The pointer arguments to [bentley_sqlite3_free()] and [bentley_sqlite3_realloc()]
 ** must be either NULL or else pointers obtained from a prior
-** invocation of [sqlite3_malloc()] or [sqlite3_realloc()] that have
+** invocation of [bentley_sqlite3_malloc()] or [bentley_sqlite3_realloc()] that have
 ** not yet been released.
 **
 ** The application must not read or write any part of
 ** a block of memory after it has been released using
-** [sqlite3_free()] or [sqlite3_realloc()].
+** [bentley_sqlite3_free()] or [bentley_sqlite3_realloc()].
 */
-SQLITE_API void *sqlite3_malloc(int);
-SQLITE_API void *sqlite3_malloc64(sqlite3_uint64);
-SQLITE_API void *sqlite3_realloc(void*, int);
-SQLITE_API void *sqlite3_realloc64(void*, sqlite3_uint64);
-SQLITE_API void sqlite3_free(void*);
-SQLITE_API sqlite3_uint64 sqlite3_msize(void*);
+SQLITE_API void *bentley_sqlite3_malloc(int);
+SQLITE_API void *bentley_sqlite3_malloc64(sqlite3_uint64);
+SQLITE_API void *bentley_sqlite3_realloc(void*, int);
+SQLITE_API void *bentley_sqlite3_realloc64(void*, sqlite3_uint64);
+SQLITE_API void bentley_sqlite3_free(void*);
+SQLITE_API sqlite3_uint64 bentley_sqlite3_msize(void*);
 
 /*
 ** CAPI3REF: Memory Allocator Statistics
 **
 ** SQLite provides these two interfaces for reporting on the status
-** of the [sqlite3_malloc()], [sqlite3_free()], and [sqlite3_realloc()]
+** of the [bentley_sqlite3_malloc()], [bentley_sqlite3_free()], and [bentley_sqlite3_realloc()]
 ** routines, which form the built-in memory allocation subsystem.
 **
-** ^The [sqlite3_memory_used()] routine returns the number of bytes
+** ^The [bentley_sqlite3_memory_used()] routine returns the number of bytes
 ** of memory currently outstanding (malloced but not freed).
-** ^The [sqlite3_memory_highwater()] routine returns the maximum
-** value of [sqlite3_memory_used()] since the high-water mark
-** was last reset.  ^The values returned by [sqlite3_memory_used()] and
-** [sqlite3_memory_highwater()] include any overhead
-** added by SQLite in its implementation of [sqlite3_malloc()],
+** ^The [bentley_sqlite3_memory_highwater()] routine returns the maximum
+** value of [bentley_sqlite3_memory_used()] since the high-water mark
+** was last reset.  ^The values returned by [bentley_sqlite3_memory_used()] and
+** [bentley_sqlite3_memory_highwater()] include any overhead
+** added by SQLite in its implementation of [bentley_sqlite3_malloc()],
 ** but not overhead added by the any underlying system library
-** routines that [sqlite3_malloc()] may call.
+** routines that [bentley_sqlite3_malloc()] may call.
 **
 ** ^The memory high-water mark is reset to the current value of
-** [sqlite3_memory_used()] if and only if the parameter to
-** [sqlite3_memory_highwater()] is true.  ^The value returned
-** by [sqlite3_memory_highwater(1)] is the high-water mark
+** [bentley_sqlite3_memory_used()] if and only if the parameter to
+** [bentley_sqlite3_memory_highwater()] is true.  ^The value returned
+** by [bentley_sqlite3_memory_highwater(1)] is the high-water mark
 ** prior to the reset.
 */
-SQLITE_API sqlite3_int64 sqlite3_memory_used(void);
-SQLITE_API sqlite3_int64 sqlite3_memory_highwater(int resetFlag);
+SQLITE_API sqlite3_int64 bentley_sqlite3_memory_used(void);
+SQLITE_API sqlite3_int64 bentley_sqlite3_memory_highwater(int resetFlag);
 
 /*
 ** CAPI3REF: Pseudo-Random Number Generator
@@ -3250,7 +3250,7 @@ SQLITE_API sqlite3_int64 sqlite3_memory_highwater(int resetFlag);
 ** internally and without recourse to the [sqlite3_vfs] xRandomness
 ** method.
 */
-SQLITE_API void sqlite3_randomness(int N, void *P);
+SQLITE_API void bentley_sqlite3_randomness(int N, void *P);
 
 /*
 ** CAPI3REF: Compile-Time Authorization Callbacks
@@ -3260,9 +3260,9 @@ SQLITE_API void sqlite3_randomness(int N, void *P);
 ** ^This routine registers an authorizer callback with a particular
 ** [database connection], supplied in the first argument.
 ** ^The authorizer callback is invoked as SQL statements are being compiled
-** by [sqlite3_prepare()] or its variants [sqlite3_prepare_v2()],
-** [sqlite3_prepare_v3()], [sqlite3_prepare16()], [sqlite3_prepare16_v2()],
-** and [sqlite3_prepare16_v3()].  ^At various
+** by [bentley_sqlite3_prepare()] or its variants [bentley_sqlite3_prepare_v2()],
+** [bentley_sqlite3_prepare_v3()], [bentley_sqlite3_prepare16()], [bentley_sqlite3_prepare16_v2()],
+** and [bentley_sqlite3_prepare16_v3()].  ^At various
 ** points during the compilation process, as logic is being created
 ** to perform various actions, the authorizer callback is invoked to
 ** see if those actions are allowed.  ^The authorizer callback should
@@ -3271,17 +3271,17 @@ SQLITE_API void sqlite3_randomness(int N, void *P);
 ** compiled, or [SQLITE_DENY] to cause the entire SQL statement to be
 ** rejected with an error.  ^If the authorizer callback returns
 ** any value other than [SQLITE_IGNORE], [SQLITE_OK], or [SQLITE_DENY]
-** then the [sqlite3_prepare_v2()] or equivalent call that triggered
+** then the [bentley_sqlite3_prepare_v2()] or equivalent call that triggered
 ** the authorizer will fail with an error message.
 **
 ** When the callback returns [SQLITE_OK], that means the operation
 ** requested is ok.  ^When the callback returns [SQLITE_DENY], the
-** [sqlite3_prepare_v2()] or equivalent call that triggered the
+** [bentley_sqlite3_prepare_v2()] or equivalent call that triggered the
 ** authorizer will fail with an error message explaining that
 ** access is denied.
 **
 ** ^The first parameter to the authorizer callback is a copy of the third
-** parameter to the sqlite3_set_authorizer() interface. ^The second parameter
+** parameter to the bentley_sqlite3_set_authorizer() interface. ^The second parameter
 ** to the callback is an integer [SQLITE_COPY | action code] that specifies
 ** the particular action to be authorized. ^The third through sixth parameters
 ** to the callback are either NULL pointers or zero-terminated strings
@@ -3304,7 +3304,7 @@ SQLITE_API void sqlite3_randomness(int N, void *P);
 ** [SQLITE_IGNORE] then the [DELETE] operation proceeds but the
 ** [truncate optimization] is disabled and all rows are deleted individually.
 **
-** An authorizer is used when [sqlite3_prepare | preparing]
+** An authorizer is used when [bentley_sqlite3_prepare | preparing]
 ** SQL statements from an untrusted source, to ensure that the SQL statements
 ** do not try to access data they are not allowed to see, or that they do not
 ** try to execute malicious statements that damage the database.  For
@@ -3312,36 +3312,36 @@ SQLITE_API void sqlite3_randomness(int N, void *P);
 ** SQL queries for evaluation by a database.  But the application does
 ** not want the user to be able to make arbitrary changes to the
 ** database.  An authorizer could then be put in place while the
-** user-entered SQL is being [sqlite3_prepare | prepared] that
+** user-entered SQL is being [bentley_sqlite3_prepare | prepared] that
 ** disallows everything except [SELECT] statements.
 **
 ** Applications that need to process SQL from untrusted sources
-** might also consider lowering resource limits using [sqlite3_limit()]
+** might also consider lowering resource limits using [bentley_sqlite3_limit()]
 ** and limiting database size using the [max_page_count] [PRAGMA]
 ** in addition to using an authorizer.
 **
 ** ^(Only a single authorizer can be in place on a database connection
-** at a time.  Each call to sqlite3_set_authorizer overrides the
+** at a time.  Each call to bentley_sqlite3_set_authorizer overrides the
 ** previous call.)^  ^Disable the authorizer by installing a NULL callback.
 ** The authorizer is disabled by default.
 **
 ** The authorizer callback must not do anything that will modify
 ** the database connection that invoked the authorizer callback.
-** Note that [sqlite3_prepare_v2()] and [sqlite3_step()] both modify their
+** Note that [bentley_sqlite3_prepare_v2()] and [bentley_sqlite3_step()] both modify their
 ** database connections for the meaning of "modify" in this paragraph.
 **
-** ^When [sqlite3_prepare_v2()] is used to prepare a statement, the
-** statement might be re-prepared during [sqlite3_step()] due to a
+** ^When [bentley_sqlite3_prepare_v2()] is used to prepare a statement, the
+** statement might be re-prepared during [bentley_sqlite3_step()] due to a
 ** schema change.  Hence, the application should ensure that the
-** correct authorizer callback remains in place during the [sqlite3_step()].
+** correct authorizer callback remains in place during the [bentley_sqlite3_step()].
 **
 ** ^Note that the authorizer callback is invoked only during
-** [sqlite3_prepare()] or its variants.  Authorization is not
-** performed during statement evaluation in [sqlite3_step()], unless
-** as stated in the previous paragraph, sqlite3_step() invokes
-** sqlite3_prepare_v2() to reprepare a statement after a schema change.
+** [bentley_sqlite3_prepare()] or its variants.  Authorization is not
+** performed during statement evaluation in [bentley_sqlite3_step()], unless
+** as stated in the previous paragraph, bentley_sqlite3_step() invokes
+** bentley_sqlite3_prepare_v2() to reprepare a statement after a schema change.
 */
-SQLITE_API int sqlite3_set_authorizer(
+SQLITE_API int bentley_sqlite3_set_authorizer(
   sqlite3*,
   int (*xAuth)(void*,int,const char*,const char*,const char*,const char*),
   void *pUserData
@@ -3350,14 +3350,14 @@ SQLITE_API int sqlite3_set_authorizer(
 /*
 ** CAPI3REF: Authorizer Return Codes
 **
-** The [sqlite3_set_authorizer | authorizer callback function] must
+** The [bentley_sqlite3_set_authorizer | authorizer callback function] must
 ** return either [SQLITE_OK] or one of these two constants in order
 ** to signal SQLite whether or not the action is permitted.  See the
-** [sqlite3_set_authorizer | authorizer documentation] for additional
+** [bentley_sqlite3_set_authorizer | authorizer documentation] for additional
 ** information.
 **
 ** Note that SQLITE_IGNORE is also used as a [conflict resolution mode]
-** returned from the [sqlite3_vtab_on_conflict()] interface.
+** returned from the [bentley_sqlite3_vtab_on_conflict()] interface.
 */
 #define SQLITE_DENY   1   /* Abort the SQL statement with an error */
 #define SQLITE_IGNORE 2   /* Don't allow access, but don't generate an error */
@@ -3365,7 +3365,7 @@ SQLITE_API int sqlite3_set_authorizer(
 /*
 ** CAPI3REF: Authorizer Action Codes
 **
-** The [sqlite3_set_authorizer()] interface registers a callback function
+** The [bentley_sqlite3_set_authorizer()] interface registers a callback function
 ** that is invoked to authorize certain SQL statement actions.  The
 ** second parameter to the callback is an integer code that specifies
 ** what action is being authorized.  These are the integer action codes that
@@ -3421,14 +3421,14 @@ SQLITE_API int sqlite3_set_authorizer(
 ** CAPI3REF: Deprecated Tracing And Profiling Functions
 ** DEPRECATED
 **
-** These routines are deprecated. Use the [sqlite3_trace_v2()] interface
+** These routines are deprecated. Use the [bentley_sqlite3_trace_v2()] interface
 ** instead of the routines described here.
 **
 ** These routines register callback functions that can be used for
 ** tracing and profiling the execution of SQL statements.
 **
 ** ^The callback function registered by sqlite3_trace() is invoked at
-** various times when an SQL statement is being run by [sqlite3_step()].
+** various times when an SQL statement is being run by [bentley_sqlite3_step()].
 ** ^The sqlite3_trace() callback is invoked with a UTF-8 rendering of the
 ** SQL statement text as the statement first begins executing.
 ** ^(Additional sqlite3_trace() callbacks might occur
@@ -3446,7 +3446,7 @@ SQLITE_API int sqlite3_set_authorizer(
 ** is only capable of millisecond resolution so the six least significant
 ** digits in the time are meaningless.  Future versions of SQLite
 ** might provide greater resolution on the profiler callback.  Invoking
-** either [sqlite3_trace()] or [sqlite3_trace_v2()] will cancel the
+** either [sqlite3_trace()] or [bentley_sqlite3_trace_v2()] will cancel the
 ** profile callback.
 */
 SQLITE_API SQLITE_DEPRECATED void *sqlite3_trace(sqlite3*,
@@ -3459,8 +3459,8 @@ SQLITE_API SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 ** KEYWORDS: SQLITE_TRACE
 **
 ** These constants identify classes of events that can be monitored
-** using the [sqlite3_trace_v2()] tracing logic.  The M argument
-** to [sqlite3_trace_v2(D,M,X,P)] is an OR-ed combination of one or more of
+** using the [bentley_sqlite3_trace_v2()] tracing logic.  The M argument
+** to [bentley_sqlite3_trace_v2(D,M,X,P)] is an OR-ed combination of one or more of
 ** the following constants.  ^The first argument to the trace callback
 ** is one of the following constants.
 **
@@ -3469,7 +3469,7 @@ SQLITE_API SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 ** ^A trace callback has four arguments: xCallback(T,C,P,X).
 ** ^The T argument is one of the integer type codes above.
 ** ^The C argument is a copy of the context pointer passed in as the
-** fourth argument to [sqlite3_trace_v2()].
+** fourth argument to [bentley_sqlite3_trace_v2()].
 ** The P and X arguments are pointers whose meanings depend on T.
 **
 ** <dl>
@@ -3483,7 +3483,7 @@ SQLITE_API SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 ** that indicates the invocation of a trigger.  ^The callback can compute
 ** the same text that would have been returned by the legacy [sqlite3_trace()]
 ** interface by using the X argument when X begins with "--" and invoking
-** [sqlite3_expanded_sql(P)] otherwise.
+** [bentley_sqlite3_expanded_sql(P)] otherwise.
 **
 ** [[SQLITE_TRACE_PROFILE]] <dt>SQLITE_TRACE_PROFILE</dt>
 ** <dd>^An SQLITE_TRACE_PROFILE callback provides approximately the same
@@ -3515,16 +3515,16 @@ SQLITE_API SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 ** CAPI3REF: SQL Trace Hook
 ** METHOD: sqlite3
 **
-** ^The sqlite3_trace_v2(D,M,X,P) interface registers a trace callback
+** ^The bentley_sqlite3_trace_v2(D,M,X,P) interface registers a trace callback
 ** function X against [database connection] D, using property mask M
 ** and context pointer P.  ^If the X callback is
 ** NULL or if the M mask is zero, then tracing is disabled.  The
 ** M argument should be the bitwise OR-ed combination of
 ** zero or more [SQLITE_TRACE] constants.
 **
-** ^Each call to either sqlite3_trace(D,X,P) or sqlite3_trace_v2(D,M,X,P)
+** ^Each call to either sqlite3_trace(D,X,P) or bentley_sqlite3_trace_v2(D,M,X,P)
 ** overrides (cancels) all prior calls to sqlite3_trace(D,X,P) or
-** sqlite3_trace_v2(D,M,X,P) for the [database connection] D.  Each
+** bentley_sqlite3_trace_v2(D,M,X,P) for the [database connection] D.  Each
 ** database connection may have at most one trace callback.
 **
 ** ^The X callback is invoked whenever any of the events identified by
@@ -3538,11 +3538,11 @@ SQLITE_API SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 ** ^The C argument is a copy of the context pointer.
 ** The P and X arguments are pointers whose meanings depend on T.
 **
-** The sqlite3_trace_v2() interface is intended to replace the legacy
+** The bentley_sqlite3_trace_v2() interface is intended to replace the legacy
 ** interfaces [sqlite3_trace()] and [sqlite3_profile()], both of which
 ** are deprecated.
 */
-SQLITE_API int sqlite3_trace_v2(
+SQLITE_API int bentley_sqlite3_trace_v2(
   sqlite3*,
   unsigned uMask,
   int(*xCallback)(unsigned,void*,void*,void*),
@@ -3555,7 +3555,7 @@ SQLITE_API int sqlite3_trace_v2(
 **
 ** ^The sqlite3_progress_handler(D,N,X,P) interface causes the callback
 ** function X to be invoked periodically during long running calls to
-** [sqlite3_step()] and [sqlite3_prepare()] and similar for
+** [bentley_sqlite3_step()] and [bentley_sqlite3_prepare()] and similar for
 ** database connection D.  An example use for this
 ** interface is to keep a GUI updated during a large query.
 **
@@ -3577,15 +3577,15 @@ SQLITE_API int sqlite3_trace_v2(
 **
 ** The progress handler callback must not do anything that will modify
 ** the database connection that invoked the progress handler.
-** Note that [sqlite3_prepare_v2()] and [sqlite3_step()] both modify their
+** Note that [bentley_sqlite3_prepare_v2()] and [bentley_sqlite3_step()] both modify their
 ** database connections for the meaning of "modify" in this paragraph.
 **
 ** The progress handler callback would originally only be invoked from the
-** bytecode engine.  It still might be invoked during [sqlite3_prepare()]
+** bytecode engine.  It still might be invoked during [bentley_sqlite3_prepare()]
 ** and similar because those routines might force a reparse of the schema
 ** which involves running the bytecode engine.  However, beginning with
 ** SQLite version 3.41.0, the progress handler callback might also be
-** invoked directly from [sqlite3_prepare()] while analyzing and generating
+** invoked directly from [bentley_sqlite3_prepare()] while analyzing and generating
 ** code for complex queries.
 */
 SQLITE_API void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
@@ -3596,29 +3596,29 @@ SQLITE_API void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 **
 ** ^These routines open an SQLite database file as specified by the
 ** filename argument. ^The filename argument is interpreted as UTF-8 for
-** sqlite3_open() and sqlite3_open_v2() and as UTF-16 in the native byte
-** order for sqlite3_open16(). ^(A [database connection] handle is usually
+** bentley_sqlite3_open() and bentley_sqlite3_open_v2() and as UTF-16 in the native byte
+** order for bentley_sqlite3_open16(). ^(A [database connection] handle is usually
 ** returned in *ppDb, even if an error occurs.  The only exception is that
 ** if SQLite is unable to allocate memory to hold the [sqlite3] object,
 ** a NULL will be written into *ppDb instead of a pointer to the [sqlite3]
 ** object.)^ ^(If the database is opened (and/or created) successfully, then
 ** [SQLITE_OK] is returned.  Otherwise an [error code] is returned.)^ ^The
-** [sqlite3_errmsg()] or [sqlite3_errmsg16()] routines can be used to obtain
+** [bentley_sqlite3_errmsg()] or [bentley_sqlite3_errmsg16()] routines can be used to obtain
 ** an English language description of the error following a failure of any
-** of the sqlite3_open() routines.
+** of the bentley_sqlite3_open() routines.
 **
 ** ^The default encoding will be UTF-8 for databases created using
-** sqlite3_open() or sqlite3_open_v2().  ^The default encoding for databases
-** created using sqlite3_open16() will be UTF-16 in the native byte order.
+** bentley_sqlite3_open() or bentley_sqlite3_open_v2().  ^The default encoding for databases
+** created using bentley_sqlite3_open16() will be UTF-16 in the native byte order.
 **
 ** Whether or not an error occurs when it is opened, resources
 ** associated with the [database connection] handle should be released by
-** passing it to [sqlite3_close()] when it is no longer required.
+** passing it to [bentley_sqlite3_close()] when it is no longer required.
 **
-** The sqlite3_open_v2() interface works like sqlite3_open()
+** The bentley_sqlite3_open_v2() interface works like bentley_sqlite3_open()
 ** except that it accepts two additional parameters for additional control
 ** over the new database connection.  ^(The flags parameter to
-** sqlite3_open_v2() must include, at a minimum, one of the following
+** bentley_sqlite3_open_v2() must include, at a minimum, one of the following
 ** three flag combinations:)^
 **
 ** <dl>
@@ -3632,14 +3632,14 @@ SQLITE_API void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** system.  In either case the database must already exist, otherwise
 ** an error is returned.  For historical reasons, if opening in
 ** read-write mode fails due to OS-level permissions, an attempt is
-** made to open it in read-only mode. [sqlite3_db_readonly()] can be
+** made to open it in read-only mode. [bentley_sqlite3_db_readonly()] can be
 ** used to determine whether the database is actually
 ** read-write.</dd>)^
 **
 ** ^(<dt>[SQLITE_OPEN_READWRITE] | [SQLITE_OPEN_CREATE]</dt>
 ** <dd>The database is opened for reading and writing, and is created if
 ** it does not already exist. This is the behavior that is always used for
-** sqlite3_open() and sqlite3_open16().</dd>)^
+** bentley_sqlite3_open() and bentley_sqlite3_open16().</dd>)^
 ** </dl>
 **
 ** In addition to the required flags, the following optional flags are
@@ -3671,7 +3671,7 @@ SQLITE_API void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** ^(<dt>[SQLITE_OPEN_SHAREDCACHE]</dt>
 ** <dd>The database is opened [shared cache] enabled, overriding
 ** the default shared cache setting provided by
-** [sqlite3_enable_shared_cache()].)^
+** [bentley_sqlite3_enable_shared_cache()].)^
 ** The [use of shared cache mode is discouraged] and hence shared cache
 ** capabilities may be omitted from many builds of SQLite.  In such cases,
 ** this option is a no-op.
@@ -3679,34 +3679,34 @@ SQLITE_API void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** ^(<dt>[SQLITE_OPEN_PRIVATECACHE]</dt>
 ** <dd>The database is opened [shared cache] disabled, overriding
 ** the default shared cache setting provided by
-** [sqlite3_enable_shared_cache()].)^
+** [bentley_sqlite3_enable_shared_cache()].)^
 **
 ** [[OPEN_EXRESCODE]] ^(<dt>[SQLITE_OPEN_EXRESCODE]</dt>
 ** <dd>The database connection comes up in "extended result code mode".
 ** In other words, the database behaves as if
-** [sqlite3_extended_result_codes(db,1)] were called on the database
+** [bentley_sqlite3_extended_result_codes(db,1)] were called on the database
 ** connection as soon as the connection is created. In addition to setting
-** the extended result code mode, this flag also causes [sqlite3_open_v2()]
+** the extended result code mode, this flag also causes [bentley_sqlite3_open_v2()]
 ** to return an extended result code.</dd>
 **
 ** [[OPEN_NOFOLLOW]] ^(<dt>[SQLITE_OPEN_NOFOLLOW]</dt>
 ** <dd>The database filename is not allowed to contain a symbolic link</dd>
 ** </dl>)^
 **
-** If the 3rd parameter to sqlite3_open_v2() is not one of the
+** If the 3rd parameter to bentley_sqlite3_open_v2() is not one of the
 ** required combinations shown above optionally combined with other
 ** [SQLITE_OPEN_READONLY | SQLITE_OPEN_* bits]
 ** then the behavior is undefined.  Historic versions of SQLite
 ** have silently ignored surplus bits in the flags parameter to
-** sqlite3_open_v2(), however that behavior might not be carried through
+** bentley_sqlite3_open_v2(), however that behavior might not be carried through
 ** into future versions of SQLite and so applications should not rely
 ** upon it.  Note in particular that the SQLITE_OPEN_EXCLUSIVE flag is a no-op
-** for sqlite3_open_v2().  The SQLITE_OPEN_EXCLUSIVE does *not* cause
+** for bentley_sqlite3_open_v2().  The SQLITE_OPEN_EXCLUSIVE does *not* cause
 ** the open to fail if the database already exists.  The SQLITE_OPEN_EXCLUSIVE
 ** flag is intended for use by the [sqlite3_vfs|VFS interface] only, and not
-** by sqlite3_open_v2().
+** by bentley_sqlite3_open_v2().
 **
-** ^The fourth parameter to sqlite3_open_v2() is the name of the
+** ^The fourth parameter to bentley_sqlite3_open_v2() is the name of the
 ** [sqlite3_vfs] object that defines the operating system interface that
 ** the new database connection should use.  ^If the fourth parameter is
 ** a NULL pointer then the default [sqlite3_vfs] object is used.
@@ -3723,14 +3723,14 @@ SQLITE_API void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** on-disk database will be created.  ^This private database will be
 ** automatically deleted as soon as the database connection is closed.
 **
-** [[URI filenames in sqlite3_open()]] <h3>URI Filenames</h3>
+** [[URI filenames in bentley_sqlite3_open()]] <h3>URI Filenames</h3>
 **
 ** ^If [URI filename] interpretation is enabled, and the filename argument
 ** begins with "file:", then the filename is interpreted as a URI. ^URI
 ** filename interpretation is enabled if the [SQLITE_OPEN_URI] flag is
-** set in the third argument to sqlite3_open_v2(), or if it has
+** set in the third argument to bentley_sqlite3_open_v2(), or if it has
 ** been enabled globally using the [SQLITE_CONFIG_URI] option with the
-** [sqlite3_config()] method or by the [SQLITE_USE_URI] compile-time option.
+** [bentley_sqlite3_config()] method or by the [SQLITE_USE_URI] compile-time option.
 ** URI filename interpretation is turned off
 ** by default, but future releases of SQLite might enable URI filename
 ** interpretation by default.  See "[URI filenames]" for additional
@@ -3761,16 +3761,16 @@ SQLITE_API void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 **     a VFS object that provides the operating system interface that should
 **     be used to access the database file on disk. ^If this option is set to
 **     an empty string the default VFS object is used. ^Specifying an unknown
-**     VFS is an error. ^If sqlite3_open_v2() is used and the vfs option is
+**     VFS is an error. ^If bentley_sqlite3_open_v2() is used and the vfs option is
 **     present, then the VFS specified by the option takes precedence over
-**     the value passed as the fourth parameter to sqlite3_open_v2().
+**     the value passed as the fourth parameter to bentley_sqlite3_open_v2().
 **
 **   <li> <b>mode</b>: ^(The mode parameter may be set to either "ro", "rw",
 **     "rwc", or "memory". Attempting to set it to any other value is
 **     an error)^.
 **     ^If "ro" is specified, then the database is opened for read-only
 **     access, just as if the [SQLITE_OPEN_READONLY] flag had been set in the
-**     third argument to sqlite3_open_v2(). ^If the mode option is set to
+**     third argument to bentley_sqlite3_open_v2(). ^If the mode option is set to
 **     "rw", then the database is opened for read-write (but not create)
 **     access, as if SQLITE_OPEN_READWRITE (but not SQLITE_OPEN_CREATE) had
 **     been set. ^Value "rwc" is equivalent to setting both
@@ -3778,14 +3778,14 @@ SQLITE_API void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 **     set to "memory" then a pure [in-memory database] that never reads
 **     or writes from disk is used. ^It is an error to specify a value for
 **     the mode parameter that is less restrictive than that specified by
-**     the flags passed in the third parameter to sqlite3_open_v2().
+**     the flags passed in the third parameter to bentley_sqlite3_open_v2().
 **
 **   <li> <b>cache</b>: ^The cache parameter may be set to either "shared" or
 **     "private". ^Setting it to "shared" is equivalent to setting the
 **     SQLITE_OPEN_SHAREDCACHE bit in the flags argument passed to
-**     sqlite3_open_v2(). ^Setting the cache parameter to "private" is
+**     bentley_sqlite3_open_v2(). ^Setting the cache parameter to "private" is
 **     equivalent to setting the SQLITE_OPEN_PRIVATECACHE bit.
-**     ^If sqlite3_open_v2() is used and the "cache" parameter is present in
+**     ^If bentley_sqlite3_open_v2() is used and the "cache" parameter is present in
 **     a URI filename, its value overrides any behavior requested by setting
 **     SQLITE_OPEN_PRIVATECACHE or SQLITE_OPEN_SHAREDCACHE flag.
 **
@@ -3857,26 +3857,26 @@ SQLITE_API void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** the results are undefined.
 **
 ** <b>Note to Windows users:</b>  The encoding used for the filename argument
-** of sqlite3_open() and sqlite3_open_v2() must be UTF-8, not whatever
+** of bentley_sqlite3_open() and bentley_sqlite3_open_v2() must be UTF-8, not whatever
 ** codepage is currently defined.  Filenames containing international
 ** characters must be converted to UTF-8 prior to passing them into
-** sqlite3_open() or sqlite3_open_v2().
+** bentley_sqlite3_open() or bentley_sqlite3_open_v2().
 **
 ** <b>Note to Windows Runtime users:</b>  The temporary directory must be set
-** prior to calling sqlite3_open() or sqlite3_open_v2().  Otherwise, various
+** prior to calling bentley_sqlite3_open() or bentley_sqlite3_open_v2().  Otherwise, various
 ** features that require the use of temporary files may fail.
 **
-** See also: [sqlite3_temp_directory]
+** See also: [bentley_sqlite3_temp_directory]
 */
-SQLITE_API int sqlite3_open(
+SQLITE_API int bentley_sqlite3_open(
   const char *filename,   /* Database filename (UTF-8) */
   sqlite3 **ppDb          /* OUT: SQLite db handle */
 );
-SQLITE_API int sqlite3_open16(
+SQLITE_API int bentley_sqlite3_open16(
   const void *filename,   /* Database filename (UTF-16) */
   sqlite3 **ppDb          /* OUT: SQLite db handle */
 );
-SQLITE_API int sqlite3_open_v2(
+SQLITE_API int bentley_sqlite3_open_v2(
   const char *filename,   /* Database filename (UTF-8) */
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   int flags,              /* Flags */
@@ -3895,8 +3895,8 @@ SQLITE_API int sqlite3_open_v2(
 ** <ul>
 ** <li> A database filename pointer created by the SQLite core and
 ** passed into the xOpen() method of a VFS implementation, or
-** <li> A filename obtained from [sqlite3_db_filename()], or
-** <li> A new filename constructed using [sqlite3_create_filename()].
+** <li> A filename obtained from [bentley_sqlite3_db_filename()], or
+** <li> A new filename constructed using [bentley_sqlite3_create_filename()].
 ** </ul>
 ** If the F parameter is not one of the above, then the behavior is
 ** undefined and probably undesirable.  Older versions of SQLite were
@@ -3904,37 +3904,37 @@ SQLITE_API int sqlite3_open_v2(
 **
 ** If F is a suitable filename (as described in the previous paragraph)
 ** and if P is the name of the query parameter, then
-** sqlite3_uri_parameter(F,P) returns the value of the P
+** bentley_sqlite3_uri_parameter(F,P) returns the value of the P
 ** parameter if it exists or a NULL pointer if P does not appear as a
 ** query parameter on F.  If P is a query parameter of F and it
-** has no explicit value, then sqlite3_uri_parameter(F,P) returns
+** has no explicit value, then bentley_sqlite3_uri_parameter(F,P) returns
 ** a pointer to an empty string.
 **
-** The sqlite3_uri_boolean(F,P,B) routine assumes that P is a boolean
+** The bentley_sqlite3_uri_boolean(F,P,B) routine assumes that P is a boolean
 ** parameter and returns true (1) or false (0) according to the value
-** of P.  The sqlite3_uri_boolean(F,P,B) routine returns true (1) if the
+** of P.  The bentley_sqlite3_uri_boolean(F,P,B) routine returns true (1) if the
 ** value of query parameter P is one of "yes", "true", or "on" in any
 ** case or if the value begins with a non-zero number.  The
-** sqlite3_uri_boolean(F,P,B) routines returns false (0) if the value of
+** bentley_sqlite3_uri_boolean(F,P,B) routines returns false (0) if the value of
 ** query parameter P is one of "no", "false", or "off" in any case or
 ** if the value begins with a numeric zero.  If P is not a query
 ** parameter on F or if the value of P does not match any of the
-** above, then sqlite3_uri_boolean(F,P,B) returns (B!=0).
+** above, then bentley_sqlite3_uri_boolean(F,P,B) returns (B!=0).
 **
-** The sqlite3_uri_int64(F,P,D) routine converts the value of P into a
+** The bentley_sqlite3_uri_int64(F,P,D) routine converts the value of P into a
 ** 64-bit signed integer and returns that integer, or D if P does not
 ** exist.  If the value of P is something other than an integer, then
 ** zero is returned.
 **
-** The sqlite3_uri_key(F,N) returns a pointer to the name (not
+** The bentley_sqlite3_uri_key(F,N) returns a pointer to the name (not
 ** the value) of the N-th query parameter for filename F, or a NULL
 ** pointer if N is less than zero or greater than the number of query
 ** parameters minus 1.  The N value is zero-based so N should be 0 to obtain
 ** the name of the first query parameter, 1 for the second parameter, and
 ** so forth.
 **
-** If F is a NULL pointer, then sqlite3_uri_parameter(F,P) returns NULL and
-** sqlite3_uri_boolean(F,P,B) returns B.  If F is not a NULL pointer and
+** If F is a NULL pointer, then bentley_sqlite3_uri_parameter(F,P) returns NULL and
+** bentley_sqlite3_uri_boolean(F,P,B) returns B.  If F is not a NULL pointer and
 ** is not a database file pathname pointer that the SQLite core passed
 ** into the xOpen VFS method, then the behavior of this routine is undefined
 ** and probably undesirable.
@@ -3949,10 +3949,10 @@ SQLITE_API int sqlite3_open_v2(
 **
 ** See the [URI filename] documentation for additional information.
 */
-SQLITE_API const char *sqlite3_uri_parameter(sqlite3_filename z, const char *zParam);
-SQLITE_API int sqlite3_uri_boolean(sqlite3_filename z, const char *zParam, int bDefault);
-SQLITE_API sqlite3_int64 sqlite3_uri_int64(sqlite3_filename, const char*, sqlite3_int64);
-SQLITE_API const char *sqlite3_uri_key(sqlite3_filename z, int N);
+SQLITE_API const char *bentley_sqlite3_uri_parameter(sqlite3_filename z, const char *zParam);
+SQLITE_API int bentley_sqlite3_uri_boolean(sqlite3_filename z, const char *zParam, int bDefault);
+SQLITE_API sqlite3_int64 bentley_sqlite3_uri_int64(sqlite3_filename, const char*, sqlite3_int64);
+SQLITE_API const char *bentley_sqlite3_uri_key(sqlite3_filename z, int N);
 
 /*
 ** CAPI3REF:  Translate filenames
@@ -3962,35 +3962,35 @@ SQLITE_API const char *sqlite3_uri_key(sqlite3_filename z, int N);
 ** and the WAL file.
 **
 ** If F is the name of an sqlite database file, journal file, or WAL file
-** passed by the SQLite core into the VFS, then sqlite3_filename_database(F)
+** passed by the SQLite core into the VFS, then bentley_sqlite3_filename_database(F)
 ** returns the name of the corresponding database file.
 **
 ** If F is the name of an sqlite database file, journal file, or WAL file
 ** passed by the SQLite core into the VFS, or if F is a database filename
-** obtained from [sqlite3_db_filename()], then sqlite3_filename_journal(F)
+** obtained from [bentley_sqlite3_db_filename()], then bentley_sqlite3_filename_journal(F)
 ** returns the name of the corresponding rollback journal file.
 **
 ** If F is the name of an sqlite database file, journal file, or WAL file
 ** that was passed by the SQLite core into the VFS, or if F is a database
-** filename obtained from [sqlite3_db_filename()], then
-** sqlite3_filename_wal(F) returns the name of the corresponding
+** filename obtained from [bentley_sqlite3_db_filename()], then
+** bentley_sqlite3_filename_wal(F) returns the name of the corresponding
 ** WAL file.
 **
 ** In all of the above, if F is not the name of a database, journal or WAL
 ** filename passed into the VFS from the SQLite core and F is not the
-** return value from [sqlite3_db_filename()], then the result is
+** return value from [bentley_sqlite3_db_filename()], then the result is
 ** undefined and is likely a memory access violation.
 */
-SQLITE_API const char *sqlite3_filename_database(sqlite3_filename);
-SQLITE_API const char *sqlite3_filename_journal(sqlite3_filename);
-SQLITE_API const char *sqlite3_filename_wal(sqlite3_filename);
+SQLITE_API const char *bentley_sqlite3_filename_database(sqlite3_filename);
+SQLITE_API const char *bentley_sqlite3_filename_journal(sqlite3_filename);
+SQLITE_API const char *bentley_sqlite3_filename_wal(sqlite3_filename);
 
 /*
 ** CAPI3REF:  Database File Corresponding To A Journal
 **
 ** ^If X is the name of a rollback or WAL-mode journal file that is
 ** passed into the xOpen method of [sqlite3_vfs], then
-** sqlite3_database_file_object(X) returns a pointer to the [sqlite3_file]
+** bentley_sqlite3_database_file_object(X) returns a pointer to the [sqlite3_file]
 ** object that represents the main database file.
 **
 ** This routine is intended for use in custom [VFS] implementations
@@ -4002,7 +4002,7 @@ SQLITE_API const char *sqlite3_filename_wal(sqlite3_filename);
 ** of this routine results in undefined and probably undesirable
 ** behavior.
 */
-SQLITE_API sqlite3_file *sqlite3_database_file_object(const char*);
+SQLITE_API sqlite3_file *bentley_sqlite3_database_file_object(const char*);
 
 /*
 ** CAPI3REF: Create and Destroy VFS Filenames
@@ -4010,82 +4010,82 @@ SQLITE_API sqlite3_file *sqlite3_database_file_object(const char*);
 ** These interfaces are provided for use by [VFS shim] implementations and
 ** are not useful outside of that context.
 **
-** The sqlite3_create_filename(D,J,W,N,P) allocates memory to hold a version of
+** The bentley_sqlite3_create_filename(D,J,W,N,P) allocates memory to hold a version of
 ** database filename D with corresponding journal file J and WAL file W and
 ** with N URI parameters key/values pairs in the array P.  The result from
-** sqlite3_create_filename(D,J,W,N,P) is a pointer to a database filename that
+** bentley_sqlite3_create_filename(D,J,W,N,P) is a pointer to a database filename that
 ** is safe to pass to routines like:
 ** <ul>
-** <li> [sqlite3_uri_parameter()],
-** <li> [sqlite3_uri_boolean()],
-** <li> [sqlite3_uri_int64()],
-** <li> [sqlite3_uri_key()],
-** <li> [sqlite3_filename_database()],
-** <li> [sqlite3_filename_journal()], or
-** <li> [sqlite3_filename_wal()].
+** <li> [bentley_sqlite3_uri_parameter()],
+** <li> [bentley_sqlite3_uri_boolean()],
+** <li> [bentley_sqlite3_uri_int64()],
+** <li> [bentley_sqlite3_uri_key()],
+** <li> [bentley_sqlite3_filename_database()],
+** <li> [bentley_sqlite3_filename_journal()], or
+** <li> [bentley_sqlite3_filename_wal()].
 ** </ul>
-** If a memory allocation error occurs, sqlite3_create_filename() might
-** return a NULL pointer.  The memory obtained from sqlite3_create_filename(X)
-** must be released by a corresponding call to sqlite3_free_filename(Y).
+** If a memory allocation error occurs, bentley_sqlite3_create_filename() might
+** return a NULL pointer.  The memory obtained from bentley_sqlite3_create_filename(X)
+** must be released by a corresponding call to bentley_sqlite3_free_filename(Y).
 **
-** The P parameter in sqlite3_create_filename(D,J,W,N,P) should be an array
+** The P parameter in bentley_sqlite3_create_filename(D,J,W,N,P) should be an array
 ** of 2*N pointers to strings.  Each pair of pointers in this array corresponds
 ** to a key and value for a query parameter.  The P parameter may be a NULL
 ** pointer if N is zero.  None of the 2*N pointers in the P array may be
 ** NULL pointers and key pointers should not be empty strings.
-** None of the D, J, or W parameters to sqlite3_create_filename(D,J,W,N,P) may
+** None of the D, J, or W parameters to bentley_sqlite3_create_filename(D,J,W,N,P) may
 ** be NULL pointers, though they can be empty strings.
 **
-** The sqlite3_free_filename(Y) routine releases a memory allocation
-** previously obtained from sqlite3_create_filename().  Invoking
-** sqlite3_free_filename(Y) where Y is a NULL pointer is a harmless no-op.
+** The bentley_sqlite3_free_filename(Y) routine releases a memory allocation
+** previously obtained from bentley_sqlite3_create_filename().  Invoking
+** bentley_sqlite3_free_filename(Y) where Y is a NULL pointer is a harmless no-op.
 **
-** If the Y parameter to sqlite3_free_filename(Y) is anything other
+** If the Y parameter to bentley_sqlite3_free_filename(Y) is anything other
 ** than a NULL pointer or a pointer previously acquired from
-** sqlite3_create_filename(), then bad things such as heap
+** bentley_sqlite3_create_filename(), then bad things such as heap
 ** corruption or segfaults may occur. The value Y should not be
-** used again after sqlite3_free_filename(Y) has been called.  This means
+** used again after bentley_sqlite3_free_filename(Y) has been called.  This means
 ** that if the [sqlite3_vfs.xOpen()] method of a VFS has been called using Y,
 ** then the corresponding [sqlite3_module.xClose() method should also be
-** invoked prior to calling sqlite3_free_filename(Y).
+** invoked prior to calling bentley_sqlite3_free_filename(Y).
 */
-SQLITE_API sqlite3_filename sqlite3_create_filename(
+SQLITE_API sqlite3_filename bentley_sqlite3_create_filename(
   const char *zDatabase,
   const char *zJournal,
   const char *zWal,
   int nParam,
   const char **azParam
 );
-SQLITE_API void sqlite3_free_filename(sqlite3_filename);
+SQLITE_API void bentley_sqlite3_free_filename(sqlite3_filename);
 
 /*
 ** CAPI3REF: Error Codes And Messages
 ** METHOD: sqlite3
 **
 ** ^If the most recent sqlite3_* API call associated with
-** [database connection] D failed, then the sqlite3_errcode(D) interface
+** [database connection] D failed, then the bentley_sqlite3_errcode(D) interface
 ** returns the numeric [result code] or [extended result code] for that
 ** API call.
-** ^The sqlite3_extended_errcode()
+** ^The bentley_sqlite3_extended_errcode()
 ** interface is the same except that it always returns the
 ** [extended result code] even when extended result codes are
 ** disabled.
 **
-** The values returned by sqlite3_errcode() and/or
-** sqlite3_extended_errcode() might change with each API call.
+** The values returned by bentley_sqlite3_errcode() and/or
+** bentley_sqlite3_extended_errcode() might change with each API call.
 ** Except, there are some interfaces that are guaranteed to never
 ** change the value of the error code.  The error-code preserving
 ** interfaces include the following:
 **
 ** <ul>
-** <li> sqlite3_errcode()
-** <li> sqlite3_extended_errcode()
-** <li> sqlite3_errmsg()
-** <li> sqlite3_errmsg16()
-** <li> sqlite3_error_offset()
+** <li> bentley_sqlite3_errcode()
+** <li> bentley_sqlite3_extended_errcode()
+** <li> bentley_sqlite3_errmsg()
+** <li> bentley_sqlite3_errmsg16()
+** <li> bentley_sqlite3_error_offset()
 ** </ul>
 **
-** ^The sqlite3_errmsg() and sqlite3_errmsg16() return English-language
+** ^The bentley_sqlite3_errmsg() and bentley_sqlite3_errmsg16() return English-language
 ** text that describes the error, as either UTF-8 or UTF-16 respectively,
 ** or NULL if no error message is available.
 ** (See how SQLite handles [invalid UTF] for exceptions to this rule.)
@@ -4094,18 +4094,18 @@ SQLITE_API void sqlite3_free_filename(sqlite3_filename);
 ** However, the error string might be overwritten or deallocated by
 ** subsequent calls to other SQLite interface functions.)^
 **
-** ^The sqlite3_errstr(E) interface returns the English-language text
+** ^The bentley_sqlite3_errstr(E) interface returns the English-language text
 ** that describes the [result code] E, as UTF-8, or NULL if E is not an
 ** result code for which a text error message is available.
 ** ^(Memory to hold the error message string is managed internally
 ** and must not be freed by the application)^.
 **
 ** ^If the most recent error references a specific token in the input
-** SQL, the sqlite3_error_offset() interface returns the byte offset
+** SQL, the bentley_sqlite3_error_offset() interface returns the byte offset
 ** of the start of that token.  ^The byte offset returned by
-** sqlite3_error_offset() assumes that the input SQL is UTF8.
+** bentley_sqlite3_error_offset() assumes that the input SQL is UTF8.
 ** ^If the most recent error does not reference a specific token in the input
-** SQL, then the sqlite3_error_offset() function returns -1.
+** SQL, then the bentley_sqlite3_error_offset() function returns -1.
 **
 ** When the serialized [threading mode] is in use, it might be the
 ** case that a second error occurs on a separate thread in between
@@ -4113,20 +4113,20 @@ SQLITE_API void sqlite3_free_filename(sqlite3_filename);
 ** When that happens, the second error will be reported since these
 ** interfaces always report the most recent result.  To avoid
 ** this, each thread can obtain exclusive use of the [database connection] D
-** by invoking [sqlite3_mutex_enter]([sqlite3_db_mutex](D)) before beginning
-** to use D and invoking [sqlite3_mutex_leave]([sqlite3_db_mutex](D)) after
+** by invoking [bentley_sqlite3_mutex_enter]([bentley_sqlite3_db_mutex](D)) before beginning
+** to use D and invoking [bentley_sqlite3_mutex_leave]([bentley_sqlite3_db_mutex](D)) after
 ** all calls to the interfaces listed here are completed.
 **
 ** If an interface fails with SQLITE_MISUSE, that means the interface
 ** was invoked incorrectly by the application.  In that case, the
 ** error code and message may or may not be set.
 */
-SQLITE_API int sqlite3_errcode(sqlite3 *db);
-SQLITE_API int sqlite3_extended_errcode(sqlite3 *db);
-SQLITE_API const char *sqlite3_errmsg(sqlite3*);
-SQLITE_API const void *sqlite3_errmsg16(sqlite3*);
-SQLITE_API const char *sqlite3_errstr(int);
-SQLITE_API int sqlite3_error_offset(sqlite3 *db);
+SQLITE_API int bentley_sqlite3_errcode(sqlite3 *db);
+SQLITE_API int bentley_sqlite3_extended_errcode(sqlite3 *db);
+SQLITE_API const char *bentley_sqlite3_errmsg(sqlite3*);
+SQLITE_API const void *bentley_sqlite3_errmsg16(sqlite3*);
+SQLITE_API const char *bentley_sqlite3_errstr(int);
+SQLITE_API int bentley_sqlite3_error_offset(sqlite3 *db);
 
 /*
 ** CAPI3REF: Prepared Statement Object
@@ -4143,13 +4143,13 @@ SQLITE_API int sqlite3_error_offset(sqlite3 *db);
 ** The life-cycle of a prepared statement object usually goes like this:
 **
 ** <ol>
-** <li> Create the prepared statement object using [sqlite3_prepare_v2()].
+** <li> Create the prepared statement object using [bentley_sqlite3_prepare_v2()].
 ** <li> Bind values to [parameters] using the sqlite3_bind_*()
 **      interfaces.
-** <li> Run the SQL by calling [sqlite3_step()] one or more times.
-** <li> Reset the prepared statement using [sqlite3_reset()] then go back
+** <li> Run the SQL by calling [bentley_sqlite3_step()] one or more times.
+** <li> Reset the prepared statement using [bentley_sqlite3_reset()] then go back
 **      to step 2.  Do this zero or more times.
-** <li> Destroy the object using [sqlite3_finalize()].
+** <li> Destroy the object using [bentley_sqlite3_finalize()].
 ** </ol>
 */
 typedef struct sqlite3_stmt sqlite3_stmt;
@@ -4175,7 +4175,7 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** silently truncated to the hard upper bound.
 **
 ** ^Regardless of whether or not the limit was changed, the
-** [sqlite3_limit()] interface returns the prior value of the limit.
+** [bentley_sqlite3_limit()] interface returns the prior value of the limit.
 ** ^Hence, to find the current value of a limit without changing it,
 ** simply invoke this interface with the third parameter set to -1.
 **
@@ -4187,21 +4187,21 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** off the Internet.  The internal databases can be given the
 ** large, default limits.  Databases managed by external sources can
 ** be given much smaller limits designed to prevent a denial of service
-** attack.  Developers might also want to use the [sqlite3_set_authorizer()]
+** attack.  Developers might also want to use the [bentley_sqlite3_set_authorizer()]
 ** interface to further control untrusted SQL.  The size of the database
 ** created by an untrusted script can be contained using the
 ** [max_page_count] [PRAGMA].
 **
 ** New run-time limit categories may be added in future releases.
 */
-SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
+SQLITE_API int bentley_sqlite3_limit(sqlite3*, int id, int newVal);
 
 /*
 ** CAPI3REF: Run-Time Limit Categories
 ** KEYWORDS: {limit category} {*limit categories}
 **
 ** These constants define various performance limits
-** that can be lowered at run-time using [sqlite3_limit()].
+** that can be lowered at run-time using [bentley_sqlite3_limit()].
 ** The synopsis of the meanings of the various limits is shown below.
 ** Additional information is available at [limits | Limits in SQLite].
 **
@@ -4225,7 +4225,7 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 **
 ** [[SQLITE_LIMIT_VDBE_OP]] ^(<dt>SQLITE_LIMIT_VDBE_OP</dt>
 ** <dd>The maximum number of instructions in a virtual machine program
-** used to implement an SQL statement.  If [sqlite3_prepare_v2()] or
+** used to implement an SQL statement.  If [bentley_sqlite3_prepare_v2()] or
 ** the equivalent tries to allocate space for more than this many opcodes
 ** in a single prepared statement, an SQLITE_NOMEM error is returned.</dd>)^
 **
@@ -4269,8 +4269,8 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 ** CAPI3REF: Prepare Flags
 **
 ** These constants define various flags that can be passed into
-** "prepFlags" parameter of the [sqlite3_prepare_v3()] and
-** [sqlite3_prepare16_v3()] interfaces.
+** "prepFlags" parameter of the [bentley_sqlite3_prepare_v3()] and
+** [bentley_sqlite3_prepare16_v3()] interfaces.
 **
 ** New flags may be added in future releases of SQLite.
 **
@@ -4278,10 +4278,10 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 ** [[SQLITE_PREPARE_PERSISTENT]] ^(<dt>SQLITE_PREPARE_PERSISTENT</dt>
 ** <dd>The SQLITE_PREPARE_PERSISTENT flag is a hint to the query planner
 ** that the prepared statement will be retained for a long time and
-** probably reused many times.)^ ^Without this flag, [sqlite3_prepare_v3()]
-** and [sqlite3_prepare16_v3()] assume that the prepared statement will
+** probably reused many times.)^ ^Without this flag, [bentley_sqlite3_prepare_v3()]
+** and [bentley_sqlite3_prepare16_v3()] assume that the prepared statement will
 ** be used just once or at most a few times and then destroyed using
-** [sqlite3_finalize()] relatively soon. The current implementation acts
+** [bentley_sqlite3_finalize()] relatively soon. The current implementation acts
 ** on this hint by avoiding the use of [lookaside memory] so as not to
 ** deplete the limited store of lookaside memory. Future versions of
 ** SQLite may act on this hint differently.
@@ -4289,8 +4289,8 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 ** [[SQLITE_PREPARE_NORMALIZE]] <dt>SQLITE_PREPARE_NORMALIZE</dt>
 ** <dd>The SQLITE_PREPARE_NORMALIZE flag is a no-op. This flag used
 ** to be required for any prepared statement that wanted to use the
-** [sqlite3_normalized_sql()] interface.  However, the
-** [sqlite3_normalized_sql()] interface is now available to all
+** [bentley_sqlite3_normalized_sql()] interface.  However, the
+** [bentley_sqlite3_normalized_sql()] interface is now available to all
 ** prepared statements, regardless of whether or not they use this
 ** flag.
 **
@@ -4305,8 +4305,8 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 ** [SQLITE_CONFIG_LOG].  This can be used, for example, to do test
 ** compiles to see if some SQL syntax is well-formed, without generating
 ** messages on the global error log when it is not.  If the test compile
-** fails, the sqlite3_prepare_v3() call returns the same error indications
-** with or without this flag; it just omits the call to [sqlite3_log()] that
+** fails, the bentley_sqlite3_prepare_v3() call returns the same error indications
+** with or without this flag; it just omits the call to [bentley_sqlite3_log()] that
 ** logs the error.
 ** </dl>
 */
@@ -4325,9 +4325,9 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 ** program using one of these routines.  Or, in other words, these routines
 ** are constructors for the [prepared statement] object.
 **
-** The preferred routine to use is [sqlite3_prepare_v2()].  The
-** [sqlite3_prepare()] interface is legacy and should be avoided.
-** [sqlite3_prepare_v3()] has an extra "prepFlags" option that is used
+** The preferred routine to use is [bentley_sqlite3_prepare_v2()].  The
+** [bentley_sqlite3_prepare()] interface is legacy and should be avoided.
+** [bentley_sqlite3_prepare_v3()] has an extra "prepFlags" option that is used
 ** for special purposes.
 **
 ** The use of the UTF-8 interfaces is preferred, as SQLite currently
@@ -4336,14 +4336,14 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 ** input text into UTF-8, then invoking the corresponding UTF-8 interface.
 **
 ** The first argument, "db", is a [database connection] obtained from a
-** prior successful call to [sqlite3_open()], [sqlite3_open_v2()] or
-** [sqlite3_open16()].  The database connection must not have been closed.
+** prior successful call to [bentley_sqlite3_open()], [bentley_sqlite3_open_v2()] or
+** [bentley_sqlite3_open16()].  The database connection must not have been closed.
 **
 ** The second argument, "zSql", is the statement to be compiled, encoded
-** as either UTF-8 or UTF-16.  The sqlite3_prepare(), sqlite3_prepare_v2(),
-** and sqlite3_prepare_v3()
-** interfaces use UTF-8, and sqlite3_prepare16(), sqlite3_prepare16_v2(),
-** and sqlite3_prepare16_v3() use UTF-16.
+** as either UTF-8 or UTF-16.  The bentley_sqlite3_prepare(), bentley_sqlite3_prepare_v2(),
+** and bentley_sqlite3_prepare_v3()
+** interfaces use UTF-8, and bentley_sqlite3_prepare16(), bentley_sqlite3_prepare16_v2(),
+** and bentley_sqlite3_prepare16_v3() use UTF-16.
 **
 ** ^If the nByte argument is negative, then zSql is read up to the
 ** first zero terminator. ^If nByte is positive, then it is the maximum
@@ -4364,38 +4364,38 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 ** what remains uncompiled.
 **
 ** ^*ppStmt is left pointing to a compiled [prepared statement] that can be
-** executed using [sqlite3_step()].  ^If there is an error, *ppStmt is set
+** executed using [bentley_sqlite3_step()].  ^If there is an error, *ppStmt is set
 ** to NULL.  ^If the input text contains no SQL (if the input is an empty
 ** string or a comment) then *ppStmt is set to NULL.
 ** The calling procedure is responsible for deleting the compiled
-** SQL statement using [sqlite3_finalize()] after it has finished with it.
+** SQL statement using [bentley_sqlite3_finalize()] after it has finished with it.
 ** ppStmt may not be NULL.
 **
-** ^On success, the sqlite3_prepare() family of routines return [SQLITE_OK];
+** ^On success, the bentley_sqlite3_prepare() family of routines return [SQLITE_OK];
 ** otherwise an [error code] is returned.
 **
-** The sqlite3_prepare_v2(), sqlite3_prepare_v3(), sqlite3_prepare16_v2(),
-** and sqlite3_prepare16_v3() interfaces are recommended for all new programs.
-** The older interfaces (sqlite3_prepare() and sqlite3_prepare16())
+** The bentley_sqlite3_prepare_v2(), bentley_sqlite3_prepare_v3(), bentley_sqlite3_prepare16_v2(),
+** and bentley_sqlite3_prepare16_v3() interfaces are recommended for all new programs.
+** The older interfaces (bentley_sqlite3_prepare() and bentley_sqlite3_prepare16())
 ** are retained for backwards compatibility, but their use is discouraged.
 ** ^In the "vX" interfaces, the prepared statement
 ** that is returned (the [sqlite3_stmt] object) contains a copy of the
-** original SQL text. This causes the [sqlite3_step()] interface to
+** original SQL text. This causes the [bentley_sqlite3_step()] interface to
 ** behave differently in three ways:
 **
 ** <ol>
 ** <li>
 ** ^If the database schema changes, instead of returning [SQLITE_SCHEMA] as it
-** always used to do, [sqlite3_step()] will automatically recompile the SQL
+** always used to do, [bentley_sqlite3_step()] will automatically recompile the SQL
 ** statement and try to run it again. As many as [SQLITE_MAX_SCHEMA_RETRY]
-** retries will occur before sqlite3_step() gives up and returns an error.
+** retries will occur before bentley_sqlite3_step() gives up and returns an error.
 ** </li>
 **
 ** <li>
-** ^When an error occurs, [sqlite3_step()] will return one of the detailed
+** ^When an error occurs, [bentley_sqlite3_step()] will return one of the detailed
 ** [error codes] or [extended error codes].  ^The legacy behavior was that
-** [sqlite3_step()] would only return a generic [SQLITE_ERROR] result code
-** and the application would have to make a second call to [sqlite3_reset()]
+** [bentley_sqlite3_step()] would only return a generic [SQLITE_ERROR] result code
+** and the application would have to make a second call to [bentley_sqlite3_reset()]
 ** in order to find the underlying cause of the problem. With the "v2" prepare
 ** interfaces, the underlying reason for the error is returned immediately.
 ** </li>
@@ -4404,8 +4404,8 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 ** ^If the specific value bound to a [parameter | host parameter] in the
 ** WHERE clause might influence the choice of query plan for a statement,
 ** then the statement will be automatically recompiled, as if there had been
-** a schema change, on the first [sqlite3_step()] call following any change
-** to the [sqlite3_bind_text | bindings] of that [parameter].
+** a schema change, on the first [bentley_sqlite3_step()] call following any change
+** to the [bentley_sqlite3_bind_text | bindings] of that [parameter].
 ** ^The specific value of a WHERE-clause [parameter] might influence the
 ** choice of query plan if the parameter is the left-hand side of a [LIKE]
 ** or [GLOB] operator or if the parameter is compared to an indexed column
@@ -4413,27 +4413,27 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 ** </li>
 ** </ol>
 **
-** <p>^sqlite3_prepare_v3() differs from sqlite3_prepare_v2() only in having
+** <p>^bentley_sqlite3_prepare_v3() differs from bentley_sqlite3_prepare_v2() only in having
 ** the extra prepFlags parameter, which is a bit array consisting of zero or
 ** more of the [SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_*] flags.  ^The
-** sqlite3_prepare_v2() interface works exactly the same as
-** sqlite3_prepare_v3() with a zero prepFlags parameter.
+** bentley_sqlite3_prepare_v2() interface works exactly the same as
+** bentley_sqlite3_prepare_v3() with a zero prepFlags parameter.
 */
-SQLITE_API int sqlite3_prepare(
+SQLITE_API int bentley_sqlite3_prepare(
   sqlite3 *db,            /* Database handle */
   const char *zSql,       /* SQL statement, UTF-8 encoded */
   int nByte,              /* Maximum length of zSql in bytes. */
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const char **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
-SQLITE_API int sqlite3_prepare_v2(
+SQLITE_API int bentley_sqlite3_prepare_v2(
   sqlite3 *db,            /* Database handle */
   const char *zSql,       /* SQL statement, UTF-8 encoded */
   int nByte,              /* Maximum length of zSql in bytes. */
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const char **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
-SQLITE_API int sqlite3_prepare_v3(
+SQLITE_API int bentley_sqlite3_prepare_v3(
   sqlite3 *db,            /* Database handle */
   const char *zSql,       /* SQL statement, UTF-8 encoded */
   int nByte,              /* Maximum length of zSql in bytes. */
@@ -4441,21 +4441,21 @@ SQLITE_API int sqlite3_prepare_v3(
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const char **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
-SQLITE_API int sqlite3_prepare16(
+SQLITE_API int bentley_sqlite3_prepare16(
   sqlite3 *db,            /* Database handle */
   const void *zSql,       /* SQL statement, UTF-16 encoded */
   int nByte,              /* Maximum length of zSql in bytes. */
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const void **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
-SQLITE_API int sqlite3_prepare16_v2(
+SQLITE_API int bentley_sqlite3_prepare16_v2(
   sqlite3 *db,            /* Database handle */
   const void *zSql,       /* SQL statement, UTF-16 encoded */
   int nByte,              /* Maximum length of zSql in bytes. */
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const void **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
-SQLITE_API int sqlite3_prepare16_v3(
+SQLITE_API int bentley_sqlite3_prepare16_v3(
   sqlite3 *db,            /* Database handle */
   const void *zSql,       /* SQL statement, UTF-16 encoded */
   int nByte,              /* Maximum length of zSql in bytes. */
@@ -4468,14 +4468,14 @@ SQLITE_API int sqlite3_prepare16_v3(
 ** CAPI3REF: Retrieving Statement SQL
 ** METHOD: sqlite3_stmt
 **
-** ^The sqlite3_sql(P) interface returns a pointer to a copy of the UTF-8
+** ^The bentley_sqlite3_sql(P) interface returns a pointer to a copy of the UTF-8
 ** SQL text used to create [prepared statement] P if P was
-** created by [sqlite3_prepare_v2()], [sqlite3_prepare_v3()],
-** [sqlite3_prepare16_v2()], or [sqlite3_prepare16_v3()].
-** ^The sqlite3_expanded_sql(P) interface returns a pointer to a UTF-8
+** created by [bentley_sqlite3_prepare_v2()], [bentley_sqlite3_prepare_v3()],
+** [bentley_sqlite3_prepare16_v2()], or [bentley_sqlite3_prepare16_v3()].
+** ^The bentley_sqlite3_expanded_sql(P) interface returns a pointer to a UTF-8
 ** string containing the SQL text of prepared statement P with
 ** [bound parameters] expanded.
-** ^The sqlite3_normalized_sql(P) interface returns a pointer to a UTF-8
+** ^The bentley_sqlite3_normalized_sql(P) interface returns a pointer to a UTF-8
 ** string containing the normalized SQL text of prepared statement P.  The
 ** semantics used to normalize a SQL statement are unspecified and subject
 ** to change.  At a minimum, literal values will be replaced with suitable
@@ -4483,46 +4483,46 @@ SQLITE_API int sqlite3_prepare16_v3(
 **
 ** ^(For example, if a prepared statement is created using the SQL
 ** text "SELECT $abc,:xyz" and if parameter $abc is bound to integer 2345
-** and parameter :xyz is unbound, then sqlite3_sql() will return
-** the original string, "SELECT $abc,:xyz" but sqlite3_expanded_sql()
+** and parameter :xyz is unbound, then bentley_sqlite3_sql() will return
+** the original string, "SELECT $abc,:xyz" but bentley_sqlite3_expanded_sql()
 ** will return "SELECT 2345,NULL".)^
 **
-** ^The sqlite3_expanded_sql() interface returns NULL if insufficient memory
+** ^The bentley_sqlite3_expanded_sql() interface returns NULL if insufficient memory
 ** is available to hold the result, or if the result would exceed the
 ** the maximum string length determined by the [SQLITE_LIMIT_LENGTH].
 **
 ** ^The [SQLITE_TRACE_SIZE_LIMIT] compile-time option limits the size of
 ** bound parameter expansions.  ^The [SQLITE_OMIT_TRACE] compile-time
-** option causes sqlite3_expanded_sql() to always return NULL.
+** option causes bentley_sqlite3_expanded_sql() to always return NULL.
 **
-** ^The strings returned by sqlite3_sql(P) and sqlite3_normalized_sql(P)
+** ^The strings returned by bentley_sqlite3_sql(P) and bentley_sqlite3_normalized_sql(P)
 ** are managed by SQLite and are automatically freed when the prepared
 ** statement is finalized.
-** ^The string returned by sqlite3_expanded_sql(P), on the other hand,
-** is obtained from [sqlite3_malloc()] and must be freed by the application
-** by passing it to [sqlite3_free()].
+** ^The string returned by bentley_sqlite3_expanded_sql(P), on the other hand,
+** is obtained from [bentley_sqlite3_malloc()] and must be freed by the application
+** by passing it to [bentley_sqlite3_free()].
 **
-** ^The sqlite3_normalized_sql() interface is only available if
+** ^The bentley_sqlite3_normalized_sql() interface is only available if
 ** the [SQLITE_ENABLE_NORMALIZE] compile-time option is defined.
 */
-SQLITE_API const char *sqlite3_sql(sqlite3_stmt *pStmt);
-SQLITE_API char *sqlite3_expanded_sql(sqlite3_stmt *pStmt);
+SQLITE_API const char *bentley_sqlite3_sql(sqlite3_stmt *pStmt);
+SQLITE_API char *bentley_sqlite3_expanded_sql(sqlite3_stmt *pStmt);
 #ifdef SQLITE_ENABLE_NORMALIZE
-SQLITE_API const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt);
+SQLITE_API const char *bentley_sqlite3_normalized_sql(sqlite3_stmt *pStmt);
 #endif
 
 /*
 ** CAPI3REF: Determine If An SQL Statement Writes The Database
 ** METHOD: sqlite3_stmt
 **
-** ^The sqlite3_stmt_readonly(X) interface returns true (non-zero) if
+** ^The bentley_sqlite3_stmt_readonly(X) interface returns true (non-zero) if
 ** and only if the [prepared statement] X makes no direct changes to
 ** the content of the database file.
 **
 ** Note that [application-defined SQL functions] or
 ** [virtual tables] might change the database indirectly as a side effect.
 ** ^(For example, if an application defines a function "eval()" that
-** calls [sqlite3_exec()], then the following SQL statement would
+** calls [bentley_sqlite3_exec()], then the following SQL statement would
 ** change the database file through side-effects:
 **
 ** <blockquote><pre>
@@ -4530,103 +4530,103 @@ SQLITE_API const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt);
 ** </pre></blockquote>
 **
 ** But because the [SELECT] statement does not change the database file
-** directly, sqlite3_stmt_readonly() would still return true.)^
+** directly, bentley_sqlite3_stmt_readonly() would still return true.)^
 **
 ** ^Transaction control statements such as [BEGIN], [COMMIT], [ROLLBACK],
-** [SAVEPOINT], and [RELEASE] cause sqlite3_stmt_readonly() to return true,
+** [SAVEPOINT], and [RELEASE] cause bentley_sqlite3_stmt_readonly() to return true,
 ** since the statements themselves do not actually modify the database but
 ** rather they control the timing of when other statements modify the
 ** database.  ^The [ATTACH] and [DETACH] statements also cause
-** sqlite3_stmt_readonly() to return true since, while those statements
+** bentley_sqlite3_stmt_readonly() to return true since, while those statements
 ** change the configuration of a database connection, they do not make
 ** changes to the content of the database files on disk.
-** ^The sqlite3_stmt_readonly() interface returns true for [BEGIN] since
+** ^The bentley_sqlite3_stmt_readonly() interface returns true for [BEGIN] since
 ** [BEGIN] merely sets internal flags, but the [BEGIN|BEGIN IMMEDIATE] and
 ** [BEGIN|BEGIN EXCLUSIVE] commands do touch the database and so
-** sqlite3_stmt_readonly() returns false for those commands.
+** bentley_sqlite3_stmt_readonly() returns false for those commands.
 **
 ** ^This routine returns false if there is any possibility that the
 ** statement might change the database file.  ^A false return does
 ** not guarantee that the statement will change the database file.
 ** ^For example, an UPDATE statement might have a WHERE clause that
-** makes it a no-op, but the sqlite3_stmt_readonly() result would still
+** makes it a no-op, but the bentley_sqlite3_stmt_readonly() result would still
 ** be false.  ^Similarly, a CREATE TABLE IF NOT EXISTS statement is a
 ** read-only no-op if the table already exists, but
-** sqlite3_stmt_readonly() still returns false for such a statement.
+** bentley_sqlite3_stmt_readonly() still returns false for such a statement.
 **
 ** ^If prepared statement X is an [EXPLAIN] or [EXPLAIN QUERY PLAN]
-** statement, then sqlite3_stmt_readonly(X) returns the same value as
+** statement, then bentley_sqlite3_stmt_readonly(X) returns the same value as
 ** if the EXPLAIN or EXPLAIN QUERY PLAN prefix were omitted.
 */
-SQLITE_API int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
+SQLITE_API int bentley_sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Query The EXPLAIN Setting For A Prepared Statement
 ** METHOD: sqlite3_stmt
 **
-** ^The sqlite3_stmt_isexplain(S) interface returns 1 if the
+** ^The bentley_sqlite3_stmt_isexplain(S) interface returns 1 if the
 ** prepared statement S is an EXPLAIN statement, or 2 if the
 ** statement S is an EXPLAIN QUERY PLAN.
-** ^The sqlite3_stmt_isexplain(S) interface returns 0 if S is
+** ^The bentley_sqlite3_stmt_isexplain(S) interface returns 0 if S is
 ** an ordinary statement or a NULL pointer.
 */
-SQLITE_API int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt);
+SQLITE_API int bentley_sqlite3_stmt_isexplain(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Change The EXPLAIN Setting For A Prepared Statement
 ** METHOD: sqlite3_stmt
 **
-** The sqlite3_stmt_explain(S,E) interface changes the EXPLAIN
+** The bentley_sqlite3_stmt_explain(S,E) interface changes the EXPLAIN
 ** setting for [prepared statement] S.  If E is zero, then S becomes
 ** a normal prepared statement.  If E is 1, then S behaves as if
 ** its SQL text began with "[EXPLAIN]".  If E is 2, then S behaves as if
 ** its SQL text began with "[EXPLAIN QUERY PLAN]".
 **
-** Calling sqlite3_stmt_explain(S,E) might cause S to be reprepared.
+** Calling bentley_sqlite3_stmt_explain(S,E) might cause S to be reprepared.
 ** SQLite tries to avoid a reprepare, but a reprepare might be necessary
 ** on the first transition into EXPLAIN or EXPLAIN QUERY PLAN mode.
 **
 ** Because of the potential need to reprepare, a call to
-** sqlite3_stmt_explain(S,E) will fail with SQLITE_ERROR if S cannot be
-** reprepared because it was created using [sqlite3_prepare()] instead of
-** the newer [sqlite3_prepare_v2()] or [sqlite3_prepare_v3()] interfaces and
+** bentley_sqlite3_stmt_explain(S,E) will fail with SQLITE_ERROR if S cannot be
+** reprepared because it was created using [bentley_sqlite3_prepare()] instead of
+** the newer [bentley_sqlite3_prepare_v2()] or [bentley_sqlite3_prepare_v3()] interfaces and
 ** hence has no saved SQL text with which to reprepare.
 **
 ** Changing the explain setting for a prepared statement does not change
 ** the original SQL text for the statement.  Hence, if the SQL text originally
-** began with EXPLAIN or EXPLAIN QUERY PLAN, but sqlite3_stmt_explain(S,0)
+** began with EXPLAIN or EXPLAIN QUERY PLAN, but bentley_sqlite3_stmt_explain(S,0)
 ** is called to convert the statement into an ordinary statement, the EXPLAIN
-** or EXPLAIN QUERY PLAN keywords will still appear in the sqlite3_sql(S)
+** or EXPLAIN QUERY PLAN keywords will still appear in the bentley_sqlite3_sql(S)
 ** output, even though the statement now acts like a normal SQL statement.
 **
 ** This routine returns SQLITE_OK if the explain mode is successfully
 ** changed, or an error code if the explain mode could not be changed.
 ** The explain mode cannot be changed while a statement is active.
-** Hence, it is good practice to call [sqlite3_reset(S)]
-** immediately prior to calling sqlite3_stmt_explain(S,E).
+** Hence, it is good practice to call [bentley_sqlite3_reset(S)]
+** immediately prior to calling bentley_sqlite3_stmt_explain(S,E).
 */
-SQLITE_API int sqlite3_stmt_explain(sqlite3_stmt *pStmt, int eMode);
+SQLITE_API int bentley_sqlite3_stmt_explain(sqlite3_stmt *pStmt, int eMode);
 
 /*
 ** CAPI3REF: Determine If A Prepared Statement Has Been Reset
 ** METHOD: sqlite3_stmt
 **
-** ^The sqlite3_stmt_busy(S) interface returns true (non-zero) if the
+** ^The bentley_sqlite3_stmt_busy(S) interface returns true (non-zero) if the
 ** [prepared statement] S has been stepped at least once using
-** [sqlite3_step(S)] but has neither run to completion (returned
-** [SQLITE_DONE] from [sqlite3_step(S)]) nor
-** been reset using [sqlite3_reset(S)].  ^The sqlite3_stmt_busy(S)
+** [bentley_sqlite3_step(S)] but has neither run to completion (returned
+** [SQLITE_DONE] from [bentley_sqlite3_step(S)]) nor
+** been reset using [bentley_sqlite3_reset(S)].  ^The bentley_sqlite3_stmt_busy(S)
 ** interface returns false if S is a NULL pointer.  If S is not a
 ** NULL pointer and is not a pointer to a valid [prepared statement]
 ** object, then the behavior is undefined and probably undesirable.
 **
-** This interface can be used in combination [sqlite3_next_stmt()]
+** This interface can be used in combination [bentley_sqlite3_next_stmt()]
 ** to locate all prepared statements associated with a database
 ** connection that are in need of being reset.  This can be used,
 ** for example, in diagnostic routines to search for prepared
 ** statements that are holding a transaction open.
 */
-SQLITE_API int sqlite3_stmt_busy(sqlite3_stmt*);
+SQLITE_API int bentley_sqlite3_stmt_busy(sqlite3_stmt*);
 
 /*
 ** CAPI3REF: Dynamically Typed Value Object
@@ -4642,14 +4642,14 @@ SQLITE_API int sqlite3_stmt_busy(sqlite3_stmt*);
 ** will accept either a protected or an unprotected sqlite3_value.
 ** Every interface that accepts sqlite3_value arguments specifies
 ** whether or not it requires a protected sqlite3_value.  The
-** [sqlite3_value_dup()] interface can be used to construct a new
+** [bentley_sqlite3_value_dup()] interface can be used to construct a new
 ** protected sqlite3_value from an unprotected sqlite3_value.
 **
 ** The terms "protected" and "unprotected" refer to whether or not
 ** a mutex is held.  An internal mutex is held for a protected
 ** sqlite3_value object but no mutex is held for an unprotected
 ** sqlite3_value object.  If SQLite is compiled to be single-threaded
-** (with [SQLITE_THREADSAFE=0] and with [sqlite3_threadsafe()] returning 0)
+** (with [SQLITE_THREADSAFE=0] and with [bentley_sqlite3_threadsafe()] returning 0)
 ** or if SQLite is run in one of reduced mutex modes
 ** [SQLITE_CONFIG_SINGLETHREAD] or [SQLITE_CONFIG_MULTITHREAD]
 ** then there is no distinction between protected and unprotected
@@ -4660,14 +4660,14 @@ SQLITE_API int sqlite3_stmt_busy(sqlite3_stmt*);
 **
 ** ^The sqlite3_value objects that are passed as parameters into the
 ** implementation of [application-defined SQL functions] are protected.
-** ^The sqlite3_value objects returned by [sqlite3_vtab_rhs_value()]
+** ^The sqlite3_value objects returned by [bentley_sqlite3_vtab_rhs_value()]
 ** are protected.
 ** ^The sqlite3_value object returned by
-** [sqlite3_column_value()] is unprotected.
+** [bentley_sqlite3_column_value()] is unprotected.
 ** Unprotected sqlite3_value objects may only be used as arguments
-** to [sqlite3_result_value()], [sqlite3_bind_value()], and
-** [sqlite3_value_dup()].
-** The [sqlite3_value_blob | sqlite3_value_type()] family of
+** to [bentley_sqlite3_result_value()], [bentley_sqlite3_bind_value()], and
+** [bentley_sqlite3_value_dup()].
+** The [bentley_sqlite3_value_blob | bentley_sqlite3_value_type()] family of
 ** interfaces require protected sqlite3_value objects.
 */
 typedef struct sqlite3_value sqlite3_value;
@@ -4679,10 +4679,10 @@ typedef struct sqlite3_value sqlite3_value;
 ** sqlite3_context object.  ^A pointer to an sqlite3_context object
 ** is always first parameter to [application-defined SQL functions].
 ** The application-defined SQL function implementation will pass this
-** pointer through into calls to [sqlite3_result_int | sqlite3_result()],
-** [sqlite3_aggregate_context()], [sqlite3_user_data()],
-** [sqlite3_context_db_handle()], [sqlite3_get_auxdata()],
-** and/or [sqlite3_set_auxdata()].
+** pointer through into calls to [bentley_sqlite3_result_int | sqlite3_result()],
+** [bentley_sqlite3_aggregate_context()], [bentley_sqlite3_user_data()],
+** [bentley_sqlite3_context_db_handle()], [bentley_sqlite3_get_auxdata()],
+** and/or [bentley_sqlite3_set_auxdata()].
 */
 typedef struct sqlite3_context sqlite3_context;
 
@@ -4692,7 +4692,7 @@ typedef struct sqlite3_context sqlite3_context;
 ** KEYWORDS: {SQL parameter} {SQL parameters} {parameter binding}
 ** METHOD: sqlite3_stmt
 **
-** ^(In the SQL statement text input to [sqlite3_prepare_v2()] and its variants,
+** ^(In the SQL statement text input to [bentley_sqlite3_prepare_v2()] and its variants,
 ** literals may be replaced by a [parameter] that matches one of following
 ** templates:
 **
@@ -4711,27 +4711,27 @@ typedef struct sqlite3_context sqlite3_context;
 **
 ** ^The first argument to the sqlite3_bind_*() routines is always
 ** a pointer to the [sqlite3_stmt] object returned from
-** [sqlite3_prepare_v2()] or its variants.
+** [bentley_sqlite3_prepare_v2()] or its variants.
 **
 ** ^The second argument is the index of the SQL parameter to be set.
 ** ^The leftmost SQL parameter has an index of 1.  ^When the same named
 ** SQL parameter is used more than once, second and subsequent
 ** occurrences have the same index as the first occurrence.
 ** ^The index for named parameters can be looked up using the
-** [sqlite3_bind_parameter_index()] API if desired.  ^The index
+** [bentley_sqlite3_bind_parameter_index()] API if desired.  ^The index
 ** for "?NNN" parameters is the value of NNN.
-** ^The NNN value must be between 1 and the [sqlite3_limit()]
+** ^The NNN value must be between 1 and the [bentley_sqlite3_limit()]
 ** parameter [SQLITE_LIMIT_VARIABLE_NUMBER] (default value: 32766).
 **
 ** ^The third argument is the value to bind to the parameter.
-** ^If the third parameter to sqlite3_bind_text() or sqlite3_bind_text16()
-** or sqlite3_bind_blob() is a NULL pointer then the fourth parameter
-** is ignored and the end result is the same as sqlite3_bind_null().
-** ^If the third parameter to sqlite3_bind_text() is not NULL, then
+** ^If the third parameter to bentley_sqlite3_bind_text() or bentley_sqlite3_bind_text16()
+** or bentley_sqlite3_bind_blob() is a NULL pointer then the fourth parameter
+** is ignored and the end result is the same as bentley_sqlite3_bind_null().
+** ^If the third parameter to bentley_sqlite3_bind_text() is not NULL, then
 ** it should be a pointer to well-formed UTF8 text.
-** ^If the third parameter to sqlite3_bind_text16() is not NULL, then
+** ^If the third parameter to bentley_sqlite3_bind_text16() is not NULL, then
 ** it should be a pointer to well-formed UTF16 text.
-** ^If the third parameter to sqlite3_bind_text64() is not NULL, then
+** ^If the third parameter to bentley_sqlite3_bind_text64() is not NULL, then
 ** it should be a pointer to a well-formed unicode string that is
 ** either UTF8 if the sixth parameter is SQLITE_UTF8, or UTF16
 ** otherwise.
@@ -4740,8 +4740,8 @@ typedef struct sqlite3_context sqlite3_context;
 ** UTF16 input text is determined by the byte-order mark (BOM, U+FEFF)
 ** found in first character, which is removed, or in the absence of a BOM
 ** the byte order is the native byte order of the host
-** machine for sqlite3_bind_text16() or the byte order specified in
-** the 6th parameter for sqlite3_bind_text64().)^
+** machine for bentley_sqlite3_bind_text16() or the byte order specified in
+** the 6th parameter for bentley_sqlite3_bind_text64().)^
 ** ^If UTF16 input text contains invalid unicode
 ** characters, then SQLite might change those invalid characters
 ** into the unicode replacement character: U+FFFD.
@@ -4749,13 +4749,13 @@ typedef struct sqlite3_context sqlite3_context;
 ** ^(In those routines that have a fourth argument, its value is the
 ** number of bytes in the parameter.  To be clear: the value is the
 ** number of <u>bytes</u> in the value, not the number of characters.)^
-** ^If the fourth parameter to sqlite3_bind_text() or sqlite3_bind_text16()
+** ^If the fourth parameter to bentley_sqlite3_bind_text() or bentley_sqlite3_bind_text16()
 ** is negative, then the length of the string is
 ** the number of bytes up to the first zero terminator.
-** If the fourth parameter to sqlite3_bind_blob() is negative, then
+** If the fourth parameter to bentley_sqlite3_bind_blob() is negative, then
 ** the behavior is undefined.
-** If a non-negative fourth parameter is provided to sqlite3_bind_text()
-** or sqlite3_bind_text16() or sqlite3_bind_text64() then
+** If a non-negative fourth parameter is provided to bentley_sqlite3_bind_text()
+** or bentley_sqlite3_bind_text16() or bentley_sqlite3_bind_text64() then
 ** that parameter must be the byte offset
 ** where the NUL terminator would occur assuming the string were NUL
 ** terminated.  If any NUL characters occurs at byte offsets less than
@@ -4780,67 +4780,67 @@ typedef struct sqlite3_context sqlite3_context;
 ** object and pointer to it must remain valid until then. ^SQLite will then
 ** manage the lifetime of its private copy.
 **
-** ^The sixth argument to sqlite3_bind_text64() must be one of
+** ^The sixth argument to bentley_sqlite3_bind_text64() must be one of
 ** [SQLITE_UTF8], [SQLITE_UTF16], [SQLITE_UTF16BE], or [SQLITE_UTF16LE]
 ** to specify the encoding of the text in the third parameter.  If
-** the sixth argument to sqlite3_bind_text64() is not one of the
+** the sixth argument to bentley_sqlite3_bind_text64() is not one of the
 ** allowed values shown above, or if the text encoding is different
 ** from the encoding specified by the sixth parameter, then the behavior
 ** is undefined.
 **
-** ^The sqlite3_bind_zeroblob() routine binds a BLOB of length N that
+** ^The bentley_sqlite3_bind_zeroblob() routine binds a BLOB of length N that
 ** is filled with zeroes.  ^A zeroblob uses a fixed amount of memory
 ** (just an integer to hold its size) while it is being processed.
 ** Zeroblobs are intended to serve as placeholders for BLOBs whose
 ** content is later written using
-** [sqlite3_blob_open | incremental BLOB I/O] routines.
+** [bentley_sqlite3_blob_open | incremental BLOB I/O] routines.
 ** ^A negative value for the zeroblob results in a zero-length BLOB.
 **
-** ^The sqlite3_bind_pointer(S,I,P,T,D) routine causes the I-th parameter in
+** ^The bentley_sqlite3_bind_pointer(S,I,P,T,D) routine causes the I-th parameter in
 ** [prepared statement] S to have an SQL value of NULL, but to also be
 ** associated with the pointer P of type T.  ^D is either a NULL pointer or
 ** a pointer to a destructor function for P. ^SQLite will invoke the
 ** destructor D with a single argument of P when it is finished using
 ** P.  The T parameter should be a static string, preferably a string
-** literal. The sqlite3_bind_pointer() routine is part of the
+** literal. The bentley_sqlite3_bind_pointer() routine is part of the
 ** [pointer passing interface] added for SQLite 3.20.0.
 **
 ** ^If any of the sqlite3_bind_*() routines are called with a NULL pointer
 ** for the [prepared statement] or with a prepared statement for which
-** [sqlite3_step()] has been called more recently than [sqlite3_reset()],
+** [bentley_sqlite3_step()] has been called more recently than [bentley_sqlite3_reset()],
 ** then the call will return [SQLITE_MISUSE].  If any sqlite3_bind_()
 ** routine is passed a [prepared statement] that has been finalized, the
 ** result is undefined and probably harmful.
 **
-** ^Bindings are not cleared by the [sqlite3_reset()] routine.
+** ^Bindings are not cleared by the [bentley_sqlite3_reset()] routine.
 ** ^Unbound parameters are interpreted as NULL.
 **
 ** ^The sqlite3_bind_* routines return [SQLITE_OK] on success or an
 ** [error code] if anything goes wrong.
 ** ^[SQLITE_TOOBIG] might be returned if the size of a string or BLOB
-** exceeds limits imposed by [sqlite3_limit]([SQLITE_LIMIT_LENGTH]) or
+** exceeds limits imposed by [bentley_sqlite3_limit]([SQLITE_LIMIT_LENGTH]) or
 ** [SQLITE_MAX_LENGTH].
 ** ^[SQLITE_RANGE] is returned if the parameter
 ** index is out of range.  ^[SQLITE_NOMEM] is returned if malloc() fails.
 **
-** See also: [sqlite3_bind_parameter_count()],
-** [sqlite3_bind_parameter_name()], and [sqlite3_bind_parameter_index()].
+** See also: [bentley_sqlite3_bind_parameter_count()],
+** [bentley_sqlite3_bind_parameter_name()], and [bentley_sqlite3_bind_parameter_index()].
 */
-SQLITE_API int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
-SQLITE_API int sqlite3_bind_blob64(sqlite3_stmt*, int, const void*, sqlite3_uint64,
+SQLITE_API int bentley_sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
+SQLITE_API int bentley_sqlite3_bind_blob64(sqlite3_stmt*, int, const void*, sqlite3_uint64,
                         void(*)(void*));
-SQLITE_API int sqlite3_bind_double(sqlite3_stmt*, int, double);
-SQLITE_API int sqlite3_bind_int(sqlite3_stmt*, int, int);
-SQLITE_API int sqlite3_bind_int64(sqlite3_stmt*, int, sqlite3_int64);
-SQLITE_API int sqlite3_bind_null(sqlite3_stmt*, int);
-SQLITE_API int sqlite3_bind_text(sqlite3_stmt*,int,const char*,int,void(*)(void*));
-SQLITE_API int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int, void(*)(void*));
-SQLITE_API int sqlite3_bind_text64(sqlite3_stmt*, int, const char*, sqlite3_uint64,
+SQLITE_API int bentley_sqlite3_bind_double(sqlite3_stmt*, int, double);
+SQLITE_API int bentley_sqlite3_bind_int(sqlite3_stmt*, int, int);
+SQLITE_API int bentley_sqlite3_bind_int64(sqlite3_stmt*, int, sqlite3_int64);
+SQLITE_API int bentley_sqlite3_bind_null(sqlite3_stmt*, int);
+SQLITE_API int bentley_sqlite3_bind_text(sqlite3_stmt*,int,const char*,int,void(*)(void*));
+SQLITE_API int bentley_sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int, void(*)(void*));
+SQLITE_API int bentley_sqlite3_bind_text64(sqlite3_stmt*, int, const char*, sqlite3_uint64,
                          void(*)(void*), unsigned char encoding);
-SQLITE_API int sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
-SQLITE_API int sqlite3_bind_pointer(sqlite3_stmt*, int, void*, const char*,void(*)(void*));
-SQLITE_API int sqlite3_bind_zeroblob(sqlite3_stmt*, int, int n);
-SQLITE_API int sqlite3_bind_zeroblob64(sqlite3_stmt*, int, sqlite3_uint64);
+SQLITE_API int bentley_sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
+SQLITE_API int bentley_sqlite3_bind_pointer(sqlite3_stmt*, int, void*, const char*,void(*)(void*));
+SQLITE_API int bentley_sqlite3_bind_zeroblob(sqlite3_stmt*, int, int n);
+SQLITE_API int bentley_sqlite3_bind_zeroblob64(sqlite3_stmt*, int, sqlite3_uint64);
 
 /*
 ** CAPI3REF: Number Of SQL Parameters
@@ -4849,7 +4849,7 @@ SQLITE_API int sqlite3_bind_zeroblob64(sqlite3_stmt*, int, sqlite3_uint64);
 ** ^This routine can be used to find the number of [SQL parameters]
 ** in a [prepared statement].  SQL parameters are tokens of the
 ** form "?", "?NNN", ":AAA", "$AAA", or "@AAA" that serve as
-** placeholders for values that are [sqlite3_bind_blob | bound]
+** placeholders for values that are [bentley_sqlite3_bind_blob | bound]
 ** to the parameters at a later time.
 **
 ** ^(This routine actually returns the index of the largest (rightmost)
@@ -4857,17 +4857,17 @@ SQLITE_API int sqlite3_bind_zeroblob64(sqlite3_stmt*, int, sqlite3_uint64);
 ** number of unique parameters.  If parameters of the ?NNN form are used,
 ** there may be gaps in the list.)^
 **
-** See also: [sqlite3_bind_blob|sqlite3_bind()],
-** [sqlite3_bind_parameter_name()], and
-** [sqlite3_bind_parameter_index()].
+** See also: [bentley_sqlite3_bind_blob|sqlite3_bind()],
+** [bentley_sqlite3_bind_parameter_name()], and
+** [bentley_sqlite3_bind_parameter_index()].
 */
-SQLITE_API int sqlite3_bind_parameter_count(sqlite3_stmt*);
+SQLITE_API int bentley_sqlite3_bind_parameter_count(sqlite3_stmt*);
 
 /*
 ** CAPI3REF: Name Of A Host Parameter
 ** METHOD: sqlite3_stmt
 **
-** ^The sqlite3_bind_parameter_name(P,N) interface returns
+** ^The bentley_sqlite3_bind_parameter_name(P,N) interface returns
 ** the name of the N-th [SQL parameter] in the [prepared statement] P.
 ** ^(SQL parameters of the form "?NNN" or ":AAA" or "@AAA" or "$AAA"
 ** have a name which is the string "?NNN" or ":AAA" or "@AAA" or "$AAA"
@@ -4882,14 +4882,14 @@ SQLITE_API int sqlite3_bind_parameter_count(sqlite3_stmt*);
 ** ^If the value N is out of range or if the N-th parameter is
 ** nameless, then NULL is returned.  ^The returned string is
 ** always in UTF-8 encoding even if the named parameter was
-** originally specified as UTF-16 in [sqlite3_prepare16()],
-** [sqlite3_prepare16_v2()], or [sqlite3_prepare16_v3()].
+** originally specified as UTF-16 in [bentley_sqlite3_prepare16()],
+** [bentley_sqlite3_prepare16_v2()], or [bentley_sqlite3_prepare16_v3()].
 **
-** See also: [sqlite3_bind_blob|sqlite3_bind()],
-** [sqlite3_bind_parameter_count()], and
-** [sqlite3_bind_parameter_index()].
+** See also: [bentley_sqlite3_bind_blob|sqlite3_bind()],
+** [bentley_sqlite3_bind_parameter_count()], and
+** [bentley_sqlite3_bind_parameter_index()].
 */
-SQLITE_API const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int);
+SQLITE_API const char *bentley_sqlite3_bind_parameter_name(sqlite3_stmt*, int);
 
 /*
 ** CAPI3REF: Index Of A Parameter With A Given Name
@@ -4897,27 +4897,27 @@ SQLITE_API const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int);
 **
 ** ^Return the index of an SQL parameter given its name.  ^The
 ** index value returned is suitable for use as the second
-** parameter to [sqlite3_bind_blob|sqlite3_bind()].  ^A zero
+** parameter to [bentley_sqlite3_bind_blob|sqlite3_bind()].  ^A zero
 ** is returned if no matching parameter is found.  ^The parameter
 ** name must be given in UTF-8 even if the original statement
-** was prepared from UTF-16 text using [sqlite3_prepare16_v2()] or
-** [sqlite3_prepare16_v3()].
+** was prepared from UTF-16 text using [bentley_sqlite3_prepare16_v2()] or
+** [bentley_sqlite3_prepare16_v3()].
 **
-** See also: [sqlite3_bind_blob|sqlite3_bind()],
-** [sqlite3_bind_parameter_count()], and
-** [sqlite3_bind_parameter_name()].
+** See also: [bentley_sqlite3_bind_blob|sqlite3_bind()],
+** [bentley_sqlite3_bind_parameter_count()], and
+** [bentley_sqlite3_bind_parameter_name()].
 */
-SQLITE_API int sqlite3_bind_parameter_index(sqlite3_stmt*, const char *zName);
+SQLITE_API int bentley_sqlite3_bind_parameter_index(sqlite3_stmt*, const char *zName);
 
 /*
 ** CAPI3REF: Reset All Bindings On A Prepared Statement
 ** METHOD: sqlite3_stmt
 **
-** ^Contrary to the intuition of many, [sqlite3_reset()] does not reset
-** the [sqlite3_bind_blob | bindings] on a [prepared statement].
+** ^Contrary to the intuition of many, [bentley_sqlite3_reset()] does not reset
+** the [bentley_sqlite3_bind_blob | bindings] on a [prepared statement].
 ** ^Use this routine to reset all host parameters to NULL.
 */
-SQLITE_API int sqlite3_clear_bindings(sqlite3_stmt*);
+SQLITE_API int bentley_sqlite3_clear_bindings(sqlite3_stmt*);
 
 /*
 ** CAPI3REF: Number Of Columns In A Result Set
@@ -4928,32 +4928,32 @@ SQLITE_API int sqlite3_clear_bindings(sqlite3_stmt*);
 ** [prepared statement] returns no data (for example an [UPDATE]).
 ** ^However, just because this routine returns a positive number does not
 ** mean that one or more rows of data will be returned.  ^A SELECT statement
-** will always have a positive sqlite3_column_count() but depending on the
+** will always have a positive bentley_sqlite3_column_count() but depending on the
 ** WHERE clause constraints and the table content, it might return no rows.
 **
-** See also: [sqlite3_data_count()]
+** See also: [bentley_sqlite3_data_count()]
 */
-SQLITE_API int sqlite3_column_count(sqlite3_stmt *pStmt);
+SQLITE_API int bentley_sqlite3_column_count(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Column Names In A Result Set
 ** METHOD: sqlite3_stmt
 **
 ** ^These routines return the name assigned to a particular column
-** in the result set of a [SELECT] statement.  ^The sqlite3_column_name()
+** in the result set of a [SELECT] statement.  ^The bentley_sqlite3_column_name()
 ** interface returns a pointer to a zero-terminated UTF-8 string
-** and sqlite3_column_name16() returns a pointer to a zero-terminated
+** and bentley_sqlite3_column_name16() returns a pointer to a zero-terminated
 ** UTF-16 string.  ^The first parameter is the [prepared statement]
 ** that implements the [SELECT] statement. ^The second parameter is the
 ** column number.  ^The leftmost column is number 0.
 **
 ** ^The returned string pointer is valid until either the [prepared statement]
-** is destroyed by [sqlite3_finalize()] or until the statement is automatically
-** reprepared by the first call to [sqlite3_step()] for a particular run
+** is destroyed by [bentley_sqlite3_finalize()] or until the statement is automatically
+** reprepared by the first call to [bentley_sqlite3_step()] for a particular run
 ** or until the next call to
-** sqlite3_column_name() or sqlite3_column_name16() on the same column.
+** bentley_sqlite3_column_name() or bentley_sqlite3_column_name16() on the same column.
 **
-** ^If sqlite3_malloc() fails during the processing of either routine
+** ^If bentley_sqlite3_malloc() fails during the processing of either routine
 ** (for example during a conversion from UTF-8 to UTF-16) then a
 ** NULL pointer is returned.
 **
@@ -4962,8 +4962,8 @@ SQLITE_API int sqlite3_column_count(sqlite3_stmt *pStmt);
 ** then the name of the column is unspecified and may change from
 ** one release of SQLite to the next.
 */
-SQLITE_API const char *sqlite3_column_name(sqlite3_stmt*, int N);
-SQLITE_API const void *sqlite3_column_name16(sqlite3_stmt*, int N);
+SQLITE_API const char *bentley_sqlite3_column_name(sqlite3_stmt*, int N);
+SQLITE_API const void *bentley_sqlite3_column_name16(sqlite3_stmt*, int N);
 
 /*
 ** CAPI3REF: Source Of Data In A Query Result
@@ -4977,8 +4977,8 @@ SQLITE_API const void *sqlite3_column_name16(sqlite3_stmt*, int N);
 ** the database name, the _table_ routines return the table name, and
 ** the origin_ routines return the column name.
 ** ^The returned string is valid until the [prepared statement] is destroyed
-** using [sqlite3_finalize()] or until the statement is automatically
-** reprepared by the first call to [sqlite3_step()] for a particular run
+** using [bentley_sqlite3_finalize()] or until the statement is automatically
+** reprepared by the first call to [bentley_sqlite3_step()] for a particular run
 ** or until the same information is requested
 ** again in a different encoding.
 **
@@ -5003,16 +5003,16 @@ SQLITE_API const void *sqlite3_column_name16(sqlite3_stmt*, int N);
 ** [SQLITE_ENABLE_COLUMN_METADATA] C-preprocessor symbol.
 **
 ** If two or more threads call one or more
-** [sqlite3_column_database_name | column metadata interfaces]
+** [bentley_sqlite3_column_database_name | column metadata interfaces]
 ** for the same [prepared statement] and result column
 ** at the same time then the results are undefined.
 */
-SQLITE_API const char *sqlite3_column_database_name(sqlite3_stmt*,int);
-SQLITE_API const void *sqlite3_column_database_name16(sqlite3_stmt*,int);
-SQLITE_API const char *sqlite3_column_table_name(sqlite3_stmt*,int);
-SQLITE_API const void *sqlite3_column_table_name16(sqlite3_stmt*,int);
-SQLITE_API const char *sqlite3_column_origin_name(sqlite3_stmt*,int);
-SQLITE_API const void *sqlite3_column_origin_name16(sqlite3_stmt*,int);
+SQLITE_API const char *bentley_sqlite3_column_database_name(sqlite3_stmt*,int);
+SQLITE_API const void *bentley_sqlite3_column_database_name16(sqlite3_stmt*,int);
+SQLITE_API const char *bentley_sqlite3_column_table_name(sqlite3_stmt*,int);
+SQLITE_API const void *bentley_sqlite3_column_table_name16(sqlite3_stmt*,int);
+SQLITE_API const char *bentley_sqlite3_column_origin_name(sqlite3_stmt*,int);
+SQLITE_API const void *bentley_sqlite3_column_origin_name16(sqlite3_stmt*,int);
 
 /*
 ** CAPI3REF: Declared Datatype Of A Query Result
@@ -5044,24 +5044,24 @@ SQLITE_API const void *sqlite3_column_origin_name16(sqlite3_stmt*,int);
 ** is associated with individual values, not with the containers
 ** used to hold those values.
 */
-SQLITE_API const char *sqlite3_column_decltype(sqlite3_stmt*,int);
-SQLITE_API const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
+SQLITE_API const char *bentley_sqlite3_column_decltype(sqlite3_stmt*,int);
+SQLITE_API const void *bentley_sqlite3_column_decltype16(sqlite3_stmt*,int);
 
 /*
 ** CAPI3REF: Evaluate An SQL Statement
 ** METHOD: sqlite3_stmt
 **
 ** After a [prepared statement] has been prepared using any of
-** [sqlite3_prepare_v2()], [sqlite3_prepare_v3()], [sqlite3_prepare16_v2()],
-** or [sqlite3_prepare16_v3()] or one of the legacy
-** interfaces [sqlite3_prepare()] or [sqlite3_prepare16()], this function
+** [bentley_sqlite3_prepare_v2()], [bentley_sqlite3_prepare_v3()], [bentley_sqlite3_prepare16_v2()],
+** or [bentley_sqlite3_prepare16_v3()] or one of the legacy
+** interfaces [bentley_sqlite3_prepare()] or [bentley_sqlite3_prepare16()], this function
 ** must be called one or more times to evaluate the statement.
 **
-** The details of the behavior of the sqlite3_step() interface depend
+** The details of the behavior of the bentley_sqlite3_step() interface depend
 ** on whether the statement was prepared using the newer "vX" interfaces
-** [sqlite3_prepare_v3()], [sqlite3_prepare_v2()], [sqlite3_prepare16_v3()],
-** [sqlite3_prepare16_v2()] or the older legacy
-** interfaces [sqlite3_prepare()] and [sqlite3_prepare16()].  The use of the
+** [bentley_sqlite3_prepare_v3()], [bentley_sqlite3_prepare_v2()], [bentley_sqlite3_prepare16_v3()],
+** [bentley_sqlite3_prepare16_v2()] or the older legacy
+** interfaces [bentley_sqlite3_prepare()] and [bentley_sqlite3_prepare16()].  The use of the
 ** new "vX" interface is recommended for new applications but the legacy
 ** interface will continue to be supported.
 **
@@ -5078,79 +5078,79 @@ SQLITE_API const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 ** continuing.
 **
 ** ^[SQLITE_DONE] means that the statement has finished executing
-** successfully.  sqlite3_step() should not be called again on this virtual
-** machine without first calling [sqlite3_reset()] to reset the virtual
+** successfully.  bentley_sqlite3_step() should not be called again on this virtual
+** machine without first calling [bentley_sqlite3_reset()] to reset the virtual
 ** machine back to its initial state.
 **
 ** ^If the SQL statement being executed returns any data, then [SQLITE_ROW]
 ** is returned each time a new row of data is ready for processing by the
 ** caller. The values may be accessed using the [column access functions].
-** sqlite3_step() is called again to retrieve the next row of data.
+** bentley_sqlite3_step() is called again to retrieve the next row of data.
 **
 ** ^[SQLITE_ERROR] means that a run-time error (such as a constraint
-** violation) has occurred.  sqlite3_step() should not be called again on
-** the VM. More information may be found by calling [sqlite3_errmsg()].
+** violation) has occurred.  bentley_sqlite3_step() should not be called again on
+** the VM. More information may be found by calling [bentley_sqlite3_errmsg()].
 ** ^With the legacy interface, a more specific error code (for example,
 ** [SQLITE_INTERRUPT], [SQLITE_SCHEMA], [SQLITE_CORRUPT], and so forth)
-** can be obtained by calling [sqlite3_reset()] on the
+** can be obtained by calling [bentley_sqlite3_reset()] on the
 ** [prepared statement].  ^In the "v2" interface,
-** the more specific error code is returned directly by sqlite3_step().
+** the more specific error code is returned directly by bentley_sqlite3_step().
 **
 ** [SQLITE_MISUSE] means that the this routine was called inappropriately.
 ** Perhaps it was called on a [prepared statement] that has
-** already been [sqlite3_finalize | finalized] or on one that had
+** already been [bentley_sqlite3_finalize | finalized] or on one that had
 ** previously returned [SQLITE_ERROR] or [SQLITE_DONE].  Or it could
 ** be the case that the same database connection is being used by two or
 ** more threads at the same moment in time.
 **
 ** For all versions of SQLite up to and including 3.6.23.1, a call to
-** [sqlite3_reset()] was required after sqlite3_step() returned anything
+** [bentley_sqlite3_reset()] was required after bentley_sqlite3_step() returned anything
 ** other than [SQLITE_ROW] before any subsequent invocation of
-** sqlite3_step().  Failure to reset the prepared statement using
-** [sqlite3_reset()] would result in an [SQLITE_MISUSE] return from
-** sqlite3_step().  But after [version 3.6.23.1] ([dateof:3.6.23.1],
-** sqlite3_step() began
-** calling [sqlite3_reset()] automatically in this circumstance rather
+** bentley_sqlite3_step().  Failure to reset the prepared statement using
+** [bentley_sqlite3_reset()] would result in an [SQLITE_MISUSE] return from
+** bentley_sqlite3_step().  But after [version 3.6.23.1] ([dateof:3.6.23.1],
+** bentley_sqlite3_step() began
+** calling [bentley_sqlite3_reset()] automatically in this circumstance rather
 ** than returning [SQLITE_MISUSE].  This is not considered a compatibility
 ** break because any application that ever receives an SQLITE_MISUSE error
 ** is broken by definition.  The [SQLITE_OMIT_AUTORESET] compile-time option
 ** can be used to restore the legacy behavior.
 **
-** <b>Goofy Interface Alert:</b> In the legacy interface, the sqlite3_step()
+** <b>Goofy Interface Alert:</b> In the legacy interface, the bentley_sqlite3_step()
 ** API always returns a generic error code, [SQLITE_ERROR], following any
 ** error other than [SQLITE_BUSY] and [SQLITE_MISUSE].  You must call
-** [sqlite3_reset()] or [sqlite3_finalize()] in order to find one of the
+** [bentley_sqlite3_reset()] or [bentley_sqlite3_finalize()] in order to find one of the
 ** specific [error codes] that better describes the error.
 ** We admit that this is a goofy design.  The problem has been fixed
 ** with the "v2" interface.  If you prepare all of your SQL statements
-** using [sqlite3_prepare_v3()] or [sqlite3_prepare_v2()]
-** or [sqlite3_prepare16_v2()] or [sqlite3_prepare16_v3()] instead
-** of the legacy [sqlite3_prepare()] and [sqlite3_prepare16()] interfaces,
+** using [bentley_sqlite3_prepare_v3()] or [bentley_sqlite3_prepare_v2()]
+** or [bentley_sqlite3_prepare16_v2()] or [bentley_sqlite3_prepare16_v3()] instead
+** of the legacy [bentley_sqlite3_prepare()] and [bentley_sqlite3_prepare16()] interfaces,
 ** then the more specific [error codes] are returned directly
-** by sqlite3_step().  The use of the "vX" interfaces is recommended.
+** by bentley_sqlite3_step().  The use of the "vX" interfaces is recommended.
 */
-SQLITE_API int sqlite3_step(sqlite3_stmt*);
+SQLITE_API int bentley_sqlite3_step(sqlite3_stmt*);
 
 /*
 ** CAPI3REF: Number of columns in a result set
 ** METHOD: sqlite3_stmt
 **
-** ^The sqlite3_data_count(P) interface returns the number of columns in the
+** ^The bentley_sqlite3_data_count(P) interface returns the number of columns in the
 ** current row of the result set of [prepared statement] P.
 ** ^If prepared statement P does not have results ready to return
-** (via calls to the [sqlite3_column_int | sqlite3_column()] family of
-** interfaces) then sqlite3_data_count(P) returns 0.
-** ^The sqlite3_data_count(P) routine also returns 0 if P is a NULL pointer.
-** ^The sqlite3_data_count(P) routine returns 0 if the previous call to
-** [sqlite3_step](P) returned [SQLITE_DONE].  ^The sqlite3_data_count(P)
-** will return non-zero if previous call to [sqlite3_step](P) returned
+** (via calls to the [bentley_sqlite3_column_int | sqlite3_column()] family of
+** interfaces) then bentley_sqlite3_data_count(P) returns 0.
+** ^The bentley_sqlite3_data_count(P) routine also returns 0 if P is a NULL pointer.
+** ^The bentley_sqlite3_data_count(P) routine returns 0 if the previous call to
+** [bentley_sqlite3_step](P) returned [SQLITE_DONE].  ^The bentley_sqlite3_data_count(P)
+** will return non-zero if previous call to [bentley_sqlite3_step](P) returned
 ** [SQLITE_ROW], except in the case of the [PRAGMA incremental_vacuum]
 ** where it always returns zero since each step of that multi-step
 ** pragma returns 0 columns of data.
 **
-** See also: [sqlite3_column_count()]
+** See also: [bentley_sqlite3_column_count()]
 */
-SQLITE_API int sqlite3_data_count(sqlite3_stmt *pStmt);
+SQLITE_API int bentley_sqlite3_data_count(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Fundamental Datatypes
@@ -5191,21 +5191,21 @@ SQLITE_API int sqlite3_data_count(sqlite3_stmt *pStmt);
 **
 ** <b>Summary:</b>
 ** <blockquote><table border=0 cellpadding=0 cellspacing=0>
-** <tr><td><b>sqlite3_column_blob</b><td>&rarr;<td>BLOB result
-** <tr><td><b>sqlite3_column_double</b><td>&rarr;<td>REAL result
-** <tr><td><b>sqlite3_column_int</b><td>&rarr;<td>32-bit INTEGER result
-** <tr><td><b>sqlite3_column_int64</b><td>&rarr;<td>64-bit INTEGER result
-** <tr><td><b>sqlite3_column_text</b><td>&rarr;<td>UTF-8 TEXT result
-** <tr><td><b>sqlite3_column_text16</b><td>&rarr;<td>UTF-16 TEXT result
-** <tr><td><b>sqlite3_column_value</b><td>&rarr;<td>The result as an
+** <tr><td><b>bentley_sqlite3_column_blob</b><td>&rarr;<td>BLOB result
+** <tr><td><b>bentley_sqlite3_column_double</b><td>&rarr;<td>REAL result
+** <tr><td><b>bentley_sqlite3_column_int</b><td>&rarr;<td>32-bit INTEGER result
+** <tr><td><b>bentley_sqlite3_column_int64</b><td>&rarr;<td>64-bit INTEGER result
+** <tr><td><b>bentley_sqlite3_column_text</b><td>&rarr;<td>UTF-8 TEXT result
+** <tr><td><b>bentley_sqlite3_column_text16</b><td>&rarr;<td>UTF-16 TEXT result
+** <tr><td><b>bentley_sqlite3_column_value</b><td>&rarr;<td>The result as an
 ** [sqlite3_value|unprotected sqlite3_value] object.
 ** <tr><td>&nbsp;<td>&nbsp;<td>&nbsp;
-** <tr><td><b>sqlite3_column_bytes</b><td>&rarr;<td>Size of a BLOB
+** <tr><td><b>bentley_sqlite3_column_bytes</b><td>&rarr;<td>Size of a BLOB
 ** or a UTF-8 TEXT result in bytes
-** <tr><td><b>sqlite3_column_bytes16&nbsp;&nbsp;</b>
+** <tr><td><b>bentley_sqlite3_column_bytes16&nbsp;&nbsp;</b>
 ** <td>&rarr;&nbsp;&nbsp;<td>Size of UTF-16
 ** TEXT in bytes
-** <tr><td><b>sqlite3_column_type</b><td>&rarr;<td>Default
+** <tr><td><b>bentley_sqlite3_column_type</b><td>&rarr;<td>Default
 ** datatype of the result
 ** </table></blockquote>
 **
@@ -5214,95 +5214,95 @@ SQLITE_API int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** ^These routines return information about a single column of the current
 ** result row of a query.  ^In every case the first argument is a pointer
 ** to the [prepared statement] that is being evaluated (the [sqlite3_stmt*]
-** that was returned from [sqlite3_prepare_v2()] or one of its variants)
+** that was returned from [bentley_sqlite3_prepare_v2()] or one of its variants)
 ** and the second argument is the index of the column for which information
 ** should be returned. ^The leftmost column of the result set has the index 0.
 ** ^The number of columns in the result can be determined using
-** [sqlite3_column_count()].
+** [bentley_sqlite3_column_count()].
 **
 ** If the SQL statement does not currently point to a valid row, or if the
 ** column index is out of range, the result is undefined.
 ** These routines may only be called when the most recent call to
-** [sqlite3_step()] has returned [SQLITE_ROW] and neither
-** [sqlite3_reset()] nor [sqlite3_finalize()] have been called subsequently.
-** If any of these routines are called after [sqlite3_reset()] or
-** [sqlite3_finalize()] or after [sqlite3_step()] has returned
+** [bentley_sqlite3_step()] has returned [SQLITE_ROW] and neither
+** [bentley_sqlite3_reset()] nor [bentley_sqlite3_finalize()] have been called subsequently.
+** If any of these routines are called after [bentley_sqlite3_reset()] or
+** [bentley_sqlite3_finalize()] or after [bentley_sqlite3_step()] has returned
 ** something other than [SQLITE_ROW], the results are undefined.
-** If [sqlite3_step()] or [sqlite3_reset()] or [sqlite3_finalize()]
+** If [bentley_sqlite3_step()] or [bentley_sqlite3_reset()] or [bentley_sqlite3_finalize()]
 ** are called from a different thread while any of these routines
 ** are pending, then the results are undefined.
 **
 ** The first six interfaces (_blob, _double, _int, _int64, _text, and _text16)
 ** each return the value of a result column in a specific data format.  If
 ** the result column is not initially in the requested format (for example,
-** if the query returns an integer but the sqlite3_column_text() interface
+** if the query returns an integer but the bentley_sqlite3_column_text() interface
 ** is used to extract the value) then an automatic type conversion is performed.
 **
-** ^The sqlite3_column_type() routine returns the
+** ^The bentley_sqlite3_column_type() routine returns the
 ** [SQLITE_INTEGER | datatype code] for the initial data type
 ** of the result column.  ^The returned value is one of [SQLITE_INTEGER],
 ** [SQLITE_FLOAT], [SQLITE_TEXT], [SQLITE_BLOB], or [SQLITE_NULL].
-** The return value of sqlite3_column_type() can be used to decide which
+** The return value of bentley_sqlite3_column_type() can be used to decide which
 ** of the first six interface should be used to extract the column value.
-** The value returned by sqlite3_column_type() is only meaningful if no
+** The value returned by bentley_sqlite3_column_type() is only meaningful if no
 ** automatic type conversions have occurred for the value in question.
-** After a type conversion, the result of calling sqlite3_column_type()
+** After a type conversion, the result of calling bentley_sqlite3_column_type()
 ** is undefined, though harmless.  Future
-** versions of SQLite may change the behavior of sqlite3_column_type()
+** versions of SQLite may change the behavior of bentley_sqlite3_column_type()
 ** following a type conversion.
 **
-** If the result is a BLOB or a TEXT string, then the sqlite3_column_bytes()
-** or sqlite3_column_bytes16() interfaces can be used to determine the size
+** If the result is a BLOB or a TEXT string, then the bentley_sqlite3_column_bytes()
+** or bentley_sqlite3_column_bytes16() interfaces can be used to determine the size
 ** of that BLOB or string.
 **
-** ^If the result is a BLOB or UTF-8 string then the sqlite3_column_bytes()
+** ^If the result is a BLOB or UTF-8 string then the bentley_sqlite3_column_bytes()
 ** routine returns the number of bytes in that BLOB or string.
-** ^If the result is a UTF-16 string, then sqlite3_column_bytes() converts
+** ^If the result is a UTF-16 string, then bentley_sqlite3_column_bytes() converts
 ** the string to UTF-8 and then returns the number of bytes.
-** ^If the result is a numeric value then sqlite3_column_bytes() uses
-** [sqlite3_snprintf()] to convert that value to a UTF-8 string and returns
+** ^If the result is a numeric value then bentley_sqlite3_column_bytes() uses
+** [bentley_sqlite3_snprintf()] to convert that value to a UTF-8 string and returns
 ** the number of bytes in that string.
-** ^If the result is NULL, then sqlite3_column_bytes() returns zero.
+** ^If the result is NULL, then bentley_sqlite3_column_bytes() returns zero.
 **
-** ^If the result is a BLOB or UTF-16 string then the sqlite3_column_bytes16()
+** ^If the result is a BLOB or UTF-16 string then the bentley_sqlite3_column_bytes16()
 ** routine returns the number of bytes in that BLOB or string.
-** ^If the result is a UTF-8 string, then sqlite3_column_bytes16() converts
+** ^If the result is a UTF-8 string, then bentley_sqlite3_column_bytes16() converts
 ** the string to UTF-16 and then returns the number of bytes.
-** ^If the result is a numeric value then sqlite3_column_bytes16() uses
-** [sqlite3_snprintf()] to convert that value to a UTF-16 string and returns
+** ^If the result is a numeric value then bentley_sqlite3_column_bytes16() uses
+** [bentley_sqlite3_snprintf()] to convert that value to a UTF-16 string and returns
 ** the number of bytes in that string.
-** ^If the result is NULL, then sqlite3_column_bytes16() returns zero.
+** ^If the result is NULL, then bentley_sqlite3_column_bytes16() returns zero.
 **
-** ^The values returned by [sqlite3_column_bytes()] and
-** [sqlite3_column_bytes16()] do not include the zero terminators at the end
+** ^The values returned by [bentley_sqlite3_column_bytes()] and
+** [bentley_sqlite3_column_bytes16()] do not include the zero terminators at the end
 ** of the string.  ^For clarity: the values returned by
-** [sqlite3_column_bytes()] and [sqlite3_column_bytes16()] are the number of
+** [bentley_sqlite3_column_bytes()] and [bentley_sqlite3_column_bytes16()] are the number of
 ** bytes in the string, not the number of characters.
 **
-** ^Strings returned by sqlite3_column_text() and sqlite3_column_text16(),
+** ^Strings returned by bentley_sqlite3_column_text() and bentley_sqlite3_column_text16(),
 ** even empty strings, are always zero-terminated.  ^The return
-** value from sqlite3_column_blob() for a zero-length BLOB is a NULL pointer.
+** value from bentley_sqlite3_column_blob() for a zero-length BLOB is a NULL pointer.
 **
-** ^Strings returned by sqlite3_column_text16() always have the endianness
+** ^Strings returned by bentley_sqlite3_column_text16() always have the endianness
 ** which is native to the platform, regardless of the text encoding set
 ** for the database.
 **
-** <b>Warning:</b> ^The object returned by [sqlite3_column_value()] is an
+** <b>Warning:</b> ^The object returned by [bentley_sqlite3_column_value()] is an
 ** [unprotected sqlite3_value] object.  In a multithreaded environment,
 ** an unprotected sqlite3_value object may only be used safely with
-** [sqlite3_bind_value()] and [sqlite3_result_value()].
+** [bentley_sqlite3_bind_value()] and [bentley_sqlite3_result_value()].
 ** If the [unprotected sqlite3_value] object returned by
-** [sqlite3_column_value()] is used in any other way, including calls
-** to routines like [sqlite3_value_int()], [sqlite3_value_text()],
-** or [sqlite3_value_bytes()], the behavior is not threadsafe.
-** Hence, the sqlite3_column_value() interface
+** [bentley_sqlite3_column_value()] is used in any other way, including calls
+** to routines like [bentley_sqlite3_value_int()], [bentley_sqlite3_value_text()],
+** or [bentley_sqlite3_value_bytes()], the behavior is not threadsafe.
+** Hence, the bentley_sqlite3_column_value() interface
 ** is normally only useful within the implementation of
 ** [application-defined SQL functions] or [virtual tables], not within
 ** top-level application code.
 **
 ** These routines may attempt to convert the datatype of the result.
 ** ^For example, if the internal representation is FLOAT and a text result
-** is requested, [sqlite3_snprintf()] is used internally to perform the
+** is requested, [bentley_sqlite3_snprintf()] is used internally to perform the
 ** conversion automatically.  ^(The following table details the conversions
 ** that are applied:
 **
@@ -5330,20 +5330,20 @@ SQLITE_API int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** </blockquote>)^
 **
 ** Note that when type conversions occur, pointers returned by prior
-** calls to sqlite3_column_blob(), sqlite3_column_text(), and/or
-** sqlite3_column_text16() may be invalidated.
+** calls to bentley_sqlite3_column_blob(), bentley_sqlite3_column_text(), and/or
+** bentley_sqlite3_column_text16() may be invalidated.
 ** Type conversions and pointer invalidations might occur
 ** in the following cases:
 **
 ** <ul>
-** <li> The initial content is a BLOB and sqlite3_column_text() or
-**      sqlite3_column_text16() is called.  A zero-terminator might
+** <li> The initial content is a BLOB and bentley_sqlite3_column_text() or
+**      bentley_sqlite3_column_text16() is called.  A zero-terminator might
 **      need to be added to the string.</li>
-** <li> The initial content is UTF-8 text and sqlite3_column_bytes16() or
-**      sqlite3_column_text16() is called.  The content must be converted
+** <li> The initial content is UTF-8 text and bentley_sqlite3_column_bytes16() or
+**      bentley_sqlite3_column_text16() is called.  The content must be converted
 **      to UTF-16.</li>
-** <li> The initial content is UTF-16 text and sqlite3_column_bytes() or
-**      sqlite3_column_text() is called.  The content must be converted
+** <li> The initial content is UTF-16 text and bentley_sqlite3_column_bytes() or
+**      bentley_sqlite3_column_text() is called.  The content must be converted
 **      to UTF-8.</li>
 ** </ul>
 **
@@ -5357,25 +5357,25 @@ SQLITE_API int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** in one of the following ways:
 **
 ** <ul>
-**  <li>sqlite3_column_text() followed by sqlite3_column_bytes()</li>
-**  <li>sqlite3_column_blob() followed by sqlite3_column_bytes()</li>
-**  <li>sqlite3_column_text16() followed by sqlite3_column_bytes16()</li>
+**  <li>bentley_sqlite3_column_text() followed by bentley_sqlite3_column_bytes()</li>
+**  <li>bentley_sqlite3_column_blob() followed by bentley_sqlite3_column_bytes()</li>
+**  <li>bentley_sqlite3_column_text16() followed by bentley_sqlite3_column_bytes16()</li>
 ** </ul>
 **
-** In other words, you should call sqlite3_column_text(),
-** sqlite3_column_blob(), or sqlite3_column_text16() first to force the result
-** into the desired format, then invoke sqlite3_column_bytes() or
-** sqlite3_column_bytes16() to find the size of the result.  Do not mix calls
-** to sqlite3_column_text() or sqlite3_column_blob() with calls to
-** sqlite3_column_bytes16(), and do not mix calls to sqlite3_column_text16()
-** with calls to sqlite3_column_bytes().
+** In other words, you should call bentley_sqlite3_column_text(),
+** bentley_sqlite3_column_blob(), or bentley_sqlite3_column_text16() first to force the result
+** into the desired format, then invoke bentley_sqlite3_column_bytes() or
+** bentley_sqlite3_column_bytes16() to find the size of the result.  Do not mix calls
+** to bentley_sqlite3_column_text() or bentley_sqlite3_column_blob() with calls to
+** bentley_sqlite3_column_bytes16(), and do not mix calls to bentley_sqlite3_column_text16()
+** with calls to bentley_sqlite3_column_bytes().
 **
 ** ^The pointers returned are valid until a type conversion occurs as
-** described above, or until [sqlite3_step()] or [sqlite3_reset()] or
-** [sqlite3_finalize()] is called.  ^The memory space used to hold strings
+** described above, or until [bentley_sqlite3_step()] or [bentley_sqlite3_reset()] or
+** [bentley_sqlite3_finalize()] is called.  ^The memory space used to hold strings
 ** and BLOBs is freed automatically.  Do not pass the pointers returned
-** from [sqlite3_column_blob()], [sqlite3_column_text()], etc. into
-** [sqlite3_free()].
+** from [bentley_sqlite3_column_blob()], [bentley_sqlite3_column_text()], etc. into
+** [bentley_sqlite3_free()].
 **
 ** As long as the input parameters are correct, these routines will only
 ** fail if an out-of-memory error occurs during a format conversion.
@@ -5383,50 +5383,50 @@ SQLITE_API int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** errors:
 **
 ** <ul>
-** <li> sqlite3_column_blob()
-** <li> sqlite3_column_text()
-** <li> sqlite3_column_text16()
-** <li> sqlite3_column_bytes()
-** <li> sqlite3_column_bytes16()
+** <li> bentley_sqlite3_column_blob()
+** <li> bentley_sqlite3_column_text()
+** <li> bentley_sqlite3_column_text16()
+** <li> bentley_sqlite3_column_bytes()
+** <li> bentley_sqlite3_column_bytes16()
 ** </ul>
 **
 ** If an out-of-memory error occurs, then the return value from these
 ** routines is the same as if the column had contained an SQL NULL value.
 ** Valid SQL NULL returns can be distinguished from out-of-memory errors
-** by invoking the [sqlite3_errcode()] immediately after the suspect
+** by invoking the [bentley_sqlite3_errcode()] immediately after the suspect
 ** return value is obtained and before any
 ** other SQLite interface is called on the same [database connection].
 */
-SQLITE_API const void *sqlite3_column_blob(sqlite3_stmt*, int iCol);
-SQLITE_API double sqlite3_column_double(sqlite3_stmt*, int iCol);
-SQLITE_API int sqlite3_column_int(sqlite3_stmt*, int iCol);
-SQLITE_API sqlite3_int64 sqlite3_column_int64(sqlite3_stmt*, int iCol);
-SQLITE_API const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol);
-SQLITE_API const void *sqlite3_column_text16(sqlite3_stmt*, int iCol);
-SQLITE_API sqlite3_value *sqlite3_column_value(sqlite3_stmt*, int iCol);
-SQLITE_API int sqlite3_column_bytes(sqlite3_stmt*, int iCol);
-SQLITE_API int sqlite3_column_bytes16(sqlite3_stmt*, int iCol);
-SQLITE_API int sqlite3_column_type(sqlite3_stmt*, int iCol);
+SQLITE_API const void *bentley_sqlite3_column_blob(sqlite3_stmt*, int iCol);
+SQLITE_API double bentley_sqlite3_column_double(sqlite3_stmt*, int iCol);
+SQLITE_API int bentley_sqlite3_column_int(sqlite3_stmt*, int iCol);
+SQLITE_API sqlite3_int64 bentley_sqlite3_column_int64(sqlite3_stmt*, int iCol);
+SQLITE_API const unsigned char *bentley_sqlite3_column_text(sqlite3_stmt*, int iCol);
+SQLITE_API const void *bentley_sqlite3_column_text16(sqlite3_stmt*, int iCol);
+SQLITE_API sqlite3_value *bentley_sqlite3_column_value(sqlite3_stmt*, int iCol);
+SQLITE_API int bentley_sqlite3_column_bytes(sqlite3_stmt*, int iCol);
+SQLITE_API int bentley_sqlite3_column_bytes16(sqlite3_stmt*, int iCol);
+SQLITE_API int bentley_sqlite3_column_type(sqlite3_stmt*, int iCol);
 
 /*
 ** CAPI3REF: Destroy A Prepared Statement Object
 ** DESTRUCTOR: sqlite3_stmt
 **
-** ^The sqlite3_finalize() function is called to delete a [prepared statement].
+** ^The bentley_sqlite3_finalize() function is called to delete a [prepared statement].
 ** ^If the most recent evaluation of the statement encountered no errors
-** or if the statement is never been evaluated, then sqlite3_finalize() returns
+** or if the statement is never been evaluated, then bentley_sqlite3_finalize() returns
 ** SQLITE_OK.  ^If the most recent evaluation of statement S failed, then
-** sqlite3_finalize(S) returns the appropriate [error code] or
+** bentley_sqlite3_finalize(S) returns the appropriate [error code] or
 ** [extended error code].
 **
-** ^The sqlite3_finalize(S) routine can be called at any point during
+** ^The bentley_sqlite3_finalize(S) routine can be called at any point during
 ** the life cycle of [prepared statement] S:
 ** before statement S is ever evaluated, after
-** one or more calls to [sqlite3_reset()], or after any call
-** to [sqlite3_step()] regardless of whether or not the statement has
+** one or more calls to [bentley_sqlite3_reset()], or after any call
+** to [bentley_sqlite3_step()] regardless of whether or not the statement has
 ** completed execution.
 **
-** ^Invoking sqlite3_finalize() on a NULL pointer is a harmless no-op.
+** ^Invoking bentley_sqlite3_finalize() on a NULL pointer is a harmless no-op.
 **
 ** The application must finalize every [prepared statement] in order to avoid
 ** resource leaks.  It is a grievous error for the application to try to use
@@ -5434,46 +5434,46 @@ SQLITE_API int sqlite3_column_type(sqlite3_stmt*, int iCol);
 ** statement after it has been finalized can result in undefined and
 ** undesirable behavior such as segfaults and heap corruption.
 */
-SQLITE_API int sqlite3_finalize(sqlite3_stmt *pStmt);
+SQLITE_API int bentley_sqlite3_finalize(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Reset A Prepared Statement Object
 ** METHOD: sqlite3_stmt
 **
-** The sqlite3_reset() function is called to reset a [prepared statement]
+** The bentley_sqlite3_reset() function is called to reset a [prepared statement]
 ** object back to its initial state, ready to be re-executed.
 ** ^Any SQL statement variables that had values bound to them using
-** the [sqlite3_bind_blob | sqlite3_bind_*() API] retain their values.
-** Use [sqlite3_clear_bindings()] to reset the bindings.
+** the [bentley_sqlite3_bind_blob | sqlite3_bind_*() API] retain their values.
+** Use [bentley_sqlite3_clear_bindings()] to reset the bindings.
 **
-** ^The [sqlite3_reset(S)] interface resets the [prepared statement] S
+** ^The [bentley_sqlite3_reset(S)] interface resets the [prepared statement] S
 ** back to the beginning of its program.
 **
-** ^The return code from [sqlite3_reset(S)] indicates whether or not
+** ^The return code from [bentley_sqlite3_reset(S)] indicates whether or not
 ** the previous evaluation of prepared statement S completed successfully.
-** ^If [sqlite3_step(S)] has never before been called on S or if
-** [sqlite3_step(S)] has not been called since the previous call
-** to [sqlite3_reset(S)], then [sqlite3_reset(S)] will return
+** ^If [bentley_sqlite3_step(S)] has never before been called on S or if
+** [bentley_sqlite3_step(S)] has not been called since the previous call
+** to [bentley_sqlite3_reset(S)], then [bentley_sqlite3_reset(S)] will return
 ** [SQLITE_OK].
 **
-** ^If the most recent call to [sqlite3_step(S)] for the
+** ^If the most recent call to [bentley_sqlite3_step(S)] for the
 ** [prepared statement] S indicated an error, then
-** [sqlite3_reset(S)] returns an appropriate [error code].
-** ^The [sqlite3_reset(S)] interface might also return an [error code]
+** [bentley_sqlite3_reset(S)] returns an appropriate [error code].
+** ^The [bentley_sqlite3_reset(S)] interface might also return an [error code]
 ** if there were no prior errors but the process of resetting
 ** the prepared statement caused a new error. ^For example, if an
 ** [INSERT] statement with a [RETURNING] clause is only stepped one time,
-** that one call to [sqlite3_step(S)] might return SQLITE_ROW but
-** the overall statement might still fail and the [sqlite3_reset(S)] call
+** that one call to [bentley_sqlite3_step(S)] might return SQLITE_ROW but
+** the overall statement might still fail and the [bentley_sqlite3_reset(S)] call
 ** might return SQLITE_BUSY if locking constraints prevent the
 ** database change from committing.  Therefore, it is important that
-** applications check the return code from [sqlite3_reset(S)] even if
-** no prior call to [sqlite3_step(S)] indicated a problem.
+** applications check the return code from [bentley_sqlite3_reset(S)] even if
+** no prior call to [bentley_sqlite3_step(S)] indicated a problem.
 **
-** ^The [sqlite3_reset(S)] interface does not change the values
-** of any [sqlite3_bind_blob|bindings] on the [prepared statement] S.
+** ^The [bentley_sqlite3_reset(S)] interface does not change the values
+** of any [bentley_sqlite3_bind_blob|bindings] on the [prepared statement] S.
 */
-SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
+SQLITE_API int bentley_sqlite3_reset(sqlite3_stmt *pStmt);
 
 
 /*
@@ -5484,10 +5484,10 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 ** ^These functions (collectively known as "function creation routines")
 ** are used to add SQL functions or aggregates or to redefine the behavior
 ** of existing SQL functions or aggregates. The only differences between
-** the three "sqlite3_create_function*" routines are the text encoding
+** the three "bentley_sqlite3_create_function*" routines are the text encoding
 ** expected for the second parameter (the name of the function being
 ** created) and the presence or absence of a destructor callback for
-** the application data pointer. Function sqlite3_create_window_function()
+** the application data pointer. Function bentley_sqlite3_create_window_function()
 ** is similar, but allows the user to supply the extra callback functions
 ** needed by [aggregate window functions].
 **
@@ -5507,7 +5507,7 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 ** is the number of arguments that the SQL function or
 ** aggregate takes. ^If this parameter is -1, then the SQL function or
 ** aggregate may take any number of arguments between 0 and the limit
-** set by [sqlite3_limit]([SQLITE_LIMIT_FUNCTION_ARG]).  If the third
+** set by [bentley_sqlite3_limit]([SQLITE_LIMIT_FUNCTION_ARG]).  If the third
 ** parameter is less than -1 or greater than 127 then the behavior is
 ** undefined.
 **
@@ -5515,9 +5515,9 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 ** [SQLITE_UTF8 | text encoding] this SQL function prefers for
 ** its parameters.  The application should set this parameter to
 ** [SQLITE_UTF16LE] if the function implementation invokes
-** [sqlite3_value_text16le()] on an input, or [SQLITE_UTF16BE] if the
-** implementation invokes [sqlite3_value_text16be()] on an input, or
-** [SQLITE_UTF16] if [sqlite3_value_text16()] is used, or [SQLITE_UTF8]
+** [bentley_sqlite3_value_text16le()] on an input, or [SQLITE_UTF16BE] if the
+** implementation invokes [bentley_sqlite3_value_text16be()] on an input, or
+** [SQLITE_UTF16] if [bentley_sqlite3_value_text16()] is used, or [SQLITE_UTF8]
 ** otherwise.  ^The same SQL function may be registered multiple times using
 ** different preferred text encodings, with different implementations for
 ** each encoding.
@@ -5548,10 +5548,10 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 ** the database file is opened and read.
 **
 ** ^(The fifth parameter is an arbitrary pointer.  The implementation of the
-** function can gain access to this pointer using [sqlite3_user_data()].)^
+** function can gain access to this pointer using [bentley_sqlite3_user_data()].)^
 **
 ** ^The sixth, seventh and eighth parameters passed to the three
-** "sqlite3_create_function*" functions, xFunc, xStep and xFinal, are
+** "bentley_sqlite3_create_function*" functions, xFunc, xStep and xFinal, are
 ** pointers to C-language functions that implement the SQL function or
 ** aggregate. ^A scalar SQL function requires an implementation of the xFunc
 ** callback only; NULL pointers must be passed as the xStep and xFinal
@@ -5561,7 +5561,7 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 ** callbacks.
 **
 ** ^The sixth, seventh, eighth and ninth parameters (xStep, xFinal, xValue
-** and xInverse) passed to sqlite3_create_window_function are pointers to
+** and xInverse) passed to bentley_sqlite3_create_window_function are pointers to
 ** C-language callbacks that implement the new function. xStep and xFinal
 ** must both be non-NULL. xValue and xInverse may either both be NULL, in
 ** which case a regular aggregate function is created, or must both be
@@ -5570,14 +5570,14 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 ** of aggregate window functions are
 ** [user-defined window functions|available here].
 **
-** ^(If the final parameter to sqlite3_create_function_v2() or
-** sqlite3_create_window_function() is not NULL, then it is destructor for
+** ^(If the final parameter to bentley_sqlite3_create_function_v2() or
+** bentley_sqlite3_create_window_function() is not NULL, then it is destructor for
 ** the application data pointer. The destructor is invoked when the function
 ** is deleted, either by being overloaded or when the database connection
 ** closes.)^ ^The destructor is also invoked if the call to
-** sqlite3_create_function_v2() fails.  ^When the destructor callback is
+** bentley_sqlite3_create_function_v2() fails.  ^When the destructor callback is
 ** invoked, it is passed a single argument which is a copy of the application
-** data pointer which was the fifth parameter to sqlite3_create_function_v2().
+** data pointer which was the fifth parameter to bentley_sqlite3_create_function_v2().
 **
 ** ^It is permitted to register multiple implementations of the same
 ** functions with the same name but with either differing numbers of
@@ -5599,7 +5599,7 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 ** close the database connection nor finalize or reset the prepared
 ** statement in which the function is running.
 */
-SQLITE_API int sqlite3_create_function(
+SQLITE_API int bentley_sqlite3_create_function(
   sqlite3 *db,
   const char *zFunctionName,
   int nArg,
@@ -5609,7 +5609,7 @@ SQLITE_API int sqlite3_create_function(
   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
   void (*xFinal)(sqlite3_context*)
 );
-SQLITE_API int sqlite3_create_function16(
+SQLITE_API int bentley_sqlite3_create_function16(
   sqlite3 *db,
   const void *zFunctionName,
   int nArg,
@@ -5619,7 +5619,7 @@ SQLITE_API int sqlite3_create_function16(
   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
   void (*xFinal)(sqlite3_context*)
 );
-SQLITE_API int sqlite3_create_function_v2(
+SQLITE_API int bentley_sqlite3_create_function_v2(
   sqlite3 *db,
   const char *zFunctionName,
   int nArg,
@@ -5630,7 +5630,7 @@ SQLITE_API int sqlite3_create_function_v2(
   void (*xFinal)(sqlite3_context*),
   void(*xDestroy)(void*)
 );
-SQLITE_API int sqlite3_create_window_function(
+SQLITE_API int bentley_sqlite3_create_window_function(
   sqlite3 *db,
   const char *zFunctionName,
   int nArg,
@@ -5654,15 +5654,15 @@ SQLITE_API int sqlite3_create_window_function(
 #define SQLITE_UTF16BE        3    /* IMP: R-51971-34154 */
 #define SQLITE_UTF16          4    /* Use native byte order */
 #define SQLITE_ANY            5    /* Deprecated */
-#define SQLITE_UTF16_ALIGNED  8    /* sqlite3_create_collation only */
+#define SQLITE_UTF16_ALIGNED  8    /* bentley_sqlite3_create_collation only */
 
 /*
 ** CAPI3REF: Function Flags
 **
 ** These constants may be ORed together with the
 ** [SQLITE_UTF8 | preferred text encoding] as the fourth argument
-** to [sqlite3_create_function()], [sqlite3_create_function16()], or
-** [sqlite3_create_function_v2()].
+** to [bentley_sqlite3_create_function()], [bentley_sqlite3_create_function16()], or
+** [bentley_sqlite3_create_function_v2()].
 **
 ** <dl>
 ** [[SQLITE_DETERMINISTIC]] <dt>SQLITE_DETERMINISTIC</dt><dd>
@@ -5723,24 +5723,24 @@ SQLITE_API int sqlite3_create_window_function(
 **
 ** [[SQLITE_SUBTYPE]] <dt>SQLITE_SUBTYPE</dt><dd>
 ** The SQLITE_SUBTYPE flag indicates to SQLite that a function might call
-** [sqlite3_value_subtype()] to inspect the sub-types of its arguments.
+** [bentley_sqlite3_value_subtype()] to inspect the sub-types of its arguments.
 ** This flag instructs SQLite to omit some corner-case optimizations that
-** might disrupt the operation of the [sqlite3_value_subtype()] function,
+** might disrupt the operation of the [bentley_sqlite3_value_subtype()] function,
 ** causing it to return zero rather than the correct subtype().
-** All SQL functions that invoke [sqlite3_value_subtype()] should have this
+** All SQL functions that invoke [bentley_sqlite3_value_subtype()] should have this
 ** property.  If the SQLITE_SUBTYPE property is omitted, then the return
-** value from [sqlite3_value_subtype()] might sometimes be zero even though
+** value from [bentley_sqlite3_value_subtype()] might sometimes be zero even though
 ** a non-zero subtype was specified by the function argument expression.
 **
 ** [[SQLITE_RESULT_SUBTYPE]] <dt>SQLITE_RESULT_SUBTYPE</dt><dd>
 ** The SQLITE_RESULT_SUBTYPE flag indicates to SQLite that a function might call
-** [sqlite3_result_subtype()] to cause a sub-type to be associated with its
+** [bentley_sqlite3_result_subtype()] to cause a sub-type to be associated with its
 ** result.
-** Every function that invokes [sqlite3_result_subtype()] should have this
-** property.  If it does not, then the call to [sqlite3_result_subtype()]
+** Every function that invokes [bentley_sqlite3_result_subtype()] should have this
+** property.  If it does not, then the call to [bentley_sqlite3_result_subtype()]
 ** might become a no-op if the function is used as term in an
 ** [expression index].  On the other hand, SQL functions that never invoke
-** [sqlite3_result_subtype()] should avoid setting this property, as the
+** [bentley_sqlite3_result_subtype()] should avoid setting this property, as the
 ** purpose of this property is to disable certain optimizations that are
 ** incompatible with subtypes.
 **
@@ -5788,30 +5788,30 @@ SQLITE_API SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int6
 **
 ** <b>Summary:</b>
 ** <blockquote><table border=0 cellpadding=0 cellspacing=0>
-** <tr><td><b>sqlite3_value_blob</b><td>&rarr;<td>BLOB value
-** <tr><td><b>sqlite3_value_double</b><td>&rarr;<td>REAL value
-** <tr><td><b>sqlite3_value_int</b><td>&rarr;<td>32-bit INTEGER value
-** <tr><td><b>sqlite3_value_int64</b><td>&rarr;<td>64-bit INTEGER value
-** <tr><td><b>sqlite3_value_pointer</b><td>&rarr;<td>Pointer value
-** <tr><td><b>sqlite3_value_text</b><td>&rarr;<td>UTF-8 TEXT value
-** <tr><td><b>sqlite3_value_text16</b><td>&rarr;<td>UTF-16 TEXT value in
+** <tr><td><b>bentley_sqlite3_value_blob</b><td>&rarr;<td>BLOB value
+** <tr><td><b>bentley_sqlite3_value_double</b><td>&rarr;<td>REAL value
+** <tr><td><b>bentley_sqlite3_value_int</b><td>&rarr;<td>32-bit INTEGER value
+** <tr><td><b>bentley_sqlite3_value_int64</b><td>&rarr;<td>64-bit INTEGER value
+** <tr><td><b>bentley_sqlite3_value_pointer</b><td>&rarr;<td>Pointer value
+** <tr><td><b>bentley_sqlite3_value_text</b><td>&rarr;<td>UTF-8 TEXT value
+** <tr><td><b>bentley_sqlite3_value_text16</b><td>&rarr;<td>UTF-16 TEXT value in
 ** the native byteorder
-** <tr><td><b>sqlite3_value_text16be</b><td>&rarr;<td>UTF-16be TEXT value
-** <tr><td><b>sqlite3_value_text16le</b><td>&rarr;<td>UTF-16le TEXT value
+** <tr><td><b>bentley_sqlite3_value_text16be</b><td>&rarr;<td>UTF-16be TEXT value
+** <tr><td><b>bentley_sqlite3_value_text16le</b><td>&rarr;<td>UTF-16le TEXT value
 ** <tr><td>&nbsp;<td>&nbsp;<td>&nbsp;
-** <tr><td><b>sqlite3_value_bytes</b><td>&rarr;<td>Size of a BLOB
+** <tr><td><b>bentley_sqlite3_value_bytes</b><td>&rarr;<td>Size of a BLOB
 ** or a UTF-8 TEXT in bytes
-** <tr><td><b>sqlite3_value_bytes16&nbsp;&nbsp;</b>
+** <tr><td><b>bentley_sqlite3_value_bytes16&nbsp;&nbsp;</b>
 ** <td>&rarr;&nbsp;&nbsp;<td>Size of UTF-16
 ** TEXT in bytes
-** <tr><td><b>sqlite3_value_type</b><td>&rarr;<td>Default
+** <tr><td><b>bentley_sqlite3_value_type</b><td>&rarr;<td>Default
 ** datatype of the value
-** <tr><td><b>sqlite3_value_numeric_type&nbsp;&nbsp;</b>
+** <tr><td><b>bentley_sqlite3_value_numeric_type&nbsp;&nbsp;</b>
 ** <td>&rarr;&nbsp;&nbsp;<td>Best numeric datatype of the value
-** <tr><td><b>sqlite3_value_nochange&nbsp;&nbsp;</b>
+** <tr><td><b>bentley_sqlite3_value_nochange&nbsp;&nbsp;</b>
 ** <td>&rarr;&nbsp;&nbsp;<td>True if the column is unchanged in an UPDATE
 ** against a virtual table.
-** <tr><td><b>sqlite3_value_frombind&nbsp;&nbsp;</b>
+** <tr><td><b>bentley_sqlite3_value_frombind&nbsp;&nbsp;</b>
 ** <td>&rarr;&nbsp;&nbsp;<td>True if value originated from a [bound parameter]
 ** </table></blockquote>
 **
@@ -5830,30 +5830,30 @@ SQLITE_API SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int6
 ** except that these routines take a single [protected sqlite3_value] object
 ** pointer instead of a [sqlite3_stmt*] pointer and an integer column number.
 **
-** ^The sqlite3_value_text16() interface extracts a UTF-16 string
+** ^The bentley_sqlite3_value_text16() interface extracts a UTF-16 string
 ** in the native byte-order of the host machine.  ^The
-** sqlite3_value_text16be() and sqlite3_value_text16le() interfaces
+** bentley_sqlite3_value_text16be() and bentley_sqlite3_value_text16le() interfaces
 ** extract UTF-16 strings as big-endian and little-endian respectively.
 **
 ** ^If [sqlite3_value] object V was initialized
-** using [sqlite3_bind_pointer(S,I,P,X,D)] or [sqlite3_result_pointer(C,P,X,D)]
+** using [bentley_sqlite3_bind_pointer(S,I,P,X,D)] or [bentley_sqlite3_result_pointer(C,P,X,D)]
 ** and if X and Y are strings that compare equal according to strcmp(X,Y),
-** then sqlite3_value_pointer(V,Y) will return the pointer P.  ^Otherwise,
-** sqlite3_value_pointer(V,Y) returns a NULL. The sqlite3_bind_pointer()
+** then bentley_sqlite3_value_pointer(V,Y) will return the pointer P.  ^Otherwise,
+** bentley_sqlite3_value_pointer(V,Y) returns a NULL. The bentley_sqlite3_bind_pointer()
 ** routine is part of the [pointer passing interface] added for SQLite 3.20.0.
 **
-** ^(The sqlite3_value_type(V) interface returns the
+** ^(The bentley_sqlite3_value_type(V) interface returns the
 ** [SQLITE_INTEGER | datatype code] for the initial datatype of the
 ** [sqlite3_value] object V. The returned value is one of [SQLITE_INTEGER],
 ** [SQLITE_FLOAT], [SQLITE_TEXT], [SQLITE_BLOB], or [SQLITE_NULL].)^
 ** Other interfaces might change the datatype for an sqlite3_value object.
 ** For example, if the datatype is initially SQLITE_INTEGER and
-** sqlite3_value_text(V) is called to extract a text value for that
-** integer, then subsequent calls to sqlite3_value_type(V) might return
+** bentley_sqlite3_value_text(V) is called to extract a text value for that
+** integer, then subsequent calls to bentley_sqlite3_value_type(V) might return
 ** SQLITE_TEXT.  Whether or not a persistent internal datatype conversion
 ** occurs is undefined and may change from one release of SQLite to the next.
 **
-** ^(The sqlite3_value_numeric_type() interface attempts to apply
+** ^(The bentley_sqlite3_value_numeric_type() interface attempts to apply
 ** numeric affinity to the value.  This means that an attempt is
 ** made to convert the value to an integer or floating point.  If
 ** such a conversion is possible without loss of information (in other
@@ -5862,28 +5862,28 @@ SQLITE_API SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int6
 ** The [SQLITE_INTEGER | datatype] after conversion is returned.)^
 **
 ** ^Within the [xUpdate] method of a [virtual table], the
-** sqlite3_value_nochange(X) interface returns true if and only if
+** bentley_sqlite3_value_nochange(X) interface returns true if and only if
 ** the column corresponding to X is unchanged by the UPDATE operation
 ** that the xUpdate method call was invoked to implement and if
 ** and the prior [xColumn] method call that was invoked to extracted
 ** the value for that column returned without setting a result (probably
-** because it queried [sqlite3_vtab_nochange()] and found that the column
+** because it queried [bentley_sqlite3_vtab_nochange()] and found that the column
 ** was unchanging).  ^Within an [xUpdate] method, any value for which
-** sqlite3_value_nochange(X) is true will in all other respects appear
-** to be a NULL value.  If sqlite3_value_nochange(X) is invoked anywhere other
+** bentley_sqlite3_value_nochange(X) is true will in all other respects appear
+** to be a NULL value.  If bentley_sqlite3_value_nochange(X) is invoked anywhere other
 ** than within an [xUpdate] method call for an UPDATE statement, then
 ** the return value is arbitrary and meaningless.
 **
-** ^The sqlite3_value_frombind(X) interface returns non-zero if the
-** value X originated from one of the [sqlite3_bind_int|sqlite3_bind()]
+** ^The bentley_sqlite3_value_frombind(X) interface returns non-zero if the
+** value X originated from one of the [bentley_sqlite3_bind_int|sqlite3_bind()]
 ** interfaces.  ^If X comes from an SQL literal value, or a table column,
-** or an expression, then sqlite3_value_frombind(X) returns zero.
+** or an expression, then bentley_sqlite3_value_frombind(X) returns zero.
 **
 ** Please pay particular attention to the fact that the pointer returned
-** from [sqlite3_value_blob()], [sqlite3_value_text()], or
-** [sqlite3_value_text16()] can be invalidated by a subsequent call to
-** [sqlite3_value_bytes()], [sqlite3_value_bytes16()], [sqlite3_value_text()],
-** or [sqlite3_value_text16()].
+** from [bentley_sqlite3_value_blob()], [bentley_sqlite3_value_text()], or
+** [bentley_sqlite3_value_text16()] can be invalidated by a subsequent call to
+** [bentley_sqlite3_value_bytes()], [bentley_sqlite3_value_bytes16()], [bentley_sqlite3_value_text()],
+** or [bentley_sqlite3_value_text16()].
 **
 ** These routines must be called from the same thread as
 ** the SQL function that supplied the [sqlite3_value*] parameters.
@@ -5894,51 +5894,51 @@ SQLITE_API SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int6
 ** errors:
 **
 ** <ul>
-** <li> sqlite3_value_blob()
-** <li> sqlite3_value_text()
-** <li> sqlite3_value_text16()
-** <li> sqlite3_value_text16le()
-** <li> sqlite3_value_text16be()
-** <li> sqlite3_value_bytes()
-** <li> sqlite3_value_bytes16()
+** <li> bentley_sqlite3_value_blob()
+** <li> bentley_sqlite3_value_text()
+** <li> bentley_sqlite3_value_text16()
+** <li> bentley_sqlite3_value_text16le()
+** <li> bentley_sqlite3_value_text16be()
+** <li> bentley_sqlite3_value_bytes()
+** <li> bentley_sqlite3_value_bytes16()
 ** </ul>
 **
 ** If an out-of-memory error occurs, then the return value from these
 ** routines is the same as if the column had contained an SQL NULL value.
 ** Valid SQL NULL returns can be distinguished from out-of-memory errors
-** by invoking the [sqlite3_errcode()] immediately after the suspect
+** by invoking the [bentley_sqlite3_errcode()] immediately after the suspect
 ** return value is obtained and before any
 ** other SQLite interface is called on the same [database connection].
 */
-SQLITE_API const void *sqlite3_value_blob(sqlite3_value*);
-SQLITE_API double sqlite3_value_double(sqlite3_value*);
-SQLITE_API int sqlite3_value_int(sqlite3_value*);
-SQLITE_API sqlite3_int64 sqlite3_value_int64(sqlite3_value*);
-SQLITE_API void *sqlite3_value_pointer(sqlite3_value*, const char*);
-SQLITE_API const unsigned char *sqlite3_value_text(sqlite3_value*);
-SQLITE_API const void *sqlite3_value_text16(sqlite3_value*);
-SQLITE_API const void *sqlite3_value_text16le(sqlite3_value*);
-SQLITE_API const void *sqlite3_value_text16be(sqlite3_value*);
-SQLITE_API int sqlite3_value_bytes(sqlite3_value*);
-SQLITE_API int sqlite3_value_bytes16(sqlite3_value*);
-SQLITE_API int sqlite3_value_type(sqlite3_value*);
-SQLITE_API int sqlite3_value_numeric_type(sqlite3_value*);
-SQLITE_API int sqlite3_value_nochange(sqlite3_value*);
-SQLITE_API int sqlite3_value_frombind(sqlite3_value*);
+SQLITE_API const void *bentley_sqlite3_value_blob(sqlite3_value*);
+SQLITE_API double bentley_sqlite3_value_double(sqlite3_value*);
+SQLITE_API int bentley_sqlite3_value_int(sqlite3_value*);
+SQLITE_API sqlite3_int64 bentley_sqlite3_value_int64(sqlite3_value*);
+SQLITE_API void *bentley_sqlite3_value_pointer(sqlite3_value*, const char*);
+SQLITE_API const unsigned char *bentley_sqlite3_value_text(sqlite3_value*);
+SQLITE_API const void *bentley_sqlite3_value_text16(sqlite3_value*);
+SQLITE_API const void *bentley_sqlite3_value_text16le(sqlite3_value*);
+SQLITE_API const void *bentley_sqlite3_value_text16be(sqlite3_value*);
+SQLITE_API int bentley_sqlite3_value_bytes(sqlite3_value*);
+SQLITE_API int bentley_sqlite3_value_bytes16(sqlite3_value*);
+SQLITE_API int bentley_sqlite3_value_type(sqlite3_value*);
+SQLITE_API int bentley_sqlite3_value_numeric_type(sqlite3_value*);
+SQLITE_API int bentley_sqlite3_value_nochange(sqlite3_value*);
+SQLITE_API int bentley_sqlite3_value_frombind(sqlite3_value*);
 
 /*
 ** CAPI3REF: Report the internal text encoding state of an sqlite3_value object
 ** METHOD: sqlite3_value
 **
-** ^(The sqlite3_value_encoding(X) interface returns one of [SQLITE_UTF8],
+** ^(The bentley_sqlite3_value_encoding(X) interface returns one of [SQLITE_UTF8],
 ** [SQLITE_UTF16BE], or [SQLITE_UTF16LE] according to the current text encoding
-** of the value X, assuming that X has type TEXT.)^  If sqlite3_value_type(X)
+** of the value X, assuming that X has type TEXT.)^  If bentley_sqlite3_value_type(X)
 ** returns something other than SQLITE_TEXT, then the return value from
-** sqlite3_value_encoding(X) is meaningless.  ^Calls to
-** [sqlite3_value_text(X)], [sqlite3_value_text16(X)], [sqlite3_value_text16be(X)],
-** [sqlite3_value_text16le(X)], [sqlite3_value_bytes(X)], or
-** [sqlite3_value_bytes16(X)] might change the encoding of the value X and
-** thus change the return from subsequent calls to sqlite3_value_encoding(X).
+** bentley_sqlite3_value_encoding(X) is meaningless.  ^Calls to
+** [bentley_sqlite3_value_text(X)], [bentley_sqlite3_value_text16(X)], [bentley_sqlite3_value_text16be(X)],
+** [bentley_sqlite3_value_text16le(X)], [bentley_sqlite3_value_bytes(X)], or
+** [bentley_sqlite3_value_bytes16(X)] might change the encoding of the value X and
+** thus change the return from subsequent calls to bentley_sqlite3_value_encoding(X).
 **
 ** This routine is intended for used by applications that test and validate
 ** the SQLite implementation.  This routine is inquiring about the opaque
@@ -5946,43 +5946,43 @@ SQLITE_API int sqlite3_value_frombind(sqlite3_value*);
 ** not need to know what the internal state of an sqlite3_value object is and
 ** hence should not need to use this interface.
 */
-SQLITE_API int sqlite3_value_encoding(sqlite3_value*);
+SQLITE_API int bentley_sqlite3_value_encoding(sqlite3_value*);
 
 /*
 ** CAPI3REF: Finding The Subtype Of SQL Values
 ** METHOD: sqlite3_value
 **
-** The sqlite3_value_subtype(V) function returns the subtype for
+** The bentley_sqlite3_value_subtype(V) function returns the subtype for
 ** an [application-defined SQL function] argument V.  The subtype
 ** information can be used to pass a limited amount of context from
-** one SQL function to another.  Use the [sqlite3_result_subtype()]
+** one SQL function to another.  Use the [bentley_sqlite3_result_subtype()]
 ** routine to set the subtype for the return value of an SQL function.
 **
 ** Every [application-defined SQL function] that invokes this interface
 ** should include the [SQLITE_SUBTYPE] property in the text
-** encoding argument when the function is [sqlite3_create_function|registered].
-** If the [SQLITE_SUBTYPE] property is omitted, then sqlite3_value_subtype()
+** encoding argument when the function is [bentley_sqlite3_create_function|registered].
+** If the [SQLITE_SUBTYPE] property is omitted, then bentley_sqlite3_value_subtype()
 ** might return zero instead of the upstream subtype in some corner cases.
 */
-SQLITE_API unsigned int sqlite3_value_subtype(sqlite3_value*);
+SQLITE_API unsigned int bentley_sqlite3_value_subtype(sqlite3_value*);
 
 /*
 ** CAPI3REF: Copy And Free SQL Values
 ** METHOD: sqlite3_value
 **
-** ^The sqlite3_value_dup(V) interface makes a copy of the [sqlite3_value]
+** ^The bentley_sqlite3_value_dup(V) interface makes a copy of the [sqlite3_value]
 ** object D and returns a pointer to that copy.  ^The [sqlite3_value] returned
 ** is a [protected sqlite3_value] object even if the input is not.
-** ^The sqlite3_value_dup(V) interface returns NULL if V is NULL or if a
+** ^The bentley_sqlite3_value_dup(V) interface returns NULL if V is NULL or if a
 ** memory allocation fails. ^If V is a [pointer value], then the result
-** of sqlite3_value_dup(V) is a NULL value.
+** of bentley_sqlite3_value_dup(V) is a NULL value.
 **
-** ^The sqlite3_value_free(V) interface frees an [sqlite3_value] object
-** previously obtained from [sqlite3_value_dup()].  ^If V is a NULL pointer
-** then sqlite3_value_free(V) is a harmless no-op.
+** ^The bentley_sqlite3_value_free(V) interface frees an [sqlite3_value] object
+** previously obtained from [bentley_sqlite3_value_dup()].  ^If V is a NULL pointer
+** then bentley_sqlite3_value_free(V) is a harmless no-op.
 */
-SQLITE_API sqlite3_value *sqlite3_value_dup(const sqlite3_value*);
-SQLITE_API void sqlite3_value_free(sqlite3_value*);
+SQLITE_API sqlite3_value *bentley_sqlite3_value_dup(const sqlite3_value*);
+SQLITE_API void bentley_sqlite3_value_free(sqlite3_value*);
 
 /*
 ** CAPI3REF: Obtain Aggregate Function Context
@@ -5991,33 +5991,33 @@ SQLITE_API void sqlite3_value_free(sqlite3_value*);
 ** Implementations of aggregate SQL functions use this
 ** routine to allocate memory for storing their state.
 **
-** ^The first time the sqlite3_aggregate_context(C,N) routine is called
+** ^The first time the bentley_sqlite3_aggregate_context(C,N) routine is called
 ** for a particular aggregate function, SQLite allocates
 ** N bytes of memory, zeroes out that memory, and returns a pointer
 ** to the new memory. ^On second and subsequent calls to
-** sqlite3_aggregate_context() for the same aggregate function instance,
+** bentley_sqlite3_aggregate_context() for the same aggregate function instance,
 ** the same buffer is returned.  Sqlite3_aggregate_context() is normally
 ** called once for each invocation of the xStep callback and then one
 ** last time when the xFinal callback is invoked.  ^(When no rows match
 ** an aggregate query, the xStep() callback of the aggregate function
 ** implementation is never called and xFinal() is called exactly once.
-** In those cases, sqlite3_aggregate_context() might be called for the
+** In those cases, bentley_sqlite3_aggregate_context() might be called for the
 ** first time from within xFinal().)^
 **
-** ^The sqlite3_aggregate_context(C,N) routine returns a NULL pointer
+** ^The bentley_sqlite3_aggregate_context(C,N) routine returns a NULL pointer
 ** when first called if N is less than or equal to zero or if a memory
 ** allocation error occurs.
 **
-** ^(The amount of space allocated by sqlite3_aggregate_context(C,N) is
+** ^(The amount of space allocated by bentley_sqlite3_aggregate_context(C,N) is
 ** determined by the N parameter on first successful call.  Changing the
-** value of N in any subsequent call to sqlite3_aggregate_context() within
+** value of N in any subsequent call to bentley_sqlite3_aggregate_context() within
 ** the same aggregate function instance will not resize the memory
 ** allocation.)^  Within the xFinal callback, it is customary to set
-** N=0 in calls to sqlite3_aggregate_context(C,N) so that no
+** N=0 in calls to bentley_sqlite3_aggregate_context(C,N) so that no
 ** pointless memory allocations occur.
 **
 ** ^SQLite automatically frees the memory allocated by
-** sqlite3_aggregate_context() when the aggregate query concludes.
+** bentley_sqlite3_aggregate_context() when the aggregate query concludes.
 **
 ** The first parameter must be a copy of the
 ** [sqlite3_context | SQL function context] that is the first parameter
@@ -6027,34 +6027,34 @@ SQLITE_API void sqlite3_value_free(sqlite3_value*);
 ** This routine must be called from the same thread in which
 ** the aggregate SQL function is running.
 */
-SQLITE_API void *sqlite3_aggregate_context(sqlite3_context*, int nBytes);
+SQLITE_API void *bentley_sqlite3_aggregate_context(sqlite3_context*, int nBytes);
 
 /*
 ** CAPI3REF: User Data For Functions
 ** METHOD: sqlite3_context
 **
-** ^The sqlite3_user_data() interface returns a copy of
+** ^The bentley_sqlite3_user_data() interface returns a copy of
 ** the pointer that was the pUserData parameter (the 5th parameter)
-** of the [sqlite3_create_function()]
-** and [sqlite3_create_function16()] routines that originally
+** of the [bentley_sqlite3_create_function()]
+** and [bentley_sqlite3_create_function16()] routines that originally
 ** registered the application defined function.
 **
 ** This routine must be called from the same thread in which
 ** the application-defined function is running.
 */
-SQLITE_API void *sqlite3_user_data(sqlite3_context*);
+SQLITE_API void *bentley_sqlite3_user_data(sqlite3_context*);
 
 /*
 ** CAPI3REF: Database Connection For Functions
 ** METHOD: sqlite3_context
 **
-** ^The sqlite3_context_db_handle() interface returns a copy of
+** ^The bentley_sqlite3_context_db_handle() interface returns a copy of
 ** the pointer to the [database connection] (the 1st parameter)
-** of the [sqlite3_create_function()]
-** and [sqlite3_create_function16()] routines that originally
+** of the [bentley_sqlite3_create_function()]
+** and [bentley_sqlite3_create_function16()] routines that originally
 ** registered the application defined function.
 */
-SQLITE_API sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
+SQLITE_API sqlite3 *bentley_sqlite3_context_db_handle(sqlite3_context*);
 
 /*
 ** CAPI3REF: Function Auxiliary Data
@@ -6071,42 +6071,42 @@ SQLITE_API sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
 ** the compiled regular expression can be reused on multiple
 ** invocations of the same function.
 **
-** ^The sqlite3_get_auxdata(C,N) interface returns a pointer to the auxiliary data
-** associated by the sqlite3_set_auxdata(C,N,P,X) function with the Nth argument
+** ^The bentley_sqlite3_get_auxdata(C,N) interface returns a pointer to the auxiliary data
+** associated by the bentley_sqlite3_set_auxdata(C,N,P,X) function with the Nth argument
 ** value to the application-defined function.  ^N is zero for the left-most
 ** function argument.  ^If there is no auxiliary data
-** associated with the function argument, the sqlite3_get_auxdata(C,N) interface
+** associated with the function argument, the bentley_sqlite3_get_auxdata(C,N) interface
 ** returns a NULL pointer.
 **
-** ^The sqlite3_set_auxdata(C,N,P,X) interface saves P as auxiliary data for the
+** ^The bentley_sqlite3_set_auxdata(C,N,P,X) interface saves P as auxiliary data for the
 ** N-th argument of the application-defined function.  ^Subsequent
-** calls to sqlite3_get_auxdata(C,N) return P from the most recent
-** sqlite3_set_auxdata(C,N,P,X) call if the auxiliary data is still valid or
+** calls to bentley_sqlite3_get_auxdata(C,N) return P from the most recent
+** bentley_sqlite3_set_auxdata(C,N,P,X) call if the auxiliary data is still valid or
 ** NULL if the auxiliary data has been discarded.
-** ^After each call to sqlite3_set_auxdata(C,N,P,X) where X is not NULL,
+** ^After each call to bentley_sqlite3_set_auxdata(C,N,P,X) where X is not NULL,
 ** SQLite will invoke the destructor function X with parameter P exactly
 ** once, when the auxiliary data is discarded.
 ** SQLite is free to discard the auxiliary data at any time, including: <ul>
 ** <li> ^(when the corresponding function parameter changes)^, or
-** <li> ^(when [sqlite3_reset()] or [sqlite3_finalize()] is called for the
+** <li> ^(when [bentley_sqlite3_reset()] or [bentley_sqlite3_finalize()] is called for the
 **      SQL statement)^, or
-** <li> ^(when sqlite3_set_auxdata() is invoked again on the same
+** <li> ^(when bentley_sqlite3_set_auxdata() is invoked again on the same
 **       parameter)^, or
-** <li> ^(during the original sqlite3_set_auxdata() call when a memory
+** <li> ^(during the original bentley_sqlite3_set_auxdata() call when a memory
 **      allocation error occurs.)^
-** <li> ^(during the original sqlite3_set_auxdata() call if the function
+** <li> ^(during the original bentley_sqlite3_set_auxdata() call if the function
 **      is evaluated during query planning instead of during query execution,
 **      as sometimes happens with [SQLITE_ENABLE_STAT4].)^ </ul>
 **
 ** Note the last two bullets in particular.  The destructor X in
-** sqlite3_set_auxdata(C,N,P,X) might be called immediately, before the
-** sqlite3_set_auxdata() interface even returns.  Hence sqlite3_set_auxdata()
+** bentley_sqlite3_set_auxdata(C,N,P,X) might be called immediately, before the
+** bentley_sqlite3_set_auxdata() interface even returns.  Hence bentley_sqlite3_set_auxdata()
 ** should be called near the end of the function implementation and the
 ** function implementation should not make any use of P after
-** sqlite3_set_auxdata() has been called.  Furthermore, a call to
-** sqlite3_get_auxdata() that occurs immediately after a corresponding call
-** to sqlite3_set_auxdata() might still return NULL if an out-of-memory
-** condition occurred during the sqlite3_set_auxdata() call or if the
+** bentley_sqlite3_set_auxdata() has been called.  Furthermore, a call to
+** bentley_sqlite3_get_auxdata() that occurs immediately after a corresponding call
+** to bentley_sqlite3_set_auxdata() might still return NULL if an out-of-memory
+** condition occurred during the bentley_sqlite3_set_auxdata() call or if the
 ** function is being evaluated during query planning rather than during
 ** query execution.
 **
@@ -6121,10 +6121,10 @@ SQLITE_API sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
 ** These routines must be called from the same thread in which
 ** the SQL function is running.
 **
-** See also: [sqlite3_get_clientdata()] and [sqlite3_set_clientdata()].
+** See also: [bentley_sqlite3_get_clientdata()] and [bentley_sqlite3_set_clientdata()].
 */
-SQLITE_API void *sqlite3_get_auxdata(sqlite3_context*, int N);
-SQLITE_API void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
+SQLITE_API void *bentley_sqlite3_get_auxdata(sqlite3_context*, int N);
+SQLITE_API void bentley_sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 
 /*
 ** CAPI3REF: Database Connection Client Data
@@ -6132,19 +6132,19 @@ SQLITE_API void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(voi
 **
 ** These functions are used to associate one or more named pointers
 ** with a [database connection].
-** A call to sqlite3_set_clientdata(D,N,P,X) causes the pointer P
+** A call to bentley_sqlite3_set_clientdata(D,N,P,X) causes the pointer P
 ** to be attached to [database connection] D using name N.  Subsequent
-** calls to sqlite3_get_clientdata(D,N) will return a copy of pointer P
+** calls to bentley_sqlite3_get_clientdata(D,N) will return a copy of pointer P
 ** or a NULL pointer if there were no prior calls to
-** sqlite3_set_clientdata() with the same values of D and N.
+** bentley_sqlite3_set_clientdata() with the same values of D and N.
 ** Names are compared using strcmp() and are thus case sensitive.
 **
 ** If P and X are both non-NULL, then the destructor X is invoked with
 ** argument P on the first of the following occurrences:
 ** <ul>
 ** <li> An out-of-memory error occurs during the call to
-**      sqlite3_set_clientdata() which attempts to register pointer P.
-** <li> A subsequent call to sqlite3_set_clientdata(D,N,P,X) is made
+**      bentley_sqlite3_set_clientdata() which attempts to register pointer P.
+** <li> A subsequent call to bentley_sqlite3_set_clientdata(D,N,P,X) is made
 **      with the same D and N parameters.
 ** <li> The database connection closes.  SQLite does not make any guarantees
 **      about the order in which destructors are called, only that all
@@ -6177,16 +6177,16 @@ SQLITE_API void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(voi
 ** Database connection client data is only available for SQLite
 ** version 3.44.0 ([dateof:3.44.0]) and later.
 **
-** See also: [sqlite3_set_auxdata()] and [sqlite3_get_auxdata()].
+** See also: [bentley_sqlite3_set_auxdata()] and [bentley_sqlite3_get_auxdata()].
 */
-SQLITE_API void *sqlite3_get_clientdata(sqlite3*,const char*);
-SQLITE_API int sqlite3_set_clientdata(sqlite3*, const char*, void*, void(*)(void*));
+SQLITE_API void *bentley_sqlite3_get_clientdata(sqlite3*,const char*);
+SQLITE_API int bentley_sqlite3_set_clientdata(sqlite3*, const char*, void*, void(*)(void*));
 
 /*
 ** CAPI3REF: Constants Defining Special Destructor Behavior
 **
 ** These are special values for the destructor that is passed in as the
-** final argument to routines like [sqlite3_result_blob()].  ^If the destructor
+** final argument to routines like [bentley_sqlite3_result_blob()].  ^If the destructor
 ** argument is SQLITE_STATIC, it means that the content pointer is constant
 ** and will never change.  It does not need to be destroyed.  ^The
 ** SQLITE_TRANSIENT value means that the content will likely change in
@@ -6206,81 +6206,81 @@ typedef void (*sqlite3_destructor_type)(void*);
 **
 ** These routines are used by the xFunc or xFinal callbacks that
 ** implement SQL functions and aggregates.  See
-** [sqlite3_create_function()] and [sqlite3_create_function16()]
+** [bentley_sqlite3_create_function()] and [bentley_sqlite3_create_function16()]
 ** for additional information.
 **
 ** These functions work very much like the [parameter binding] family of
 ** functions used to bind values to host parameters in prepared statements.
 ** Refer to the [SQL parameter] documentation for additional information.
 **
-** ^The sqlite3_result_blob() interface sets the result from
+** ^The bentley_sqlite3_result_blob() interface sets the result from
 ** an application-defined function to be the BLOB whose content is pointed
 ** to by the second parameter and which is N bytes long where N is the
 ** third parameter.
 **
-** ^The sqlite3_result_zeroblob(C,N) and sqlite3_result_zeroblob64(C,N)
+** ^The bentley_sqlite3_result_zeroblob(C,N) and bentley_sqlite3_result_zeroblob64(C,N)
 ** interfaces set the result of the application-defined function to be
 ** a BLOB containing all zero bytes and N bytes in size.
 **
-** ^The sqlite3_result_double() interface sets the result from
+** ^The bentley_sqlite3_result_double() interface sets the result from
 ** an application-defined function to be a floating point value specified
 ** by its 2nd argument.
 **
-** ^The sqlite3_result_error() and sqlite3_result_error16() functions
+** ^The bentley_sqlite3_result_error() and bentley_sqlite3_result_error16() functions
 ** cause the implemented SQL function to throw an exception.
 ** ^SQLite uses the string pointed to by the
-** 2nd parameter of sqlite3_result_error() or sqlite3_result_error16()
+** 2nd parameter of bentley_sqlite3_result_error() or bentley_sqlite3_result_error16()
 ** as the text of an error message.  ^SQLite interprets the error
-** message string from sqlite3_result_error() as UTF-8. ^SQLite
-** interprets the string from sqlite3_result_error16() as UTF-16 using
-** the same [byte-order determination rules] as [sqlite3_bind_text16()].
-** ^If the third parameter to sqlite3_result_error()
-** or sqlite3_result_error16() is negative then SQLite takes as the error
+** message string from bentley_sqlite3_result_error() as UTF-8. ^SQLite
+** interprets the string from bentley_sqlite3_result_error16() as UTF-16 using
+** the same [byte-order determination rules] as [bentley_sqlite3_bind_text16()].
+** ^If the third parameter to bentley_sqlite3_result_error()
+** or bentley_sqlite3_result_error16() is negative then SQLite takes as the error
 ** message all text up through the first zero character.
-** ^If the third parameter to sqlite3_result_error() or
-** sqlite3_result_error16() is non-negative then SQLite takes that many
+** ^If the third parameter to bentley_sqlite3_result_error() or
+** bentley_sqlite3_result_error16() is non-negative then SQLite takes that many
 ** bytes (not characters) from the 2nd parameter as the error message.
-** ^The sqlite3_result_error() and sqlite3_result_error16()
+** ^The bentley_sqlite3_result_error() and bentley_sqlite3_result_error16()
 ** routines make a private copy of the error message text before
 ** they return.  Hence, the calling function can deallocate or
 ** modify the text after they return without harm.
-** ^The sqlite3_result_error_code() function changes the error code
+** ^The bentley_sqlite3_result_error_code() function changes the error code
 ** returned by SQLite as a result of an error in a function.  ^By default,
-** the error code is SQLITE_ERROR.  ^A subsequent call to sqlite3_result_error()
-** or sqlite3_result_error16() resets the error code to SQLITE_ERROR.
+** the error code is SQLITE_ERROR.  ^A subsequent call to bentley_sqlite3_result_error()
+** or bentley_sqlite3_result_error16() resets the error code to SQLITE_ERROR.
 **
-** ^The sqlite3_result_error_toobig() interface causes SQLite to throw an
+** ^The bentley_sqlite3_result_error_toobig() interface causes SQLite to throw an
 ** error indicating that a string or BLOB is too long to represent.
 **
-** ^The sqlite3_result_error_nomem() interface causes SQLite to throw an
+** ^The bentley_sqlite3_result_error_nomem() interface causes SQLite to throw an
 ** error indicating that a memory allocation failed.
 **
-** ^The sqlite3_result_int() interface sets the return value
+** ^The bentley_sqlite3_result_int() interface sets the return value
 ** of the application-defined function to be the 32-bit signed integer
 ** value given in the 2nd argument.
-** ^The sqlite3_result_int64() interface sets the return value
+** ^The bentley_sqlite3_result_int64() interface sets the return value
 ** of the application-defined function to be the 64-bit signed integer
 ** value given in the 2nd argument.
 **
-** ^The sqlite3_result_null() interface sets the return value
+** ^The bentley_sqlite3_result_null() interface sets the return value
 ** of the application-defined function to be NULL.
 **
-** ^The sqlite3_result_text(), sqlite3_result_text16(),
-** sqlite3_result_text16le(), and sqlite3_result_text16be() interfaces
+** ^The bentley_sqlite3_result_text(), bentley_sqlite3_result_text16(),
+** bentley_sqlite3_result_text16le(), and bentley_sqlite3_result_text16be() interfaces
 ** set the return value of the application-defined function to be
 ** a text string which is represented as UTF-8, UTF-16 native byte order,
 ** UTF-16 little endian, or UTF-16 big endian, respectively.
-** ^The sqlite3_result_text64() interface sets the return value of an
+** ^The bentley_sqlite3_result_text64() interface sets the return value of an
 ** application-defined function to be a text string in an encoding
 ** specified by the fifth (and last) parameter, which must be one
 ** of [SQLITE_UTF8], [SQLITE_UTF16], [SQLITE_UTF16BE], or [SQLITE_UTF16LE].
 ** ^SQLite takes the text result from the application from
-** the 2nd parameter of the sqlite3_result_text* interfaces.
-** ^If the 3rd parameter to any of the sqlite3_result_text* interfaces
-** other than sqlite3_result_text64() is negative, then SQLite computes
+** the 2nd parameter of the bentley_sqlite3_result_text* interfaces.
+** ^If the 3rd parameter to any of the bentley_sqlite3_result_text* interfaces
+** other than bentley_sqlite3_result_text64() is negative, then SQLite computes
 ** the string length itself by searching the 2nd parameter for the first
 ** zero character.
-** ^If the 3rd parameter to the sqlite3_result_text* interfaces
+** ^If the 3rd parameter to the bentley_sqlite3_result_text* interfaces
 ** is non-negative, then as many bytes (not characters) of the text
 ** pointed to by the 2nd parameter are taken as the application-defined
 ** function result.  If the 3rd parameter is non-negative, then it
@@ -6289,93 +6289,93 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** in the string at a byte offset that is less than the value of the 3rd
 ** parameter, then the resulting string will contain embedded NULs and the
 ** result of expressions operating on strings with embedded NULs is undefined.
-** ^If the 4th parameter to the sqlite3_result_text* interfaces
-** or sqlite3_result_blob is a non-NULL pointer, then SQLite calls that
+** ^If the 4th parameter to the bentley_sqlite3_result_text* interfaces
+** or bentley_sqlite3_result_blob is a non-NULL pointer, then SQLite calls that
 ** function as the destructor on the text or BLOB result when it has
 ** finished using that result.
-** ^If the 4th parameter to the sqlite3_result_text* interfaces or to
-** sqlite3_result_blob is the special constant SQLITE_STATIC, then SQLite
+** ^If the 4th parameter to the bentley_sqlite3_result_text* interfaces or to
+** bentley_sqlite3_result_blob is the special constant SQLITE_STATIC, then SQLite
 ** assumes that the text or BLOB result is in constant space and does not
 ** copy the content of the parameter nor call a destructor on the content
 ** when it has finished using that result.
-** ^If the 4th parameter to the sqlite3_result_text* interfaces
-** or sqlite3_result_blob is the special constant SQLITE_TRANSIENT
+** ^If the 4th parameter to the bentley_sqlite3_result_text* interfaces
+** or bentley_sqlite3_result_blob is the special constant SQLITE_TRANSIENT
 ** then SQLite makes a copy of the result into space obtained
-** from [sqlite3_malloc()] before it returns.
+** from [bentley_sqlite3_malloc()] before it returns.
 **
-** ^For the sqlite3_result_text16(), sqlite3_result_text16le(), and
-** sqlite3_result_text16be() routines, and for sqlite3_result_text64()
+** ^For the bentley_sqlite3_result_text16(), bentley_sqlite3_result_text16le(), and
+** bentley_sqlite3_result_text16be() routines, and for bentley_sqlite3_result_text64()
 ** when the encoding is not UTF8, if the input UTF16 begins with a
 ** byte-order mark (BOM, U+FEFF) then the BOM is removed from the
 ** string and the rest of the string is interpreted according to the
 ** byte-order specified by the BOM.  ^The byte-order specified by
 ** the BOM at the beginning of the text overrides the byte-order
 ** specified by the interface procedure.  ^So, for example, if
-** sqlite3_result_text16le() is invoked with text that begins
+** bentley_sqlite3_result_text16le() is invoked with text that begins
 ** with bytes 0xfe, 0xff (a big-endian byte-order mark) then the
 ** first two bytes of input are skipped and the remaining input
 ** is interpreted as UTF16BE text.
 **
-** ^For UTF16 input text to the sqlite3_result_text16(),
-** sqlite3_result_text16be(), sqlite3_result_text16le(), and
-** sqlite3_result_text64() routines, if the text contains invalid
+** ^For UTF16 input text to the bentley_sqlite3_result_text16(),
+** bentley_sqlite3_result_text16be(), bentley_sqlite3_result_text16le(), and
+** bentley_sqlite3_result_text64() routines, if the text contains invalid
 ** UTF16 characters, the invalid characters might be converted
 ** into the unicode replacement character, U+FFFD.
 **
-** ^The sqlite3_result_value() interface sets the result of
+** ^The bentley_sqlite3_result_value() interface sets the result of
 ** the application-defined function to be a copy of the
 ** [unprotected sqlite3_value] object specified by the 2nd parameter.  ^The
-** sqlite3_result_value() interface makes a copy of the [sqlite3_value]
+** bentley_sqlite3_result_value() interface makes a copy of the [sqlite3_value]
 ** so that the [sqlite3_value] specified in the parameter may change or
-** be deallocated after sqlite3_result_value() returns without harm.
+** be deallocated after bentley_sqlite3_result_value() returns without harm.
 ** ^A [protected sqlite3_value] object may always be used where an
 ** [unprotected sqlite3_value] object is required, so either
 ** kind of [sqlite3_value] object can be used with this interface.
 **
-** ^The sqlite3_result_pointer(C,P,T,D) interface sets the result to an
-** SQL NULL value, just like [sqlite3_result_null(C)], except that it
+** ^The bentley_sqlite3_result_pointer(C,P,T,D) interface sets the result to an
+** SQL NULL value, just like [bentley_sqlite3_result_null(C)], except that it
 ** also associates the host-language pointer P or type T with that
 ** NULL value such that the pointer can be retrieved within an
-** [application-defined SQL function] using [sqlite3_value_pointer()].
+** [application-defined SQL function] using [bentley_sqlite3_value_pointer()].
 ** ^If the D parameter is not NULL, then it is a pointer to a destructor
 ** for the P parameter.  ^SQLite invokes D with P as its only argument
 ** when SQLite is finished with P.  The T parameter should be a static
-** string and preferably a string literal. The sqlite3_result_pointer()
+** string and preferably a string literal. The bentley_sqlite3_result_pointer()
 ** routine is part of the [pointer passing interface] added for SQLite 3.20.0.
 **
 ** If these routines are called from within the different thread
 ** than the one containing the application-defined function that received
 ** the [sqlite3_context] pointer, the results are undefined.
 */
-SQLITE_API void sqlite3_result_blob(sqlite3_context*, const void*, int, void(*)(void*));
-SQLITE_API void sqlite3_result_blob64(sqlite3_context*,const void*,
+SQLITE_API void bentley_sqlite3_result_blob(sqlite3_context*, const void*, int, void(*)(void*));
+SQLITE_API void bentley_sqlite3_result_blob64(sqlite3_context*,const void*,
                            sqlite3_uint64,void(*)(void*));
-SQLITE_API void sqlite3_result_double(sqlite3_context*, double);
-SQLITE_API void sqlite3_result_error(sqlite3_context*, const char*, int);
-SQLITE_API void sqlite3_result_error16(sqlite3_context*, const void*, int);
-SQLITE_API void sqlite3_result_error_toobig(sqlite3_context*);
-SQLITE_API void sqlite3_result_error_nomem(sqlite3_context*);
-SQLITE_API void sqlite3_result_error_code(sqlite3_context*, int);
-SQLITE_API void sqlite3_result_int(sqlite3_context*, int);
-SQLITE_API void sqlite3_result_int64(sqlite3_context*, sqlite3_int64);
-SQLITE_API void sqlite3_result_null(sqlite3_context*);
-SQLITE_API void sqlite3_result_text(sqlite3_context*, const char*, int, void(*)(void*));
-SQLITE_API void sqlite3_result_text64(sqlite3_context*, const char*,sqlite3_uint64,
+SQLITE_API void bentley_sqlite3_result_double(sqlite3_context*, double);
+SQLITE_API void bentley_sqlite3_result_error(sqlite3_context*, const char*, int);
+SQLITE_API void bentley_sqlite3_result_error16(sqlite3_context*, const void*, int);
+SQLITE_API void bentley_sqlite3_result_error_toobig(sqlite3_context*);
+SQLITE_API void bentley_sqlite3_result_error_nomem(sqlite3_context*);
+SQLITE_API void bentley_sqlite3_result_error_code(sqlite3_context*, int);
+SQLITE_API void bentley_sqlite3_result_int(sqlite3_context*, int);
+SQLITE_API void bentley_sqlite3_result_int64(sqlite3_context*, sqlite3_int64);
+SQLITE_API void bentley_sqlite3_result_null(sqlite3_context*);
+SQLITE_API void bentley_sqlite3_result_text(sqlite3_context*, const char*, int, void(*)(void*));
+SQLITE_API void bentley_sqlite3_result_text64(sqlite3_context*, const char*,sqlite3_uint64,
                            void(*)(void*), unsigned char encoding);
-SQLITE_API void sqlite3_result_text16(sqlite3_context*, const void*, int, void(*)(void*));
-SQLITE_API void sqlite3_result_text16le(sqlite3_context*, const void*, int,void(*)(void*));
-SQLITE_API void sqlite3_result_text16be(sqlite3_context*, const void*, int,void(*)(void*));
-SQLITE_API void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
-SQLITE_API void sqlite3_result_pointer(sqlite3_context*, void*,const char*,void(*)(void*));
-SQLITE_API void sqlite3_result_zeroblob(sqlite3_context*, int n);
-SQLITE_API int sqlite3_result_zeroblob64(sqlite3_context*, sqlite3_uint64 n);
+SQLITE_API void bentley_sqlite3_result_text16(sqlite3_context*, const void*, int, void(*)(void*));
+SQLITE_API void bentley_sqlite3_result_text16le(sqlite3_context*, const void*, int,void(*)(void*));
+SQLITE_API void bentley_sqlite3_result_text16be(sqlite3_context*, const void*, int,void(*)(void*));
+SQLITE_API void bentley_sqlite3_result_value(sqlite3_context*, sqlite3_value*);
+SQLITE_API void bentley_sqlite3_result_pointer(sqlite3_context*, void*,const char*,void(*)(void*));
+SQLITE_API void bentley_sqlite3_result_zeroblob(sqlite3_context*, int n);
+SQLITE_API int bentley_sqlite3_result_zeroblob64(sqlite3_context*, sqlite3_uint64 n);
 
 
 /*
 ** CAPI3REF: Setting The Subtype Of An SQL Function
 ** METHOD: sqlite3_context
 **
-** The sqlite3_result_subtype(C,T) function causes the subtype of
+** The bentley_sqlite3_result_subtype(C,T) function causes the subtype of
 ** the result from the [application-defined SQL function] with
 ** [sqlite3_context] C to be the value T.  Only the lower 8 bits
 ** of the subtype T are preserved in current versions of SQLite;
@@ -6386,18 +6386,18 @@ SQLITE_API int sqlite3_result_zeroblob64(sqlite3_context*, sqlite3_uint64 n);
 ** Every [application-defined SQL function] that invokes this interface
 ** should include the [SQLITE_RESULT_SUBTYPE] property in its
 ** text encoding argument when the SQL function is
-** [sqlite3_create_function|registered].  If the [SQLITE_RESULT_SUBTYPE]
-** property is omitted from the function that invokes sqlite3_result_subtype(),
-** then in some cases the sqlite3_result_subtype() might fail to set
+** [bentley_sqlite3_create_function|registered].  If the [SQLITE_RESULT_SUBTYPE]
+** property is omitted from the function that invokes bentley_sqlite3_result_subtype(),
+** then in some cases the bentley_sqlite3_result_subtype() might fail to set
 ** the result subtype.
 **
 ** If SQLite is compiled with -DSQLITE_STRICT_SUBTYPE=1, then any
-** SQL function that invokes the sqlite3_result_subtype() interface
+** SQL function that invokes the bentley_sqlite3_result_subtype() interface
 ** and that does not have the SQLITE_RESULT_SUBTYPE property will raise
 ** an error.  Future versions of SQLite might enable -DSQLITE_STRICT_SUBTYPE=1
 ** by default.
 */
-SQLITE_API void sqlite3_result_subtype(sqlite3_context*,unsigned int);
+SQLITE_API void bentley_sqlite3_result_subtype(sqlite3_context*,unsigned int);
 
 /*
 ** CAPI3REF: Define New Collating Sequences
@@ -6407,9 +6407,9 @@ SQLITE_API void sqlite3_result_subtype(sqlite3_context*,unsigned int);
 ** with the [database connection] specified as the first argument.
 **
 ** ^The name of the collation is a UTF-8 string
-** for sqlite3_create_collation() and sqlite3_create_collation_v2()
-** and a UTF-16 string in native byte order for sqlite3_create_collation16().
-** ^Collation names that compare equal according to [sqlite3_strnicmp()] are
+** for bentley_sqlite3_create_collation() and bentley_sqlite3_create_collation_v2()
+** and a UTF-16 string in native byte order for bentley_sqlite3_create_collation16().
+** ^Collation names that compare equal according to [bentley_sqlite3_strnicmp()] are
 ** considered to be the same name.
 **
 ** ^(The third argument (eTextRep) must be one of the constants:
@@ -6462,32 +6462,32 @@ SQLITE_API void sqlite3_result_subtype(sqlite3_context*,unsigned int);
 ** collating function is registered and used, then the behavior of SQLite
 ** is undefined.
 **
-** ^The sqlite3_create_collation_v2() works like sqlite3_create_collation()
+** ^The bentley_sqlite3_create_collation_v2() works like bentley_sqlite3_create_collation()
 ** with the addition that the xDestroy callback is invoked on pArg when
 ** the collating function is deleted.
 ** ^Collating functions are deleted when they are overridden by later
 ** calls to the collation creation functions or when the
-** [database connection] is closed using [sqlite3_close()].
+** [database connection] is closed using [bentley_sqlite3_close()].
 **
 ** ^The xDestroy callback is <u>not</u> called if the
-** sqlite3_create_collation_v2() function fails.  Applications that invoke
-** sqlite3_create_collation_v2() with a non-NULL xDestroy argument should
+** bentley_sqlite3_create_collation_v2() function fails.  Applications that invoke
+** bentley_sqlite3_create_collation_v2() with a non-NULL xDestroy argument should
 ** check the return code and dispose of the application data pointer
 ** themselves rather than expecting SQLite to deal with it for them.
 ** This is different from every other SQLite interface.  The inconsistency
 ** is unfortunate but cannot be changed without breaking backwards
 ** compatibility.
 **
-** See also:  [sqlite3_collation_needed()] and [sqlite3_collation_needed16()].
+** See also:  [bentley_sqlite3_collation_needed()] and [bentley_sqlite3_collation_needed16()].
 */
-SQLITE_API int sqlite3_create_collation(
+SQLITE_API int bentley_sqlite3_create_collation(
   sqlite3*,
   const char *zName,
   int eTextRep,
   void *pArg,
   int(*xCompare)(void*,int,const void*,int,const void*)
 );
-SQLITE_API int sqlite3_create_collation_v2(
+SQLITE_API int bentley_sqlite3_create_collation_v2(
   sqlite3*,
   const char *zName,
   int eTextRep,
@@ -6495,7 +6495,7 @@ SQLITE_API int sqlite3_create_collation_v2(
   int(*xCompare)(void*,int,const void*,int,const void*),
   void(*xDestroy)(void*)
 );
-SQLITE_API int sqlite3_create_collation16(
+SQLITE_API int bentley_sqlite3_create_collation16(
   sqlite3*,
   const void *zName,
   int eTextRep,
@@ -6512,30 +6512,30 @@ SQLITE_API int sqlite3_create_collation16(
 ** [database connection] to be invoked whenever an undefined collation
 ** sequence is required.
 **
-** ^If the function is registered using the sqlite3_collation_needed() API,
+** ^If the function is registered using the bentley_sqlite3_collation_needed() API,
 ** then it is passed the names of undefined collation sequences as strings
-** encoded in UTF-8. ^If sqlite3_collation_needed16() is used,
+** encoded in UTF-8. ^If bentley_sqlite3_collation_needed16() is used,
 ** the names are passed as UTF-16 in machine native byte order.
 ** ^A call to either function replaces the existing collation-needed callback.
 **
 ** ^(When the callback is invoked, the first argument passed is a copy
-** of the second argument to sqlite3_collation_needed() or
-** sqlite3_collation_needed16().  The second argument is the database
+** of the second argument to bentley_sqlite3_collation_needed() or
+** bentley_sqlite3_collation_needed16().  The second argument is the database
 ** connection.  The third argument is one of [SQLITE_UTF8], [SQLITE_UTF16BE],
 ** or [SQLITE_UTF16LE], indicating the most desirable form of the collation
 ** sequence function required.  The fourth parameter is the name of the
 ** required collation sequence.)^
 **
 ** The callback function should register the desired collation using
-** [sqlite3_create_collation()], [sqlite3_create_collation16()], or
-** [sqlite3_create_collation_v2()].
+** [bentley_sqlite3_create_collation()], [bentley_sqlite3_create_collation16()], or
+** [bentley_sqlite3_create_collation_v2()].
 */
-SQLITE_API int sqlite3_collation_needed(
+SQLITE_API int bentley_sqlite3_collation_needed(
   sqlite3*,
   void*,
   void(*)(void*,sqlite3*,int eTextRep,const char*)
 );
-SQLITE_API int sqlite3_collation_needed16(
+SQLITE_API int bentley_sqlite3_collation_needed16(
   sqlite3*,
   void*,
   void(*)(void*,sqlite3*,int eTextRep,const void*)
@@ -6554,7 +6554,7 @@ SQLITE_API void sqlite3_activate_cerod(
 /*
 ** CAPI3REF: Suspend Execution For A Short Time
 **
-** The sqlite3_sleep() function causes the current thread to suspend execution
+** The bentley_sqlite3_sleep() function causes the current thread to suspend execution
 ** for at least a number of milliseconds specified in its parameter.
 **
 ** If the operating system does not support sleep requests with
@@ -6565,17 +6565,17 @@ SQLITE_API void sqlite3_activate_cerod(
 ** ^SQLite implements this interface by calling the xSleep()
 ** method of the default [sqlite3_vfs] object.  If the xSleep() method
 ** of the default VFS is not implemented correctly, or not implemented at
-** all, then the behavior of sqlite3_sleep() may deviate from the description
+** all, then the behavior of bentley_sqlite3_sleep() may deviate from the description
 ** in the previous paragraphs.
 **
-** If a negative argument is passed to sqlite3_sleep() the results vary by
+** If a negative argument is passed to bentley_sqlite3_sleep() the results vary by
 ** VFS and operating system.  Some system treat a negative argument as an
 ** instruction to sleep forever.  Others understand it to mean do not sleep
 ** at all. ^In SQLite version 3.42.0 and later, a negative
-** argument passed into sqlite3_sleep() is changed to zero before it is relayed
+** argument passed into bentley_sqlite3_sleep() is changed to zero before it is relayed
 ** down into the xSleep method of the VFS.
 */
-SQLITE_API int sqlite3_sleep(int);
+SQLITE_API int bentley_sqlite3_sleep(int);
 
 /*
 ** CAPI3REF: Name Of The Folder Holding Temporary Files
@@ -6604,22 +6604,22 @@ SQLITE_API int sqlite3_sleep(int);
 ** thereafter.
 **
 ** ^The [temp_store_directory pragma] may modify this variable and cause
-** it to point to memory obtained from [sqlite3_malloc].  ^Furthermore,
+** it to point to memory obtained from [bentley_sqlite3_malloc].  ^Furthermore,
 ** the [temp_store_directory pragma] always assumes that any string
 ** that this variable points to is held in memory obtained from
-** [sqlite3_malloc] and the pragma may attempt to free that memory
-** using [sqlite3_free].
+** [bentley_sqlite3_malloc] and the pragma may attempt to free that memory
+** using [bentley_sqlite3_free].
 ** Hence, if this variable is modified directly, either it should be
-** made NULL or made to point to memory obtained from [sqlite3_malloc]
+** made NULL or made to point to memory obtained from [bentley_sqlite3_malloc]
 ** or else the use of the [temp_store_directory pragma] should be avoided.
 ** Except when requested by the [temp_store_directory pragma], SQLite
-** does not free the memory that sqlite3_temp_directory points to.  If
+** does not free the memory that bentley_sqlite3_temp_directory points to.  If
 ** the application wants that memory to be freed, it must do
 ** so itself, taking care to only do so after all [database connection]
 ** objects have been destroyed.
 **
 ** <b>Note to Windows Runtime users:</b>  The temporary directory must be set
-** prior to calling [sqlite3_open] or [sqlite3_open_v2].  Otherwise, various
+** prior to calling [bentley_sqlite3_open] or [bentley_sqlite3_open_v2].  Otherwise, various
 ** features that require the use of temporary files may fail.  Here is an
 ** example of how to do this using C++ with the Windows Runtime:
 **
@@ -6630,10 +6630,10 @@ SQLITE_API int sqlite3_sleep(int);
 ** memset(zPathBuf, 0, sizeof(zPathBuf));
 ** WideCharToMultiByte(CP_UTF8, 0, zPath, -1, zPathBuf, sizeof(zPathBuf),
 ** &nbsp;     NULL, NULL);
-** sqlite3_temp_directory = sqlite3_mprintf("%s", zPathBuf);
+** bentley_sqlite3_temp_directory = bentley_sqlite3_mprintf("%s", zPathBuf);
 ** </pre></blockquote>
 */
-SQLITE_API SQLITE_EXTERN char *sqlite3_temp_directory;
+SQLITE_API SQLITE_EXTERN char *bentley_sqlite3_temp_directory;
 
 /*
 ** CAPI3REF: Name Of The Folder Holding Database Files
@@ -6661,30 +6661,30 @@ SQLITE_API SQLITE_EXTERN char *sqlite3_temp_directory;
 ** thereafter.
 **
 ** ^The [data_store_directory pragma] may modify this variable and cause
-** it to point to memory obtained from [sqlite3_malloc].  ^Furthermore,
+** it to point to memory obtained from [bentley_sqlite3_malloc].  ^Furthermore,
 ** the [data_store_directory pragma] always assumes that any string
 ** that this variable points to is held in memory obtained from
-** [sqlite3_malloc] and the pragma may attempt to free that memory
-** using [sqlite3_free].
+** [bentley_sqlite3_malloc] and the pragma may attempt to free that memory
+** using [bentley_sqlite3_free].
 ** Hence, if this variable is modified directly, either it should be
-** made NULL or made to point to memory obtained from [sqlite3_malloc]
+** made NULL or made to point to memory obtained from [bentley_sqlite3_malloc]
 ** or else the use of the [data_store_directory pragma] should be avoided.
 */
-SQLITE_API SQLITE_EXTERN char *sqlite3_data_directory;
+SQLITE_API SQLITE_EXTERN char *bentley_sqlite3_data_directory;
 
 /*
 ** CAPI3REF: Win32 Specific Interface
 **
 ** These interfaces are available only on Windows.  The
 ** [sqlite3_win32_set_directory] interface is used to set the value associated
-** with the [sqlite3_temp_directory] or [sqlite3_data_directory] variable, to
+** with the [bentley_sqlite3_temp_directory] or [bentley_sqlite3_data_directory] variable, to
 ** zValue, depending on the value of the type parameter.  The zValue parameter
-** should be NULL to cause the previous value to be freed via [sqlite3_free];
-** a non-NULL value will be copied into memory obtained from [sqlite3_malloc]
+** should be NULL to cause the previous value to be freed via [bentley_sqlite3_free];
+** a non-NULL value will be copied into memory obtained from [bentley_sqlite3_malloc]
 ** prior to being used.  The [sqlite3_win32_set_directory] interface returns
 ** [SQLITE_OK] to indicate success, [SQLITE_ERROR] if the type is unsupported,
 ** or [SQLITE_NOMEM] if memory could not be allocated.  The value of the
-** [sqlite3_data_directory] variable is intended to act as a replacement for
+** [bentley_sqlite3_data_directory] variable is intended to act as a replacement for
 ** the current directory on the sub-platforms of Win32 where that concept is
 ** not present, e.g. WinRT and UWP.  The [sqlite3_win32_set_directory8] and
 ** [sqlite3_win32_set_directory16] interfaces behave exactly the same as the
@@ -6712,7 +6712,7 @@ SQLITE_API int sqlite3_win32_set_directory16(unsigned long type, const void *zVa
 ** KEYWORDS: {autocommit mode}
 ** METHOD: sqlite3
 **
-** ^The sqlite3_get_autocommit() interface returns non-zero or
+** ^The bentley_sqlite3_get_autocommit() interface returns non-zero or
 ** zero if the given database connection is or is not in autocommit mode,
 ** respectively.  ^Autocommit mode is on by default.
 ** ^Autocommit mode is disabled by a [BEGIN] statement.
@@ -6729,48 +6729,48 @@ SQLITE_API int sqlite3_win32_set_directory16(unsigned long type, const void *zVa
 ** connection while this routine is running, then the return value
 ** is undefined.
 */
-SQLITE_API int sqlite3_get_autocommit(sqlite3*);
+SQLITE_API int bentley_sqlite3_get_autocommit(sqlite3*);
 
 /*
 ** CAPI3REF: Find The Database Handle Of A Prepared Statement
 ** METHOD: sqlite3_stmt
 **
-** ^The sqlite3_db_handle interface returns the [database connection] handle
+** ^The bentley_sqlite3_db_handle interface returns the [database connection] handle
 ** to which a [prepared statement] belongs.  ^The [database connection]
-** returned by sqlite3_db_handle is the same [database connection]
+** returned by bentley_sqlite3_db_handle is the same [database connection]
 ** that was the first argument
-** to the [sqlite3_prepare_v2()] call (or its variants) that was used to
+** to the [bentley_sqlite3_prepare_v2()] call (or its variants) that was used to
 ** create the statement in the first place.
 */
-SQLITE_API sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
+SQLITE_API sqlite3 *bentley_sqlite3_db_handle(sqlite3_stmt*);
 
 /*
 ** CAPI3REF: Return The Schema Name For A Database Connection
 ** METHOD: sqlite3
 **
-** ^The sqlite3_db_name(D,N) interface returns a pointer to the schema name
+** ^The bentley_sqlite3_db_name(D,N) interface returns a pointer to the schema name
 ** for the N-th database on database connection D, or a NULL pointer of N is
 ** out of range.  An N value of 0 means the main database file.  An N of 1 is
 ** the "temp" schema.  Larger values of N correspond to various ATTACH-ed
 ** databases.
 **
-** Space to hold the string that is returned by sqlite3_db_name() is managed
+** Space to hold the string that is returned by bentley_sqlite3_db_name() is managed
 ** by SQLite itself.  The string might be deallocated by any operation that
 ** changes the schema, including [ATTACH] or [DETACH] or calls to
-** [sqlite3_serialize()] or [sqlite3_deserialize()], even operations that
+** [bentley_sqlite3_serialize()] or [bentley_sqlite3_deserialize()], even operations that
 ** occur on a different thread.  Applications that need to
 ** remember the string long-term should make their own copy.  Applications that
 ** are accessing the same database connection simultaneously on multiple
 ** threads should mutex-protect calls to this API and should make their own
 ** private copy of the result prior to releasing the mutex.
 */
-SQLITE_API const char *sqlite3_db_name(sqlite3 *db, int N);
+SQLITE_API const char *bentley_sqlite3_db_name(sqlite3 *db, int N);
 
 /*
 ** CAPI3REF: Return The Filename For A Database Connection
 ** METHOD: sqlite3
 **
-** ^The sqlite3_db_filename(D,N) interface returns a pointer to the filename
+** ^The bentley_sqlite3_db_filename(D,N) interface returns a pointer to the filename
 ** associated with database N of connection D.
 ** ^If there is no attached database N on the database
 ** connection D, or if database N is a temporary or in-memory database, then
@@ -6788,31 +6788,31 @@ SQLITE_API const char *sqlite3_db_name(sqlite3 *db, int N);
 ** If the filename pointer returned by this routine is not NULL, then it
 ** can be used as the filename input parameter to these routines:
 ** <ul>
-** <li> [sqlite3_uri_parameter()]
-** <li> [sqlite3_uri_boolean()]
-** <li> [sqlite3_uri_int64()]
-** <li> [sqlite3_filename_database()]
-** <li> [sqlite3_filename_journal()]
-** <li> [sqlite3_filename_wal()]
+** <li> [bentley_sqlite3_uri_parameter()]
+** <li> [bentley_sqlite3_uri_boolean()]
+** <li> [bentley_sqlite3_uri_int64()]
+** <li> [bentley_sqlite3_filename_database()]
+** <li> [bentley_sqlite3_filename_journal()]
+** <li> [bentley_sqlite3_filename_wal()]
 ** </ul>
 */
-SQLITE_API sqlite3_filename sqlite3_db_filename(sqlite3 *db, const char *zDbName);
+SQLITE_API sqlite3_filename bentley_sqlite3_db_filename(sqlite3 *db, const char *zDbName);
 
 /*
 ** CAPI3REF: Determine if a database is read-only
 ** METHOD: sqlite3
 **
-** ^The sqlite3_db_readonly(D,N) interface returns 1 if the database N
+** ^The bentley_sqlite3_db_readonly(D,N) interface returns 1 if the database N
 ** of connection D is read-only, 0 if it is read/write, or -1 if N is not
 ** the name of a database on connection D.
 */
-SQLITE_API int sqlite3_db_readonly(sqlite3 *db, const char *zDbName);
+SQLITE_API int bentley_sqlite3_db_readonly(sqlite3 *db, const char *zDbName);
 
 /*
 ** CAPI3REF: Determine the transaction state of a database
 ** METHOD: sqlite3
 **
-** ^The sqlite3_txn_state(D,S) interface returns the current
+** ^The bentley_sqlite3_txn_state(D,S) interface returns the current
 ** [transaction state] of schema S in database connection D.  ^If S is NULL,
 ** then the highest transaction state of any schema on database connection D
 ** is returned.  Transaction states are (in order of lowest to highest):
@@ -6821,17 +6821,17 @@ SQLITE_API int sqlite3_db_readonly(sqlite3 *db, const char *zDbName);
 ** <li value="1"> SQLITE_TXN_READ
 ** <li value="2"> SQLITE_TXN_WRITE
 ** </ol>
-** ^If the S argument to sqlite3_txn_state(D,S) is not the name of
+** ^If the S argument to bentley_sqlite3_txn_state(D,S) is not the name of
 ** a valid schema, then -1 is returned.
 */
-SQLITE_API int sqlite3_txn_state(sqlite3*,const char *zSchema);
+SQLITE_API int bentley_sqlite3_txn_state(sqlite3*,const char *zSchema);
 
 /*
-** CAPI3REF: Allowed return values from sqlite3_txn_state()
+** CAPI3REF: Allowed return values from bentley_sqlite3_txn_state()
 ** KEYWORDS: {transaction state}
 **
 ** These constants define the current transaction state of a database file.
-** ^The [sqlite3_txn_state(D,S)] interface returns one of these
+** ^The [bentley_sqlite3_txn_state(D,S)] interface returns one of these
 ** constants in order to describe the transaction state of schema S
 ** in [database connection] D.
 **
@@ -6870,28 +6870,28 @@ SQLITE_API int sqlite3_txn_state(sqlite3*,const char *zSchema);
 ** satisfies the conditions of this routine, it returns NULL.
 **
 ** The [database connection] pointer D in a call to
-** [sqlite3_next_stmt(D,S)] must refer to an open database
+** [bentley_sqlite3_next_stmt(D,S)] must refer to an open database
 ** connection and in particular must not be a NULL pointer.
 */
-SQLITE_API sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
+SQLITE_API sqlite3_stmt *bentley_sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Commit And Rollback Notification Callbacks
 ** METHOD: sqlite3
 **
-** ^The sqlite3_commit_hook() interface registers a callback
+** ^The bentley_sqlite3_commit_hook() interface registers a callback
 ** function to be invoked whenever a transaction is [COMMIT | committed].
-** ^Any callback set by a previous call to sqlite3_commit_hook()
+** ^Any callback set by a previous call to bentley_sqlite3_commit_hook()
 ** for the same database connection is overridden.
-** ^The sqlite3_rollback_hook() interface registers a callback
+** ^The bentley_sqlite3_rollback_hook() interface registers a callback
 ** function to be invoked whenever a transaction is [ROLLBACK | rolled back].
-** ^Any callback set by a previous call to sqlite3_rollback_hook()
+** ^Any callback set by a previous call to bentley_sqlite3_rollback_hook()
 ** for the same database connection is overridden.
 ** ^The pArg argument is passed through to the callback.
 ** ^If the callback on a commit hook function returns non-zero,
 ** then the commit is converted into a rollback.
 **
-** ^The sqlite3_commit_hook(D,C,P) and sqlite3_rollback_hook(D,C,P) functions
+** ^The bentley_sqlite3_commit_hook(D,C,P) and bentley_sqlite3_rollback_hook(D,C,P) functions
 ** return the P argument from the previous call of the same function
 ** on the same [database connection] D, or NULL for
 ** the first call for each function on D.
@@ -6900,10 +6900,10 @@ SQLITE_API sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 ** The callback implementation must not do anything that will modify
 ** the database connection that invoked the callback.  Any actions
 ** to modify the database connection must be deferred until after the
-** completion of the [sqlite3_step()] call that triggered the commit
+** completion of the [bentley_sqlite3_step()] call that triggered the commit
 ** or rollback hook in the first place.
 ** Note that running any other SQL statements, including SELECT statements,
-** or merely calling [sqlite3_prepare_v2()] and [sqlite3_step()] will modify
+** or merely calling [bentley_sqlite3_prepare_v2()] and [bentley_sqlite3_step()] will modify
 ** the database connections for the meaning of "modify" in this paragraph.
 **
 ** ^Registering a NULL function disables the callback.
@@ -6920,16 +6920,16 @@ SQLITE_API sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 ** ^The rollback callback is not invoked if a transaction is
 ** automatically rolled back because the database connection is closed.
 **
-** See also the [sqlite3_update_hook()] interface.
+** See also the [bentley_sqlite3_update_hook()] interface.
 */
-SQLITE_API void *sqlite3_commit_hook(sqlite3*, int(*)(void*), void*);
-SQLITE_API void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
+SQLITE_API void *bentley_sqlite3_commit_hook(sqlite3*, int(*)(void*), void*);
+SQLITE_API void *bentley_sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 
 /*
 ** CAPI3REF: Autovacuum Compaction Amount Callback
 ** METHOD: sqlite3
 **
-** ^The sqlite3_autovacuum_pages(D,C,P,X) interface registers a callback
+** ^The bentley_sqlite3_autovacuum_pages(D,C,P,X) interface registers a callback
 ** function C that is invoked prior to each autovacuum of the database
 ** file.  ^The callback is passed a copy of the generic data pointer (P),
 ** the schema-name of the attached database that is being autovacuumed,
@@ -6950,17 +6950,17 @@ SQLITE_API void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 ** files.  The callback function should be a simple function that
 ** does some arithmetic on its input parameters and returns a result.
 **
-** ^The X parameter to sqlite3_autovacuum_pages(D,C,P,X) is an optional
+** ^The X parameter to bentley_sqlite3_autovacuum_pages(D,C,P,X) is an optional
 ** destructor for the P parameter.  ^If X is not NULL, then X(P) is
 ** invoked whenever the database connection closes or when the callback
-** is overwritten by another invocation of sqlite3_autovacuum_pages().
+** is overwritten by another invocation of bentley_sqlite3_autovacuum_pages().
 **
 ** <p>^There is only one autovacuum pages callback per database connection.
-** ^Each call to the sqlite3_autovacuum_pages() interface overrides all
+** ^Each call to the bentley_sqlite3_autovacuum_pages() interface overrides all
 ** previous invocations for that database connection.  ^If the callback
-** argument (C) to sqlite3_autovacuum_pages(D,C,P,X) is a NULL pointer,
+** argument (C) to bentley_sqlite3_autovacuum_pages(D,C,P,X) is a NULL pointer,
 ** then the autovacuum steps callback is canceled.  The return value
-** from sqlite3_autovacuum_pages() is normally SQLITE_OK, but might
+** from bentley_sqlite3_autovacuum_pages() is normally SQLITE_OK, but might
 ** be some other error code if something goes wrong.  The current
 ** implementation will only return SQLITE_OK or SQLITE_MISUSE, but other
 ** return codes might be added in future releases.
@@ -6983,7 +6983,7 @@ SQLITE_API void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 ** &nbsp;   }
 ** </pre></blockquote>
 */
-SQLITE_API int sqlite3_autovacuum_pages(
+SQLITE_API int bentley_sqlite3_autovacuum_pages(
   sqlite3 *db,
   unsigned int(*)(void*,const char*,unsigned int,unsigned int,unsigned int),
   void*,
@@ -6995,7 +6995,7 @@ SQLITE_API int sqlite3_autovacuum_pages(
 ** CAPI3REF: Data Change Notification Callbacks
 ** METHOD: sqlite3
 **
-** ^The sqlite3_update_hook() interface registers a callback function
+** ^The bentley_sqlite3_update_hook() interface registers a callback function
 ** with the [database connection] identified by the first argument
 ** to be invoked whenever a row is updated, inserted or deleted in
 ** a [rowid table].
@@ -7005,7 +7005,7 @@ SQLITE_API int sqlite3_autovacuum_pages(
 ** ^The second argument is a pointer to the function to invoke when a
 ** row is updated, inserted or deleted in a rowid table.
 ** ^The first argument to the callback is a copy of the third argument
-** to sqlite3_update_hook().
+** to bentley_sqlite3_update_hook().
 ** ^The second callback argument is one of [SQLITE_INSERT], [SQLITE_DELETE],
 ** or [SQLITE_UPDATE], depending on the operation that caused the callback
 ** to be invoked.
@@ -7034,19 +7034,19 @@ SQLITE_API int sqlite3_autovacuum_pages(
 ** The update hook implementation must not do anything that will modify
 ** the database connection that invoked the update hook.  Any actions
 ** to modify the database connection must be deferred until after the
-** completion of the [sqlite3_step()] call that triggered the update hook.
-** Note that [sqlite3_prepare_v2()] and [sqlite3_step()] both modify their
+** completion of the [bentley_sqlite3_step()] call that triggered the update hook.
+** Note that [bentley_sqlite3_prepare_v2()] and [bentley_sqlite3_step()] both modify their
 ** database connections for the meaning of "modify" in this paragraph.
 **
-** ^The sqlite3_update_hook(D,C,P) function
+** ^The bentley_sqlite3_update_hook(D,C,P) function
 ** returns the P argument from the previous call
 ** on the same [database connection] D, or NULL for
 ** the first call on D.
 **
-** See also the [sqlite3_commit_hook()], [sqlite3_rollback_hook()],
-** and [sqlite3_preupdate_hook()] interfaces.
+** See also the [bentley_sqlite3_commit_hook()], [bentley_sqlite3_rollback_hook()],
+** and [bentley_sqlite3_preupdate_hook()] interfaces.
 */
-SQLITE_API void *sqlite3_update_hook(
+SQLITE_API void *bentley_sqlite3_update_hook(
   sqlite3*,
   void(*)(void *,int ,char const *,char const *,sqlite3_int64),
   void*
@@ -7071,7 +7071,7 @@ SQLITE_API void *sqlite3_update_hook(
 ** sharing was enabled or disabled for each thread separately.
 **
 ** ^(The cache sharing mode set by this interface effects all subsequent
-** calls to [sqlite3_open()], [sqlite3_open_v2()], and [sqlite3_open16()].
+** calls to [bentley_sqlite3_open()], [bentley_sqlite3_open_v2()], and [bentley_sqlite3_open16()].
 ** Existing database connections continue to use the sharing mode
 ** that was in effect at the time they were opened.)^
 **
@@ -7083,50 +7083,50 @@ SQLITE_API void *sqlite3_update_hook(
 ** continues to be provided for historical compatibility, but its use is
 ** discouraged.  Any use of shared cache is discouraged.  If shared cache
 ** must be used, it is recommended that shared cache only be enabled for
-** individual database connections using the [sqlite3_open_v2()] interface
+** individual database connections using the [bentley_sqlite3_open_v2()] interface
 ** with the [SQLITE_OPEN_SHAREDCACHE] flag.
 **
 ** Note: This method is disabled on MacOS X 10.7 and iOS version 5.0
 ** and will always return SQLITE_MISUSE. On those systems,
 ** shared cache mode should be enabled per-database connection via
-** [sqlite3_open_v2()] with [SQLITE_OPEN_SHAREDCACHE].
+** [bentley_sqlite3_open_v2()] with [SQLITE_OPEN_SHAREDCACHE].
 **
 ** This interface is threadsafe on processors where writing a
 ** 32-bit integer is atomic.
 **
 ** See Also:  [SQLite Shared-Cache Mode]
 */
-SQLITE_API int sqlite3_enable_shared_cache(int);
+SQLITE_API int bentley_sqlite3_enable_shared_cache(int);
 
 /*
 ** CAPI3REF: Attempt To Free Heap Memory
 **
-** ^The sqlite3_release_memory() interface attempts to free N bytes
+** ^The bentley_sqlite3_release_memory() interface attempts to free N bytes
 ** of heap memory by deallocating non-essential memory allocations
 ** held by the database library.   Memory used to cache database
 ** pages to improve performance is an example of non-essential memory.
-** ^sqlite3_release_memory() returns the number of bytes actually freed,
+** ^bentley_sqlite3_release_memory() returns the number of bytes actually freed,
 ** which might be more or less than the amount requested.
-** ^The sqlite3_release_memory() routine is a no-op returning zero
+** ^The bentley_sqlite3_release_memory() routine is a no-op returning zero
 ** if SQLite is not compiled with [SQLITE_ENABLE_MEMORY_MANAGEMENT].
 **
-** See also: [sqlite3_db_release_memory()]
+** See also: [bentley_sqlite3_db_release_memory()]
 */
-SQLITE_API int sqlite3_release_memory(int);
+SQLITE_API int bentley_sqlite3_release_memory(int);
 
 /*
 ** CAPI3REF: Free Memory Used By A Database Connection
 ** METHOD: sqlite3
 **
-** ^The sqlite3_db_release_memory(D) interface attempts to free as much heap
+** ^The bentley_sqlite3_db_release_memory(D) interface attempts to free as much heap
 ** memory as possible from database connection D. Unlike the
-** [sqlite3_release_memory()] interface, this interface is in effect even
+** [bentley_sqlite3_release_memory()] interface, this interface is in effect even
 ** when the [SQLITE_ENABLE_MEMORY_MANAGEMENT] compile-time option is
 ** omitted.
 **
-** See also: [sqlite3_release_memory()]
+** See also: [bentley_sqlite3_release_memory()]
 */
-SQLITE_API int sqlite3_db_release_memory(sqlite3*);
+SQLITE_API int bentley_sqlite3_db_release_memory(sqlite3*);
 
 /*
 ** CAPI3REF: Impose A Limit On Heap Size
@@ -7134,7 +7134,7 @@ SQLITE_API int sqlite3_db_release_memory(sqlite3*);
 ** These interfaces impose limits on the amount of heap memory that will be
 ** by all database connections within a single process.
 **
-** ^The sqlite3_soft_heap_limit64() interface sets and/or queries the
+** ^The bentley_sqlite3_soft_heap_limit64() interface sets and/or queries the
 ** soft limit on the amount of heap memory that may be allocated by SQLite.
 ** ^SQLite strives to keep heap memory utilization below the soft heap
 ** limit by reducing the number of pages held in the page cache
@@ -7144,30 +7144,30 @@ SQLITE_API int sqlite3_db_release_memory(sqlite3*);
 ** an [SQLITE_NOMEM] error.  In other words, the soft heap limit
 ** is advisory only.
 **
-** ^The sqlite3_hard_heap_limit64(N) interface sets a hard upper bound of
+** ^The bentley_sqlite3_hard_heap_limit64(N) interface sets a hard upper bound of
 ** N bytes on the amount of memory that will be allocated.  ^The
-** sqlite3_hard_heap_limit64(N) interface is similar to
-** sqlite3_soft_heap_limit64(N) except that memory allocations will fail
+** bentley_sqlite3_hard_heap_limit64(N) interface is similar to
+** bentley_sqlite3_soft_heap_limit64(N) except that memory allocations will fail
 ** when the hard heap limit is reached.
 **
-** ^The return value from both sqlite3_soft_heap_limit64() and
-** sqlite3_hard_heap_limit64() is the size of
+** ^The return value from both bentley_sqlite3_soft_heap_limit64() and
+** bentley_sqlite3_hard_heap_limit64() is the size of
 ** the heap limit prior to the call, or negative in the case of an
 ** error.  ^If the argument N is negative
 ** then no change is made to the heap limit.  Hence, the current
 ** size of heap limits can be determined by invoking
-** sqlite3_soft_heap_limit64(-1) or sqlite3_hard_heap_limit(-1).
+** bentley_sqlite3_soft_heap_limit64(-1) or sqlite3_hard_heap_limit(-1).
 **
 ** ^Setting the heap limits to zero disables the heap limiter mechanism.
 **
 ** ^The soft heap limit may not be greater than the hard heap limit.
-** ^If the hard heap limit is enabled and if sqlite3_soft_heap_limit(N)
+** ^If the hard heap limit is enabled and if bentley_sqlite3_soft_heap_limit(N)
 ** is invoked with a value of N that is greater than the hard heap limit,
 ** the soft heap limit is set to the value of the hard heap limit.
 ** ^The soft heap limit is automatically enabled whenever the hard heap
-** limit is enabled. ^When sqlite3_hard_heap_limit64(N) is invoked and
+** limit is enabled. ^When bentley_sqlite3_hard_heap_limit64(N) is invoked and
 ** the soft heap limit is outside the range of 1..N, then the soft heap
-** limit is set to N.  ^Invoking sqlite3_soft_heap_limit64(0) when the
+** limit is set to N.  ^Invoking bentley_sqlite3_soft_heap_limit64(0) when the
 ** hard heap limit is enabled makes the soft heap limit equal to the
 ** hard heap limit.
 **
@@ -7180,49 +7180,49 @@ SQLITE_API int sqlite3_db_release_memory(sqlite3*);
 ** <ul>
 ** <li> The limit value is set to zero.
 ** <li> Memory accounting is disabled using a combination of the
-**      [sqlite3_config]([SQLITE_CONFIG_MEMSTATUS],...) start-time option and
+**      [bentley_sqlite3_config]([SQLITE_CONFIG_MEMSTATUS],...) start-time option and
 **      the [SQLITE_DEFAULT_MEMSTATUS] compile-time option.
 ** <li> An alternative page cache implementation is specified using
-**      [sqlite3_config]([SQLITE_CONFIG_PCACHE2],...).
+**      [bentley_sqlite3_config]([SQLITE_CONFIG_PCACHE2],...).
 ** <li> The page cache allocates from its own memory pool supplied
-**      by [sqlite3_config]([SQLITE_CONFIG_PAGECACHE],...) rather than
+**      by [bentley_sqlite3_config]([SQLITE_CONFIG_PAGECACHE],...) rather than
 **      from the heap.
 ** </ul>)^
 **
 ** The circumstances under which SQLite will enforce the heap limits may
 ** changes in future releases of SQLite.
 */
-SQLITE_API sqlite3_int64 sqlite3_soft_heap_limit64(sqlite3_int64 N);
-SQLITE_API sqlite3_int64 sqlite3_hard_heap_limit64(sqlite3_int64 N);
+SQLITE_API sqlite3_int64 bentley_sqlite3_soft_heap_limit64(sqlite3_int64 N);
+SQLITE_API sqlite3_int64 bentley_sqlite3_hard_heap_limit64(sqlite3_int64 N);
 
 /*
 ** CAPI3REF: Deprecated Soft Heap Limit Interface
 ** DEPRECATED
 **
-** This is a deprecated version of the [sqlite3_soft_heap_limit64()]
+** This is a deprecated version of the [bentley_sqlite3_soft_heap_limit64()]
 ** interface.  This routine is provided for historical compatibility
 ** only.  All new applications should use the
-** [sqlite3_soft_heap_limit64()] interface rather than this one.
+** [bentley_sqlite3_soft_heap_limit64()] interface rather than this one.
 */
-SQLITE_API SQLITE_DEPRECATED void sqlite3_soft_heap_limit(int N);
+SQLITE_API SQLITE_DEPRECATED void bentley_sqlite3_soft_heap_limit(int N);
 
 
 /*
 ** CAPI3REF: Extract Metadata About A Column Of A Table
 ** METHOD: sqlite3
 **
-** ^(The sqlite3_table_column_metadata(X,D,T,C,....) routine returns
+** ^(The bentley_sqlite3_table_column_metadata(X,D,T,C,....) routine returns
 ** information about column C of table T in database D
-** on [database connection] X.)^  ^The sqlite3_table_column_metadata()
+** on [database connection] X.)^  ^The bentley_sqlite3_table_column_metadata()
 ** interface returns SQLITE_OK and fills in the non-NULL pointers in
 ** the final five arguments with appropriate values if the specified
-** column exists.  ^The sqlite3_table_column_metadata() interface returns
+** column exists.  ^The bentley_sqlite3_table_column_metadata() interface returns
 ** SQLITE_ERROR if the specified column does not exist.
-** ^If the column-name parameter to sqlite3_table_column_metadata() is a
+** ^If the column-name parameter to bentley_sqlite3_table_column_metadata() is a
 ** NULL pointer, then this routine simply checks for the existence of the
 ** table and returns SQLITE_OK if the table exists and SQLITE_ERROR if it
 ** does not.  If the table name parameter T in a call to
-** sqlite3_table_column_metadata(X,D,T,C,...) is NULL then the result is
+** bentley_sqlite3_table_column_metadata(X,D,T,C,...) is NULL then the result is
 ** undefined behavior.
 **
 ** ^The column is identified by the second, third and fourth parameters to
@@ -7276,7 +7276,7 @@ SQLITE_API SQLITE_DEPRECATED void sqlite3_soft_heap_limit(int N);
 ** parsed, if that has not already been done, and returns an error if
 ** any errors are encountered while loading the schema.
 */
-SQLITE_API int sqlite3_table_column_metadata(
+SQLITE_API int bentley_sqlite3_table_column_metadata(
   sqlite3 *db,                /* Connection handle */
   const char *zDbName,        /* Database name or NULL */
   const char *zTableName,     /* Table name */
@@ -7294,7 +7294,7 @@ SQLITE_API int sqlite3_table_column_metadata(
 **
 ** ^This interface loads an SQLite extension library from the named file.
 **
-** ^The sqlite3_load_extension() interface attempts to load an
+** ^The bentley_sqlite3_load_extension() interface attempts to load an
 ** [SQLite extension] library contained in the file zFile.  If
 ** the file cannot be loaded directly, attempts are made to load
 ** with various operating-system specific extensions added.
@@ -7309,30 +7309,30 @@ SQLITE_API int sqlite3_table_column_metadata(
 ** X is consists of the lower-case equivalent of all ASCII alphabetic
 ** characters in the filename from the last "/" to the first following
 ** "." and omitting any initial "lib".)^
-** ^The sqlite3_load_extension() interface returns
+** ^The bentley_sqlite3_load_extension() interface returns
 ** [SQLITE_OK] on success and [SQLITE_ERROR] if something goes wrong.
 ** ^If an error occurs and pzErrMsg is not 0, then the
-** [sqlite3_load_extension()] interface shall attempt to
+** [bentley_sqlite3_load_extension()] interface shall attempt to
 ** fill *pzErrMsg with error message text stored in memory
-** obtained from [sqlite3_malloc()]. The calling function
-** should free this memory by calling [sqlite3_free()].
+** obtained from [bentley_sqlite3_malloc()]. The calling function
+** should free this memory by calling [bentley_sqlite3_free()].
 **
 ** ^Extension loading must be enabled using
-** [sqlite3_enable_load_extension()] or
-** [sqlite3_db_config](db,[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION],1,NULL)
+** [bentley_sqlite3_enable_load_extension()] or
+** [bentley_sqlite3_db_config](db,[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION],1,NULL)
 ** prior to calling this API,
 ** otherwise an error will be returned.
 **
 ** <b>Security warning:</b> It is recommended that the
 ** [SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION] method be used to enable only this
-** interface.  The use of the [sqlite3_enable_load_extension()] interface
+** interface.  The use of the [bentley_sqlite3_enable_load_extension()] interface
 ** should be avoided.  This will keep the SQL function [load_extension()]
 ** disabled and prevent SQL injections from giving attackers
 ** access to extension loading capabilities.
 **
 ** See also the [load_extension() SQL function].
 */
-SQLITE_API int sqlite3_load_extension(
+SQLITE_API int bentley_sqlite3_load_extension(
   sqlite3 *db,          /* Load the extension into this database connection */
   const char *zFile,    /* Name of the shared library containing extension */
   const char *zProc,    /* Entry point.  Derived from zFile if 0 */
@@ -7346,16 +7346,16 @@ SQLITE_API int sqlite3_load_extension(
 ** ^So as not to open security holes in older applications that are
 ** unprepared to deal with [extension loading], and as a means of disabling
 ** [extension loading] while evaluating user-entered SQL, the following API
-** is provided to turn the [sqlite3_load_extension()] mechanism on and off.
+** is provided to turn the [bentley_sqlite3_load_extension()] mechanism on and off.
 **
 ** ^Extension loading is off by default.
-** ^Call the sqlite3_enable_load_extension() routine with onoff==1
+** ^Call the bentley_sqlite3_enable_load_extension() routine with onoff==1
 ** to turn extension loading on and call it with onoff==0 to turn
 ** it back off again.
 **
 ** ^This interface enables or disables both the C-API
-** [sqlite3_load_extension()] and the SQL function [load_extension()].
-** ^(Use [sqlite3_db_config](db,[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION],..)
+** [bentley_sqlite3_load_extension()] and the SQL function [load_extension()].
+** ^(Use [bentley_sqlite3_db_config](db,[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION],..)
 ** to enable or disable only the C-API.)^
 **
 ** <b>Security warning:</b> It is recommended that extension loading
@@ -7364,7 +7364,7 @@ SQLITE_API int sqlite3_load_extension(
 ** remains disabled. This will prevent SQL injections from giving attackers
 ** access to extension loading capabilities.
 */
-SQLITE_API int sqlite3_enable_load_extension(sqlite3 *db, int onoff);
+SQLITE_API int bentley_sqlite3_enable_load_extension(sqlite3 *db, int onoff);
 
 /*
 ** CAPI3REF: Automatically Load Statically Linked Extensions
@@ -7388,41 +7388,41 @@ SQLITE_API int sqlite3_enable_load_extension(sqlite3 *db, int onoff);
 ** </pre></blockquote>)^
 **
 ** If the xEntryPoint routine encounters an error, it should make *pzErrMsg
-** point to an appropriate error message (obtained from [sqlite3_mprintf()])
+** point to an appropriate error message (obtained from [bentley_sqlite3_mprintf()])
 ** and return an appropriate [error code].  ^SQLite ensures that *pzErrMsg
 ** is NULL before calling the xEntryPoint().  ^SQLite will invoke
-** [sqlite3_free()] on *pzErrMsg after xEntryPoint() returns.  ^If any
-** xEntryPoint() returns an error, the [sqlite3_open()], [sqlite3_open16()],
-** or [sqlite3_open_v2()] call that provoked the xEntryPoint() will fail.
+** [bentley_sqlite3_free()] on *pzErrMsg after xEntryPoint() returns.  ^If any
+** xEntryPoint() returns an error, the [bentley_sqlite3_open()], [bentley_sqlite3_open16()],
+** or [bentley_sqlite3_open_v2()] call that provoked the xEntryPoint() will fail.
 **
-** ^Calling sqlite3_auto_extension(X) with an entry point X that is already
+** ^Calling bentley_sqlite3_auto_extension(X) with an entry point X that is already
 ** on the list of automatic extensions is a harmless no-op. ^No entry point
 ** will be called more than once for each database connection that is opened.
 **
-** See also: [sqlite3_reset_auto_extension()]
-** and [sqlite3_cancel_auto_extension()]
+** See also: [bentley_sqlite3_reset_auto_extension()]
+** and [bentley_sqlite3_cancel_auto_extension()]
 */
-SQLITE_API int sqlite3_auto_extension(void(*xEntryPoint)(void));
+SQLITE_API int bentley_sqlite3_auto_extension(void(*xEntryPoint)(void));
 
 /*
 ** CAPI3REF: Cancel Automatic Extension Loading
 **
-** ^The [sqlite3_cancel_auto_extension(X)] interface unregisters the
+** ^The [bentley_sqlite3_cancel_auto_extension(X)] interface unregisters the
 ** initialization routine X that was registered using a prior call to
-** [sqlite3_auto_extension(X)].  ^The [sqlite3_cancel_auto_extension(X)]
+** [bentley_sqlite3_auto_extension(X)].  ^The [bentley_sqlite3_cancel_auto_extension(X)]
 ** routine returns 1 if initialization routine X was successfully
 ** unregistered and it returns 0 if X was not on the list of initialization
 ** routines.
 */
-SQLITE_API int sqlite3_cancel_auto_extension(void(*xEntryPoint)(void));
+SQLITE_API int bentley_sqlite3_cancel_auto_extension(void(*xEntryPoint)(void));
 
 /*
 ** CAPI3REF: Reset Automatic Extension Loading
 **
 ** ^This interface disables all automatic extensions previously
-** registered using [sqlite3_auto_extension()].
+** registered using [bentley_sqlite3_auto_extension()].
 */
-SQLITE_API void sqlite3_reset_auto_extension(void);
+SQLITE_API void bentley_sqlite3_reset_auto_extension(void);
 
 /*
 ** Structures used by the virtual table interface
@@ -7442,7 +7442,7 @@ typedef struct sqlite3_module sqlite3_module;
 **
 ** ^A virtual table module is created by filling in a persistent
 ** instance of this structure and passing a pointer to that instance
-** to [sqlite3_create_module()] or [sqlite3_create_module_v2()].
+** to [bentley_sqlite3_create_module()] or [bentley_sqlite3_create_module_v2()].
 ** ^The registration remains valid until it is replaced by a different
 ** module or until the [database connection] closes.  The content
 ** of this structure must not change while it is registered with
@@ -7525,7 +7525,7 @@ struct sqlite3_module {
 ** The colUsed field indicates which columns of the virtual table may be
 ** required by the current scan. Virtual table columns are numbered from
 ** zero in the order in which they appear within the CREATE TABLE statement
-** passed to sqlite3_declare_vtab(). For the first 63 columns (columns 0-62),
+** passed to bentley_sqlite3_declare_vtab(). For the first 63 columns (columns 0-62),
 ** the corresponding bit is set within the colUsed mask if the column may be
 ** required by SQLite. If the table has at least 64 columns and any column
 ** to the right of the first 63 is required, then bit 63 of colUsed is also
@@ -7548,7 +7548,7 @@ struct sqlite3_module {
 **
 ** ^The idxNum and idxStr values are recorded and passed into the
 ** [xFilter] method.
-** ^[sqlite3_free()] is used to free idxStr if and only if
+** ^[bentley_sqlite3_free()] is used to free idxStr if and only if
 ** needToFreeIdxStr is true.
 **
 ** ^The orderByConsumed means that output from [xFilter]/[xNext] will occur in
@@ -7587,11 +7587,11 @@ struct sqlite3_module {
 ** used with an SQLite version earlier than 3.8.2, the results of attempting
 ** to read or write the estimatedRows field are undefined (but are likely
 ** to include crashing the application). The estimatedRows field should
-** therefore only be used if [sqlite3_libversion_number()] returns a
+** therefore only be used if [bentley_sqlite3_libversion_number()] returns a
 ** value greater than or equal to 3008002. Similarly, the idxFlags field
 ** was added for [version 3.9.0] ([dateof:3.9.0]).
 ** It may therefore only be used if
-** sqlite3_libversion_number() returns a value greater than or equal to
+** bentley_sqlite3_libversion_number() returns a value greater than or equal to
 ** 3009000.
 */
 struct sqlite3_index_info {
@@ -7614,8 +7614,8 @@ struct sqlite3_index_info {
     unsigned char omit;      /* Do not code a test for this constraint */
   } *aConstraintUsage;
   int idxNum;                /* Number used to identify the index */
-  char *idxStr;              /* String, possibly obtained from sqlite3_malloc */
-  int needToFreeIdxStr;      /* Free idxStr using sqlite3_free() if true */
+  char *idxStr;              /* String, possibly obtained from bentley_sqlite3_malloc */
+  int needToFreeIdxStr;      /* Free idxStr using bentley_sqlite3_free() if true */
   int orderByConsumed;       /* True if output is already ordered */
   double estimatedCost;           /* Estimated cost of using this index */
   /* Fields below are only available in SQLite 3.8.2 and later */
@@ -7659,20 +7659,20 @@ struct sqlite3_index_info {
 ** implementation.
 **
 ** The right-hand operands for each constraint might be accessible using
-** the [sqlite3_vtab_rhs_value()] interface.  Usually the right-hand
+** the [bentley_sqlite3_vtab_rhs_value()] interface.  Usually the right-hand
 ** operand is only available if it appears as a single constant literal
 ** in the input SQL.  If the right-hand operand is another column or an
 ** expression (even a constant expression) or a parameter, then the
-** sqlite3_vtab_rhs_value() probably will not be able to extract it.
+** bentley_sqlite3_vtab_rhs_value() probably will not be able to extract it.
 ** ^The SQLITE_INDEX_CONSTRAINT_ISNULL and
 ** SQLITE_INDEX_CONSTRAINT_ISNOTNULL operators have no right-hand operand
-** and hence calls to sqlite3_vtab_rhs_value() for those operators will
+** and hence calls to bentley_sqlite3_vtab_rhs_value() for those operators will
 ** always return SQLITE_NOTFOUND.
 **
 ** The collating sequence to be used for comparison can be found using
-** the [sqlite3_vtab_collation()] interface.  For most real-world virtual
+** the [bentley_sqlite3_vtab_collation()] interface.  For most real-world virtual
 ** tables, the collating sequence of constraints does not matter (for example
-** because the constraints are numeric) and so the sqlite3_vtab_collation()
+** because the constraints are numeric) and so the bentley_sqlite3_vtab_collation()
 ** interface is not commonly needed.
 */
 #define SQLITE_INDEX_CONSTRAINT_EQ          2
@@ -7710,28 +7710,28 @@ struct sqlite3_index_info {
 ** into the [xCreate] and [xConnect] methods of the virtual table module
 ** when a new virtual table is be being created or reinitialized.
 **
-** ^The sqlite3_create_module_v2() interface has a fifth parameter which
+** ^The bentley_sqlite3_create_module_v2() interface has a fifth parameter which
 ** is a pointer to a destructor for the pClientData.  ^SQLite will
 ** invoke the destructor function (if it is not NULL) when SQLite
 ** no longer needs the pClientData pointer.  ^The destructor will also
-** be invoked if the call to sqlite3_create_module_v2() fails.
-** ^The sqlite3_create_module()
-** interface is equivalent to sqlite3_create_module_v2() with a NULL
+** be invoked if the call to bentley_sqlite3_create_module_v2() fails.
+** ^The bentley_sqlite3_create_module()
+** interface is equivalent to bentley_sqlite3_create_module_v2() with a NULL
 ** destructor.
 **
 ** ^If the third parameter (the pointer to the sqlite3_module object) is
 ** NULL then no new module is created and any existing modules with the
 ** same name are dropped.
 **
-** See also: [sqlite3_drop_modules()]
+** See also: [bentley_sqlite3_drop_modules()]
 */
-SQLITE_API int sqlite3_create_module(
+SQLITE_API int bentley_sqlite3_create_module(
   sqlite3 *db,               /* SQLite connection to register module with */
   const char *zName,         /* Name of the module */
   const sqlite3_module *p,   /* Methods for the module */
   void *pClientData          /* Client data for xCreate/xConnect */
 );
-SQLITE_API int sqlite3_create_module_v2(
+SQLITE_API int bentley_sqlite3_create_module_v2(
   sqlite3 *db,               /* SQLite connection to register module with */
   const char *zName,         /* Name of the module */
   const sqlite3_module *p,   /* Methods for the module */
@@ -7743,15 +7743,15 @@ SQLITE_API int sqlite3_create_module_v2(
 ** CAPI3REF: Remove Unnecessary Virtual Table Implementations
 ** METHOD: sqlite3
 **
-** ^The sqlite3_drop_modules(D,L) interface removes all virtual
+** ^The bentley_sqlite3_drop_modules(D,L) interface removes all virtual
 ** table modules from database connection D except those named on list L.
 ** The L parameter must be either NULL or a pointer to an array of pointers
 ** to strings where the array is terminated by a single NULL pointer.
 ** ^If the L parameter is NULL, then all virtual table modules are removed.
 **
-** See also: [sqlite3_create_module()]
+** See also: [bentley_sqlite3_create_module()]
 */
-SQLITE_API int sqlite3_drop_modules(
+SQLITE_API int bentley_sqlite3_drop_modules(
   sqlite3 *db,                /* Remove modules from this connection */
   const char **azKeep         /* Except, do not remove the ones named here */
 );
@@ -7768,16 +7768,16 @@ SQLITE_API int sqlite3_drop_modules(
 ** common to all module implementations.
 **
 ** ^Virtual tables methods can set an error message by assigning a
-** string obtained from [sqlite3_mprintf()] to zErrMsg.  The method should
-** take care that any prior string is freed by a call to [sqlite3_free()]
+** string obtained from [bentley_sqlite3_mprintf()] to zErrMsg.  The method should
+** take care that any prior string is freed by a call to [bentley_sqlite3_free()]
 ** prior to assigning a new string to zErrMsg.  ^After the error message
 ** is delivered up to the client application, the string will be automatically
-** freed by sqlite3_free() and the zErrMsg field will be zeroed.
+** freed by bentley_sqlite3_free() and the zErrMsg field will be zeroed.
 */
 struct sqlite3_vtab {
   const sqlite3_module *pModule;  /* The module for this virtual table */
   int nRef;                       /* Number of open cursors */
-  char *zErrMsg;                  /* Error message from sqlite3_mprintf() */
+  char *zErrMsg;                  /* Error message from bentley_sqlite3_mprintf() */
   /* Virtual table implementations will typically add additional fields */
 };
 
@@ -7811,7 +7811,7 @@ struct sqlite3_vtab_cursor {
 ** to declare the format (the names and datatypes of the columns) of
 ** the virtual tables they implement.
 */
-SQLITE_API int sqlite3_declare_vtab(sqlite3*, const char *zSQL);
+SQLITE_API int bentley_sqlite3_declare_vtab(sqlite3*, const char *zSQL);
 
 /*
 ** CAPI3REF: Overload A Function For A Virtual Table
@@ -7830,19 +7830,19 @@ SQLITE_API int sqlite3_declare_vtab(sqlite3*, const char *zSQL);
 ** purpose is to be a placeholder function that can be overloaded
 ** by a [virtual table].
 */
-SQLITE_API int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
+SQLITE_API int bentley_sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
 
 /*
 ** CAPI3REF: A Handle To An Open BLOB
 ** KEYWORDS: {BLOB handle} {BLOB handles}
 **
 ** An instance of this object represents an open BLOB on which
-** [sqlite3_blob_open | incremental BLOB I/O] can be performed.
-** ^Objects of this type are created by [sqlite3_blob_open()]
-** and destroyed by [sqlite3_blob_close()].
-** ^The [sqlite3_blob_read()] and [sqlite3_blob_write()] interfaces
+** [bentley_sqlite3_blob_open | incremental BLOB I/O] can be performed.
+** ^Objects of this type are created by [bentley_sqlite3_blob_open()]
+** and destroyed by [bentley_sqlite3_blob_close()].
+** ^The [bentley_sqlite3_blob_read()] and [bentley_sqlite3_blob_write()] interfaces
 ** can be used to read or write small subsections of the BLOB.
-** ^The [sqlite3_blob_bytes()] interface returns the size of the BLOB in bytes.
+** ^The [bentley_sqlite3_blob_bytes()] interface returns the size of the BLOB in bytes.
 */
 typedef struct sqlite3_blob sqlite3_blob;
 
@@ -7872,7 +7872,7 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** ^(On success, [SQLITE_OK] is returned and the new [BLOB handle] is stored
 ** in *ppBlob. Otherwise an [error code] is returned and, unless the error
 ** code is SQLITE_MISUSE, *ppBlob is set to NULL.)^ ^This means that, provided
-** the API is not misused, it is always safe to call [sqlite3_blob_close()]
+** the API is not misused, it is always safe to call [bentley_sqlite3_blob_close()]
 ** on *ppBlob after this function it returns.
 **
 ** This function fails with SQLITE_ERROR if any of the following are true:
@@ -7893,12 +7893,12 @@ typedef struct sqlite3_blob sqlite3_blob;
 **
 ** ^Unless it returns SQLITE_MISUSE, this function sets the
 ** [database connection] error code and message accessible via
-** [sqlite3_errcode()] and [sqlite3_errmsg()] and related functions.
+** [bentley_sqlite3_errcode()] and [bentley_sqlite3_errmsg()] and related functions.
 **
-** A BLOB referenced by sqlite3_blob_open() may be read using the
-** [sqlite3_blob_read()] interface and modified by using
-** [sqlite3_blob_write()].  The [BLOB handle] can be moved to a
-** different row of the same table using the [sqlite3_blob_reopen()]
+** A BLOB referenced by bentley_sqlite3_blob_open() may be read using the
+** [bentley_sqlite3_blob_read()] interface and modified by using
+** [bentley_sqlite3_blob_write()].  The [BLOB handle] can be moved to a
+** different row of the same table using the [bentley_sqlite3_blob_reopen()]
 ** interface.  However, the column, table, or database of a [BLOB handle]
 ** cannot be changed after the [BLOB handle] is opened.
 **
@@ -7907,29 +7907,29 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** then the BLOB handle is marked as "expired".
 ** This is true if any column of the row is changed, even a column
 ** other than the one the BLOB handle is open on.)^
-** ^Calls to [sqlite3_blob_read()] and [sqlite3_blob_write()] for
+** ^Calls to [bentley_sqlite3_blob_read()] and [bentley_sqlite3_blob_write()] for
 ** an expired BLOB handle fail with a return code of [SQLITE_ABORT].
 ** ^(Changes written into a BLOB prior to the BLOB expiring are not
 ** rolled back by the expiration of the BLOB.  Such changes will eventually
 ** commit if the transaction continues to completion.)^
 **
-** ^Use the [sqlite3_blob_bytes()] interface to determine the size of
+** ^Use the [bentley_sqlite3_blob_bytes()] interface to determine the size of
 ** the opened blob.  ^The size of a blob may not be changed by this
 ** interface.  Use the [UPDATE] SQL command to change the size of a
 ** blob.
 **
-** ^The [sqlite3_bind_zeroblob()] and [sqlite3_result_zeroblob()] interfaces
+** ^The [bentley_sqlite3_bind_zeroblob()] and [bentley_sqlite3_result_zeroblob()] interfaces
 ** and the built-in [zeroblob] SQL function may be used to create a
 ** zero-filled blob to read or write using the incremental-blob interface.
 **
 ** To avoid a resource leak, every open [BLOB handle] should eventually
-** be released by a call to [sqlite3_blob_close()].
+** be released by a call to [bentley_sqlite3_blob_close()].
 **
-** See also: [sqlite3_blob_close()],
-** [sqlite3_blob_reopen()], [sqlite3_blob_read()],
-** [sqlite3_blob_bytes()], [sqlite3_blob_write()].
+** See also: [bentley_sqlite3_blob_close()],
+** [bentley_sqlite3_blob_reopen()], [bentley_sqlite3_blob_read()],
+** [bentley_sqlite3_blob_bytes()], [bentley_sqlite3_blob_write()].
 */
-SQLITE_API int sqlite3_blob_open(
+SQLITE_API int bentley_sqlite3_blob_open(
   sqlite3*,
   const char *zDb,
   const char *zTable,
@@ -7950,19 +7950,19 @@ SQLITE_API int sqlite3_blob_open(
 ** remain the same. Moving an existing [BLOB handle] to a new row is
 ** faster than closing the existing handle and opening a new one.
 **
-** ^(The new row must meet the same criteria as for [sqlite3_blob_open()] -
+** ^(The new row must meet the same criteria as for [bentley_sqlite3_blob_open()] -
 ** it must exist and there must be either a blob or text value stored in
 ** the nominated column.)^ ^If the new row is not present in the table, or if
 ** it does not contain a blob or text value, or if another error occurs, an
 ** SQLite error code is returned and the blob handle is considered aborted.
-** ^All subsequent calls to [sqlite3_blob_read()], [sqlite3_blob_write()] or
-** [sqlite3_blob_reopen()] on an aborted blob handle immediately return
-** SQLITE_ABORT. ^Calling [sqlite3_blob_bytes()] on an aborted blob handle
+** ^All subsequent calls to [bentley_sqlite3_blob_read()], [bentley_sqlite3_blob_write()] or
+** [bentley_sqlite3_blob_reopen()] on an aborted blob handle immediately return
+** SQLITE_ABORT. ^Calling [bentley_sqlite3_blob_bytes()] on an aborted blob handle
 ** always returns zero.
 **
 ** ^This function sets the database handle error code and message.
 */
-SQLITE_API int sqlite3_blob_reopen(sqlite3_blob *, sqlite3_int64);
+SQLITE_API int bentley_sqlite3_blob_reopen(sqlite3_blob *, sqlite3_int64);
 
 /*
 ** CAPI3REF: Close A BLOB Handle
@@ -7981,11 +7981,11 @@ SQLITE_API int sqlite3_blob_reopen(sqlite3_blob *, sqlite3_int64);
 ** Calling this function with an argument that is not a NULL pointer or an
 ** open blob handle results in undefined behavior. ^Calling this routine
 ** with a null pointer (such as would be returned by a failed call to
-** [sqlite3_blob_open()]) is a harmless no-op. ^Otherwise, if this function
+** [bentley_sqlite3_blob_open()]) is a harmless no-op. ^Otherwise, if this function
 ** is passed a valid open blob handle, the values returned by the
-** sqlite3_errcode() and sqlite3_errmsg() functions are set before returning.
+** bentley_sqlite3_errcode() and bentley_sqlite3_errmsg() functions are set before returning.
 */
-SQLITE_API int sqlite3_blob_close(sqlite3_blob *);
+SQLITE_API int bentley_sqlite3_blob_close(sqlite3_blob *);
 
 /*
 ** CAPI3REF: Return The Size Of An Open BLOB
@@ -7997,11 +7997,11 @@ SQLITE_API int sqlite3_blob_close(sqlite3_blob *);
 ** blob content; they cannot change the size of a blob.
 **
 ** This routine only works on a [BLOB handle] which has been created
-** by a prior successful call to [sqlite3_blob_open()] and which has not
-** been closed by [sqlite3_blob_close()].  Passing any other pointer in
+** by a prior successful call to [bentley_sqlite3_blob_open()] and which has not
+** been closed by [bentley_sqlite3_blob_close()].  Passing any other pointer in
 ** to this routine results in undefined and probably undesirable behavior.
 */
-SQLITE_API int sqlite3_blob_bytes(sqlite3_blob *);
+SQLITE_API int bentley_sqlite3_blob_bytes(sqlite3_blob *);
 
 /*
 ** CAPI3REF: Read Data From A BLOB Incrementally
@@ -8015,22 +8015,22 @@ SQLITE_API int sqlite3_blob_bytes(sqlite3_blob *);
 ** [SQLITE_ERROR] is returned and no data is read.  ^If N or iOffset is
 ** less than zero, [SQLITE_ERROR] is returned and no data is read.
 ** ^The size of the blob (and hence the maximum value of N+iOffset)
-** can be determined using the [sqlite3_blob_bytes()] interface.
+** can be determined using the [bentley_sqlite3_blob_bytes()] interface.
 **
 ** ^An attempt to read from an expired [BLOB handle] fails with an
 ** error code of [SQLITE_ABORT].
 **
-** ^(On success, sqlite3_blob_read() returns SQLITE_OK.
+** ^(On success, bentley_sqlite3_blob_read() returns SQLITE_OK.
 ** Otherwise, an [error code] or an [extended error code] is returned.)^
 **
 ** This routine only works on a [BLOB handle] which has been created
-** by a prior successful call to [sqlite3_blob_open()] and which has not
-** been closed by [sqlite3_blob_close()].  Passing any other pointer in
+** by a prior successful call to [bentley_sqlite3_blob_open()] and which has not
+** been closed by [bentley_sqlite3_blob_close()].  Passing any other pointer in
 ** to this routine results in undefined and probably undesirable behavior.
 **
-** See also: [sqlite3_blob_write()].
+** See also: [bentley_sqlite3_blob_write()].
 */
-SQLITE_API int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
+SQLITE_API int bentley_sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 
 /*
 ** CAPI3REF: Write Data Into A BLOB Incrementally
@@ -8040,14 +8040,14 @@ SQLITE_API int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 ** caller-supplied buffer. N bytes of data are copied from the buffer Z
 ** into the open BLOB, starting at offset iOffset.)^
 **
-** ^(On success, sqlite3_blob_write() returns SQLITE_OK.
+** ^(On success, bentley_sqlite3_blob_write() returns SQLITE_OK.
 ** Otherwise, an  [error code] or an [extended error code] is returned.)^
 ** ^Unless SQLITE_MISUSE is returned, this function sets the
 ** [database connection] error code and message accessible via
-** [sqlite3_errcode()] and [sqlite3_errmsg()] and related functions.
+** [bentley_sqlite3_errcode()] and [bentley_sqlite3_errmsg()] and related functions.
 **
 ** ^If the [BLOB handle] passed as the first argument was not opened for
-** writing (the flags parameter to [sqlite3_blob_open()] was zero),
+** writing (the flags parameter to [bentley_sqlite3_blob_open()] was zero),
 ** this function returns [SQLITE_READONLY].
 **
 ** This function may only modify the contents of the BLOB; it is
@@ -8055,7 +8055,7 @@ SQLITE_API int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 ** ^If offset iOffset is less than N bytes from the end of the BLOB,
 ** [SQLITE_ERROR] is returned and no data is written. The size of the
 ** BLOB (and hence the maximum value of N+iOffset) can be determined
-** using the [sqlite3_blob_bytes()] interface. ^If N or iOffset are less
+** using the [bentley_sqlite3_blob_bytes()] interface. ^If N or iOffset are less
 ** than zero [SQLITE_ERROR] is returned and no data is written.
 **
 ** ^An attempt to write to an expired [BLOB handle] fails with an
@@ -8066,13 +8066,13 @@ SQLITE_API int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 ** or by other independent statements.
 **
 ** This routine only works on a [BLOB handle] which has been created
-** by a prior successful call to [sqlite3_blob_open()] and which has not
-** been closed by [sqlite3_blob_close()].  Passing any other pointer in
+** by a prior successful call to [bentley_sqlite3_blob_open()] and which has not
+** been closed by [bentley_sqlite3_blob_close()].  Passing any other pointer in
 ** to this routine results in undefined and probably undesirable behavior.
 **
-** See also: [sqlite3_blob_read()].
+** See also: [bentley_sqlite3_blob_read()].
 */
-SQLITE_API int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
+SQLITE_API int bentley_sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
 
 /*
 ** CAPI3REF: Virtual File System Objects
@@ -8084,13 +8084,13 @@ SQLITE_API int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOff
 ** New VFSes can be registered and existing VFSes can be unregistered.
 ** The following interfaces are provided.
 **
-** ^The sqlite3_vfs_find() interface returns a pointer to a VFS given its name.
+** ^The bentley_sqlite3_vfs_find() interface returns a pointer to a VFS given its name.
 ** ^Names are case sensitive.
 ** ^Names are zero-terminated UTF-8 strings.
 ** ^If there is no match, a NULL pointer is returned.
 ** ^If zVfsName is NULL then the default VFS is returned.
 **
-** ^New VFSes are registered with sqlite3_vfs_register().
+** ^New VFSes are registered with bentley_sqlite3_vfs_register().
 ** ^Each new VFS becomes the default VFS if the makeDflt flag is set.
 ** ^The same VFS can be registered multiple times without injury.
 ** ^To make an existing VFS into the default VFS, register it again
@@ -8099,13 +8099,13 @@ SQLITE_API int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOff
 ** VFS is registered with a name that is NULL or an empty string,
 ** then the behavior is undefined.
 **
-** ^Unregister a VFS with the sqlite3_vfs_unregister() interface.
+** ^Unregister a VFS with the bentley_sqlite3_vfs_unregister() interface.
 ** ^(If the default VFS is unregistered, another VFS is chosen as
 ** the default.  The choice for the new VFS is arbitrary.)^
 */
-SQLITE_API sqlite3_vfs *sqlite3_vfs_find(const char *zVfsName);
-SQLITE_API int sqlite3_vfs_register(sqlite3_vfs*, int makeDflt);
-SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
+SQLITE_API sqlite3_vfs *bentley_sqlite3_vfs_find(const char *zVfsName);
+SQLITE_API int bentley_sqlite3_vfs_register(sqlite3_vfs*, int makeDflt);
+SQLITE_API int bentley_sqlite3_vfs_unregister(sqlite3_vfs*);
 
 /*
 ** CAPI3REF: Mutexes
@@ -8136,14 +8136,14 @@ SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** macro defined (with "-DSQLITE_MUTEX_APPDEF=1"), then no mutex
 ** implementation is included with the library. In this case the
 ** application must supply a custom mutex implementation using the
-** [SQLITE_CONFIG_MUTEX] option of the sqlite3_config() function
-** before calling sqlite3_initialize() or any other public sqlite3_
-** function that calls sqlite3_initialize().
+** [SQLITE_CONFIG_MUTEX] option of the bentley_sqlite3_config() function
+** before calling bentley_sqlite3_initialize() or any other public sqlite3_
+** function that calls bentley_sqlite3_initialize().
 **
-** ^The sqlite3_mutex_alloc() routine allocates a new
-** mutex and returns a pointer to it. ^The sqlite3_mutex_alloc()
+** ^The bentley_sqlite3_mutex_alloc() routine allocates a new
+** mutex and returns a pointer to it. ^The bentley_sqlite3_mutex_alloc()
 ** routine returns NULL if it is unable to allocate the requested
-** mutex.  The argument to sqlite3_mutex_alloc() must one of these
+** mutex.  The argument to bentley_sqlite3_mutex_alloc() must one of these
 ** integer constants:
 **
 ** <ul>
@@ -8164,7 +8164,7 @@ SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** </ul>
 **
 ** ^The first two constants (SQLITE_MUTEX_FAST and SQLITE_MUTEX_RECURSIVE)
-** cause sqlite3_mutex_alloc() to create
+** cause bentley_sqlite3_mutex_alloc() to create
 ** a new mutex.  ^The new mutex is recursive when SQLITE_MUTEX_RECURSIVE
 ** is used but not necessarily so when SQLITE_MUTEX_FAST is used.
 ** The mutex implementation does not need to make a distinction
@@ -8174,7 +8174,7 @@ SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** implementation is available on the host platform, the mutex subsystem
 ** might return such a mutex in response to SQLITE_MUTEX_FAST.
 **
-** ^The other allowed parameters to sqlite3_mutex_alloc() (anything other
+** ^The other allowed parameters to bentley_sqlite3_mutex_alloc() (anything other
 ** than SQLITE_MUTEX_FAST and SQLITE_MUTEX_RECURSIVE) each return
 ** a pointer to a static preexisting mutex.  ^Nine static mutexes are
 ** used by the current version of SQLite.  Future versions of SQLite
@@ -8184,19 +8184,19 @@ SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** SQLITE_MUTEX_RECURSIVE.
 **
 ** ^Note that if one of the dynamic mutex parameters (SQLITE_MUTEX_FAST
-** or SQLITE_MUTEX_RECURSIVE) is used then sqlite3_mutex_alloc()
+** or SQLITE_MUTEX_RECURSIVE) is used then bentley_sqlite3_mutex_alloc()
 ** returns a different mutex on every call.  ^For the static
 ** mutex types, the same mutex is returned on every call that has
 ** the same type number.
 **
-** ^The sqlite3_mutex_free() routine deallocates a previously
+** ^The bentley_sqlite3_mutex_free() routine deallocates a previously
 ** allocated dynamic mutex.  Attempting to deallocate a static
 ** mutex results in undefined behavior.
 **
-** ^The sqlite3_mutex_enter() and sqlite3_mutex_try() routines attempt
+** ^The bentley_sqlite3_mutex_enter() and bentley_sqlite3_mutex_try() routines attempt
 ** to enter a mutex.  ^If another thread is already within the mutex,
-** sqlite3_mutex_enter() will block and sqlite3_mutex_try() will return
-** SQLITE_BUSY.  ^The sqlite3_mutex_try() interface returns [SQLITE_OK]
+** bentley_sqlite3_mutex_enter() will block and bentley_sqlite3_mutex_try() will return
+** SQLITE_BUSY.  ^The bentley_sqlite3_mutex_try() interface returns [SQLITE_OK]
 ** upon successful entry.  ^(Mutexes created using
 ** SQLITE_MUTEX_RECURSIVE can be entered multiple times by the same thread.
 ** In such cases, the
@@ -8205,29 +8205,29 @@ SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** than an SQLITE_MUTEX_RECURSIVE more than once, the behavior is undefined.
 **
 ** ^(Some systems (for example, Windows 95) do not support the operation
-** implemented by sqlite3_mutex_try().  On those systems, sqlite3_mutex_try()
+** implemented by bentley_sqlite3_mutex_try().  On those systems, bentley_sqlite3_mutex_try()
 ** will always return SQLITE_BUSY. In most cases the SQLite core only uses
-** sqlite3_mutex_try() as an optimization, so this is acceptable
+** bentley_sqlite3_mutex_try() as an optimization, so this is acceptable
 ** behavior. The exceptions are unix builds that set the
 ** SQLITE_ENABLE_SETLK_TIMEOUT build option. In that case a working
-** sqlite3_mutex_try() is required.)^
+** bentley_sqlite3_mutex_try() is required.)^
 **
-** ^The sqlite3_mutex_leave() routine exits a mutex that was
+** ^The bentley_sqlite3_mutex_leave() routine exits a mutex that was
 ** previously entered by the same thread.   The behavior
 ** is undefined if the mutex is not currently entered by the
 ** calling thread or is not currently allocated.
 **
-** ^If the argument to sqlite3_mutex_enter(), sqlite3_mutex_try(),
-** sqlite3_mutex_leave(), or sqlite3_mutex_free() is a NULL pointer,
+** ^If the argument to bentley_sqlite3_mutex_enter(), bentley_sqlite3_mutex_try(),
+** bentley_sqlite3_mutex_leave(), or bentley_sqlite3_mutex_free() is a NULL pointer,
 ** then any of the four routines behaves as a no-op.
 **
 ** See also: [sqlite3_mutex_held()] and [sqlite3_mutex_notheld()].
 */
-SQLITE_API sqlite3_mutex *sqlite3_mutex_alloc(int);
-SQLITE_API void sqlite3_mutex_free(sqlite3_mutex*);
-SQLITE_API void sqlite3_mutex_enter(sqlite3_mutex*);
-SQLITE_API int sqlite3_mutex_try(sqlite3_mutex*);
-SQLITE_API void sqlite3_mutex_leave(sqlite3_mutex*);
+SQLITE_API sqlite3_mutex *bentley_sqlite3_mutex_alloc(int);
+SQLITE_API void bentley_sqlite3_mutex_free(sqlite3_mutex*);
+SQLITE_API void bentley_sqlite3_mutex_enter(sqlite3_mutex*);
+SQLITE_API int bentley_sqlite3_mutex_try(sqlite3_mutex*);
+SQLITE_API void bentley_sqlite3_mutex_leave(sqlite3_mutex*);
 
 /*
 ** CAPI3REF: Mutex Methods Object
@@ -8240,33 +8240,33 @@ SQLITE_API void sqlite3_mutex_leave(sqlite3_mutex*);
 ** implementation for specialized deployments or systems for which SQLite
 ** does not provide a suitable implementation. In this case, the application
 ** creates and populates an instance of this structure to pass
-** to sqlite3_config() along with the [SQLITE_CONFIG_MUTEX] option.
+** to bentley_sqlite3_config() along with the [SQLITE_CONFIG_MUTEX] option.
 ** Additionally, an instance of this structure can be used as an
 ** output variable when querying the system for the current mutex
 ** implementation, using the [SQLITE_CONFIG_GETMUTEX] option.
 **
 ** ^The xMutexInit method defined by this structure is invoked as
-** part of system initialization by the sqlite3_initialize() function.
+** part of system initialization by the bentley_sqlite3_initialize() function.
 ** ^The xMutexInit routine is called by SQLite exactly once for each
-** effective call to [sqlite3_initialize()].
+** effective call to [bentley_sqlite3_initialize()].
 **
 ** ^The xMutexEnd method defined by this structure is invoked as
-** part of system shutdown by the sqlite3_shutdown() function. The
+** part of system shutdown by the bentley_sqlite3_shutdown() function. The
 ** implementation of this method is expected to release all outstanding
 ** resources obtained by the mutex methods implementation, especially
 ** those obtained by the xMutexInit method.  ^The xMutexEnd()
-** interface is invoked exactly once for each call to [sqlite3_shutdown()].
+** interface is invoked exactly once for each call to [bentley_sqlite3_shutdown()].
 **
 ** ^(The remaining seven methods defined by this structure (xMutexAlloc,
 ** xMutexFree, xMutexEnter, xMutexTry, xMutexLeave, xMutexHeld and
 ** xMutexNotheld) implement the following interfaces (respectively):
 **
 ** <ul>
-**   <li>  [sqlite3_mutex_alloc()] </li>
-**   <li>  [sqlite3_mutex_free()] </li>
-**   <li>  [sqlite3_mutex_enter()] </li>
-**   <li>  [sqlite3_mutex_try()] </li>
-**   <li>  [sqlite3_mutex_leave()] </li>
+**   <li>  [bentley_sqlite3_mutex_alloc()] </li>
+**   <li>  [bentley_sqlite3_mutex_free()] </li>
+**   <li>  [bentley_sqlite3_mutex_enter()] </li>
+**   <li>  [bentley_sqlite3_mutex_try()] </li>
+**   <li>  [bentley_sqlite3_mutex_leave()] </li>
 **   <li>  [sqlite3_mutex_held()] </li>
 **   <li>  [sqlite3_mutex_notheld()] </li>
 ** </ul>)^
@@ -8284,12 +8284,12 @@ SQLITE_API void sqlite3_mutex_leave(sqlite3_mutex*);
 ** intervening calls to xMutexEnd().  Second and subsequent calls to
 ** xMutexInit() must be no-ops.
 **
-** xMutexInit() must not use SQLite memory allocation ([sqlite3_malloc()]
+** xMutexInit() must not use SQLite memory allocation ([bentley_sqlite3_malloc()]
 ** and its associates).  Similarly, xMutexAlloc() must not use SQLite memory
 ** allocation for a static mutex.  ^However xMutexAlloc() may use SQLite
 ** memory allocation for a fast or recursive mutex.
 **
-** ^SQLite will invoke the xMutexEnd() method when [sqlite3_shutdown()] is
+** ^SQLite will invoke the xMutexEnd() method when [bentley_sqlite3_shutdown()] is
 ** called, but only if the prior call to xMutexInit returned SQLITE_OK.
 ** If xMutexInit fails in any way, it is expected to clean up after itself
 ** prior to returning.
@@ -8344,7 +8344,7 @@ SQLITE_API int sqlite3_mutex_notheld(sqlite3_mutex*);
 /*
 ** CAPI3REF: Mutex Types
 **
-** The [sqlite3_mutex_alloc()] interface takes a single argument
+** The [bentley_sqlite3_mutex_alloc()] interface takes a single argument
 ** which is one of these integer constants.
 **
 ** The set of static mutexes may change from one SQLite release to the
@@ -8354,10 +8354,10 @@ SQLITE_API int sqlite3_mutex_notheld(sqlite3_mutex*);
 #define SQLITE_MUTEX_FAST             0
 #define SQLITE_MUTEX_RECURSIVE        1
 #define SQLITE_MUTEX_STATIC_MAIN      2
-#define SQLITE_MUTEX_STATIC_MEM       3  /* sqlite3_malloc() */
+#define SQLITE_MUTEX_STATIC_MEM       3  /* bentley_sqlite3_malloc() */
 #define SQLITE_MUTEX_STATIC_MEM2      4  /* NOT USED */
 #define SQLITE_MUTEX_STATIC_OPEN      4  /* sqlite3BtreeOpen() */
-#define SQLITE_MUTEX_STATIC_PRNG      5  /* sqlite3_randomness() */
+#define SQLITE_MUTEX_STATIC_PRNG      5  /* bentley_sqlite3_randomness() */
 #define SQLITE_MUTEX_STATIC_LRU       6  /* lru page list */
 #define SQLITE_MUTEX_STATIC_LRU2      7  /* NOT USED */
 #define SQLITE_MUTEX_STATIC_PMEM      7  /* sqlite3PageMalloc() */
@@ -8382,14 +8382,14 @@ SQLITE_API int sqlite3_mutex_notheld(sqlite3_mutex*);
 ** ^If the [threading mode] is Single-thread or Multi-thread then this
 ** routine returns a NULL pointer.
 */
-SQLITE_API sqlite3_mutex *sqlite3_db_mutex(sqlite3*);
+SQLITE_API sqlite3_mutex *bentley_sqlite3_db_mutex(sqlite3*);
 
 /*
 ** CAPI3REF: Low-Level Control Of Database Files
 ** METHOD: sqlite3
 ** KEYWORDS: {file control}
 **
-** ^The [sqlite3_file_control()] interface makes a direct call to the
+** ^The [bentley_sqlite3_file_control()] interface makes a direct call to the
 ** xFileControl method for the [sqlite3_io_methods] object associated
 ** with a particular database identified by the second argument. ^The
 ** name of the database is "main" for the main database or "temp" for the
@@ -8402,7 +8402,7 @@ SQLITE_API sqlite3_mutex *sqlite3_db_mutex(sqlite3*);
 ** the xFileControl method.  ^The return value of the xFileControl
 ** method becomes the return value of this routine.
 **
-** A few opcodes for [sqlite3_file_control()] are handled directly
+** A few opcodes for [bentley_sqlite3_file_control()] are handled directly
 ** by the SQLite core and never invoke the
 ** sqlite3_io_methods.xFileControl method.
 ** ^The [SQLITE_FCNTL_FILE_POINTER] value for the op parameter causes
@@ -8417,20 +8417,20 @@ SQLITE_API sqlite3_mutex *sqlite3_db_mutex(sqlite3*);
 **
 ** ^If the second parameter (zDbName) does not match the name of any
 ** open database file, then SQLITE_ERROR is returned.  ^This error
-** code is not remembered and will not be recalled by [sqlite3_errcode()]
-** or [sqlite3_errmsg()].  The underlying xFileControl method might
+** code is not remembered and will not be recalled by [bentley_sqlite3_errcode()]
+** or [bentley_sqlite3_errmsg()].  The underlying xFileControl method might
 ** also return SQLITE_ERROR.  There is no way to distinguish between
 ** an incorrect zDbName and an SQLITE_ERROR return from the underlying
 ** xFileControl method.
 **
 ** See also: [file control opcodes]
 */
-SQLITE_API int sqlite3_file_control(sqlite3*, const char *zDbName, int op, void*);
+SQLITE_API int bentley_sqlite3_file_control(sqlite3*, const char *zDbName, int op, void*);
 
 /*
 ** CAPI3REF: Testing Interface
 **
-** ^The sqlite3_test_control() interface is used to read out internal
+** ^The bentley_sqlite3_test_control() interface is used to read out internal
 ** state of SQLite and to inject faults into SQLite for testing
 ** purposes.  ^The first parameter is an operation code that determines
 ** the number, meaning, and operation of all subsequent parameters.
@@ -8444,18 +8444,18 @@ SQLITE_API int sqlite3_file_control(sqlite3*, const char *zDbName, int op, void*
 ** Unlike most of the SQLite API, this function is not guaranteed to
 ** operate consistently from one release to the next.
 */
-SQLITE_API int sqlite3_test_control(int op, ...);
+SQLITE_API int bentley_sqlite3_test_control(int op, ...);
 
 /*
 ** CAPI3REF: Testing Interface Operation Codes
 **
 ** These constants are the valid operation code parameters used
-** as the first argument to [sqlite3_test_control()].
+** as the first argument to [bentley_sqlite3_test_control()].
 **
 ** These parameters and their meanings are subject to change
 ** without notice.  These values are for testing purposes only.
 ** Applications should not use any of these parameters or the
-** [sqlite3_test_control()] interface.
+** [bentley_sqlite3_test_control()] interface.
 */
 #define SQLITE_TESTCTRL_FIRST                    5
 #define SQLITE_TESTCTRL_PRNG_SAVE                5
@@ -8503,18 +8503,18 @@ SQLITE_API int sqlite3_test_control(int op, ...);
 ** whether or not a specific identifier needs to be escaped (for example,
 ** by enclosing in double-quotes) so as not to confuse the parser.
 **
-** The sqlite3_keyword_count() interface returns the number of distinct
+** The bentley_sqlite3_keyword_count() interface returns the number of distinct
 ** keywords understood by SQLite.
 **
-** The sqlite3_keyword_name(N,Z,L) interface finds the 0-based N-th keyword and
+** The bentley_sqlite3_keyword_name(N,Z,L) interface finds the 0-based N-th keyword and
 ** makes *Z point to that keyword expressed as UTF8 and writes the number
 ** of bytes in the keyword into *L.  The string that *Z points to is not
-** zero-terminated.  The sqlite3_keyword_name(N,Z,L) routine returns
+** zero-terminated.  The bentley_sqlite3_keyword_name(N,Z,L) routine returns
 ** SQLITE_OK if N is within bounds and SQLITE_ERROR if not. If either Z
 ** or L are NULL or invalid pointers then calls to
-** sqlite3_keyword_name(N,Z,L) result in undefined behavior.
+** bentley_sqlite3_keyword_name(N,Z,L) result in undefined behavior.
 **
-** The sqlite3_keyword_check(Z,L) interface checks to see whether or not
+** The bentley_sqlite3_keyword_check(Z,L) interface checks to see whether or not
 ** the L-byte UTF8 identifier that Z points to is a keyword, returning non-zero
 ** if it is and zero if not.
 **
@@ -8542,9 +8542,9 @@ SQLITE_API int sqlite3_test_control(int op, ...);
 ** SQLite is compiled with the [-DSQLITE_OMIT_VACUUM] option.  Also,
 ** new keywords may be added to future releases of SQLite.
 */
-SQLITE_API int sqlite3_keyword_count(void);
-SQLITE_API int sqlite3_keyword_name(int,const char**,int*);
-SQLITE_API int sqlite3_keyword_check(const char*,int);
+SQLITE_API int bentley_sqlite3_keyword_count(void);
+SQLITE_API int bentley_sqlite3_keyword_name(int,const char**,int*);
+SQLITE_API int bentley_sqlite3_keyword_check(const char*,int);
 
 /*
 ** CAPI3REF: Dynamic String Object
@@ -8555,11 +8555,11 @@ SQLITE_API int sqlite3_keyword_check(const char*,int);
 **
 ** The lifecycle of an sqlite3_str object is as follows:
 ** <ol>
-** <li> ^The sqlite3_str object is created using [sqlite3_str_new()].
+** <li> ^The sqlite3_str object is created using [bentley_sqlite3_str_new()].
 ** <li> ^Text is appended to the sqlite3_str object using various
-** methods, such as [sqlite3_str_appendf()].
+** methods, such as [bentley_sqlite3_str_appendf()].
 ** <li> ^The sqlite3_str object is destroyed and the string it created
-** is returned using the [sqlite3_str_finish()] interface.
+** is returned using the [bentley_sqlite3_str_finish()] interface.
 ** </ol>
 */
 typedef struct sqlite3_str sqlite3_str;
@@ -8568,82 +8568,82 @@ typedef struct sqlite3_str sqlite3_str;
 ** CAPI3REF: Create A New Dynamic String Object
 ** CONSTRUCTOR: sqlite3_str
 **
-** ^The [sqlite3_str_new(D)] interface allocates and initializes
+** ^The [bentley_sqlite3_str_new(D)] interface allocates and initializes
 ** a new [sqlite3_str] object.  To avoid memory leaks, the object returned by
-** [sqlite3_str_new()] must be freed by a subsequent call to
-** [sqlite3_str_finish(X)].
+** [bentley_sqlite3_str_new()] must be freed by a subsequent call to
+** [bentley_sqlite3_str_finish(X)].
 **
-** ^The [sqlite3_str_new(D)] interface always returns a pointer to a
+** ^The [bentley_sqlite3_str_new(D)] interface always returns a pointer to a
 ** valid [sqlite3_str] object, though in the event of an out-of-memory
 ** error the returned object might be a special singleton that will
 ** silently reject new text, always return SQLITE_NOMEM from
-** [sqlite3_str_errcode()], always return 0 for
-** [sqlite3_str_length()], and always return NULL from
-** [sqlite3_str_finish(X)].  It is always safe to use the value
-** returned by [sqlite3_str_new(D)] as the sqlite3_str parameter
+** [bentley_sqlite3_str_errcode()], always return 0 for
+** [bentley_sqlite3_str_length()], and always return NULL from
+** [bentley_sqlite3_str_finish(X)].  It is always safe to use the value
+** returned by [bentley_sqlite3_str_new(D)] as the sqlite3_str parameter
 ** to any of the other [sqlite3_str] methods.
 **
-** The D parameter to [sqlite3_str_new(D)] may be NULL.  If the
-** D parameter in [sqlite3_str_new(D)] is not NULL, then the maximum
+** The D parameter to [bentley_sqlite3_str_new(D)] may be NULL.  If the
+** D parameter in [bentley_sqlite3_str_new(D)] is not NULL, then the maximum
 ** length of the string contained in the [sqlite3_str] object will be
-** the value set for [sqlite3_limit](D,[SQLITE_LIMIT_LENGTH]) instead
+** the value set for [bentley_sqlite3_limit](D,[SQLITE_LIMIT_LENGTH]) instead
 ** of [SQLITE_MAX_LENGTH].
 */
-SQLITE_API sqlite3_str *sqlite3_str_new(sqlite3*);
+SQLITE_API sqlite3_str *bentley_sqlite3_str_new(sqlite3*);
 
 /*
 ** CAPI3REF: Finalize A Dynamic String
 ** DESTRUCTOR: sqlite3_str
 **
-** ^The [sqlite3_str_finish(X)] interface destroys the sqlite3_str object X
-** and returns a pointer to a memory buffer obtained from [sqlite3_malloc64()]
+** ^The [bentley_sqlite3_str_finish(X)] interface destroys the sqlite3_str object X
+** and returns a pointer to a memory buffer obtained from [bentley_sqlite3_malloc64()]
 ** that contains the constructed string.  The calling application should
-** pass the returned value to [sqlite3_free()] to avoid a memory leak.
-** ^The [sqlite3_str_finish(X)] interface may return a NULL pointer if any
+** pass the returned value to [bentley_sqlite3_free()] to avoid a memory leak.
+** ^The [bentley_sqlite3_str_finish(X)] interface may return a NULL pointer if any
 ** errors were encountered during construction of the string.  ^The
-** [sqlite3_str_finish(X)] interface will also return a NULL pointer if the
+** [bentley_sqlite3_str_finish(X)] interface will also return a NULL pointer if the
 ** string in [sqlite3_str] object X is zero bytes long.
 */
-SQLITE_API char *sqlite3_str_finish(sqlite3_str*);
+SQLITE_API char *bentley_sqlite3_str_finish(sqlite3_str*);
 
 /*
 ** CAPI3REF: Add Content To A Dynamic String
 ** METHOD: sqlite3_str
 **
 ** These interfaces add content to an sqlite3_str object previously obtained
-** from [sqlite3_str_new()].
+** from [bentley_sqlite3_str_new()].
 **
-** ^The [sqlite3_str_appendf(X,F,...)] and
-** [sqlite3_str_vappendf(X,F,V)] interfaces uses the [built-in printf]
+** ^The [bentley_sqlite3_str_appendf(X,F,...)] and
+** [bentley_sqlite3_str_vappendf(X,F,V)] interfaces uses the [built-in printf]
 ** functionality of SQLite to append formatted text onto the end of
 ** [sqlite3_str] object X.
 **
-** ^The [sqlite3_str_append(X,S,N)] method appends exactly N bytes from string S
+** ^The [bentley_sqlite3_str_append(X,S,N)] method appends exactly N bytes from string S
 ** onto the end of the [sqlite3_str] object X.  N must be non-negative.
 ** S must contain at least N non-zero bytes of content.  To append a
-** zero-terminated string in its entirety, use the [sqlite3_str_appendall()]
+** zero-terminated string in its entirety, use the [bentley_sqlite3_str_appendall()]
 ** method instead.
 **
-** ^The [sqlite3_str_appendall(X,S)] method appends the complete content of
+** ^The [bentley_sqlite3_str_appendall(X,S)] method appends the complete content of
 ** zero-terminated string S onto the end of [sqlite3_str] object X.
 **
-** ^The [sqlite3_str_appendchar(X,N,C)] method appends N copies of the
+** ^The [bentley_sqlite3_str_appendchar(X,N,C)] method appends N copies of the
 ** single-byte character C onto the end of [sqlite3_str] object X.
 ** ^This method can be used, for example, to add whitespace indentation.
 **
-** ^The [sqlite3_str_reset(X)] method resets the string under construction
+** ^The [bentley_sqlite3_str_reset(X)] method resets the string under construction
 ** inside [sqlite3_str] object X back to zero bytes in length.
 **
 ** These methods do not return a result code.  ^If an error occurs, that fact
 ** is recorded in the [sqlite3_str] object and can be recovered by a
-** subsequent call to [sqlite3_str_errcode(X)].
+** subsequent call to [bentley_sqlite3_str_errcode(X)].
 */
-SQLITE_API void sqlite3_str_appendf(sqlite3_str*, const char *zFormat, ...);
-SQLITE_API void sqlite3_str_vappendf(sqlite3_str*, const char *zFormat, va_list);
-SQLITE_API void sqlite3_str_append(sqlite3_str*, const char *zIn, int N);
-SQLITE_API void sqlite3_str_appendall(sqlite3_str*, const char *zIn);
-SQLITE_API void sqlite3_str_appendchar(sqlite3_str*, int N, char C);
-SQLITE_API void sqlite3_str_reset(sqlite3_str*);
+SQLITE_API void bentley_sqlite3_str_appendf(sqlite3_str*, const char *zFormat, ...);
+SQLITE_API void bentley_sqlite3_str_vappendf(sqlite3_str*, const char *zFormat, va_list);
+SQLITE_API void bentley_sqlite3_str_append(sqlite3_str*, const char *zIn, int N);
+SQLITE_API void bentley_sqlite3_str_appendall(sqlite3_str*, const char *zIn);
+SQLITE_API void bentley_sqlite3_str_appendchar(sqlite3_str*, int N, char C);
+SQLITE_API void bentley_sqlite3_str_reset(sqlite3_str*);
 
 /*
 ** CAPI3REF: Status Of A Dynamic String
@@ -8652,31 +8652,31 @@ SQLITE_API void sqlite3_str_reset(sqlite3_str*);
 ** These interfaces return the current status of an [sqlite3_str] object.
 **
 ** ^If any prior errors have occurred while constructing the dynamic string
-** in sqlite3_str X, then the [sqlite3_str_errcode(X)] method will return
-** an appropriate error code.  ^The [sqlite3_str_errcode(X)] method returns
+** in sqlite3_str X, then the [bentley_sqlite3_str_errcode(X)] method will return
+** an appropriate error code.  ^The [bentley_sqlite3_str_errcode(X)] method returns
 ** [SQLITE_NOMEM] following any out-of-memory error, or
 ** [SQLITE_TOOBIG] if the size of the dynamic string exceeds
 ** [SQLITE_MAX_LENGTH], or [SQLITE_OK] if there have been no errors.
 **
-** ^The [sqlite3_str_length(X)] method returns the current length, in bytes,
+** ^The [bentley_sqlite3_str_length(X)] method returns the current length, in bytes,
 ** of the dynamic string under construction in [sqlite3_str] object X.
-** ^The length returned by [sqlite3_str_length(X)] does not include the
+** ^The length returned by [bentley_sqlite3_str_length(X)] does not include the
 ** zero-termination byte.
 **
-** ^The [sqlite3_str_value(X)] method returns a pointer to the current
+** ^The [bentley_sqlite3_str_value(X)] method returns a pointer to the current
 ** content of the dynamic string under construction in X.  The value
-** returned by [sqlite3_str_value(X)] is managed by the sqlite3_str object X
+** returned by [bentley_sqlite3_str_value(X)] is managed by the sqlite3_str object X
 ** and might be freed or altered by any subsequent method on the same
 ** [sqlite3_str] object.  Applications must not used the pointer returned
-** [sqlite3_str_value(X)] after any subsequent method call on the same
+** [bentley_sqlite3_str_value(X)] after any subsequent method call on the same
 ** object.  ^Applications may change the content of the string returned
-** by [sqlite3_str_value(X)] as long as they do not write into any bytes
-** outside the range of 0 to [sqlite3_str_length(X)] and do not read or
+** by [bentley_sqlite3_str_value(X)] as long as they do not write into any bytes
+** outside the range of 0 to [bentley_sqlite3_str_length(X)] and do not read or
 ** write any byte after any subsequent sqlite3_str method call.
 */
-SQLITE_API int sqlite3_str_errcode(sqlite3_str*);
-SQLITE_API int sqlite3_str_length(sqlite3_str*);
-SQLITE_API char *sqlite3_str_value(sqlite3_str*);
+SQLITE_API int bentley_sqlite3_str_errcode(sqlite3_str*);
+SQLITE_API int bentley_sqlite3_str_length(sqlite3_str*);
+SQLITE_API char *bentley_sqlite3_str_value(sqlite3_str*);
 
 /*
 ** CAPI3REF: SQLite Runtime Status
@@ -8695,17 +8695,17 @@ SQLITE_API char *sqlite3_str_value(sqlite3_str*);
 ** ^(Other parameters record only the highwater mark and not the current
 ** value.  For these latter parameters nothing is written into *pCurrent.)^
 **
-** ^The sqlite3_status() and sqlite3_status64() routines return
+** ^The bentley_sqlite3_status() and bentley_sqlite3_status64() routines return
 ** SQLITE_OK on success and a non-zero [error code] on failure.
 **
 ** If either the current value or the highwater mark is too large to
 ** be represented by a 32-bit integer, then the values returned by
-** sqlite3_status() are undefined.
+** bentley_sqlite3_status() are undefined.
 **
-** See also: [sqlite3_db_status()]
+** See also: [bentley_sqlite3_db_status()]
 */
-SQLITE_API int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
-SQLITE_API int sqlite3_status64(
+SQLITE_API int bentley_sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
+SQLITE_API int bentley_sqlite3_status64(
   int op,
   sqlite3_int64 *pCurrent,
   sqlite3_int64 *pHighwater,
@@ -8718,13 +8718,13 @@ SQLITE_API int sqlite3_status64(
 ** KEYWORDS: {status parameters}
 **
 ** These integer constants designate various run-time status parameters
-** that can be returned by [sqlite3_status()].
+** that can be returned by [bentley_sqlite3_status()].
 **
 ** <dl>
 ** [[SQLITE_STATUS_MEMORY_USED]] ^(<dt>SQLITE_STATUS_MEMORY_USED</dt>
 ** <dd>This parameter is the current amount of memory checked out
-** using [sqlite3_malloc()], either directly or indirectly.  The
-** figure includes calls made to [sqlite3_malloc()] by the application
+** using [bentley_sqlite3_malloc()], either directly or indirectly.  The
+** figure includes calls made to [bentley_sqlite3_malloc()] by the application
 ** and internal memory usage by the SQLite library.  Auxiliary page-cache
 ** memory controlled by [SQLITE_CONFIG_PAGECACHE] is not included in
 ** this parameter.  The amount returned is the sum of the allocation
@@ -8732,9 +8732,9 @@ SQLITE_API int sqlite3_status64(
 **
 ** [[SQLITE_STATUS_MALLOC_SIZE]] ^(<dt>SQLITE_STATUS_MALLOC_SIZE</dt>
 ** <dd>This parameter records the largest memory allocation request
-** handed to [sqlite3_malloc()] or [sqlite3_realloc()] (or their
+** handed to [bentley_sqlite3_malloc()] or [bentley_sqlite3_realloc()] (or their
 ** internal equivalents).  Only the value returned in the
-** *pHighwater parameter to [sqlite3_status()] is of interest.
+** *pHighwater parameter to [bentley_sqlite3_status()] is of interest.
 ** The value written into the *pCurrent parameter is undefined.</dd>)^
 **
 ** [[SQLITE_STATUS_MALLOC_COUNT]] ^(<dt>SQLITE_STATUS_MALLOC_COUNT</dt>
@@ -8751,7 +8751,7 @@ SQLITE_API int sqlite3_status64(
 ** ^(<dt>SQLITE_STATUS_PAGECACHE_OVERFLOW</dt>
 ** <dd>This parameter returns the number of bytes of page cache
 ** allocation which could not be satisfied by the [SQLITE_CONFIG_PAGECACHE]
-** buffer and where forced to overflow to [sqlite3_malloc()].  The
+** buffer and where forced to overflow to [bentley_sqlite3_malloc()].  The
 ** returned value includes allocations that overflowed because they
 ** where too large (they were larger than the "sz" parameter to
 ** [SQLITE_CONFIG_PAGECACHE]) and allocations that overflowed because
@@ -8760,7 +8760,7 @@ SQLITE_API int sqlite3_status64(
 ** [[SQLITE_STATUS_PAGECACHE_SIZE]] ^(<dt>SQLITE_STATUS_PAGECACHE_SIZE</dt>
 ** <dd>This parameter records the largest memory allocation request
 ** handed to the [pagecache memory allocator].  Only the value returned in the
-** *pHighwater parameter to [sqlite3_status()] is of interest.
+** *pHighwater parameter to [bentley_sqlite3_status()] is of interest.
 ** The value written into the *pCurrent parameter is undefined.</dd>)^
 **
 ** [[SQLITE_STATUS_SCRATCH_USED]] <dt>SQLITE_STATUS_SCRATCH_USED</dt>
@@ -8809,24 +8809,24 @@ SQLITE_API int sqlite3_status64(
 ** the resetFlg is true, then the highest instantaneous value is
 ** reset back down to the current value.
 **
-** ^The sqlite3_db_status() routine returns SQLITE_OK on success and a
+** ^The bentley_sqlite3_db_status() routine returns SQLITE_OK on success and a
 ** non-zero [error code] on failure.
 **
-** See also: [sqlite3_status()] and [sqlite3_stmt_status()].
+** See also: [bentley_sqlite3_status()] and [bentley_sqlite3_stmt_status()].
 */
-SQLITE_API int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
+SQLITE_API int bentley_sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 
 /*
 ** CAPI3REF: Status Parameters for database connections
 ** KEYWORDS: {SQLITE_DBSTATUS options}
 **
 ** These constants are the available integer "verbs" that can be passed as
-** the second argument to the [sqlite3_db_status()] interface.
+** the second argument to the [bentley_sqlite3_db_status()] interface.
 **
 ** New verbs may be added in future releases of SQLite. Existing verbs
 ** might be discontinued. Applications should check the return code from
-** [sqlite3_db_status()] to make sure that the call worked.
-** The [sqlite3_db_status()] interface will return a non-zero error code
+** [bentley_sqlite3_db_status()] to make sure that the call worked.
+** The [bentley_sqlite3_db_status()] interface will return a non-zero error code
 ** if a discontinued or unsupported verb is invoked.
 **
 ** <dl>
@@ -8965,16 +8965,16 @@ SQLITE_API int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int r
 ** ^If the resetFlg is true, then the counter is reset to zero after this
 ** interface call returns.
 **
-** See also: [sqlite3_status()] and [sqlite3_db_status()].
+** See also: [bentley_sqlite3_status()] and [bentley_sqlite3_db_status()].
 */
-SQLITE_API int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
+SQLITE_API int bentley_sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 
 /*
 ** CAPI3REF: Status Parameters for prepared statements
 ** KEYWORDS: {SQLITE_STMTSTATUS counter} {SQLITE_STMTSTATUS counters}
 **
 ** These preprocessor macros define integer codes that name counter
-** values associated with the [sqlite3_stmt_status()] interface.
+** values associated with the [bentley_sqlite3_stmt_status()] interface.
 ** The meanings of the various counters are as follows:
 **
 ** <dl>
@@ -9012,8 +9012,8 @@ SQLITE_API int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 ** [[SQLITE_STMTSTATUS_RUN]] <dt>SQLITE_STMTSTATUS_RUN</dt>
 ** <dd>^This is the number of times that the prepared statement has
 ** been run.  A single "run" for the purposes of this counter is one
-** or more calls to [sqlite3_step()] followed by a call to [sqlite3_reset()].
-** The counter is incremented on the first [sqlite3_step()] call of each
+** or more calls to [bentley_sqlite3_step()] followed by a call to [bentley_sqlite3_reset()].
+** The counter is incremented on the first [bentley_sqlite3_step()] call of each
 ** cycle.
 **
 ** [[SQLITE_STMTSTATUS_FILTER_MISS]]
@@ -9029,7 +9029,7 @@ SQLITE_API int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 ** [[SQLITE_STMTSTATUS_MEMUSED]] <dt>SQLITE_STMTSTATUS_MEMUSED</dt>
 ** <dd>^This is the approximate number of bytes of heap memory
 ** used to store the prepared statement.  ^This value is not actually
-** a counter, and so the resetFlg parameter to sqlite3_stmt_status()
+** a counter, and so the resetFlg parameter to bentley_sqlite3_stmt_status()
 ** is ignored when the opcode is SQLITE_STMTSTATUS_MEMUSED.
 ** </dd>
 ** </dl>
@@ -9077,7 +9077,7 @@ struct sqlite3_pcache_page {
 ** CAPI3REF: Application Defined Page Cache.
 ** KEYWORDS: {page cache}
 **
-** ^(The [sqlite3_config]([SQLITE_CONFIG_PCACHE2], ...) interface can
+** ^(The [bentley_sqlite3_config]([SQLITE_CONFIG_PCACHE2], ...) interface can
 ** register an alternative page cache implementation by passing in an
 ** instance of the sqlite3_pcache_methods2 structure.)^
 ** In many applications, most of the heap memory allocated by
@@ -9094,13 +9094,13 @@ struct sqlite3_pcache_page {
 ** The built-in page cache is recommended for most uses.
 **
 ** ^(The contents of the sqlite3_pcache_methods2 structure are copied to an
-** internal buffer by SQLite within the call to [sqlite3_config].  Hence
+** internal buffer by SQLite within the call to [bentley_sqlite3_config].  Hence
 ** the application may discard the parameter after the call to
-** [sqlite3_config()] returns.)^
+** [bentley_sqlite3_config()] returns.)^
 **
 ** [[the xInit() page cache method]]
 ** ^(The xInit() method is called once for each effective
-** call to [sqlite3_initialize()])^
+** call to [bentley_sqlite3_initialize()])^
 ** (usually only once during the lifetime of the process). ^(The xInit()
 ** method is passed a copy of the sqlite3_pcache_methods2.pArg value.)^
 ** The intent of the xInit() method is to set up global data structures
@@ -9110,14 +9110,14 @@ struct sqlite3_pcache_page {
 ** page cache.)^
 **
 ** [[the xShutdown() page cache method]]
-** ^The xShutdown() method is called by [sqlite3_shutdown()].
+** ^The xShutdown() method is called by [bentley_sqlite3_shutdown()].
 ** It can be used to clean up
 ** any outstanding resources before process shutdown, if required.
 ** ^The xShutdown() method may be NULL.
 **
 ** ^SQLite automatically serializes calls to the xInit method,
 ** so the xInit method need not be threadsafe.  ^The
-** xShutdown method is only called from [sqlite3_shutdown()] so it does
+** xShutdown method is only called from [bentley_sqlite3_shutdown()] so it does
 ** not need to be threadsafe either.  All other methods must be threadsafe
 ** in multithreaded applications.
 **
@@ -9276,8 +9276,8 @@ struct sqlite3_pcache_methods {
 **
 ** The sqlite3_backup object records state information about an ongoing
 ** online backup operation.  ^The sqlite3_backup object is created by
-** a call to [sqlite3_backup_init()] and is destroyed by a call to
-** [sqlite3_backup_finish()].
+** a call to [bentley_sqlite3_backup_init()] and is destroyed by a call to
+** [bentley_sqlite3_backup_finish()].
 **
 ** See Also: [Using the SQLite Online Backup API]
 */
@@ -9302,63 +9302,63 @@ typedef struct sqlite3_backup sqlite3_backup;
 **
 ** ^(To perform a backup operation:
 **   <ol>
-**     <li><b>sqlite3_backup_init()</b> is called once to initialize the
+**     <li><b>bentley_sqlite3_backup_init()</b> is called once to initialize the
 **         backup,
-**     <li><b>sqlite3_backup_step()</b> is called one or more times to transfer
+**     <li><b>bentley_sqlite3_backup_step()</b> is called one or more times to transfer
 **         the data between the two databases, and finally
-**     <li><b>sqlite3_backup_finish()</b> is called to release all resources
+**     <li><b>bentley_sqlite3_backup_finish()</b> is called to release all resources
 **         associated with the backup operation.
 **   </ol>)^
-** There should be exactly one call to sqlite3_backup_finish() for each
-** successful call to sqlite3_backup_init().
+** There should be exactly one call to bentley_sqlite3_backup_finish() for each
+** successful call to bentley_sqlite3_backup_init().
 **
-** [[sqlite3_backup_init()]] <b>sqlite3_backup_init()</b>
+** [[bentley_sqlite3_backup_init()]] <b>bentley_sqlite3_backup_init()</b>
 **
-** ^The D and N arguments to sqlite3_backup_init(D,N,S,M) are the
+** ^The D and N arguments to bentley_sqlite3_backup_init(D,N,S,M) are the
 ** [database connection] associated with the destination database
 ** and the database name, respectively.
 ** ^The database name is "main" for the main database, "temp" for the
 ** temporary database, or the name specified after the AS keyword in
 ** an [ATTACH] statement for an attached database.
 ** ^The S and M arguments passed to
-** sqlite3_backup_init(D,N,S,M) identify the [database connection]
+** bentley_sqlite3_backup_init(D,N,S,M) identify the [database connection]
 ** and database name of the source database, respectively.
 ** ^The source and destination [database connections] (parameters S and D)
-** must be different or else sqlite3_backup_init(D,N,S,M) will fail with
+** must be different or else bentley_sqlite3_backup_init(D,N,S,M) will fail with
 ** an error.
 **
-** ^A call to sqlite3_backup_init() will fail, returning NULL, if
+** ^A call to bentley_sqlite3_backup_init() will fail, returning NULL, if
 ** there is already a read or read-write transaction open on the
 ** destination database.
 **
-** ^If an error occurs within sqlite3_backup_init(D,N,S,M), then NULL is
+** ^If an error occurs within bentley_sqlite3_backup_init(D,N,S,M), then NULL is
 ** returned and an error code and error message are stored in the
 ** destination [database connection] D.
-** ^The error code and message for the failed call to sqlite3_backup_init()
-** can be retrieved using the [sqlite3_errcode()], [sqlite3_errmsg()], and/or
-** [sqlite3_errmsg16()] functions.
-** ^A successful call to sqlite3_backup_init() returns a pointer to an
+** ^The error code and message for the failed call to bentley_sqlite3_backup_init()
+** can be retrieved using the [bentley_sqlite3_errcode()], [bentley_sqlite3_errmsg()], and/or
+** [bentley_sqlite3_errmsg16()] functions.
+** ^A successful call to bentley_sqlite3_backup_init() returns a pointer to an
 ** [sqlite3_backup] object.
-** ^The [sqlite3_backup] object may be used with the sqlite3_backup_step() and
-** sqlite3_backup_finish() functions to perform the specified backup
+** ^The [sqlite3_backup] object may be used with the bentley_sqlite3_backup_step() and
+** bentley_sqlite3_backup_finish() functions to perform the specified backup
 ** operation.
 **
-** [[sqlite3_backup_step()]] <b>sqlite3_backup_step()</b>
+** [[bentley_sqlite3_backup_step()]] <b>bentley_sqlite3_backup_step()</b>
 **
-** ^Function sqlite3_backup_step(B,N) will copy up to N pages between
+** ^Function bentley_sqlite3_backup_step(B,N) will copy up to N pages between
 ** the source and destination databases specified by [sqlite3_backup] object B.
 ** ^If N is negative, all remaining source pages are copied.
-** ^If sqlite3_backup_step(B,N) successfully copies N pages and there
+** ^If bentley_sqlite3_backup_step(B,N) successfully copies N pages and there
 ** are still more pages to be copied, then the function returns [SQLITE_OK].
-** ^If sqlite3_backup_step(B,N) successfully finishes copying all pages
+** ^If bentley_sqlite3_backup_step(B,N) successfully finishes copying all pages
 ** from source to destination, then it returns [SQLITE_DONE].
-** ^If an error occurs while running sqlite3_backup_step(B,N),
+** ^If an error occurs while running bentley_sqlite3_backup_step(B,N),
 ** then an [error code] is returned. ^As well as [SQLITE_OK] and
-** [SQLITE_DONE], a call to sqlite3_backup_step() may return [SQLITE_READONLY],
+** [SQLITE_DONE], a call to bentley_sqlite3_backup_step() may return [SQLITE_READONLY],
 ** [SQLITE_NOMEM], [SQLITE_BUSY], [SQLITE_LOCKED], or an
 ** [SQLITE_IOERR_ACCESS | SQLITE_IOERR_XXX] extended error code.
 **
-** ^(The sqlite3_backup_step() might return [SQLITE_READONLY] if
+** ^(The bentley_sqlite3_backup_step() might return [SQLITE_READONLY] if
 ** <ol>
 ** <li> the destination database was opened read-only, or
 ** <li> the destination database is using write-ahead-log journaling
@@ -9367,76 +9367,76 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** destination and source page sizes differ.
 ** </ol>)^
 **
-** ^If sqlite3_backup_step() cannot obtain a required file-system lock, then
-** the [sqlite3_busy_handler | busy-handler function]
+** ^If bentley_sqlite3_backup_step() cannot obtain a required file-system lock, then
+** the [bentley_sqlite3_busy_handler | busy-handler function]
 ** is invoked (if one is specified). ^If the
 ** busy-handler returns non-zero before the lock is available, then
 ** [SQLITE_BUSY] is returned to the caller. ^In this case the call to
-** sqlite3_backup_step() can be retried later. ^If the source
+** bentley_sqlite3_backup_step() can be retried later. ^If the source
 ** [database connection]
-** is being used to write to the source database when sqlite3_backup_step()
+** is being used to write to the source database when bentley_sqlite3_backup_step()
 ** is called, then [SQLITE_LOCKED] is returned immediately. ^Again, in this
-** case the call to sqlite3_backup_step() can be retried later on. ^(If
+** case the call to bentley_sqlite3_backup_step() can be retried later on. ^(If
 ** [SQLITE_IOERR_ACCESS | SQLITE_IOERR_XXX], [SQLITE_NOMEM], or
 ** [SQLITE_READONLY] is returned, then
-** there is no point in retrying the call to sqlite3_backup_step(). These
+** there is no point in retrying the call to bentley_sqlite3_backup_step(). These
 ** errors are considered fatal.)^  The application must accept
 ** that the backup operation has failed and pass the backup operation handle
-** to the sqlite3_backup_finish() to release associated resources.
+** to the bentley_sqlite3_backup_finish() to release associated resources.
 **
-** ^The first call to sqlite3_backup_step() obtains an exclusive lock
+** ^The first call to bentley_sqlite3_backup_step() obtains an exclusive lock
 ** on the destination file. ^The exclusive lock is not released until either
-** sqlite3_backup_finish() is called or the backup operation is complete
-** and sqlite3_backup_step() returns [SQLITE_DONE].  ^Every call to
-** sqlite3_backup_step() obtains a [shared lock] on the source database that
-** lasts for the duration of the sqlite3_backup_step() call.
+** bentley_sqlite3_backup_finish() is called or the backup operation is complete
+** and bentley_sqlite3_backup_step() returns [SQLITE_DONE].  ^Every call to
+** bentley_sqlite3_backup_step() obtains a [shared lock] on the source database that
+** lasts for the duration of the bentley_sqlite3_backup_step() call.
 ** ^Because the source database is not locked between calls to
-** sqlite3_backup_step(), the source database may be modified mid-way
+** bentley_sqlite3_backup_step(), the source database may be modified mid-way
 ** through the backup process.  ^If the source database is modified by an
 ** external process or via a database connection other than the one being
 ** used by the backup operation, then the backup will be automatically
-** restarted by the next call to sqlite3_backup_step(). ^If the source
+** restarted by the next call to bentley_sqlite3_backup_step(). ^If the source
 ** database is modified by the using the same database connection as is used
 ** by the backup operation, then the backup database is automatically
 ** updated at the same time.
 **
-** [[sqlite3_backup_finish()]] <b>sqlite3_backup_finish()</b>
+** [[bentley_sqlite3_backup_finish()]] <b>bentley_sqlite3_backup_finish()</b>
 **
-** When sqlite3_backup_step() has returned [SQLITE_DONE], or when the
+** When bentley_sqlite3_backup_step() has returned [SQLITE_DONE], or when the
 ** application wishes to abandon the backup operation, the application
-** should destroy the [sqlite3_backup] by passing it to sqlite3_backup_finish().
-** ^The sqlite3_backup_finish() interfaces releases all
+** should destroy the [sqlite3_backup] by passing it to bentley_sqlite3_backup_finish().
+** ^The bentley_sqlite3_backup_finish() interfaces releases all
 ** resources associated with the [sqlite3_backup] object.
-** ^If sqlite3_backup_step() has not yet returned [SQLITE_DONE], then any
+** ^If bentley_sqlite3_backup_step() has not yet returned [SQLITE_DONE], then any
 ** active write-transaction on the destination database is rolled back.
 ** The [sqlite3_backup] object is invalid
-** and may not be used following a call to sqlite3_backup_finish().
+** and may not be used following a call to bentley_sqlite3_backup_finish().
 **
-** ^The value returned by sqlite3_backup_finish is [SQLITE_OK] if no
-** sqlite3_backup_step() errors occurred, regardless or whether or not
-** sqlite3_backup_step() completed.
+** ^The value returned by bentley_sqlite3_backup_finish is [SQLITE_OK] if no
+** bentley_sqlite3_backup_step() errors occurred, regardless or whether or not
+** bentley_sqlite3_backup_step() completed.
 ** ^If an out-of-memory condition or IO error occurred during any prior
-** sqlite3_backup_step() call on the same [sqlite3_backup] object, then
-** sqlite3_backup_finish() returns the corresponding [error code].
+** bentley_sqlite3_backup_step() call on the same [sqlite3_backup] object, then
+** bentley_sqlite3_backup_finish() returns the corresponding [error code].
 **
-** ^A return of [SQLITE_BUSY] or [SQLITE_LOCKED] from sqlite3_backup_step()
+** ^A return of [SQLITE_BUSY] or [SQLITE_LOCKED] from bentley_sqlite3_backup_step()
 ** is not a permanent error and does not affect the return value of
-** sqlite3_backup_finish().
+** bentley_sqlite3_backup_finish().
 **
-** [[sqlite3_backup_remaining()]] [[sqlite3_backup_pagecount()]]
-** <b>sqlite3_backup_remaining() and sqlite3_backup_pagecount()</b>
+** [[bentley_sqlite3_backup_remaining()]] [[bentley_sqlite3_backup_pagecount()]]
+** <b>bentley_sqlite3_backup_remaining() and bentley_sqlite3_backup_pagecount()</b>
 **
-** ^The sqlite3_backup_remaining() routine returns the number of pages still
-** to be backed up at the conclusion of the most recent sqlite3_backup_step().
-** ^The sqlite3_backup_pagecount() routine returns the total number of pages
+** ^The bentley_sqlite3_backup_remaining() routine returns the number of pages still
+** to be backed up at the conclusion of the most recent bentley_sqlite3_backup_step().
+** ^The bentley_sqlite3_backup_pagecount() routine returns the total number of pages
 ** in the source database at the conclusion of the most recent
-** sqlite3_backup_step().
+** bentley_sqlite3_backup_step().
 ** ^(The values returned by these functions are only updated by
-** sqlite3_backup_step(). If the source database is modified in a way that
+** bentley_sqlite3_backup_step(). If the source database is modified in a way that
 ** changes the size of the source database or the number of pages remaining,
-** those changes are not reflected in the output of sqlite3_backup_pagecount()
-** and sqlite3_backup_remaining() until after the next
-** sqlite3_backup_step().)^
+** those changes are not reflected in the output of bentley_sqlite3_backup_pagecount()
+** and bentley_sqlite3_backup_remaining() until after the next
+** bentley_sqlite3_backup_step().)^
 **
 ** <b>Concurrent Usage of Database Handles</b>
 **
@@ -9448,8 +9448,8 @@ typedef struct sqlite3_backup sqlite3_backup;
 **
 ** However, the application must guarantee that the destination
 ** [database connection] is not passed to any other API (by any thread) after
-** sqlite3_backup_init() is called and before the corresponding call to
-** sqlite3_backup_finish().  SQLite does not currently check to see
+** bentley_sqlite3_backup_init() is called and before the corresponding call to
+** bentley_sqlite3_backup_finish().  SQLite does not currently check to see
 ** if the application incorrectly accesses the destination [database connection]
 ** and so no error code is reported, but the operations may malfunction
 ** nevertheless.  Use of the destination database connection while a
@@ -9460,13 +9460,13 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** is not accessed while the backup is running. In practice this means
 ** that the application must guarantee that the disk file being
 ** backed up to is not accessed by any connection within the process,
-** not just the specific connection that was passed to sqlite3_backup_init().
+** not just the specific connection that was passed to bentley_sqlite3_backup_init().
 **
 ** The [sqlite3_backup] object itself is partially threadsafe. Multiple
-** threads may safely make multiple concurrent calls to sqlite3_backup_step().
-** However, the sqlite3_backup_remaining() and sqlite3_backup_pagecount()
+** threads may safely make multiple concurrent calls to bentley_sqlite3_backup_step().
+** However, the bentley_sqlite3_backup_remaining() and bentley_sqlite3_backup_pagecount()
 ** APIs are not strictly speaking threadsafe. If they are invoked at the
-** same time as another thread is invoking sqlite3_backup_step() it is
+** same time as another thread is invoking bentley_sqlite3_backup_step() it is
 ** possible that they return invalid values.
 **
 ** <b>Alternatives To Using The Backup API</b>
@@ -9479,16 +9479,16 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** <li> The [sqlite3_rsync] utility program.
 ** </ul>
 */
-SQLITE_API sqlite3_backup *sqlite3_backup_init(
+SQLITE_API sqlite3_backup *bentley_sqlite3_backup_init(
   sqlite3 *pDest,                        /* Destination database handle */
   const char *zDestName,                 /* Destination database name */
   sqlite3 *pSource,                      /* Source database handle */
   const char *zSourceName                /* Source database name */
 );
-SQLITE_API int sqlite3_backup_step(sqlite3_backup *p, int nPage);
-SQLITE_API int sqlite3_backup_finish(sqlite3_backup *p);
-SQLITE_API int sqlite3_backup_remaining(sqlite3_backup *p);
-SQLITE_API int sqlite3_backup_pagecount(sqlite3_backup *p);
+SQLITE_API int bentley_sqlite3_backup_step(sqlite3_backup *p, int nPage);
+SQLITE_API int bentley_sqlite3_backup_finish(sqlite3_backup *p);
+SQLITE_API int bentley_sqlite3_backup_remaining(sqlite3_backup *p);
+SQLITE_API int bentley_sqlite3_backup_pagecount(sqlite3_backup *p);
 
 /*
 ** CAPI3REF: Unlock Notification
@@ -9516,7 +9516,7 @@ SQLITE_API int sqlite3_backup_pagecount(sqlite3_backup *p);
 ** sqlite3_unlock_notify() method with the blocked connection handle as
 ** the first argument to register for a callback that will be invoked
 ** when the blocking connections current transaction is concluded. ^The
-** callback is invoked from within the [sqlite3_step] or [sqlite3_close]
+** callback is invoked from within the [bentley_sqlite3_step] or [bentley_sqlite3_close]
 ** call that concludes the blocking connection's transaction.
 **
 ** ^(If sqlite3_unlock_notify() is called in a multi-threaded application,
@@ -9537,7 +9537,7 @@ SQLITE_API int sqlite3_backup_pagecount(sqlite3_backup *p);
 ** called with a NULL pointer as its second argument, then any existing
 ** unlock-notify callback is canceled. ^The blocked connections
 ** unlock-notify callback may also be canceled by closing the blocked
-** connection using [sqlite3_close()].
+** connection using [bentley_sqlite3_close()].
 **
 ** The unlock-notify callback is not reentrant. If an application invokes
 ** any sqlite3_xxx API functions from within an unlock-notify callback, a
@@ -9589,7 +9589,7 @@ SQLITE_API int sqlite3_backup_pagecount(sqlite3_backup *p);
 **
 ** <b>The "DROP TABLE" Exception</b>
 **
-** When a call to [sqlite3_step()] returns SQLITE_LOCKED, it is almost
+** When a call to [bentley_sqlite3_step()] returns SQLITE_LOCKED, it is almost
 ** always appropriate to call sqlite3_unlock_notify(). There is however,
 ** one exception. When executing a "DROP TABLE" or "DROP INDEX" statement,
 ** SQLite checks if there are any currently executing SELECT statements
@@ -9600,7 +9600,7 @@ SQLITE_API int sqlite3_backup_pagecount(sqlite3_backup *p);
 ** or "DROP INDEX" query, an infinite loop might be the result.
 **
 ** One way around this problem is to check the extended error code returned
-** by an sqlite3_step() call. ^(If there is a blocking connection, then the
+** by an bentley_sqlite3_step() call. ^(If there is a blocking connection, then the
 ** extended error code is set to SQLITE_LOCKED_SHAREDCACHE. Otherwise, in
 ** the special "DROP TABLE/INDEX" case, the extended error code is just
 ** SQLITE_LOCKED.)^
@@ -9615,82 +9615,82 @@ SQLITE_API int sqlite3_unlock_notify(
 /*
 ** CAPI3REF: String Comparison
 **
-** ^The [sqlite3_stricmp()] and [sqlite3_strnicmp()] APIs allow applications
+** ^The [bentley_sqlite3_stricmp()] and [bentley_sqlite3_strnicmp()] APIs allow applications
 ** and extensions to compare the contents of two buffers containing UTF-8
 ** strings in a case-independent fashion, using the same definition of "case
 ** independence" that SQLite uses internally when comparing identifiers.
 */
-SQLITE_API int sqlite3_stricmp(const char *, const char *);
-SQLITE_API int sqlite3_strnicmp(const char *, const char *, int);
+SQLITE_API int bentley_sqlite3_stricmp(const char *, const char *);
+SQLITE_API int bentley_sqlite3_strnicmp(const char *, const char *, int);
 
 /*
 ** CAPI3REF: String Globbing
 *
-** ^The [sqlite3_strglob(P,X)] interface returns zero if and only if
+** ^The [bentley_sqlite3_strglob(P,X)] interface returns zero if and only if
 ** string X matches the [GLOB] pattern P.
 ** ^The definition of [GLOB] pattern matching used in
-** [sqlite3_strglob(P,X)] is the same as for the "X GLOB P" operator in the
-** SQL dialect understood by SQLite.  ^The [sqlite3_strglob(P,X)] function
+** [bentley_sqlite3_strglob(P,X)] is the same as for the "X GLOB P" operator in the
+** SQL dialect understood by SQLite.  ^The [bentley_sqlite3_strglob(P,X)] function
 ** is case sensitive.
 **
 ** Note that this routine returns zero on a match and non-zero if the strings
-** do not match, the same as [sqlite3_stricmp()] and [sqlite3_strnicmp()].
+** do not match, the same as [bentley_sqlite3_stricmp()] and [bentley_sqlite3_strnicmp()].
 **
-** See also: [sqlite3_strlike()].
+** See also: [bentley_sqlite3_strlike()].
 */
-SQLITE_API int sqlite3_strglob(const char *zGlob, const char *zStr);
+SQLITE_API int bentley_sqlite3_strglob(const char *zGlob, const char *zStr);
 
 /*
 ** CAPI3REF: String LIKE Matching
 *
-** ^The [sqlite3_strlike(P,X,E)] interface returns zero if and only if
+** ^The [bentley_sqlite3_strlike(P,X,E)] interface returns zero if and only if
 ** string X matches the [LIKE] pattern P with escape character E.
 ** ^The definition of [LIKE] pattern matching used in
-** [sqlite3_strlike(P,X,E)] is the same as for the "X LIKE P ESCAPE E"
+** [bentley_sqlite3_strlike(P,X,E)] is the same as for the "X LIKE P ESCAPE E"
 ** operator in the SQL dialect understood by SQLite.  ^For "X LIKE P" without
-** the ESCAPE clause, set the E parameter of [sqlite3_strlike(P,X,E)] to 0.
-** ^As with the LIKE operator, the [sqlite3_strlike(P,X,E)] function is case
+** the ESCAPE clause, set the E parameter of [bentley_sqlite3_strlike(P,X,E)] to 0.
+** ^As with the LIKE operator, the [bentley_sqlite3_strlike(P,X,E)] function is case
 ** insensitive - equivalent upper and lower case ASCII characters match
 ** one another.
 **
-** ^The [sqlite3_strlike(P,X,E)] function matches Unicode characters, though
+** ^The [bentley_sqlite3_strlike(P,X,E)] function matches Unicode characters, though
 ** only ASCII characters are case folded.
 **
 ** Note that this routine returns zero on a match and non-zero if the strings
-** do not match, the same as [sqlite3_stricmp()] and [sqlite3_strnicmp()].
+** do not match, the same as [bentley_sqlite3_stricmp()] and [bentley_sqlite3_strnicmp()].
 **
-** See also: [sqlite3_strglob()].
+** See also: [bentley_sqlite3_strglob()].
 */
-SQLITE_API int sqlite3_strlike(const char *zGlob, const char *zStr, unsigned int cEsc);
+SQLITE_API int bentley_sqlite3_strlike(const char *zGlob, const char *zStr, unsigned int cEsc);
 
 /*
 ** CAPI3REF: Error Logging Interface
 **
-** ^The [sqlite3_log()] interface writes a message into the [error log]
-** established by the [SQLITE_CONFIG_LOG] option to [sqlite3_config()].
+** ^The [bentley_sqlite3_log()] interface writes a message into the [error log]
+** established by the [SQLITE_CONFIG_LOG] option to [bentley_sqlite3_config()].
 ** ^If logging is enabled, the zFormat string and subsequent arguments are
-** used with [sqlite3_snprintf()] to generate the final output string.
+** used with [bentley_sqlite3_snprintf()] to generate the final output string.
 **
-** The sqlite3_log() interface is intended for use by extensions such as
+** The bentley_sqlite3_log() interface is intended for use by extensions such as
 ** virtual tables, collating functions, and SQL functions.  While there is
-** nothing to prevent an application from calling sqlite3_log(), doing so
+** nothing to prevent an application from calling bentley_sqlite3_log(), doing so
 ** is considered bad form.
 **
 ** The zFormat string must not be NULL.
 **
-** To avoid deadlocks and other threading problems, the sqlite3_log() routine
+** To avoid deadlocks and other threading problems, the bentley_sqlite3_log() routine
 ** will not use dynamically allocated memory.  The log message is stored in
 ** a fixed-length buffer on the stack.  If the log message is longer than
 ** a few hundred characters, it will be truncated to the length of the
 ** buffer.
 */
-SQLITE_API void sqlite3_log(int iErrCode, const char *zFormat, ...);
+SQLITE_API void bentley_sqlite3_log(int iErrCode, const char *zFormat, ...);
 
 /*
 ** CAPI3REF: Write-Ahead Log Commit Hook
 ** METHOD: sqlite3
 **
-** ^The [sqlite3_wal_hook()] function is used to register a callback that
+** ^The [bentley_sqlite3_wal_hook()] function is used to register a callback that
 ** is invoked each time data is committed to a database in wal mode.
 **
 ** ^(The callback is invoked by SQLite after the commit has taken place and
@@ -9698,7 +9698,7 @@ SQLITE_API void sqlite3_log(int iErrCode, const char *zFormat, ...);
 ** may read, write or [checkpoint] the database as required.
 **
 ** ^The first parameter passed to the callback function when it is invoked
-** is a copy of the third parameter passed to sqlite3_wal_hook() when
+** is a copy of the third parameter passed to bentley_sqlite3_wal_hook() when
 ** registering the callback. ^The second is a copy of the database handle.
 ** ^The third parameter is the name of the database that was written to -
 ** either "main" or the name of an [ATTACH]-ed database. ^The fourth parameter
@@ -9714,14 +9714,14 @@ SQLITE_API void sqlite3_log(int iErrCode, const char *zFormat, ...);
 ** are undefined.
 **
 ** A single database handle may have at most a single write-ahead log callback
-** registered at one time. ^Calling [sqlite3_wal_hook()] replaces any
+** registered at one time. ^Calling [bentley_sqlite3_wal_hook()] replaces any
 ** previously registered write-ahead log callback. ^The return value is
 ** a copy of the third parameter from the previous call, if any, or 0.
-** ^Note that the [sqlite3_wal_autocheckpoint()] interface and the
-** [wal_autocheckpoint pragma] both invoke [sqlite3_wal_hook()] and will
-** overwrite any prior [sqlite3_wal_hook()] settings.
+** ^Note that the [bentley_sqlite3_wal_autocheckpoint()] interface and the
+** [wal_autocheckpoint pragma] both invoke [bentley_sqlite3_wal_hook()] and will
+** overwrite any prior [bentley_sqlite3_wal_hook()] settings.
 */
-SQLITE_API void *sqlite3_wal_hook(
+SQLITE_API void *bentley_sqlite3_wal_hook(
   sqlite3*,
   int(*)(void *,sqlite3*,const char*,int),
   void*
@@ -9731,8 +9731,8 @@ SQLITE_API void *sqlite3_wal_hook(
 ** CAPI3REF: Configure an auto-checkpoint
 ** METHOD: sqlite3
 **
-** ^The [sqlite3_wal_autocheckpoint(D,N)] is a wrapper around
-** [sqlite3_wal_hook()] that causes any database on [database connection] D
+** ^The [bentley_sqlite3_wal_autocheckpoint(D,N)] is a wrapper around
+** [bentley_sqlite3_wal_hook()] that causes any database on [database connection] D
 ** to automatically [checkpoint]
 ** after committing a transaction if there are N or
 ** more frames in the [write-ahead log] file.  ^Passing zero or
@@ -9740,15 +9740,15 @@ SQLITE_API void *sqlite3_wal_hook(
 ** checkpoints entirely.
 **
 ** ^The callback registered by this function replaces any existing callback
-** registered using [sqlite3_wal_hook()].  ^Likewise, registering a callback
-** using [sqlite3_wal_hook()] disables the automatic checkpoint mechanism
+** registered using [bentley_sqlite3_wal_hook()].  ^Likewise, registering a callback
+** using [bentley_sqlite3_wal_hook()] disables the automatic checkpoint mechanism
 ** configured by this function.
 **
 ** ^The [wal_autocheckpoint pragma] can be used to invoke this interface
 ** from SQL.
 **
 ** ^Checkpoints initiated by this mechanism are
-** [sqlite3_wal_checkpoint_v2|PASSIVE].
+** [bentley_sqlite3_wal_checkpoint_v2|PASSIVE].
 **
 ** ^Every new [database connection] defaults to having the auto-checkpoint
 ** enabled with a threshold of 1000 or [SQLITE_DEFAULT_WAL_AUTOCHECKPOINT]
@@ -9756,35 +9756,35 @@ SQLITE_API void *sqlite3_wal_hook(
 ** is only necessary if the default setting is found to be suboptimal
 ** for a particular application.
 */
-SQLITE_API int sqlite3_wal_autocheckpoint(sqlite3 *db, int N);
+SQLITE_API int bentley_sqlite3_wal_autocheckpoint(sqlite3 *db, int N);
 
 /*
 ** CAPI3REF: Checkpoint a database
 ** METHOD: sqlite3
 **
-** ^(The sqlite3_wal_checkpoint(D,X) is equivalent to
-** [sqlite3_wal_checkpoint_v2](D,X,[SQLITE_CHECKPOINT_PASSIVE],0,0).)^
+** ^(The bentley_sqlite3_wal_checkpoint(D,X) is equivalent to
+** [bentley_sqlite3_wal_checkpoint_v2](D,X,[SQLITE_CHECKPOINT_PASSIVE],0,0).)^
 **
-** In brief, sqlite3_wal_checkpoint(D,X) causes the content in the
+** In brief, bentley_sqlite3_wal_checkpoint(D,X) causes the content in the
 ** [write-ahead log] for database X on [database connection] D to be
 ** transferred into the database file and for the write-ahead log to
 ** be reset.  See the [checkpointing] documentation for addition
 ** information.
 **
 ** This interface used to be the only way to cause a checkpoint to
-** occur.  But then the newer and more powerful [sqlite3_wal_checkpoint_v2()]
+** occur.  But then the newer and more powerful [bentley_sqlite3_wal_checkpoint_v2()]
 ** interface was added.  This interface is retained for backwards
 ** compatibility and as a convenience for applications that need to manually
 ** start a callback but which do not need the full power (and corresponding
-** complication) of [sqlite3_wal_checkpoint_v2()].
+** complication) of [bentley_sqlite3_wal_checkpoint_v2()].
 */
-SQLITE_API int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
+SQLITE_API int bentley_sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 
 /*
 ** CAPI3REF: Checkpoint a database
 ** METHOD: sqlite3
 **
-** ^(The sqlite3_wal_checkpoint_v2(D,X,M,L,C) interface runs a checkpoint
+** ^(The bentley_sqlite3_wal_checkpoint_v2(D,X,M,L,C) interface runs a checkpoint
 ** operation on database X of [database connection] D in mode M.  Status
 ** information is written back into integers pointed to by L and C.)^
 ** ^(The M parameter must be a valid [checkpoint mode]:)^
@@ -9800,7 +9800,7 @@ SQLITE_API int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 **
 ** <dt>SQLITE_CHECKPOINT_FULL<dd>
 **   ^This mode blocks (it invokes the
-**   [sqlite3_busy_handler|busy-handler callback]) until there is no
+**   [bentley_sqlite3_busy_handler|busy-handler callback]) until there is no
 **   database writer and all readers are reading from the most recent database
 **   snapshot. ^It then checkpoints all frames in the log file and syncs the
 **   database file. ^This mode blocks new database writers while it is pending,
@@ -9865,14 +9865,14 @@ SQLITE_API int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 ** attached database, SQLITE_ERROR is returned to the caller.
 **
 ** ^Unless it returns SQLITE_MISUSE,
-** the sqlite3_wal_checkpoint_v2() interface
+** the bentley_sqlite3_wal_checkpoint_v2() interface
 ** sets the error information that is queried by
-** [sqlite3_errcode()] and [sqlite3_errmsg()].
+** [bentley_sqlite3_errcode()] and [bentley_sqlite3_errmsg()].
 **
 ** ^The [PRAGMA wal_checkpoint] command can be used to invoke this interface
 ** from SQL.
 */
-SQLITE_API int sqlite3_wal_checkpoint_v2(
+SQLITE_API int bentley_sqlite3_wal_checkpoint_v2(
   sqlite3 *db,                    /* Database handle */
   const char *zDb,                /* Name of attached database (or NULL) */
   int eMode,                      /* SQLITE_CHECKPOINT_* value */
@@ -9885,8 +9885,8 @@ SQLITE_API int sqlite3_wal_checkpoint_v2(
 ** KEYWORDS: {checkpoint mode}
 **
 ** These constants define all valid values for the "checkpoint mode" passed
-** as the third parameter to the [sqlite3_wal_checkpoint_v2()] interface.
-** See the [sqlite3_wal_checkpoint_v2()] documentation for details on the
+** as the third parameter to the [bentley_sqlite3_wal_checkpoint_v2()] interface.
+** See the [bentley_sqlite3_wal_checkpoint_v2()] documentation for details on the
 ** meaning of each of these checkpoint modes.
 */
 #define SQLITE_CHECKPOINT_PASSIVE  0  /* Do as much as possible w/o blocking */
@@ -9904,15 +9904,15 @@ SQLITE_API int sqlite3_wal_checkpoint_v2(
 ** If this interface is invoked outside the context of an xConnect or
 ** xCreate virtual table method then the behavior is undefined.
 **
-** In the call sqlite3_vtab_config(D,C,...) the D parameter is the
+** In the call bentley_sqlite3_vtab_config(D,C,...) the D parameter is the
 ** [database connection] in which the virtual table is being created and
 ** which is passed in as the first argument to the [xConnect] or [xCreate]
-** method that is invoking sqlite3_vtab_config().  The C parameter is one
+** method that is invoking bentley_sqlite3_vtab_config().  The C parameter is one
 ** of the [virtual table configuration options].  The presence and meaning
 ** of parameters after C depend on which [virtual table configuration option]
 ** is used.
 */
-SQLITE_API int sqlite3_vtab_config(sqlite3*, int op, ...);
+SQLITE_API int bentley_sqlite3_vtab_config(sqlite3*, int op, ...);
 
 /*
 ** CAPI3REF: Virtual Table Configuration Options
@@ -9920,16 +9920,16 @@ SQLITE_API int sqlite3_vtab_config(sqlite3*, int op, ...);
 ** KEYWORDS: {virtual table configuration option}
 **
 ** These macros define the various options to the
-** [sqlite3_vtab_config()] interface that [virtual table] implementations
+** [bentley_sqlite3_vtab_config()] interface that [virtual table] implementations
 ** can use to customize and optimize their behavior.
 **
 ** <dl>
 ** [[SQLITE_VTAB_CONSTRAINT_SUPPORT]]
 ** <dt>SQLITE_VTAB_CONSTRAINT_SUPPORT</dt>
 ** <dd>Calls of the form
-** [sqlite3_vtab_config](db,SQLITE_VTAB_CONSTRAINT_SUPPORT,X) are supported,
+** [bentley_sqlite3_vtab_config](db,SQLITE_VTAB_CONSTRAINT_SUPPORT,X) are supported,
 ** where X is an integer.  If X is zero, then the [virtual table] whose
-** [xCreate] or [xConnect] method invoked [sqlite3_vtab_config()] does not
+** [xCreate] or [xConnect] method invoked [bentley_sqlite3_vtab_config()] does not
 ** support constraints.  In this configuration (which is the default) if
 ** a call to the [xUpdate] method returns [SQLITE_CONSTRAINT], then the entire
 ** statement is rolled back as if [ON CONFLICT | OR ABORT] had been
@@ -9948,7 +9948,7 @@ SQLITE_API int sqlite3_vtab_config(sqlite3*, int op, ...);
 **
 ** Virtual table implementations that are required to handle OR REPLACE
 ** must do so within the [xUpdate] method. If a call to the
-** [sqlite3_vtab_on_conflict()] function indicates that the current ON
+** [bentley_sqlite3_vtab_on_conflict()] function indicates that the current ON
 ** CONFLICT policy is REPLACE, the virtual table implementation should
 ** silently replace the appropriate rows within the xUpdate callback and
 ** return SQLITE_OK. Or, if this is not possible, it may return
@@ -9958,7 +9958,7 @@ SQLITE_API int sqlite3_vtab_config(sqlite3*, int op, ...);
 **
 ** [[SQLITE_VTAB_DIRECTONLY]]<dt>SQLITE_VTAB_DIRECTONLY</dt>
 ** <dd>Calls of the form
-** [sqlite3_vtab_config](db,SQLITE_VTAB_DIRECTONLY) from within the
+** [bentley_sqlite3_vtab_config](db,SQLITE_VTAB_DIRECTONLY) from within the
 ** the [xConnect] or [xCreate] methods of a [virtual table] implementation
 ** prohibits that virtual table from being used from within triggers and
 ** views.
@@ -9966,7 +9966,7 @@ SQLITE_API int sqlite3_vtab_config(sqlite3*, int op, ...);
 **
 ** [[SQLITE_VTAB_INNOCUOUS]]<dt>SQLITE_VTAB_INNOCUOUS</dt>
 ** <dd>Calls of the form
-** [sqlite3_vtab_config](db,SQLITE_VTAB_INNOCUOUS) from within the
+** [bentley_sqlite3_vtab_config](db,SQLITE_VTAB_INNOCUOUS) from within the
 ** the [xConnect] or [xCreate] methods of a [virtual table] implementation
 ** identify that virtual table as being safe to use from within triggers
 ** and views.  Conceptually, the SQLITE_VTAB_INNOCUOUS tag means that the
@@ -9977,7 +9977,7 @@ SQLITE_API int sqlite3_vtab_config(sqlite3*, int op, ...);
 **
 ** [[SQLITE_VTAB_USES_ALL_SCHEMAS]]<dt>SQLITE_VTAB_USES_ALL_SCHEMAS</dt>
 ** <dd>Calls of the form
-** [sqlite3_vtab_config](db,SQLITE_VTAB_USES_ALL_SCHEMA) from within the
+** [bentley_sqlite3_vtab_config](db,SQLITE_VTAB_USES_ALL_SCHEMA) from within the
 ** the [xConnect] or [xCreate] methods of a [virtual table] implementation
 ** instruct the query planner to begin at least a read transaction on
 ** all schemas ("main", "temp", and any ATTACH-ed databases) whenever the
@@ -10000,12 +10000,12 @@ SQLITE_API int sqlite3_vtab_config(sqlite3*, int op, ...);
 ** of the SQL statement that triggered the call to the [xUpdate] method of the
 ** [virtual table].
 */
-SQLITE_API int sqlite3_vtab_on_conflict(sqlite3 *);
+SQLITE_API int bentley_sqlite3_vtab_on_conflict(sqlite3 *);
 
 /*
 ** CAPI3REF: Determine If Virtual Table Column Access Is For UPDATE
 **
-** If the sqlite3_vtab_nochange(X) routine is called within the [xColumn]
+** If the bentley_sqlite3_vtab_nochange(X) routine is called within the [xColumn]
 ** method of a [virtual table], then it might return true if the
 ** column is being fetched as part of an UPDATE operation during which the
 ** column value will not change.  The virtual table implementation can use
@@ -10013,20 +10013,20 @@ SQLITE_API int sqlite3_vtab_on_conflict(sqlite3 *);
 ** expensive to compute and that the corresponding
 ** [xUpdate] method understands as a "no-change" value.
 **
-** If the [xColumn] method calls sqlite3_vtab_nochange() and finds that
+** If the [xColumn] method calls bentley_sqlite3_vtab_nochange() and finds that
 ** the column is not changed by the UPDATE statement, then the xColumn
 ** method can optionally return without setting a result, without calling
-** any of the [sqlite3_result_int|sqlite3_result_xxxxx() interfaces].
-** In that case, [sqlite3_value_nochange(X)] will return true for the
+** any of the [bentley_sqlite3_result_int|sqlite3_result_xxxxx() interfaces].
+** In that case, [bentley_sqlite3_value_nochange(X)] will return true for the
 ** same column in the [xUpdate] method.
 **
-** The sqlite3_vtab_nochange() routine is an optimization.  Virtual table
+** The bentley_sqlite3_vtab_nochange() routine is an optimization.  Virtual table
 ** implementations should continue to give a correct answer even if the
-** sqlite3_vtab_nochange() interface were to always return false.  In the
-** current implementation, the sqlite3_vtab_nochange() interface does always
+** bentley_sqlite3_vtab_nochange() interface were to always return false.  In the
+** current implementation, the bentley_sqlite3_vtab_nochange() interface does always
 ** returns false for the enhanced [UPDATE FROM] statement.
 */
-SQLITE_API int sqlite3_vtab_nochange(sqlite3_context*);
+SQLITE_API int bentley_sqlite3_vtab_nochange(sqlite3_context*);
 
 /*
 ** CAPI3REF: Determine The Collation For a Virtual Table Constraint
@@ -10056,12 +10056,12 @@ SQLITE_API int sqlite3_vtab_nochange(sqlite3_context*);
 ** <li><p> If there is no COLLATE operator, but the column that is the subject
 **         of the constraint specifies an alternative collating sequence via
 **         a [COLLATE clause] on the column definition within the CREATE TABLE
-**         statement that was passed into [sqlite3_declare_vtab()], then the
+**         statement that was passed into [bentley_sqlite3_declare_vtab()], then the
 **         name of that alternative collating sequence is returned.
 ** <li><p> Otherwise, "BINARY" is returned.
 ** </ol>
 */
-SQLITE_API const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
+SQLITE_API const char *bentley_sqlite3_vtab_collation(sqlite3_index_info*,int);
 
 /*
 ** CAPI3REF: Determine if a virtual table query is DISTINCT
@@ -10071,29 +10071,29 @@ SQLITE_API const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
 ** of a [virtual table] implementation. The result of calling this
 ** interface from outside of xBestIndex() is undefined and probably harmful.
 **
-** ^The sqlite3_vtab_distinct() interface returns an integer between 0 and
-** 3.  The integer returned by sqlite3_vtab_distinct()
+** ^The bentley_sqlite3_vtab_distinct() interface returns an integer between 0 and
+** 3.  The integer returned by bentley_sqlite3_vtab_distinct()
 ** gives the virtual table additional information about how the query
 ** planner wants the output to be ordered. As long as the virtual table
 ** can meet the ordering requirements of the query planner, it may set
 ** the "orderByConsumed" flag.
 **
 ** <ol><li value="0"><p>
-** ^If the sqlite3_vtab_distinct() interface returns 0, that means
+** ^If the bentley_sqlite3_vtab_distinct() interface returns 0, that means
 ** that the query planner needs the virtual table to return all rows in the
 ** sort order defined by the "nOrderBy" and "aOrderBy" fields of the
 ** [sqlite3_index_info] object.  This is the default expectation.  If the
 ** virtual table outputs all rows in sorted order, then it is always safe for
 ** the xBestIndex method to set the "orderByConsumed" flag, regardless of
-** the return value from sqlite3_vtab_distinct().
+** the return value from bentley_sqlite3_vtab_distinct().
 ** <li value="1"><p>
-** ^(If the sqlite3_vtab_distinct() interface returns 1, that means
+** ^(If the bentley_sqlite3_vtab_distinct() interface returns 1, that means
 ** that the query planner does not need the rows to be returned in sorted order
 ** as long as all rows with the same values in all columns identified by the
 ** "aOrderBy" field are adjacent.)^  This mode is used when the query planner
 ** is doing a GROUP BY.
 ** <li value="2"><p>
-** ^(If the sqlite3_vtab_distinct() interface returns 2, that means
+** ^(If the bentley_sqlite3_vtab_distinct() interface returns 2, that means
 ** that the query planner does not need the rows returned in any particular
 ** order, as long as rows with the same values in all columns identified
 ** by "aOrderBy" are adjacent.)^  ^(Furthermore, when two or more rows
@@ -10104,9 +10104,9 @@ SQLITE_API const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
 ** too much extra effort, it could potentially help the query to run faster.
 ** This mode is used for a DISTINCT query.
 ** <li value="3"><p>
-** ^(If the sqlite3_vtab_distinct() interface returns 3, that means the
+** ^(If the bentley_sqlite3_vtab_distinct() interface returns 3, that means the
 ** virtual table must return rows in the order defined by "aOrderBy" as
-** if the sqlite3_vtab_distinct() interface had returned 0.  However if
+** if the bentley_sqlite3_vtab_distinct() interface had returned 0.  However if
 ** two or more rows in the result have the same values for all columns
 ** identified by "colUsed", then all but one such row may optionally be
 ** omitted.)^  Like when the return value is 2, the virtual table
@@ -10119,12 +10119,12 @@ SQLITE_API const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
 **
 ** <p>The following table summarizes the conditions under which the
 ** virtual table is allowed to set the "orderByConsumed" flag based on
-** the value returned by sqlite3_vtab_distinct().  This table is a
+** the value returned by bentley_sqlite3_vtab_distinct().  This table is a
 ** restatement of the previous four paragraphs:
 **
 ** <table border=1 cellspacing=0 cellpadding=10 width="90%">
 ** <tr>
-** <td valign="top">sqlite3_vtab_distinct() return value
+** <td valign="top">bentley_sqlite3_vtab_distinct() return value
 ** <td valign="top">Rows are returned in aOrderBy order
 ** <td valign="top">Rows with the same value in all aOrderBy columns are adjacent
 ** <td valign="top">Duplicates over all colUsed columns may be omitted
@@ -10148,14 +10148,14 @@ SQLITE_API const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
 ** the "orderByConsumed" flag is unset, the query planner will add extra
 ** [bytecode] to ensure that the final results returned by the SQL query are
 ** ordered correctly.  The use of the "orderByConsumed" flag and the
-** sqlite3_vtab_distinct() interface is merely an optimization.  ^Careful
-** use of the sqlite3_vtab_distinct() interface and the "orderByConsumed"
+** bentley_sqlite3_vtab_distinct() interface is merely an optimization.  ^Careful
+** use of the bentley_sqlite3_vtab_distinct() interface and the "orderByConsumed"
 ** flag might help queries against a virtual table to run faster.  Being
 ** overly aggressive and setting the "orderByConsumed" flag when it is not
 ** valid to do so, on the other hand, might cause SQLite to return incorrect
 ** results.
 */
-SQLITE_API int sqlite3_vtab_distinct(sqlite3_index_info*);
+SQLITE_API int bentley_sqlite3_vtab_distinct(sqlite3_index_info*);
 
 /*
 ** CAPI3REF: Identify and handle IN constraints in xBestIndex
@@ -10179,19 +10179,19 @@ SQLITE_API int sqlite3_vtab_distinct(sqlite3_index_info*);
 **
 ** In some cases, however, it would be advantageous for the virtual
 ** table to see all values on the right-hand of the IN operator all at
-** once.  The sqlite3_vtab_in() interfaces facilitates this in two ways:
+** once.  The bentley_sqlite3_vtab_in() interfaces facilitates this in two ways:
 **
 ** <ol>
 ** <li><p>
-**   ^A call to sqlite3_vtab_in(P,N,-1) will return true (non-zero)
+**   ^A call to bentley_sqlite3_vtab_in(P,N,-1) will return true (non-zero)
 **   if and only if the [sqlite3_index_info|P->aConstraint][N] constraint
 **   is an [IN operator] that can be processed all at once.  ^In other words,
-**   sqlite3_vtab_in() with -1 in the third argument is a mechanism
+**   bentley_sqlite3_vtab_in() with -1 in the third argument is a mechanism
 **   by which the virtual table can ask SQLite if all-at-once processing
 **   of the IN operator is even possible.
 **
 ** <li><p>
-**   ^A call to sqlite3_vtab_in(P,N,F) with F==1 or F==0 indicates
+**   ^A call to bentley_sqlite3_vtab_in(P,N,F) with F==1 or F==0 indicates
 **   to SQLite that the virtual table does or does not want to process
 **   the IN operator all-at-once, respectively.  ^Thus when the third
 **   parameter (F) is non-negative, this interface is the mechanism by
@@ -10199,9 +10199,9 @@ SQLITE_API int sqlite3_vtab_distinct(sqlite3_index_info*);
 **   IN operator.
 ** </ol>
 **
-** ^The sqlite3_vtab_in(P,N,F) interface can be invoked multiple times
+** ^The bentley_sqlite3_vtab_in(P,N,F) interface can be invoked multiple times
 ** within the same xBestIndex method call.  ^For any given P,N pair,
-** the return value from sqlite3_vtab_in(P,N,F) will always be the same
+** the return value from bentley_sqlite3_vtab_in(P,N,F) will always be the same
 ** within the same xBestIndex call.  ^If the interface returns true
 ** (non-zero), that means that the constraint is an IN operator
 ** that can be processed all-at-once.  ^If the constraint is not an IN
@@ -10216,7 +10216,7 @@ SQLITE_API int sqlite3_vtab_distinct(sqlite3_index_info*);
 ** integer.  This is how the virtual table tells SQLite that it wants to
 ** use the N-th constraint.
 **
-** <li><p> The last call to sqlite3_vtab_in(P,N,F) for which F was
+** <li><p> The last call to bentley_sqlite3_vtab_in(P,N,F) for which F was
 ** non-negative had F>=1.
 ** </ol>)^
 **
@@ -10224,11 +10224,11 @@ SQLITE_API int sqlite3_vtab_distinct(sqlite3_index_info*);
 ** the traditional one-at-a-time processing strategy for the IN constraint.
 ** ^If both conditions are true, then the argvIndex-th parameter to the
 ** xFilter method will be an [sqlite3_value] that appears to be NULL,
-** but which can be passed to [sqlite3_vtab_in_first()] and
-** [sqlite3_vtab_in_next()] to find all values on the right-hand side
+** but which can be passed to [bentley_sqlite3_vtab_in_first()] and
+** [bentley_sqlite3_vtab_in_next()] to find all values on the right-hand side
 ** of the IN constraint.
 */
-SQLITE_API int sqlite3_vtab_in(sqlite3_index_info*, int iCons, int bHandle);
+SQLITE_API int bentley_sqlite3_vtab_in(sqlite3_index_info*, int iCons, int bHandle);
 
 /*
 ** CAPI3REF: Find all elements on the right-hand side of an IN constraint.
@@ -10238,11 +10238,11 @@ SQLITE_API int sqlite3_vtab_in(sqlite3_index_info*, int iCons, int bHandle);
 ** The result of invoking these interfaces from any other context
 ** is undefined and probably harmful.
 **
-** The X parameter in a call to sqlite3_vtab_in_first(X,P) or
-** sqlite3_vtab_in_next(X,P) should be one of the parameters to the
+** The X parameter in a call to bentley_sqlite3_vtab_in_first(X,P) or
+** bentley_sqlite3_vtab_in_next(X,P) should be one of the parameters to the
 ** xFilter method which invokes these routines, and specifically
 ** a parameter that was previously selected for all-at-once IN constraint
-** processing use the [sqlite3_vtab_in()] interface in the
+** processing use the [bentley_sqlite3_vtab_in()] interface in the
 ** [xBestIndex|xBestIndex method].  ^(If the X parameter is not
 ** an xFilter argument that was selected for all-at-once IN constraint
 ** processing, then these routines return [SQLITE_ERROR].)^
@@ -10251,9 +10251,9 @@ SQLITE_API int sqlite3_vtab_in(sqlite3_index_info*, int iCons, int bHandle);
 ** of the IN constraint using code like the following:
 **
 ** <blockquote><pre>
-** &nbsp;  for(rc=sqlite3_vtab_in_first(pList, &pVal);
+** &nbsp;  for(rc=bentley_sqlite3_vtab_in_first(pList, &pVal);
 ** &nbsp;      rc==SQLITE_OK && pVal;
-** &nbsp;      rc=sqlite3_vtab_in_next(pList, &pVal)
+** &nbsp;      rc=bentley_sqlite3_vtab_in_next(pList, &pVal)
 ** &nbsp;  ){
 ** &nbsp;    // do something with pVal
 ** &nbsp;  }
@@ -10262,7 +10262,7 @@ SQLITE_API int sqlite3_vtab_in(sqlite3_index_info*, int iCons, int bHandle);
 ** &nbsp;  }
 ** </pre></blockquote>)^
 **
-** ^On success, the sqlite3_vtab_in_first(X,P) and sqlite3_vtab_in_next(X,P)
+** ^On success, the bentley_sqlite3_vtab_in_first(X,P) and bentley_sqlite3_vtab_in_next(X,P)
 ** routines return SQLITE_OK and set *P to point to the first or next value
 ** on the RHS of the IN constraint.  ^If there are no more values on the
 ** right hand side of the IN constraint, then *P is set to NULL and these
@@ -10275,8 +10275,8 @@ SQLITE_API int sqlite3_vtab_in(sqlite3_index_info*, int iCons, int bHandle);
 ** implementation needs to retain the *ppOut values for longer, it must make
 ** copies.  The *ppOut values are [protected sqlite3_value|protected].
 */
-SQLITE_API int sqlite3_vtab_in_first(sqlite3_value *pVal, sqlite3_value **ppOut);
-SQLITE_API int sqlite3_vtab_in_next(sqlite3_value *pVal, sqlite3_value **ppOut);
+SQLITE_API int bentley_sqlite3_vtab_in_first(sqlite3_value *pVal, sqlite3_value **ppOut);
+SQLITE_API int bentley_sqlite3_vtab_in_next(sqlite3_value *pVal, sqlite3_value **ppOut);
 
 /*
 ** CAPI3REF: Constraint values in xBestIndex()
@@ -10286,50 +10286,50 @@ SQLITE_API int sqlite3_vtab_in_next(sqlite3_value *pVal, sqlite3_value **ppOut);
 ** of a [virtual table] implementation. The result of calling this interface
 ** from outside of an xBestIndex method are undefined and probably harmful.
 **
-** ^When the sqlite3_vtab_rhs_value(P,J,V) interface is invoked from within
+** ^When the bentley_sqlite3_vtab_rhs_value(P,J,V) interface is invoked from within
 ** the [xBestIndex] method of a [virtual table] implementation, with P being
 ** a copy of the [sqlite3_index_info] object pointer passed into xBestIndex and
 ** J being a 0-based index into P->aConstraint[], then this routine
 ** attempts to set *V to the value of the right-hand operand of
 ** that constraint if the right-hand operand is known.  ^If the
 ** right-hand operand is not known, then *V is set to a NULL pointer.
-** ^The sqlite3_vtab_rhs_value(P,J,V) interface returns SQLITE_OK if
-** and only if *V is set to a value.  ^The sqlite3_vtab_rhs_value(P,J,V)
+** ^The bentley_sqlite3_vtab_rhs_value(P,J,V) interface returns SQLITE_OK if
+** and only if *V is set to a value.  ^The bentley_sqlite3_vtab_rhs_value(P,J,V)
 ** inteface returns SQLITE_NOTFOUND if the right-hand side of the J-th
-** constraint is not available.  ^The sqlite3_vtab_rhs_value() interface
+** constraint is not available.  ^The bentley_sqlite3_vtab_rhs_value() interface
 ** can return an result code other than SQLITE_OK or SQLITE_NOTFOUND if
 ** something goes wrong.
 **
-** The sqlite3_vtab_rhs_value() interface is usually only successful if
+** The bentley_sqlite3_vtab_rhs_value() interface is usually only successful if
 ** the right-hand operand of a constraint is a literal value in the original
 ** SQL statement.  If the right-hand operand is an expression or a reference
-** to some other column or a [host parameter], then sqlite3_vtab_rhs_value()
+** to some other column or a [host parameter], then bentley_sqlite3_vtab_rhs_value()
 ** will probably return [SQLITE_NOTFOUND].
 **
 ** ^(Some constraints, such as [SQLITE_INDEX_CONSTRAINT_ISNULL] and
 ** [SQLITE_INDEX_CONSTRAINT_ISNOTNULL], have no right-hand operand.  For such
-** constraints, sqlite3_vtab_rhs_value() always returns SQLITE_NOTFOUND.)^
+** constraints, bentley_sqlite3_vtab_rhs_value() always returns SQLITE_NOTFOUND.)^
 **
 ** ^The [sqlite3_value] object returned in *V is a protected sqlite3_value
 ** and remains valid for the duration of the xBestIndex method call.
 ** ^When xBestIndex returns, the sqlite3_value object returned by
-** sqlite3_vtab_rhs_value() is automatically deallocated.
+** bentley_sqlite3_vtab_rhs_value() is automatically deallocated.
 **
 ** The "_rhs_" in the name of this routine is an abbreviation for
 ** "Right-Hand Side".
 */
-SQLITE_API int sqlite3_vtab_rhs_value(sqlite3_index_info*, int, sqlite3_value **ppVal);
+SQLITE_API int bentley_sqlite3_vtab_rhs_value(sqlite3_index_info*, int, sqlite3_value **ppVal);
 
 /*
 ** CAPI3REF: Conflict resolution modes
 ** KEYWORDS: {conflict resolution mode}
 **
-** These constants are returned by [sqlite3_vtab_on_conflict()] to
+** These constants are returned by [bentley_sqlite3_vtab_on_conflict()] to
 ** inform a [virtual table] implementation what the [ON CONFLICT] mode
 ** is for the SQL statement being evaluated.
 **
 ** Note that the [SQLITE_IGNORE] constant is also used as a potential
-** return value from the [sqlite3_set_authorizer()] callback and that
+** return value from the [bentley_sqlite3_set_authorizer()] callback and that
 ** [SQLITE_ABORT] is also a [result code].
 */
 #define SQLITE_ROLLBACK 1
@@ -10483,11 +10483,11 @@ SQLITE_API void sqlite3_stmt_scanstatus_reset(sqlite3_stmt*);
 ** METHOD: sqlite3
 **
 ** ^If a write-transaction is open on [database connection] D when the
-** [sqlite3_db_cacheflush(D)] interface invoked, any dirty
+** [bentley_sqlite3_db_cacheflush(D)] interface invoked, any dirty
 ** pages in the pager-cache that are not currently in use are written out
 ** to disk. A dirty page may be in use if a database cursor created by an
 ** active SQL statement is reading from it, or if it is page 1 of a database
-** file (page 1 is always "in use").  ^The [sqlite3_db_cacheflush(D)]
+** file (page 1 is always "in use").  ^The [bentley_sqlite3_db_cacheflush(D)]
 ** interface flushes caches for all schemas - "main", "temp", and
 ** any [attached] databases.
 **
@@ -10504,12 +10504,12 @@ SQLITE_API void sqlite3_stmt_scanstatus_reset(sqlite3_stmt*);
 ** example an IO error or out-of-memory condition), then processing is
 ** abandoned and an SQLite [error code] is returned to the caller immediately.
 **
-** ^Otherwise, if no error occurs, [sqlite3_db_cacheflush()] returns SQLITE_OK.
+** ^Otherwise, if no error occurs, [bentley_sqlite3_db_cacheflush()] returns SQLITE_OK.
 **
 ** ^This function does not set the database handle error code or message
-** returned by the [sqlite3_errcode()] and [sqlite3_errmsg()] functions.
+** returned by the [bentley_sqlite3_errcode()] and [bentley_sqlite3_errmsg()] functions.
 */
-SQLITE_API int sqlite3_db_cacheflush(sqlite3*);
+SQLITE_API int bentley_sqlite3_db_cacheflush(sqlite3*);
 
 /*
 ** CAPI3REF: The pre-update hook.
@@ -10518,15 +10518,15 @@ SQLITE_API int sqlite3_db_cacheflush(sqlite3*);
 ** ^These interfaces are only available if SQLite is compiled using the
 ** [SQLITE_ENABLE_PREUPDATE_HOOK] compile-time option.
 **
-** ^The [sqlite3_preupdate_hook()] interface registers a callback function
+** ^The [bentley_sqlite3_preupdate_hook()] interface registers a callback function
 ** that is invoked prior to each [INSERT], [UPDATE], and [DELETE] operation
 ** on a database table.
 ** ^At most one preupdate hook may be registered at a time on a single
-** [database connection]; each call to [sqlite3_preupdate_hook()] overrides
+** [database connection]; each call to [bentley_sqlite3_preupdate_hook()] overrides
 ** the previous setting.
-** ^The preupdate hook is disabled by invoking [sqlite3_preupdate_hook()]
+** ^The preupdate hook is disabled by invoking [bentley_sqlite3_preupdate_hook()]
 ** with a NULL pointer as the second parameter.
-** ^The third parameter to [sqlite3_preupdate_hook()] is passed through as
+** ^The third parameter to [bentley_sqlite3_preupdate_hook()] is passed through as
 ** the first parameter to callbacks.
 **
 ** ^The preupdate hook only fires for changes to real database tables; the
@@ -10556,12 +10556,12 @@ SQLITE_API int sqlite3_db_cacheflush(sqlite3*);
 ** function is not defined for operations on WITHOUT ROWID tables, or for
 ** DELETE operations on rowid tables.
 **
-** ^The sqlite3_preupdate_hook(D,C,P) function returns the P argument from
+** ^The bentley_sqlite3_preupdate_hook(D,C,P) function returns the P argument from
 ** the previous call on the same [database connection] D, or NULL for
 ** the first call on D.
 **
-** The [sqlite3_preupdate_old()], [sqlite3_preupdate_new()],
-** [sqlite3_preupdate_count()], and [sqlite3_preupdate_depth()] interfaces
+** The [bentley_sqlite3_preupdate_old()], [bentley_sqlite3_preupdate_new()],
+** [bentley_sqlite3_preupdate_count()], and [bentley_sqlite3_preupdate_depth()] interfaces
 ** provide additional information about a preupdate event. These routines
 ** may only be called from within a preupdate callback.  Invoking any of
 ** these routines from outside of a preupdate callback or with a
@@ -10569,10 +10569,10 @@ SQLITE_API int sqlite3_db_cacheflush(sqlite3*);
 ** to the preupdate callback results in undefined and probably undesirable
 ** behavior.
 **
-** ^The [sqlite3_preupdate_count(D)] interface returns the number of columns
+** ^The [bentley_sqlite3_preupdate_count(D)] interface returns the number of columns
 ** in the row that is being inserted, updated, or deleted.
 **
-** ^The [sqlite3_preupdate_old(D,N,P)] interface writes into P a pointer to
+** ^The [bentley_sqlite3_preupdate_old(D,N,P)] interface writes into P a pointer to
 ** a [protected sqlite3_value] that contains the value of the Nth column of
 ** the table row before it is updated.  The N parameter must be between 0
 ** and one less than the number of columns or the behavior will be
@@ -10581,7 +10581,7 @@ SQLITE_API int sqlite3_db_cacheflush(sqlite3*);
 ** behavior is undefined.  The [sqlite3_value] that P points to
 ** will be destroyed when the preupdate callback returns.
 **
-** ^The [sqlite3_preupdate_new(D,N,P)] interface writes into P a pointer to
+** ^The [bentley_sqlite3_preupdate_new(D,N,P)] interface writes into P a pointer to
 ** a [protected sqlite3_value] that contains the value of the Nth column of
 ** the table row after it is updated.  The N parameter must be between 0
 ** and one less than the number of columns or the behavior will be
@@ -10590,25 +10590,25 @@ SQLITE_API int sqlite3_db_cacheflush(sqlite3*);
 ** behavior is undefined.  The [sqlite3_value] that P points to
 ** will be destroyed when the preupdate callback returns.
 **
-** ^The [sqlite3_preupdate_depth(D)] interface returns 0 if the preupdate
+** ^The [bentley_sqlite3_preupdate_depth(D)] interface returns 0 if the preupdate
 ** callback was invoked as a result of a direct insert, update, or delete
 ** operation; or 1 for inserts, updates, or deletes invoked by top-level
 ** triggers; or 2 for changes resulting from triggers called by top-level
 ** triggers; and so forth.
 **
-** When the [sqlite3_blob_write()] API is used to update a blob column,
+** When the [bentley_sqlite3_blob_write()] API is used to update a blob column,
 ** the pre-update hook is invoked with SQLITE_DELETE. This is because the
 ** in this case the new values are not available. In this case, when a
 ** callback made with op==SQLITE_DELETE is actually a write using the
-** sqlite3_blob_write() API, the [sqlite3_preupdate_blobwrite()] returns
+** bentley_sqlite3_blob_write() API, the [bentley_sqlite3_preupdate_blobwrite()] returns
 ** the index of the column being written. In other cases, where the
 ** pre-update hook is being invoked for some other reason, including a
-** regular DELETE, sqlite3_preupdate_blobwrite() returns -1.
+** regular DELETE, bentley_sqlite3_preupdate_blobwrite() returns -1.
 **
-** See also:  [sqlite3_update_hook()]
+** See also:  [bentley_sqlite3_update_hook()]
 */
 #if defined(SQLITE_ENABLE_PREUPDATE_HOOK)
-SQLITE_API void *sqlite3_preupdate_hook(
+SQLITE_API void *bentley_sqlite3_preupdate_hook(
   sqlite3 *db,
   void(*xPreUpdate)(
     void *pCtx,                   /* Copy of third arg to preupdate_hook() */
@@ -10621,11 +10621,11 @@ SQLITE_API void *sqlite3_preupdate_hook(
   ),
   void*
 );
-SQLITE_API int sqlite3_preupdate_old(sqlite3 *, int, sqlite3_value **);
-SQLITE_API int sqlite3_preupdate_count(sqlite3 *);
-SQLITE_API int sqlite3_preupdate_depth(sqlite3 *);
-SQLITE_API int sqlite3_preupdate_new(sqlite3 *, int, sqlite3_value **);
-SQLITE_API int sqlite3_preupdate_blobwrite(sqlite3 *);
+SQLITE_API int bentley_sqlite3_preupdate_old(sqlite3 *, int, sqlite3_value **);
+SQLITE_API int bentley_sqlite3_preupdate_count(sqlite3 *);
+SQLITE_API int bentley_sqlite3_preupdate_depth(sqlite3 *);
+SQLITE_API int bentley_sqlite3_preupdate_new(sqlite3 *, int, sqlite3_value **);
+SQLITE_API int bentley_sqlite3_preupdate_blobwrite(sqlite3 *);
 #endif
 
 /*
@@ -10635,11 +10635,11 @@ SQLITE_API int sqlite3_preupdate_blobwrite(sqlite3 *);
 ** ^Attempt to return the underlying operating system error code or error
 ** number that caused the most recent I/O error or failure to open a file.
 ** The return value is OS-dependent.  For example, on unix systems, after
-** [sqlite3_open_v2()] returns [SQLITE_CANTOPEN], this interface could be
+** [bentley_sqlite3_open_v2()] returns [SQLITE_CANTOPEN], this interface could be
 ** called to get back the underlying "errno" that caused the problem, such
 ** as ENOSPC, EAUTH, EISDIR, and so forth.
 */
-SQLITE_API int sqlite3_system_errno(sqlite3*);
+SQLITE_API int bentley_sqlite3_system_errno(sqlite3*);
 
 /*
 ** CAPI3REF: Database Snapshot
@@ -10737,7 +10737,7 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_snapshot_get(
 ** [autocommit mode] when [sqlite3_snapshot_open(D,S,P)] is called. If there
 ** is already a read transaction open on schema S, then the database handle
 ** must have no active statements (SELECT statements that have been passed
-** to sqlite3_step() but not sqlite3_reset() or sqlite3_finalize()).
+** to bentley_sqlite3_step() but not bentley_sqlite3_reset() or bentley_sqlite3_finalize()).
 ** SQLITE_ERROR is returned if either of these conditions is violated, or
 ** if schema S does not exist, or if the snapshot object is invalid.
 **
@@ -10821,7 +10821,7 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_snapshot_cmp(
 ** If a [WAL file] remains on disk after all database connections close
 ** (either through the use of the [SQLITE_FCNTL_PERSIST_WAL] [file control]
 ** or because the last process to have the database opened exited without
-** calling [sqlite3_close()]) and a new connection is subsequently opened
+** calling [bentley_sqlite3_close()]) and a new connection is subsequently opened
 ** on that database and [WAL file], the [sqlite3_snapshot_open()] interface
 ** will only be able to open the last transaction added to the WAL file
 ** even though the WAL file contains other valid transactions.
@@ -10842,7 +10842,7 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const c
 /*
 ** CAPI3REF: Serialize a database
 **
-** The sqlite3_serialize(D,S,P,F) interface returns a pointer to
+** The bentley_sqlite3_serialize(D,S,P,F) interface returns a pointer to
 ** memory that is a serialization of the S database on
 ** [database connection] D.  If S is a NULL pointer, the main database is used.
 ** If P is not a NULL pointer, then the size of the database in bytes
@@ -10853,17 +10853,17 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const c
 ** the serialization is the same sequence of bytes which would be written
 ** to disk if that database where backed up to disk.
 **
-** The usual case is that sqlite3_serialize() copies the serialization of
-** the database into memory obtained from [sqlite3_malloc64()] and returns
+** The usual case is that bentley_sqlite3_serialize() copies the serialization of
+** the database into memory obtained from [bentley_sqlite3_malloc64()] and returns
 ** a pointer to that memory.  The caller is responsible for freeing the
 ** returned value to avoid a memory leak.  However, if the F argument
 ** contains the SQLITE_SERIALIZE_NOCOPY bit, then no memory allocations
-** are made, and the sqlite3_serialize() function will return a pointer
+** are made, and the bentley_sqlite3_serialize() function will return a pointer
 ** to the contiguous memory representation of the database that SQLite
 ** is currently using for that database, or NULL if the no such contiguous
 ** memory representation of the database exists.  A contiguous memory
 ** representation of the database will usually only exist if there has
-** been a prior call to [sqlite3_deserialize(D,S,...)] with the same
+** been a prior call to [bentley_sqlite3_deserialize(D,S,...)] with the same
 ** values of D and S.
 ** The size of the database is written into *P even if the
 ** SQLITE_SERIALIZE_NOCOPY bit is set but no contiguous copy
@@ -10876,14 +10876,14 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const c
 ** buffer. If the bit had been clear, the returned buffer will not
 ** be accessed by SQLite after the call.
 **
-** A call to sqlite3_serialize(D,S,P,F) might return NULL even if the
+** A call to bentley_sqlite3_serialize(D,S,P,F) might return NULL even if the
 ** SQLITE_SERIALIZE_NOCOPY bit is omitted from argument F if a memory
 ** allocation error occurs.
 **
 ** This interface is omitted if SQLite is compiled with the
 ** [SQLITE_OMIT_DESERIALIZE] option.
 */
-SQLITE_API unsigned char *sqlite3_serialize(
+SQLITE_API unsigned char *bentley_sqlite3_serialize(
   sqlite3 *db,           /* The database connection */
   const char *zSchema,   /* Which DB to serialize. ex: "main", "temp", ... */
   sqlite3_int64 *piSize, /* Write size of the DB here, if not NULL */
@@ -10891,25 +10891,25 @@ SQLITE_API unsigned char *sqlite3_serialize(
 );
 
 /*
-** CAPI3REF: Flags for sqlite3_serialize
+** CAPI3REF: Flags for bentley_sqlite3_serialize
 **
 ** Zero or more of the following constants can be OR-ed together for
-** the F argument to [sqlite3_serialize(D,S,P,F)].
+** the F argument to [bentley_sqlite3_serialize(D,S,P,F)].
 **
-** SQLITE_SERIALIZE_NOCOPY means that [sqlite3_serialize()] will return
+** SQLITE_SERIALIZE_NOCOPY means that [bentley_sqlite3_serialize()] will return
 ** a pointer to contiguous in-memory database that it is currently using,
 ** without making a copy of the database.  If SQLite is not currently using
 ** a contiguous in-memory database, then this option causes
-** [sqlite3_serialize()] to return a NULL pointer.  SQLite will only be
+** [bentley_sqlite3_serialize()] to return a NULL pointer.  SQLite will only be
 ** using a contiguous in-memory database if it has been initialized by a
-** prior call to [sqlite3_deserialize()].
+** prior call to [bentley_sqlite3_deserialize()].
 */
 #define SQLITE_SERIALIZE_NOCOPY 0x001   /* Do no memory allocations */
 
 /*
 ** CAPI3REF: Deserialize a database
 **
-** The sqlite3_deserialize(D,S,P,N,M,F) interface causes the
+** The bentley_sqlite3_deserialize(D,S,P,N,M,F) interface causes the
 ** [database connection] D to disconnect from database S and then
 ** reopen S as an in-memory database based on the serialization contained
 ** in P.  The serialized database P is N bytes in size.  M is the size of
@@ -10919,37 +10919,37 @@ SQLITE_API unsigned char *sqlite3_serialize(
 ** size does not exceed M bytes.
 **
 ** If the SQLITE_DESERIALIZE_FREEONCLOSE bit is set in F, then SQLite will
-** invoke sqlite3_free() on the serialization buffer when the database
+** invoke bentley_sqlite3_free() on the serialization buffer when the database
 ** connection closes.  If the SQLITE_DESERIALIZE_RESIZEABLE bit is set, then
-** SQLite will try to increase the buffer size using sqlite3_realloc64()
+** SQLite will try to increase the buffer size using bentley_sqlite3_realloc64()
 ** if writes on the database cause it to grow larger than M bytes.
 **
 ** Applications must not modify the buffer P or invalidate it before
 ** the database connection D is closed.
 **
-** The sqlite3_deserialize() interface will fail with SQLITE_BUSY if the
+** The bentley_sqlite3_deserialize() interface will fail with SQLITE_BUSY if the
 ** database is currently in a read transaction or is involved in a backup
 ** operation.
 **
 ** It is not possible to deserialized into the TEMP database.  If the
-** S argument to sqlite3_deserialize(D,S,P,N,M,F) is "temp" then the
+** S argument to bentley_sqlite3_deserialize(D,S,P,N,M,F) is "temp" then the
 ** function returns SQLITE_ERROR.
 **
 ** The deserialized database should not be in [WAL mode].  If the database
 ** is in WAL mode, then any attempt to use the database file will result
 ** in an [SQLITE_CANTOPEN] error.  The application can set the
 ** [file format version numbers] (bytes 18 and 19) of the input database P
-** to 0x01 prior to invoking sqlite3_deserialize(D,S,P,N,M,F) to force the
+** to 0x01 prior to invoking bentley_sqlite3_deserialize(D,S,P,N,M,F) to force the
 ** database file into rollback mode and work around this limitation.
 **
-** If sqlite3_deserialize(D,S,P,N,M,F) fails for any reason and if the
+** If bentley_sqlite3_deserialize(D,S,P,N,M,F) fails for any reason and if the
 ** SQLITE_DESERIALIZE_FREEONCLOSE bit is set in argument F, then
-** [sqlite3_free()] is invoked on argument P prior to returning.
+** [bentley_sqlite3_free()] is invoked on argument P prior to returning.
 **
 ** This interface is omitted if SQLite is compiled with the
 ** [SQLITE_OMIT_DESERIALIZE] option.
 */
-SQLITE_API int sqlite3_deserialize(
+SQLITE_API int bentley_sqlite3_deserialize(
   sqlite3 *db,            /* The database connection */
   const char *zSchema,    /* Which DB to reopen with the deserialization */
   unsigned char *pData,   /* The serialized database content */
@@ -10959,19 +10959,19 @@ SQLITE_API int sqlite3_deserialize(
 );
 
 /*
-** CAPI3REF: Flags for sqlite3_deserialize()
+** CAPI3REF: Flags for bentley_sqlite3_deserialize()
 **
 ** The following are allowed values for 6th argument (the F argument) to
-** the [sqlite3_deserialize(D,S,P,N,M,F)] interface.
+** the [bentley_sqlite3_deserialize(D,S,P,N,M,F)] interface.
 **
 ** The SQLITE_DESERIALIZE_FREEONCLOSE means that the database serialization
-** in the P argument is held in memory obtained from [sqlite3_malloc64()]
+** in the P argument is held in memory obtained from [bentley_sqlite3_malloc64()]
 ** and that SQLite should take ownership of this memory and automatically
 ** free it when it has finished using it.  Without this flag, the caller
 ** is responsible for freeing any dynamically allocated memory.
 **
 ** The SQLITE_DESERIALIZE_RESIZEABLE flag means that SQLite is allowed to
-** grow the size of the database using calls to [sqlite3_realloc64()].  This
+** grow the size of the database using calls to [bentley_sqlite3_realloc64()].  This
 ** flag should only be used if SQLITE_DESERIALIZE_FREEONCLOSE is also used.
 ** Without this flag, the deserialized database cannot increase in size beyond
 ** the number of bytes specified by the M parameter.
@@ -10979,8 +10979,8 @@ SQLITE_API int sqlite3_deserialize(
 ** The SQLITE_DESERIALIZE_READONLY flag means that the deserialized database
 ** should be treated as read-only.
 */
-#define SQLITE_DESERIALIZE_FREEONCLOSE 1 /* Call sqlite3_free() on close */
-#define SQLITE_DESERIALIZE_RESIZEABLE  2 /* Resize using sqlite3_realloc64() */
+#define SQLITE_DESERIALIZE_FREEONCLOSE 1 /* Call bentley_sqlite3_free() on close */
+#define SQLITE_DESERIALIZE_RESIZEABLE  2 /* Resize using bentley_sqlite3_realloc64() */
 #define SQLITE_DESERIALIZE_READONLY    4 /* Database is read-only */
 
 /*
@@ -11047,7 +11047,7 @@ typedef struct sqlite3_rtree_query_info sqlite3_rtree_query_info;
 **
 **   SELECT ... FROM <rtree> WHERE <rtree col> MATCH $zGeom(... params ...)
 */
-SQLITE_API int sqlite3_rtree_geometry_callback(
+SQLITE_API int bentley_sqlite3_rtree_geometry_callback(
   sqlite3 *db,
   const char *zGeom,
   int (*xGeom)(sqlite3_rtree_geometry*, int, sqlite3_rtree_dbl*,int*),
@@ -11073,7 +11073,7 @@ struct sqlite3_rtree_geometry {
 **
 **   SELECT ... FROM <rtree> WHERE <rtree col> MATCH $zQueryFunc(... params ...)
 */
-SQLITE_API int sqlite3_rtree_query_callback(
+SQLITE_API int bentley_sqlite3_rtree_query_callback(
   sqlite3 *db,
   const char *zQueryFunc,
   int (*xQueryFunc)(sqlite3_rtree_query_info*),
@@ -11085,7 +11085,7 @@ SQLITE_API int sqlite3_rtree_query_callback(
 /*
 ** A pointer to a structure of the following type is passed as the
 ** argument to scored geometry callback registered using
-** sqlite3_rtree_query_callback().
+** bentley_sqlite3_rtree_query_callback().
 **
 ** Note that the first 5 fields of this structure are identical to
 ** sqlite3_rtree_geometry.  This structure is a subclass of
@@ -11168,13 +11168,13 @@ typedef struct sqlite3_changeset_iter sqlite3_changeset_iter;
 ** database handle.
 **
 ** Session objects created using this function should be deleted using the
-** [sqlite3session_delete()] function before the database handle that they
+** [bentley_sqlite3session_delete()] function before the database handle that they
 ** are attached to is itself closed. If the database handle is closed before
 ** the session object is deleted, then the results of calling any session
-** module function, including [sqlite3session_delete()] on the session object
+** module function, including [bentley_sqlite3session_delete()] on the session object
 ** are undefined.
 **
-** Because the session module uses the [sqlite3_preupdate_hook()] API, it
+** Because the session module uses the [bentley_sqlite3_preupdate_hook()] API, it
 ** is not possible for an application to register a pre-update hook on a
 ** database handle that has one or more session objects attached. Nor is
 ** it possible to create a session object attached to a database handle for
@@ -11186,7 +11186,7 @@ typedef struct sqlite3_changeset_iter sqlite3_changeset_iter;
 ** attached database. It is not an error if database zDb is not attached
 ** to the database when the session object is created.
 */
-SQLITE_API int sqlite3session_create(
+SQLITE_API int bentley_sqlite3session_create(
   sqlite3 *db,                    /* Database handle */
   const char *zDb,                /* Name of db (e.g. "main") */
   sqlite3_session **ppSession     /* OUT: New session object */
@@ -11197,15 +11197,15 @@ SQLITE_API int sqlite3session_create(
 ** DESTRUCTOR: sqlite3_session
 **
 ** Delete a session object previously allocated using
-** [sqlite3session_create()]. Once a session object has been deleted, the
+** [bentley_sqlite3session_create()]. Once a session object has been deleted, the
 ** results of attempting to use pSession with any other session module
 ** function are undefined.
 **
 ** Session objects must be deleted before the database handle to which they
 ** are attached is closed. Refer to the documentation for
-** [sqlite3session_create()] for details.
+** [bentley_sqlite3session_create()] for details.
 */
-SQLITE_API void sqlite3session_delete(sqlite3_session *pSession);
+SQLITE_API void bentley_sqlite3session_delete(sqlite3_session *pSession);
 
 /*
 ** CAPI3REF: Configure a Session Object
@@ -11216,23 +11216,23 @@ SQLITE_API void sqlite3session_delete(sqlite3_session *pSession);
 ** [SQLITE_SESSION_OBJCONFIG_SIZE] and [SQLITE_SESSION_OBJCONFIG_ROWID].
 **
 */
-SQLITE_API int sqlite3session_object_config(sqlite3_session*, int op, void *pArg);
+SQLITE_API int bentley_sqlite3session_object_config(sqlite3_session*, int op, void *pArg);
 
 /*
-** CAPI3REF: Options for sqlite3session_object_config
+** CAPI3REF: Options for bentley_sqlite3session_object_config
 **
 ** The following values may passed as the the 2nd parameter to
-** sqlite3session_object_config().
+** bentley_sqlite3session_object_config().
 **
 ** <dt>SQLITE_SESSION_OBJCONFIG_SIZE <dd>
 **   This option is used to set, clear or query the flag that enables
-**   the [sqlite3session_changeset_size()] API. Because it imposes some
+**   the [bentley_sqlite3session_changeset_size()] API. Because it imposes some
 **   computational overhead, this API is disabled by default. Argument
 **   pArg must point to a value of type (int). If the value is initially
-**   0, then the sqlite3session_changeset_size() API is disabled. If it
+**   0, then the bentley_sqlite3session_changeset_size() API is disabled. If it
 **   is greater than 0, then the same API is enabled. Or, if the initial
 **   value is less than zero, no change is made. In all cases the (int)
-**   variable is set to 1 if the sqlite3session_changeset_size() API is
+**   variable is set to 1 if the bentley_sqlite3session_changeset_size() API is
 **   enabled following the current call, or 0 otherwise.
 **
 **   It is an error (SQLITE_MISUSE) to attempt to modify this setting after
@@ -11260,7 +11260,7 @@ SQLITE_API int sqlite3session_object_config(sqlite3_session*, int op, void *pArg
 ** Enable or disable the recording of changes by a session object. When
 ** enabled, a session object records changes made to the database. When
 ** disabled - it does not. A newly created session object is enabled.
-** Refer to the documentation for [sqlite3session_changeset()] for further
+** Refer to the documentation for [bentley_sqlite3session_changeset()] for further
 ** details regarding how enabling and disabling a session object affects
 ** the eventual changesets.
 **
@@ -11271,7 +11271,7 @@ SQLITE_API int sqlite3session_object_config(sqlite3_session*, int op, void *pArg
 ** The return value indicates the final state of the session object: 0 if
 ** the session is disabled, or 1 if it is enabled.
 */
-SQLITE_API int sqlite3session_enable(sqlite3_session *pSession, int bEnable);
+SQLITE_API int bentley_sqlite3session_enable(sqlite3_session *pSession, int bEnable);
 
 /*
 ** CAPI3REF: Set Or Clear the Indirect Change Flag
@@ -11301,7 +11301,7 @@ SQLITE_API int sqlite3session_enable(sqlite3_session *pSession, int bEnable);
 ** The return value indicates the final state of the indirect flag: 0 if
 ** it is clear, or 1 if it is set.
 */
-SQLITE_API int sqlite3session_indirect(sqlite3_session *pSession, int bIndirect);
+SQLITE_API int bentley_sqlite3session_indirect(sqlite3_session *pSession, int bIndirect);
 
 /*
 ** CAPI3REF: Attach A Table To A Session Object
@@ -11310,7 +11310,7 @@ SQLITE_API int sqlite3session_indirect(sqlite3_session *pSession, int bIndirect)
 ** If argument zTab is not NULL, then it is the name of a table to attach
 ** to the session object passed as the first argument. All subsequent changes
 ** made to the table while the session object is enabled will be recorded. See
-** documentation for [sqlite3session_changeset()] for further details.
+** documentation for [bentley_sqlite3session_changeset()] for further details.
 **
 ** Or, if argument zTab is NULL, then changes are recorded for all tables
 ** in the database. If additional tables are added to the database (by
@@ -11345,23 +11345,23 @@ SQLITE_API int sqlite3session_indirect(sqlite3_session *pSession, int bIndirect)
 ** are recorded for rows for which (idx IS NULL) is true. However, for such
 ** rows a zero-length blob (SQL value X'') is stored in the changeset or
 ** patchset instead of a NULL value. This allows such changesets to be
-** manipulated by legacy implementations of sqlite3changeset_invert(),
+** manipulated by legacy implementations of bentley_sqlite3changeset_invert(),
 ** concat() and similar.
 **
-** The sqlite3changeset_apply() function automatically converts the
+** The bentley_sqlite3changeset_apply() function automatically converts the
 ** zero-length blob back to a NULL value when updating the sqlite_stat1
-** table. However, if the application calls sqlite3changeset_new(),
-** sqlite3changeset_old() or sqlite3changeset_conflict on a changeset
+** table. However, if the application calls bentley_sqlite3changeset_new(),
+** bentley_sqlite3changeset_old() or bentley_sqlite3changeset_conflict on a changeset
 ** iterator directly (including on a changeset iterator passed to a
 ** conflict-handler callback) then the X'' value is returned. The application
 ** must translate X'' to NULL itself if required.
 **
 ** Legacy (older than 3.22.0) versions of the sessions module cannot capture
 ** changes made to the sqlite_stat1 table. Legacy versions of the
-** sqlite3changeset_apply() function silently ignore any modifications to the
+** bentley_sqlite3changeset_apply() function silently ignore any modifications to the
 ** sqlite_stat1 table that are part of a changeset or patchset.
 */
-SQLITE_API int sqlite3session_attach(
+SQLITE_API int bentley_sqlite3session_attach(
   sqlite3_session *pSession,      /* Session object */
   const char *zTab                /* Table name */
 );
@@ -11376,7 +11376,7 @@ SQLITE_API int sqlite3session_attach(
 ** If xFilter returns 0, changes are not tracked. Note that once a table is
 ** attached, xFilter will not be called again.
 */
-SQLITE_API void sqlite3session_table_filter(
+SQLITE_API void bentley_sqlite3session_table_filter(
   sqlite3_session *pSession,      /* Session object */
   int(*xFilter)(
     void *pCtx,                   /* Copy of third arg to _filter_table() */
@@ -11417,8 +11417,8 @@ SQLITE_API void sqlite3session_table_filter(
 ** DELETE change only.
 **
 ** The contents of a changeset may be traversed using an iterator created
-** using the [sqlite3changeset_start()] API. A changeset may be applied to
-** a database with a compatible schema using the [sqlite3changeset_apply()]
+** using the [bentley_sqlite3changeset_start()] API. A changeset may be applied to
+** a database with a compatible schema using the [bentley_sqlite3changeset_apply()]
 ** API.
 **
 ** Within a changeset generated by this function, all changes related to a
@@ -11431,7 +11431,7 @@ SQLITE_API void sqlite3session_table_filter(
 **
 ** Following a successful call to this function, it is the responsibility of
 ** the caller to eventually free the buffer that *ppChangeset points to using
-** [sqlite3_free()].
+** [bentley_sqlite3_free()].
 **
 ** <h3>Changeset Generation</h3>
 **
@@ -11479,7 +11479,7 @@ SQLITE_API void sqlite3session_table_filter(
 ** active, the resulting changeset will contain an UPDATE change instead of
 ** a DELETE and an INSERT.
 **
-** When a session object is disabled (see the [sqlite3session_enable()] API),
+** When a session object is disabled (see the [bentley_sqlite3session_enable()] API),
 ** it does not accumulate records when rows are inserted, updated or deleted.
 ** This may appear to have some counter-intuitive effects if a single row
 ** is written to more than once during a session. For example, if a row
@@ -11490,7 +11490,7 @@ SQLITE_API void sqlite3session_table_filter(
 ** another field of the same row is updated while the session is enabled, the
 ** resulting changeset will contain an UPDATE change that updates both fields.
 */
-SQLITE_API int sqlite3session_changeset(
+SQLITE_API int bentley_sqlite3session_changeset(
   sqlite3_session *pSession,      /* Session object */
   int *pnChangeset,               /* OUT: Size of buffer at *ppChangeset */
   void **ppChangeset              /* OUT: Buffer containing changeset */
@@ -11502,15 +11502,15 @@ SQLITE_API int sqlite3session_changeset(
 **
 ** By default, this function always returns 0. For it to return
 ** a useful result, the sqlite3_session object must have been configured
-** to enable this API using sqlite3session_object_config() with the
+** to enable this API using bentley_sqlite3session_object_config() with the
 ** SQLITE_SESSION_OBJCONFIG_SIZE verb.
 **
 ** When enabled, this function returns an upper limit, in bytes, for the size
-** of the changeset that might be produced if sqlite3session_changeset() were
+** of the changeset that might be produced if bentley_sqlite3session_changeset() were
 ** called. The final changeset size might be equal to or smaller than the
 ** size in bytes returned by this function.
 */
-SQLITE_API sqlite3_int64 sqlite3session_changeset_size(sqlite3_session *pSession);
+SQLITE_API sqlite3_int64 bentley_sqlite3session_changeset_size(sqlite3_session *pSession);
 
 /*
 ** CAPI3REF: Load The Difference Between Tables Into A Session
@@ -11518,7 +11518,7 @@ SQLITE_API sqlite3_int64 sqlite3session_changeset_size(sqlite3_session *pSession
 **
 ** If it is not already attached to the session object passed as the first
 ** argument, this function attaches table zTbl in the same manner as the
-** [sqlite3session_attach()] function. If zTbl does not exist, or if it
+** [bentley_sqlite3session_attach()] function. If zTbl does not exist, or if it
 ** does not have a primary key, this function is a no-op (but does not return
 ** an error).
 **
@@ -11556,7 +11556,7 @@ SQLITE_API sqlite3_int64 sqlite3session_changeset_size(sqlite3_session *pSession
 ** </ul>
 **
 ** To clarify, if this function is called and then a changeset constructed
-** using [sqlite3session_changeset()], then after applying that changeset to
+** using [bentley_sqlite3session_changeset()], then after applying that changeset to
 ** database zFrom the contents of the two compatible tables would be
 ** identical.
 **
@@ -11567,9 +11567,9 @@ SQLITE_API sqlite3_int64 sqlite3session_changeset_size(sqlite3_session *pSession
 ** error code. In this case, if argument pzErrMsg is not NULL, *pzErrMsg
 ** may be set to point to a buffer containing an English language error
 ** message. It is the responsibility of the caller to free this buffer using
-** sqlite3_free().
+** bentley_sqlite3_free().
 */
-SQLITE_API int sqlite3session_diff(
+SQLITE_API int bentley_sqlite3session_diff(
   sqlite3_session *pSession,
   const char *zFromDb,
   const char *zTbl,
@@ -11591,22 +11591,22 @@ SQLITE_API int sqlite3session_diff(
 ** </ul>
 **
 ** A patchset blob may be used with up to date versions of all
-** sqlite3changeset_xxx API functions except for sqlite3changeset_invert(),
+** sqlite3changeset_xxx API functions except for bentley_sqlite3changeset_invert(),
 ** which returns SQLITE_CORRUPT if it is passed a patchset. Similarly,
 ** attempting to use a patchset blob with old versions of the
 ** sqlite3changeset_xxx APIs also provokes an SQLITE_CORRUPT error.
 **
 ** Because the non-primary key "old.*" fields are omitted, no
 ** SQLITE_CHANGESET_DATA conflicts can be detected or reported if a patchset
-** is passed to the sqlite3changeset_apply() API. Other conflict types work
+** is passed to the bentley_sqlite3changeset_apply() API. Other conflict types work
 ** in the same way as for changesets.
 **
 ** Changes within a patchset are ordered in the same way as for changesets
-** generated by the sqlite3session_changeset() function (i.e. all changes for
+** generated by the bentley_sqlite3session_changeset() function (i.e. all changes for
 ** a single table are grouped together, tables appear in the order in which
 ** they were attached to the session object).
 */
-SQLITE_API int sqlite3session_patchset(
+SQLITE_API int bentley_sqlite3session_patchset(
   sqlite3_session *pSession,      /* Session object */
   int *pnPatchset,                /* OUT: Size of buffer at *ppPatchset */
   void **ppPatchset               /* OUT: Buffer containing patchset */
@@ -11620,14 +11620,14 @@ SQLITE_API int sqlite3session_patchset(
 ** more changes have been recorded, return zero.
 **
 ** Even if this function returns zero, it is possible that calling
-** [sqlite3session_changeset()] on the session handle may still return a
+** [bentley_sqlite3session_changeset()] on the session handle may still return a
 ** changeset that contains no changes. This can happen when a row in
 ** an attached table is modified and then later on the original values
 ** are restored. However, if this function returns non-zero, then it is
-** guaranteed that a call to sqlite3session_changeset() will return a
+** guaranteed that a call to bentley_sqlite3session_changeset() will return a
 ** changeset containing zero changes.
 */
-SQLITE_API int sqlite3session_isempty(sqlite3_session *pSession);
+SQLITE_API int bentley_sqlite3session_isempty(sqlite3_session *pSession);
 
 /*
 ** CAPI3REF: Query for the amount of heap memory used by a session object.
@@ -11635,7 +11635,7 @@ SQLITE_API int sqlite3session_isempty(sqlite3_session *pSession);
 ** This API returns the total amount of heap memory in bytes currently
 ** used by the session object passed as the only argument.
 */
-SQLITE_API sqlite3_int64 sqlite3session_memory_used(sqlite3_session *pSession);
+SQLITE_API sqlite3_int64 bentley_sqlite3session_memory_used(sqlite3_session *pSession);
 
 /*
 ** CAPI3REF: Create An Iterator To Traverse A Changeset
@@ -11650,20 +11650,20 @@ SQLITE_API sqlite3_int64 sqlite3session_memory_used(sqlite3_session *pSession);
 ** iterator created by this function:
 **
 ** <ul>
-**   <li> [sqlite3changeset_next()]
-**   <li> [sqlite3changeset_op()]
-**   <li> [sqlite3changeset_new()]
-**   <li> [sqlite3changeset_old()]
+**   <li> [bentley_sqlite3changeset_next()]
+**   <li> [bentley_sqlite3changeset_op()]
+**   <li> [bentley_sqlite3changeset_new()]
+**   <li> [bentley_sqlite3changeset_old()]
 ** </ul>
 **
 ** It is the responsibility of the caller to eventually destroy the iterator
-** by passing it to [sqlite3changeset_finalize()]. The buffer containing the
+** by passing it to [bentley_sqlite3changeset_finalize()]. The buffer containing the
 ** changeset (pChangeset) must remain valid until after the iterator is
 ** destroyed.
 **
 ** Assuming the changeset blob was created by one of the
-** [sqlite3session_changeset()], [sqlite3changeset_concat()] or
-** [sqlite3changeset_invert()] functions, all changes within the changeset
+** [bentley_sqlite3session_changeset()], [bentley_sqlite3changeset_concat()] or
+** [bentley_sqlite3changeset_invert()] functions, all changes within the changeset
 ** that apply to a single table are grouped together. This means that when
 ** an application iterates through a changeset using an iterator created by
 ** this function, all changes that relate to a single table are visited
@@ -11671,19 +11671,19 @@ SQLITE_API sqlite3_int64 sqlite3session_memory_used(sqlite3_session *pSession);
 ** the applies to table X, then one for table Y, and then later on visit
 ** another change for table X.
 **
-** The behavior of sqlite3changeset_start_v2() and its streaming equivalent
+** The behavior of bentley_sqlite3changeset_start_v2() and its streaming equivalent
 ** may be modified by passing a combination of
 ** [SQLITE_CHANGESETSTART_INVERT | supported flags] as the 4th parameter.
 **
-** Note that the sqlite3changeset_start_v2() API is still <b>experimental</b>
+** Note that the bentley_sqlite3changeset_start_v2() API is still <b>experimental</b>
 ** and therefore subject to change.
 */
-SQLITE_API int sqlite3changeset_start(
+SQLITE_API int bentley_sqlite3changeset_start(
   sqlite3_changeset_iter **pp,    /* OUT: New changeset iterator handle */
   int nChangeset,                 /* Size of changeset blob in bytes */
   void *pChangeset                /* Pointer to blob containing changeset */
 );
-SQLITE_API int sqlite3changeset_start_v2(
+SQLITE_API int bentley_sqlite3changeset_start_v2(
   sqlite3_changeset_iter **pp,    /* OUT: New changeset iterator handle */
   int nChangeset,                 /* Size of changeset blob in bytes */
   void *pChangeset,               /* Pointer to blob containing changeset */
@@ -11691,14 +11691,14 @@ SQLITE_API int sqlite3changeset_start_v2(
 );
 
 /*
-** CAPI3REF: Flags for sqlite3changeset_start_v2
+** CAPI3REF: Flags for bentley_sqlite3changeset_start_v2
 **
 ** The following flags may passed via the 4th parameter to
-** [sqlite3changeset_start_v2] and [sqlite3changeset_start_v2_strm]:
+** [bentley_sqlite3changeset_start_v2] and [bentley_sqlite3changeset_start_v2_strm]:
 **
 ** <dt>SQLITE_CHANGESETAPPLY_INVERT <dd>
 **   Invert the changeset while iterating through it. This is equivalent to
-**   inverting a changeset using sqlite3changeset_invert() before applying it.
+**   inverting a changeset using bentley_sqlite3changeset_invert() before applying it.
 **   It is an error to specify this flag with a patchset.
 */
 #define SQLITE_CHANGESETSTART_INVERT        0x0002
@@ -11709,17 +11709,17 @@ SQLITE_API int sqlite3changeset_start_v2(
 ** METHOD: sqlite3_changeset_iter
 **
 ** This function may only be used with iterators created by the function
-** [sqlite3changeset_start()]. If it is called on an iterator passed to
-** a conflict-handler callback by [sqlite3changeset_apply()], SQLITE_MISUSE
+** [bentley_sqlite3changeset_start()]. If it is called on an iterator passed to
+** a conflict-handler callback by [bentley_sqlite3changeset_apply()], SQLITE_MISUSE
 ** is returned and the call has no effect.
 **
-** Immediately after an iterator is created by sqlite3changeset_start(), it
+** Immediately after an iterator is created by bentley_sqlite3changeset_start(), it
 ** does not point to any change in the changeset. Assuming the changeset
 ** is not empty, the first call to this function advances the iterator to
 ** point to the first change in the changeset. Each subsequent call advances
 ** the iterator to point to the next change in the changeset (if any). If
 ** no error occurs and the iterator points to a valid change after a call
-** to sqlite3changeset_next() has advanced it, SQLITE_ROW is returned.
+** to bentley_sqlite3changeset_next() has advanced it, SQLITE_ROW is returned.
 ** Otherwise, if all changes in the changeset have already been visited,
 ** SQLITE_DONE is returned.
 **
@@ -11727,16 +11727,16 @@ SQLITE_API int sqlite3changeset_start_v2(
 ** codes include SQLITE_CORRUPT (if the changeset buffer is corrupt) or
 ** SQLITE_NOMEM.
 */
-SQLITE_API int sqlite3changeset_next(sqlite3_changeset_iter *pIter);
+SQLITE_API int bentley_sqlite3changeset_next(sqlite3_changeset_iter *pIter);
 
 /*
 ** CAPI3REF: Obtain The Current Operation From A Changeset Iterator
 ** METHOD: sqlite3_changeset_iter
 **
 ** The pIter argument passed to this function may either be an iterator
-** passed to a conflict-handler by [sqlite3changeset_apply()], or an iterator
-** created by [sqlite3changeset_start()]. In the latter case, the most recent
-** call to [sqlite3changeset_next()] must have returned [SQLITE_ROW]. If this
+** passed to a conflict-handler by [bentley_sqlite3changeset_apply()], or an iterator
+** created by [bentley_sqlite3changeset_start()]. In the latter case, the most recent
+** call to [bentley_sqlite3changeset_next()] must have returned [SQLITE_ROW]. If this
 ** is not the case, this function returns [SQLITE_MISUSE].
 **
 ** Arguments pOp, pnCol and pzTab may not be NULL. Upon return, three
@@ -11749,19 +11749,19 @@ SQLITE_API int sqlite3changeset_next(sqlite3_changeset_iter *pIter);
 **
 ** *pzTab is set to point to a nul-terminated utf-8 encoded string containing
 ** the name of the table affected by the current change. The buffer remains
-** valid until either sqlite3changeset_next() is called on the iterator
+** valid until either bentley_sqlite3changeset_next() is called on the iterator
 ** or until the conflict-handler function returns.
 **
 ** If pbIndirect is not NULL, then *pbIndirect is set to true (1) if the change
 ** is an indirect change, or false (0) otherwise. See the documentation for
-** [sqlite3session_indirect()] for a description of direct and indirect
+** [bentley_sqlite3session_indirect()] for a description of direct and indirect
 ** changes.
 **
 ** If no error occurs, SQLITE_OK is returned. If an error does occur, an
 ** SQLite error code is returned. The values of the output variables may not
 ** be trusted in this case.
 */
-SQLITE_API int sqlite3changeset_op(
+SQLITE_API int bentley_sqlite3changeset_op(
   sqlite3_changeset_iter *pIter,  /* Iterator object */
   const char **pzTab,             /* OUT: Pointer to table name */
   int *pnCol,                     /* OUT: Number of columns in table */
@@ -11795,7 +11795,7 @@ SQLITE_API int sqlite3changeset_op(
 ** SQLITE_OK is returned and the output variables populated as described
 ** above.
 */
-SQLITE_API int sqlite3changeset_pk(
+SQLITE_API int bentley_sqlite3changeset_pk(
   sqlite3_changeset_iter *pIter,  /* Iterator object */
   unsigned char **pabPK,          /* OUT: Array of boolean - true for PK cols */
   int *pnCol                      /* OUT: Number of entries in output array */
@@ -11806,9 +11806,9 @@ SQLITE_API int sqlite3changeset_pk(
 ** METHOD: sqlite3_changeset_iter
 **
 ** The pIter argument passed to this function may either be an iterator
-** passed to a conflict-handler by [sqlite3changeset_apply()], or an iterator
-** created by [sqlite3changeset_start()]. In the latter case, the most recent
-** call to [sqlite3changeset_next()] must have returned SQLITE_ROW.
+** passed to a conflict-handler by [bentley_sqlite3changeset_apply()], or an iterator
+** created by [bentley_sqlite3changeset_start()]. In the latter case, the most recent
+** call to [bentley_sqlite3changeset_next()] must have returned SQLITE_ROW.
 ** Furthermore, it may only be called if the type of change that the iterator
 ** currently points to is either [SQLITE_DELETE] or [SQLITE_UPDATE]. Otherwise,
 ** this function returns [SQLITE_MISUSE] and sets *ppValue to NULL.
@@ -11826,7 +11826,7 @@ SQLITE_API int sqlite3changeset_pk(
 ** If some other error occurs (e.g. an OOM condition), an SQLite error code
 ** is returned and *ppValue is set to NULL.
 */
-SQLITE_API int sqlite3changeset_old(
+SQLITE_API int bentley_sqlite3changeset_old(
   sqlite3_changeset_iter *pIter,  /* Changeset iterator */
   int iVal,                       /* Column number */
   sqlite3_value **ppValue         /* OUT: Old value (or NULL pointer) */
@@ -11837,9 +11837,9 @@ SQLITE_API int sqlite3changeset_old(
 ** METHOD: sqlite3_changeset_iter
 **
 ** The pIter argument passed to this function may either be an iterator
-** passed to a conflict-handler by [sqlite3changeset_apply()], or an iterator
-** created by [sqlite3changeset_start()]. In the latter case, the most recent
-** call to [sqlite3changeset_next()] must have returned SQLITE_ROW.
+** passed to a conflict-handler by [bentley_sqlite3changeset_apply()], or an iterator
+** created by [bentley_sqlite3changeset_start()]. In the latter case, the most recent
+** call to [bentley_sqlite3changeset_next()] must have returned SQLITE_ROW.
 ** Furthermore, it may only be called if the type of change that the iterator
 ** currently points to is either [SQLITE_UPDATE] or [SQLITE_INSERT]. Otherwise,
 ** this function returns [SQLITE_MISUSE] and sets *ppValue to NULL.
@@ -11860,7 +11860,7 @@ SQLITE_API int sqlite3changeset_old(
 ** If some other error occurs (e.g. an OOM condition), an SQLite error code
 ** is returned and *ppValue is set to NULL.
 */
-SQLITE_API int sqlite3changeset_new(
+SQLITE_API int bentley_sqlite3changeset_new(
   sqlite3_changeset_iter *pIter,  /* Changeset iterator */
   int iVal,                       /* Column number */
   sqlite3_value **ppValue         /* OUT: New value (or NULL pointer) */
@@ -11871,7 +11871,7 @@ SQLITE_API int sqlite3changeset_new(
 ** METHOD: sqlite3_changeset_iter
 **
 ** This function should only be used with iterator objects passed to a
-** conflict-handler callback by [sqlite3changeset_apply()] with either
+** conflict-handler callback by [bentley_sqlite3changeset_apply()] with either
 ** [SQLITE_CHANGESET_DATA] or [SQLITE_CHANGESET_CONFLICT]. If this function
 ** is called on any other iterator, [SQLITE_MISUSE] is returned and *ppValue
 ** is set to NULL.
@@ -11888,7 +11888,7 @@ SQLITE_API int sqlite3changeset_new(
 ** If some other error occurs (e.g. an OOM condition), an SQLite error code
 ** is returned and *ppValue is set to NULL.
 */
-SQLITE_API int sqlite3changeset_conflict(
+SQLITE_API int bentley_sqlite3changeset_conflict(
   sqlite3_changeset_iter *pIter,  /* Changeset iterator */
   int iVal,                       /* Column number */
   sqlite3_value **ppValue         /* OUT: Value from conflicting row */
@@ -11905,7 +11905,7 @@ SQLITE_API int sqlite3changeset_conflict(
 **
 ** In all other cases this function returns SQLITE_MISUSE.
 */
-SQLITE_API int sqlite3changeset_fk_conflicts(
+SQLITE_API int bentley_sqlite3changeset_fk_conflicts(
   sqlite3_changeset_iter *pIter,  /* Changeset iterator */
   int *pnOut                      /* OUT: Number of FK violations */
 );
@@ -11916,32 +11916,32 @@ SQLITE_API int sqlite3changeset_fk_conflicts(
 ** METHOD: sqlite3_changeset_iter
 **
 ** This function is used to finalize an iterator allocated with
-** [sqlite3changeset_start()].
+** [bentley_sqlite3changeset_start()].
 **
 ** This function should only be called on iterators created using the
-** [sqlite3changeset_start()] function. If an application calls this
+** [bentley_sqlite3changeset_start()] function. If an application calls this
 ** function with an iterator passed to a conflict-handler by
-** [sqlite3changeset_apply()], [SQLITE_MISUSE] is immediately returned and the
+** [bentley_sqlite3changeset_apply()], [SQLITE_MISUSE] is immediately returned and the
 ** call has no effect.
 **
 ** If an error was encountered within a call to an sqlite3changeset_xxx()
-** function (for example an [SQLITE_CORRUPT] in [sqlite3changeset_next()] or an
-** [SQLITE_NOMEM] in [sqlite3changeset_new()]) then an error code corresponding
+** function (for example an [SQLITE_CORRUPT] in [bentley_sqlite3changeset_next()] or an
+** [SQLITE_NOMEM] in [bentley_sqlite3changeset_new()]) then an error code corresponding
 ** to that error is returned by this function. Otherwise, SQLITE_OK is
 ** returned. This is to allow the following pattern (pseudo-code):
 **
 ** <pre>
-**   sqlite3changeset_start();
-**   while( SQLITE_ROW==sqlite3changeset_next() ){
+**   bentley_sqlite3changeset_start();
+**   while( SQLITE_ROW==bentley_sqlite3changeset_next() ){
 **     // Do something with change.
 **   }
-**   rc = sqlite3changeset_finalize();
+**   rc = bentley_sqlite3changeset_finalize();
 **   if( rc!=SQLITE_OK ){
 **     // An error has occurred
 **   }
 ** </pre>
 */
-SQLITE_API int sqlite3changeset_finalize(sqlite3_changeset_iter *pIter);
+SQLITE_API int bentley_sqlite3changeset_finalize(sqlite3_changeset_iter *pIter);
 
 /*
 ** CAPI3REF: Invert A Changeset
@@ -11964,14 +11964,14 @@ SQLITE_API int sqlite3changeset_finalize(sqlite3_changeset_iter *pIter);
 ** SQLITE_OK is returned. If an error occurs, both *pnOut and *ppOut are
 ** zeroed and an SQLite error code returned.
 **
-** It is the responsibility of the caller to eventually call sqlite3_free()
+** It is the responsibility of the caller to eventually call bentley_sqlite3_free()
 ** on the *ppOut pointer to free the buffer allocation following a successful
 ** call to this function.
 **
 ** WARNING/TODO: This function currently assumes that the input is a valid
 ** changeset. If it is not, the results are undefined.
 */
-SQLITE_API int sqlite3changeset_invert(
+SQLITE_API int bentley_sqlite3changeset_invert(
   int nIn, const void *pIn,       /* Input changeset */
   int *pnOut, void **ppOut        /* OUT: Inverse of input */
 );
@@ -11990,10 +11990,10 @@ SQLITE_API int sqlite3changeset_invert(
 ** <pre>
 **   sqlite3_changegroup *pGrp;
 **   rc = sqlite3_changegroup_new(&pGrp);
-**   if( rc==SQLITE_OK ) rc = sqlite3changegroup_add(pGrp, nA, pA);
-**   if( rc==SQLITE_OK ) rc = sqlite3changegroup_add(pGrp, nB, pB);
+**   if( rc==SQLITE_OK ) rc = bentley_sqlite3changegroup_add(pGrp, nA, pA);
+**   if( rc==SQLITE_OK ) rc = bentley_sqlite3changegroup_add(pGrp, nB, pB);
 **   if( rc==SQLITE_OK ){
-**     rc = sqlite3changegroup_output(pGrp, pnOut, ppOut);
+**     rc = bentley_sqlite3changegroup_output(pGrp, pnOut, ppOut);
 **   }else{
 **     *ppOut = 0;
 **     *pnOut = 0;
@@ -12002,7 +12002,7 @@ SQLITE_API int sqlite3changeset_invert(
 **
 ** Refer to the sqlite3_changegroup documentation below for details.
 */
-SQLITE_API int sqlite3changeset_concat(
+SQLITE_API int bentley_sqlite3changeset_concat(
   int nA,                         /* Number of bytes in buffer pA */
   void *pA,                       /* Pointer to buffer containing changeset A */
   int nB,                         /* Number of bytes in buffer pB */
@@ -12044,31 +12044,31 @@ typedef struct sqlite3_changegroup sqlite3_changegroup;
 ** If successful, this function returns SQLITE_OK and populates (*pp) with
 ** a pointer to a new sqlite3_changegroup object before returning. The caller
 ** should eventually free the returned object using a call to
-** sqlite3changegroup_delete(). If an error occurs, an SQLite error code
+** bentley_sqlite3changegroup_delete(). If an error occurs, an SQLite error code
 ** (i.e. SQLITE_NOMEM) is returned and *pp is set to NULL.
 **
 ** The usual usage pattern for an sqlite3_changegroup object is as follows:
 **
 ** <ul>
-**   <li> It is created using a call to sqlite3changegroup_new().
+**   <li> It is created using a call to bentley_sqlite3changegroup_new().
 **
 **   <li> Zero or more changesets (or patchsets) are added to the object
-**        by calling sqlite3changegroup_add().
+**        by calling bentley_sqlite3changegroup_add().
 **
 **   <li> The result of combining all input changesets together is obtained
-**        by the application via a call to sqlite3changegroup_output().
+**        by the application via a call to bentley_sqlite3changegroup_output().
 **
-**   <li> The object is deleted using a call to sqlite3changegroup_delete().
+**   <li> The object is deleted using a call to bentley_sqlite3changegroup_delete().
 ** </ul>
 **
 ** Any number of calls to add() and output() may be made between the calls to
 ** new() and delete(), and in any order.
 **
-** As well as the regular sqlite3changegroup_add() and
-** sqlite3changegroup_output() functions, also available are the streaming
-** versions sqlite3changegroup_add_strm() and sqlite3changegroup_output_strm().
+** As well as the regular bentley_sqlite3changegroup_add() and
+** bentley_sqlite3changegroup_output() functions, also available are the streaming
+** versions bentley_sqlite3changegroup_add_strm() and bentley_sqlite3changegroup_output_strm().
 */
-SQLITE_API int sqlite3changegroup_new(sqlite3_changegroup **pp);
+SQLITE_API int bentley_sqlite3changegroup_new(sqlite3_changegroup **pp);
 
 /*
 ** CAPI3REF: Add a Schema to a Changegroup
@@ -12077,12 +12077,12 @@ SQLITE_API int sqlite3changegroup_new(sqlite3_changegroup **pp);
 ** This method may be used to optionally enforce the rule that the changesets
 ** added to the changegroup handle must match the schema of database zDb
 ** ("main", "temp", or the name of an attached database). If
-** sqlite3changegroup_add() is called to add a changeset that is not compatible
+** bentley_sqlite3changegroup_add() is called to add a changeset that is not compatible
 ** with the configured schema, SQLITE_SCHEMA is returned and the changegroup
 ** object is left in an undefined state.
 **
 ** A changeset schema is considered compatible with the database schema in
-** the same way as for sqlite3changeset_apply(). Specifically, for each
+** the same way as for bentley_sqlite3changeset_apply(). Specifically, for each
 ** table in the changeset, there exists a database table with:
 **
 ** <ul>
@@ -12094,13 +12094,13 @@ SQLITE_API int sqlite3changegroup_new(sqlite3_changegroup **pp);
 **
 ** The output of the changegroup object always has the same schema as the
 ** database nominated using this function. In cases where changesets passed
-** to sqlite3changegroup_add() have fewer columns than the corresponding table
+** to bentley_sqlite3changegroup_add() have fewer columns than the corresponding table
 ** in the database schema, these are filled in using the default column
 ** values from the database schema. This makes it possible to combined
 ** changesets that have different numbers of columns for a single table
 ** within a changegroup, provided that they are otherwise compatible.
 */
-SQLITE_API int sqlite3changegroup_schema(sqlite3_changegroup*, sqlite3*, const char *zDb);
+SQLITE_API int bentley_sqlite3changegroup_schema(sqlite3_changegroup*, sqlite3*, const char *zDb);
 
 /*
 ** CAPI3REF: Add A Changeset To A Changegroup
@@ -12172,7 +12172,7 @@ SQLITE_API int sqlite3changegroup_schema(sqlite3_changegroup*, sqlite3*, const c
 ** primary key columns for the table must be consistent. If this is not the
 ** case, this function fails with SQLITE_SCHEMA. Except, if the changegroup
 ** object has been configured with a database schema using the
-** sqlite3changegroup_schema() API, then it is possible to combine changesets
+** bentley_sqlite3changegroup_schema() API, then it is possible to combine changesets
 ** with different numbers of columns for a single table, provided that
 ** they are otherwise compatible.
 **
@@ -12183,7 +12183,7 @@ SQLITE_API int sqlite3changegroup_schema(sqlite3_changegroup*, sqlite3*, const c
 ** In all cases, if an error occurs the state of the final contents of the
 ** changegroup is undefined. If no error occurs, SQLITE_OK is returned.
 */
-SQLITE_API int sqlite3changegroup_add(sqlite3_changegroup*, int nData, void *pData);
+SQLITE_API int bentley_sqlite3changegroup_add(sqlite3_changegroup*, int nData, void *pData);
 
 /*
 ** CAPI3REF: Add A Single Change To A Changegroup
@@ -12191,7 +12191,7 @@ SQLITE_API int sqlite3changegroup_add(sqlite3_changegroup*, int nData, void *pDa
 **
 ** This function adds the single change currently indicated by the iterator
 ** passed as the second argument to the changegroup object. The rules for
-** adding the change are just as described for [sqlite3changegroup_add()].
+** adding the change are just as described for [bentley_sqlite3changegroup_add()].
 **
 ** If the change is successfully added to the changegroup, SQLITE_OK is
 ** returned. Otherwise, an SQLite error code is returned.
@@ -12202,7 +12202,7 @@ SQLITE_API int sqlite3changegroup_add(sqlite3_changegroup*, int nData, void *pDa
 ** the SQLITE_CHANGESETAPPLY_INVERT flag. In this case SQLITE_ERROR is also
 ** returned.
 */
-SQLITE_API int sqlite3changegroup_add_change(
+SQLITE_API int bentley_sqlite3changegroup_add_change(
   sqlite3_changegroup*,
   sqlite3_changeset_iter*
 );
@@ -12218,8 +12218,8 @@ SQLITE_API int sqlite3changegroup_add_change(
 ** were themselves changesets, the output is a changeset. Or, if the
 ** inputs were patchsets, the output is also a patchset.
 **
-** As with the output of the sqlite3session_changeset() and
-** sqlite3session_patchset() functions, all changes related to a single
+** As with the output of the bentley_sqlite3session_changeset() and
+** bentley_sqlite3session_patchset() functions, all changes related to a single
 ** table are grouped together in the output of this function. Tables appear
 ** in the same order as for the very first changeset added to the changegroup.
 ** If the second or subsequent changesets added to the changegroup contain
@@ -12232,9 +12232,9 @@ SQLITE_API int sqlite3changegroup_add_change(
 ** is returned and the output variables are set to the size of and a
 ** pointer to the output buffer, respectively. In this case it is the
 ** responsibility of the caller to eventually free the buffer using a
-** call to sqlite3_free().
+** call to bentley_sqlite3_free().
 */
-SQLITE_API int sqlite3changegroup_output(
+SQLITE_API int bentley_sqlite3changegroup_output(
   sqlite3_changegroup*,
   int *pnData,                    /* OUT: Size of output buffer in bytes */
   void **ppData                   /* OUT: Pointer to output buffer */
@@ -12244,7 +12244,7 @@ SQLITE_API int sqlite3changegroup_output(
 ** CAPI3REF: Delete A Changegroup Object
 ** DESTRUCTOR: sqlite3_changegroup
 */
-SQLITE_API void sqlite3changegroup_delete(sqlite3_changegroup*);
+SQLITE_API void bentley_sqlite3changegroup_delete(sqlite3_changegroup*);
 
 /*
 ** CAPI3REF: Apply A Changeset To A Database
@@ -12277,13 +12277,13 @@ SQLITE_API void sqlite3changegroup_delete(sqlite3_changegroup*);
 **
 ** If there is no compatible table, it is not an error, but none of the
 ** changes associated with the table are applied. A warning message is issued
-** via the sqlite3_log() mechanism with the error code SQLITE_SCHEMA. At most
+** via the bentley_sqlite3_log() mechanism with the error code SQLITE_SCHEMA. At most
 ** one such warning is issued for each table in the changeset.
 **
 ** For each change for which there is a compatible table, an attempt is made
 ** to modify the table contents according to the UPDATE, INSERT or DELETE
 ** change. If a change cannot be applied cleanly, the conflict handler
-** function passed as the fifth argument to sqlite3changeset_apply() may be
+** function passed as the fifth argument to bentley_sqlite3changeset_apply() may be
 ** invoked. A description of exactly when the conflict handler is invoked for
 ** each type of change is below.
 **
@@ -12297,8 +12297,8 @@ SQLITE_API void sqlite3changegroup_delete(sqlite3_changegroup*);
 ** if the second argument passed to the conflict handler is either
 ** SQLITE_CHANGESET_DATA or SQLITE_CHANGESET_CONFLICT. If the conflict-handler
 ** returns an illegal value, any changes already made are rolled back and
-** the call to sqlite3changeset_apply() returns SQLITE_MISUSE. Different
-** actions are taken by sqlite3changeset_apply() depending on the value
+** the call to bentley_sqlite3changeset_apply() returns SQLITE_MISUSE. Different
+** actions are taken by bentley_sqlite3changeset_apply() depending on the value
 ** returned by each invocation of the conflict-handler function. Refer to
 ** the documentation for the three
 ** [SQLITE_CHANGESET_OMIT|available return values] for details.
@@ -12388,23 +12388,23 @@ SQLITE_API void sqlite3changegroup_delete(sqlite3_changegroup*);
 ** SQLite error code returned.
 **
 ** If the output parameters (ppRebase) and (pnRebase) are non-NULL and
-** the input is a changeset (not a patchset), then sqlite3changeset_apply_v2()
+** the input is a changeset (not a patchset), then bentley_sqlite3changeset_apply_v2()
 ** may set (*ppRebase) to point to a "rebase" that may be used with the
 ** sqlite3_rebaser APIs buffer before returning. In this case (*pnRebase)
 ** is set to the size of the buffer in bytes. It is the responsibility of the
-** caller to eventually free any such buffer using sqlite3_free(). The buffer
+** caller to eventually free any such buffer using bentley_sqlite3_free(). The buffer
 ** is only allocated and populated if one or more conflicts were encountered
 ** while applying the patchset. See comments surrounding the sqlite3_rebaser
 ** APIs for further details.
 **
-** The behavior of sqlite3changeset_apply_v2() and its streaming equivalent
+** The behavior of bentley_sqlite3changeset_apply_v2() and its streaming equivalent
 ** may be modified by passing a combination of
 ** [SQLITE_CHANGESETAPPLY_NOSAVEPOINT | supported flags] as the 9th parameter.
 **
-** Note that the sqlite3changeset_apply_v2() API is still <b>experimental</b>
+** Note that the bentley_sqlite3changeset_apply_v2() API is still <b>experimental</b>
 ** and therefore subject to change.
 */
-SQLITE_API int sqlite3changeset_apply(
+SQLITE_API int bentley_sqlite3changeset_apply(
   sqlite3 *db,                    /* Apply change to "main" db of this handle */
   int nChangeset,                 /* Size of changeset in bytes */
   void *pChangeset,               /* Changeset blob */
@@ -12419,7 +12419,7 @@ SQLITE_API int sqlite3changeset_apply(
   ),
   void *pCtx                      /* First argument passed to xConflict */
 );
-SQLITE_API int sqlite3changeset_apply_v2(
+SQLITE_API int bentley_sqlite3changeset_apply_v2(
   sqlite3 *db,                    /* Apply change to "main" db of this handle */
   int nChangeset,                 /* Size of changeset in bytes */
   void *pChangeset,               /* Changeset blob */
@@ -12438,10 +12438,10 @@ SQLITE_API int sqlite3changeset_apply_v2(
 );
 
 /*
-** CAPI3REF: Flags for sqlite3changeset_apply_v2
+** CAPI3REF: Flags for bentley_sqlite3changeset_apply_v2
 **
 ** The following flags may passed via the 9th parameter to
-** [sqlite3changeset_apply_v2] and [sqlite3changeset_apply_v2_strm]:
+** [bentley_sqlite3changeset_apply_v2] and [bentley_sqlite3changeset_apply_v2_strm]:
 **
 ** <dl>
 ** <dt>SQLITE_CHANGESETAPPLY_NOSAVEPOINT <dd>
@@ -12455,7 +12455,7 @@ SQLITE_API int sqlite3changeset_apply_v2(
 **
 ** <dt>SQLITE_CHANGESETAPPLY_INVERT <dd>
 **   Invert the changeset before applying it. This is equivalent to inverting
-**   a changeset using sqlite3changeset_invert() before applying it. It is
+**   a changeset using bentley_sqlite3changeset_invert() before applying it. It is
 **   an error to specify this flag with a patchset.
 **
 ** <dt>SQLITE_CHANGESETAPPLY_IGNORENOOP <dd>
@@ -12504,7 +12504,7 @@ SQLITE_API int sqlite3changeset_apply_v2(
 **   required PRIMARY KEY fields is not present in the database.
 **
 **   There is no conflicting row in this case. The results of invoking the
-**   sqlite3changeset_conflict() API are undefined.
+**   bentley_sqlite3changeset_conflict() API are undefined.
 **
 ** <dt>SQLITE_CHANGESET_CONFLICT<dd>
 **   CHANGESET_CONFLICT is passed as the second argument to the conflict
@@ -12525,7 +12525,7 @@ SQLITE_API int sqlite3changeset_apply_v2(
 **
 **   No current or conflicting row information is provided. The only function
 **   it is possible to call on the supplied sqlite3_changeset_iter handle
-**   is sqlite3changeset_fk_conflicts().
+**   is bentley_sqlite3changeset_fk_conflicts().
 **
 ** <dt>SQLITE_CHANGESET_CONSTRAINT<dd>
 **   If any other constraint violation occurs while applying a change (i.e.
@@ -12533,7 +12533,7 @@ SQLITE_API int sqlite3changeset_apply_v2(
 **   invoked with CHANGESET_CONSTRAINT as the second argument.
 **
 **   There is no conflicting row in this case. The results of invoking the
-**   sqlite3changeset_conflict() API are undefined.
+**   bentley_sqlite3changeset_conflict() API are undefined.
 **
 ** </dl>
 */
@@ -12558,7 +12558,7 @@ SQLITE_API int sqlite3changeset_apply_v2(
 **   This value may only be returned if the second argument to the conflict
 **   handler was SQLITE_CHANGESET_DATA or SQLITE_CHANGESET_CONFLICT. If this
 **   is not the case, any changes applied so far are rolled back and the
-**   call to sqlite3changeset_apply() returns SQLITE_MISUSE.
+**   call to bentley_sqlite3changeset_apply() returns SQLITE_MISUSE.
 **
 **   If CHANGESET_REPLACE is returned by an SQLITE_CHANGESET_DATA conflict
 **   handler, then the conflicting row is either updated or deleted, depending
@@ -12571,7 +12571,7 @@ SQLITE_API int sqlite3changeset_apply_v2(
 **
 ** <dt>SQLITE_CHANGESET_ABORT<dd>
 **   If this value is returned, any changes applied so far are rolled back
-**   and the call to sqlite3changeset_apply() returns SQLITE_ABORT.
+**   and the call to bentley_sqlite3changeset_apply() returns SQLITE_ABORT.
 ** </dl>
 */
 #define SQLITE_CHANGESET_OMIT       0
@@ -12659,21 +12659,21 @@ SQLITE_API int sqlite3changeset_apply_v2(
 ** OMIT.
 **
 ** In order to rebase a local changeset, the remote changeset must first
-** be applied to the local database using sqlite3changeset_apply_v2() and
+** be applied to the local database using bentley_sqlite3changeset_apply_v2() and
 ** the buffer of rebase information captured. Then:
 **
 ** <ol>
 **   <li> An sqlite3_rebaser object is created by calling
-**        sqlite3rebaser_create().
+**        bentley_sqlite3rebaser_create().
 **   <li> The new object is configured with the rebase buffer obtained from
-**        sqlite3changeset_apply_v2() by calling sqlite3rebaser_configure().
+**        bentley_sqlite3changeset_apply_v2() by calling bentley_sqlite3rebaser_configure().
 **        If the local changeset is to be rebased against multiple remote
-**        changesets, then sqlite3rebaser_configure() should be called
+**        changesets, then bentley_sqlite3rebaser_configure() should be called
 **        multiple times, in the same order that the multiple
-**        sqlite3changeset_apply_v2() calls were made.
-**   <li> Each local changeset is rebased by calling sqlite3rebaser_rebase().
+**        bentley_sqlite3changeset_apply_v2() calls were made.
+**   <li> Each local changeset is rebased by calling bentley_sqlite3rebaser_rebase().
 **   <li> The sqlite3_rebaser object is deleted by calling
-**        sqlite3rebaser_delete().
+**        bentley_sqlite3rebaser_delete().
 ** </ol>
 */
 typedef struct sqlite3_rebaser sqlite3_rebaser;
@@ -12687,7 +12687,7 @@ typedef struct sqlite3_rebaser sqlite3_rebaser;
 ** occurs, return an SQLite error code (e.g. SQLITE_NOMEM) and set (*ppNew)
 ** to NULL.
 */
-SQLITE_API int sqlite3rebaser_create(sqlite3_rebaser **ppNew);
+SQLITE_API int bentley_sqlite3rebaser_create(sqlite3_rebaser **ppNew);
 
 /*
 ** CAPI3REF: Configure a changeset rebaser object.
@@ -12696,9 +12696,9 @@ SQLITE_API int sqlite3rebaser_create(sqlite3_rebaser **ppNew);
 ** Configure the changeset rebaser object to rebase changesets according
 ** to the conflict resolutions described by buffer pRebase (size nRebase
 ** bytes), which must have been obtained from a previous call to
-** sqlite3changeset_apply_v2().
+** bentley_sqlite3changeset_apply_v2().
 */
-SQLITE_API int sqlite3rebaser_configure(
+SQLITE_API int bentley_sqlite3rebaser_configure(
   sqlite3_rebaser*,
   int nRebase, const void *pRebase
 );
@@ -12714,10 +12714,10 @@ SQLITE_API int sqlite3rebaser_configure(
 ** is set to point to the new buffer containing the rebased changeset and
 ** (*pnOut) to its size in bytes and SQLITE_OK returned. It is the
 ** responsibility of the caller to eventually free the new buffer using
-** sqlite3_free(). Otherwise, if an error occurs, (*ppOut) and (*pnOut)
+** bentley_sqlite3_free(). Otherwise, if an error occurs, (*ppOut) and (*pnOut)
 ** are set to zero and an SQLite error code returned.
 */
-SQLITE_API int sqlite3rebaser_rebase(
+SQLITE_API int bentley_sqlite3rebaser_rebase(
   sqlite3_rebaser*,
   int nIn, const void *pIn,
   int *pnOut, void **ppOut
@@ -12729,9 +12729,9 @@ SQLITE_API int sqlite3rebaser_rebase(
 **
 ** Delete the changeset rebaser object and all associated resources. There
 ** should be one call to this function for each successful invocation
-** of sqlite3rebaser_create().
+** of bentley_sqlite3rebaser_create().
 */
-SQLITE_API void sqlite3rebaser_delete(sqlite3_rebaser *p);
+SQLITE_API void bentley_sqlite3rebaser_delete(sqlite3_rebaser *p);
 
 /*
 ** CAPI3REF: Streaming Versions of API functions.
@@ -12741,19 +12741,19 @@ SQLITE_API void sqlite3rebaser_delete(sqlite3_rebaser *p);
 **
 ** <table border=1 style="margin-left:8ex;margin-right:8ex">
 **   <tr><th>Streaming function<th>Non-streaming equivalent</th>
-**   <tr><td>sqlite3changeset_apply_strm<td>[sqlite3changeset_apply]
-**   <tr><td>sqlite3changeset_apply_strm_v2<td>[sqlite3changeset_apply_v2]
-**   <tr><td>sqlite3changeset_concat_strm<td>[sqlite3changeset_concat]
-**   <tr><td>sqlite3changeset_invert_strm<td>[sqlite3changeset_invert]
-**   <tr><td>sqlite3changeset_start_strm<td>[sqlite3changeset_start]
-**   <tr><td>sqlite3session_changeset_strm<td>[sqlite3session_changeset]
-**   <tr><td>sqlite3session_patchset_strm<td>[sqlite3session_patchset]
+**   <tr><td>bentley_sqlite3changeset_apply_strm<td>[bentley_sqlite3changeset_apply]
+**   <tr><td>sqlite3changeset_apply_strm_v2<td>[bentley_sqlite3changeset_apply_v2]
+**   <tr><td>bentley_sqlite3changeset_concat_strm<td>[bentley_sqlite3changeset_concat]
+**   <tr><td>bentley_sqlite3changeset_invert_strm<td>[bentley_sqlite3changeset_invert]
+**   <tr><td>bentley_sqlite3changeset_start_strm<td>[bentley_sqlite3changeset_start]
+**   <tr><td>bentley_sqlite3session_changeset_strm<td>[bentley_sqlite3session_changeset]
+**   <tr><td>bentley_sqlite3session_patchset_strm<td>[bentley_sqlite3session_patchset]
 ** </table>
 **
 ** Non-streaming functions that accept changesets (or patchsets) as input
 ** require that the entire changeset be stored in a single buffer in memory.
 ** Similarly, those that return a changeset or patchset do so by returning
-** a pointer to a single large buffer allocated using sqlite3_malloc().
+** a pointer to a single large buffer allocated using bentley_sqlite3_malloc().
 ** Normally this is convenient. However, if an application running in a
 ** low-memory environment is required to handle very large changesets, the
 ** large contiguous memory allocations required can become onerous.
@@ -12786,7 +12786,7 @@ SQLITE_API void sqlite3rebaser_delete(sqlite3_rebaser *p);
 ** an error, all processing is abandoned and the streaming API function
 ** returns a copy of the error code to the caller.
 **
-** In the case of sqlite3changeset_start_strm(), the xInput callback may be
+** In the case of bentley_sqlite3changeset_start_strm(), the xInput callback may be
 ** invoked by the sessions module at any point during the lifetime of the
 ** iterator. If such an xInput callback returns an error, the iterator enters
 ** an error state, whereby all subsequent calls to iterator functions
@@ -12823,7 +12823,7 @@ SQLITE_API void sqlite3rebaser_delete(sqlite3_rebaser *p);
 ** parameter set to a value less than or equal to zero. Other than this,
 ** no guarantees are made as to the size of the chunks of data returned.
 */
-SQLITE_API int sqlite3changeset_apply_strm(
+SQLITE_API int bentley_sqlite3changeset_apply_strm(
   sqlite3 *db,                    /* Apply change to "main" db of this handle */
   int (*xInput)(void *pIn, void *pData, int *pnData), /* Input function */
   void *pIn,                                          /* First arg for xInput */
@@ -12838,7 +12838,7 @@ SQLITE_API int sqlite3changeset_apply_strm(
   ),
   void *pCtx                      /* First argument passed to xConflict */
 );
-SQLITE_API int sqlite3changeset_apply_v2_strm(
+SQLITE_API int bentley_sqlite3changeset_apply_v2_strm(
   sqlite3 *db,                    /* Apply change to "main" db of this handle */
   int (*xInput)(void *pIn, void *pData, int *pnData), /* Input function */
   void *pIn,                                          /* First arg for xInput */
@@ -12855,7 +12855,7 @@ SQLITE_API int sqlite3changeset_apply_v2_strm(
   void **ppRebase, int *pnRebase,
   int flags
 );
-SQLITE_API int sqlite3changeset_concat_strm(
+SQLITE_API int bentley_sqlite3changeset_concat_strm(
   int (*xInputA)(void *pIn, void *pData, int *pnData),
   void *pInA,
   int (*xInputB)(void *pIn, void *pData, int *pnData),
@@ -12863,42 +12863,42 @@ SQLITE_API int sqlite3changeset_concat_strm(
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
 );
-SQLITE_API int sqlite3changeset_invert_strm(
+SQLITE_API int bentley_sqlite3changeset_invert_strm(
   int (*xInput)(void *pIn, void *pData, int *pnData),
   void *pIn,
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
 );
-SQLITE_API int sqlite3changeset_start_strm(
+SQLITE_API int bentley_sqlite3changeset_start_strm(
   sqlite3_changeset_iter **pp,
   int (*xInput)(void *pIn, void *pData, int *pnData),
   void *pIn
 );
-SQLITE_API int sqlite3changeset_start_v2_strm(
+SQLITE_API int bentley_sqlite3changeset_start_v2_strm(
   sqlite3_changeset_iter **pp,
   int (*xInput)(void *pIn, void *pData, int *pnData),
   void *pIn,
   int flags
 );
-SQLITE_API int sqlite3session_changeset_strm(
+SQLITE_API int bentley_sqlite3session_changeset_strm(
   sqlite3_session *pSession,
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
 );
-SQLITE_API int sqlite3session_patchset_strm(
+SQLITE_API int bentley_sqlite3session_patchset_strm(
   sqlite3_session *pSession,
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
 );
-SQLITE_API int sqlite3changegroup_add_strm(sqlite3_changegroup*,
+SQLITE_API int bentley_sqlite3changegroup_add_strm(sqlite3_changegroup*,
     int (*xInput)(void *pIn, void *pData, int *pnData),
     void *pIn
 );
-SQLITE_API int sqlite3changegroup_output_strm(sqlite3_changegroup*,
+SQLITE_API int bentley_sqlite3changegroup_output_strm(sqlite3_changegroup*,
     int (*xOutput)(void *pOut, const void *pData, int nData),
     void *pOut
 );
-SQLITE_API int sqlite3rebaser_rebase_strm(
+SQLITE_API int bentley_sqlite3rebaser_rebase_strm(
   sqlite3_rebaser *pRebaser,
   int (*xInput)(void *pIn, void *pData, int *pnData),
   void *pIn,
@@ -12909,16 +12909,16 @@ SQLITE_API int sqlite3rebaser_rebase_strm(
 /*
 ** CAPI3REF: Configure global parameters
 **
-** The sqlite3session_config() interface is used to make global configuration
+** The bentley_sqlite3session_config() interface is used to make global configuration
 ** changes to the sessions module in order to tune it to the specific needs
 ** of the application.
 **
-** The sqlite3session_config() interface is not threadsafe. If it is invoked
+** The bentley_sqlite3session_config() interface is not threadsafe. If it is invoked
 ** while any other thread is inside any other sessions method then the
 ** results are undefined. Furthermore, if it is invoked after any sessions
 ** related objects have been created, the results are also undefined.
 **
-** The first argument to the sqlite3session_config() function must be one
+** The first argument to the bentley_sqlite3session_config() function must be one
 ** of the SQLITE_SESSION_CONFIG_XXX constants defined below. The
 ** interpretation of the (void*) value passed as the second parameter and
 ** the effect of calling this function depends on the value of the first
@@ -12939,10 +12939,10 @@ SQLITE_API int sqlite3rebaser_rebase_strm(
 ** This function returns SQLITE_OK if successful, or an SQLite error code
 ** otherwise.
 */
-SQLITE_API int sqlite3session_config(int op, void *pArg);
+SQLITE_API int bentley_sqlite3session_config(int op, void *pArg);
 
 /*
-** CAPI3REF: Values for sqlite3session_config().
+** CAPI3REF: Values for bentley_sqlite3session_config().
 */
 #define SQLITE_SESSION_CONFIG_STRMSIZE 1
 

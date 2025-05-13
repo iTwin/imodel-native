@@ -345,7 +345,7 @@ struct SuspendDefaultTxn {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeGuid::Create()
     {
-    sqlite3_randomness(sizeof(BeGuid), m_guid.u);
+    bentley_sqlite3_randomness(sizeof(BeGuid), m_guid.u);
     m_guid.b[6] = (m_guid.b[6] & 0x0f) | 0x40;   // see http://en.wikipedia.org/wiki/Universally_unique_identifier, use Version 4 (random)
     m_guid.b[8] = (m_guid.b[8] & 0x3f) | 0x80;   // set 2-bit flags to 0b10
     }
@@ -555,35 +555,35 @@ void StatementDiagnostics::SetIsEnabled(bool isEnabled) {s_diagIsEnabled=isEnabl
 
 #endif
 
-void        Statement::Finalize() {if (m_stmt) {sqlite3_finalize(m_stmt); m_stmt = nullptr;}}
-DbResult    Statement::Step() {return m_stmt ? (DbResult) sqlite3_step(m_stmt) : BE_SQLITE_ERROR;}
-DbResult    Statement::Reset() {return (DbResult)sqlite3_reset(m_stmt);}
-DbResult    Statement::ClearBindings() {return m_stmt ? (DbResult)sqlite3_clear_bindings(m_stmt): BE_SQLITE_ERROR;}
-DbResult    Statement::BindInt(int col, int val)        {return (DbResult)sqlite3_bind_int(m_stmt, col, val);}
-DbResult    Statement::BindInt64(int col, int64_t val)  {return (DbResult)sqlite3_bind_int64(m_stmt, col, val);}
-DbResult    Statement::BindDouble(int col, double val)  {return (DbResult)sqlite3_bind_double(m_stmt, col, val);}
-DbResult    Statement::BindText(int col, Utf8CP val, MakeCopy makeCopy, int nBytes) {return (DbResult)sqlite3_bind_text(m_stmt, col, val, nBytes, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
+void        Statement::Finalize() {if (m_stmt) {bentley_sqlite3_finalize(m_stmt); m_stmt = nullptr;}}
+DbResult    Statement::Step() {return m_stmt ? (DbResult) bentley_sqlite3_step(m_stmt) : BE_SQLITE_ERROR;}
+DbResult    Statement::Reset() {return (DbResult)bentley_sqlite3_reset(m_stmt);}
+DbResult    Statement::ClearBindings() {return m_stmt ? (DbResult)bentley_sqlite3_clear_bindings(m_stmt): BE_SQLITE_ERROR;}
+DbResult    Statement::BindInt(int col, int val)        {return (DbResult)bentley_sqlite3_bind_int(m_stmt, col, val);}
+DbResult    Statement::BindInt64(int col, int64_t val)  {return (DbResult)bentley_sqlite3_bind_int64(m_stmt, col, val);}
+DbResult    Statement::BindDouble(int col, double val)  {return (DbResult)bentley_sqlite3_bind_double(m_stmt, col, val);}
+DbResult    Statement::BindText(int col, Utf8CP val, MakeCopy makeCopy, int nBytes) {return (DbResult)bentley_sqlite3_bind_text(m_stmt, col, val, nBytes, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
 DbResult    Statement::BindZeroBlob(int col, int size) {
-    return (size < 0) ?  BE_SQLITE_TOOBIG :  (DbResult)sqlite3_bind_zeroblob(m_stmt, col, size);
+    return (size < 0) ?  BE_SQLITE_TOOBIG :  (DbResult)bentley_sqlite3_bind_zeroblob(m_stmt, col, size);
 }
-DbResult    Statement::BindBlob(int col, void const* val, int size, MakeCopy makeCopy) {return (DbResult)sqlite3_bind_blob(m_stmt, col, val, size, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
-DbResult    Statement::BindNull(int col) {return (DbResult)sqlite3_bind_null(m_stmt, col);}
+DbResult    Statement::BindBlob(int col, void const* val, int size, MakeCopy makeCopy) {return (DbResult)bentley_sqlite3_bind_blob(m_stmt, col, val, size, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
+DbResult    Statement::BindNull(int col) {return (DbResult)bentley_sqlite3_bind_null(m_stmt, col);}
 DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindInt64(col, (int64_t) &intSet);}
-DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) {return (DbResult) sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP());}
-DbResult    Statement::BindPointer(int col, void* ptr, const char* name, void(*destroy)(void*))  {return (DbResult) sqlite3_bind_pointer(m_stmt, col, ptr, name, destroy);}
+DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) {return (DbResult) bentley_sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP());}
+DbResult    Statement::BindPointer(int col, void* ptr, const char* name, void(*destroy)(void*))  {return (DbResult) bentley_sqlite3_bind_pointer(m_stmt, col, ptr, name, destroy);}
 
-DbValueType Statement::GetColumnType(int col)   {return (DbValueType) sqlite3_column_type(m_stmt, col);}
-Utf8CP      Statement::GetColumnDeclaredType(int col) { return sqlite3_column_decltype(m_stmt, col); }
-Utf8CP      Statement::GetColumnTableName(int col) { return sqlite3_column_table_name(m_stmt, col); }
-int         Statement::GetColumnCount()         {return sqlite3_column_count(m_stmt);}
-int         Statement::GetColumnBytes(int col)  {return sqlite3_column_bytes(m_stmt, col);}
-int         Statement::GetColumnBytes16(int col){return sqlite3_column_bytes16(m_stmt, col);}
-Utf8CP      Statement::GetColumnName(int col)   {return sqlite3_column_name(m_stmt, col);}
-void const* Statement::GetValueBlob(int col)    {return sqlite3_column_blob(m_stmt, col);}
-Utf8CP      Statement::GetValueText(int col)    {return (Utf8CP) sqlite3_column_text(m_stmt, col);}
-int         Statement::GetValueInt(int col)     {return sqlite3_column_int(m_stmt, col);}
-int64_t     Statement::GetValueInt64(int col)   {return sqlite3_column_int64(m_stmt, col);}
-double      Statement::GetValueDouble(int col)  {return sqlite3_column_double(m_stmt, col);}
+DbValueType Statement::GetColumnType(int col)   {return (DbValueType) bentley_sqlite3_column_type(m_stmt, col);}
+Utf8CP      Statement::GetColumnDeclaredType(int col) { return bentley_sqlite3_column_decltype(m_stmt, col); }
+Utf8CP      Statement::GetColumnTableName(int col) { return bentley_sqlite3_column_table_name(m_stmt, col); }
+int         Statement::GetColumnCount()         {return bentley_sqlite3_column_count(m_stmt);}
+int         Statement::GetColumnBytes(int col)  {return bentley_sqlite3_column_bytes(m_stmt, col);}
+int         Statement::GetColumnBytes16(int col){return bentley_sqlite3_column_bytes16(m_stmt, col);}
+Utf8CP      Statement::GetColumnName(int col)   {return bentley_sqlite3_column_name(m_stmt, col);}
+void const* Statement::GetValueBlob(int col)    {return bentley_sqlite3_column_blob(m_stmt, col);}
+Utf8CP      Statement::GetValueText(int col)    {return (Utf8CP) bentley_sqlite3_column_text(m_stmt, col);}
+int         Statement::GetValueInt(int col)     {return bentley_sqlite3_column_int(m_stmt, col);}
+int64_t     Statement::GetValueInt64(int col)   {return bentley_sqlite3_column_int64(m_stmt, col);}
+double      Statement::GetValueDouble(int col)  {return bentley_sqlite3_column_double(m_stmt, col);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -591,7 +591,7 @@ double      Statement::GetValueDouble(int col)  {return sqlite3_column_double(m_
 DbResult Statement::BindGuid(int col, BeGuidCR guid)
     {
     if (guid.IsValid())
-        return (DbResult)sqlite3_bind_blob(m_stmt, col, &guid, sizeof(guid), SQLITE_TRANSIENT);
+        return (DbResult)bentley_sqlite3_bind_blob(m_stmt, col, &guid, sizeof(guid), SQLITE_TRANSIENT);
 
     return BindNull(col);
     }
@@ -618,24 +618,24 @@ BeGuid Statement::GetValueGuid(int col)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbDupValue  Statement::GetDbValue(int col)
     {
-    DbDupValue value(sqlite3_column_value(m_stmt, col));
+    DbDupValue value(bentley_sqlite3_column_value(m_stmt, col));
     return value;
     }
 
-int         Statement::GetParameterIndex(Utf8CP name) {return sqlite3_bind_parameter_index(m_stmt, name);}
-int         Statement::GetParameterCount() { return sqlite3_bind_parameter_count(m_stmt); }
-Utf8CP      Statement::GetSql() const                {return sqlite3_sql(m_stmt);}
-DbValueType  DbValue::GetValueType() const               {return (DbValueType) sqlite3_value_type(m_val);}
-DbValueType  DbValue::GetNumericType() const             {return (DbValueType) sqlite3_value_numeric_type(m_val);}
-int          DbValue::GetValueBytes() const              {return sqlite3_value_bytes(m_val);}
-void const*  DbValue::GetValueBlob() const               {return sqlite3_value_blob(m_val);}
-Utf8CP       DbValue::GetValueText() const               {return (Utf8CP)sqlite3_value_text(m_val);}
-int          DbValue::GetValueInt() const                {return sqlite3_value_int(m_val);}
-int64_t      DbValue::GetValueInt64() const              {return sqlite3_value_int64(m_val);}
-double       DbValue::GetValueDouble() const             {return sqlite3_value_double(m_val);}
-void*        DbValue::GetValuePointer(Utf8CP name) const {return sqlite3_value_pointer(m_val, name); }
-unsigned int DbValue::GetSubType() const                 {return sqlite3_value_subtype(m_val); }
-bool         DbValue::FromBinding() const                {return sqlite3_value_frombind(m_val);}
+int         Statement::GetParameterIndex(Utf8CP name) {return bentley_sqlite3_bind_parameter_index(m_stmt, name);}
+int         Statement::GetParameterCount() { return bentley_sqlite3_bind_parameter_count(m_stmt); }
+Utf8CP      Statement::GetSql() const                {return bentley_sqlite3_sql(m_stmt);}
+DbValueType  DbValue::GetValueType() const               {return (DbValueType) bentley_sqlite3_value_type(m_val);}
+DbValueType  DbValue::GetNumericType() const             {return (DbValueType) bentley_sqlite3_value_numeric_type(m_val);}
+int          DbValue::GetValueBytes() const              {return bentley_sqlite3_value_bytes(m_val);}
+void const*  DbValue::GetValueBlob() const               {return bentley_sqlite3_value_blob(m_val);}
+Utf8CP       DbValue::GetValueText() const               {return (Utf8CP)bentley_sqlite3_value_text(m_val);}
+int          DbValue::GetValueInt() const                {return bentley_sqlite3_value_int(m_val);}
+int64_t      DbValue::GetValueInt64() const              {return bentley_sqlite3_value_int64(m_val);}
+double       DbValue::GetValueDouble() const             {return bentley_sqlite3_value_double(m_val);}
+void*        DbValue::GetValuePointer(Utf8CP name) const {return bentley_sqlite3_value_pointer(m_val, name); }
+unsigned int DbValue::GetSubType() const                 {return bentley_sqlite3_value_subtype(m_val); }
+bool         DbValue::FromBinding() const                {return bentley_sqlite3_value_frombind(m_val);}
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
@@ -671,7 +671,7 @@ int DbFile::TraceCallback(unsigned t, void* data, void* p, void* x) {
         traceEvents.m_traceStmtEvent.RaiseEvent(ctx, sql);
     } else if (t == static_cast<int>(DbTrace::Close)) {
         auto sqlDb = reinterpret_cast<SqlDbP>(p);
-        std::string fileName = sqlite3_db_filename(sqlDb, nullptr);
+        std::string fileName = bentley_sqlite3_db_filename(sqlDb, nullptr);
         traceEvents.m_traceCloseEvent.RaiseEvent(sqlDb, fileName.c_str());
     };
     return 0;
@@ -704,7 +704,7 @@ DbTrace DbFile::ConfigTraceEvents(DbTrace flags, bool enable) const {
     traceEvents.m_traceFlags = traceFlags;
 
     if (traceEvents.m_traceFlags != DbTrace::None) {
-        sqlite3_trace_v2(m_sqlDb, static_cast<unsigned int>(traceEvents.m_traceFlags), DbFile::TraceCallback, (void*)this);
+        bentley_sqlite3_trace_v2(m_sqlDb, static_cast<unsigned int>(traceEvents.m_traceFlags), DbFile::TraceCallback, (void*)this);
     } else {
         DisableAllTraceEvents();
     }
@@ -716,7 +716,7 @@ DbTrace DbFile::ConfigTraceEvents(DbTrace flags, bool enable) const {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DbFile::DisableAllTraceEvents() const {
     GetTraceEvents().m_traceFlags = DbTrace::None;
-    sqlite3_trace_v2(m_sqlDb, 0, nullptr, nullptr);
+    bentley_sqlite3_trace_v2(m_sqlDb, 0, nullptr, nullptr);
 }
 
 
@@ -725,7 +725,7 @@ void DbFile::DisableAllTraceEvents() const {
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP Statement::GetNormalizedSql() const
     {
-    return sqlite3_normalized_sql(m_stmt);
+    return bentley_sqlite3_normalized_sql(m_stmt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -733,9 +733,9 @@ Utf8CP Statement::GetNormalizedSql() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Statement::GetExpandedSql() const
     {
-    char * sql = sqlite3_expanded_sql(m_stmt);
+    char * sql = bentley_sqlite3_expanded_sql(m_stmt);
     Utf8String expendedSql = sql;
-    sqlite3_free(sql);
+    bentley_sqlite3_free(sql);
     return expendedSql;
     }
 
@@ -744,7 +744,7 @@ Utf8String Statement::GetExpandedSql() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP TraceContext::GetNormalizedSql() const
     {
-    return sqlite3_normalized_sql(m_stmt);
+    return bentley_sqlite3_normalized_sql(m_stmt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -752,9 +752,9 @@ Utf8CP TraceContext::GetNormalizedSql() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String TraceContext::GetExpandedSql() const
     {
-    char * sql = sqlite3_expanded_sql(m_stmt);
+    char * sql = bentley_sqlite3_expanded_sql(m_stmt);
     Utf8String expendedSql = sql;
-    sqlite3_free(sql);
+    bentley_sqlite3_free(sql);
     return expendedSql;
     }
 
@@ -763,7 +763,7 @@ Utf8String TraceContext::GetExpandedSql() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP TraceContext::GetSql() const
     {
-    return sqlite3_sql(m_stmt);
+    return bentley_sqlite3_sql(m_stmt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -771,7 +771,7 @@ Utf8CP TraceContext::GetSql() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TraceContext::IsReadonly() const
     {
-    return 0 != sqlite3_stmt_readonly(m_stmt);
+    return 0 != bentley_sqlite3_stmt_readonly(m_stmt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -791,14 +791,14 @@ BeGuid DbValue::GetValueGuid() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbDupValue::DbDupValue(SqlValueP val) : DbValue(nullptr) {m_val = sqlite3_value_dup(val);}
-DbDupValue::~DbDupValue() {sqlite3_value_free(m_val);}
+DbDupValue::DbDupValue(SqlValueP val) : DbValue(nullptr) {m_val = bentley_sqlite3_value_dup(val);}
+DbDupValue::~DbDupValue() {bentley_sqlite3_value_free(m_val);}
 DbDupValue& DbDupValue::operator = (DbDupValue&& other)
     {
     if (this != &other)
         {
         if (m_val)
-            sqlite3_value_free(m_val);
+            bentley_sqlite3_value_free(m_val);
         m_val = other.m_val;
         other.m_val = nullptr;
         }
@@ -814,16 +814,16 @@ SqlDbP   Db::GetSqlDb() const {return m_dbFile->m_sqlDb;}
 BeGuid   Db::GetDbGuid() const {return m_dbFile->m_dbGuid;}
 int32_t  Db::GetCurrentSavepointDepth() const {return (int32_t) m_dbFile->m_txns.size();}
 Utf8String Db::GetLastError(DbResult* lastResult) const {return IsDbOpen() ? m_dbFile->GetLastError(lastResult) : "Not opened";}
-void Db::Interrupt() const {return sqlite3_interrupt(GetSqlDb());}
+void Db::Interrupt() const {return bentley_sqlite3_interrupt(GetSqlDb());}
 
-int64_t  Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
-int      Db::GetModifiedRowCount() const {return sqlite3_changes(GetSqlDb());}
-int      Db::GetTotalModifiedRowCount() const { return sqlite3_total_changes(GetSqlDb()); }
-int64_t  Db::GetTotalModifiedRowCount64() const { return sqlite3_total_changes64(GetSqlDb()); }
+int64_t  Db::GetLastInsertRowId() const {return bentley_sqlite3_last_insert_rowid(GetSqlDb());}
+int      Db::GetModifiedRowCount() const {return bentley_sqlite3_changes(GetSqlDb());}
+int      Db::GetTotalModifiedRowCount() const { return bentley_sqlite3_total_changes(GetSqlDb()); }
+int64_t  Db::GetTotalModifiedRowCount64() const { return bentley_sqlite3_total_changes64(GetSqlDb()); }
 void     SnappyFromBlob::Finish() {m_blobIO.Close();}
 
 Utf8String ProfileVersion::ToJson() const { return ToString("{\"major\":%" PRIu16 ",\"minor\":%" PRIu16 ",\"sub1\":%" PRIu16 ",\"sub2\":%" PRIu16 "}"); }
-DbResult Db::FreeMemory() const { return (DbResult)sqlite3_db_release_memory(m_dbFile->m_sqlDb); }
+DbResult Db::FreeMemory() const { return (DbResult)bentley_sqlite3_db_release_memory(m_dbFile->m_sqlDb); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -922,7 +922,7 @@ DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualifiedTabl
             column.hidden = stmt.GetValueInt(6) != 0;
             char const* pzCollSeq;
             int pAutoinc;
-            rc = (DbResult)sqlite3_table_column_metadata(db.GetSqlDb(), dbName.c_str(), tableName.c_str(), column.name.c_str(), nullptr, &pzCollSeq, nullptr, nullptr, &pAutoinc);
+            rc = (DbResult)bentley_sqlite3_table_column_metadata(db.GetSqlDb(), dbName.c_str(), tableName.c_str(), column.name.c_str(), nullptr, &pzCollSeq, nullptr, nullptr, &pAutoinc);
             if (rc != BE_SQLITE_OK) {
                 LOG.errorv("MetaData::QueryTable(): Failed to query column metadata for column: %s", column.name.c_str());
                 return false;
@@ -1377,7 +1377,7 @@ DbResult Statement::Prepare(DbFileCR dbFile, Utf8CP sql, bool suppressDiagnostic
 DbResult Statement::DoPrepare(DbFileCR dbFile, Utf8CP sql)
     {
     SqlDbP dbHdl = dbFile.GetSqlDb();
-    return (nullptr != m_stmt) ? BE_SQLITE_MISUSE : (DbResult) sqlite3_prepare_v2(dbHdl, sql, -1, &m_stmt, 0);
+    return (nullptr != m_stmt) ? BE_SQLITE_MISUSE : (DbResult) bentley_sqlite3_prepare_v2(dbHdl, sql, -1, &m_stmt, 0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1391,7 +1391,7 @@ bool Statement::IsReadonly() const
         return true; // pick true in error case, as an unprepared statement cannot change the DB either
         }
 
-    return sqlite3_stmt_readonly(m_stmt) != 0;
+    return bentley_sqlite3_stmt_readonly(m_stmt) != 0;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1449,14 +1449,14 @@ SqlPrintfString::SqlPrintfString(Utf8CP fmt, ...)
     {
     va_list vl;
     va_start(vl,fmt);
-    m_str = sqlite3_vmprintf(fmt, vl);
+    m_str = bentley_sqlite3_vmprintf(fmt, vl);
     va_end(vl);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SqlPrintfString::~SqlPrintfString() {sqlite3_free(m_str);}
+SqlPrintfString::~SqlPrintfString() {bentley_sqlite3_free(m_str);}
 
 #ifdef _MSC_VER
     #pragma warning(disable:4355)
@@ -1483,7 +1483,7 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, s
         SetBusyTimeout(busyTimeout.value());
     } else if (retry) {
         m_retry = retry;
-        sqlite3_busy_handler(sqlDb, besqliteBusyHandler, m_retry.get());
+        bentley_sqlite3_busy_handler(sqlDb, besqliteBusyHandler, m_retry.get());
     } else {
         // same as new BusyRetry()
         SetBusyTimeout(5000);
@@ -1506,7 +1506,7 @@ static void nocaseCollatingFuncLatin1Del(void *pCtx){
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int nocaseCollatingFuncASCII(void *, int nLeft, const void *zLeft, int nRight, const void *zRight){
-    int r = sqlite3_strnicmp((const char *)zLeft, (const char *)zRight, (nLeft<nRight)?nLeft:nRight);
+    int r = bentley_sqlite3_strnicmp((const char *)zLeft, (const char *)zRight, (nLeft<nRight)?nLeft:nRight);
     if(0 == r){
         r = nLeft-nRight;
     }
@@ -1533,15 +1533,15 @@ static int nocaseCollatingFuncLatin1(void *pCtx, int nLeft, const void *zLeft, i
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DbFile::SetNoCaseCollation(NoCaseCollation col) {
-    auto mutex = sqlite3_db_mutex(m_sqlDb);
-    sqlite3_mutex_enter(mutex);
+    auto mutex = bentley_sqlite3_db_mutex(m_sqlDb);
+    bentley_sqlite3_mutex_enter(mutex);
     const auto NOCASE = "NOCASE";
     if (col == NoCaseCollation::ASCII) {
-        const auto rc = (DbResult)sqlite3_create_collation(m_sqlDb, NOCASE, SQLITE_UTF8, nullptr, nocaseCollatingFuncASCII);
+        const auto rc = (DbResult)bentley_sqlite3_create_collation(m_sqlDb, NOCASE, SQLITE_UTF8, nullptr, nocaseCollatingFuncASCII);
         if (rc == BE_SQLITE_OK){
             m_noCaseCollation = col;
         }
-        sqlite3_mutex_leave(mutex);
+        bentley_sqlite3_mutex_leave(mutex);
         return rc;
     }
 
@@ -1549,15 +1549,15 @@ DbResult DbFile::SetNoCaseCollation(NoCaseCollation col) {
     UErrorCode status = U_ZERO_ERROR;
     pUCollator = ucol_open("latin1", &status);
     if( !U_SUCCESS(status) ){
-        sqlite3_mutex_leave(mutex);
+        bentley_sqlite3_mutex_leave(mutex);
         return BE_SQLITE_ERROR;
     }
     ucol_setStrength(pUCollator, UCOL_PRIMARY);
-    const auto rc = sqlite3_create_collation_v2(m_sqlDb, NOCASE, SQLITE_UTF8, (void *)pUCollator, nocaseCollatingFuncLatin1, nocaseCollatingFuncLatin1Del);
+    const auto rc = bentley_sqlite3_create_collation_v2(m_sqlDb, NOCASE, SQLITE_UTF8, (void *)pUCollator, nocaseCollatingFuncLatin1, nocaseCollatingFuncLatin1Del);
     if (rc == BE_SQLITE_OK){
         m_noCaseCollation = col;
     }
-    sqlite3_mutex_leave(mutex);
+    bentley_sqlite3_mutex_leave(mutex);
     return (DbResult)rc;
 }
 
@@ -1594,7 +1594,7 @@ int DbFile::OnCommit()
 
     // Sqlite initiate auto rollback in case of SQLITE_FULL, SQLITE_IOERR, SQLITE_NOMEM, SQLITE_BUSY, and SQLITE_INTERRUPT
     // We force a crash if COMMIT/ROLLBACK is called outside BeSQLite api.
-    if (sqlite3_get_autocommit(m_sqlDb) != 0 ) {
+    if (bentley_sqlite3_get_autocommit(m_sqlDb) != 0 ) {
         LOG.error("Sqlite initiated autocommit due to a fatal error.");
         if (BeSQLiteLib::s_throwExceptionOnUnexpectedAutoCommit) {
              LOG.error("Runtime debug option to throw exception on unexpected autocommit is set to *true*. Caller must handle exception and then delete the briefcase/db afterword.");
@@ -1641,11 +1641,11 @@ DbResult DbFile::StartSavepoint(Savepoint& txn, BeSQLiteTxnMode txnMode)
         SaveCachedBlvs(true);
         }
 
-    void* old = sqlite3_commit_hook(m_sqlDb, savepointCommitHook, this);
+    void* old = bentley_sqlite3_commit_hook(m_sqlDb, savepointCommitHook, this);
     UNUSED_VARIABLE (old);
     BeAssert(old == nullptr || old == this);
 
-    DbResult rc = (DbResult) sqlite3_exec(m_sqlDb,
+    DbResult rc = (DbResult) bentley_sqlite3_exec(m_sqlDb,
                (0 == m_txns.size()) ? getStartTxnSql(txnMode) : SqlPrintfString("SAVEPOINT \"%s\"", txn.GetName()).GetUtf8CP(), nullptr, nullptr, nullptr);
 
     if (BE_SQLITE_OK != rc)
@@ -1746,14 +1746,14 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
     DbResult rc = BE_SQLITE_OK;
     if (trackerStatus == ChangeTracker::OnCommitStatus::Commit || trackerStatus == ChangeTracker::OnCommitStatus::NoChanges) {
         if (0 == txn.GetDepth()) {
-            rc = (DbResult)sqlite3_exec(m_sqlDb, isCommit ? "COMMIT" : "ROLLBACK", nullptr, nullptr, nullptr);
+            rc = (DbResult)bentley_sqlite3_exec(m_sqlDb, isCommit ? "COMMIT" : "ROLLBACK", nullptr, nullptr, nullptr);
         } else {
             Utf8String sql;
             if (!isCommit) // to cancel a nested transaction, we need to roll it back and then release it.
                 sql.append(SqlPrintfString("ROLLBACK TO \"%s\";", txn.GetName()));
 
             sql.append(SqlPrintfString("RELEASE \"%s\"", txn.GetName()));
-            rc = (DbResult)sqlite3_exec(m_sqlDb, sql.c_str(), nullptr, nullptr, nullptr);
+            rc = (DbResult)bentley_sqlite3_exec(m_sqlDb, sql.c_str(), nullptr, nullptr, nullptr);
         }
     }
 
@@ -1900,7 +1900,7 @@ DbResult Db::ExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),voi
         return  BE_SQLITE_ERROR_NoTxnActive;
         }
 
-    DbResult rc = (DbResult) sqlite3_exec(GetSqlDb(), sql, callback, arg, errmsg);
+    DbResult rc = (DbResult) bentley_sqlite3_exec(GetSqlDb(), sql, callback, arg, errmsg);
     if (rc != BE_SQLITE_OK && rc != BE_SQLITE_DONE)
         {
         Utf8String lastError = GetLastError(); // keep on separate line for debugging
@@ -1909,11 +1909,11 @@ DbResult Db::ExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),voi
         if (BE_SQLITE_LOCKED == rc)
             {
             sqlite3_stmt* stmt = nullptr;
-            while (nullptr != (stmt = sqlite3_next_stmt(m_dbFile->m_sqlDb, stmt)))
+            while (nullptr != (stmt = bentley_sqlite3_next_stmt(m_dbFile->m_sqlDb, stmt)))
                 {
-                if (sqlite3_stmt_busy(stmt))
+                if (bentley_sqlite3_stmt_busy(stmt))
                     {
-                    Utf8String openStatement(sqlite3_sql(stmt));
+                    Utf8String openStatement(bentley_sqlite3_sql(stmt));
                     if (openStatement.empty())
                         LOG.errorv("Transaction is active.");
                     else
@@ -1932,7 +1932,7 @@ DbResult Db::ExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),voi
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),void* arg,CharP* errmsg) const
     {
-    return (DbResult) sqlite3_exec(GetSqlDb(), sql, callback, arg, errmsg);
+    return (DbResult) bentley_sqlite3_exec(GetSqlDb(), sql, callback, arg, errmsg);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1945,7 +1945,7 @@ Utf8String Db::ExplainQuery(Utf8CP sql, bool explainPlan) const {return m_dbFile
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DbFile::CreatePropertyTable(Utf8CP tablename, Utf8CP ddl)
     {
-    return (DbResult) sqlite3_exec(m_sqlDb, SqlPrintfString("CREATE TABLE %s (%s)",tablename, ddl), nullptr, nullptr, nullptr);
+    return (DbResult) bentley_sqlite3_exec(m_sqlDb, SqlPrintfString("CREATE TABLE %s (%s)",tablename, ddl), nullptr, nullptr, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2637,7 +2637,7 @@ static Utf8String getDbUri(Utf8CP dbName, Db::OpenParams const& params) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisableBloomFilter(SqlDbP db) {
     const int SQLITE_BloomFilter =  0x00080000;
-    sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, db, SQLITE_BloomFilter);
+    bentley_sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, db, SQLITE_BloomFilter);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2667,9 +2667,9 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
 #endif
 
     SqlDbP sqlDb;
-    DbResult rc = (DbResult)sqlite3_open_v2(dbName.c_str(), &sqlDb, (int)openMode, nullptr);
+    DbResult rc = (DbResult)bentley_sqlite3_open_v2(dbName.c_str(), &sqlDb, (int)openMode, nullptr);
     if (BE_SQLITE_OK != rc) {
-        sqlite3_close_v2(sqlDb);
+        bentley_sqlite3_close_v2(sqlDb);
         return rc;
     }
 
@@ -2678,7 +2678,7 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
     // we are able to run ANALYZE on all new checkpoints and old one if necessary.
     DisableBloomFilter(sqlDb);
 
-    sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
+    bentley_sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn, params.m_busyTimeout);
     m_isCloudDb = params.m_fromContainer;
 
@@ -2748,7 +2748,7 @@ DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias) const {
     Savepoint* txn = GetSavepoint(0);
     bool wasActive = (txn != nullptr) && (BE_SQLITE_OK == txn->Commit(nullptr));
 
-    DbResult rc = (DbResult)sqlite3_exec(GetSqlDb(), SqlPrintfString("ATTACH \"%s\" AS %s", filename, alias), nullptr, nullptr, nullptr);
+    DbResult rc = (DbResult)bentley_sqlite3_exec(GetSqlDb(), SqlPrintfString("ATTACH \"%s\" AS %s", filename, alias), nullptr, nullptr, nullptr);
 
     if (rc != BE_SQLITE_OK) {
         BeAssert(false);
@@ -2773,7 +2773,7 @@ DbResult Db::DetachDb(Utf8CP alias) const
     Savepoint* txn = GetSavepoint(0);
     bool wasActive = (nullptr != txn) && (BE_SQLITE_OK == txn->Commit(nullptr));
 
-    DbResult rc = (DbResult) sqlite3_exec(GetSqlDb(), SqlPrintfString("DETACH %s", alias), nullptr, nullptr, nullptr);
+    DbResult rc = (DbResult) bentley_sqlite3_exec(GetSqlDb(), SqlPrintfString("DETACH %s", alias), nullptr, nullptr, nullptr);
     if (rc != BE_SQLITE_OK)
         LOG.errorv("DetachDb failed: \"%s\" alias:[%s]", GetLastError(nullptr).c_str(), alias);
 
@@ -3226,7 +3226,7 @@ bool Db::TableExists(Utf8CP tableName) const
 //--------------+------------------------------------------------------------------------
 void Db::FlushPageCache()
     {
-    sqlite3_db_release_memory(m_dbFile->m_sqlDb);
+    bentley_sqlite3_db_release_memory(m_dbFile->m_sqlDb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3304,7 +3304,7 @@ void DbFile::DeleteCachedPropertyMap()
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbTxnState DbFile::GetTxnState(Utf8CP schema) const {
-    return (DbTxnState)sqlite3_txn_state(m_sqlDb, nullptr);
+    return (DbTxnState)bentley_sqlite3_txn_state(m_sqlDb, nullptr);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3317,7 +3317,7 @@ DbFile::~DbFile() {
     //! IMPORTANT we need to make sure if tracker was set and has changes we should *ROLLBACK* instead of *COMMIT*
     const bool isChangeTrackerIsEnabled = m_tracker.IsValid();
     const bool isChangeTrackerHasChanges = isChangeTrackerIsEnabled ? m_tracker->HasChanges() : false;
-    const bool isInMemoryDb = strcmp (sqlite3_db_filename(m_sqlDb, nullptr), "") == 0;
+    const bool isInMemoryDb = strcmp (bentley_sqlite3_db_filename(m_sqlDb, nullptr), "") == 0;
     m_tracker = nullptr;
 
     if (0 != m_txns.size()) {
@@ -3354,22 +3354,22 @@ DbFile::~DbFile() {
     RemoveFunction(*m_regexFunc);
     RemoveFunction(*m_regexExtractFunc);
     RemoveFunction(*m_base36Func);
-    DbResult rc = (DbResult) sqlite3_close(m_sqlDb);
+    DbResult rc = (DbResult) bentley_sqlite3_close(m_sqlDb);
 
     if (BE_SQLITE_OK != rc) {
         sqlite3_stmt* stmt = nullptr;
         std::vector<sqlite3_stmt*> stmts;
-        while (nullptr != (stmt = sqlite3_next_stmt(m_sqlDb, stmt))) {
+        while (nullptr != (stmt = bentley_sqlite3_next_stmt(m_sqlDb, stmt))) {
             stmts.push_back(stmt);
-            Utf8String openStatement(sqlite3_sql(stmt)); // keep as separate line for debugging
+            Utf8String openStatement(bentley_sqlite3_sql(stmt)); // keep as separate line for debugging
             LOG.errorv("Statement not closed: '%s'", openStatement.c_str());
         };
         for(auto stmt : stmts)
-            sqlite3_finalize(stmt);
+            bentley_sqlite3_finalize(stmt);
 
-        rc = (DbResult) sqlite3_close(m_sqlDb);
+        rc = (DbResult) bentley_sqlite3_close(m_sqlDb);
         if (rc != BE_SQLITE_OK) {
-            LOG.errorv("Cannot close database '%s'", sqlite3_db_filename(m_sqlDb, "main"));
+            LOG.errorv("Cannot close database '%s'", bentley_sqlite3_db_filename(m_sqlDb, "main"));
             BeAssert(false);
         }
 
@@ -3479,12 +3479,12 @@ Db::AppDataPtr Db::FindAppData(AppData::Key const& key) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int Db::SetLimit(DbLimits id, int newVal) const { return sqlite3_limit(m_dbFile->m_sqlDb, (int)id, newVal); }
+int Db::SetLimit(DbLimits id, int newVal) const { return bentley_sqlite3_limit(m_dbFile->m_sqlDb, (int)id, newVal); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int Db::GetLimit(DbLimits id) const { return sqlite3_limit(m_dbFile->m_sqlDb, (int)id, -1); }
+int Db::GetLimit(DbLimits id) const { return bentley_sqlite3_limit(m_dbFile->m_sqlDb, (int)id, -1); }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -3492,7 +3492,7 @@ int Db::GetLimit(DbLimits id) const { return sqlite3_limit(m_dbFile->m_sqlDb, (i
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP Db::GetDbFileName() const
     {
-    return  (m_dbFile && m_dbFile->m_sqlDb) ? sqlite3_db_filename(m_dbFile->m_sqlDb, "main") : nullptr;
+    return  (m_dbFile && m_dbFile->m_sqlDb) ? bentley_sqlite3_db_filename(m_dbFile->m_sqlDb, "main") : nullptr;
     }
 
 #define IS_SQLITE_FILE_SIGNATURE(toCheck) (0 == memcmp((Utf8CP)header, toCheck, strlen(toCheck)))
@@ -3587,7 +3587,7 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
 
     Utf8String uri = getDbUri(inName, params);
     SqlDbP sqlDb = nullptr;
-    rc = (DbResult)sqlite3_open_v2(uri.c_str(), &sqlDb, (int)params.m_openMode, nullptr);
+    rc = (DbResult)bentley_sqlite3_open_v2(uri.c_str(), &sqlDb, (int)params.m_openMode, nullptr);
     if (BE_SQLITE_OK != rc)
         return rc;
 
@@ -3597,7 +3597,7 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
     DisableBloomFilter(sqlDb);
 
 #ifdef TRACE_ALL_SQLITE_STATEMENTS
-    sqlite3_config(SQLITE_CONFIG_LOG, printLog, nullptr);
+    bentley_sqlite3_config(SQLITE_CONFIG_LOG, printLog, nullptr);
     sqlite3_trace(sqlDb, tracefunc, nullptr);
 #endif
 
@@ -3607,7 +3607,7 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
 
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn, params.m_busyTimeout);
     m_dbFile->m_readonly = ((int)params.m_openMode & (int)OpenMode::Readonly) == (int)OpenMode::Readonly;
-    sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
+    bentley_sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
 
     // for writeable databases in WAL mode with DEFERRED defaultTxn mode, promote it to IMMEDIATE mode so there can only
     // be one writer. Without WAL mode we can't do that because the (single) writer would block readers.
@@ -3754,12 +3754,12 @@ DbResult Db::OpenSecondaryConnection(Db& newConnection, OpenParams params) const
 /** Perform a checkpoint operation if this database is in WAL mode. */
 DbResult Db::PerformCheckpoint(WalCheckpointMode mode, int* pnLog, int* pnCkpt) {
     SuspendDefaultTxn noDefaultTxn(*this); // no transactions may be active to perform a checkpoint
-    return (DbResult) sqlite3_wal_checkpoint_v2(GetSqlDb(), "main", (int)mode, pnLog, pnCkpt);
+    return (DbResult) bentley_sqlite3_wal_checkpoint_v2(GetSqlDb(), "main", (int)mode, pnLog, pnCkpt);
 }
 
 /** Set the auto checkpoint threshold */
 DbResult Db::SetAutoCheckpointThreshold(int frames) {
-    return (DbResult) sqlite3_wal_autocheckpoint(GetSqlDb(), frames);
+    return (DbResult) bentley_sqlite3_wal_autocheckpoint(GetSqlDb(), frames);
 }
 
 /** Turn on or off WAL journal mode */
@@ -4038,26 +4038,26 @@ DbResult Db::QueryDbIds()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbFunction::Context::SetResultBlob(void const* value, int length, CopyData doCopy) {sqlite3_result_blob((sqlite3_context*) this, value, length, (sqlite3_destructor_type) doCopy);}
-void DbFunction::Context::SetResultDouble(double val){sqlite3_result_double((sqlite3_context*) this, val);}
-void DbFunction::Context::SetResultError(Utf8CP val, int len){sqlite3_result_error((sqlite3_context*) this, val, len);}
-void DbFunction::Context::SetResultError_toobig(){sqlite3_result_error_toobig((sqlite3_context*) this);}
-void DbFunction::Context::SetResultError_nomem(){sqlite3_result_error_nomem((sqlite3_context*) this);}
-void DbFunction::Context::SetResultError_code(int val){sqlite3_result_error_code((sqlite3_context*) this, val);}
-void DbFunction::Context::SetResultInt(int val){sqlite3_result_int((sqlite3_context*) this, val);}
-void DbFunction::Context::SetResultInt64(int64_t val){sqlite3_result_int64((sqlite3_context*) this, val);}
-void DbFunction::Context::SetResultNull(){sqlite3_result_null((sqlite3_context*) this);}
-void DbFunction::Context::SetResultText(Utf8CP val, int length, CopyData doCopy){sqlite3_result_text((sqlite3_context*) this, val, length,(sqlite3_destructor_type) doCopy);}
-void DbFunction::Context::SetResultZeroblob(int length){sqlite3_result_zeroblob((sqlite3_context*)this, length);}
-void DbFunction::Context::SetResultValue(DbValue val){sqlite3_result_value((sqlite3_context*)this, val.GetSqlValueP());}
-void* DbFunction::Context::GetAggregateContext(int nBytes) {return sqlite3_aggregate_context((sqlite3_context*)this, nBytes);}
+void DbFunction::Context::SetResultBlob(void const* value, int length, CopyData doCopy) {bentley_sqlite3_result_blob((sqlite3_context*) this, value, length, (sqlite3_destructor_type) doCopy);}
+void DbFunction::Context::SetResultDouble(double val){bentley_sqlite3_result_double((sqlite3_context*) this, val);}
+void DbFunction::Context::SetResultError(Utf8CP val, int len){bentley_sqlite3_result_error((sqlite3_context*) this, val, len);}
+void DbFunction::Context::SetResultError_toobig(){bentley_sqlite3_result_error_toobig((sqlite3_context*) this);}
+void DbFunction::Context::SetResultError_nomem(){bentley_sqlite3_result_error_nomem((sqlite3_context*) this);}
+void DbFunction::Context::SetResultError_code(int val){bentley_sqlite3_result_error_code((sqlite3_context*) this, val);}
+void DbFunction::Context::SetResultInt(int val){bentley_sqlite3_result_int((sqlite3_context*) this, val);}
+void DbFunction::Context::SetResultInt64(int64_t val){bentley_sqlite3_result_int64((sqlite3_context*) this, val);}
+void DbFunction::Context::SetResultNull(){bentley_sqlite3_result_null((sqlite3_context*) this);}
+void DbFunction::Context::SetResultText(Utf8CP val, int length, CopyData doCopy){bentley_sqlite3_result_text((sqlite3_context*) this, val, length,(sqlite3_destructor_type) doCopy);}
+void DbFunction::Context::SetResultZeroblob(int length){bentley_sqlite3_result_zeroblob((sqlite3_context*)this, length);}
+void DbFunction::Context::SetResultValue(DbValue val){bentley_sqlite3_result_value((sqlite3_context*)this, val.GetSqlValueP());}
+void* DbFunction::Context::GetAggregateContext(int nBytes) {return bentley_sqlite3_aggregate_context((sqlite3_context*)this, nBytes);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void aggregateStep(sqlite3_context* context, int nArgs, sqlite3_value** args){((AggregateFunction*)sqlite3_user_data(context))->_StepAggregate((DbFunction::Context&) *context, nArgs, (DbValue*)args);}
-static void aggregateFinal(sqlite3_context* context) {((AggregateFunction*) sqlite3_user_data(context))->_FinishAggregate((DbFunction::Context&) *context);}
-static void scalarFunc(sqlite3_context* context, int nArgs, sqlite3_value** args) {((ScalarFunction*)sqlite3_user_data(context))->_ComputeScalar((DbFunction::Context&) *context, nArgs, (DbValue*)args);}
+static void aggregateStep(sqlite3_context* context, int nArgs, sqlite3_value** args){((AggregateFunction*)bentley_sqlite3_user_data(context))->_StepAggregate((DbFunction::Context&) *context, nArgs, (DbValue*)args);}
+static void aggregateFinal(sqlite3_context* context) {((AggregateFunction*) bentley_sqlite3_user_data(context))->_FinishAggregate((DbFunction::Context&) *context);}
+static void scalarFunc(sqlite3_context* context, int nArgs, sqlite3_value** args) {((ScalarFunction*)bentley_sqlite3_user_data(context))->_ComputeScalar((DbFunction::Context&) *context, nArgs, (DbValue*)args);}
 static int  rTreeMatch(RTreeMatchFunction::QueryInfo* info){return ((RTreeMatchFunction*) info->m_context)->_TestRange(*info);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -4066,7 +4066,7 @@ static int  rTreeMatch(RTreeMatchFunction::QueryInfo* info){return ((RTreeMatchF
 int DbFile::AddFunction(DbFunction& function) const
     {
     bool isAgg = function._IsAggregate();
-    return sqlite3_create_function_v2(m_sqlDb, function.GetName(), function.GetNumArgs(), SQLITE_UTF8 | SQLITE_DETERMINISTIC, &function,
+    return bentley_sqlite3_create_function_v2(m_sqlDb, function.GetName(), function.GetNumArgs(), SQLITE_UTF8 | SQLITE_DETERMINISTIC, &function,
             isAgg ? nullptr        : scalarFunc,
             isAgg ? aggregateStep  : nullptr,
             isAgg ? aggregateFinal : nullptr,
@@ -4078,7 +4078,7 @@ int DbFile::AddFunction(DbFunction& function) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 int DbFile::AddRTreeMatchFunction(RTreeMatchFunction& func) const
     {
-    return sqlite3_rtree_query_callback(m_sqlDb, func.GetName(), (int(*)(sqlite3_rtree_query_info*)) rTreeMatch, &func, nullptr);
+    return bentley_sqlite3_rtree_query_callback(m_sqlDb, func.GetName(), (int(*)(sqlite3_rtree_query_info*)) rTreeMatch, &func, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4086,7 +4086,7 @@ int DbFile::AddRTreeMatchFunction(RTreeMatchFunction& func) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 int DbFile::RemoveFunction(DbFunction& function) const
     {
-    return sqlite3_create_function_v2(m_sqlDb, function.GetName(), function.GetNumArgs(), SQLITE_UTF8 | SQLITE_DETERMINISTIC, nullptr, nullptr, nullptr, nullptr, nullptr);
+    return bentley_sqlite3_create_function_v2(m_sqlDb, function.GetName(), function.GetNumArgs(), SQLITE_UTF8 | SQLITE_DETERMINISTIC, nullptr, nullptr, nullptr, nullptr, nullptr);
     }
 
 //---------------------------------------------------------------------------------
@@ -4109,7 +4109,7 @@ static void updateHookCallback(void* arg, int sqlTypeInt, Utf8CP dbName, Utf8CP 
                 break;
 
             default:
-                BeAssert(false && "Unexpected SQL type passed to call back in sqlite3_update_hook");
+                BeAssert(false && "Unexpected SQL type passed to call back in bentley_sqlite3_update_hook");
                 return;
         }
 
@@ -4121,7 +4121,7 @@ static void updateHookCallback(void* arg, int sqlTypeInt, Utf8CP dbName, Utf8CP 
 //+---------------+---------------+---------------+---------------+---------------+------
 void DbFile::AddDataUpdateCallback(DataUpdateCallback& updateHook) const
     {
-    void* previousHook = sqlite3_update_hook(m_sqlDb, updateHookCallback, &updateHook);
+    void* previousHook = bentley_sqlite3_update_hook(m_sqlDb, updateHookCallback, &updateHook);
     if (previousHook != nullptr)
         {
         BeAssert(false && "Previous SQLite data change notification callback was overridden by call to Db::AddDataUpdateCallback");
@@ -4132,7 +4132,7 @@ void DbFile::AddDataUpdateCallback(DataUpdateCallback& updateHook) const
 //---------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void DbFile::RemoveDataUpdateCallback() const { sqlite3_update_hook(m_sqlDb, nullptr, nullptr); }
+void DbFile::RemoveDataUpdateCallback() const { bentley_sqlite3_update_hook(m_sqlDb, nullptr, nullptr); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -4160,8 +4160,8 @@ Utf8String DbFile::GetLastError(DbResult* lastResult) const
         return BeSQLiteLib::GetErrorString(status);
         }
 
-    status = (DbResult) sqlite3_errcode(m_sqlDb);
-    Utf8String msg = (Utf8CP)sqlite3_errmsg(m_sqlDb);
+    status = (DbResult) bentley_sqlite3_errcode(m_sqlDb);
+    Utf8String msg = (Utf8CP)bentley_sqlite3_errmsg(m_sqlDb);
     msg.append(" (").append(BeSQLiteLib::GetErrorName(status)).append(")");
     return msg;
     }
@@ -4178,7 +4178,7 @@ Utf8CP Db::InterpretDbResult(DbResult result)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BlobIO::Open(DbR db, Utf8CP tableName, Utf8CP columnName, uint64_t row, bool writable, Utf8CP dbName)
     {
-    return (DbResult) sqlite3_blob_open(db.GetSqlDb(), dbName ? dbName : "main", tableName, columnName, row, writable, &m_blob);
+    return (DbResult) bentley_sqlite3_blob_open(db.GetSqlDb(), dbName ? dbName : "main", tableName, columnName, row, writable, &m_blob);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4188,13 +4188,13 @@ DbResult BlobIO::Close()
     {
     SqlDbBlobP blob = m_blob;
     m_blob  = 0;
-    return blob ? (DbResult) sqlite3_blob_close(blob) : BE_SQLITE_OK;
+    return blob ? (DbResult) bentley_sqlite3_blob_close(blob) : BE_SQLITE_OK;
     }
 
-DbResult BlobIO::ReOpen(uint64_t row) {return (DbResult) sqlite3_blob_reopen(m_blob, row);}
-DbResult BlobIO::Read(void* data, int numBytes, int offset) {return (DbResult) sqlite3_blob_read(m_blob, data, numBytes, offset);}
-DbResult BlobIO::Write(const void* data, int numBytes, int offset) {return (DbResult) sqlite3_blob_write(m_blob, data, numBytes, offset);}
-int BlobIO::GetNumBytes() const {return sqlite3_blob_bytes(m_blob);}
+DbResult BlobIO::ReOpen(uint64_t row) {return (DbResult) bentley_sqlite3_blob_reopen(m_blob, row);}
+DbResult BlobIO::Read(void* data, int numBytes, int offset) {return (DbResult) bentley_sqlite3_blob_read(m_blob, data, numBytes, offset);}
+DbResult BlobIO::Write(const void* data, int numBytes, int offset) {return (DbResult) bentley_sqlite3_blob_write(m_blob, data, numBytes, offset);}
+int BlobIO::GetNumBytes() const {return bentley_sqlite3_blob_bytes(m_blob);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -4694,10 +4694,10 @@ DbResult SnappyToBlob::SaveToRow(BlobIO& io)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeDbMutex::BeDbMutex(MutexType mutexType) {m_mux = sqlite3_mutex_alloc((int) mutexType);}
-BeDbMutex::~BeDbMutex()   {sqlite3_mutex_free((sqlite3_mutex*)m_mux);}
-void BeDbMutex::Enter() {sqlite3_mutex_enter((sqlite3_mutex*)m_mux);}
-void BeDbMutex::Leave() {sqlite3_mutex_leave((sqlite3_mutex*)m_mux);}
+BeDbMutex::BeDbMutex(MutexType mutexType) {m_mux = bentley_sqlite3_mutex_alloc((int) mutexType);}
+BeDbMutex::~BeDbMutex()   {bentley_sqlite3_mutex_free((sqlite3_mutex*)m_mux);}
+void BeDbMutex::Enter() {bentley_sqlite3_mutex_enter((sqlite3_mutex*)m_mux);}
+void BeDbMutex::Leave() {bentley_sqlite3_mutex_leave((sqlite3_mutex*)m_mux);}
 
 #ifndef NDEBUG
 bool BeDbMutex::IsHeld() {return 0!=sqlite3_mutex_held((sqlite3_mutex*)m_mux);}
@@ -4708,11 +4708,11 @@ bool BeDbMutex::IsHeld() {return 0!=sqlite3_mutex_held((sqlite3_mutex*)m_mux);}
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSqliteDbMutex::BeSqliteDbMutex(Db& db)
     {
-    m_mux = sqlite3_db_mutex(db.GetDbFile()->GetSqlDb());
+    m_mux = bentley_sqlite3_db_mutex(db.GetDbFile()->GetSqlDb());
     }
 
-void BeSqliteDbMutex::Enter() {sqlite3_mutex_enter((sqlite3_mutex*)m_mux);}
-void BeSqliteDbMutex::Leave() {sqlite3_mutex_leave((sqlite3_mutex*)m_mux);}
+void BeSqliteDbMutex::Enter() {bentley_sqlite3_mutex_enter((sqlite3_mutex*)m_mux);}
+void BeSqliteDbMutex::Leave() {bentley_sqlite3_mutex_leave((sqlite3_mutex*)m_mux);}
 
 #ifndef NDEBUG
 bool BeSqliteDbMutex::IsHeld() {return 0!=sqlite3_mutex_held((sqlite3_mutex*)m_mux);}
@@ -4725,11 +4725,11 @@ bool BeSqliteDbMutex::IsHeld() {return 0!=sqlite3_mutex_held((sqlite3_mutex*)m_m
 CachedStatement::CachedStatement(Utf8CP sql, StatementCache const& myCache) : m_myCache(myCache), m_inCache(true)
     {
     size_t len = strlen(sql) + 1;
-    m_sql = (Utf8P) sqlite3_malloc((int)len);
+    m_sql = (Utf8P) bentley_sqlite3_malloc((int)len);
     memcpy(const_cast<char*>(m_sql), sql, len);
     }
 
-CachedStatement::~CachedStatement() {sqlite3_free((void*)m_sql);}
+CachedStatement::~CachedStatement() {bentley_sqlite3_free((void*)m_sql);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -5902,18 +5902,18 @@ static void isInVirtualSet(sqlite3_context* ctx, int nArgs, sqlite3_value** args
     {
     if (2 > nArgs)
         {
-        sqlite3_result_error(ctx, "Not enough arguments to InVirtualSet", -1);
+        bentley_sqlite3_result_error(ctx, "Not enough arguments to InVirtualSet", -1);
         return;
         }
 
     // the first argument must be the set to test against.
-    VirtualSet const* vSet = (VirtualSet const*) sqlite3_value_int64(args[0]);
+    VirtualSet const* vSet = (VirtualSet const*) bentley_sqlite3_value_int64(args[0]);
     if (nullptr==vSet)
-        sqlite3_result_int(ctx, 0); //0 means false -> if no virtual set is bound, we treat it as binding an empty virtual set
+        bentley_sqlite3_result_int(ctx, 0); //0 means false -> if no virtual set is bound, we treat it as binding an empty virtual set
     else
         {
         // skip the first argument - we used it above.
-        sqlite3_result_int(ctx, vSet->_IsInSet(nArgs - 1, (DbValue const*) args + 1));
+        bentley_sqlite3_result_int(ctx, vSet->_IsInSet(nArgs - 1, (DbValue const*) args + 1));
         }
     }
 
@@ -5925,7 +5925,7 @@ static int besqlite_db_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_rou
     {
 
     // and the "InVirtualSet" SQL function. It requires at least two arguments: the address of the VirtualSet and the value(s) to test
-    auto rc = sqlite3_create_function_v2(db, "InVirtualSet", -1, SQLITE_UTF8, nullptr, &isInVirtualSet, nullptr, nullptr, nullptr);
+    auto rc = bentley_sqlite3_create_function_v2(db, "InVirtualSet", -1, SQLITE_UTF8, nullptr, &isInVirtualSet, nullptr, nullptr, nullptr);
     UNUSED_VARIABLE(rc);
     BeAssert(BE_SQLITE_OK == rc);
 
@@ -5959,7 +5959,7 @@ static void logCallback(void* pArg, int rc, Utf8CP zMsg) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BeSQLiteLib::EnableSharedCache(bool enabled)
     {
-    return (DbResult)sqlite3_enable_shared_cache(enabled);
+    return (DbResult)bentley_sqlite3_enable_shared_cache(enabled);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6099,7 +6099,7 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
     }
     if( zName==0 ){
         static char zBuf[50];
-        sqlite3_snprintf(sizeof(zBuf), zBuf, "BE_SQLITE_UNKNOWN(%d)", origRc);
+        bentley_sqlite3_snprintf(sizeof(zBuf), zBuf, "BE_SQLITE_UNKNOWN(%d)", origRc);
         zName = zBuf;
     }
     return zName;
@@ -6134,7 +6134,7 @@ Utf8CP BeSQLiteLib::GetErrorString(DbResult rc) {
         case BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes:   return "error acquiring locks or codes";
         case BE_SQLITE_ERROR_NOTOPEN:                       return "db not open";
     };
-    return sqlite3_errstr(rc);
+    return bentley_sqlite3_errstr(rc);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6142,7 +6142,7 @@ Utf8CP BeSQLiteLib::GetErrorString(DbResult rc) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BeSQLiteLib::GetMemoryUsed(int64_t& current, int64_t& high, bool reset)
     {
-    return (DbResult)sqlite3_status64(SQLITE_STATUS_MEMORY_USED, (sqlite3_int64*)&current, (sqlite3_int64*)&high, reset?1:0);
+    return (DbResult)bentley_sqlite3_status64(SQLITE_STATUS_MEMORY_USED, (sqlite3_int64*)&current, (sqlite3_int64*)&high, reset?1:0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6155,10 +6155,10 @@ DbResult BeSQLiteLib::Initialize(BeFileNameCR tempDir, LogErrors logErrors)
 
 #ifndef NO_LOG_CALLBACK
     if (LogErrors::No != logErrors)
-        sqlite3_config(SQLITE_CONFIG_LOG, logCallback, nullptr);
+        bentley_sqlite3_config(SQLITE_CONFIG_LOG, logCallback, nullptr);
 #endif
-    sqlite3_initialize();
-    sqlite3_auto_extension((void(*)(void))&besqlite_db_init);
+    bentley_sqlite3_initialize();
+    bentley_sqlite3_auto_extension((void(*)(void))&besqlite_db_init);
 
     Utf8String tempDirUtf8 = tempDir.GetNameUtf8();
     if (!tempDir.DoesPathExist())
@@ -6168,21 +6168,21 @@ DbResult BeSQLiteLib::Initialize(BeFileNameCR tempDir, LogErrors logErrors)
         return BE_SQLITE_CANTOPEN_NOTEMPDIR;
         }
 
-    sqlite3_temp_directory = (char*) sqlite3_malloc((int) (tempDirUtf8.size()) + 1);
+    bentley_sqlite3_temp_directory = (char*) bentley_sqlite3_malloc((int) (tempDirUtf8.size()) + 1);
 PUSH_DISABLE_DEPRECATION_WARNINGS
-    strcpy(sqlite3_temp_directory, tempDirUtf8.c_str());
+    strcpy(bentley_sqlite3_temp_directory, tempDirUtf8.c_str());
 POP_DISABLE_DEPRECATION_WARNINGS
 
     //Set streaming chuck size to 64KiB
     const int streamChuckSize = 64 * 1024;
-    sqlite3session_config (SQLITE_SESSION_CONFIG_STRMSIZE, (void*)&streamChuckSize);
+    bentley_sqlite3session_config (SQLITE_SESSION_CONFIG_STRMSIZE, (void*)&streamChuckSize);
     return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeSQLiteLib::CloseSqlDb(void* p) {return sqlite3_close((sqlite3*) p);}
+int BeSQLiteLib::CloseSqlDb(void* p) {return bentley_sqlite3_close((sqlite3*) p);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -6442,10 +6442,10 @@ DbResult Db::SaveStandaloneEditFlags(BeJsConst val) {
     return val.isNull() ? DeleteBriefcaseLocalValue(BE_LOCAL_StandaloneEdit) : SaveBriefcaseLocalValue(BE_LOCAL_StandaloneEdit, val.Stringify());
 }
 
-void BeSQLiteLib::Randomness(int numBytes, void* random) {sqlite3_randomness(numBytes, random);}
-void* BeSQLiteLib::MallocMem(int sz) {return sqlite3_malloc(sz);}
-void* BeSQLiteLib::ReallocMem(void* p, int sz) {return sqlite3_realloc(p,sz);}
-void BeSQLiteLib::FreeMem(void* p) {sqlite3_free(p);}
+void BeSQLiteLib::Randomness(int numBytes, void* random) {bentley_sqlite3_randomness(numBytes, random);}
+void* BeSQLiteLib::MallocMem(int sz) {return bentley_sqlite3_malloc(sz);}
+void* BeSQLiteLib::ReallocMem(void* p, int sz) {return bentley_sqlite3_realloc(p,sz);}
+void BeSQLiteLib::FreeMem(void* p) {bentley_sqlite3_free(p);}
 
 #define DB_LZMA_MARKER   "LzmaDgnDb"
 
@@ -6617,7 +6617,7 @@ DbResult DbFile::SetBusyTimeout(int ms) {
     if (m_retry.IsValid())
         m_retry = nullptr;
 
-    return (DbResult)sqlite3_busy_timeout(m_sqlDb, ms);
+    return (DbResult)bentley_sqlite3_busy_timeout(m_sqlDb, ms);
 }
 
 //---------------------------------------------------------------------------------------
@@ -6627,15 +6627,15 @@ DbResult Db::CheckDbIntegrity(BeFileNameCR dbFileName)
     {
     Utf8String dbName(dbFileName.c_str());
     SqlDbP sqlDb;
-    DbResult rc = (DbResult)sqlite3_open_v2(dbName.c_str(), &sqlDb, (int)Db::OpenMode::Readonly, nullptr);
+    DbResult rc = (DbResult)bentley_sqlite3_open_v2(dbName.c_str(), &sqlDb, (int)Db::OpenMode::Readonly, nullptr);
     if (BE_SQLITE_OK != rc)
         return rc;
 
     // Pass '1' as the maximum number of failures to detect... we don't currently need to know details, just whether /anything/ is wrong.
     bool anyFailures = false;
-    rc = (DbResult)sqlite3_exec(sqlDb, "PRAGMA integrity_check(1)", integrityCheckCallback, &anyFailures, nullptr);
+    rc = (DbResult)bentley_sqlite3_exec(sqlDb, "PRAGMA integrity_check(1)", integrityCheckCallback, &anyFailures, nullptr);
 
-    DbResult closeRc = (DbResult)sqlite3_close(sqlDb);
+    DbResult closeRc = (DbResult)bentley_sqlite3_close(sqlDb);
     if (BE_SQLITE_OK != closeRc)
         {
         BeAssert(false);
@@ -6751,7 +6751,7 @@ uint64_t DbBuffer::SqliteMSize(SqlMemP buff) {
     if (buff == 0) {
         return 0;
     }
-    return sqlite3_msize(buff);
+    return bentley_sqlite3_msize(buff);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6759,7 +6759,7 @@ uint64_t DbBuffer::SqliteMSize(SqlMemP buff) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DbBuffer::SqliteFree(SqlMemP buff) {
     if (buff != 0) {
-        sqlite3_free(buff);
+        bentley_sqlite3_free(buff);
     }
 }
 
@@ -6767,7 +6767,7 @@ void DbBuffer::SqliteFree(SqlMemP buff) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbBuffer::SqlMemP DbBuffer::SqliteAlloc(uint64_t size){
-    SqlMemP buff = sqlite3_malloc64(size);
+    SqlMemP buff = bentley_sqlite3_malloc64(size);
     if (buff == nullptr) {
         throw std::bad_alloc();
     }
@@ -6778,7 +6778,7 @@ DbBuffer::SqlMemP DbBuffer::SqliteAlloc(uint64_t size){
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbBuffer::SqlMemP DbBuffer::SqliteRealloc(SqlMemP buff, uint64_t newSize) {
-    SqlMemP relBuff = sqlite3_realloc64(buff, newSize);
+    SqlMemP relBuff = bentley_sqlite3_realloc64(buff, newSize);
     if (relBuff == nullptr) {
         throw std::bad_alloc();
     }
@@ -6879,7 +6879,7 @@ DbBuffer Db::Serialize(const char *zSchema ) const {
         return DbBuffer();
     }
     sqlite3_int64 spiSize;
-    auto buff = sqlite3_serialize(GetSqlDb(), zSchema,  &spiSize, 0);
+    auto buff = bentley_sqlite3_serialize(GetSqlDb(), zSchema,  &spiSize, 0);
     return DbBuffer((DbBuffer::SqlMemP)buff, spiSize);
 }
 
@@ -6915,7 +6915,7 @@ DbResult Db::Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts, co
         db.m_dbFile->m_defaultTxn.Commit(nullptr);
     }
 
-    rc = (DbResult)sqlite3_deserialize(
+    rc = (DbResult)bentley_sqlite3_deserialize(
         db.GetSqlDb(),
         zSchema,
         (unsigned char*)buffer.DataP(),

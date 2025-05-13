@@ -493,8 +493,8 @@ enum DbResult
     BE_SQLITE_FORMAT      = 24,  //!< Auxiliary database format error
     BE_SQLITE_RANGE       = 25,  //!< 2nd parameter to Bind out of range
     BE_SQLITE_NOTADB      = 26,  //!< File opened that is not a database file
-    BE_SQLITE_NOTICE      = 27,  //!< Notifications from sqlite3_log()
-    BE_SQLITE_WARNING     = 28,  //!< Warnings from sqlite3_log()
+    BE_SQLITE_NOTICE      = 27,  //!< Notifications from bentley_sqlite3_log()
+    BE_SQLITE_WARNING     = 28,  //!< Warnings from bentley_sqlite3_log()
     BE_SQLITE_ROW         = 100, //!< Step() has another row ready
     BE_SQLITE_DONE        = 101, //!< Step() has finished executing
 
@@ -668,13 +668,13 @@ public:
     //! @param[in] wantLogging If Yes, then SQLite error messages are logged. Note that some SQLite errors are expected and are handled, so they do not necessarily indicate a problem.
     //! Turn this option on only for limited debugging purposes.
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise, e.g. if @p tempDir does not exist
-    //! @see sqlite3_initialize
+    //! @see bentley_sqlite3_initialize
     BE_SQLITE_EXPORT static DbResult Initialize(BeFileNameCR tempDir, LogErrors wantLogging=LogErrors::No);
 
     //! Generate a sequence of pseudo-random bytes
     //! @param[in] numBytes number of bytes of randomness to generate.
     //! @param[out] random buffer to hold randomness.
-    //! @see sqlite3_randomness
+    //! @see bentley_sqlite3_randomness
     BE_SQLITE_EXPORT static void Randomness(int numBytes, void* random);
 
     //! Allocate a buffer using SQLite's memory manager.
@@ -724,15 +724,15 @@ public:
     explicit TraceContext(SqlStatementP stmt) {m_stmt=stmt;}
 
     //! Get a saved copy of the original SQL text used to prepare this Statement
-    //! @see sqlite3_sql
+    //! @see bentley_sqlite3_sql
     BE_SQLITE_EXPORT Utf8CP GetSql() const;
 
     //! Returns a UTF-8 string containing the SQL text of prepared statement with bound parameters expanded.
-    //! @see sqlite3_expanded_sql
+    //! @see bentley_sqlite3_expanded_sql
     BE_SQLITE_EXPORT Utf8String GetExpandedSql() const;
 
     //! Returns a pointer to a UTF-8 string containing the normalized SQL text of prepared statement.
-    //! @see sqlite3_normalized_sql
+    //! @see bentley_sqlite3_normalized_sql
     BE_SQLITE_EXPORT Utf8CP GetNormalizedSql() const;
 
     SqlStatementP GetSqlStatementP() const {return m_stmt;}  // for direct use of sqlite3 api
@@ -781,49 +781,49 @@ public:
     //! Prepare this Statement
     //! @param[in] db The database to use
     //! @param[in] sql The SQL string to prepare.
-    //! @see sqlite3_prepare
+    //! @see bentley_sqlite3_prepare
     BE_SQLITE_EXPORT DbResult Prepare(DbCR db, Utf8CP sql);
 
     //! Prepare this Statement. Identical to Prepare, except that it does not automatically log errors
     //! @param[in] db The database to use
     //! @param[in] sql The SQL string to prepare.
-    //! @see sqlite3_prepare
+    //! @see bentley_sqlite3_prepare
     BE_SQLITE_EXPORT DbResult TryPrepare(DbCR db, Utf8CP sql);
 
     //! Indicates whether the prepared statement makes no @b direct changes to the content of the db or not.
     //! @remarks
     //! @return true if the prepared statement makes no direct changes to the content of the db, false otherwise
-    //! @see sqlite3_stmt_readonly, https://www.sqlite.org/c3ref/stmt_readonly.html
+    //! @see bentley_sqlite3_stmt_readonly, https://www.sqlite.org/c3ref/stmt_readonly.html
     BE_SQLITE_EXPORT bool IsReadonly() const;
 
     //! Perform a single step on this (previously prepared) Statement
-    //! @see sqlite3_step
+    //! @see bentley_sqlite3_step
     BE_SQLITE_EXPORT DbResult Step();
 
     //! Reset this Statement
-    //! @see sqlite3_reset
+    //! @see bentley_sqlite3_reset
     BE_SQLITE_EXPORT DbResult Reset();
 
     //! Clear the bindings of this Statement
-    //! @see sqlite3_clear_bindings
+    //! @see bentley_sqlite3_clear_bindings
     BE_SQLITE_EXPORT DbResult ClearBindings();
 
     //! Bind an integer value to a parameter of this (previously prepared) Statement (1-based)
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] value the value to bind.
-    //! @see sqlite3_bind_int
+    //! @see bentley_sqlite3_bind_int
     BE_SQLITE_EXPORT DbResult BindInt(int paramNum, int value);
 
     //! Bind an Int64 value to a parameter of this (previously prepared) Statement (1-based)
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] value the value to bind.
-    //! @see sqlite3_bind_int64
+    //! @see bentley_sqlite3_bind_int64
     BE_SQLITE_EXPORT DbResult BindInt64(int paramNum, int64_t value);
 
     //! Bind a UInt64 value to a parameter of this (previously prepared) Statement (1-based)
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] value the value to bind.
-    //! @see sqlite3_bind_int64
+    //! @see bentley_sqlite3_bind_int64
     DbResult BindUInt64(int paramNum, uint64_t value) {return BindInt64(paramNum, (int64_t) value);}
 
     //! Bind a Boolean value to a parameter of this (previously prepared) Statement (1-based)
@@ -839,14 +839,14 @@ public:
     //! Bind a double value to a parameter of this (previously prepared) Statement (1-based)
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] value the value to bind.
-    //! @see sqlite3_bind_double
+    //! @see bentley_sqlite3_bind_double
     BE_SQLITE_EXPORT DbResult BindDouble(int paramNum, double value);
 
     //! Bind the value of a Utf8String to a parameter of this (previously prepared) Statement (1-based)
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] stringValue the value to bind.
     //! @param[in] makeCopy Make a private copy of the string in the Statement. Only pass Statement::MakeCopy::No if stringValue will remain valid until the Statement's bindings are cleared.
-    //! @see sqlite3_bind_text
+    //! @see bentley_sqlite3_bind_text
     DbResult BindText(int paramNum, Utf8StringCR stringValue, MakeCopy makeCopy) {return BindText(paramNum, stringValue.c_str(), makeCopy, (int)stringValue.size());}
 
     //! Bind the value of a Utf8CP to a parameter of this (previously prepared) Statement (1-based)
@@ -854,7 +854,7 @@ public:
     //! @param[in] stringValue the value to bind.
     //! @param[in] makeCopy Make a private copy of the string in the Statement. Only pass Statement::MakeCopy::No if stringValue will remain valid until the Statement's bindings are cleared.
     //! @param[in] nBytes The number of bytes (not characters) in @p stringValue. If negative, it will be calculated from stringValue. Passing this value is only an optimization.
-    //! @see sqlite3_bind_text
+    //! @see bentley_sqlite3_bind_text
     BE_SQLITE_EXPORT DbResult BindText(int paramNum, Utf8CP stringValue, MakeCopy makeCopy, int nBytes=-1);
 
     //! Bind a BeGuid to a parameter of this (previously prepared) Statement (1-based)
@@ -866,7 +866,7 @@ public:
     //! Bind a zero-blob of the specified size to a parameter of this (previously prepared) Statement (1-based)
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] size The number of bytes for the blob.
-    //! @see sqlite3_bind_zeroblob
+    //! @see bentley_sqlite3_bind_zeroblob
     BE_SQLITE_EXPORT DbResult BindZeroBlob(int paramNum, int size);
 
     //! Bind a blob to a parameter of this (previously prepared) Statement (1-based)
@@ -874,12 +874,12 @@ public:
     //! @param[in] blobValue the value to bind.
     //! @param[in] size The number of bytes in blobValue
     //! @param[in] makeCopy Make a private copy of the blob in the Statement. Only pass Statement::MakeCopy::No if blobValue will remain valid until the Statement's bindings are cleared.
-    //! @see sqlite3_bind_blob
+    //! @see bentley_sqlite3_bind_blob
     BE_SQLITE_EXPORT DbResult BindBlob(int paramNum, void const* blobValue, int size, MakeCopy makeCopy);
 
     //! Bind a null value to a parameter of this (previously prepared) Statement (1-based)
     //! @param[in] paramNum the SQL parameter number to bind.
-    //! @see sqlite3_bind_null
+    //! @see bentley_sqlite3_bind_null
     BE_SQLITE_EXPORT DbResult BindNull(int paramNum);
 
     //! Bind a VirtualSet. Must be the first parameter of the "InVirtualSet" BeSQLite function.
@@ -897,22 +897,22 @@ public:
     BE_SQLITE_EXPORT DbResult BindPointer(int col, void* ptr, const char* name, void (*destroy)(void*));
 
     //! Get the number of columns resulting from Step on this Statement (0-based)
-    //! @see sqlite3_column_count
+    //! @see bentley_sqlite3_column_count
     BE_SQLITE_EXPORT int GetColumnCount();
 
     //! Get the type for a column of the result of Step (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_type
+    //! @see bentley_sqlite3_column_type
     BE_SQLITE_EXPORT DbValueType GetColumnType(int col);
 
     //!Get the table name from which a column of the result of Step originates (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_table_name
+    //! @see bentley_sqlite3_column_table_name
     BE_SQLITE_EXPORT Utf8CP GetColumnTableName(int col);
 
     //! Get the declared type for a column of the result of Step (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_decltype
+    //! @see bentley_sqlite3_column_decltype
     BE_SQLITE_EXPORT Utf8CP GetColumnDeclaredType(int col);
 
     //! Determine whether the column value is NULL. (0-based)
@@ -920,42 +920,42 @@ public:
 
     //! Get the name of a column of the result of Step (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_name
+    //! @see bentley_sqlite3_column_name
     BE_SQLITE_EXPORT Utf8CP GetColumnName(int col);
 
     //! Get the number of bytes in a column of the result of Step (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_bytes
+    //! @see bentley_sqlite3_column_bytes
     BE_SQLITE_EXPORT int GetColumnBytes(int col);
 
     //! Get the number of bytes in a column as a utf16 string. This is only valid after a call to GetValueUtf16 (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_bytes16
+    //! @see bentley_sqlite3_column_bytes16
     BE_SQLITE_EXPORT int GetColumnBytes16(int col);
 
     //! Get the value of a column in the result of Step as a blob (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_blob
+    //! @see bentley_sqlite3_column_blob
     BE_SQLITE_EXPORT void const* GetValueBlob(int col);
 
     //! Get the value of a column in the result of Step as a UTF-8 string (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_text
+    //! @see bentley_sqlite3_column_text
     BE_SQLITE_EXPORT Utf8CP GetValueText(int col);
 
     //! Get an integer value from a column returned from Step (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_int
+    //! @see bentley_sqlite3_column_int
     BE_SQLITE_EXPORT int GetValueInt(int col);
 
     //! Get an Int64 value from a column returned from Step (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_int64
+    //! @see bentley_sqlite3_column_int64
     BE_SQLITE_EXPORT int64_t GetValueInt64(int col);
 
     //! Get a UInt64 value from a column returned from Step (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_int64
+    //! @see bentley_sqlite3_column_int64
     uint64_t GetValueUInt64(int col) {return (uint64_t) GetValueInt64(col);}
 
     //! Get a Boolean value from a column returned from Step (0-based)
@@ -967,7 +967,7 @@ public:
 
     //! Get a double value from a column returned from Step (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_double
+    //! @see bentley_sqlite3_column_double
     BE_SQLITE_EXPORT double GetValueDouble(int col);
 
     //! Get a BeBriefcaseBasedId value from a column returned from Step (0-based)
@@ -976,37 +976,37 @@ public:
 
     //! Get a BeGuid value from a column returned from Step (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_blob
+    //! @see bentley_sqlite3_column_blob
     BE_SQLITE_EXPORT BeGuid GetValueGuid(int col);
 
     //! @private internal use only
     //! Get an invariant sqlite value from a column returned from Step (0-based)
     //! @param[in] col The column of interest
-    //! @see sqlite3_column_value, sqlite3_value_dup
+    //! @see bentley_sqlite3_column_value, bentley_sqlite3_value_dup
     BE_SQLITE_EXPORT struct DbDupValue GetDbValue(int col);
 
     //! Get the index of a bound parameter by name.
     //! @param[in] name the name of the bound parameter
-    //! @see sqlite3_bind_parameter_index
+    //! @see bentley_sqlite3_bind_parameter_index
     BE_SQLITE_EXPORT int GetParameterIndex(Utf8CP name);
 
     //! Get the number of parameters in the statement
     //! @note This method actually returns the index of the largest (rightmost) parameter.
     //! For all forms except ?NNN, this will correspond to the number of unique parameters.
     //! If parameters of the ?NNN form are used, there may be gaps in the list
-    //! @see sqlite3_bind_parameter_count
+    //! @see bentley_sqlite3_bind_parameter_count
     BE_SQLITE_EXPORT int GetParameterCount();
 
     //! Get a saved copy of the original SQL text used to prepare this Statement
-    //! @see sqlite3_sql
+    //! @see bentley_sqlite3_sql
     BE_SQLITE_EXPORT Utf8CP GetSql() const;
 
     //! Returns a UTF-8 string containing the SQL text of prepared statement with bound parameters expanded.
-    //! @see sqlite3_expanded_sql
+    //! @see bentley_sqlite3_expanded_sql
     BE_SQLITE_EXPORT Utf8String GetExpandedSql() const;
 
     //! Returns a pointer to a UTF-8 string containing the normalized SQL text of prepared statement.
-    //! @see sqlite3_normalized_sql
+    //! @see bentley_sqlite3_normalized_sql
     BE_SQLITE_EXPORT Utf8CP GetNormalizedSql() const;
 
     //! Dump query results to stdout, for debugging purposes
@@ -1079,7 +1079,7 @@ public:
 #endif
 
 //=======================================================================================
-//! A Blob handle for incremental I/O. See sqlite3_blob_open for details.
+//! A Blob handle for incremental I/O. See bentley_sqlite3_blob_open for details.
 // @bsiclass
 //=======================================================================================
 struct BlobIO
@@ -1100,18 +1100,18 @@ public:
     //! @param[in] writable If true, blob is opened for read/write access, otherwise it is opened readonly.
     //! @param[in] dbName The name of the database attachment to open. If nullptr, use "main".
     //! @return BE_SQLITE_OK on success, error status otherwise.
-    //! @see sqlite3_blob_open
+    //! @see bentley_sqlite3_blob_open
     BE_SQLITE_EXPORT DbResult Open(DbR db, Utf8CP tableName, Utf8CP columnName, uint64_t row, bool writable, Utf8CP dbName=0);
 
     //! Move an existing opened BlobIO to a new row in the same table.
     //! @param[in] row The new rowId
     //! @return BE_SQLITE_OK on success, error status otherwise.
-    //! @see sqlite3_blob_reopen
+    //! @see bentley_sqlite3_blob_reopen
     BE_SQLITE_EXPORT DbResult ReOpen(uint64_t row);
 
     //! Close an opened BlobIO
     //! @return BE_SQLITE_OK on success, error status otherwise.
-    //! @see sqlite3_blob_close
+    //! @see bentley_sqlite3_blob_close
     BE_SQLITE_EXPORT DbResult Close();
 
     //! Read data from an opened BlobIO.
@@ -1119,7 +1119,7 @@ public:
     //! @param[in] numBytes The number of bytes to copy to data.
     //! @param[in] offset The offset in bytes to the first byte to be copied.
     //! @return BE_SQLITE_OK on success, error status otherwise.
-    //! @see sqlite3_blob_read
+    //! @see bentley_sqlite3_blob_read
     BE_SQLITE_EXPORT DbResult Read(void* data, int numBytes, int offset);
 
     //! Write data to an opened BlobIO.
@@ -1127,12 +1127,12 @@ public:
     //! @param[in] numBytes The number of bytes to copy from data.
     //! @param[in] offset The offset in bytes to the first byte to be copied.
     //! @return BE_SQLITE_OK on success, error status otherwise.
-    //! @see sqlite3_blob_write
+    //! @see bentley_sqlite3_blob_write
     BE_SQLITE_EXPORT DbResult Write(const void* data, int numBytes, int offset);
 
     //! Get the size of an opened blob
     //! @return The number of bytes in the current blob.
-    //! @see sqlite3_blob_bytes
+    //! @see bentley_sqlite3_blob_bytes
     BE_SQLITE_EXPORT int GetNumBytes() const;
 
     //! Determine whether this BlobIO was successfully opened.
@@ -1155,18 +1155,18 @@ public:
     bool IsNull()  const {return DbValueType::NullVal == GetValueType();} //!< return true if this value is null
     SqlValueP GetSqlValueP() const {return m_val;}  //!< for direct use of sqlite3 api
 
-    BE_SQLITE_EXPORT bool        FromBinding() const;              //!< see sqlite3_value_frombind
-    BE_SQLITE_EXPORT DbValueType GetValueType() const;      //!< see sqlite3_value_type
-    BE_SQLITE_EXPORT DbValueType GetNumericType() const;    //!< see sqlite3_value_numeric_type
-    BE_SQLITE_EXPORT int         GetValueBytes() const;     //!< see sqlite3_value_bytes
-    BE_SQLITE_EXPORT void const* GetValueBlob() const;      //!< see sqlite3_value_blob
-    BE_SQLITE_EXPORT Utf8CP      GetValueText() const;      //!< see sqlite3_value_text
-    BE_SQLITE_EXPORT int         GetValueInt() const;       //!< see sqlite3_value_int
-    BE_SQLITE_EXPORT int64_t     GetValueInt64() const;     //!< see sqlite3_value_int64
+    BE_SQLITE_EXPORT bool        FromBinding() const;              //!< see bentley_sqlite3_value_frombind
+    BE_SQLITE_EXPORT DbValueType GetValueType() const;      //!< see bentley_sqlite3_value_type
+    BE_SQLITE_EXPORT DbValueType GetNumericType() const;    //!< see bentley_sqlite3_value_numeric_type
+    BE_SQLITE_EXPORT int         GetValueBytes() const;     //!< see bentley_sqlite3_value_bytes
+    BE_SQLITE_EXPORT void const* GetValueBlob() const;      //!< see bentley_sqlite3_value_blob
+    BE_SQLITE_EXPORT Utf8CP      GetValueText() const;      //!< see bentley_sqlite3_value_text
+    BE_SQLITE_EXPORT int         GetValueInt() const;       //!< see bentley_sqlite3_value_int
+    BE_SQLITE_EXPORT int64_t     GetValueInt64() const;     //!< see bentley_sqlite3_value_int64
     uint64_t GetValueUInt64() const {return (uint64_t) GetValueInt64();}
-    BE_SQLITE_EXPORT double      GetValueDouble() const;    //!< see sqlite3_value_double
+    BE_SQLITE_EXPORT double      GetValueDouble() const;    //!< see bentley_sqlite3_value_double
     BE_SQLITE_EXPORT BeGuid      GetValueGuid() const;      //!< get the value as a GUID
-    BE_SQLITE_EXPORT unsigned int GetSubType() const; //!< see sqlite3_value_subtype
+    BE_SQLITE_EXPORT unsigned int GetSubType() const; //!< see bentley_sqlite3_value_subtype
     BE_SQLITE_EXPORT void*       GetValuePointer(Utf8CP name) const;      //!< get pointer
     template <class T_Id> T_Id   GetValueId() const {return T_Id(GetValueUInt64());}
 
@@ -1176,7 +1176,7 @@ public:
 //=======================================================================================
 //! A duplicated "value" from a BeSQLite function
 //! @remarks Used when the sqlite value may refer to unprotected memory, and needs to
-//! be protected by duplication. @see sqlite3_value_dup
+//! be protected by duplication. @see bentley_sqlite3_value_dup
 // @bsiclass
 //=======================================================================================
 struct DbDupValue : DbValue, NonCopyableClass
@@ -1189,7 +1189,7 @@ struct DbDupValue : DbValue, NonCopyableClass
 
 //=======================================================================================
 //! A user-defined function that can be added to a Db connection and then used in SQL.
-//! See http://www.sqlite.org/capi3ref.html#sqlite3_create_function.
+//! See http://www.sqlite.org/capi3ref.html#bentley_sqlite3_create_function.
 //! WARNING: The implementation of a DbFunction is forbidden from creating or using
 //! a CachedStatement. Doing so can easily result in deadlock due to contention between
 //! the sqlite mutex and the StatementCache mutex.
@@ -1205,18 +1205,18 @@ public:
     struct Context
         {
         enum class CopyData : int {No = 0, Yes = -1};                                     //!< see sqlite3_destructor_type
-        BE_SQLITE_EXPORT void SetResultBlob(void const* value, int length, CopyData copy=CopyData::Yes); //!< see sqlite3_result_blob
-        BE_SQLITE_EXPORT void SetResultDouble(double);                                //!< see sqlite3_result_double
-        BE_SQLITE_EXPORT void SetResultError(Utf8CP, int len=-1);                     //!< see sqlite3_result_error
-        BE_SQLITE_EXPORT void SetResultError_toobig();                                //!< see sqlite3_result_error_toobig
-        BE_SQLITE_EXPORT void SetResultError_nomem();                                 //!< see sqlite3_result_error_nomem
-        BE_SQLITE_EXPORT void SetResultError_code(int);                               //!< see sqlite3_result_error_code
-        BE_SQLITE_EXPORT void SetResultInt(int);                                      //!< see sqlite3_result_int
-        BE_SQLITE_EXPORT void SetResultInt64(int64_t);                                //!< see sqlite3_result_int64
-        BE_SQLITE_EXPORT void SetResultNull();                                        //!< see sqlite3_result_null
-        BE_SQLITE_EXPORT void SetResultText(Utf8CP value, int length, CopyData);      //!< see sqlite3_result_text
-        BE_SQLITE_EXPORT void SetResultZeroblob(int length);                          //!< see sqlite3_result_zeroblob
-        BE_SQLITE_EXPORT void SetResultValue(DbValue);                                //!< see sqlite3_result_value
+        BE_SQLITE_EXPORT void SetResultBlob(void const* value, int length, CopyData copy=CopyData::Yes); //!< see bentley_sqlite3_result_blob
+        BE_SQLITE_EXPORT void SetResultDouble(double);                                //!< see bentley_sqlite3_result_double
+        BE_SQLITE_EXPORT void SetResultError(Utf8CP, int len=-1);                     //!< see bentley_sqlite3_result_error
+        BE_SQLITE_EXPORT void SetResultError_toobig();                                //!< see bentley_sqlite3_result_error_toobig
+        BE_SQLITE_EXPORT void SetResultError_nomem();                                 //!< see bentley_sqlite3_result_error_nomem
+        BE_SQLITE_EXPORT void SetResultError_code(int);                               //!< see bentley_sqlite3_result_error_code
+        BE_SQLITE_EXPORT void SetResultInt(int);                                      //!< see bentley_sqlite3_result_int
+        BE_SQLITE_EXPORT void SetResultInt64(int64_t);                                //!< see bentley_sqlite3_result_int64
+        BE_SQLITE_EXPORT void SetResultNull();                                        //!< see bentley_sqlite3_result_null
+        BE_SQLITE_EXPORT void SetResultText(Utf8CP value, int length, CopyData);      //!< see bentley_sqlite3_result_text
+        BE_SQLITE_EXPORT void SetResultZeroblob(int length);                          //!< see bentley_sqlite3_result_zeroblob
+        BE_SQLITE_EXPORT void SetResultValue(DbValue);                                //!< see bentley_sqlite3_result_value
         BE_SQLITE_EXPORT void* GetAggregateContext(int nbytes);
         };
 
@@ -1245,7 +1245,7 @@ public:
 };
 
 //=======================================================================================
-//! A user-defined scalar function. See discussion of scalar functions at http://www.sqlite.org/capi3ref.html#sqlite3_create_function.
+//! A user-defined scalar function. See discussion of scalar functions at http://www.sqlite.org/capi3ref.html#bentley_sqlite3_create_function.
 //! This object is must survive as long as the Db to which it is added survives, or until it is removed.
 // @bsiclass
 //=======================================================================================
@@ -1254,7 +1254,7 @@ struct ScalarFunction : DbFunction
     //! WARNING: The implementation of _ComputeScalar is forbidden from creating or using
     //! a CachedStatement. Doing so can easily result in deadlock due to contention between
     //! the sqlite mutex and the StatementCache mutex.
-    virtual void _ComputeScalar(Context&, int nArgs, DbValue* args) = 0;   //<! see "xFunc" in sqlite3_create_function
+    virtual void _ComputeScalar(Context&, int nArgs, DbValue* args) = 0;   //<! see "xFunc" in bentley_sqlite3_create_function
 
     //! Initializes a new ScalarFunction instance
     //! @param[in] name Function name
@@ -1263,7 +1263,7 @@ struct ScalarFunction : DbFunction
     ScalarFunction(Utf8CP name, int nArgs, DbValueType returnType = DbValueType::NullVal) : DbFunction(name, nArgs, returnType) {}
 };
 //=======================================================================================
-//! A user-defined aggregate function. See discussion of aggregate functions at http://www.sqlite.org/capi3ref.html#sqlite3_create_function.
+//! A user-defined aggregate function. See discussion of aggregate functions at http://www.sqlite.org/capi3ref.html#bentley_sqlite3_create_function.
 //! This object is must survive as long as the Db to which it is added survives, or until it is removed.
 // @bsiclass
 //=======================================================================================
@@ -1274,8 +1274,8 @@ struct AggregateFunction : DbFunction
     //! WARNING: The implementations of _StepAggregate and _FinishAggregate are forbidden from creating or using
     //! a CachedStatement. Doing so can easily result in deadlock due to contention between
     //! the sqlite mutex and the StatementCache mutex.
-    virtual void _StepAggregate(Context&, int nArgs, DbValue* args) = 0; //<! see "xStep" in sqlite3_create_function
-    virtual void _FinishAggregate(Context&) = 0;                         //<! see "xFinal" in sqlite3_create_function
+    virtual void _StepAggregate(Context&, int nArgs, DbValue* args) = 0; //<! see "xStep" in bentley_sqlite3_create_function
+    virtual void _FinishAggregate(Context&) = 0;                         //<! see "xFinal" in bentley_sqlite3_create_function
 
     //! Initializes a new AggregateFunction instance
     //! @param[in] name Function name
@@ -1285,7 +1285,7 @@ struct AggregateFunction : DbFunction
 };
 
 //=======================================================================================
-//! A user-defined implementation of the SQLite sqlite3_rtree_query_callback function for using the MATCH keyword for RTree queries.
+//! A user-defined implementation of the SQLite bentley_sqlite3_rtree_query_callback function for using the MATCH keyword for RTree queries.
 //! See https://www.sqlite.org/rtree.html for implementation details.
 // @bsiclass
 //=======================================================================================
@@ -1323,7 +1323,7 @@ struct RTreeMatchFunction : DbFunction
     };
 
     //! this method is called for every internal and leaf node in an sqlite rtree vtable.
-    //! @see sqlite3_rtree_query_callback.
+    //! @see bentley_sqlite3_rtree_query_callback.
     //! WARNING: The implementation of _TestRange is forbidden from creating or using
     //! a CachedStatement. Doing so can easily result in deadlock due to contention between
     //! the sqlite mutex and the StatementCache mutex.
@@ -1509,7 +1509,7 @@ public:
     };
 
 //=======================================================================================
-//! Wraps sqlite3_mprintf. Adds convenience that destructor frees memory.
+//! Wraps bentley_sqlite3_mprintf. Adds convenience that destructor frees memory.
 // @bsiclass
 //=======================================================================================
 struct SqlPrintfString final
@@ -1517,7 +1517,7 @@ struct SqlPrintfString final
 private:
     Utf8P m_str;
 public:
-    //! @see sqlite3_mprintf
+    //! @see bentley_sqlite3_mprintf
     BE_SQLITE_EXPORT SqlPrintfString(Utf8CP fmt, ...);
     BE_SQLITE_EXPORT ~SqlPrintfString();
     operator Utf8CP(){return m_str;}
@@ -1534,7 +1534,7 @@ private:
     void*  m_mux;
 public:
     enum class MutexType : bool {Fast=0, Recursive=1};
-    BE_SQLITE_EXPORT BeDbMutex(MutexType mutexType=MutexType::Fast);       //!< create a new SQLite mutex, see sqlite3_mutex_alloc
+    BE_SQLITE_EXPORT BeDbMutex(MutexType mutexType=MutexType::Fast);       //!< create a new SQLite mutex, see bentley_sqlite3_mutex_alloc
     BE_SQLITE_EXPORT ~BeDbMutex();      //!< free mutex
     BE_SQLITE_EXPORT void Enter();      //!< acquire mutex's lock
     BE_SQLITE_EXPORT void Leave();      //!< release mutex's lock
@@ -2137,16 +2137,16 @@ struct DbBuffer final {
         //! detach from memory making someone else responsible to free it.
         BE_SQLITE_EXPORT std::pair<SqlMemP,uint64_t> Detach();
 
-        //! see sqlite3_free in https://www.sqlite.org/c3ref/free.html
+        //! see bentley_sqlite3_free in https://www.sqlite.org/c3ref/free.html
         BE_SQLITE_EXPORT static void SqliteFree(SqlMemP);
 
-        //! see sqlite3_malloc64 in https://www.sqlite.org/c3ref/free.html
+        //! see bentley_sqlite3_malloc64 in https://www.sqlite.org/c3ref/free.html
         BE_SQLITE_EXPORT static SqlMemP SqliteAlloc(uint64_t);
 
-        //! see sqlite3_realloc64 in https://www.sqlite.org/c3ref/free.html
+        //! see bentley_sqlite3_realloc64 in https://www.sqlite.org/c3ref/free.html
         BE_SQLITE_EXPORT static SqlMemP SqliteRealloc(SqlMemP, uint64_t);
 
-        //! see sqlite3_msize in https://www.sqlite.org/c3ref/free.html
+        //! see bentley_sqlite3_msize in https://www.sqlite.org/c3ref/free.html
         BE_SQLITE_EXPORT static uint64_t SqliteMSize(SqlMemP);
 };
 
@@ -2956,7 +2956,7 @@ public:
     //! This merely binds, steps, and finalizes the statement. It is no more efficient than performing those steps individually,
     //! but is more convenient.
     //! This method also enforces logs the statement and error if the statement fails. Use TryExecuteSql if you consider failures to be non-exceptional.
-    //! @see sqlite3_exec
+    //! @see bentley_sqlite3_exec
     BE_SQLITE_EXPORT DbResult ExecuteSql(Utf8CP sql, int(*callback)(void*,int,char**,char**)=0, void* arg=0, char** errmsg=0) const;
 
     //! Identical to ExecuteSql, but does not log errors nor check implicit transactions
@@ -3130,28 +3130,28 @@ public:
     //! @}
 
     //! @return the rowid from the last insert statement for this Db.
-    //! @see sqlite3_last_insert_rowid
+    //! @see bentley_sqlite3_last_insert_rowid
     BE_SQLITE_EXPORT int64_t GetLastInsertRowId() const;
 
     //! @return the number of rows modified by the last statement for this Db.
-    //! @see sqlite3_changes
+    //! @see bentley_sqlite3_changes
     BE_SQLITE_EXPORT int GetModifiedRowCount() const;
 
     //! @return the total number of rows modified since the database connection was opened.
-    //! @see sqlite3_total_changes
+    //! @see bentley_sqlite3_total_changes
     BE_SQLITE_EXPORT int GetTotalModifiedRowCount() const;
 
     //! @return the total number of rows modified since the database connection was opened.
-    //! @see sqlite3_total_changes
+    //! @see bentley_sqlite3_total_changes
     BE_SQLITE_EXPORT int64_t GetTotalModifiedRowCount64() const;
 
     //! @return The last error message for this Db.
     //! @param[out] lastResult The last error code for this Db.
-    //! @see sqlite3_errmsg, sqlite3_errcode
+    //! @see bentley_sqlite3_errmsg, bentley_sqlite3_errcode
     BE_SQLITE_EXPORT Utf8String GetLastError(DbResult* lastResult = nullptr) const;
 
     //! Causes any pending database operation to abort and return at its earliest opportunity.
-    //! @see sqlite3_interrupt
+    //! @see bentley_sqlite3_interrupt
     BE_SQLITE_EXPORT void Interrupt() const;
 
     //! Commit the outermost transaction, writing changes to the file. Then, restart the transaction.
@@ -3242,7 +3242,7 @@ public:
     //! Return the DbResult as a string. This is useful for debugging SQL problems.
     BE_SQLITE_EXPORT static Utf8CP InterpretDbResult(DbResult result);
 
-    //! Set one of the internal SQLite limits for this database. See documentation at sqlite3_limit for argument details.
+    //! Set one of the internal SQLite limits for this database. See documentation at bentley_sqlite3_limit for argument details.
     BE_SQLITE_EXPORT int SetLimit(DbLimits id, int newVal) const;
     BE_SQLITE_EXPORT int GetLimit(DbLimits id) const;
 
@@ -3255,11 +3255,11 @@ public:
     // Set auto checkpoint frame threshold after which sqlite will perform checkpoint automatically
     BE_SQLITE_EXPORT DbResult SetAutoCheckpointThreshold(int frames);
 
-    //! Add a DbFunction to this Db for use in SQL. See sqlite3_create_function for return values. The DbFunction object must remain valid
+    //! Add a DbFunction to this Db for use in SQL. See bentley_sqlite3_create_function for return values. The DbFunction object must remain valid
     //! while this Db is valid, or until it is removed via #RemoveFunction.
     BE_SQLITE_EXPORT int AddFunction(DbFunction& func) const;
 
-    //! Remove a previously added DbFunction from this Db. See sqlite3_create_function for return values.
+    //! Remove a previously added DbFunction from this Db. See bentley_sqlite3_create_function for return values.
     BE_SQLITE_EXPORT int RemoveFunction(DbFunction& func) const;
 
     BE_SQLITE_EXPORT int AddRTreeMatchFunction(RTreeMatchFunction& func) const;
@@ -3416,7 +3416,7 @@ public:
     //! @param[in] rowId the rowId to write
     //! @note The cell in the db at tableName[column,rowId] must be an existing blob of #GetCompressedSize bytes. This method cannot be used to
     //! change the size of a blob.
-    //! @see sqlite3_blob_open, sqlite3_blob_write, sqlite3_blob_close
+    //! @see bentley_sqlite3_blob_open, bentley_sqlite3_blob_write, bentley_sqlite3_blob_close
     BE_SQLITE_EXPORT DbResult SaveToRow(DbR db, Utf8CP tableName, Utf8CP column, int64_t rowId);
 
     //! Save this compressed value as a blob in a Db.
@@ -3424,7 +3424,7 @@ public:
     //! @param[in] blobIO the BlobIO handle used to write the BLOB to the SQLite database. It must already be opened in read-write mode.
     //! @note The cell in the db to which @p blobIO points to must be an existing blob of #GetCompressedSize bytes. This method cannot be used to
     //! change the size of a blob.
-    //! @see sqlite3_blob_open, sqlite3_blob_write, sqlite3_blob_close
+    //! @see bentley_sqlite3_blob_open, bentley_sqlite3_blob_write, bentley_sqlite3_blob_close
     BE_SQLITE_EXPORT DbResult SaveToRow(BlobIO& blobIO);
     BE_SQLITE_EXPORT void SaveTo(ByteStream& buffer);
 

@@ -554,7 +554,7 @@ struct BcvEncryptionKey {
 BcvEncryptionKey *bcvEncryptionKeyNew(const unsigned char *aKey){
   /* Now we can set key and IV */
   BcvEncryptionKey *pNew;
-  pNew = (BcvEncryptionKey*)sqlite3_malloc(sizeof(BcvEncryptionKey));
+  pNew = (BcvEncryptionKey*)bentley_sqlite3_malloc(sizeof(BcvEncryptionKey));
   if( pNew ) {
     memset(pNew, 0, sizeof(BcvEncryptionKey));
     memcpy(pNew->aKey, aKey, BCV_KEY_SIZE);
@@ -563,8 +563,8 @@ BcvEncryptionKey *bcvEncryptionKeyNew(const unsigned char *aKey){
 }
 
 void bcvEncryptionKeyFree(BcvEncryptionKey *pKey){
-  sqlite3_free(pKey->aMask);
-  sqlite3_free(pKey);
+  bentley_sqlite3_free(pKey->aMask);
+  bentley_sqlite3_free(pKey);
 }
 
 /*

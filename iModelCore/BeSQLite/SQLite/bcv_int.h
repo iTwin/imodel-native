@@ -142,7 +142,7 @@ struct Manifest {
 **   when the manifest file was downloaded. nBlkArray is the number of
 **   blocks it contains. If the manifest is serialized and uploaded, this is
 **   the block array that will form part of the new manifest. If bBlkOrigFree
-**   is non-zero, then aBlkOrig[] must be freed using sqlite3_free when this
+**   is non-zero, then aBlkOrig[] must be freed using bentley_sqlite3_free when this
 **   object is deallocated.
 **
 ** aBlkLocal, nBlkLocal, nBlkLocalAlloc:
