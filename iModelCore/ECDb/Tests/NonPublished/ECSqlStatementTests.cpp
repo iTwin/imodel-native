@@ -13115,6 +13115,9 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
         m_ecdb.AbandonChanges();
     }
 
+    ECClassId relClassId;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ECClassId::FromString(relClassId, "9999"));
+    
     // Make sure the pragma only works for insert statements
     for (const auto& pragmaValue : { false, true}) {
         setPragma(__LINE__, pragmaValue);
@@ -13125,7 +13128,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
         stmt.Finalize();
 
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Element where Parent=?"));
-        EXPECT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(9999ull), ECClassId(9999ull)));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(9999ull), relClassId));
         EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
         stmt.Finalize();
     }
