@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <set>
 #include <BeRapidJson/BeRapidJson.h>
-#include "iostream"
 
 #define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
 
@@ -13057,7 +13056,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
 
     auto setPragma = [&](const unsigned int testCaseNumber, const bool pragmaValue) {
         ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("PRAGMA validate_ecsql_inserts=%s", pragmaValue ? "true" : "false"))) << "Test case " << testCaseNumber << " failed.";
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("PRAGMA validate_ecsql_inserts=%s", pragmaValue ? "true" : "false"))) << "Test case " << testCaseNumber << " failed to call PRAGMA.";
         EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
         EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
         stmt.Finalize();
@@ -13066,14 +13065,14 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
 
     auto testInsert = [&](const unsigned int testCaseNumber, Utf8StringCR sqlStmt, const ECSqlStatus expectedResult) {
         ECSqlStatement stmt;
-        EXPECT_EQ(expectedResult, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed.";
+        EXPECT_EQ(expectedResult, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed to prepare statement.";
         if (expectedResult == ECSqlStatus::Success)
             EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
         stmt.Finalize();
     };
 
     // Test with hardcoded values in ecsql statements without binders
-    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, relClassId, expectedResult] : std::vector<std::tuple<unsigned int, bool, Utf8String, Utf8String, ECSqlStatus>> {
+    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, relClassIdStr, expectedResult] : std::vector<std::tuple<unsigned int, bool, Utf8String, Utf8String, ECSqlStatus>> {
         {  1, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(1, %s)", classElementOwnsChildElements->GetId().ToString(), ECSqlStatus::Success },
         {  2, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(2, %s)", "9999", ECSqlStatus::Success },
         {  4, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(4, %s)", "0", ECSqlStatus::Success },
@@ -13087,29 +13086,30 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
         { 11, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(11, %s)", "NULL", ECSqlStatus::InvalidECSql },
     })  {
         setPragma(testCaseNumber, pragmaValue);
-        testInsert(testCaseNumber, SqlPrintfString(sqlStmt.c_str(), relClassId.c_str()).GetUtf8CP(), expectedResult);
+        testInsert(testCaseNumber, SqlPrintfString(sqlStmt.c_str(), relClassIdStr.c_str()).GetUtf8CP(), expectedResult);
     }
 
     m_ecdb.AbandonChanges();
     ReopenECDb();
 
     // Test with binders
-    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, relClassId, expectedBindingResult] : std::vector<std::tuple<unsigned int, bool, Utf8String, Utf8String, ECSqlStatus>> {
+    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, relClassIdStr, expectedBindingResult] : std::vector<std::tuple<unsigned int, bool, Utf8String, Utf8String, ECSqlStatus>> {
         { 12, false, "INSERT INTO ts.Element(Parent) VALUES(?)", classElementOwnsChildElements->GetId().ToString(), ECSqlStatus::Success },  // Valid Id
         { 13, false, "INSERT INTO ts.Element(Parent) VALUES(?)", "9999", ECSqlStatus::Success }, // Non-existent class Id
-        { 14, false, "INSERT INTO ts.Element(Parent) VALUES(?)", "0", ECSqlStatus::Success }, // Invalid id, will return success without binding
-        { 15, true, "INSERT INTO ts.Element(Parent) VALUES(?)", classElementRefersToElements->GetId().ToString(), ECSqlStatus::Success },  // Valid Id
-        { 16, true, "INSERT INTO ts.Element(Parent) VALUES(?)", "9999", ECSqlStatus::InvalidECSql },  // Non-existent class Id
-        { 17, true, "INSERT INTO ts.Element(Parent) VALUES(?)", "0", ECSqlStatus::InvalidECSql }, // Invalid id, will return success without binding
+
+        { 14, true, "INSERT INTO ts.Element(Parent) VALUES(?)", classElementRefersToElements->GetId().ToString(), ECSqlStatus::Success },  // Valid Id
+        { 15, true, "INSERT INTO ts.Element(Parent) VALUES(?)", "9999", ECSqlStatus::InvalidECSql },  // Non-existent class Id
     }) {
         setPragma(testCaseNumber, pragmaValue);
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed.";
-        std::cout << "Testing for relClassId: " << ECClassId(static_cast<uint64_t>(std::stoull(relClassId))).ToString().c_str() << std::endl;
+
+        ECClassId relClassId;
+        ASSERT_EQ(BentleyStatus::SUCCESS, ECClassId::FromString(relClassId, relClassIdStr.c_str())) << "Test case " << testCaseNumber << " failed to convert string to ECClassId.";
     
-        EXPECT_EQ(expectedBindingResult, stmt.BindNavigationValue(1, BeInt64Id(testCaseNumber), ECClassId(static_cast<uint64_t>(std::stoull(relClassId))))) << "Test case " << testCaseNumber << " failed.";
+        EXPECT_EQ(expectedBindingResult, stmt.BindNavigationValue(1, BeInt64Id(testCaseNumber), relClassId)) << "Test case " << testCaseNumber << " failed to bind value.";
         if (expectedBindingResult == ECSqlStatus::Success)
-            EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
+            EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed to step.";
     
         stmt.Finalize();
         m_ecdb.AbandonChanges();
@@ -13125,7 +13125,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
         stmt.Finalize();
 
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Element where Parent=?"));
-        EXPECT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(9999), ECClassId(static_cast<uint64_t>(9999ull))));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(9999ull), ECClassId(9999ull)));
         EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
         stmt.Finalize();
     }

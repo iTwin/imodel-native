@@ -5,7 +5,6 @@
 #include "ECDbPch.h"
 #include <ECDb/ECSqlStatement.h>
 #include "ECSqlStatementImpl.h"
-#include "iostream"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -169,15 +168,12 @@ ECSqlStatus ECSqlStatement::BindNavigationValue(int parameterIndex, BeInt64Id re
         const auto ecClass = GetECDb()->Schemas().GetClass(relationshipECClassId);
 
         if (!ecClass) {
-            std::cout << "The ECSql INSERT statement contains an invalid relationship class ID '" << relationshipECClassId.ToString() << "'. The ID does not correspond to any EC class." << std::endl;
             LOG.errorv("The ECSql INSERT statement contains an invalid relationship class ID '%s'. The ID does not correspond to any EC class.", 
                        relationshipECClassId.ToString().c_str());
             return ECSqlStatus::InvalidECSql;
         }
 
         if (!ecClass->IsRelationshipClass()) {
-            std::cout << "Class Name '" << ecClass->GetName() << "' is not a relationship class." << std::endl;
-            std::cout << "The ECSql INSERT statement contains an invalid relationship class ID '" << relationshipECClassId.ToString() << "'. The ID does not correspond to a valid ECRelationship class." << std::endl;
             LOG.errorv("The ECSql INSERT statement contains an invalid relationship class ID '%s'. The ID does not correspond to a valid ECRelationship class.", 
                        relationshipECClassId.ToString().c_str());
             return ECSqlStatus::InvalidECSql;

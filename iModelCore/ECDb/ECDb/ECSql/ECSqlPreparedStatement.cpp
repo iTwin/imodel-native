@@ -640,14 +640,10 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         
             // Convert and validate the ECClassId
             ECClassId ecClassId;
-            try 
-                {
-                ecClassId = ECClassId(static_cast<uint64_t>(std::stoull(classIdValue.c_str())));
-                }
-            catch (const std::exception&)
+            if (ECClassId::FromString(ecClassId, classIdValue.c_str()) != SUCCESS)
                 {
                 ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
-                    Utf8PrintfString("The ECSql INSERT statement contains an invalid relationship class id '%s'. Unable to convert to ECClassId.", classIdValue.c_str()).c_str());
+                    Utf8PrintfString("The ECSql INSERT statement contains an invalid relationship class id '%s'.", classIdValue.c_str()).c_str());
                 return ECSqlStatus::InvalidECSql;
                 }
         
