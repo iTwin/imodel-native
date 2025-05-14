@@ -13052,11 +13052,14 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
 
     const auto classElementOwnsChildElements = m_ecdb.Schemas().FindClass("ts.ElementOwnsChildElements");
     ASSERT_NE(classElementOwnsChildElements, nullptr);
+    const auto classElementOwnsChildElementsId =  classElementOwnsChildElements->GetId().ToString();
+
     const auto classElementRefersToElements = m_ecdb.Schemas().FindClass("ts.ElementRefersToElements");
     ASSERT_NE(classElementRefersToElements, nullptr);
+    const auto classElementRefersToElementsId =  classElementRefersToElements->GetId().ToString();
 
-    std::cout << "classElementOwnsChildElements Class Id: " << classElementOwnsChildElements->GetId().ToString().c_str() << std::endl;
-    std::cout << "classElementRefersToElements Class Id: " << classElementRefersToElements->GetId().ToString().c_str() << std::endl;
+    std::cout << "classElementOwnsChildElements Class Id: " << classElementOwnsChildElementsId.c_str() << std::endl;
+    std::cout << "classElementRefersToElements Class Id: " << classElementRefersToElementsId.c_str() << std::endl;
 
     auto setPragma = [&](const unsigned int testCaseNumber, const bool pragmaValue) {
         ECSqlStatement stmt;
@@ -13077,13 +13080,13 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
 
     // Test with hardcoded values in ecsql statements without binders
     for (const auto& [testCaseNumber, pragmaValue, sqlStmt, relClassIdStr, expectedResult] : std::vector<std::tuple<unsigned int, bool, Utf8String, Utf8String, ECSqlStatus>> {
-        {  1, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(1, %s)", classElementOwnsChildElements->GetId().ToString(), ECSqlStatus::Success },
+        {  1, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(1, %s)", classElementOwnsChildElementsId, ECSqlStatus::Success },
         {  2, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(2, %s)", "9999", ECSqlStatus::Success },
         {  4, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(4, %s)", "0", ECSqlStatus::Success },
         {  5, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(5, %s)", "-1", ECSqlStatus::Success },
         {  6, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(6, %s)", "NULL", ECSqlStatus::Success },
         
-        {  7, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(7, %s)", classElementRefersToElements->GetId().ToString(), ECSqlStatus::Success },
+        {  7, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(7, %s)", classElementRefersToElementsId, ECSqlStatus::Success },
         {  8, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(8, %s)", "9999", ECSqlStatus::InvalidECSql },
         {  9, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(9, %s)", "0", ECSqlStatus::InvalidECSql },
         { 10, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(10, %s)", "-1", ECSqlStatus::InvalidECSql },
@@ -13098,10 +13101,10 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
 
     // Test with binders
     for (const auto& [testCaseNumber, pragmaValue, sqlStmt, relClassIdStr, expectedBindingResult] : std::vector<std::tuple<unsigned int, bool, Utf8String, Utf8String, ECSqlStatus>> {
-        { 12, false, "INSERT INTO ts.Element(Parent) VALUES(?)", classElementOwnsChildElements->GetId().ToString(), ECSqlStatus::Success },  // Valid Id
+        { 12, false, "INSERT INTO ts.Element(Parent) VALUES(?)", classElementOwnsChildElementsId, ECSqlStatus::Success },  // Valid Id
         { 13, false, "INSERT INTO ts.Element(Parent) VALUES(?)", "9999", ECSqlStatus::Success }, // Non-existent class Id
 
-        { 14, true, "INSERT INTO ts.Element(Parent) VALUES(?)", classElementRefersToElements->GetId().ToString(), ECSqlStatus::Success },  // Valid Id
+        { 14, true, "INSERT INTO ts.Element(Parent) VALUES(?)", classElementRefersToElementsId, ECSqlStatus::Success },  // Valid Id
         { 15, true, "INSERT INTO ts.Element(Parent) VALUES(?)", "9999", ECSqlStatus::InvalidECSql },  // Non-existent class Id
     }) {
         setPragma(testCaseNumber, pragmaValue);
