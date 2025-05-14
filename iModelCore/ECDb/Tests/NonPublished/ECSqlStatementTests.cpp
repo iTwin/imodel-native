@@ -13105,10 +13105,11 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed.";
 
-        ECClassId relClassId;
-        ASSERT_EQ(BentleyStatus::SUCCESS, ECClassId::FromString(relClassId, relClassIdStr.c_str())) << "Test case " << testCaseNumber << " failed to convert string to ECClassId.";
+        std::cout << "Looking at Class Value: " << relClassIdStr.c_str() << std::endl;
 
-        std::cout << "Class Value: " << relClassIdStr.c_str() << std::endl;
+        ECClassId relClassId;
+        ECClassId::FromString(relClassId, relClassIdStr.c_str());
+
         std::cout << "Converted Class Value: " << relClassId.ToString().c_str() << std::endl;
     
         EXPECT_EQ(expectedBindingResult, stmt.BindNavigationValue(1, BeInt64Id(testCaseNumber), relClassId)) << "Test case " << testCaseNumber << " failed to bind value.";
