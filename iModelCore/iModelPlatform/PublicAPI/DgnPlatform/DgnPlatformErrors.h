@@ -177,12 +177,18 @@ class DgnDbStatusHelper {
 enum class IModelJsNativeErrorKey : int
 {
     BadArg = IMODELJSNATIVE_ERROR_BASE + 1,
+    NotFound,
+    NotInitialized,
+    NotOpen,
     FontError,
     SchemaError,
     ChangesetError,
     TypeError,
     CompressionError,
     ElementGeometryCacheError,
+    GeometryStreamError,
+    ECClassError,
+    RuntimeError,
     LockNotHeld
 };
 
@@ -191,15 +197,21 @@ class IModelJsNativeErrorKeyHelper {
     static iTwinErrorId GetITwinError(IModelJsNativeErrorKey key) {
         switch (key)
             {
-            case IModelJsNativeErrorKey::BadArg: return {"imodel-js-native", "BadArg"};
-            case IModelJsNativeErrorKey::FontError: return {"imodel-js-native", "FontError"};
-            case IModelJsNativeErrorKey::SchemaError: return {"imodel-js-native", "SchemaError"};
-            case IModelJsNativeErrorKey::ChangesetError: return {"imodel-js-native", "ChangesetError"};
-            case IModelJsNativeErrorKey::TypeError: return {"imodel-js-native", "TypeError"};
-            case IModelJsNativeErrorKey::CompressionError: return {"imodel-js-native", "CompressionError"};
-            case IModelJsNativeErrorKey::ElementGeometryCacheError: return {"imodel-js-native", "ElementGeometryCacheError"};
-            case IModelJsNativeErrorKey::LockNotHeld: return {"imodel-js-native", "LockNotHeld"};
-            default: return {"imodel-js-native", "UnknownIModelJsNativeErrorKey"};
+            case IModelJsNativeErrorKey::BadArg: return {"imodel-native", "BadArg"};
+            case IModelJsNativeErrorKey::NotFound: return {"imodel-native", "NotFound"};
+            case IModelJsNativeErrorKey::NotInitialized: return {"imodel-native", "NotInitialized"};
+            case IModelJsNativeErrorKey::NotOpen: return {"imodel-native", "NotOpen"};
+            case IModelJsNativeErrorKey::FontError: return {"imodel-native", "FontError"};
+            case IModelJsNativeErrorKey::SchemaError: return {"imodel-native", "SchemaError"};
+            case IModelJsNativeErrorKey::ChangesetError: return {"imodel-native", "ChangesetError"};
+            case IModelJsNativeErrorKey::TypeError: return {"imodel-native", "TypeError"};
+            case IModelJsNativeErrorKey::CompressionError: return {"imodel-native", "CompressionError"};
+            case IModelJsNativeErrorKey::ElementGeometryCacheError: return {"imodel-native", "ElementGeometryCacheError"};
+            case IModelJsNativeErrorKey::GeometryStreamError: return {"imodel-native", "GeometryStreamError"};
+            case IModelJsNativeErrorKey::ECClassError: return {"imodel-native", "ECClassError"};
+            case IModelJsNativeErrorKey::RuntimeError: return {"imodel-native", "RuntimeError"};
+            case IModelJsNativeErrorKey::LockNotHeld: return {"imodel-native", "LockNotHeld"};
+            default: return {"imodel-native", "UnknownIModelJsNativeErrorKey"};
             }
     }
 };
