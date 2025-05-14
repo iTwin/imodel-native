@@ -13050,10 +13050,13 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
 
     m_ecdb.SaveChanges();
 
-    auto classElementOwnsChildElements = m_ecdb.Schemas().FindClass("ts.ElementOwnsChildElements");
+    const auto classElementOwnsChildElements = m_ecdb.Schemas().FindClass("ts.ElementOwnsChildElements");
     ASSERT_NE(classElementOwnsChildElements, nullptr);
-    auto classElementRefersToElements = m_ecdb.Schemas().FindClass("ts.ElementRefersToElements");
+    const auto classElementRefersToElements = m_ecdb.Schemas().FindClass("ts.ElementRefersToElements");
     ASSERT_NE(classElementRefersToElements, nullptr);
+
+    std::cout << "classElementOwnsChildElements Class Id: " << classElementOwnsChildElements->GetId().ToString().c_str() << std::endl;
+    std::cout << "classElementRefersToElements Class Id: " << classElementRefersToElements->GetId().ToString().c_str() << std::endl;
 
     auto setPragma = [&](const unsigned int testCaseNumber, const bool pragmaValue) {
         ECSqlStatement stmt;
