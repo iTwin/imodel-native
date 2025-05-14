@@ -287,13 +287,21 @@ describe("basic tests", () => {
     // first try a function
     expect(() => (iModelJsNative as any).addFontWorkspace()).to.throw("Argument 0");
 
+    try {
+      (iModelJsNative as any).addFontWorkspace();
+    } catch (error: any) {
+      expect(error.message).to.equal("Argument 0 must be a string");
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: "TypeError" });
+    }
+
     // now try methods
     const db = new iModelJsNative.DgnDb() as any;
-    expect(() => db.openIModel()).to.throw("Argument 0");
-    expect(() => db.saveFileProperty()).to.throw("requires 2");
+    expect(() => db.openIModel()).to.throw("Argument 0").property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: "TypeError" });
+    expect(() => db.saveFileProperty()).to.throw("requires 2").property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: "BadArg" });  
 
     // from Node
     expect(() => db.nonsense()).to.throw("not a function");
+
   });
 
   it("testTileVersionInfo", () => {
@@ -335,7 +343,7 @@ describe("basic tests", () => {
     // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
     const db = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
     assert.isTrue(db !== undefined);
-    expect(() => db.getSchemaProps("PresentationRules")).to.throw("schema not found"); // presentationrules alias is 'pr'.
+    expect(() => db.getSchemaProps("PresentationRules")).to.throw("schema not found").to.have.property("iTwinErrorId"); // presentationrules alias is 'pr'.
     let bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version === "01.00.00");
     const schemaPath = path.join(iModelJsNative.DgnDb.getAssetsDir(), "ECSchemas/Domain/PresentationRules.ecschema.xml");
@@ -462,8 +470,8 @@ describe("basic tests", () => {
     const abstractRelationshipClass = "BisCore:ElementRefersToElements";
     const insertRel: RelationshipProps = { classFullName: abstractRelationshipClass, sourceId: "0x37", targetId: "0x31" };
     const updateRel: RelationshipProps = { classFullName: abstractRelationshipClass, id: "0xe", sourceId: "0x37", targetId: "0x31" };
-    expect(() => db.insertLinkTableRelationship(insertRel)).to.throw("Failed to insert relationship. Relationship class 'BisCore:ElementRefersToElements' is abstract");
-    expect(() => db.updateLinkTableRelationship(updateRel)).to.throw("Failed to update relationship. Relationship class 'BisCore:ElementRefersToElements' is abstract");
+    expect(() => db.insertLinkTableRelationship(insertRel)).to.throw("Failed to insert relationship. Relationship class 'BisCore:ElementRefersToElements' is abstract").to.have.property("iTwinErrorId");
+    expect(() => db.updateLinkTableRelationship(updateRel)).to.throw("Failed to update relationship. Relationship class 'BisCore:ElementRefersToElements' is abstract").to.have.property("iTwinErrorId");
   });
   it("testCrashReportingConfig", () => {
     if (os.platform() === "darwin" || process.env.AddressSanitizer === "yes") {
@@ -503,7 +511,7 @@ describe("basic tests", () => {
 
     const db = new iModelJsNative.SQLiteDb();
     // rawSQLite being false causes us to look for the presence of be_prop table, which gives us SQLITE_NOTADB
-    expect(() => db.openDb(pathToDb, { openMode: OpenMode.ReadWrite })).to.throw("file is not a database");
+    expect(() => db.openDb(pathToDb, { openMode: OpenMode.ReadWrite })).to.throw("file is not a database").to.have.property("iTwinErrorId");;
     // rawSQLite being true skips be_prop check so we can open the database, but will fail later on if we step and prepare on the db.
     expect(() => db.openDb(pathToDb, { openMode: OpenMode.ReadWrite, rawSQLite: true })).to.not.throw();
     db.closeDb();
@@ -560,10 +568,37 @@ describe("basic tests", () => {
   }
 
   it("queryModelExtents", () => {
-    expect(() => dgndb.queryModelExtents({ id: "NotAnId" })).to.throw("Invalid id").property("errorNumber").equal(IModelStatus.InvalidId);
-    expect(() => dgndb.queryModelExtents({ id: "0xabcdef" })).to.throw("not found").property("errorNumber").equal(IModelStatus.NotFound);
-    expect(() => dgndb.queryModelExtents({ id: "0x1" })).to.throw("error=10040").property("errorNumber").equal(IModelStatus.WrongModel);
-    expect(() => dgndb.queryModelExtents({ id: "0x1c" })).to.throw("error=10022").property("errorNumber").equal(IModelStatus.NoGeometry);
+    try {
+      dgndb.queryModelExtents({ id: "NotAnId" })
+    } catch (error: any) {
+      expect(error.message).to.equal("Invalid id");
+      expect(error).to.have.property("errorNumber").equal(IModelStatus.InvalidId);
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: IModelStatus.InvalidId.toString() });
+    }
+
+    try {
+      dgndb.queryModelExtents({ id: "0xabcdef" });
+    } catch (error: any) {
+      expect(error.message).to.equal("not found");
+      expect(error).to.have.property("errorNumber").equal(IModelStatus.NotFound);
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: IModelStatus.NotFound.toString() });
+    }
+
+    try {
+      dgndb.queryModelExtents({ id: "0x1" });
+    } catch (error: any) {
+      expect(error.message).to.equal("error=10040");
+      expect(error).to.have.property("errorNumber").equal(IModelStatus.WrongModel);
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: IModelStatus.WrongModel.toString() });
+    }
+
+    try {
+      dgndb.queryModelExtents({ id: "0x1c" });
+    } catch (error: any) {
+      expect(error.message).to.equal("error=10022");
+      expect(error).to.have.property("errorNumber").equal(IModelStatus.NoGeometry);
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: IModelStatus.NoGeometry.toString() });
+    }
 
     expectExtents(dgndb.queryModelExtents({ id: "0x23" }).modelExtents, { low: [-10, -16, -10], high: [14, 6, 10] });
   });
