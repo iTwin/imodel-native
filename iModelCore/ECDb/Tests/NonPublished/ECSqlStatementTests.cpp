@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <set>
 #include <BeRapidJson/BeRapidJson.h>
-#include "iostream"
 
 #define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
 
@@ -13058,25 +13057,24 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
     ASSERT_NE(classElementRefersToElements, nullptr);
     const auto classElementRefersToElementsId =  classElementRefersToElements->GetId().ToString();
 
-    std::cout << "classElementOwnsChildElements Class Id: " << classElementOwnsChildElementsId.c_str() << std::endl;
-    std::cout << "classElementRefersToElements Class Id: " << classElementRefersToElementsId.c_str() << std::endl;
-
-    auto setPragma = [&](const unsigned int testCaseNumber, const bool pragmaValue) {
+    auto setPragma = [&](const unsigned int testCaseNumber, const bool pragmaValue)
+        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("PRAGMA validate_ecsql_inserts=%s", pragmaValue ? "true" : "false"))) << "Test case " << testCaseNumber << " failed to call PRAGMA.";
         EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
         EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
         stmt.Finalize();
         ASSERT_EQ(pragmaValue, m_ecdb.GetECSqlConfig().IsInsertValueValidationEnabled());
-    };
+        };
 
-    auto testInsert = [&](const unsigned int testCaseNumber, Utf8StringCR sqlStmt, const ECSqlStatus expectedResult) {
+    auto testInsert = [&](const unsigned int testCaseNumber, Utf8StringCR sqlStmt, const ECSqlStatus expectedResult)
+        {
         ECSqlStatement stmt;
         EXPECT_EQ(expectedResult, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed to prepare statement.";
         if (expectedResult == ECSqlStatus::Success)
             EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
         stmt.Finalize();
-    };
+        };
 
     // Test with hardcoded values in ecsql statements without binders
     for (const auto& [testCaseNumber, pragmaValue, sqlStmt, relClassIdStr, expectedResult] : std::vector<std::tuple<unsigned int, bool, Utf8String, Utf8String, ECSqlStatus>> {
@@ -13090,11 +13088,11 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
         {  8, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(8, %s)", "9999", ECSqlStatus::InvalidECSql },
         {  9, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(9, %s)", "0", ECSqlStatus::InvalidECSql },
         { 10, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(10, %s)", "-1", ECSqlStatus::InvalidECSql },
-        { 11, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(11, %s)", "NULL", ECSqlStatus::InvalidECSql },
+        { 11, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(11, %s)", "null", ECSqlStatus::InvalidECSql },
     })  {
         setPragma(testCaseNumber, pragmaValue);
         testInsert(testCaseNumber, SqlPrintfString(sqlStmt.c_str(), relClassIdStr.c_str()).GetUtf8CP(), expectedResult);
-    }
+        }
 
     m_ecdb.AbandonChanges();
     ReopenECDb();
@@ -13111,12 +13109,8 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed.";
 
-        std::cout << "Looking at Class Value: " << relClassIdStr.c_str() << std::endl;
-
         ECClassId relClassId;
         ECClassId::FromString(relClassId, relClassIdStr.c_str());
-
-        std::cout << "Converted Class Value: " << relClassId.ToString().c_str() << std::endl;
     
         EXPECT_EQ(expectedBindingResult, stmt.BindNavigationValue(1, BeInt64Id(testCaseNumber), relClassId)) << "Test case " << testCaseNumber << " failed to bind value.";
         if (expectedBindingResult == ECSqlStatus::Success)
@@ -13124,13 +13118,14 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
     
         stmt.Finalize();
         m_ecdb.AbandonChanges();
-    }
+        }
 
     ECClassId relClassId;
     ASSERT_EQ(BentleyStatus::SUCCESS, ECClassId::FromString(relClassId, "9999"));
 
     // Make sure the pragma only works for insert statements
-    for (const auto& pragmaValue : { false, true}) {
+    for (const auto& pragmaValue : { false, true})
+        {
         setPragma(__LINE__, pragmaValue);
 
         ECSqlStatement stmt;
@@ -13142,7 +13137,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
         EXPECT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(9999ull), relClassId));
         EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
         stmt.Finalize();
-    }
+        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE

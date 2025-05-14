@@ -630,8 +630,8 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
                 }
         
             // Extract and validate the class ID value
-            Utf8String classIdValue = (valueExp->GetType() == Exp::Type::LiteralValue) ? valueExp->GetAs<LiteralValueExp>().GetRawValue() : "";
-            if (classIdValue.empty() || classIdValue == "NULL")
+            const auto classIdValue = (valueExp->GetType() == Exp::Type::LiteralValue) ? valueExp->GetAs<LiteralValueExp>().GetRawValue() : "";
+            if (classIdValue.empty() || classIdValue.CompareToI("NULL") == 0)
                 {
                 ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
                     "The ECSql INSERT statement contains an invalid relationship class id.");
