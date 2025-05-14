@@ -948,9 +948,9 @@ Napi::Value JsInterop::InsertInstance(ECDbR db, NapiInfoCR info) {
     auto rc = repo.Insert(inst, args, fmt, newKey);
     if (rc != BE_SQLITE_DONE) {
         if (repo.GetLastError().empty()) {
-            THROW_JS_EXCEPTION("Failed to insert instance");
+            THROW_JS_BE_SQLITE_EXCEPTION("Failed to insert instance", rc);
         }
-        THROW_JS_EXCEPTION(repo.GetLastError().c_str());
+        THROW_JS_BE_SQLITE_EXCEPTION(repo.GetLastError().c_str(), rc);
     }
 
     return Napi::Value::From(info.Env(), newKey.GetInstanceId().ToHexStr());
@@ -975,9 +975,9 @@ Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
     auto rc = repo.Update(inst, args, fmt);
     if (rc != BE_SQLITE_DONE) {
         if (repo.GetLastError().empty()) {
-            THROW_JS_EXCEPTION("Failed to insert instance");
+            THROW_JS_BE_SQLITE_EXCEPTION("Failed to insert instance", rc);
         }
-        THROW_JS_EXCEPTION(repo.GetLastError().c_str());
+        THROW_JS_BE_SQLITE_EXCEPTION(repo.GetLastError().c_str(), rc);
     }
     return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);
 }
@@ -1001,9 +1001,9 @@ Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
     auto rc = repo.Delete(key, args, fmt);
     if (rc != BE_SQLITE_DONE) {
         if (repo.GetLastError().empty()) {
-            THROW_JS_EXCEPTION("Failed to insert instance");
+            THROW_JS_BE_SQLITE_EXCEPTION("Failed to insert instance", rc);
         }
-        THROW_JS_EXCEPTION(repo.GetLastError().c_str());
+        THROW_JS_BE_SQLITE_EXCEPTION(repo.GetLastError().c_str(), rc);
     }
     return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);;
 }
@@ -1028,9 +1028,9 @@ Napi::Value JsInterop::ReadInstance(ECDbR db, NapiInfoCR info) {
     auto rc = repo.Read(key, outInstance, args, fmt);
     if (rc != BE_SQLITE_ROW) {
         if (repo.GetLastError().empty()) {
-            THROW_JS_EXCEPTION("Failed to read instance");
+            THROW_JS_BE_SQLITE_EXCEPTION("Failed to read instance", rc);
         }
-        THROW_JS_EXCEPTION(repo.GetLastError().c_str());
+        THROW_JS_BE_SQLITE_EXCEPTION(repo.GetLastError().c_str(), rc);
     }
     return outInstance;
 }
