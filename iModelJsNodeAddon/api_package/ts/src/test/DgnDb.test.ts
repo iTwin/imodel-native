@@ -291,13 +291,13 @@ describe("basic tests", () => {
       (iModelJsNative as any).addFontWorkspace();
     } catch (error: any) {
       expect(error.message).to.equal("Argument 0 must be a string");
-      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: "TypeError" });
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: "TypeError" });
     }
 
     // now try methods
     const db = new iModelJsNative.DgnDb() as any;
-    expect(() => db.openIModel()).to.throw("Argument 0").property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: "TypeError" });
-    expect(() => db.saveFileProperty()).to.throw("requires 2").property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: "BadArg" });  
+    expect(() => db.openIModel()).to.throw("Argument 0").property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: "TypeError" });
+    expect(() => db.saveFileProperty()).to.throw("requires 2").property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: "BadArg" });  
 
     // from Node
     expect(() => db.nonsense()).to.throw("not a function");
@@ -573,7 +573,7 @@ describe("basic tests", () => {
     } catch (error: any) {
       expect(error.message).to.equal("Invalid id");
       expect(error).to.have.property("errorNumber").equal(IModelStatus.InvalidId);
-      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: IModelStatus.InvalidId.toString() });
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: IModelStatus.InvalidId.toString() });
     }
 
     try {
@@ -581,7 +581,7 @@ describe("basic tests", () => {
     } catch (error: any) {
       expect(error.message).to.equal("not found");
       expect(error).to.have.property("errorNumber").equal(IModelStatus.NotFound);
-      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: IModelStatus.NotFound.toString() });
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: IModelStatus.NotFound.toString() });
     }
 
     try {
@@ -589,7 +589,7 @@ describe("basic tests", () => {
     } catch (error: any) {
       expect(error.message).to.equal("error=10040");
       expect(error).to.have.property("errorNumber").equal(IModelStatus.WrongModel);
-      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: IModelStatus.WrongModel.toString() });
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: IModelStatus.WrongModel.toString() });
     }
 
     try {
@@ -597,7 +597,7 @@ describe("basic tests", () => {
     } catch (error: any) {
       expect(error.message).to.equal("error=10022");
       expect(error).to.have.property("errorNumber").equal(IModelStatus.NoGeometry);
-      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-js-native", key: IModelStatus.NoGeometry.toString() });
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: IModelStatus.NoGeometry.toString() });
     }
 
     expectExtents(dgndb.queryModelExtents({ id: "0x23" }).modelExtents, { low: [-10, -16, -10], high: [14, 6, 10] });
