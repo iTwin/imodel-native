@@ -368,6 +368,25 @@ DgnDbStatus DefinitionElement::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DefinitionElement::_OnDelete() const
+    {
+    if (GetDgnDb().IsPurgeOperationActive())
+        {
+        return T_Super::_OnDelete();
+        }
+
+    if (GetDgnDb().GetJsIModelDb() == nullptr)
+        {
+        return DgnDbStatus::DeletionProhibited;
+        }
+
+    GetDgnDb().ThrowException(
+        "DefinitionElements cannot be deleted directly. Use deleteDefinitionElements() instead.", (int)DgnDbStatus::DeletionProhibited);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DefinitionModelPtr DefinitionElement::GetDefinitionModel() const
     {
     DgnModelPtr model = GetModel();
