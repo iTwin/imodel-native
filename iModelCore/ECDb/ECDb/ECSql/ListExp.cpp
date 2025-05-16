@@ -6,6 +6,7 @@
 #include "ECDbPch.h"
 #include "ListExp.h"
 #include "UpdateStatementExp.h"
+#include "SelectStatementExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -168,6 +169,133 @@ void ValueExpListExp::_ToECSql(ECSqlRenderContext& ctx) const
         }
     }
 
+// ******************* RowValueConstructorListExp *************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+RowValueConstructorListExp::RowValueConstructorListExp(std::vector<std::unique_ptr<ValueExpListExp>>& rowValueList)
+    : RangeClassRefExp(Exp::Type::RowValueConstructorList, PolymorphicInfo::NotSpecified())
+    {
+    std::unique_ptr<SelectClauseExp> selectStmtExp = std::make_unique<SelectClauseExp>(); 
+
+    size_t childrenCount = rowValueList[0]->GetChildrenCount();
+
+    for (size_t i = 0; i < childrenCount; i++)
+        {
+        Utf8String columnName = "column" + std::to_string(i+1);
+        ECSqlTypeInfo const& typeInfo = rowValueList[0]->GetValueExp(i)->GetTypeInfo();
+
+        // set typeInfo for property generation
+        std::unique_ptr<SqlColumnNameExp> sqlColumnNameExp = std::make_unique<SqlColumnNameExp>(columnName);
+        sqlColumnNameExp->SetTypeInfo(typeInfo);
+
+        selectStmtExp->AddProperty(std::make_unique<DerivedPropertyExp>(std::move(sqlColumnNameExp), columnName.c_str()));
+        }
+    
+    AddChild(std::move(selectStmtExp));
+
+    for (std::unique_ptr<ValueExpListExp>& valueExpListExp : rowValueList)
+        { 
+        AddChild(std::move(valueExpListExp));
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+Exp::FinalizeParseStatus RowValueConstructorListExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
+    {
+    return FinalizeParseStatus::Completed;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void RowValueConstructorListExp::_ToECSql(ECSqlRenderContext& ctx) const
+    {
+    ctx.AppendToECSql("(");
+
+    bool isFirstItem = true;
+    for (Exp const* childExp : GetChildren())
+        {
+        if (!isFirstItem)
+            ctx.AppendToECSql(", ");
+        ctx.AppendToECSql(*childExp);
+        isFirstItem = false;
+        }
+
+    ctx.AppendToECSql("(");
+    }
+    
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void RowValueConstructorListExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const
+    {
+    val.SetEmptyArray();
+    for (Exp const* childExp : GetChildren())
+        childExp->ToJson(val.appendValue(), fmt);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void RowValueConstructorListExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
+    {
+    for (Exp const* expr : GetSelection()->GetChildren())
+        {
+        DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
+        std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp);
+        expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+PropertyMatchResult RowValueConstructorListExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const& propertyPath, const PropertyMatchOptions& options) const
+    {
+    if (propertyPath.IsEmpty())
+        return PropertyMatchResult::NotFound();
+
+    Utf8String subqueryAlias = GetParent()->GetParent()->GetAs<SubqueryRefExp>().GetAlias();
+
+    // if subquery dooesn't have alias
+    if (subqueryAlias.empty())
+        {
+        for (size_t i = 0; i <  GetSelection()->GetChildrenCount(); i++)
+            {
+            auto derivedPropertyExp = GetSelection()->GetChildren().Get<DerivedPropertyExp>(i);
+            if (propertyPath.First().GetName() == derivedPropertyExp->GetColumnAlias())
+                return PropertyMatchResult(options, propertyPath, propertyPath, *derivedPropertyExp, 0);
+            }
+        }
+    // if subquery has alias
+    else {
+        if (propertyPath.First().GetName() == subqueryAlias && propertyPath.Size() == 2)
+            {
+            for (size_t i = 0; i <  GetSelection()->GetChildrenCount(); i++)
+                {
+                auto derivedPropertyExp = GetSelection()->GetChildren().Get<DerivedPropertyExp>(i);
+                if (propertyPath[1].GetName() == derivedPropertyExp->GetColumnAlias())
+                    return PropertyMatchResult(options, propertyPath, propertyPath, *derivedPropertyExp, 0);
+                }
+            }
+        }
+
+    return PropertyMatchResult::NotFound();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+std::vector<ValueExpListExp const*> RowValueConstructorListExp::GetRowValues() const
+    {
+    std::vector<ValueExpListExp const*> rowValues;
+    for (size_t i = 1; i < GetChildrenCount(); i++)
+        rowValues.push_back(GetChild<ValueExpListExp>(i));
+    return rowValues;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod

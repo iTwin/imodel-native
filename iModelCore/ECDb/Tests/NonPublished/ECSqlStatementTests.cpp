@@ -169,11 +169,11 @@ TEST_F(ECSqlStatementTestFixture, RowValConstructor) {
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (VALUES(1,2), (3,4))"));
-    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K0],[K1] FROM (SELECT 1 [K0],2 [K1] UNION ALL SELECT 3,4)");
+    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT column1,column2 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4)))");
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (VALUES(1,2), (3,4), (5,1))"));
-    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K0],[K1] FROM (SELECT 1 [K0],2 [K1] UNION ALL SELECT 3,4 UNION ALL SELECT 5,1)");
+    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT column1,column2 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4),(5,1)))");
     stmt.Finalize();
 }
 /*---------------------------------------------------------------------------------**//**
@@ -13009,6 +13009,478 @@ TEST_F(ECSqlStatementTestFixture, Testing_Table_Valued_Functions_without_schemaN
         }
     }
 
+TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ValuesClauseTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
+    {
+    // Simple SELECT query using VALUES clause
+    ECSqlStatement simpleSelect;
+    std::string query = "select column1 from (values(1), (2), (3))";
+    ASSERT_EQ(ECSqlStatus::Success, simpleSelect.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(simpleSelect.GetNativeSql(), "SELECT column1 FROM (SELECT column1 FROM (VALUES (1),(2),(3)))");
+    
+    EXPECT_EQ(BE_SQLITE_ROW, simpleSelect.Step());
+    ASSERT_EQ(1, simpleSelect.GetColumnCount());
+
+    ECSqlColumnInfo const& colInfo = simpleSelect.GetColumnInfo(0);
+    ASSERT_STREQ("column1", colInfo.GetPropertyPath().ToString().c_str());
+
+    ASSERT_EQ(1, simpleSelect.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, simpleSelect.Step());
+    ASSERT_EQ(2, simpleSelect.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, simpleSelect.Step());
+    ASSERT_EQ(3, simpleSelect.GetValueInt(0));
+    }
+
+    {
+    // SELECT query with one column from VALUES clause
+    ECSqlStatement selectOneColumn;
+    std::string query = "SELECT column1 FROM (VALUES(1,2), (3,4))";
+    ASSERT_EQ(ECSqlStatus::Success, selectOneColumn.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(selectOneColumn.GetNativeSql(), "SELECT column1 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4)))");
+
+    EXPECT_EQ(BE_SQLITE_ROW, selectOneColumn.Step());
+    ASSERT_EQ(1, selectOneColumn.GetColumnCount());
+
+    ECSqlColumnInfo const& colInfo = selectOneColumn.GetColumnInfo(0);
+    ASSERT_STREQ("column1", colInfo.GetPropertyPath().ToString().c_str());
+
+    ASSERT_EQ(1, selectOneColumn.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, selectOneColumn.Step());
+    ASSERT_EQ(3, selectOneColumn.GetValueInt(0));
+    }
+
+    {
+    // SELECT query with multiple columns from VALUES clause
+    ECSqlStatement multipleRows;
+    std::string query = "SELECT column1, column2 FROM (VALUES(1,2), (3,4))";
+    ASSERT_EQ(ECSqlStatus::Success, multipleRows.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(multipleRows.GetNativeSql(), "SELECT column1,column2 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4)))");
+
+    EXPECT_EQ(BE_SQLITE_ROW, multipleRows.Step());
+    ASSERT_EQ(2, multipleRows.GetColumnCount());
+
+    ECSqlColumnInfo const& colInfo1 = multipleRows.GetColumnInfo(0);
+    ASSERT_STREQ("column1", colInfo1.GetPropertyPath().ToString().c_str());
+    ECSqlColumnInfo const& colInfo2 = multipleRows.GetColumnInfo(1);
+    ASSERT_STREQ("column2", colInfo2.GetPropertyPath().ToString().c_str());
+
+    ASSERT_EQ(1, multipleRows.GetValueInt(0));
+    ASSERT_EQ(2, multipleRows.GetValueInt(1));
+    EXPECT_EQ(BE_SQLITE_ROW, multipleRows.Step());
+    ASSERT_EQ(3, multipleRows.GetValueInt(0));
+    ASSERT_EQ(4, multipleRows.GetValueInt(1));
+    }
+
+    {
+    // SELECT query with table alias
+    ECSqlStatement tableAlias;
+    std::string query = "SELECT a.column1, a.column2 FROM (VALUES(1,2), (3,4)) a"; 
+    ASSERT_EQ(ECSqlStatus::Success, tableAlias.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(tableAlias.GetNativeSql(), "SELECT a.column1,a.column2 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4))) [a]");
+
+    EXPECT_EQ(BE_SQLITE_ROW, tableAlias.Step());
+    ASSERT_EQ(2, tableAlias.GetColumnCount());
+
+    ECSqlColumnInfo const& colInfo1 = tableAlias.GetColumnInfo(0);
+    ASSERT_STREQ("column1", colInfo1.GetPropertyPath().ToString().c_str());
+    ECSqlColumnInfo const& colInfo2 = tableAlias.GetColumnInfo(1);
+    ASSERT_STREQ("column2", colInfo2.GetPropertyPath().ToString().c_str());
+
+    ASSERT_EQ(1, tableAlias.GetValueInt(0));
+    ASSERT_EQ(2, tableAlias.GetValueInt(1));
+    EXPECT_EQ(BE_SQLITE_ROW, tableAlias.Step());
+    ASSERT_EQ(3, tableAlias.GetValueInt(0));
+    ASSERT_EQ(4, tableAlias.GetValueInt(1));
+    }
+
+    {
+    // SELECT query with asterisk expansion
+    ECSqlStatement asteriskExpansion;
+    std::string query = "SELECT * FROM (VALUES(1), (2), (3))";
+    ASSERT_EQ(ECSqlStatus::Success, asteriskExpansion.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(asteriskExpansion.GetNativeSql(), "SELECT column1 FROM (SELECT column1 FROM (VALUES (1),(2),(3)))");
+
+    EXPECT_EQ(BE_SQLITE_ROW, asteriskExpansion.Step());
+    ASSERT_EQ(1, asteriskExpansion.GetColumnCount());
+
+    ECSqlColumnInfo const& colInfo = asteriskExpansion.GetColumnInfo(0);
+    ASSERT_STREQ("column1", colInfo.GetPropertyPath().ToString().c_str());
+
+    ASSERT_EQ(1, asteriskExpansion.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, asteriskExpansion.Step());
+    ASSERT_EQ(2, asteriskExpansion.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, asteriskExpansion.Step());
+    ASSERT_EQ(3, asteriskExpansion.GetValueInt(0));
+    }
+
+    {
+    // SELECT query with asterisk expansion and multiple columns
+    ECSqlStatement asteriskWithMultipleColumns;
+    std::string query = "SELECT * FROM (VALUES(1,2,3,4,5), (6,7,8,9,10))";
+    ASSERT_EQ(ECSqlStatus::Success, asteriskWithMultipleColumns.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(asteriskWithMultipleColumns.GetNativeSql(), "SELECT column1,column2,column3,column4,column5 FROM (SELECT column1,column2,column3,column4,column5 FROM (VALUES (1,2,3,4,5),(6,7,8,9,10)))");
+
+    EXPECT_EQ(BE_SQLITE_ROW, asteriskWithMultipleColumns.Step());
+    ASSERT_EQ(5, asteriskWithMultipleColumns.GetColumnCount());
+
+    for (int i = 0; i < 5; i++)
+        {
+        ECSqlColumnInfo const& colInfo = asteriskWithMultipleColumns.GetColumnInfo(i);
+        ASSERT_STREQ(("column" + std::to_string(i + 1)).c_str(), colInfo.GetPropertyPath().ToString().c_str());
+        }
+    
+    for (int i = 0; i < 5; i++)
+        {
+        ASSERT_EQ(i + 1, asteriskWithMultipleColumns.GetValueInt(i));
+        }
+    
+    EXPECT_EQ(BE_SQLITE_ROW, asteriskWithMultipleColumns.Step());
+
+    for (int i = 0; i < 5; i++)
+        {
+        ASSERT_EQ(i + 6, asteriskWithMultipleColumns.GetValueInt(i));
+        }
+    }
+
+    {
+    // SELECT query with asterisk expansion and multiple subquery aliases
+    ECSqlStatement asteriskWithMultipleSubqueryAlias;
+    std::string query = "SELECT * FROM (VALUES(1), (2)) a, (VALUES(3), (4)) b";
+    ASSERT_EQ(ECSqlStatus::Success, asteriskWithMultipleSubqueryAlias.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(asteriskWithMultipleSubqueryAlias.GetNativeSql(), "SELECT a.column1,b.column1 FROM (SELECT column1 FROM (VALUES (1),(2))) [a],(SELECT column1 FROM (VALUES (3),(4))) [b]");
+
+    EXPECT_EQ(BE_SQLITE_ROW, asteriskWithMultipleSubqueryAlias.Step());
+    ASSERT_EQ(2, asteriskWithMultipleSubqueryAlias.GetColumnCount());
+
+    ECSqlColumnInfo const& colInfo1 = asteriskWithMultipleSubqueryAlias.GetColumnInfo(0);
+    ASSERT_STREQ("column1", colInfo1.GetPropertyPath().ToString().c_str());
+    ECSqlColumnInfo const& colInfo2 = asteriskWithMultipleSubqueryAlias.GetColumnInfo(1);
+    ASSERT_STREQ("column1_1", colInfo2.GetPropertyPath().ToString().c_str());
+
+    ASSERT_EQ(1, asteriskWithMultipleSubqueryAlias.GetValueInt(0));
+    ASSERT_EQ(3, asteriskWithMultipleSubqueryAlias.GetValueInt(1));
+    EXPECT_EQ(BE_SQLITE_ROW, asteriskWithMultipleSubqueryAlias.Step());
+
+    ASSERT_EQ(1, asteriskWithMultipleSubqueryAlias.GetValueInt(0));
+    ASSERT_EQ(4, asteriskWithMultipleSubqueryAlias.GetValueInt(1));
+    EXPECT_EQ(BE_SQLITE_ROW, asteriskWithMultipleSubqueryAlias.Step());
+
+    ASSERT_EQ(2, asteriskWithMultipleSubqueryAlias.GetValueInt(0));
+    ASSERT_EQ(3, asteriskWithMultipleSubqueryAlias.GetValueInt(1));
+    EXPECT_EQ(BE_SQLITE_ROW, asteriskWithMultipleSubqueryAlias.Step());
+
+    ASSERT_EQ(2, asteriskWithMultipleSubqueryAlias.GetValueInt(0));
+    ASSERT_EQ(4, asteriskWithMultipleSubqueryAlias.GetValueInt(1));
+    EXPECT_EQ(BE_SQLITE_DONE, asteriskWithMultipleSubqueryAlias.Step());
+    }
+
+    {
+    // SELECT query with multiple inline tables
+    ECSqlStatement multipleInlineTables;
+    std::string query = "SELECT d.column1, d.column2, x.column1, x.column2 FROM (VALUES(1,2), (3,4)) d, (VALUES(5,6), (7,8)) x";
+    ASSERT_EQ(ECSqlStatus::Success, multipleInlineTables.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(multipleInlineTables.GetNativeSql(), "SELECT d.column1,d.column2,x.column1,x.column2 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4))) [d],(SELECT column1,column2 FROM (VALUES (5,6),(7,8))) [x]");
+
+    EXPECT_EQ(BE_SQLITE_ROW, multipleInlineTables.Step());
+    ASSERT_EQ(4, multipleInlineTables.GetColumnCount());
+
+    ECSqlColumnInfo const& colInfo1 = multipleInlineTables.GetColumnInfo(0);
+    ASSERT_STREQ("column1", colInfo1.GetPropertyPath().ToString().c_str());
+    ECSqlColumnInfo const& colInfo2 = multipleInlineTables.GetColumnInfo(1);
+    ASSERT_STREQ("column2", colInfo2.GetPropertyPath().ToString().c_str());
+    ECSqlColumnInfo const& colInfo3 = multipleInlineTables.GetColumnInfo(2);
+    ASSERT_STREQ("column1_1", colInfo3.GetPropertyPath().ToString().c_str());
+    ECSqlColumnInfo const& colInfo4 = multipleInlineTables.GetColumnInfo(3);
+    ASSERT_STREQ("column2_1", colInfo4.GetPropertyPath().ToString().c_str());
+
+    ASSERT_EQ(1, multipleInlineTables.GetValueInt(0));
+    ASSERT_EQ(2, multipleInlineTables.GetValueInt(1));
+    ASSERT_EQ(5, multipleInlineTables.GetValueInt(2));
+    ASSERT_EQ(6, multipleInlineTables.GetValueInt(3));
+    EXPECT_EQ(BE_SQLITE_ROW, multipleInlineTables.Step());
+
+    ASSERT_EQ(1, multipleInlineTables.GetValueInt(0));
+    ASSERT_EQ(2, multipleInlineTables.GetValueInt(1));
+    ASSERT_EQ(7, multipleInlineTables.GetValueInt(2));
+    ASSERT_EQ(8, multipleInlineTables.GetValueInt(3));
+    EXPECT_EQ(BE_SQLITE_ROW, multipleInlineTables.Step());
+
+    ASSERT_EQ(3, multipleInlineTables.GetValueInt(0));
+    ASSERT_EQ(4, multipleInlineTables.GetValueInt(1));
+    ASSERT_EQ(5, multipleInlineTables.GetValueInt(2));
+    ASSERT_EQ(6, multipleInlineTables.GetValueInt(3));
+    EXPECT_EQ(BE_SQLITE_ROW, multipleInlineTables.Step());
+
+    ASSERT_EQ(3, multipleInlineTables.GetValueInt(0));
+    ASSERT_EQ(4, multipleInlineTables.GetValueInt(1));
+    ASSERT_EQ(7, multipleInlineTables.GetValueInt(2));
+    ASSERT_EQ(8, multipleInlineTables.GetValueInt(3));
+    EXPECT_EQ(BE_SQLITE_DONE, multipleInlineTables.Step());
+    }
+
+    {
+    // SELECT query with column alias
+    ECSqlStatement withColumnAlias;
+    std::string query = "SELECT column1 myColumn FROM (VALUES(1), (2))";
+    ASSERT_EQ(ECSqlStatus::Success, withColumnAlias.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(withColumnAlias.GetNativeSql(), "SELECT column1 [myColumn] FROM (SELECT column1 FROM (VALUES (1),(2)))");
+
+    EXPECT_EQ(BE_SQLITE_ROW, withColumnAlias.Step());
+    ECSqlColumnInfo const& colInfo1 = withColumnAlias.GetColumnInfo(0);
+    ASSERT_STREQ("myColumn", colInfo1.GetPropertyPath().ToString().c_str());
+    }
+
+    {
+    // SELECT query with nested values clause
+    ECSqlStatement nestedValues;
+    std::string query = "SELECT column1 FROM (SELECT column1 FROM (VALUES(1), (2), (3)))";
+    ASSERT_EQ(ECSqlStatus::Success, nestedValues.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(nestedValues.GetNativeSql(), "SELECT [K1] FROM (SELECT column1 [K1] FROM (SELECT column1 FROM (VALUES (1),(2),(3))))");
+
+    EXPECT_EQ(BE_SQLITE_ROW, nestedValues.Step());
+    ASSERT_EQ(1, nestedValues.GetColumnCount());
+
+    ECSqlColumnInfo const& colInfo = nestedValues.GetColumnInfo(0);
+    ASSERT_STREQ("column1", colInfo.GetPropertyPath().ToString().c_str());
+
+    ASSERT_EQ(1, nestedValues.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, nestedValues.Step());
+    ASSERT_EQ(2, nestedValues.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, nestedValues.Step());
+    ASSERT_EQ(3, nestedValues.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_DONE, nestedValues.Step());
+    }
+
+    {
+    // SELECT query with triple nested values clause
+    ECSqlStatement tripleNestedValues;
+    std::string query = "SELECT column1 FROM (SELECT column1 FROM (SELECT column1 FROM (VALUES(1), (2), (3))))";
+    ASSERT_EQ(ECSqlStatus::Success, tripleNestedValues.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(tripleNestedValues.GetNativeSql(), "SELECT [K2] FROM (SELECT [K1] [K2] FROM (SELECT column1 [K1] FROM (SELECT column1 FROM (VALUES (1),(2),(3)))))");
+
+    EXPECT_EQ(BE_SQLITE_ROW, tripleNestedValues.Step());
+    ASSERT_EQ(1, tripleNestedValues.GetColumnCount());
+
+    ECSqlColumnInfo const& colInfo = tripleNestedValues.GetColumnInfo(0);
+    ASSERT_STREQ("column1", colInfo.GetPropertyPath().ToString().c_str());
+
+    ASSERT_EQ(1, tripleNestedValues.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, tripleNestedValues.Step());
+    ASSERT_EQ(2, tripleNestedValues.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, tripleNestedValues.Step());
+    ASSERT_EQ(3, tripleNestedValues.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_DONE, tripleNestedValues.Step());
+    }
+
+    {
+    // SELECT query with nested values clause and asterisk expansion
+    ECSqlStatement nestedValuesWithAsterisk;
+    std::string query = "SELECT * FROM (SELECT * FROM (VALUES(1), (2), (3)))";
+    ASSERT_EQ(ECSqlStatus::Success, nestedValuesWithAsterisk.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(nestedValuesWithAsterisk.GetNativeSql(), "SELECT [K1] FROM (SELECT column1 [K1] FROM (SELECT column1 FROM (VALUES (1),(2),(3))))");
+
+    EXPECT_EQ(BE_SQLITE_ROW, nestedValuesWithAsterisk.Step());
+    ASSERT_EQ(1, nestedValuesWithAsterisk.GetColumnCount());
+
+    ECSqlColumnInfo const& colInfo = nestedValuesWithAsterisk.GetColumnInfo(0);
+    ASSERT_STREQ("column1", colInfo.GetPropertyPath().ToString().c_str());
+
+    ASSERT_EQ(1, nestedValuesWithAsterisk.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, nestedValuesWithAsterisk.Step());
+    ASSERT_EQ(2, nestedValuesWithAsterisk.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, nestedValuesWithAsterisk.Step());
+    ASSERT_EQ(3, nestedValuesWithAsterisk.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_DONE, nestedValuesWithAsterisk.Step());
+    }
+
+    {
+    // SELECT query having column in nested values clause with asterisk expansion
+    ECSqlStatement selectColumnInNestedValuesWithAsterisk;
+    std::string query = "SELECT column2 FROM (SELECT * FROM (VALUES(1, 2), (2, 3), (3, 4)))";
+    ASSERT_EQ(ECSqlStatus::Success, selectColumnInNestedValuesWithAsterisk.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(selectColumnInNestedValuesWithAsterisk.GetNativeSql(), "SELECT [column2] FROM (SELECT column1,column2 [column2] FROM (SELECT column1,column2 FROM (VALUES (1,2),(2,3),(3,4))))");
+
+    EXPECT_EQ(BE_SQLITE_ROW, selectColumnInNestedValuesWithAsterisk.Step());
+    ASSERT_EQ(1, selectColumnInNestedValuesWithAsterisk.GetColumnCount());
+
+    ECSqlColumnInfo const& colInfo = selectColumnInNestedValuesWithAsterisk.GetColumnInfo(0);
+    ASSERT_STREQ("column2", colInfo.GetPropertyPath().ToString().c_str());
+
+    ASSERT_EQ(2, selectColumnInNestedValuesWithAsterisk.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, selectColumnInNestedValuesWithAsterisk.Step());
+    ASSERT_EQ(3, selectColumnInNestedValuesWithAsterisk.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, selectColumnInNestedValuesWithAsterisk.Step());
+    ASSERT_EQ(4, selectColumnInNestedValuesWithAsterisk.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_DONE, selectColumnInNestedValuesWithAsterisk.Step());
+    }
+
+    {
+    // SELECT query with nested values clause and column alias
+    ECSqlStatement nestedValuesWithAlias;
+    std::string query = "SELECT a.col1 FROM (SELECT b.column1 col1 from (VALUES(1), (2), (3)) b) a";
+    ASSERT_EQ(ECSqlStatus::Success, nestedValuesWithAlias.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(nestedValuesWithAlias.GetNativeSql(), "SELECT [K1] FROM (SELECT b.column1 [K1] FROM (SELECT column1 FROM (VALUES (1),(2),(3))) [b]) [a]");
+
+    EXPECT_EQ(BE_SQLITE_ROW, nestedValuesWithAlias.Step());
+    ASSERT_EQ(1, nestedValuesWithAlias.GetColumnCount());
+
+    ECSqlColumnInfo const& colInfo = nestedValuesWithAlias.GetColumnInfo(0);
+    ASSERT_STREQ("col1", colInfo.GetPropertyPath().ToString().c_str());
+
+    ASSERT_EQ(1, nestedValuesWithAlias.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, nestedValuesWithAlias.Step());
+    ASSERT_EQ(2, nestedValuesWithAlias.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, nestedValuesWithAlias.Step());
+    ASSERT_EQ(3, nestedValuesWithAlias.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_DONE, nestedValuesWithAlias.Step());
+    }
+
+    {
+    // SELECT query with triple nested values clause and column alias
+    ECSqlStatement tripleNestedValuesWithAlias;
+    std::string query = "SELECT a.col1 FROM (SELECT b.col1 FROM (SELECT c.column1 col1 FROM (VALUES(1), (2), (3)) c) b) a";
+    ASSERT_EQ(ECSqlStatus::Success, tripleNestedValuesWithAlias.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(tripleNestedValuesWithAlias.GetNativeSql(), "SELECT [K2] FROM (SELECT [K1] [K2] FROM (SELECT c.column1 [K1] FROM (SELECT column1 FROM (VALUES (1),(2),(3))) [c]) [b]) [a]");
+
+    EXPECT_EQ(BE_SQLITE_ROW, tripleNestedValuesWithAlias.Step());
+    ASSERT_EQ(1, tripleNestedValuesWithAlias.GetColumnCount());
+
+    ECSqlColumnInfo const& colInfo = tripleNestedValuesWithAlias.GetColumnInfo(0);
+    ASSERT_STREQ("col1", colInfo.GetPropertyPath().ToString().c_str());
+
+    ASSERT_EQ(1, tripleNestedValuesWithAlias.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, tripleNestedValuesWithAlias.Step());
+    ASSERT_EQ(2, tripleNestedValuesWithAlias.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_ROW, tripleNestedValuesWithAlias.Step());
+    ASSERT_EQ(3, tripleNestedValuesWithAlias.GetValueInt(0));
+    EXPECT_EQ(BE_SQLITE_DONE, tripleNestedValuesWithAlias.Step());
+    }
+
+    {
+    ECSqlStatement fiveHundredPlusValues;
+    std::string query = "SELECT * FROM (VALUES ";
+    for (int i = 0; i < 600; i++)
+        {
+        query += "(" + std::to_string(i) + ")";
+        if (i != 599)
+            query += ", ";
+        }
+    query += ")";
+    ASSERT_EQ(ECSqlStatus::Success, fiveHundredPlusValues.Prepare(m_ecdb, query.c_str()));
+
+    for (int i = 0; i < 600; i++)
+        {
+        EXPECT_EQ(BE_SQLITE_ROW, fiveHundredPlusValues.Step());
+        ASSERT_EQ(i, fiveHundredPlusValues.GetValueInt(0));
+        }
+    EXPECT_EQ(BE_SQLITE_DONE, fiveHundredPlusValues.Step());
+    }
+
+    {
+    // SELECT query with various primitive types in VALUES clause
+    ECSqlStatement selectVaiousPrimitives;
+    std::string query = "SELECT * FROM (VALUES(1, 2.5, 'test', 3.14, TRUE))";
+    ASSERT_EQ(ECSqlStatus::Success, selectVaiousPrimitives.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(selectVaiousPrimitives.GetNativeSql(), "SELECT column1,column2,column3,column4,column5 FROM (SELECT column1,column2,column3,column4,column5 FROM (VALUES (1,2.5,'test',3.14,1)))");
+
+    EXPECT_EQ(BE_SQLITE_ROW, selectVaiousPrimitives.Step());
+    ASSERT_EQ(5, selectVaiousPrimitives.GetColumnCount());
+
+    ASSERT_EQ(1, selectVaiousPrimitives.GetValueInt(0));
+    ASSERT_EQ(2.5, selectVaiousPrimitives.GetValueDouble(1));
+    ASSERT_STREQ("test", selectVaiousPrimitives.GetValueText(2));
+    ASSERT_EQ(3.14, selectVaiousPrimitives.GetValueDouble(3));
+    ASSERT_EQ(true, selectVaiousPrimitives.GetValueBoolean(4));
+    }
+
+    {
+    // SELECT query with UNION of two VALUES clauses
+    ECSqlStatement selectUnion;
+    std::string query = "SELECT column1, column2 FROM (VALUES(1,2)) UNION SELECT column1, column2 FROM (VALUES(3,4))";
+    ASSERT_EQ(ECSqlStatus::Success, selectUnion.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(selectUnion.GetNativeSql(), "SELECT column1,column2 FROM (SELECT column1,column2 FROM (VALUES (1,2))) UNION SELECT column1,column2 FROM (SELECT column1,column2 FROM (VALUES (3,4)))");
+
+    EXPECT_EQ(BE_SQLITE_ROW, selectUnion.Step());
+    ASSERT_EQ(2, selectUnion.GetColumnCount());
+
+    ASSERT_EQ(1, selectUnion.GetValueInt(0));
+    ASSERT_EQ(2, selectUnion.GetValueInt(1));
+    }
+
+    {
+    // SELECT query with aliased columns in VALUES clause
+    ECSqlStatement selectAliasedColumns;
+    std::string query = "SELECT * FROM (SELECT column1 a, column2 b FROM  (VALUES(1,2)))";
+    ASSERT_EQ(ECSqlStatus::Success, selectAliasedColumns.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(selectAliasedColumns.GetNativeSql(), "SELECT [K2],[K3] FROM (SELECT column1 [K2],column2 [K3] FROM (SELECT column1,column2 FROM (VALUES (1,2))))");
+
+    EXPECT_EQ(BE_SQLITE_ROW, selectAliasedColumns.Step());
+    ASSERT_EQ(2, selectAliasedColumns.GetColumnCount());
+
+    ASSERT_EQ(1, selectAliasedColumns.GetValueInt(0));
+    ASSERT_EQ(2, selectAliasedColumns.GetValueInt(1));
+    }
+
+    {
+    // SELECT query with Cartesian product of two VALUES clauses
+    ECSqlStatement selectCartesianProduct;
+    std::string query = "SELECT * FROM (VALUES(1,2)) a, (VALUES(2,3)) b";
+    ASSERT_EQ(ECSqlStatus::Success, selectCartesianProduct.Prepare(m_ecdb, query.c_str()));
+    ASSERT_STREQ(selectCartesianProduct.GetNativeSql(), "SELECT a.column1,a.column2,b.column1,b.column2 FROM (SELECT column1,column2 FROM (VALUES (1,2))) [a],(SELECT column1,column2 FROM (VALUES (2,3))) [b]");
+
+    EXPECT_EQ(BE_SQLITE_ROW, selectCartesianProduct.Step());
+    ASSERT_EQ(4, selectCartesianProduct.GetColumnCount());
+
+    ASSERT_EQ(1, selectCartesianProduct.GetValueInt(0));
+    ASSERT_EQ(2, selectCartesianProduct.GetValueInt(1));
+    ASSERT_EQ(2, selectCartesianProduct.GetValueInt(2));
+    ASSERT_EQ(3, selectCartesianProduct.GetValueInt(3));
+    }
+
+    // {
+    // // TODO: SELECT query with WHERE clause on Cartesian product of two VALUES clauses
+    // ECSqlStatement selectWhereClause;
+    // std::string query = "SELECT * FROM (VALUES(1,2)) a, (VALUES(2,3)) b WHERE a.column2=2";
+    // ASSERT_EQ(ECSqlStatus::Success, selectWhereClause.Prepare(m_ecdb, query.c_str()));
+    // ASSERT_STREQ(selectWhereClause.GetNativeSql(), "SELECT a.column1,a.column2,b.column1,b.column2 FROM (SELECT column1,column2 FROM (VALUES (1,2))) [a],(SELECT column1,column2 FROM (VALUES (2,3))) [b] WHERE a.column2=2");
+
+    // EXPECT_EQ(BE_SQLITE_ROW, selectWhereClause.Step());
+    // ASSERT_EQ(4, selectWhereClause.GetColumnCount());
+
+    // ASSERT_EQ(1, selectWhereClause.GetValueInt(0));
+    // ASSERT_EQ(2, selectWhereClause.GetValueInt(1));
+    // ASSERT_EQ(2, selectWhereClause.GetValueInt(2));
+    // ASSERT_EQ(3, selectWhereClause.GetValueInt(3));
+    // }
+
+    // {
+    // // TODO: Bind parameters in VALUES clause
+    // ECSqlStatement bindPrimitives;
+    // std::string query = "SELECT * FROM (VALUES(?,?),(?,?)) a";
+    // ASSERT_EQ(ECSqlStatus::Success, bindPrimitives.Prepare(m_ecdb, query.c_str()));
+    // ASSERT_EQ(ECSqlStatus::Success, bindPrimitives.BindInt(1, 1));
+    // ASSERT_EQ(ECSqlStatus::Success, bindPrimitives.BindInt(2, 2));
+    // ASSERT_EQ(ECSqlStatus::Success, bindPrimitives.BindInt(3, 3));
+    // ASSERT_EQ(ECSqlStatus::Success, bindPrimitives.BindInt(3, 4));
+    // ASSERT_STREQ(bindPrimitives.GetNativeSql(), "SELECT column1,column2,column3,column4,column5 FROM (SELECT column1,column2,column3,column4,column5 FROM (VALUES (1,2.5,'test',3.14,1)))");
+
+    // EXPECT_EQ(BE_SQLITE_ROW, bindPrimitives.Step());
+    // ASSERT_EQ(5, bindPrimitives.GetColumnCount());
+
+    // ASSERT_EQ(1, bindPrimitives.GetValueInt(0));
+    // ASSERT_EQ(2.5, bindPrimitives.GetValueDouble(1));
+    // ASSERT_STREQ("test", bindPrimitives.GetValueText(2));
+    // ASSERT_EQ(3.14, bindPrimitives.GetValueDouble(3));
+    // ASSERT_EQ(true, bindPrimitives.GetValueBoolean(4));
+    // }
+
+    {
+    // Failure case
+    ECSqlStatement unequalNumberOfColumns;
+    std::string query = "SELECT * FROM (VALUES(1), (3,4))";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, unequalNumberOfColumns.Prepare(m_ecdb, query.c_str()));    
+    }
+}
 
 END_ECDBUNITTESTS_NAMESPACE

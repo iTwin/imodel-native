@@ -781,6 +781,10 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
+        if (GetParent()->GetType() == Exp::Type::RowValueConstructorList)
+            {
+            return FinalizeParseStatus::Completed;
+            }
         auto& sel = GetParent()->GetAs<SingleSelectStatementExp>();
         if (!sel.IsRowConstructor())
             {
@@ -1110,15 +1114,27 @@ SubqueryExp::SubqueryExp(std::unique_ptr<CommonTableExp> exp) : QueryExp(Type::S
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+SubqueryExp::SubqueryExp(std::unique_ptr<RowValueConstructorListExp> exp) : QueryExp(Type::Subquery)
+    {
+    AddChild(std::move(exp));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 PropertyMatchResult SubqueryExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const {
     SelectStatementExp const* stm = GetQuery<SelectStatementExp>();
-    if(stm != nullptr)
+    if (stm != nullptr)
         return stm->FindProperty(ctx, propertyPath, options);
     CommonTableExp const* stmcte = GetQuery<CommonTableExp>();
-    if(stmcte != nullptr){
+    if (stmcte != nullptr) {
         auto selectStatementInsideCTE = stmcte->GetQuery();
         return selectStatementInsideCTE->FindProperty(ctx,propertyPath,options);
-    }   
+    }
+    RowValueConstructorListExp const* stmRowValueConstructorList = GetQuery<RowValueConstructorListExp>();
+    if (stmRowValueConstructorList != nullptr) {
+        return stmRowValueConstructorList->FindProperty(ctx, propertyPath, options);
+    }
     return PropertyMatchResult::NotFound();
 }
 //-----------------------------------------------------------------------------------------
@@ -1133,6 +1149,9 @@ SelectClauseExp const* SubqueryExp::_GetSelection() const {
         auto selectStatementInsideCTE = stmcte->GetQuery();
         return selectStatementInsideCTE->GetSelection();
     }
+    RowValueConstructorListExp const* stmRowValueConstructorList = GetQuery<RowValueConstructorListExp>();
+    if(stmRowValueConstructorList != nullptr)
+        return stmRowValueConstructorList->GetSelection();
     // This below code should never be reached by the control. Otherwise unexpected behaviour/ undefined behaviour/ crashes may occur
     BeAssert(false && "SubqueryExp::_GetSelection> Reaching this code may lead to unexpected behaviour/ undefined behaviour/ crashes because child of SubqueryExp is expected to be either of type SelectStatementExp or CommonTableExp");
     return nullptr;  
@@ -1153,6 +1172,7 @@ T const* SubqueryExp::GetQuery() const {
 template Exp const* SubqueryExp::GetQuery<Exp>() const;
 template CommonTableExp const* SubqueryExp::GetQuery<CommonTableExp>() const;
 template SelectStatementExp const* SubqueryExp::GetQuery<SelectStatementExp>() const;
+template RowValueConstructorListExp const* SubqueryExp::GetQuery<RowValueConstructorListExp>() const;
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1211,13 +1231,19 @@ SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8CP ali
 //+---------------+---------------+---------------+---------------+---------------+------
 void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
     {
+    if (GetSubquery()->GetQuery<RowValueConstructorListExp>() != nullptr)
+        {
+        auto rowValueConstructorListExp = GetSubquery()->GetQuery<RowValueConstructorListExp>();
+        rowValueConstructorListExp->ExpandSelectAsterisk(expandedSelectClauseItemList, ctx);
+        return ;
+        }
     for (Exp const* expr : GetSubquery()->GetSelection()->GetChildren())
         {
         DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
         std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp);
         expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
         }
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod

@@ -2772,11 +2772,11 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
     if (SQL_ISRULE(valuesCommalistNode, values_commalist))
         {
         //values_commalist
-        std::unique_ptr<SelectStatementExp> compound_select = nullptr;
-        if (SUCCESS != ParseValuesCommalist(compound_select, *valuesCommalistNode))
+        std::unique_ptr<RowValueConstructorListExp> valuesExpList = nullptr;
+        if (SUCCESS != ParseValuesCommalist(valuesExpList, *valuesCommalistNode))
             return ERROR;
 
-        exp = std::make_unique<SubqueryExp>(std::move(compound_select));
+        exp = std::make_unique<SubqueryExp>(std::move(valuesExpList));
         }
     return SUCCESS;
     }
@@ -2784,7 +2784,7 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<SelectStatementExp>& exp, OSQLParseNode const& parseNode) const
+BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<RowValueConstructorListExp>& exp, OSQLParseNode const& parseNode) const
     {
     if (!SQL_ISRULE(&parseNode, values_commalist))
         {
@@ -2795,11 +2795,10 @@ BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<SelectStatementE
     // 1st:(, 2nd: row_value_constructor_commalist, 3rd:)
     BeAssert(parseNode.count() % 3 == 0);
 
-    std::unique_ptr<SelectStatementExp> prevSelectExp = nullptr;
-    // traverse in reverse order so the converted native SQL is in the same order as input
-    for (int i = (int)parseNode.count() - 1; i >= 0; i = i - 3)
+    std::vector<std::unique_ptr<ValueExpListExp>> rowValuesExpList;
+    for (size_t i = 0; i < parseNode.count(); i = i + 3)
         {
-        OSQLParseNode const* listNode = parseNode.getChild(i - 1);
+        OSQLParseNode const* listNode = parseNode.getChild(i + 1);
         if (listNode == nullptr)
             {
             BeAssert(false);
@@ -2812,22 +2811,33 @@ BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<SelectStatementE
             return ERROR;
             }
 
-        std::vector<std::unique_ptr<ValueExp>> valueExpList;
+        std::vector<std::unique_ptr<ValueExp>> valueExpList; 
         if (SUCCESS != ParseRowValueConstructorCommalist(valueExpList, *listNode))
             return ERROR;
 
-        std::unique_ptr<SingleSelectStatementExp> singleSelect = std::make_unique<SingleSelectStatementExp>(valueExpList);
-        if (prevSelectExp == nullptr)
-            prevSelectExp = std::make_unique<SelectStatementExp>(std::move(singleSelect));
-        else
+        if (valueExpList.size() == 0)
             {
-            std::unique_ptr<SelectStatementExp> selectExp = nullptr;
-            selectExp = std::make_unique<SelectStatementExp>(std::move(singleSelect), SelectStatementExp::CompoundOperator::Union, true /*isAll*/, std::move(prevSelectExp));
-            prevSelectExp = std::move(selectExp);
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739, "Empty list within row value constructor list");
+            return ERROR;
             }
+
+        // return error if each valueExpList dont have the same number of elements
+        if (i > 0 && valueExpList.size() != rowValuesExpList[0]->GetChildrenCount())
+            {
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740, "All rows in VALUES clause must have the same number of elements");
+            return ERROR;
+            }
+
+        rowValuesExpList.push_back(std::make_unique<ValueExpListExp>(valueExpList));
         }
 
-    exp = std::move(prevSelectExp);
+    if (rowValuesExpList.size() == 0)
+        {
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0741, "Empty row value constructor list");
+        return ERROR;
+        }
+
+    exp = std::make_unique<RowValueConstructorListExp>(rowValuesExpList);
     return SUCCESS;
     }
 

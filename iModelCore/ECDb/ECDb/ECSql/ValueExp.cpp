@@ -1938,6 +1938,38 @@ Utf8String UnaryValueExp::_ToString() const
     return str;
     }
 
+//******************************* sqlColumnNameExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Exp::FinalizeParseStatus SqlColumnNameExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode){
+    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
+        if (!GetTypeInfo().IsPrimitive()) {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0742,
+                "values inside Values List expects primitive type expressions", ToECSql().c_str());
+            return FinalizeParseStatus::Error;
+        }
+    return FinalizeParseStatus::Completed;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SqlColumnNameExp::_ToJson(BeJsValue val, JsonFormat const&) const
+    {
+    val.SetEmptyObject();
+    val["id"] = "SqlColumnNameExp";
+    val["name"] = m_columnName;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SqlColumnNameExp::_ToECSql(ECSqlRenderContext& ctx) const
+    {
+    ctx.AppendToECSql(m_columnName);
+    }
+
 //****************************** FunctionSignatureSet *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod

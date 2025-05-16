@@ -66,6 +66,7 @@ struct DerivedPropertyExp final : Exp
         Utf8String GetName() const;
 
         Utf8StringCR GetColumnAlias() const;
+        Utf8StringCR GetSubqueryAlias() const;
         Utf8StringCR GetCteColumnName() const { return m_cteColumnName; }
         Utf8StringCR GetNestedAlias() const { return m_cteColumnName.empty() ? m_nestedAlias : m_cteColumnName; }
         Utf8String GetAliasRecursively() const;
@@ -386,7 +387,8 @@ struct SingleSelectStatementExp final : QueryExp
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct CommonTableExp; // Forward Declared for SubqueryExp constructor
+struct RowValueConstructorListExp; // Forward Declared for SubqueryExp constructor
+struct CommonTableExp; 
 struct SelectStatementExp;
 struct SubqueryExp final : QueryExp
     {
@@ -401,6 +403,7 @@ struct SubqueryExp final : QueryExp
     public:
         explicit SubqueryExp(std::unique_ptr<SelectStatementExp>);
         explicit SubqueryExp(std::unique_ptr<CommonTableExp>);
+        explicit SubqueryExp(std::unique_ptr<RowValueConstructorListExp>);
         template<typename T>
         T const* GetQuery() const;
     };

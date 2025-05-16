@@ -254,7 +254,7 @@ private:
     BentleyStatus ParseValueExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValueExpCommalist(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValueExpPrimary(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseValuesCommalist(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const&) const;
+    BentleyStatus ParseValuesCommalist(std::unique_ptr<RowValueConstructorListExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseValuesOrQuerySpec(std::vector<std::unique_ptr<ValueExp>>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseWindowFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp> &, connectivity::OSQLParseNode const *) const;

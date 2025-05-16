@@ -1570,7 +1570,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSearchConditionExp(NativeSqlBuilder& native
 ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, SubqueryExp const& exp)
     {
     ctx.GetSqlBuilder().AppendParenLeft();
-    SelectStatementExp const* selectSubquery =  exp.GetQuery<SelectStatementExp>();
+    SelectStatementExp const* selectSubquery = exp.GetQuery<SelectStatementExp>();
     if(selectSubquery != nullptr)
         {
         ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
@@ -1579,16 +1579,28 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, Subqu
         ctx.GetSqlBuilder().AppendParenRight();
         return stat;
         }
-    CommonTableExp const* cteSubquery =  exp.GetQuery<CommonTableExp>();
+    CommonTableExp const* cteSubquery = exp.GetQuery<CommonTableExp>();
     if(cteSubquery != nullptr)
-    {
+        {
         ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
         if (!stat.IsSuccess())
             return stat;
         ctx.GetSqlBuilder().AppendParenRight();
         return stat;
-    }
-    BeAssert(false && "ECSqlExpPreparer::PrepareSubqueryExp> SubqueryExp must have a child of type either SelectStatementExp or CommonTableExp.");
+        }
+    RowValueConstructorListExp const* rowValuesSubquery = exp.GetQuery<RowValueConstructorListExp>();
+    if(rowValuesSubquery != nullptr)
+        {
+        NativeSqlBuilder::List nativeSqlSnippets;
+        ECSqlStatus stat = PrepareRowValueConstructorListExp(nativeSqlSnippets, ctx, *rowValuesSubquery);
+        if (!stat.IsSuccess())
+            return stat;
+        ctx.GetSqlBuilder().Append(nativeSqlSnippets);
+        ctx.GetSqlBuilder().AppendParenRight();
+        return stat;
+        }
+
+    BeAssert(false && "ECSqlExpPreparer::PrepareSubqueryExp> SubqueryExp must have a child of type either SelectStatementExp, CommonTableExp or RowValueConstructorListExp.");
     return ECSqlStatus::Error;
     }
 
@@ -2549,6 +2561,60 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
 
     BeAssert(false && "ECSqlPreparer::PrepareValueExp> Unhandled ValueExp subclass.");
     return ECSqlStatus::Error;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareRowValueConstructorListExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, RowValueConstructorListExp const& exp)
+    {
+    BeAssert(nativeSqlSnippets.empty());
+    bool isFirstExp = true;
+
+    // build the select string
+    NativeSqlBuilder builder;
+    builder.Append("SELECT ");
+    for (Exp const* selectionItem : exp.GetSelection()->GetChildren())
+        {
+        auto columnNameExp = selectionItem->GetAs<DerivedPropertyExp>().GetExpression();
+        Utf8StringCR columnName = columnNameExp->GetAs<SqlColumnNameExp>().GetColumnName();
+        if (!isFirstExp)
+            builder.AppendComma();
+        else
+            isFirstExp = false;
+        builder.Append(columnName);        
+        }
+
+    builder.Append(" FROM (VALUES ");
+    isFirstExp = true;
+    // build the values string
+    for (Exp const* valueExpListExp : exp.GetRowValues())
+        {
+        NativeSqlBuilder::List listItemExpBuilders;
+
+        auto stat = PrepareValueExpListExp(listItemExpBuilders, ctx, valueExpListExp->GetAs<ValueExpListExp>(), false);
+        if (!stat.IsSuccess())
+            return stat;
+
+        if (!isFirstExp)
+            builder.AppendComma();
+        else 
+            isFirstExp = false;
+
+        builder.AppendParenLeft();
+        for (size_t i = 0; i < listItemExpBuilders.size(); i++)
+            {
+            if (i > 0)
+                builder.AppendComma();
+            builder.Append(listItemExpBuilders[i]);
+            }
+        builder.AppendParenRight();
+        }
+
+    builder.AppendParenRight();
+    nativeSqlSnippets.push_back(std::move(builder));
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
