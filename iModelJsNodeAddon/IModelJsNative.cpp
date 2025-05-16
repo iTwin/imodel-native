@@ -683,7 +683,7 @@ static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenPara
 
     auto container = getCloudContainer(jsContainer);
     if (!params.IsReadonly() && !container->m_writeLockHeld)
-        BeNapi::ThrowJsException(arg.Env(), "cannot open for database for write - container write lock not held", (int)IModelJsNativeErrorKey::LockNotHeld, IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::LockNotHeld));
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(arg.Env(), "cannot open for database for write - container write lock not held", IModelJsNativeErrorKey::LockNotHeld);
 
     dbName = params.SetFromContainer(dbName.c_str(), container);
 };
@@ -6136,7 +6136,7 @@ void JsInterop::HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAsse
         return;
         }
 
-    BeNapi::ThrowJsException(JsInterop::Env(), Utf8PrintfString("Native Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str());
+    THROW_JS_IMODEL_NATIVE_EXCEPTION(JsInterop::Env(), Utf8PrintfString("Native Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str(), IModelJsNativeErrorKey::NativeAssertion);
     }
 
 //=======================================================================================

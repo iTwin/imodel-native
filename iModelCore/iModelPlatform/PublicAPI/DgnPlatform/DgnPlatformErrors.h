@@ -189,6 +189,7 @@ enum class IModelJsNativeErrorKey : int
     GeometryStreamError,
     ECClassError,
     RuntimeError,
+    NativeAssertion,
     LockNotHeld
 };
 
@@ -210,6 +211,7 @@ class IModelJsNativeErrorKeyHelper {
             case IModelJsNativeErrorKey::GeometryStreamError: return {"imodel-native", "GeometryStreamError"};
             case IModelJsNativeErrorKey::ECClassError: return {"imodel-native", "ECClassError"};
             case IModelJsNativeErrorKey::RuntimeError: return {"imodel-native", "RuntimeError"};
+            case IModelJsNativeErrorKey::NativeAssertion: return {"imodel-native", "NativeAssertion"};
             case IModelJsNativeErrorKey::LockNotHeld: return {"imodel-native", "LockNotHeld"};
             default: return {"imodel-native", "UnknownIModelJsNativeErrorKey"};
             }
