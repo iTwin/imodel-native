@@ -325,10 +325,6 @@ struct iTwinErrorId {
 
 struct BeNapi {
 public:
-    [[noreturn]] static void ThrowJsException(Napi::Env env, Utf8CP str) {
-        auto err = Napi::Error::New(env, str);
-        throw err;
-    }
     [[noreturn]] static void ThrowJsException(Napi::Env env, Utf8CP str, iTwinErrorId id ) {
         auto err = Napi::Error::New(env, str);
         id.setITwinErrorId(err);
