@@ -2542,7 +2542,7 @@ TEST_F (BeSQLiteDbTests, Limits)
     ASSERT_EQ(10, m_db.GetLimit(DbLimits::Attached));
     ASSERT_EQ(2200, m_db.GetLimit(DbLimits::Column));
     ASSERT_EQ(500, m_db.GetLimit(DbLimits::CompoundSelect));
-    ASSERT_EQ(2000, m_db.GetLimit(DbLimits::ExprDepth));
+    ASSERT_EQ(3000, m_db.GetLimit(DbLimits::ExprDepth));
     ASSERT_EQ(1000, m_db.GetLimit(DbLimits::FunctionArg));
     ASSERT_EQ(2147483647, m_db.GetLimit(DbLimits::Length));
     ASSERT_EQ(50000, m_db.GetLimit(DbLimits::LikePatternLength));
