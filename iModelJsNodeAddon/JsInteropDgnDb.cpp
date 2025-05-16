@@ -13,6 +13,10 @@ using namespace IModelJsNative;
 #define SET_IF_NOT_EMPTY_STR(j, str) {if (!(str).empty()) j = str;}
 #define SET_IF_NOT_NULL_STR(j, str) {if (nullptr != (str)) j = str;}
 
+#define THROW_JS_TYPE_EXCEPTION(str) BeNapi::ThrowJsTypeException(info.Env(), str);
+#define THROW_JS_IMODEL_NATIVE_EXCEPTION(str, status) BeNapi::ThrowJsException(info.Env(), str, (int)status, IModelJsNativeErrorKeyHelper::GetITwinError(status));
+#define THROW_JS_DGN_DB_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, DgnDbStatusHelper::GetITwinError(status));
+
 BE_JSON_NAME(baseClasses)
 BE_JSON_NAME(code)
 BE_JSON_NAME(customAttributes)
@@ -68,7 +72,7 @@ BE_JSON_NAME(geographicCoordinateSystem)
         default:
             msg = Utf8PrintfString("error=%x", (int) stat); break;
     }
-    BeNapi::ThrowJsException(Env(), msg.c_str(), (int) stat);
+    THROW_JS_DGN_DB_EXCEPTION(Env(), msg.c_str(), stat);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1656,13 +1660,13 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
         if (jsIs2d) {
             placement2d.FromJson(jsPlacement);
             if (!placement2d.IsValid()) {
-                BeNapi::ThrowJsException(info.Env(), "Invalid placement");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION("Invalid placement", IModelJsNativeErrorKey::BadArg);
             }
         } else {
 
             placement3d.FromJson(jsPlacement);
             if (!placement3d.IsValid()) {
-                BeNapi::ThrowJsException(info.Env(), "Invalid placement");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION("Invalid placement", IModelJsNativeErrorKey::BadArg);
             }
         }
     }
@@ -1670,7 +1674,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
     if (jsCategoryId.IsString()) {
         BeInt64Id::FromString(categoryId, jsCategoryId.As<Napi::String>().Utf8Value().c_str());
         if (!categoryId.IsValid()) {
-            BeNapi::ThrowJsException(info.Env(), "Invalid category id");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION("Invalid category id", IModelJsNativeErrorKey::BadArg);
         }
     }
 
@@ -1680,7 +1684,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
         if (geom.IsTypedArray()) {
             auto geomBin = geom.As<Napi::TypedArrayOf<uint8_t>>();
             if (geomBin.TypedArrayType() != napi_uint8_array) {
-                BeNapi::ThrowJsException(info.Env(), "Invalid geometry stream properties. Expecting uint8array");
+                THROW_JS_TYPE_EXCEPTION("Invalid geometry stream properties. Expecting uint8array");
             }
             uint8_t* data = geomBin.Data();
             size_t size = geomBin.ElementLength();
@@ -1693,7 +1697,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
         } else {
             auto geomProps = geom.As<Napi::Object>();
             if (!geomProps.IsObject()) {
-                BeNapi::ThrowJsException(info.Env(), "Invalid geometry stream properties. Expecting object");
+                THROW_JS_TYPE_EXCEPTION("Invalid geometry stream properties. Expecting object");
             }
 
             if (jsIs2d)
@@ -1701,7 +1705,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
             else
                 geomSource = std::make_unique<NativeGeometrySource3d>(db, categoryId, std::move(placement3d), GeometryStream());
             if (!GeometryBuilder::UpdateFromJson(*geomSource, geomProps)){
-                BeNapi::ThrowJsException(info.Env(), "Invalid geometry stream properties");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION("Invalid geometry stream properties", IModelJsNativeErrorKey::BadArg);
             }
         }
     } else {
@@ -1714,11 +1718,11 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
     if (args.HasOwnProperty("builder")) {
         auto geomBuilder = args.Get("builder").As<Napi::Object>();
         if (!geomBuilder.IsObject()) {
-            BeNapi::ThrowJsException(info.Env(), "Invalid geometry builder");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION("Invalid geometry builder", IModelJsNativeErrorKey::BadArg);
         }
 
         if (geomBuilder.Has("is2dPart")) {
-            BeNapi::ThrowJsException(info.Env(), "BuildGeometryStream failed - invalid builder parameter");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION("BuildGeometryStream failed - invalid builder parameter", IModelJsNativeErrorKey::BadArg);
         }
 
         auto viewIndependentVal = geomBuilder.Get("viewIndependent");
@@ -1730,7 +1734,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
         bparams.viewIndependent = viewIndependentVal.IsBoolean() && viewIndependentVal.As<Napi::Boolean>().Value();
         auto status = GeometryStreamIO::BuildFromGeometrySource(*geomSource, bparams, entryArrayObj.As<Napi::Array>());
         if (DgnDbStatus::Success != status) {
-            BeNapi::ThrowJsException(info.Env(), "BuildGeometryStream failed");
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "BuildGeometryStream failed", status);
         }
     }
 
@@ -1809,7 +1813,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info) {
     if (hasBBox) {
         bbox3d.FromJson(jsBBox);
         if (!bbox3d.IsValid()) {
-            BeNapi::ThrowJsException(info.Env(), "Invalid placement");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION("Invalid placement", IModelJsNativeErrorKey::BadArg);
         }
     }
 
@@ -1819,7 +1823,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info) {
         if (geom.IsTypedArray()) {
             auto geomBin = geom.As<Napi::TypedArrayOf<uint8_t>>();
             if (geomBin.TypedArrayType() != napi_uint8_array) {
-                BeNapi::ThrowJsException(info.Env(), "Invalid geometry stream properties. Expecting uint8array");
+                THROW_JS_TYPE_EXCEPTION("Invalid geometry stream properties. Expecting uint8array");
             }
             uint8_t* data = geomBin.Data();
             size_t size = geomBin.ElementLength();
@@ -1829,12 +1833,12 @@ Napi::Value JsInterop::ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info) {
         } else {
             auto geomProps = geom.As<Napi::Object>();
             if (!geomProps.IsObject()) {
-                BeNapi::ThrowJsException(info.Env(), "Invalid geometry stream properties. Expecting object");
+                THROW_JS_TYPE_EXCEPTION("Invalid geometry stream properties. Expecting object");
             }
 
             geomSource = std::make_unique<NativeGeometryPart>(db, GeometryStream(), std::move(bbox3d));
             if (!GeometryBuilder::UpdateFromJson(*geomSource, geomProps, !jsIs2d)){
-                BeNapi::ThrowJsException(info.Env(), "Invalid geometry stream properties");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION("Invalid geometry stream properties", IModelJsNativeErrorKey::BadArg);
             }
         }
     } else {
@@ -1844,11 +1848,11 @@ Napi::Value JsInterop::ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info) {
     if (args.HasOwnProperty("builder")) {
         auto geomBuilder = args.Get("builder").As<Napi::Object>();
         if (!geomBuilder.IsObject()) {
-            BeNapi::ThrowJsException(info.Env(), "Invalid geometry builder");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION("Invalid geometry builder", IModelJsNativeErrorKey::BadArg);
         }
 
         if (geomBuilder.Has("is2dPart")) {
-            BeNapi::ThrowJsException(info.Env(), "BuildGeometryStream failed - invalid builder parameter");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION("BuildGeometryStream failed - invalid builder parameter", IModelJsNativeErrorKey::BadArg);
         }
 
         auto viewIndependentVal = geomBuilder.Get("viewIndependent");
@@ -1860,7 +1864,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info) {
         bparams.viewIndependent = viewIndependentVal.IsBoolean() && viewIndependentVal.As<Napi::Boolean>().Value();
         auto status = GeometryStreamIO::BuildFromGeometryPart(*geomSource, bparams, entryArrayObj.As<Napi::Array>());
         if (DgnDbStatus::Success != status) {
-            BeNapi::ThrowJsException(info.Env(), "BuildGeometryStream failed");
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "BuildGeometryStream failed", status);
         }
     }
 
