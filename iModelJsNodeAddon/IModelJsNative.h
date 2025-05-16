@@ -329,25 +329,25 @@ inline static bool boolMember(Napi::Object const& obj, Utf8CP name, bool default
 inline static Utf8String requireString(Napi::Object const& obj, Utf8CP name) {
     auto strVal = stringMember(obj, name);
     if (strVal.empty())
-        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
+        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str(), IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::BadArg));
     return strVal;
 }
 inline static int requireInt(Napi::Object const& obj, Utf8CP name) {
     auto member = obj.Get(name);
     if (!member.IsNumber())
-        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
+        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str(), IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::BadArg));
     return  member.ToNumber().Int32Value();
 }
 inline static bool requireBool(Napi::Object const& obj, Utf8CP name) {
     auto member = obj.Get(name);
     if (!member.IsBoolean())
-        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
+        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str(), IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::BadArg));
     return  member.ToBoolean().Value();
 }
 inline static Napi::Array requireArray(Napi::Object const& obj, Utf8CP name) {
     auto member = obj.Get(name);
     if (!member.IsArray())
-        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply array %s", name).c_str());
+        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply array %s", name).c_str(), IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::BadArg));
     return member.As<Napi::Array>();
 }
 
@@ -367,7 +367,7 @@ ENUM_IS_FLAGS(TextEmphasis);
 
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
-        BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: rc=%d, %s", msg, fileName, (int)result, BeSQLiteLib::GetLogError(result).c_str()).c_str(), result);
+        BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: rc=%d, %s", msg, fileName, (int)result, BeSQLiteLib::GetLogError(result).c_str()).c_str(), result, {"be-sqlite", BeSQLiteLib::GetErrorName(result)});
     }
     [[noreturn]] static void throwDgnDbStatus(DgnDbStatus);
     [[noreturn]] static void throwWrongClass() { throwDgnDbStatus(DgnDbStatus::WrongClass); }
