@@ -111,6 +111,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @return true, if it is prepared. false otherwise
         ECDB_EXPORT bool IsPrepared() const;
 
+        //! Indicates whether this statement is an insert statement or not.
+        //! @return true, if it is an insert statement. false otherwise
+        ECDB_EXPORT bool IsInsertStatement() const;
+
         //! @name Methods to bind values to an ECSQL parameter
         //! @{
 
@@ -231,7 +235,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //!            If an invalid @p relationshipECClassId is passed, NULL will be bound to it. This is only correct
         //!            if the relationshipECClassId is optional. ECDb does not validate the input.
         //! @return ECSqlStatus::Success or error codes
-        ECSqlStatus BindNavigationValue(int parameterIndex, BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId = ECN::ECClassId()) { return GetBinder(parameterIndex).BindNavigation(relatedInstanceId, relationshipECClassId); }
+        ECDB_EXPORT ECSqlStatus BindNavigationValue(int parameterIndex, BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId = ECN::ECClassId());
 
         //! Binds a VirtualSet to the SQL function @b InVirtualSet.
         //! The parameter must be the first parameter in the InVirtualSet function.

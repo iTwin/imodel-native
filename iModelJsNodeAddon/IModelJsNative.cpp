@@ -3459,6 +3459,7 @@ private:
     DEFINE_CONSTRUCTOR;
     IECSqlBinder* m_binder = nullptr;
     ECDb const* m_ecdb = nullptr;
+    ECSqlStatement* m_ecSqlStatement = nullptr;
 
     static DbResult ToDbResult(ECSqlStatus status)
         {
@@ -3474,7 +3475,7 @@ private:
 public:
     NativeECSqlBinder(NapiInfoCR info) : BeObjectWrap<NativeECSqlBinder>(info)
         {
-        if (info.Length() != 2)
+        if (info.Length() < 2 || info.Length() > 3)
             THROW_JS_EXCEPTION("ECSqlBinder constructor expects two arguments.");
 
         m_binder = info[0].As<Napi::External<IECSqlBinder>>().Data();
@@ -3484,6 +3485,8 @@ public:
         m_ecdb = info[1].As<Napi::External<ECDb>>().Data();
         if (m_ecdb == nullptr)
             THROW_JS_TYPE_EXCEPTION("Invalid second arg for NativeECSqlBinder constructor. ECDb must not be nullptr");
+
+        m_ecSqlStatement = info[2].As<Napi::External<ECSqlStatement>>().Data();
         }
 
     ~NativeECSqlBinder() {SetInDestructor();}
@@ -3524,9 +3527,9 @@ public:
         SET_CONSTRUCTOR(t);
         }
 
-    static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb)
+    static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb, const ECSqlStatement* ecSqlStatement = nullptr)
         {
-        return Constructor().New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
+        return Constructor().New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb)), Napi::External<ECSqlStatement>::New(env, const_cast<ECSqlStatement*>(ecSqlStatement))});
         }
 
     Napi::Value BindNull(NapiInfoCR info)
@@ -3789,10 +3792,20 @@ public:
             {
             bvector<Utf8String> tokens;
             BeStringUtilities::Split(relClassName.c_str(), ".:", tokens);
-            if (tokens.size() != 2)
+            if (tokens.size() < 2 || tokens.size() > 3)
                 return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
 
             relClassId = m_ecdb->Schemas().GetClassId(tokens[0], tokens[1], SchemaLookupMode::AutoDetect, relClassTableSpaceName.c_str());
+
+            if (m_ecSqlStatement && m_ecSqlStatement->IsInsertStatement() && m_ecdb->GetECSqlConfig().IsInsertValueValidationEnabled())
+                {
+                auto relClass = m_ecdb->Schemas().GetClass(relClassId);
+                if (!relClass)
+                    THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql INSERT statement contains an invalid relationship class '%s'. The name does not correspond to any EC class.", relClassName.c_str()).c_str());
+        
+                if (!relClass->IsRelationshipClass())
+                    THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql INSERT statement contains an invalid relationship class '%s'. The ID does not correspond to a valid ECRelationship class.", relClassName.c_str()).c_str());
+                }
             }
 
         ECSqlStatus stat = m_binder->BindNavigation(navId, relClassId);
@@ -4830,7 +4843,7 @@ public:
             paramIndex = m_stmt.GetParameterIndex(paramArg.ToString().Utf8Value().c_str());
 
         IECSqlBinder& binder = m_stmt.GetBinder(paramIndex);
-        return NativeECSqlBinder::New(info.Env(), binder, *m_stmt.GetECDb());
+        return NativeECSqlBinder::New(info.Env(), binder, *m_stmt.GetECDb(), &m_stmt);
     }
 
     Napi::Value Step(NapiInfoCR info) {

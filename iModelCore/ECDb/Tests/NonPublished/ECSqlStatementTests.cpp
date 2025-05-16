@@ -13009,6 +13009,135 @@ TEST_F(ECSqlStatementTestFixture, Testing_Table_Valued_Functions_without_schemaN
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECSqlStatementTestFixture, InsertWithInvalidRelECClassId)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertWithInvalidRelECClassId.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
 
+            <ECEntityClass typeName="Element">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElements" direction="Backward" />
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="ElementRefersToElements" strength="embedding" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    m_ecdb.SaveChanges();
+
+    const auto classElementOwnsChildElements = m_ecdb.Schemas().FindClass("ts.ElementOwnsChildElements");
+    ASSERT_NE(classElementOwnsChildElements, nullptr);
+    const auto classElementOwnsChildElementsId =  classElementOwnsChildElements->GetId().ToString();
+
+    const auto classElementRefersToElements = m_ecdb.Schemas().FindClass("ts.ElementRefersToElements");
+    ASSERT_NE(classElementRefersToElements, nullptr);
+    const auto classElementRefersToElementsId =  classElementRefersToElements->GetId().ToString();
+
+    auto setPragma = [&](const unsigned int testCaseNumber, const bool pragmaValue)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("PRAGMA validate_ecsql_inserts=%s", pragmaValue ? "true" : "false"))) << "Test case " << testCaseNumber << " failed to call PRAGMA.";
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
+        stmt.Finalize();
+        ASSERT_EQ(pragmaValue, m_ecdb.GetECSqlConfig().IsInsertValueValidationEnabled());
+        };
+
+    auto testInsert = [&](const unsigned int testCaseNumber, Utf8StringCR sqlStmt, const ECSqlStatus expectedResult)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(expectedResult, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed to prepare statement.";
+        if (expectedResult == ECSqlStatus::Success)
+            EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
+        stmt.Finalize();
+        };
+
+    // Test with hardcoded values in ecsql statements without binders
+    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, relClassIdStr, expectedResult] : std::vector<std::tuple<unsigned int, bool, Utf8String, Utf8String, ECSqlStatus>> {
+        {  1, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(1, %s)", classElementOwnsChildElementsId, ECSqlStatus::Success },
+        {  2, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(2, %s)", "9999", ECSqlStatus::Success },
+        {  4, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(4, %s)", "0", ECSqlStatus::Success },
+        {  5, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(5, %s)", "-1", ECSqlStatus::Success },
+        {  6, false, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(6, %s)", "NULL", ECSqlStatus::Success },
+        
+        {  7, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(7, %s)", classElementRefersToElementsId, ECSqlStatus::Success },
+        {  8, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(8, %s)", "9999", ECSqlStatus::InvalidECSql },
+        {  9, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(9, %s)", "0", ECSqlStatus::InvalidECSql },
+        { 10, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(10, %s)", "-1", ECSqlStatus::InvalidECSql },
+        { 11, true, "INSERT INTO ts.Element(Parent.Id, Parent.RelECClassId) VALUES(11, %s)", "null", ECSqlStatus::InvalidECSql },
+    })  {
+        setPragma(testCaseNumber, pragmaValue);
+        testInsert(testCaseNumber, SqlPrintfString(sqlStmt.c_str(), relClassIdStr.c_str()).GetUtf8CP(), expectedResult);
+        }
+
+    m_ecdb.AbandonChanges();
+    ReopenECDb();
+
+    // Test with binders
+    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, relClassIdStr, expectedBindingResult] : std::vector<std::tuple<unsigned int, bool, Utf8String, Utf8String, ECSqlStatus>> {
+        { 12, false, "INSERT INTO ts.Element(Parent) VALUES(?)", classElementOwnsChildElementsId, ECSqlStatus::Success },  // Valid Id
+        { 13, false, "INSERT INTO ts.Element(Parent) VALUES(?)", "9999", ECSqlStatus::Success }, // Non-existent class Id
+
+        { 14, true, "INSERT INTO ts.Element(Parent) VALUES(?)", classElementRefersToElementsId, ECSqlStatus::Success },  // Valid Id
+        { 15, true, "INSERT INTO ts.Element(Parent) VALUES(?)", "9999", ECSqlStatus::InvalidECSql },  // Non-existent class Id
+    }) {
+        setPragma(testCaseNumber, pragmaValue);
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed.";
+
+        ECClassId relClassId;
+        ECClassId::FromString(relClassId, relClassIdStr.c_str());
+    
+        EXPECT_EQ(expectedBindingResult, stmt.BindNavigationValue(1, BeInt64Id(testCaseNumber), relClassId)) << "Test case " << testCaseNumber << " failed to bind value.";
+        if (expectedBindingResult == ECSqlStatus::Success)
+            EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed to step.";
+    
+        stmt.Finalize();
+        m_ecdb.AbandonChanges();
+        }
+
+    ECClassId relClassId;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ECClassId::FromString(relClassId, "9999"));
+
+    // Make sure the pragma only works for insert statements
+    for (const auto& pragmaValue : { false, true})
+        {
+        setPragma(__LINE__, pragmaValue);
+
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Element where Parent.RelECClassId=9999"));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.Finalize();
+
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Element where Parent=?"));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(9999ull), relClassId));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.Finalize();
+        }
+    }
 
 END_ECDBUNITTESTS_NAMESPACE
