@@ -18,6 +18,8 @@ USING_NAMESPACE_BENTLEY_SQLITE
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #define THROW_JS_TYPE_EXCEPTION(str) BeNapi::ThrowJsTypeException(info.Env(), str);
+#define THROW_JS_DGN_DB_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, DgnDbStatusHelper::GetITwinError(status));
+
 #define ARGUMENT_IS_PRESENT(i) (info.Length() > (i))
 #define ARGUMENT_IS_NUMBER(i) (ARGUMENT_IS_PRESENT(i) && info[i].IsNumber())
 #define ARGUMENT_IS_NOT_NUMBER(i) !ARGUMENT_IS_NUMBER(i)
@@ -41,7 +43,7 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
     const auto onRebaseLocalTxnConflict = m_dgndb.GetJsTxns().Get("_onRebaseLocalTxnConflict").As<Napi::Function>();
 
     if (!onRebaseLocalTxnConflict.IsFunction()) {
-        BeNapi::ThrowJsException(jsDgnDb.Env(), "_onRebaseLocalTxnConflict() does not exists", (int) DgnDbStatus::BadArg);
+        THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "_onRebaseLocalTxnConflict() does not exists", DgnDbStatus::BadArg);
     }
     auto arg = Napi::Object::New(env);
     arg.Set("cause", Napi::Number::New(env, (int)cause));
@@ -185,26 +187,25 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
     }));
     arg.Set("setLastError", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> void {
         if (info.Length() != 1)
-            BeNapi::ThrowJsException(jsDgnDb.Env(), "setLastError() Expect a string type arg");
+            THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
 
         auto val = info[0];
         if (!val.IsString())
-            BeNapi::ThrowJsException(jsDgnDb.Env(), "setLastError() Expect a string type arg");
+            THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
 
         m_lastErrorMessage = val.As<Napi::String>().Utf8Value();
     }));
 
     const auto resJsVal = onRebaseLocalTxnConflict.Call(m_dgndb.GetJsTxns(), {arg});
-    if (resJsVal.IsUndefined()) {
-         BeNapi::ThrowJsException(jsDgnDb.Env(), "_onRebaseLocalTxnConflict must return a resolution", (int) DgnDbStatus::BadArg);
-    }
+    if (resJsVal.IsUndefined())
+        THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "_onRebaseLocalTxnConflict must return a resolution", DgnDbStatus::BadArg);
 
     if (!resJsVal.IsNumber())
-        BeNapi::ThrowJsException(jsDgnDb.Env(), "_onRebaseLocalTxnConflict did not return a number", (int) DgnDbStatus::BadArg);
+        THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "_onRebaseLocalTxnConflict did not return a number", DgnDbStatus::BadArg);
 
     const auto resolution = (ChangeSet::ConflictResolution)resJsVal.As<Napi::Number>().Int32Value();
     if (resolution != ChangeSet::ConflictResolution::Abort  && resolution != ChangeSet::ConflictResolution::Replace && resolution != ChangeSet::ConflictResolution::Skip )
-        BeNapi::ThrowJsException(jsDgnDb.Env(), "_onRebaseLocalTxnConflict returned unsupported value for conflict resolution", (int) DgnDbStatus::BadArg);
+        THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "_onRebaseLocalTxnConflict returned unsupported value for conflict resolution", DgnDbStatus::BadArg);
 
     return resolution;
 }
@@ -352,11 +353,11 @@ const auto jsIModelDb = m_dgndb->GetJsIModelDb();
             }));
             arg.Set("setLastError", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> void {
                 if (info.Length() != 1)
-                    BeNapi::ThrowJsException(jsDgnDb.Env(), "setLastError() Expect a string type arg");
+                    THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
 
                 auto val = info[0];
                 if (!val.IsString())
-                    BeNapi::ThrowJsException(jsDgnDb.Env(), "setLastError() Expect a string type arg");
+                    THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
 
                 m_lastErrorMessage = val.As<Napi::String>().Utf8Value();
             }));
@@ -366,11 +367,11 @@ const auto jsIModelDb = m_dgndb->GetJsIModelDb();
             // if handler return undefined we revert to native handler.
             if (!resolutionJsVal.IsUndefined()) {
                 if (!resolutionJsVal.IsNumber())
-                    BeNapi::ThrowJsException(jsDgnDb.Env(), "onChangesetConflict did not return a number", (int) DgnDbStatus::BadArg);
+                    THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "onChangesetConflict did not return a number", DgnDbStatus::BadArg);
 
                 const auto resolution = (ChangeSet::ConflictResolution)resolutionJsVal.As<Napi::Number>().Int32Value();
                 if (resolution != ChangeSet::ConflictResolution::Abort  && resolution != ChangeSet::ConflictResolution::Replace && resolution != ChangeSet::ConflictResolution::Skip )
-                    BeNapi::ThrowJsException(jsDgnDb.Env(), "onChangesetConflict returned unsupported value for conflict resolution", (int) DgnDbStatus::BadArg);
+                    THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "onChangesetConflict returned unsupported value for conflict resolution", DgnDbStatus::BadArg);
 
                 return resolution;
             }
