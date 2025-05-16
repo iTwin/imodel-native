@@ -52,7 +52,7 @@ void JsLogger::SyncLogLevels()
     // in the TypeScript class, but that doesn't stop us from accessing it in JavaScript.
     auto jsCategoryFilter = m_loggerObj.Get("categoryFilter").As<Napi::Object>();
     if (jsCategoryFilter == undefined)
-        BeNapi::ThrowJsException(JsInterop::Env(), "Invalid Logger");
+        BeNapi::ThrowJsException(JsInterop::Env(), "Invalid Logger", IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::BadArg));
 
     m_categoryFilter.clear();
 
