@@ -16,7 +16,7 @@
 #define SQLITE_MAX_VARIABLE_NUMBER 20000 // this is the maximum number of variables in an SQL statement
 #define SQLITE_OMIT_COMPLETE 1
 #define SQLITE_OMIT_PROGRESS_CALLBACK 1
-#define SQLITE_MAX_EXPR_DEPTH 2000
+#define SQLITE_MAX_EXPR_DEPTH 3000
 
 //Allocate around ~ 32 Mb
 #define SQLITE_DEFAULT_CACHE_SIZE 8000
