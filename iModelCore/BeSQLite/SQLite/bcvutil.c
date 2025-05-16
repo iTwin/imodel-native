@@ -195,14 +195,14 @@ void fatal_oom_error(void){
 }
 
 /*
-** Wrapper around sqlite3_mprintf() that calls fatal_oom_error() if an 
+** Wrapper around bentley_sqlite3_mprintf() that calls fatal_oom_error() if an 
 ** OOM occurs.
 */
 char *bcvMprintf(const char *zFmt, ...){
   char *zRet;
   va_list ap;
   va_start(ap, zFmt);
-  zRet = sqlite3_vmprintf(zFmt, ap);
+  zRet = bentley_sqlite3_vmprintf(zFmt, ap);
   va_end(ap);
   if( zRet==0 ) fatal_oom_error();
   return zRet;
@@ -213,7 +213,7 @@ char *bcvMprintfRc(int *pRc, const char *zFmt, ...){
   va_list ap;
   va_start(ap, zFmt);
   if( *pRc==SQLITE_OK ){
-    zRet = sqlite3_vmprintf(zFmt, ap);
+    zRet = bentley_sqlite3_vmprintf(zFmt, ap);
     if( zRet==0 ) *pRc = SQLITE_NOMEM;
   }
   va_end(ap);
@@ -222,14 +222,14 @@ char *bcvMprintfRc(int *pRc, const char *zFmt, ...){
 
 
 void *bcvMalloc(i64 nByte){
-  void *p = sqlite3_malloc64(nByte);
+  void *p = bentley_sqlite3_malloc64(nByte);
   assert( nByte!=0 );
   if( p==0 ) fatal_oom_error();
   return p;
 }
 
 void *bcvRealloc(void *a, i64 nByte){
-  void *p = sqlite3_realloc64(a, nByte);
+  void *p = bentley_sqlite3_realloc64(a, nByte);
   assert( nByte!=0 );
   if( p==0 ) fatal_oom_error();
   return p;
@@ -244,7 +244,7 @@ void *bcvMallocZero(i64 nByte){
 void *bcvMallocRc(int *pRc, i64 nByte){
   void *pRet = 0;
   if( nByte>0 && *pRc==SQLITE_OK ){
-    pRet = sqlite3_malloc64(nByte);
+    pRet = bentley_sqlite3_malloc64(nByte);
     if( pRet==0 ){
       *pRc = SQLITE_NOMEM;
     }else{
@@ -257,13 +257,13 @@ void *bcvMallocRc(int *pRc, i64 nByte){
 static void *bcvReallocOrFreeRc(int *pRc, void *pIn, int nByte){
   void *pRet = 0;
   if( nByte>0 && *pRc==SQLITE_OK ){
-    pRet = sqlite3_realloc(pIn, nByte);
+    pRet = bentley_sqlite3_realloc(pIn, nByte);
     if( pRet==0 ){
-      sqlite3_free(pIn);
+      bentley_sqlite3_free(pIn);
       *pRc = SQLITE_NOMEM;
     }
   }else{
-    sqlite3_free(pIn);
+    bentley_sqlite3_free(pIn);
   }
   return pRet;
 }
@@ -301,14 +301,14 @@ void bcvBufferAppendRc(int *pRc, BcvBuffer *p, const void *a, int n){
 }
 
 void bcvBufferZero(BcvBuffer *p){
-  sqlite3_free(p->aData);
+  bentley_sqlite3_free(p->aData);
   memset(p, 0, sizeof(BcvBuffer));
 }
 
 /*
 ** Return a duplicate of the nIn byte buffer at aIn[]. It is the 
 ** responsibility of the caller to eventually free the returned buffer
-** by passing a pointer to it to sqlite3_free().
+** by passing a pointer to it to bentley_sqlite3_free().
 */
 u8 *bcvMemdup(int nIn, const u8 *aIn){
   u8 *aRet = bcvMalloc(nIn+1);
@@ -327,7 +327,7 @@ char *bcvStrdup(const char *zIn){
 
 i64 sqlite_timestamp(void){
   i64 iRet = 0;
-  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+  sqlite3_vfs *pVfs = bentley_sqlite3_vfs_find(0);
   pVfs->xCurrentTimeInt64(pVfs, &iRet);
   return iRet;
 }
@@ -379,7 +379,7 @@ u64 bcvGetU64(const u8 *a){
 }
 
 static void bcvApiErrorClear(sqlite3_bcv *p){
-  sqlite3_free(p->zErrmsg);
+  bentley_sqlite3_free(p->zErrmsg);
   p->zErrmsg = 0;
   p->errCode = SQLITE_OK;
 }
@@ -388,7 +388,7 @@ static int bcvApiError(sqlite3_bcv *p, int rc, const char *zFmt, ...){
   va_list ap;
   va_start(ap, zFmt);
   bcvApiErrorClear(p);
-  p->zErrmsg = sqlite3_vmprintf(zFmt, ap);
+  p->zErrmsg = bentley_sqlite3_vmprintf(zFmt, ap);
   p->errCode = rc;
   va_end(ap);
   return rc;
@@ -418,7 +418,7 @@ void bcvMHashAdd(ManifestHash *pHash, u8 *aBlk, int nBlk){
 ** Free hash table pHash.
 */
 void bcvMHashFree(ManifestHash *pHash){
-  sqlite3_free(pHash);
+  bentley_sqlite3_free(pHash);
 }
 
 /*
@@ -702,8 +702,8 @@ int bcvManifestParse(
   }
 
   if( pRet==0 ){
-    sqlite3_free(a);
-    sqlite3_free(zETag);
+    bentley_sqlite3_free(a);
+    bentley_sqlite3_free(zETag);
   }
   if( rc!=SQLITE_OK ){
     bcvManifestDeref(pRet);
@@ -723,8 +723,8 @@ int bcvManifestParseCopy(
   u8 *aCopy = bcvMallocRc(&rc, n);
   char *zECopy = bcvStrdupRc(&rc, zETag);
   if( rc!=SQLITE_OK ){
-    sqlite3_free(aCopy);
-    sqlite3_free(zECopy);
+    bentley_sqlite3_free(aCopy);
+    bentley_sqlite3_free(zECopy);
     *ppOut = 0;
     *pz = 0;
   }else{
@@ -743,7 +743,7 @@ u8 *bcvManifestCompose(Manifest *p, int *pnOut){
 
   /* Write the db header */
   nAlloc = 1024*1024;
-  aOut = sqlite3_malloc(nAlloc);
+  aOut = bentley_sqlite3_malloc(nAlloc);
   if( aOut==0 ){
     rc = SQLITE_NOMEM;
   }else{
@@ -764,7 +764,7 @@ u8 *bcvManifestCompose(Manifest *p, int *pnOut){
     if( nOut>nAlloc ){
       u8 *aNew = 0;
       while( nOut>nAlloc ) nAlloc = nAlloc*2;
-      aNew = sqlite3_realloc(aOut, nAlloc);
+      aNew = bentley_sqlite3_realloc(aOut, nAlloc);
       if( aNew==0 ){
         rc = SQLITE_NOMEM;
       }else{
@@ -794,7 +794,7 @@ u8 *bcvManifestCompose(Manifest *p, int *pnOut){
     if( nMax>nAlloc ){
       u8 *aNew = 0;
       while( nMax>nAlloc ) nAlloc = nAlloc*2;
-      aNew = sqlite3_realloc(aOut, nAlloc);
+      aNew = bentley_sqlite3_realloc(aOut, nAlloc);
       if( aNew==0 ){
         rc = SQLITE_NOMEM;
         break;
@@ -833,7 +833,7 @@ u8 *bcvManifestCompose(Manifest *p, int *pnOut){
   }
 
   if( rc!=SQLITE_OK ){
-    sqlite3_free(aOut);
+    bentley_sqlite3_free(aOut);
     nOut = 0;
     aOut = 0;
   }
@@ -846,15 +846,15 @@ void bcvManifestFree(Manifest *p){
     int i;
     for(i=0; i<p->nDb; i++){
       ManifestDb *pDb = &p->aDb[i];
-      if( pDb->nBlkOrigAlloc ) sqlite3_free(pDb->aBlkOrig);
-      if( pDb->nBlkLocalAlloc ) sqlite3_free(pDb->aBlkLocal);
+      if( pDb->nBlkOrigAlloc ) bentley_sqlite3_free(pDb->aBlkOrig);
+      if( pDb->nBlkLocalAlloc ) bentley_sqlite3_free(pDb->aBlkLocal);
     }
     if( p->bDelFree ){
-      sqlite3_free(p->aDelBlk);
+      bentley_sqlite3_free(p->aDelBlk);
     }
-    sqlite3_free(p->pFree);
-    sqlite3_free(p->zETag);
-    sqlite3_free(p);
+    bentley_sqlite3_free(p->pFree);
+    bentley_sqlite3_free(p->zETag);
+    bentley_sqlite3_free(p);
   }
 }
 
@@ -890,7 +890,7 @@ void bcvManifestExpand(int *pRc, Manifest **ppMan, int nExtra){
   pNew = (Manifest*)bcvMallocRc(pRc, nByte + nExtra*sizeof(ManifestDb));
   if( pNew ){
     memcpy(pNew, pMan, nByte);
-    sqlite3_free(pMan);
+    bentley_sqlite3_free(pMan);
     *ppMan = pNew;
     pNew->aDb = (ManifestDb*)&pNew[1];
   }
@@ -1020,8 +1020,8 @@ static int bcvManifestFetchParsed(sqlite3_bcv *pBcv, Manifest **ppOut){
     dl.buf.aData = 0;
   }
   pBcv->errCode = rc;
-  sqlite3_free(dl.buf.aData);
-  sqlite3_free(dl.zETag);
+  bentley_sqlite3_free(dl.buf.aData);
+  bentley_sqlite3_free(dl.zETag);
   return rc;
 }
 
@@ -1046,7 +1046,7 @@ static void bcvManifestUploadParsedCb(
 ){
   ManifestCtx *pCtx = (ManifestCtx*)pApp;
   if( rc==SQLITE_OK && pCtx->pMan ){
-    sqlite3_free(pCtx->pMan->zETag);
+    bentley_sqlite3_free(pCtx->pMan->zETag);
     pCtx->pMan->zETag = bcvStrdupRc(&rc, zErr);
   }
   if( rc!=SQLITE_OK ){
@@ -1089,7 +1089,7 @@ int bcvManifestUploadParsed(sqlite3_bcv *p, Manifest *pMan){
     }
     p->errCode = rc;
   }
-  sqlite3_free(aMan);
+  bentley_sqlite3_free(aMan);
 
   return p->errCode;
 }
@@ -1160,8 +1160,8 @@ void sqlite3_bcv_close(sqlite3_bcv *p){
     bcvContainerClose(p->pCont);
     bcvDispatchFree(p->pDisp);
     bcvLogDelete(p->pBcvLogObj);
-    sqlite3_free(p->zErrmsg);
-    sqlite3_free(p);
+    bentley_sqlite3_free(p->zErrmsg);
+    bentley_sqlite3_free(p);
   }
 }
 
@@ -1339,12 +1339,12 @@ static void bcvUploadOneBlockRetry(BcvUploadJob *pJob, int *pbRetry){
         *pbRetry = 1;
         return;
       }else{
-        sqlite3_randomness(
+        bentley_sqlite3_randomness(
             NAMEBYTES(pMan) - MD5_DIGEST_LENGTH, &aBlk[MD5_DIGEST_LENGTH]
         );
       }
     }else{
-      sqlite3_randomness(NAMEBYTES(pMan), aBlk);
+      bentley_sqlite3_randomness(NAMEBYTES(pMan), aBlk);
     }
 
     bcvBlockidToText(NAMEBYTES(pMan), aBlk, aBuf);
@@ -1468,7 +1468,7 @@ int sqlite3_bcv_upload(
   }
 
  update_out:
-  sqlite3_free(aJob);
+  bentley_sqlite3_free(aJob);
   bcvCloseLocal(up.pFd);
   bcvManifestFree(pMan);
   bcvMHashFree(up.pMHash);
@@ -1505,7 +1505,7 @@ int bcvDeleteBlocks(Manifest *pMan, int iDb){
     if( pMan->nDelBlk ){
       memcpy(aGC, pMan->aDelBlk, pMan->nDelBlk * GCENTRYBYTES(pMan));
       if( pMan->bDelFree ){
-        sqlite3_free(pMan->aDelBlk);
+        bentley_sqlite3_free(pMan->aDelBlk);
         pMan->aDelBlk = 0;
       }
     }
@@ -1789,8 +1789,8 @@ int sqlite3_bcv_download(
   }
 
 download_out:
-  sqlite3_free(aJob);
-  sqlite3_free(dl.aSpace);
+  bentley_sqlite3_free(aJob);
+  bentley_sqlite3_free(dl.aSpace);
   bcvCloseLocal(dl.pFd);
   bcvManifestFree(pMan);
   return p->errCode;
@@ -1829,7 +1829,7 @@ int sqlite3_bcv_delete(
 
     if( rc==SQLITE_OK ){
       assert( pDb->nBlkLocalAlloc==0 );
-      if( pDb->nBlkOrigAlloc ) sqlite3_free(pDb->aBlkOrig);
+      if( pDb->nBlkOrigAlloc ) bentley_sqlite3_free(pDb->aBlkOrig);
       if( iDb<pMan->nDb-1 ){
         memmove(pDb, &pDb[1], (pMan->nDb-iDb-1)*sizeof(ManifestDb));
       }
@@ -1896,10 +1896,10 @@ static void bcvExtraLog(sqlite3_bcv *p, const char *zFmt, ...){
   va_list ap;
   va_start(ap, zFmt);
   if( p->nLogLevel>=BCV_LOGLEVEL_DEBUG && p->pDisp->xLog ){
-    char *zMsg = sqlite3_vmprintf(zFmt, ap);
+    char *zMsg = bentley_sqlite3_vmprintf(zFmt, ap);
     if( zMsg ){
       p->pDisp->xLog(p->pDisp->pLogApp, 0, zMsg);
-      sqlite3_free(zMsg);
+      bentley_sqlite3_free(zMsg);
     }
   }
   va_end(ap);
@@ -1994,7 +1994,7 @@ static int bcvfsListCb(void *pArg, int rc, char *zFile){
         u8 *pWrite;
         if( (pCtx->nDel & (pCtx->nDel-1))==0 ){
           int nNew = pCtx->nDel ? pCtx->nDel*2 : 8;
-          u8 *aNew = (u8*)sqlite3_realloc(pCtx->aDel, nNew*nGC);
+          u8 *aNew = (u8*)bentley_sqlite3_realloc(pCtx->aDel, nNew*nGC);
           if( aNew==0 ){
             pCtx->rc = SQLITE_NOMEM;
             return pCtx->rc;
@@ -2176,7 +2176,7 @@ int sqlite3_bcv_cleanup(sqlite3_bcv *p, int nSecond){
       if( p->errCode==SQLITE_OK || p->errCode==SQLITE_DONE ) p->errCode = rc;
     }
     if( p->errCode==SQLITE_OK && ctx2.nNew<ctx2.nOld ){
-      if( ctx1.pMan->bDelFree ) sqlite3_free(ctx1.pMan->aDelBlk);
+      if( ctx1.pMan->bDelFree ) bentley_sqlite3_free(ctx1.pMan->aDelBlk);
       ctx1.pMan->aDelBlk = ctx2.aNew;
       ctx1.pMan->nDelBlk = ctx2.nNew;
       ctx1.pMan->bDelFree = 1;
@@ -2197,8 +2197,8 @@ int sqlite3_bcv_cleanup(sqlite3_bcv *p, int nSecond){
   if( p->errCode==SQLITE_DONE ) p->errCode = SQLITE_OK;
   bcvManifestFree(ctx1.pMan);
   bcvMHashFree(ctx1.pHash);
-  sqlite3_free(ctx1.aDel);
-  sqlite3_free(ctx2.aNew);
+  bentley_sqlite3_free(ctx1.aDel);
+  bentley_sqlite3_free(ctx2.aNew);
   return p->errCode;
 }
 
@@ -2288,7 +2288,7 @@ int sqlite3_bcv_create(sqlite3_bcv *p, int szName, int szBlock){
         if( p->errCode ) rc = p->errCode;
       }
       p->errCode = rc;
-      sqlite3_free(aKV);
+      bentley_sqlite3_free(aKV);
     }
   }
 
@@ -2377,7 +2377,7 @@ const char *bcvRequestHeader(
 
   for(i=0; i<nHdrs; i+=1+bcvStrlen((char*)&aHdrs[i])){
     char *z = (char*)&aHdrs[i];
-    if( 0==sqlite3_strnicmp(z, zHdr, nHdr) && z[nHdr]==':' ){
+    if( 0==bentley_sqlite3_strnicmp(z, zHdr, nHdr) && z[nHdr]==':' ){
       zVal = &z[nHdr+1];
       while( bcv_isspace(zVal[0]) ) zVal++;
       break;
@@ -2412,7 +2412,7 @@ void sqlite3_bcv_job_hdrs(
   const unsigned char *pHdrs, 
   int nHdrs
 ){
-  sqlite3_free(p->aHdrs);
+  bentley_sqlite3_free(p->aHdrs);
   p->aHdrs = bcvMallocRc(&p->rc, nHdrs);
   if( p->aHdrs ){
     memcpy(p->aHdrs, pHdrs, nHdrs);
@@ -2427,7 +2427,7 @@ void sqlite3_bcv_job_result(
 ){
   switch( p->eType ){
     case BCV_DISPATCH_FETCH: {
-      sqlite3_free(p->aResult);
+      bentley_sqlite3_free(p->aResult);
       p->aResult = bcvMallocRc(&p->rc, nData);
       if( p->aResult ){
         memcpy(p->aResult, pData, nData);
@@ -2446,13 +2446,13 @@ void sqlite3_bcv_job_result(
 }
 
 void sqlite3_bcv_job_etag(sqlite3_bcv_job *p, const char *zETag){
-  sqlite3_free(p->zETag);
+  bentley_sqlite3_free(p->zETag);
   p->zETag = bcvStrdupRc(&p->rc, zETag);
 }
 void sqlite3_bcv_job_error(sqlite3_bcv_job *p, int eCode, const char *zErr){
   int rc = SQLITE_OK;
   p->rc = eCode;
-  sqlite3_free(p->zETag);
+  bentley_sqlite3_free(p->zETag);
   p->zETag = bcvStrdupRc(&rc, zErr);
 }
 
@@ -2500,7 +2500,7 @@ static int bcvGlobalInit(void){
       BcvModule *pNext;
       for(p=g_bcv.pModuleList; p; p=pNext){
         pNext = p->pNext;
-        sqlite3_free(p);
+        bentley_sqlite3_free(p);
       }
       g_bcv.pModuleList = 0;
       g_bcv.bInit = 0;
@@ -2521,7 +2521,7 @@ int bcvCreateModuleUnsafe(
   int rc = SQLITE_OK;
 
   nByte = sizeof(BcvModule) + nName+1;
-  pNew = (BcvModule*)sqlite3_malloc(nByte);
+  pNew = (BcvModule*)bentley_sqlite3_malloc(nByte);
   if( pNew ){
     memset(pNew, 0, nByte);
     pNew->zName = (char*)&pNew[1];
@@ -2547,29 +2547,29 @@ int sqlite3_bcv_create_module(
   void *pCtx
 ){
   int rc;
-  rc = sqlite3_initialize();
+  rc = bentley_sqlite3_initialize();
   if( rc==SQLITE_OK ){
-    sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
+    bentley_sqlite3_mutex_enter( bentley_sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
     rc = bcvGlobalInit();
     if( rc==SQLITE_OK ){
       rc = bcvCreateModuleUnsafe(zName, pMod, pCtx);
     }
-    sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
+    bentley_sqlite3_mutex_leave( bentley_sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
   }
   return rc;
 }
 
 void sqlite3_bcv_shutdown(){
-  if( sqlite3_initialize()==SQLITE_OK ){
+  if( bentley_sqlite3_initialize()==SQLITE_OK ){
     BcvModule *p;
     BcvModule *pNext;
-    sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
+    bentley_sqlite3_mutex_enter( bentley_sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
     for(p=g_bcv.pModuleList; p; p=pNext){
       pNext = p->pNext;
-      sqlite3_free(p);
+      bentley_sqlite3_free(p);
     }
     memset(&g_bcv, 0, sizeof(g_bcv));
-    sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
+    bentley_sqlite3_mutex_leave( bentley_sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
   }
 }
 
@@ -2583,7 +2583,7 @@ static int bcvParseModuleName(
   int nEntry = nMod / 2;
   char **azField;
 
-  *pazField = azField = (char**)sqlite3_malloc(nMod+1+nEntry*sizeof(char*));
+  *pazField = azField = (char**)bentley_sqlite3_malloc(nMod+1+nEntry*sizeof(char*));
   if( azField==0 ){
     rc = SQLITE_NOMEM;
   }else{
@@ -2618,7 +2618,7 @@ void bcvContainerDeref(BcvContainer *p){
   p->nContRef--;
   if( p->nContRef==0 ){
     p->pMod->xClose(p->pCont);
-    sqlite3_free(p);
+    bentley_sqlite3_free(p);
   }
 }
 
@@ -2631,12 +2631,12 @@ void bcvContainerClose(BcvContainer *p){
 static void bcvDispatchReqFree(BcvDispatchReq *pReq){
   curl_easy_cleanup(pReq->pCurl);
   curl_slist_free_all(pReq->pList);
-  sqlite3_free(pReq->zUri);
-  sqlite3_free(pReq->zUriLog);
-  sqlite3_free(pReq->zStatus);
-  sqlite3_free(pReq->body.aData);
-  sqlite3_free(pReq->hdr.aData);
-  sqlite3_free(pReq);
+  bentley_sqlite3_free(pReq->zUri);
+  bentley_sqlite3_free(pReq->zUriLog);
+  bentley_sqlite3_free(pReq->zStatus);
+  bentley_sqlite3_free(pReq->body.aData);
+  bentley_sqlite3_free(pReq->hdr.aData);
+  bentley_sqlite3_free(pReq);
 }
 
 int bcvContainerOpen(
@@ -2657,17 +2657,17 @@ int bcvContainerOpen(
     BcvModule *pMod = 0;
     /* Search for the named cloud module */
 
-    sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
+    bentley_sqlite3_mutex_enter( bentley_sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
     rc = bcvGlobalInit();
     if( rc==SQLITE_OK ){
       for(pMod=g_bcv.pModuleList; pMod; pMod=pMod->pNext){
-        if( sqlite3_stricmp(azField[0], pMod->zName)==0 ) break;
+        if( bentley_sqlite3_stricmp(azField[0], pMod->zName)==0 ) break;
       }
     }
-    sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
+    bentley_sqlite3_mutex_leave( bentley_sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
 
     if( pMod ){
-      BcvContainer *pNew = sqlite3_malloc(sizeof(BcvContainer));
+      BcvContainer *pNew = bentley_sqlite3_malloc(sizeof(BcvContainer));
       if( pNew==0 ){
         rc = SQLITE_NOMEM;
       }else{
@@ -2679,12 +2679,12 @@ int bcvContainerOpen(
             zUser, zSecret, zCont, &pNew->pCont, pzErr
         );
         if( rc!=SQLITE_OK ){
-          sqlite3_free(pNew);
+          bentley_sqlite3_free(pNew);
         }else{
           *ppCont = pNew;
           int ii;
           for(ii=1; azField[ii-1] && azField[ii]; ii+=2){
-            if( sqlite3_stricmp("maxresults",azField[ii])==0 && azField[ii+1] ){
+            if( bentley_sqlite3_stricmp("maxresults",azField[ii])==0 && azField[ii+1] ){
               const u8 *z = (const u8*)azField[ii+1];
               int nMax = bcvParseInt(z, strlen(azField[ii+1]));
               if( nMax>0 ) pNew->nMaxResults = nMax;
@@ -2694,10 +2694,10 @@ int bcvContainerOpen(
       }
     }else if( rc==SQLITE_OK ){
       rc = SQLITE_ERROR;
-      *pzErr = sqlite3_mprintf("no such module: %s", azField[0]);
+      *pzErr = bentley_sqlite3_mprintf("no such module: %s", azField[0]);
     }
   }
-  sqlite3_free(azField);
+  bentley_sqlite3_free(azField);
   return rc;
 }
 
@@ -2710,9 +2710,9 @@ int bcvDispatchNew(BcvDispatch **pp){
     rc = SQLITE_NOMEM;
   }else{
     pNew->pMulti = curl_multi_init();
-    sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
+    bentley_sqlite3_mutex_enter( bentley_sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
     pNew->iDispatchId = g_bcv.iNextDispatchId++;
-    sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
+    bentley_sqlite3_mutex_leave( bentley_sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP2) );
   }
 
   return rc;
@@ -2730,12 +2730,12 @@ void bcvDispatchTimeout(BcvDispatch *pDisp, int nHttpTimeout){
 static void bcvDispatchJobFree(BcvDispatchJob *pJob){
   assert( pJob->pCont && pJob->pCont->nContRef );
   bcvContainerDeref(pJob->pCont);
-  sqlite3_free(pJob->aResult);
-  sqlite3_free(pJob->aHdrs);
-  sqlite3_free(pJob->zPrefix);
-  sqlite3_free(pJob->zETag);
-  sqlite3_free(pJob->zLogmsg);
-  sqlite3_free(pJob);
+  bentley_sqlite3_free(pJob->aResult);
+  bentley_sqlite3_free(pJob->aHdrs);
+  bentley_sqlite3_free(pJob->zPrefix);
+  bentley_sqlite3_free(pJob->zETag);
+  bentley_sqlite3_free(pJob->zLogmsg);
+  bentley_sqlite3_free(pJob);
 }
 
 static void bcvRequestListFree(BcvDispatchReq *pReq){
@@ -2785,7 +2785,7 @@ void bcvDispatchFree(BcvDispatch *p){
     }
     
     curl_multi_cleanup(p->pMulti);
-    sqlite3_free(p);
+    bentley_sqlite3_free(p);
   }
 }
 
@@ -2820,8 +2820,8 @@ static size_t bcvHeaderFunction(
     nHdr--;
   }
 
-  if( nHdr>5 && sqlite3_strnicmp(pHdr, "http/", 5)==0 ){
-    sqlite3_free(pReq->zStatus);
+  if( nHdr>5 && bentley_sqlite3_strnicmp(pHdr, "http/", 5)==0 ){
+    bentley_sqlite3_free(pReq->zStatus);
     pReq->zStatus = bcvMprintfRc(&pReq->rc, "%.*s", nHdr, pHdr);
   }else if( nHdr>0 && pReq->rc==SQLITE_OK ){
     bcvBufferAppendRc(&pReq->rc, &pReq->hdr, pHdr, nHdr);
@@ -2863,9 +2863,9 @@ static void bcvDispatchLogRequest(BcvDispatch *p, BcvDispatchReq *pReq){
     char *zRetry = 0;
 
     if( pReq->nRetry>0 ){
-      zRetry = sqlite3_mprintf(" (nRetry=%d)", pReq->nRetry);
+      zRetry = bentley_sqlite3_mprintf(" (nRetry=%d)", pReq->nRetry);
     }
-    zMsg = sqlite3_mprintf("r%lld [%s] %s%s %s", 
+    zMsg = bentley_sqlite3_mprintf("r%lld [%s] %s%s %s", 
       pReq->iLogId,
       pReq->pJob->zLogmsg,
       pReq->eMethod==SQLITE_BCV_METHOD_GET ? "GET" :
@@ -2874,9 +2874,9 @@ static void bcvDispatchLogRequest(BcvDispatch *p, BcvDispatchReq *pReq){
     );
     if( zMsg ){
       p->xLog(p->pLogApp, pReq->nRetry>0, zMsg);
-      sqlite3_free(zMsg);
+      bentley_sqlite3_free(zMsg);
     }
-    sqlite3_free(zRetry);
+    bentley_sqlite3_free(zRetry);
   }
 }
 
@@ -2903,9 +2903,9 @@ static void bcvDispatchLogReply(
       zETag = pReq->pJob->zETag;
     }
     if( bRetry ){
-      zRetry = sqlite3_mprintf(" (retry in %dms)", iDelay);
+      zRetry = bentley_sqlite3_mprintf(" (retry in %dms)", iDelay);
     }
-    zMsg = sqlite3_mprintf("r%lld [%s] [%lldms] (http=%d) (rc=%d) %s%s%s%s%s",
+    zMsg = bentley_sqlite3_mprintf("r%lld [%s] [%lldms] (http=%d) (rc=%d) %s%s%s%s%s",
       pReq->iLogId, 
       pReq->pJob->zLogmsg,
       iMs,
@@ -2917,9 +2917,9 @@ static void bcvDispatchLogReply(
     );
     if( zMsg ){
       p->xLog(p->pLogApp, pReq->nRetry>0, zMsg);
-      sqlite3_free(zMsg);
+      bentley_sqlite3_free(zMsg);
     }
-    sqlite3_free(zRetry);
+    bentley_sqlite3_free(zRetry);
   }
 }
 
@@ -2963,7 +2963,7 @@ static void bcvDispatchJobUpdate(BcvDispatchJob *pJob){
     ** just have it fail immediately.  */
     if( pJob->rc!=SQLITE_OK ){
       pReq->rc = pJob->rc;
-      sqlite3_free(pReq->zStatus);
+      bentley_sqlite3_free(pReq->zStatus);
       pReq->zStatus = 0;
       pReq->xCallback(pJob, pReq, pReq->pApp);
       bcvDispatchReqFree(pReq);
@@ -3069,7 +3069,7 @@ static void bcvDispatchFail(
     while( (pReq = pJob->pWaiting) ){
       pJob->pWaiting = pReq->pNext;
       pReq->rc = rc;
-      sqlite3_free(pReq->zStatus);
+      bentley_sqlite3_free(pReq->zStatus);
       pReq->zStatus = (char*)zErr;
       pReq->xCallback(pJob, pReq, pReq->pApp);
       pReq->zStatus = 0;
@@ -3139,7 +3139,7 @@ int bcvDispatchShouldRetry(BcvDispatchReq *pReq, int *piMs){
 */
 static void bcvDispatchRetryRequest(BcvDispatchReq *pReq, int iDelay){
   curl_easy_reset(pReq->pCurl);
-  sqlite3_free(pReq->zStatus);
+  bentley_sqlite3_free(pReq->zStatus);
   pReq->zStatus = 0;
   bcvBufferZero(&pReq->body);
   bcvBufferZero(&pReq->hdr);
@@ -3174,9 +3174,9 @@ int bcvDispatchRun(BcvDispatch *p, struct curl_waitfd *aFd, int nFd, int ms){
 
 #ifdef SQLITE_DEBUG
   {
-    void *pRet = sqlite3_malloc64(64);
+    void *pRet = bentley_sqlite3_malloc64(64);
     if( pRet==0 ) return SQLITE_NOMEM;
-    sqlite3_free(pRet);
+    bentley_sqlite3_free(pRet);
   }
 #endif
 
@@ -3223,7 +3223,7 @@ int bcvDispatchRun(BcvDispatch *p, struct curl_waitfd *aFd, int nFd, int ms){
 
     /* Log the reply */
     if( pReq->rc!=SQLITE_OK && pReq->rc<100 ){
-      sqlite3_free(pReq->zStatus);
+      bentley_sqlite3_free(pReq->zStatus);
       pReq->zStatus = 0;
     }
 
@@ -3291,7 +3291,7 @@ static BcvDispatchJob *bcvDispatchNewJob(
     p->pJobList = pJob;
     pCont->nContRef++;
   }else{
-    sqlite3_free(p->zLogmsg);
+    bentley_sqlite3_free(p->zLogmsg);
   }
   p->zLogmsg = 0;
   return pJob;
@@ -3302,9 +3302,9 @@ int bcvDispatchLogmsg(BcvDispatch *p, const char *zFmt, ...){
     char *zMsg = 0;
     va_list ap;
     va_start(ap, zFmt);
-    zMsg = sqlite3_vmprintf(zFmt, ap);
+    zMsg = bentley_sqlite3_vmprintf(zFmt, ap);
     va_end(ap);
-    sqlite3_free(p->zLogmsg);
+    bentley_sqlite3_free(p->zLogmsg);
     p->zLogmsg = zMsg;
     return zMsg ? SQLITE_OK : SQLITE_NOMEM;
   }
@@ -3343,7 +3343,7 @@ int bcvDispatchFetch(
       nData = MD5_DIGEST_LENGTH;
     }
     if( pMd5 ) flags = BCV_MODULE_CONDITION_MD5;
-    if( p->xLog && sqlite3_stricmp(zFile, BCV_MANIFEST_FILE)==0 ){
+    if( p->xLog && bentley_sqlite3_stricmp(zFile, BCV_MANIFEST_FILE)==0 ){
       pJob->bLogEtag = 1;
     }
     pJob->cb.xFetch = x;
@@ -3384,7 +3384,7 @@ int bcvDispatchPut(
   int rc = SQLITE_OK;
   BcvDispatchJob *pJob;
   if( (pJob = bcvDispatchNewJob(p, pCont, BCV_DISPATCH_PUT, pApp, &rc)) ){
-    if( p->xLog && sqlite3_stricmp(zFile, BCV_MANIFEST_FILE)==0 ){
+    if( p->xLog && bentley_sqlite3_stricmp(zFile, BCV_MANIFEST_FILE)==0 ){
       pJob->bLogEtag = 1;
     }
     pJob->cb.xPut = x;
@@ -3443,7 +3443,7 @@ int bcvDispatchList(
     bcvDispatchJobUpdate(pJob);
   }
   if( rc!=SQLITE_OK ){
-    sqlite3_free(zCopy);
+    bentley_sqlite3_free(zCopy);
   }
   return rc;
 }
@@ -3454,7 +3454,7 @@ int bcvOpenLocal(
   int bReadonly,
   sqlite3_file **ppFd
 ){
-  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+  sqlite3_vfs *pVfs = bentley_sqlite3_vfs_find(0);
   sqlite3_file *pFd = 0;
   char *zOpen = 0;
   int nByte;
@@ -3469,7 +3469,7 @@ int bcvOpenLocal(
 
   *ppFd = 0;
   nByte = pVfs->szOsFile + 4 + pVfs->mxPathname + 3;
-  pFd = (sqlite3_file*)sqlite3_malloc(nByte);
+  pFd = (sqlite3_file*)bentley_sqlite3_malloc(nByte);
   if( pFd==0 ){
     return SQLITE_NOMEM;
   }
@@ -3486,7 +3486,7 @@ int bcvOpenLocal(
     pFd->pMethods->xClose(pFd);
   }
   if( rc!=SQLITE_OK ){
-    sqlite3_free(pFd);
+    bentley_sqlite3_free(pFd);
     return rc;
   }
 
@@ -3497,7 +3497,7 @@ int bcvOpenLocal(
 void bcvCloseLocal(sqlite3_file *pFd){
   if( pFd ){
     pFd->pMethods->xClose(pFd);
-    sqlite3_free(pFd);
+    bentley_sqlite3_free(pFd);
   }
 }
 
@@ -3969,7 +3969,7 @@ int bcvRecvMsg(
     }
 
     if( rc!=SQLITE_OK ){
-      sqlite3_free(pMsg);
+      bentley_sqlite3_free(pMsg);
       pMsg = 0;
     }
   }
@@ -3994,7 +3994,7 @@ BcvIntKey *bcvIntEncryptionKeyNew(const u8 *aKey){
   BcvEncryptionKey *pKey = bcvEncryptionKeyNew(aKey);
   BcvIntKey *pRet = 0;
   if( pKey ){
-    pRet = (BcvIntKey*)sqlite3_malloc(sizeof(BcvIntKey));
+    pRet = (BcvIntKey*)bentley_sqlite3_malloc(sizeof(BcvIntKey));
     if( pRet==0 ){
       bcvEncryptionKeyFree(pKey);
     }else{
@@ -4010,7 +4010,7 @@ void bcvIntEncryptionKeyFree(BcvIntKey *pKey){
     pKey->nRef--;
     if( pKey->nRef<=0 ){
       bcvEncryptionKeyFree(pKey->pKey);
-      sqlite3_free(pKey);
+      bentley_sqlite3_free(pKey);
     }
   }
 }

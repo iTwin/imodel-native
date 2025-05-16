@@ -67,27 +67,27 @@ void DbModule::DbVirtualTable::SetError(Utf8CP error) {
 	if (error == nullptr)
         m_ctx->base.zErrMsg = 0;
 	else
-    	m_ctx->base.zErrMsg = sqlite3_mprintf("%s", error);
+    	m_ctx->base.zErrMsg = bentley_sqlite3_mprintf("%s", error);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultBlob(void const* value, int length, CopyData doCopy) {sqlite3_result_blob((sqlite3_context*) this, value, length, (sqlite3_destructor_type) doCopy);}
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultDouble(double val){sqlite3_result_double((sqlite3_context*) this, val);}
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultError(Utf8CP val, int len){sqlite3_result_error((sqlite3_context*) this, val, len);}
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultError_toobig(){sqlite3_result_error_toobig((sqlite3_context*) this);}
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultError_nomem(){sqlite3_result_error_nomem((sqlite3_context*) this);}
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultError_code(int val){sqlite3_result_error_code((sqlite3_context*) this, val);}
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultInt(int val){sqlite3_result_int((sqlite3_context*) this, val);}
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultInt64(int64_t val){sqlite3_result_int64((sqlite3_context*) this, val);}
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultNull(){sqlite3_result_null((sqlite3_context*) this);}
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultText(Utf8CP val, int length, CopyData doCopy){sqlite3_result_text((sqlite3_context*) this, val, length,(sqlite3_destructor_type) doCopy);}
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultZeroblob(int length){sqlite3_result_zeroblob((sqlite3_context*)this, length);}
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultValue(DbValue val){sqlite3_result_value((sqlite3_context*)this, val.GetSqlValueP());}
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultPointer(void* ptr,const char* name ,void(*destroy)(void*) ){sqlite3_result_pointer((sqlite3_context*)this, ptr, name, destroy);}
-void DbModule::DbVirtualTable::DbCursor::Context::SetResultZeroBlob(int n){sqlite3_result_zeroblob((sqlite3_context*)this, n);}
-void DbModule::DbVirtualTable::DbCursor::Context::SetSubType(int type){sqlite3_result_subtype((sqlite3_context*)this, type);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultBlob(void const* value, int length, CopyData doCopy) {bentley_sqlite3_result_blob((sqlite3_context*) this, value, length, (sqlite3_destructor_type) doCopy);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultDouble(double val){bentley_sqlite3_result_double((sqlite3_context*) this, val);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultError(Utf8CP val, int len){bentley_sqlite3_result_error((sqlite3_context*) this, val, len);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultError_toobig(){bentley_sqlite3_result_error_toobig((sqlite3_context*) this);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultError_nomem(){bentley_sqlite3_result_error_nomem((sqlite3_context*) this);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultError_code(int val){bentley_sqlite3_result_error_code((sqlite3_context*) this, val);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultInt(int val){bentley_sqlite3_result_int((sqlite3_context*) this, val);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultInt64(int64_t val){bentley_sqlite3_result_int64((sqlite3_context*) this, val);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultNull(){bentley_sqlite3_result_null((sqlite3_context*) this);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultText(Utf8CP val, int length, CopyData doCopy){bentley_sqlite3_result_text((sqlite3_context*) this, val, length,(sqlite3_destructor_type) doCopy);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultZeroblob(int length){bentley_sqlite3_result_zeroblob((sqlite3_context*)this, length);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultValue(DbValue val){bentley_sqlite3_result_value((sqlite3_context*)this, val.GetSqlValueP());}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultPointer(void* ptr,const char* name ,void(*destroy)(void*) ){bentley_sqlite3_result_pointer((sqlite3_context*)this, ptr, name, destroy);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetResultZeroBlob(int n){bentley_sqlite3_result_zeroblob((sqlite3_context*)this, n);}
+void DbModule::DbVirtualTable::DbCursor::Context::SetSubType(int type){bentley_sqlite3_result_subtype((sqlite3_context*)this, type);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -113,10 +113,10 @@ static int vtabConnect(sqlite3* db,
         return (int)rc;
     }
     *ppVtab = &vt->GetCallbackData()->base;
-    rc = sqlite3_declare_vtab(db, module->GetDeclaration().c_str());
+    rc = bentley_sqlite3_declare_vtab(db, module->GetDeclaration().c_str());
 	if (rc != BE_SQLITE_OK)
         return rc;
-    return sqlite3_vtab_config(db, (int)conf.GetTag());
+    return bentley_sqlite3_vtab_config(db, (int)conf.GetTag());
 };
 
 //---------------------------------------------------------------------------------------
@@ -204,7 +204,7 @@ DbResult DbModule::Register() {
     if (rc != BE_SQLITE_OK)
         return rc;
 
-    return (DbResult)sqlite3_create_module_v2(m_db.GetSqlDb(), m_name.c_str(), &s_module, this, vtabDestroy);
+    return (DbResult)bentley_sqlite3_create_module_v2(m_db.GetSqlDb(), m_name.c_str(), &s_module, this, vtabDestroy);
 }
 
 //---------------------------------------------------------------------------------------
@@ -214,7 +214,7 @@ void DbModule::DbVirtualTable::IndexInfo::SetIdxStr(const char* idxStr, bool mak
     auto info = (sqlite3_index_info*)this;
     if (makeCopy) {
         auto len = (int)(strlen(idxStr) + 1);
-        auto copyStr = (char*)sqlite3_malloc(len );
+        auto copyStr = (char*)bentley_sqlite3_malloc(len );
         BeStringUtilities::Strncpy(copyStr, len, idxStr, len);
         info->idxStr = copyStr;
         info->needToFreeIdxStr = 1;
@@ -255,6 +255,6 @@ DbModule::DbVirtualTable::IndexInfo::ScanFlags DbModule::DbVirtualTable::IndexIn
 void DbModule::DbVirtualTable::IndexInfo::SetIdxFlags(ScanFlags idxFlags){ ((sqlite3_index_info*)this)->idxFlags =  (int)idxFlags; }
 int64_t DbModule::DbVirtualTable::IndexInfo::GetColUsed() const { return ((sqlite3_index_info const *)this)->colUsed; }
 void DbModule::DbVirtualTable::IndexInfo::SetColUsed(int64_t colUsed) { ((sqlite3_index_info*)this)->colUsed =  colUsed; }
-bool DbModule::DbVirtualTable::IndexInfo::IsDistinct() const { return (bool)sqlite3_vtab_distinct((sqlite3_index_info*)const_cast<IndexInfo*>(this)); }
+bool DbModule::DbVirtualTable::IndexInfo::IsDistinct() const { return (bool)bentley_sqlite3_vtab_distinct((sqlite3_index_info*)const_cast<IndexInfo*>(this)); }
 
 END_BENTLEY_SQLITE_NAMESPACE

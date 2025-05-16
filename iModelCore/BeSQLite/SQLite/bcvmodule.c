@@ -64,16 +64,16 @@ struct BcvAzure {
 ** The first argument passed to this function is a nul-terminated string
 ** containing data encoded using base64 encoding, with no embedded spaces or
 ** newlines. This function decodes the base64 and writes the results into
-** a buffer obtained by calling sqlite3_malloc(). If successful, (*paOut)
+** a buffer obtained by calling bentley_sqlite3_malloc(). If successful, (*paOut)
 ** is set to point to the new buffer, (*pnOut) is set to its size in bytes,
 ** and SQLITE_OK returned. In this case it is the responsibility of the caller
-** to free the returned buffer using sqlite3_free(). 
+** to free the returned buffer using bentley_sqlite3_free(). 
 **
 ** If an error occurs, an SQLite error code is returned and both (*paOut)
 ** and (*pnOut) set to zero. In this case, *pzErr may be set to point
 ** to a new buffer containing an English language error message. It is the 
 ** responsibility of the caller to eventually free any such buffer using
-** sqlite3_free().
+** bentley_sqlite3_free().
 */
 static void bcvBase64DecodeRc(
   int *pRc,
@@ -144,10 +144,10 @@ static void bcvBase64DecodeRc(
            || aBase64Decode[ zIn[i+2] ]==0x80 
            || aBase64Decode[ zIn[i+3] ]==0x80 
           ){
-            *pzErr = sqlite3_mprintf(
+            *pzErr = bentley_sqlite3_mprintf(
                 "cannot decode base64 data - illegal character"
             );
-            sqlite3_free(aOut);
+            bentley_sqlite3_free(aOut);
             *pRc = SQLITE_ERROR;
             return;
           }else{
@@ -165,7 +165,7 @@ static void bcvBase64DecodeRc(
         *paOut = aOut;
       }
     }else{
-      *pzErr = sqlite3_mprintf(
+      *pzErr = bentley_sqlite3_mprintf(
           "cannot decode base64 data - length is %d bytes", nIn
       );
       *pRc = SQLITE_ERROR;
@@ -320,7 +320,7 @@ static void bcvModuleListCb(
       xNext(pCont, pCtx, lfc.zNextMarker);
     }
 
-    sqlite3_free(lfc.zNextMarker);
+    bentley_sqlite3_free(lfc.zNextMarker);
   }
 }
 
@@ -377,13 +377,13 @@ static void bcvAzureClose(sqlite3_bcv_container *pCont){
     assert( p->bSas==0 || p->zSlashAccountSlash==0 );
     assert( p->bSas==0 || p->zContainer==0 );
 
-    sqlite3_free(p->zAccount);
-    sqlite3_free(p->zKey);
-    sqlite3_free(p->zSlashAccountSlash);
-    sqlite3_free(p->zContainer);
-    sqlite3_free(p->zBase);
-    sqlite3_free(p->aKey);
-    sqlite3_free(p);
+    bentley_sqlite3_free(p->zAccount);
+    bentley_sqlite3_free(p->zKey);
+    bentley_sqlite3_free(p->zSlashAccountSlash);
+    bentley_sqlite3_free(p->zContainer);
+    bentley_sqlite3_free(p->zBase);
+    bentley_sqlite3_free(p->aKey);
+    bentley_sqlite3_free(p);
   }
 }
 
@@ -423,30 +423,30 @@ static int bcvAzureOpen(
   for(i=0; azParam[i]; i+=2){
     const char *zKey = azParam[i];
     const char *zVal = azParam[i+1];
-    if( 0==sqlite3_stricmp(zKey, "maxresults") ){
+    if( 0==bentley_sqlite3_stricmp(zKey, "maxresults") ){
       nMaxResults = bcvParseInt((const u8*)zVal, -1);
     }else 
-    if( 0==sqlite3_stricmp(zKey, "emulator") ){
+    if( 0==bentley_sqlite3_stricmp(zKey, "emulator") ){
       zEmulator = zVal;
     }else 
-    if( 0==sqlite3_stricmp(zKey, "sas") ){
+    if( 0==bentley_sqlite3_stricmp(zKey, "sas") ){
       if( zVal[1]!='\0' || (zVal[0]!='0' && zVal[0]!='1') ){
-        *pzErrmsg = sqlite3_mprintf(
+        *pzErrmsg = bentley_sqlite3_mprintf(
             "bad argument to sas parameter \"%s\" - must be 0 or 1", zVal
         );
         return SQLITE_ERROR;
       }
       bSas = zVal[0]=='1';
-    }else if( 0==sqlite3_stricmp(zKey, "customuri") ){
+    }else if( 0==bentley_sqlite3_stricmp(zKey, "customuri") ){
       if( zVal[1]!='\0' || (zVal[0]!='0' && zVal[0]!='1') ){
-        *pzErrmsg = sqlite3_mprintf(
+        *pzErrmsg = bentley_sqlite3_mprintf(
             "bad argument to customuri parameter \"%s\" - must be 0 or 1", zVal
         );
         return SQLITE_ERROR;
       }
       bCustomUri = zVal[0]=='1';
     }else{
-      *pzErrmsg = sqlite3_mprintf(
+      *pzErrmsg = bentley_sqlite3_mprintf(
           "bad parameter \"%s\" - must be \"emulator\" or \"sas\"", zKey
       );
       return SQLITE_ERROR;
@@ -471,20 +471,20 @@ static int bcvAzureOpen(
 
   /* customuri=1 requires sas=1 */
   if( bCustomUri && bSas==0 ){
-    *pzErrmsg = sqlite3_mprintf("customuri=1 requires sas=1");
+    *pzErrmsg = bentley_sqlite3_mprintf("customuri=1 requires sas=1");
     return SQLITE_ERROR;
   }
 
   /* Unless the "customuri=1" option was specified, a container name is
   ** required.  */
   if( bCustomUri==0 && zContainer==0 ){
-    *pzErrmsg = sqlite3_mprintf("container name may not be NULL");
+    *pzErrmsg = bentley_sqlite3_mprintf("container name may not be NULL");
     return SQLITE_ERROR;
   }
 
   /* Account name is always required */
   if( zUser==0 ){
-    *pzErrmsg = sqlite3_mprintf("account name may not be NULL");
+    *pzErrmsg = bentley_sqlite3_mprintf("account name may not be NULL");
     return SQLITE_ERROR;
   }
 
@@ -545,13 +545,13 @@ static void bcvUriPrintf(
   char *zRet;
   va_list ap;
   va_start(ap, zFmt);
-  zRet = sqlite3_vmprintf(zFmt, ap);
+  zRet = bentley_sqlite3_vmprintf(zFmt, ap);
   va_end(ap);
   if( zRet==0 ){
     sqlite3_bcv_job_error(pCtx, SQLITE_NOMEM, 0);
   }else{
     sqlite3_bcv_request_set_uri(pReq, zRet);
-    sqlite3_free(zRet);
+    bentley_sqlite3_free(zRet);
   }
 }
 
@@ -566,13 +566,13 @@ static void bcvUriLogPrintf(
   char *zRet;
   va_list ap;
   va_start(ap, zFmt);
-  zRet = sqlite3_vmprintf(zFmt, ap);
+  zRet = bentley_sqlite3_vmprintf(zFmt, ap);
   va_end(ap);
   if( zRet==0 ){
     sqlite3_bcv_job_error(pCtx, SQLITE_NOMEM, 0);
   }else{
     sqlite3_bcv_request_set_log(pReq, zRet);
-    sqlite3_free(zRet);
+    bentley_sqlite3_free(zRet);
   }
 }
 
@@ -584,13 +584,13 @@ static void bcvHdrPrintf(
   char *zRet;
   va_list ap;
   va_start(ap, zFmt);
-  zRet = sqlite3_vmprintf(zFmt, ap);
+  zRet = bentley_sqlite3_vmprintf(zFmt, ap);
   va_end(ap);
   if( zRet==0 ){
     sqlite3_bcv_job_error(pCtx, SQLITE_NOMEM, 0);
   }else{
     sqlite3_bcv_request_set_header(pReq, zRet);
-    sqlite3_free(zRet);
+    bentley_sqlite3_free(zRet);
   }
 }
 
@@ -598,7 +598,7 @@ static void bcvHdrPrintf(
 ** Encode the binary data in buffer aIn[] (size nIn bytes) as a
 ** nul-terminated base64 string. Return a pointer to the buffer. It is
 ** the responsibility of the caller to eventually free the returned 
-** buffer using sqlite3_free().
+** buffer using bentley_sqlite3_free().
 */
 char *bcvBase64Encode(const unsigned char *aIn, int nIn){
   static const char aBase64Encode[] = 
@@ -606,7 +606,7 @@ char *bcvBase64Encode(const unsigned char *aIn, int nIn){
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789+/";
   int nOut = ((nIn + 2) / 3) * 4;
-  char *zOut = sqlite3_malloc(nOut+1);
+  char *zOut = bentley_sqlite3_malloc(nOut+1);
 
   if( zOut ){
     int i;
@@ -653,7 +653,7 @@ static void bcvAzureAuthHeader(
 
   va_list ap;
   va_start(ap, zFmt);
-  zStringToSign = sqlite3_vmprintf(zFmt, ap);
+  zStringToSign = bentley_sqlite3_vmprintf(zFmt, ap);
   if( zStringToSign ){
     pHmac = HMAC_CTX_new();
     HMAC_CTX_reset(pHmac);
@@ -662,15 +662,15 @@ static void bcvAzureAuthHeader(
     HMAC_Final(pHmac, aDigest, &nDigest);
     HMAC_CTX_free(pHmac);
     zSig = bcvBase64Encode(aDigest, (int)nDigest);
-    zAuth = sqlite3_mprintf("Authorization: SharedKey %s:%s", p->zAccount,zSig);
+    zAuth = bentley_sqlite3_mprintf("Authorization: SharedKey %s:%s", p->zAccount,zSig);
   }
   sqlite3_bcv_request_set_header(pReq, zAuth);
   if( zStringToSign==0 || zAuth==0 || zSig==0 ){
     sqlite3_bcv_job_error(pCtx, SQLITE_NOMEM, 0);
   }
-  sqlite3_free(zStringToSign);
-  sqlite3_free(zAuth);
-  sqlite3_free(zSig);
+  bentley_sqlite3_free(zStringToSign);
+  bentley_sqlite3_free(zAuth);
+  bentley_sqlite3_free(zSig);
 }
 
 struct AzureHeadCtx {
@@ -713,15 +713,15 @@ static void bcvAzureHeadCb(
         bOmit = 1;
       }
 
-      sqlite3_free(zErr);
-      sqlite3_free(aMd5);
+      bentley_sqlite3_free(zErr);
+      bentley_sqlite3_free(aMd5);
     }
   }
 
   if( bOmit==0 ){
     bcvAzureHeadFetch(pHead->p, 0, pCtx, pHead->zFile, 0);
   }
-  sqlite3_free(pHead);
+  bentley_sqlite3_free(pHead);
 }
 
 /*
@@ -751,7 +751,7 @@ static void bcvAzureHeadFetch(
     }else{
       pReq = sqlite3_bcv_job_request(pCtx, pHead, bcvAzureHeadCb);
       if( pReq==0 ){
-        sqlite3_free(pHead);
+        bentley_sqlite3_free(pHead);
       }else{
         pHead->p = p;
         memcpy(pHead->aMd5, zETag, MD5_DIGEST_LENGTH);
@@ -767,7 +767,7 @@ static void bcvAzureHeadFetch(
   sqlite3_bcv_request_set_header(pReq, zDate);
   sqlite3_bcv_request_set_header(pReq, AZURE_VERSION_HDR);
   if( bHead==0 && zETag ){
-    zIfNoneMatch = sqlite3_mprintf("If-None-Match:%s", zETag);
+    zIfNoneMatch = bentley_sqlite3_mprintf("If-None-Match:%s", zETag);
     sqlite3_bcv_request_set_header(pReq, zIfNoneMatch);
   }
   if( p->bSas ){
@@ -784,7 +784,7 @@ static void bcvAzureHeadFetch(
     );
   }
 
-  sqlite3_free(zIfNoneMatch);
+  bentley_sqlite3_free(zIfNoneMatch);
 }
 
 static void bcvAzureFetch(
@@ -840,7 +840,7 @@ static void bcvAzurePut(
     }else{
       sqlite3_bcv_job_error(pCtx, SQLITE_NOMEM, 0);
     }
-    sqlite3_free(zHdr);
+    bentley_sqlite3_free(zHdr);
   }
   sqlite3_bcv_request_set_body(pReq, aData, nData);
 
@@ -1017,7 +1017,7 @@ struct BcvGoogle {
 };
 
 static void bcvGoogleClose(sqlite3_bcv_container *pCont){
-  sqlite3_free(pCont);
+  bentley_sqlite3_free(pCont);
 }
 
 static int bcvGoogleOpen(
@@ -1051,7 +1051,7 @@ static int bcvGoogleOpen(
     memcpy(zCsr, zContainer, nContainer);
     pNew->zCont = zCsr;
     zCsr += nContainer+1;
-    sqlite3_snprintf(
+    bentley_sqlite3_snprintf(
         nBase+1, zCsr, "https://storage.googleapis.com/%s", zContainer
     );
     pNew->zBase = zCsr;
