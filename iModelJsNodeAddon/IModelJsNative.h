@@ -38,10 +38,11 @@ USING_NAMESPACE_BENTLEY_EC
 
 #define THROW_JS_EXCEPTION(str) BeNapi::ThrowJsException(info.Env(), str);
 #define THROW_JS_TYPE_EXCEPTION(str) BeNapi::ThrowJsTypeException(info.Env(), str);
-#define THROW_JS_IMODEL_NATIVE_EXCEPTION(str, status) BeNapi::ThrowJsException(info.Env(), str, (int)status, IModelJsNativeErrorKeyHelper::GetITwinError(status));
-#define THROW_JS_SCHEMA_SYNC_EXCEPTION(str, status) BeNapi::ThrowJsException(info.Env(), str, (int)status, {"schema-sync", SchemaSync::GetStatusAsString(status)});
-#define THROW_JS_BE_SQLITE_EXCEPTION(str, status) BeNapi::ThrowJsException(info.Env(), str, (int)status, {"be-sqlite", BeSQLiteLib::GetErrorName(status)});
-#define THROW_JS_DGN_DB_EXCEPTION(str, status) BeNapi::ThrowJsException(info.Env(), str, (int)status, DgnDbStatusHelper::GetITwinError(status));
+
+#define THROW_JS_IMODEL_NATIVE_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, IModelJsNativeErrorKeyHelper::GetITwinError(status));
+#define THROW_JS_SCHEMA_SYNC_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, {"schema-sync", SchemaSync::GetStatusAsString(status)});
+#define THROW_JS_BE_SQLITE_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, {"be-sqlite", BeSQLiteLib::GetErrorName(status)});
+#define THROW_JS_DGN_DB_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, DgnDbStatusHelper::GetITwinError(status));
 
 #define ARGUMENT_IS_PRESENT(i) (info.Length() > (i))
 #define ARGUMENT_IS_NOT_PRESENT(i) !ARGUMENT_IS_PRESENT(i)
