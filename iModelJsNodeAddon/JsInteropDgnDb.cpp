@@ -1680,7 +1680,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
         if (geom.IsTypedArray()) {
             auto geomBin = geom.As<Napi::TypedArrayOf<uint8_t>>();
             if (geomBin.TypedArrayType() != napi_uint8_array) {
-                THROW_JS_TYPE_EXCEPTION(info.Env(), "Invalid geometry stream properties. Expecting uint8array");
+                THROW_JS_TYPE_EXCEPTION("Invalid geometry stream properties. Expecting uint8array");
             }
             uint8_t* data = geomBin.Data();
             size_t size = geomBin.ElementLength();
@@ -1693,7 +1693,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
         } else {
             auto geomProps = geom.As<Napi::Object>();
             if (!geomProps.IsObject()) {
-                THROW_JS_TYPE_EXCEPTION(info.Env(), "Invalid geometry stream properties. Expecting object");
+                THROW_JS_TYPE_EXCEPTION("Invalid geometry stream properties. Expecting object");
             }
 
             if (jsIs2d)
@@ -1819,7 +1819,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info) {
         if (geom.IsTypedArray()) {
             auto geomBin = geom.As<Napi::TypedArrayOf<uint8_t>>();
             if (geomBin.TypedArrayType() != napi_uint8_array) {
-                THROW_JS_TYPE_EXCEPTION(info.Env(), "Invalid geometry stream properties. Expecting uint8array");
+                THROW_JS_TYPE_EXCEPTION("Invalid geometry stream properties. Expecting uint8array");
             }
             uint8_t* data = geomBin.Data();
             size_t size = geomBin.ElementLength();
@@ -1829,7 +1829,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info) {
         } else {
             auto geomProps = geom.As<Napi::Object>();
             if (!geomProps.IsObject()) {
-                THROW_JS_TYPE_EXCEPTION(info.Env(), "Invalid geometry stream properties. Expecting object");
+                THROW_JS_TYPE_EXCEPTION("Invalid geometry stream properties. Expecting object");
             }
 
             geomSource = std::make_unique<NativeGeometryPart>(db, GeometryStream(), std::move(bbox3d));

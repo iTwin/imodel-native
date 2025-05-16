@@ -541,9 +541,9 @@ public:
         auto rc = m_ecdb.Schemas().GetSchemaSync().SetDefaultSyncDbUri(schemaSyncDbUriStr.c_str());
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(lastError.GetLastError().c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(Utf8PrintfString("fail to set default shared schema channel uri: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to set default shared schema channel uri: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -563,9 +563,9 @@ public:
         auto rc = m_ecdb.Schemas().GetSchemaSync().Init(syncDbUri, containerId, overrideContainer);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(lastError.GetLastError().c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(Utf8PrintfString("fail to initialize shared schema channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to initialize shared schema channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -604,9 +604,9 @@ public:
         auto rc = m_ecdb.Schemas().GetSchemaSync().Pull(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(lastError.GetLastError().c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(Utf8PrintfString("fail to pull changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to pull changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -618,9 +618,9 @@ public:
         auto rc = m_ecdb.Schemas().GetSchemaSync().Push(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(lastError.GetLastError().c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(Utf8PrintfString("fail to push changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to push changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -1594,7 +1594,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             }
         catch (std::exception const& e)
             {
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(e.what(), IModelJsNativeErrorKey::ElementGeometryCacheError);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), e.what(), IModelJsNativeErrorKey::ElementGeometryCacheError);
             }
         }
 
@@ -1785,7 +1785,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             }
         catch (std::exception const& e)
             {
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(e.what(), IModelJsNativeErrorKey::GeometryStreamError);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), e.what(), IModelJsNativeErrorKey::GeometryStreamError);
             }
         }
 
@@ -1812,7 +1812,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             }
         catch (std::exception const& e)
             {
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(e.what(), IModelJsNativeErrorKey::GeometryStreamError);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), e.what(), IModelJsNativeErrorKey::GeometryStreamError);
             }
         }
 
@@ -2023,9 +2023,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto rc = db.Schemas().GetSchemaSync().SetDefaultSyncDbUri(schemaSyncDbUriStr.c_str());
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(lastError.GetLastError().c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(Utf8PrintfString("fail to set default shared schema channel uri: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to set default shared schema channel uri: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -2045,9 +2045,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto rc = GetOpenedDb(info).Schemas().GetSchemaSync().Init(syncDbUri, containerId, overrideContainer);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(lastError.GetLastError().c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(Utf8PrintfString("fail to initialize shared schema channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to initialize shared schema channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -2089,9 +2089,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto rc = db.PullSchemaChanges(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(lastError.GetLastError().c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(Utf8PrintfString("fail to pull changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to pull changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -2104,9 +2104,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto rc = db.Schemas().GetSchemaSync().Push(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(lastError.GetLastError().c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(Utf8PrintfString("fail to push changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to push changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -2135,7 +2135,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (DbResult::BE_SQLITE_OK != result)
             {
                 if (lastError.HasError()) {
-                    THROW_JS_BE_SQLITE_EXCEPTION(lastError.GetLastError().c_str(), result);
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), result);
                 } else {
                     THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to import schemas", result);
                 }
@@ -2158,7 +2158,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (DbResult::BE_SQLITE_OK != result)
             {
                 if (lastError.HasError()) {
-                    THROW_JS_BE_SQLITE_EXCEPTION(lastError.GetLastError().c_str(), result);
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), result);
                 } else {
                     THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to import schemas", result);
                 }
@@ -3228,7 +3228,7 @@ struct NativeSchemaUtility : BeObjectWrap<NativeSchemaUtility>
         if (result != BentleyStatus::SUCCESS)
             {
             Utf8String error = convertCA ? "Failed to convert custom attributes of given schemas" : "Failed to convert EC2 Xml schemas";
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(error.c_str(), IModelJsNativeErrorKey::SchemaError);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), error.c_str(), IModelJsNativeErrorKey::SchemaError);
             }
 
         uint32_t index = 0;
@@ -4273,7 +4273,7 @@ public:
             {
             Utf8String err;
             err.Sprintf("Failed to get class name from ECSqlValue: Class not found for ECClassId %s.", classId.ToHexStr().c_str());
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(err.c_str(), IModelJsNativeErrorKey::ECClassError);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), err.c_str(), IModelJsNativeErrorKey::ECClassError);
             }
 
         return toJsString(Env(), ECJsonUtilities::FormatClassName(*ecClass));
@@ -4682,12 +4682,12 @@ public:
 
         BeInt64Id id;
         if (SUCCESS != BeInt64Id::FromString(id, idStr.c_str())) {
-            THROW_JS_IMODEL_NATIVE_EXCEPTION( "expect txnId to be a hex string", IModelJsNativeErrorKey::BadArg);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "expect txnId to be a hex string", IModelJsNativeErrorKey::BadArg);
         }
 
         auto changeset = nativeDgnDb->GetDgnDb().Txns().OpenLocalTxn(TxnManager::TxnId(id.GetValueUnchecked()));
         if (changeset == nullptr)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(SqlPrintfString("no local change with id: %s", idStr.c_str()).GetUtf8CP(), IModelJsNativeErrorKey::ChangesetError);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), SqlPrintfString("no local change with id: %s", idStr.c_str()).GetUtf8CP(), IModelJsNativeErrorKey::ChangesetError);
 
         m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
 
@@ -5115,7 +5115,7 @@ public:
             status = m_stmt.TryPrepare(*db, sql.c_str());
 
         if (status != BE_SQLITE_OK)
-            THROW_JS_BE_SQLITE_EXCEPTION(db->GetLastError().c_str(), status);
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), db->GetLastError().c_str(), status);
     }
 
     Napi::Value IsReadonly(NapiInfoCR info) {
@@ -5197,7 +5197,7 @@ public:
             if (isNegativeNumber && uVal > (uint64_t)std::numeric_limits<int64_t>::max()) {
                 Utf8String error;
                 error.Sprintf("BindInteger failed. Number in string %s is too large to fit into a signed 64 bit integer value.", strVal.c_str());
-                THROW_JS_IMODEL_NATIVE_EXCEPTION(error.c_str(), IModelJsNativeErrorKey::BadArg);
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), error.c_str(), IModelJsNativeErrorKey::BadArg);
             }
 
             int64Val = uVal;
@@ -5881,7 +5881,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
         catch (std::exception const& e)
             {
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(e.what(), IModelJsNativeErrorKey::RuntimeError);
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), e.what(), IModelJsNativeErrorKey::RuntimeError);
             }
         catch (...)
             {
@@ -6622,7 +6622,7 @@ static Napi::Value computeSchemaChecksum(NapiInfoCR info) {
     Utf8String message;
     auto sha1 = exactMatch ? SchemaUtil::ComputeChecksumWithExactRefMatch(message, schemaPath, paths) : SchemaUtil::ComputeChecksum(message, schemaPath, paths);
     if ("" == sha1)
-        THROW_JS_IMODEL_NATIVE_EXCEPTION(message.c_str(), IModelJsNativeErrorKey::SchemaError);
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), message.c_str(), IModelJsNativeErrorKey::SchemaError);
 
     return Napi::String::New(info.Env(), sha1);
 }
