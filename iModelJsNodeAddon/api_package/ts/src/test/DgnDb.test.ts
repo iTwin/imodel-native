@@ -573,7 +573,7 @@ describe("basic tests", () => {
     } catch (error: any) {
       expect(error.message).to.equal("Invalid id");
       expect(error).to.have.property("errorNumber").equal(IModelStatus.InvalidId);
-      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: IModelStatus.InvalidId.toString() });
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "dgn-db", key: IModelStatus.InvalidId.toString() });
     }
 
     try {
