@@ -178,21 +178,21 @@ ECSqlStatus ECSqlStatement::IsNavigationPropertyValid(Utf8StringCR propertyName,
         const auto relClassToValidate = GetECDb()->Schemas().GetClass(relationshipECClassId);
         if (!relClassToValidate)
             {
-            LOG.errorv("The ECSql INSERT statement contains a relationship class ID '%s' which does not correspond to any EC class.", 
+            LOG.errorv("The ECSql statement contains a relationship class ID '%s' which does not correspond to any EC class.", 
                 relationshipECClassId.ToString().c_str());
             return ECSqlStatus::InvalidECSql;
             }
 
         if (!relClassToValidate->IsRelationshipClass())
             {
-            LOG.errorv("The ECSql INSERT statement contains a relationship class ID '%s' which does not correspond to a valid ECRelationship class.", 
+            LOG.errorv("The ECSql statement contains a relationship class ID '%s' which does not correspond to a valid ECRelationship class.", 
                 relationshipECClassId.ToString().c_str());
             return ECSqlStatus::InvalidECSql;
             }
         
         if (Utf8String::IsNullOrEmpty(propertyName.c_str()))
             {
-            LOG.errorv("The ECSql INSERT statement contains an invalid/empty navigation property name.", propertyName.c_str());
+            LOG.errorv("The ECSql statement contains an invalid/empty navigation property name.", propertyName.c_str());
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -206,7 +206,7 @@ ECSqlStatus ECSqlStatement::IsNavigationPropertyValid(Utf8StringCR propertyName,
 
         if (stmt.Prepare(*GetECDb(), query.GetUtf8CP(), nullptr, false) != ECSqlStatus::Success || stmt.Step() != BE_SQLITE_ROW)
             {
-            LOG.errorv("The ECSql INSERT statement contains an invalid navigation property '%s'. The property does not correspond to any valid navigation property.", propertyName.c_str());
+            LOG.errorv("The ECSql statement contains an invalid navigation property '%s'. The property does not correspond to any valid navigation property.", propertyName.c_str());
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -214,7 +214,7 @@ ECSqlStatus ECSqlStatement::IsNavigationPropertyValid(Utf8StringCR propertyName,
         const auto relClass = GetECDb()->Schemas().GetClass(stmt.GetValueId<ECClassId>(0));
         if ( relClass == nullptr)
             {
-            LOG.errorv("The ECSql INSERT statement contains a relationship class id '%s' which does not correspond to any valid class in the schema.",
+            LOG.errorv("The ECSql statement contains a relationship class id '%s' which does not correspond to any valid class in the schema.",
                 relationshipECClassId.ToString().c_str());
             return ECSqlStatus::InvalidECSql;
             }
@@ -226,7 +226,7 @@ ECSqlStatus ECSqlStatement::IsNavigationPropertyValid(Utf8StringCR propertyName,
         if (!derivedClasses.IsValid()
             || std::none_of(derivedClasses.Value().begin(), derivedClasses.Value().end(), [&relationshipECClassId](const auto& checkClass) { return checkClass->GetId() == relationshipECClassId; }))
             {
-            LOG.errorv("The ECSql INSERT statement contains a relationship class id '%s' which does not correspond to any valid ECRelationship class in the schema.",
+            LOG.errorv("The ECSql statement contains a relationship class id '%s' which does not correspond to any valid ECRelationship class in the schema.",
                 relationshipECClassId.ToString().c_str());
             return ECSqlStatus::InvalidECSql;
             }

@@ -408,7 +408,7 @@ namespace
         if (exp->GetType() == Exp::Type::UnaryValue)
             {
             ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
-                "The ECSql UPDATE statement contains an invalid or missing relationship class id.");
+                "The ECSql statement contains an invalid or missing relationship class id.");
             return false;
             }
 
@@ -417,7 +417,7 @@ namespace
         if (relClassIdValueGiven.empty() || relClassIdValueGiven.CompareToI("NULL") == 0)
             {
             ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
-                "The ECSql UPDATE statement contains an invalid relationship class id.");
+                "The ECSql statement contains an invalid relationship class id.");
             return false;
             }
 
@@ -426,7 +426,7 @@ namespace
         if (ECClassId::FromString(relECClassIdToCheck, relClassIdValueGiven.c_str()) != SUCCESS)
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
-                "The ECSql UPDATE statement contains an invalid relationship class id '%s'.", relClassIdValueGiven.c_str());
+                "The ECSql statement contains an invalid relationship class id '%s'.", relClassIdValueGiven.c_str());
             return false;
             }
 
@@ -434,7 +434,7 @@ namespace
         if (!relECClass || !relECClass->IsRelationshipClass())
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
-                "The ECSql UPDATE statement contains a relationship class id '%s' that is not a valid relationship class.", relClassIdValueGiven.c_str());
+                "The ECSql statement contains a relationship class id '%s' that is not a valid relationship class.", relClassIdValueGiven.c_str());
             return false;
             }
 
@@ -461,7 +461,7 @@ namespace
             || std::none_of(derivedClasses.Value().begin(), derivedClasses.Value().end(),
                 [&relECClassIdToCheck](const auto& checkClass) { return checkClass->GetId() == relECClassIdToCheck; }))
             {
-            LOG.errorv("The ECSql UPDATE statement contains a relationship class id '%s' that does not correspond to any valid ECRelationship class in the schema.",
+            LOG.errorv("The ECSql statement contains a relationship class id '%s' that does not correspond to any valid ECRelationship class in the schema.",
                 relECClassIdToCheck.ToString().c_str());
             return false;
             }
