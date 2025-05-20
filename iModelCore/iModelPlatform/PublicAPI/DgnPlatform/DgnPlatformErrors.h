@@ -180,6 +180,7 @@ enum class IModelJsNativeErrorKey : int
     NotFound,
     NotInitialized,
     NotOpen,
+    NotOpenForWrite,
     FontError,
     SchemaError,
     ChangesetError,
