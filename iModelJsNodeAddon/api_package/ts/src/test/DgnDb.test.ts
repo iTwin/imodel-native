@@ -573,7 +573,7 @@ describe("basic tests", () => {
     } catch (error: any) {
       expect(error.message).to.equal("Invalid id");
       expect(error).to.have.property("errorNumber").equal(IModelStatus.InvalidId);
-      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "dgn-db", key: IModelStatus.InvalidId.toString() });
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "dgn-db", key: "InvalidId" });
     }
 
     try {
@@ -581,7 +581,7 @@ describe("basic tests", () => {
     } catch (error: any) {
       expect(error.message).to.equal("not found");
       expect(error).to.have.property("errorNumber").equal(IModelStatus.NotFound);
-      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: IModelStatus.NotFound.toString() });
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "dgn-db", key: "NotFound" });
     }
 
     try {
@@ -589,7 +589,7 @@ describe("basic tests", () => {
     } catch (error: any) {
       expect(error.message).to.equal("error=10040");
       expect(error).to.have.property("errorNumber").equal(IModelStatus.WrongModel);
-      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: IModelStatus.WrongModel.toString() });
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "dgn-db", key: "WrongModel" });
     }
 
     try {
@@ -597,7 +597,7 @@ describe("basic tests", () => {
     } catch (error: any) {
       expect(error.message).to.equal("error=10022");
       expect(error).to.have.property("errorNumber").equal(IModelStatus.NoGeometry);
-      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: IModelStatus.NoGeometry.toString() });
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "dgn-db", key: "NoGeometry" });
     }
 
     expectExtents(dgndb.queryModelExtents({ id: "0x23" }).modelExtents, { low: [-10, -16, -10], high: [14, 6, 10] });
