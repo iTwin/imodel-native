@@ -181,12 +181,20 @@ ECSqlStatus ECSqlStatement::Impl::ClearBindings()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool ECSqlStatement::Impl::IsInsertStatement() const
+bool ECSqlStatement::Impl::IsWriteStatement() const
     {
-    if (FailIfNotPrepared("Cannot call IsInsertStatement on an unprepared ECSqlStatement.") == ECSqlStatus::Error)
+    if (FailIfNotPrepared("Cannot call IsWriteStatement on an unprepared ECSqlStatement.") == ECSqlStatus::Error)
         return false;
 
-    return GetPreparedStatementP()->GetType() == ECSqlType::Insert;
+    switch (GetPreparedStatementP()->GetType())
+        {
+        case ECSqlType::Insert:
+        case ECSqlType::Update:
+        case ECSqlType::Delete:
+            return true;
+        default:
+            return false;
+        }
     }
 
 //---------------------------------------------------------------------------------------

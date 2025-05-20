@@ -861,17 +861,17 @@ DbResult PragmaDbList::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaV
 
 
 //=======================================================================================
-// PragmaCheckECSqlInsertValues
+// PragmaCheckECSqlWriteValues
 //=======================================================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PragmaCheckECSqlInsertValues::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options)   {
+DbResult PragmaCheckECSqlWriteValues::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options)   {
 	auto result = std::make_unique<StaticPragmaResult>(ecdb);
-	result->AppendProperty("validate_ecsql_inserts", PRIMITIVETYPE_Boolean);
+	result->AppendProperty("validate_ecsql_writes", PRIMITIVETYPE_Boolean);
 	result->FreezeSchemaChanges();
 	auto row = result->AppendRow();
-	row.appendValue() = ecdb.GetImpl().GetECSqlConfig().IsInsertValueValidationEnabled();
+	row.appendValue() = ecdb.GetImpl().GetECSqlConfig().IsWriteValueValidationEnabled();
 	rowSet = std::move(result);
 	return BE_SQLITE_OK;
 }
@@ -879,15 +879,15 @@ DbResult PragmaCheckECSqlInsertValues::Read(PragmaManager::RowSet& rowSet, ECDbC
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PragmaCheckECSqlInsertValues::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val, PragmaManager::OptionsMap const& options) {
+DbResult PragmaCheckECSqlWriteValues::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val, PragmaManager::OptionsMap const& options) {
 	if (val.IsBool())
-		ecdb.GetImpl().GetECSqlConfig().SetInsertValueValidation(val.GetBool());
+		ecdb.GetImpl().GetECSqlConfig().SetWriteValueValidation(val.GetBool());
 
 	auto result = std::make_unique<StaticPragmaResult>(ecdb);
-	result->AppendProperty("validate_ecsql_inserts", PRIMITIVETYPE_Boolean);
+	result->AppendProperty("validate_ecsql_writes", PRIMITIVETYPE_Boolean);
 	result->FreezeSchemaChanges();
 	auto row = result->AppendRow();
-	row.appendValue() = ecdb.GetImpl().GetECSqlConfig().IsInsertValueValidationEnabled();
+	row.appendValue() = ecdb.GetImpl().GetECSqlConfig().IsWriteValueValidationEnabled();
 	rowSet = std::move(result);
 	return BE_SQLITE_OK;
 }

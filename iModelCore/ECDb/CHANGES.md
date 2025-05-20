@@ -7,9 +7,9 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `2.0.2.1` |
 
-## ## `05/12/2025`: Added PRAGMA `validate_ecsql_inserts` to validate navigation property inserts
+## ## `05/12/2025`: Added PRAGMA `validate_ecsql_writes` to validate navigation property inserts or updates
 * ECSql version change `2.0.2.0` -> `2.0.2.1`.
-* Add `PRAGMA validate_ecsql_inserts` allow to enable validation of RelECClassId when inserting a navigation property of a class.
+* Add `PRAGMA validate_ecsql_writes` allow to enable validation of RelECClassId when inserting or updating a navigation property of a class.
 * This config defaults to false.
 * The navigation value binders have also been updated to handle the validations when the config is enabled.
 * The validation only covers the navigation properties in ECSql insert statements.

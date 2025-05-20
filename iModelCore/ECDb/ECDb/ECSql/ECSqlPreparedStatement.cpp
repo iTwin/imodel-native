@@ -380,6 +380,96 @@ Utf8CP CompoundECSqlPreparedStatement::_GetNativeSql() const
     return m_compoundNativeSql.c_str();
     }
 
+namespace
+    {
+    //! Validates that a literal value assigned to a navigation relationship ECClassId property is correct for the schema.
+    //!
+    //!
+    //! This function checks that the provided value expression for a navigation relationship ECClassId property
+    //! is a valid ECClassId, refers to an existing ECRelationship class, and is compatible with the navigation property's
+    //! expected relationship class (including derived classes).
+    //!
+    //! If any check fails, an error is reported to the context and the function returns false.
+    //!
+    //! @param db           The ECDb instance containing the schema.
+    //! @param ctx          The ECSqlPrepareContext for error reporting.
+    //! @param exp          The value expression to validate (should be a literal).
+    //! @param propertyMap  The PropertyMap for the navigation relationship ECClassId property.
+    //! @return true if the value is valid for the navigation property, false otherwise.
+    //! @note This function will only validate if the PRAGMA validate_ecsql_writes is set to true.
+    bool ValidateNavRelECClassIdLiteral(const ECDb& db, const ECSqlPrepareContext& ctx, const ValueExp* exp, const PropertyMap* propertyMap)
+        {
+        if (!exp || !propertyMap)
+            return false;
+
+        if (!db.GetECSqlConfig().IsWriteValueValidationEnabled() || propertyMap->GetType() != PropertyMap::Type::NavigationRelECClassId)
+            return true;
+
+        if (exp->GetType() == Exp::Type::UnaryValue)
+            {
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
+                "The ECSql UPDATE statement contains an invalid or missing relationship class id.");
+            return false;
+            }
+
+        // Extract and validate the class ID value
+        Utf8String relClassIdValueGiven = (exp->GetType() == Exp::Type::LiteralValue) ? exp->GetAs<LiteralValueExp>().GetRawValue() : "";
+        if (relClassIdValueGiven.empty() || relClassIdValueGiven.CompareToI("NULL") == 0)
+            {
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
+                "The ECSql UPDATE statement contains an invalid relationship class id.");
+            return false;
+            }
+
+        // Convert and validate the ECClassId
+        ECClassId relECClassIdToCheck;
+        if (ECClassId::FromString(relECClassIdToCheck, relClassIdValueGiven.c_str()) != SUCCESS)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
+                "The ECSql UPDATE statement contains an invalid relationship class id '%s'.", relClassIdValueGiven.c_str());
+            return false;
+            }
+
+        ECClassCP relECClass = db.Schemas().GetClass(relECClassIdToCheck);
+        if (!relECClass || !relECClass->IsRelationshipClass())
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
+                "The ECSql UPDATE statement contains a relationship class id '%s' that is not a valid relationship class.", relClassIdValueGiven.c_str());
+            return false;
+            }
+
+        // Get relationship class from navigation property
+        const auto parentProp = propertyMap->GetParent();
+        if (!parentProp)
+            return false;
+
+        NavigationECPropertyCP navProp = parentProp->GetProperty().GetAsNavigationProperty();
+        if (!navProp)
+            return false;
+
+        ECClassCP navPropRelClass = db.Schemas().GetClass(navProp->GetRelationshipClass()->GetId());
+        if (!navPropRelClass)
+            return false;
+        
+        // Check if the relationship class ID provided matches the one in the navigation property
+        if (relECClassIdToCheck == navPropRelClass->GetId())
+            return true;
+
+        // Check against all derived classes of the relationship class
+        const auto derivedClasses = db.Schemas().GetAllDerivedClassesInternal(*navPropRelClass);
+        if (!derivedClasses.IsValid()
+            || std::none_of(derivedClasses.Value().begin(), derivedClasses.Value().end(),
+                [&relECClassIdToCheck](const auto& checkClass) { return checkClass->GetId() == relECClassIdToCheck; }))
+            {
+            LOG.errorv("The ECSql UPDATE statement contains a relationship class id '%s' that does not correspond to any valid ECRelationship class in the schema.",
+                relECClassIdToCheck.ToString().c_str());
+            return false;
+            }
+        return true;
+        }
+    }
+
+
 
 //***************************************************************************************
 //    ECSqlSelectPreparedStatement
@@ -617,66 +707,8 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             prepareInfo.AddParameterIndex(paramIndex, *table);
             }
 
-        if (ctx.GetECDb().GetECSqlConfig().IsInsertValueValidationEnabled() && propertyMap->GetType() == PropertyMap::Type::NavigationRelECClassId)
-            {
-            const auto valueExp = propNameValueInfo.m_valueExp;
-        
-            // Validate the value expression
-            if (!valueExp || valueExp->GetType() == Exp::Type::UnaryValue)
-                {
-                ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
-                    "The ECSql INSERT statement contains an invalid or missing relationship class id.");
-                return ECSqlStatus::InvalidECSql;
-                }
-        
-            // Extract and validate the class ID value
-            const auto relClassIdValueGiven = (valueExp->GetType() == Exp::Type::LiteralValue) ? valueExp->GetAs<LiteralValueExp>().GetRawValue() : "";
-            if (relClassIdValueGiven.empty() || relClassIdValueGiven.CompareToI("NULL") == 0)
-                {
-                ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
-                    "The ECSql INSERT statement contains an invalid relationship class id.");
-                return ECSqlStatus::InvalidECSql;
-                }
-        
-            // Convert and validate the ECClassId
-            ECClassId relECClassIdToCheck;
-            if (ECClassId::FromString(relECClassIdToCheck, relClassIdValueGiven.c_str()) != SUCCESS)
-                {
-                ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
-                    Utf8PrintfString("The ECSql INSERT statement contains an invalid relationship class id '%s'.", relClassIdValueGiven.c_str()).c_str());
-                return ECSqlStatus::InvalidECSql;
-                }
-        
-            const auto relECClass = ctx.GetECDb().Schemas().GetClass(relECClassIdToCheck);
-            if (!relECClass || !relECClass->IsRelationshipClass())
-                {
-                ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
-                    Utf8PrintfString("The ECSql INSERT statement contains a relationship class id '%s' which does not correspond to a valid ECRelationship class.", relClassIdValueGiven.c_str()).c_str());
-                return ECSqlStatus::InvalidECSql;
-                }
-
-            const auto parentProp = propertyMap->GetParent();
-            if (parentProp == nullptr)
-                return ECSqlStatus::InvalidECSql;
-            const auto navProp = parentProp->GetProperty().GetAsNavigationProperty();
-            if (navProp == nullptr)
-                return ECSqlStatus::InvalidECSql;
-
-            const auto navPropRelClass = ctx.GetECDb().Schemas().GetClass(navProp->GetRelationshipClass()->GetId());
-            if (relECClassIdToCheck != navPropRelClass->GetId())
-                {
-                // Check against all derived classes of the relationship class
-                const auto derivedClasses = ctx.GetECDb().Schemas().GetAllDerivedClassesInternal(*navPropRelClass);
-                if (!derivedClasses.IsValid()
-                    || std::none_of(derivedClasses.Value().begin(), derivedClasses.Value().end(), 
-                        [&relECClassIdToCheck](const auto& checkClass) { return checkClass->GetId() == relECClassIdToCheck; }))
-                    {
-                    LOG.errorv("The ECSql INSERT statement contains a relationship class id '%s' which does not correspond to any valid ECRelationship class in the schema.",
-                        relECClassIdToCheck.ToString().c_str());
-                    return ECSqlStatus::InvalidECSql;
-                    }
-                }
-            }
+        if (!ValidateNavRelECClassIdLiteral(m_ecdb, ctx, valueExp, propertyMap))
+            return ECSqlStatus::InvalidECSql;
 
         prepareInfo.AddPropNameValueInfo(propNameValueInfo, *table);
         }
@@ -1128,6 +1160,9 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
             prepareInfo.AddParameterIndex(paramIndex, table);
             }
+
+        if (!ValidateNavRelECClassIdLiteral(m_ecdb, ctx, rhsExp, lhsPropMap))
+            return ECSqlStatus::InvalidECSql;
         }
 
     if (prepareInfo.HasWhereExp())
@@ -1331,6 +1366,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PopulateProxyBinders(PrepareInfo const
                 }
 
             proxyBinder.AddBinder(*binder);
+            proxyBinder.SetBinderInfoWithPropertyName(binder->GetBinderInfo().GetPropertyName());
             }
         else
             {
@@ -1347,6 +1383,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PopulateProxyBinders(PrepareInfo const
                     }
 
                 proxyBinder.AddBinder(*binder);
+                proxyBinder.SetBinderInfoWithPropertyName(binder->GetBinderInfo().GetPropertyName());
                 }
             }
         }

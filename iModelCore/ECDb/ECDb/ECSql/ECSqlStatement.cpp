@@ -75,7 +75,7 @@ bool ECSqlStatement::IsPrepared() const { return m_pimpl->IsPrepared(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool ECSqlStatement::IsInsertStatement() const { return m_pimpl->IsInsertStatement(); }
+bool ECSqlStatement::IsWriteStatement() const { return m_pimpl->IsWriteStatement(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -173,7 +173,7 @@ ECSqlStatus ECSqlStatement::BindNavigationValue(int parameterIndex, BeInt64Id re
 
 ECSqlStatus ECSqlStatement::IsNavigationPropertyValid(Utf8StringCR propertyName, const ECN::ECClassId& relationshipECClassId)
     {
-    if (IsInsertStatement() && GetECDb()->GetECSqlConfig().IsInsertValueValidationEnabled())
+    if (IsWriteStatement() && GetECDb()->GetECSqlConfig().IsWriteValueValidationEnabled())
         {
         const auto relClassToValidate = GetECDb()->Schemas().GetClass(relationshipECClassId);
         if (!relClassToValidate)

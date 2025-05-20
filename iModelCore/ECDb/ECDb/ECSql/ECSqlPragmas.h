@@ -126,12 +126,12 @@ struct PragmaPurgeOrphanRelationships : PragmaManager::GlobalHandler {
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct PragmaCheckECSqlInsertValues : PragmaManager::GlobalHandler {
-    PragmaCheckECSqlInsertValues():GlobalHandler("validate_ecsql_inserts", "validate values in ECSql insert statements."){}
-    ~PragmaCheckECSqlInsertValues(){}
+struct PragmaCheckECSqlWriteValues : PragmaManager::GlobalHandler {
+    PragmaCheckECSqlWriteValues():GlobalHandler("validate_ecsql_writes", "validate values in ECSql insert statements."){}
+    ~PragmaCheckECSqlWriteValues(){}
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaCheckECSqlInsertValues>(); }
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaCheckECSqlWriteValues>(); }
 };
 
 //=======================================================================================

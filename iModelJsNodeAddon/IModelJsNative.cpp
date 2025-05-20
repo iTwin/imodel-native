@@ -3797,7 +3797,7 @@ public:
 
             relClassId = m_ecdb->Schemas().GetClassId(tokens[0], tokens[1], SchemaLookupMode::AutoDetect, relClassTableSpaceName.c_str());
 
-            if (m_ecSqlStatement && m_ecSqlStatement->IsInsertStatement() && m_ecdb->GetECSqlConfig().IsInsertValueValidationEnabled())
+            if (m_ecSqlStatement && m_ecSqlStatement->IsWriteStatement() && m_ecdb->GetECSqlConfig().IsWriteValueValidationEnabled())
                 {
                 auto relClass = m_ecdb->Schemas().GetClass(relClassId);
                 if (!relClass)

@@ -264,7 +264,7 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaParseTree::Create());
     GetPragmaManager().Register(PragmaPurgeOrphanRelationships::Create());
     GetPragmaManager().Register(PragmaDbList::Create());
-    GetPragmaManager().Register(PragmaCheckECSqlInsertValues::Create());
+    GetPragmaManager().Register(PragmaCheckECSqlWriteValues::Create());
     }
 
 //--------------------------------------------------------------------------------------
