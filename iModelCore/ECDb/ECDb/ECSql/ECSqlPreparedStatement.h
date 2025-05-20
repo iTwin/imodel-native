@@ -132,6 +132,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
             {
         private:
             virtual void _AddBinder(IECSqlBinder&) = 0;
+            virtual void _SetBinderInfoWithPropertyName(Utf8StringCR propertyName) = 0;
 
         protected:
             IProxyECSqlBinder() : IECSqlBinder() {}
@@ -139,6 +140,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
         public:
             virtual ~IProxyECSqlBinder() {}
             void AddBinder(IECSqlBinder& binder) { _AddBinder(binder); }
+            void SetBinderInfoWithPropertyName(Utf8StringCR propertyName) { _SetBinderInfoWithPropertyName(propertyName); }
             };
 
         //=======================================================================================
@@ -173,6 +175,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 BinderInfo& _GetBinderInfo() override { return m_binderInfo; }
 
                 void _AddBinder(IECSqlBinder& binder) override { BeAssert(m_idBinder == nullptr); m_idBinder = &binder; }
+                void _SetBinderInfoWithPropertyName(Utf8StringCR propertyName) override { m_binderInfo.SetPropertyName(propertyName); }
 
             public:
                 ProxyECInstanceIdECSqlBinder() : IProxyECSqlBinder(), m_binderInfo(BinderInfo::BinderType::ProxyECInstanceId) {}
@@ -216,6 +219,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 BinderInfo& _GetBinderInfo() override { return m_binderInfo; }
 
                 void _AddBinder(IECSqlBinder& binder) override { m_binders.push_back(&binder); }
+                void _SetBinderInfoWithPropertyName(Utf8StringCR propertyName) override { m_binderInfo.SetPropertyName(propertyName); }
 
             public:
                 ProxyECSqlBinder() : IProxyECSqlBinder(),m_binderInfo(BinderInfo::BinderType::Proxy) {}

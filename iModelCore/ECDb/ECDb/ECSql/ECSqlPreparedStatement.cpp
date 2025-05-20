@@ -630,8 +630,8 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
                 }
         
             // Extract and validate the class ID value
-            const auto classIdValue = (valueExp->GetType() == Exp::Type::LiteralValue) ? valueExp->GetAs<LiteralValueExp>().GetRawValue() : "";
-            if (classIdValue.empty() || classIdValue.CompareToI("NULL") == 0)
+            const auto relClassIdValueGiven = (valueExp->GetType() == Exp::Type::LiteralValue) ? valueExp->GetAs<LiteralValueExp>().GetRawValue() : "";
+            if (relClassIdValueGiven.empty() || relClassIdValueGiven.CompareToI("NULL") == 0)
                 {
                 ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
                     "The ECSql INSERT statement contains an invalid relationship class id.");
@@ -639,20 +639,42 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
                 }
         
             // Convert and validate the ECClassId
-            ECClassId ecClassId;
-            if (ECClassId::FromString(ecClassId, classIdValue.c_str()) != SUCCESS)
+            ECClassId relECClassIdToCheck;
+            if (ECClassId::FromString(relECClassIdToCheck, relClassIdValueGiven.c_str()) != SUCCESS)
                 {
                 ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
-                    Utf8PrintfString("The ECSql INSERT statement contains an invalid relationship class id '%s'.", classIdValue.c_str()).c_str());
+                    Utf8PrintfString("The ECSql INSERT statement contains an invalid relationship class id '%s'.", relClassIdValueGiven.c_str()).c_str());
                 return ECSqlStatus::InvalidECSql;
                 }
         
-            const auto ecClass = ctx.GetECDb().Schemas().GetClass(ecClassId);
-            if (!ecClass || !ecClass->IsRelationshipClass())
+            const auto relECClass = ctx.GetECDb().Schemas().GetClass(relECClassIdToCheck);
+            if (!relECClass || !relECClass->IsRelationshipClass())
                 {
                 ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
-                    Utf8PrintfString("The ECSql INSERT statement contains an invalid relationship class id '%s'. The id does not correspond to a valid ECRelationship class.", classIdValue.c_str()).c_str());
+                    Utf8PrintfString("The ECSql INSERT statement contains a relationship class id '%s' which does not correspond to a valid ECRelationship class.", relClassIdValueGiven.c_str()).c_str());
                 return ECSqlStatus::InvalidECSql;
+                }
+
+            const auto parentProp = propertyMap->GetParent();
+            if (parentProp == nullptr)
+                return ECSqlStatus::InvalidECSql;
+            const auto navProp = parentProp->GetProperty().GetAsNavigationProperty();
+            if (navProp == nullptr)
+                return ECSqlStatus::InvalidECSql;
+
+            const auto navPropRelClass = ctx.GetECDb().Schemas().GetClass(navProp->GetRelationshipClass()->GetId());
+            if (relECClassIdToCheck != navPropRelClass->GetId())
+                {
+                // Check against all derived classes of the relationship class
+                const auto derivedClasses = ctx.GetECDb().Schemas().GetAllDerivedClassesInternal(*navPropRelClass);
+                if (!derivedClasses.IsValid()
+                    || std::none_of(derivedClasses.Value().begin(), derivedClasses.Value().end(), 
+                        [&relECClassIdToCheck](const auto& checkClass) { return checkClass->GetId() == relECClassIdToCheck; }))
+                    {
+                    LOG.errorv("The ECSql INSERT statement contains a relationship class id '%s' which does not correspond to any valid ECRelationship class in the schema.",
+                        relECClassIdToCheck.ToString().c_str());
+                    return ECSqlStatus::InvalidECSql;
+                    }
                 }
             }
 
@@ -790,6 +812,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::PopulateProxyBinders(PrepareInfo const
                 }
 
             proxyBinder.AddBinder(*binder);
+            proxyBinder.SetBinderInfoWithPropertyName(binder->GetBinderInfo().GetPropertyName());
             }
         }
 

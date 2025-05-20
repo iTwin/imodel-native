@@ -3801,10 +3801,14 @@ public:
                 {
                 auto relClass = m_ecdb->Schemas().GetClass(relClassId);
                 if (!relClass)
-                    THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql INSERT statement contains an invalid relationship class '%s'. The name does not correspond to any EC class.", relClassName.c_str()).c_str());
+                    THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql INSERT statement contains a relationship class '%s' which does not correspond to any EC class.", relClassName.c_str()).c_str());
         
                 if (!relClass->IsRelationshipClass())
-                    THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql INSERT statement contains an invalid relationship class '%s'. The ID does not correspond to a valid ECRelationship class.", relClassName.c_str()).c_str());
+                    THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql INSERT statement contains a relationship class '%s' which does not correspond to a valid ECRelationship class.", relClassName.c_str()).c_str());
+
+                const auto isNavPropValid = m_ecSqlStatement->IsNavigationPropertyValid(m_binder->GetBinderInfo().GetPropertyName(), relClassId);
+                if (isNavPropValid != ECSqlStatus::Success)
+                    THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql INSERT statement contains a relationship class '%s' which does not correspond to a valid ECRelationship class.", relClassName.c_str()).c_str());
                 }
             }
 

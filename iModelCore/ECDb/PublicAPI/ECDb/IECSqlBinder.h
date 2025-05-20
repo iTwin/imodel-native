@@ -34,11 +34,14 @@ struct BinderInfo final
     private:
         BinderType m_binderType ;
         bool m_binderIsForIdSet = false;
+        Utf8String m_propertyName;
     public:
         explicit BinderInfo(BinderType binderType) : m_binderType(binderType), m_binderIsForIdSet(false){}
         BinderInfo(BinderType binderType, bool binderIsForInVirtualSetOrIdSetVirtualTable) : m_binderType(binderType), m_binderIsForIdSet(binderIsForInVirtualSetOrIdSetVirtualTable){}
         BinderType GetType() const { return m_binderType; }
         bool IsForIdSet() const { return m_binderIsForIdSet; }
+        void SetPropertyName(Utf8StringCR propertyName) { m_propertyName = propertyName; }
+        Utf8StringCR GetPropertyName() const { return m_propertyName; }
     };
 
 

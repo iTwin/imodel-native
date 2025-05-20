@@ -49,6 +49,8 @@ BentleyStatus NavigationPropertyECSqlBinder::Initialize(ECSqlPrepareContext& ctx
         }
 
     AddChildMemberMappedSqlParameterIndices(*m_relECClassIdBinder);
+    m_binderInfo.SetPropertyName(navPropMap.GetAccessString());
+
     return SUCCESS;
     }
 

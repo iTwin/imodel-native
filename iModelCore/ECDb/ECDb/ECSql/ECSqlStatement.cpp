@@ -164,24 +164,75 @@ uint64_t ECSqlStatement::GetHashCode(Utf8CP ecsql) { return ECSqlStatement::Impl
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatement::BindNavigationValue(int parameterIndex, BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId) {
     // Validate the relationship class ID if the ECSQL is an INSERT statement and validation is enabled
-    if (IsInsertStatement() && GetECDb()->GetECSqlConfig().IsInsertValueValidationEnabled()) {
-        const auto ecClass = GetECDb()->Schemas().GetClass(relationshipECClassId);
-
-        if (!ecClass) {
-            LOG.errorv("The ECSql INSERT statement contains an invalid relationship class ID '%s'. The ID does not correspond to any EC class.", 
-                       relationshipECClassId.ToString().c_str());
-            return ECSqlStatus::InvalidECSql;
-        }
-
-        if (!ecClass->IsRelationshipClass()) {
-            LOG.errorv("The ECSql INSERT statement contains an invalid relationship class ID '%s'. The ID does not correspond to a valid ECRelationship class.", 
-                       relationshipECClassId.ToString().c_str());
-            return ECSqlStatus::InvalidECSql;
-        }
-    }
+    if (const auto status = IsNavigationPropertyValid(GetBinder(parameterIndex).GetBinderInfo().GetPropertyName(), relationshipECClassId); status != ECSqlStatus::Success)
+        return status;
 
     // Bind the navigation value
     return GetBinder(parameterIndex).BindNavigation(relatedInstanceId, relationshipECClassId);
 }
+
+ECSqlStatus ECSqlStatement::IsNavigationPropertyValid(Utf8StringCR propertyName, const ECN::ECClassId& relationshipECClassId)
+    {
+    if (IsInsertStatement() && GetECDb()->GetECSqlConfig().IsInsertValueValidationEnabled())
+        {
+        const auto relClassToValidate = GetECDb()->Schemas().GetClass(relationshipECClassId);
+        if (!relClassToValidate)
+            {
+            LOG.errorv("The ECSql INSERT statement contains a relationship class ID '%s' which does not correspond to any EC class.", 
+                relationshipECClassId.ToString().c_str());
+            return ECSqlStatus::InvalidECSql;
+            }
+
+        if (!relClassToValidate->IsRelationshipClass())
+            {
+            LOG.errorv("The ECSql INSERT statement contains a relationship class ID '%s' which does not correspond to a valid ECRelationship class.", 
+                relationshipECClassId.ToString().c_str());
+            return ECSqlStatus::InvalidECSql;
+            }
+        
+        if (Utf8String::IsNullOrEmpty(propertyName.c_str()))
+            {
+            LOG.errorv("The ECSql INSERT statement contains an invalid/empty navigation property name.", propertyName.c_str());
+            return ECSqlStatus::InvalidECSql;
+            }
+
+        // Try to get the rel class for the nav prop
+        ECSqlStatement stmt;
+        auto query = SqlPrintfString(
+            "SELECT c.ECInstanceId "
+            "FROM meta.ECClassDef c "
+            "JOIN meta.ECPropertyDef p ON c.ECInstanceId = p.NavigationRelationshipClass.Id "
+            "WHERE p.Name='%s'", propertyName.c_str());
+
+        if (stmt.Prepare(*GetECDb(), query.GetUtf8CP(), nullptr, false) != ECSqlStatus::Success || stmt.Step() != BE_SQLITE_ROW)
+            {
+            LOG.errorv("The ECSql INSERT statement contains an invalid navigation property '%s'. The property does not correspond to any valid navigation property.", propertyName.c_str());
+            return ECSqlStatus::InvalidECSql;
+            }
+
+        // Check if the relationship class matches or is a base of the provided class ID
+        const auto relClass = GetECDb()->Schemas().GetClass(stmt.GetValueId<ECClassId>(0));
+        if ( relClass == nullptr)
+            {
+            LOG.errorv("The ECSql INSERT statement contains a relationship class id '%s' which does not correspond to any valid class in the schema.",
+                relationshipECClassId.ToString().c_str());
+            return ECSqlStatus::InvalidECSql;
+            }
+
+        if (relClass->GetId() == relationshipECClassId)
+            return ECSqlStatus::Success;
+
+        const auto derivedClasses = GetECDb()->Schemas().GetAllDerivedClassesInternal(*relClass);
+        if (!derivedClasses.IsValid()
+            || std::none_of(derivedClasses.Value().begin(), derivedClasses.Value().end(), [&relationshipECClassId](const auto& checkClass) { return checkClass->GetId() == relationshipECClassId; }))
+            {
+            LOG.errorv("The ECSql INSERT statement contains a relationship class id '%s' which does not correspond to any valid ECRelationship class in the schema.",
+                relationshipECClassId.ToString().c_str());
+            return ECSqlStatus::InvalidECSql;
+            }
+        }
+
+    return ECSqlStatus::Success;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
