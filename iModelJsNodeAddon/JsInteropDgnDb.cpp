@@ -1210,7 +1210,7 @@ void JsInterop::ComputeRangeForText(BeJsValue result, DgnDbR db, Utf8StringCR te
         auto& font = db.Fonts().FindFont(fontId);
         GlyphLayoutContext layoutContext;
         layoutContext.m_string = text;
-        layoutContext.m_drawSize = DPoint2d::From(height, height * widthFactor);
+        layoutContext.m_drawSize = DPoint2d::From(height * widthFactor, height);
         layoutContext.m_isBold = TextEmphasis::None != (emphasis & TextEmphasis::Bold);
         layoutContext.m_isItalic = TextEmphasis::None != (emphasis & TextEmphasis::Italic);
 
