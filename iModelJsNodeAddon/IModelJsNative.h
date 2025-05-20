@@ -36,9 +36,7 @@ USING_NAMESPACE_BENTLEY_EC
 #define SET_CONSTRUCTOR(t) Constructor() = Napi::Persistent(t); Constructor().SuppressDestruct();
 #define DEFINE_CONSTRUCTOR static Napi::FunctionReference& Constructor() { static Napi::FunctionReference s_ctor; return s_ctor; }
 
-#define THROW_JS_EXCEPTION(str) BeNapi::(info.Env(), str);
 #define THROW_JS_TYPE_EXCEPTION(str) BeNapi::ThrowJsTypeException(info.Env(), str);
-
 #define THROW_JS_IMODEL_NATIVE_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, IModelJsNativeErrorKeyHelper::GetITwinError(status));
 #define THROW_JS_SCHEMA_SYNC_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, {"schema-sync", SchemaSync::GetStatusAsString(status)});
 #define THROW_JS_BE_SQLITE_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, {"be-sqlite", BeSQLiteLib::GetErrorName(status)});
