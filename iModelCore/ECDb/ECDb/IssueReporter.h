@@ -756,6 +756,7 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0736;
     static ECN::IssueId ECDb_0737;
     static ECN::IssueId ECDb_0738;
+    static ECN::IssueId ECDb_0739;  // this issue id is being used to report instance query related ambiguity
     };
 
 //---------------------------------------------------------------------------------------
