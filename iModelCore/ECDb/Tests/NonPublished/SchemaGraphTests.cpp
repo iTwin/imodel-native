@@ -477,9 +477,6 @@ TEST_F(SchemaGraphTestFixture, DeepSchemaHierarchyWithNumerousUpdates)
 
 TEST_F(SchemaGraphTestFixture, UpdatedBaseCASchema)
     {
-    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
-    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
-    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
     // Scenario hit by iTwin Studio
     // Simplified Schema Hierarchy: DomainSchema <- BisCore <- CoreCustomAttributes
     // DomainSchema and CoreCustomAttributes get imported, while BisCore comes from the DB.
