@@ -404,10 +404,11 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     const auto inherited = matchProps.size() - local;
 
     if (!(local == 1 || inherited == 1)) {
-
-        if (this->GetParent()->GetType() == Exp::Type::ExtractProperty){
+        auto parent = this->GetParent();
+        if (parent != nullptr && parent->GetType() == Exp::Type::ExtractProperty){
+            Utf8String targetPath = parent->GetAs<ExtractPropertyValueExp>().GetTargetPath().ToString();
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
-                "In expression '$->%s', $ is ambiguous", this->GetParent()->GetAs<ExtractPropertyValueExp>().GetTargetPath().ToString().c_str());
+                "In expression '$->%s', $ is ambiguous", targetPath.c_str());
             return ERROR;
         }
 
