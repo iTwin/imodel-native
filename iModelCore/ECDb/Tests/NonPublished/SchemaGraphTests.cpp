@@ -483,6 +483,9 @@ TEST_F(SchemaGraphTestFixture, UpdatedBaseCASchema)
     // The first import works fine, but when we attempt to repeat the import, we got a lot of problems indicating that BisCore is modified without incrementing its version.
     SetupECDbForCurrentTest();
 
+    TestLogger logger;
+    LogCatcher logCatcher(logger);
+
     // Initial setup
     SchemaKey myCustomAttributes_1_0_0_Key("MyCustomAttributes", 1, 0, 0);
     Utf8String myCustomAttributes_1_0_0_Xml(
@@ -585,5 +588,9 @@ TEST_F(SchemaGraphTestFixture, UpdatedBaseCASchema)
     }
 
     CloseECDb();
+    // no errors or warnings should be logged.
+    ASSERT_TRUE(logger.GetLastMessage(NativeLogging::LOG_WARNING) == nullptr);
+    ASSERT_TRUE(logger.GetLastMessage(NativeLogging::LOG_ERROR) == nullptr);
+    // there is another test that checks the warning for non-references-only schemas in SchemaManagerTests.SchemaWithChangesButSameVersionTest
     }
 END_ECDBUNITTESTS_NAMESPACE

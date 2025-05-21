@@ -3220,7 +3220,7 @@ TEST_F(SchemaManagerTests, SchemaWithChangesButSameVersionTest)
     ECSchemaReadContextPtr readContext2 = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(changedSchema, changedSchemaXml, *readContext2));
     ASSERT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext2->GetCache().GetSchemas()));
-    ASSERT_STREQ("ECSchema import has failed. Schema std has new changes, but the schema version is not incremented.", logger.GetLastMessage(NativeLogging::LOG_ERROR)->second.c_str());
+    ASSERT_STREQ("Schema 'std' has changes but its version was not incremented. Proceeding with import, but this may lead to unexpected behavior.", logger.GetLastMessage(NativeLogging::LOG_WARNING)->second.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
