@@ -54,7 +54,7 @@
 **   This module attempts to make a best effort to continue logging if an
 **   IO or other error is encountered. For example, if a log file cannot 
 **   be opened logs are not collected for that connection, but other
-**   logging proceeds as expected. Errors are logged by calling sqlite3_log().
+**   logging proceeds as expected. Errors are logged by calling bentley_sqlite3_log().
 */
 
 #ifndef SQLITE_AMALGAMATION
@@ -88,7 +88,7 @@ static int getProcessId(void){
 #define SQLLOG_NAMESZ 512
 
 /* Maximum number of simultaneous database connections the process may
-** open (if any more are opened an error is logged using sqlite3_log()
+** open (if any more are opened an error is logged using bentley_sqlite3_log()
 ** and processing is halted).
 */
 #define MAX_CONNECTIONS 256
@@ -152,7 +152,7 @@ static void sqllogTokenize(const char *z, const char **pz, int *pn){
 ** return NULL.
 **
 ** If a non-NULL value is returned, then the caller must arrange to 
-** eventually free it using sqlite3_free().
+** eventually free it using bentley_sqlite3_free().
 */
 static char *sqllogFindFile(const char *zFile){
   char *zRet = 0;
@@ -161,7 +161,7 @@ static char *sqllogFindFile(const char *zFile){
   /* Open the index file for reading */
   fd = fopen(sqllogglobal.zIdx, "r");
   if( fd==0 ){
-    sqlite3_log(SQLITE_IOERR, "sqllogFindFile(): error in fopen()");
+    bentley_sqlite3_log(SQLITE_IOERR, "sqllogFindFile(): error in fopen()");
     return 0;
   }
 
@@ -190,14 +190,14 @@ static char *sqllogFindFile(const char *zFile){
           zBuf[z-zLine] = *z;
           z++;
         }
-        zRet = sqlite3_mprintf("%s_%s.db", sqllogglobal.zPrefix, zBuf);
+        zRet = bentley_sqlite3_mprintf("%s_%s.db", sqllogglobal.zPrefix, zBuf);
         break;
       }
     }
   }
 
   if( ferror(fd) ){
-    sqlite3_log(SQLITE_IOERR, "sqllogFindFile(): error reading index file");
+    bentley_sqlite3_log(SQLITE_IOERR, "sqllogFindFile(): error reading index file");
   }
 
   fclose(fd);
@@ -218,32 +218,32 @@ static int sqllogFindAttached(
   ** described by the last row returned.  */
   assert( sqllogglobal.bRec==0 );
   sqllogglobal.bRec = 1;
-  rc = sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
+  rc = bentley_sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
   if( rc==SQLITE_OK ){
-    while( SQLITE_ROW==sqlite3_step(pStmt) ){
+    while( SQLITE_ROW==bentley_sqlite3_step(pStmt) ){
       const char *zVal1; int nVal1;
       const char *zVal2; int nVal2;
 
-      zVal1 = (const char*)sqlite3_column_text(pStmt, 1);
-      nVal1 = sqlite3_column_bytes(pStmt, 1);
+      zVal1 = (const char*)bentley_sqlite3_column_text(pStmt, 1);
+      nVal1 = bentley_sqlite3_column_bytes(pStmt, 1);
       memcpy(zName, zVal1, nVal1+1);
 
-      zVal2 = (const char*)sqlite3_column_text(pStmt, 2);
-      nVal2 = sqlite3_column_bytes(pStmt, 2);
+      zVal2 = (const char*)bentley_sqlite3_column_text(pStmt, 2);
+      nVal2 = bentley_sqlite3_column_bytes(pStmt, 2);
       memcpy(zFile, zVal2, nVal2+1);
 
       if( zSearch && strlen(zSearch)==nVal1 
-       && 0==sqlite3_strnicmp(zSearch, zVal1, nVal1)
+       && 0==bentley_sqlite3_strnicmp(zSearch, zVal1, nVal1)
       ){
         break;
       }
     }
-    rc = sqlite3_finalize(pStmt);
+    rc = bentley_sqlite3_finalize(pStmt);
   }
   sqllogglobal.bRec = 0;
 
   if( rc!=SQLITE_OK ){
-    sqlite3_log(rc, "sqllogFindAttached(): error in \"PRAGMA database_list\"");
+    bentley_sqlite3_log(rc, "sqllogFindAttached(): error in \"PRAGMA database_list\"");
   }
   return rc;
 }
@@ -279,7 +279,7 @@ static void sqllogCopydb(struct SLConn *p, const char *zSearch, int bLog){
   if( rc!=SQLITE_OK ) return;
 
   if( zFile[0]=='\0' ){
-    zInit = sqlite3_mprintf("");
+    zInit = bentley_sqlite3_mprintf("");
   }else{
     if( sqllogglobal.bReuse ){
       zInit = sqllogFindFile(zFile);
@@ -293,23 +293,23 @@ static void sqllogCopydb(struct SLConn *p, const char *zSearch, int bLog){
 
       /* Generate a file-name to use for the copy of this database */
       iDb = sqllogglobal.iNextDb++;
-      zInit = sqlite3_mprintf("%s_%d.db", sqllogglobal.zPrefix, iDb);
+      zInit = bentley_sqlite3_mprintf("%s_%d.db", sqllogglobal.zPrefix, iDb);
 
       /* Create the backup */
       assert( sqllogglobal.bRec==0 );
       sqllogglobal.bRec = 1;
-      rc = sqlite3_open(zInit, &copy);
+      rc = bentley_sqlite3_open(zInit, &copy);
       if( rc==SQLITE_OK ){
         sqlite3_backup *pBak;
-        sqlite3_exec(copy, "PRAGMA synchronous = 0", 0, 0, 0);
-        pBak = sqlite3_backup_init(copy, "main", p->db, zName);
+        bentley_sqlite3_exec(copy, "PRAGMA synchronous = 0", 0, 0, 0);
+        pBak = bentley_sqlite3_backup_init(copy, "main", p->db, zName);
         if( pBak ){
-          sqlite3_backup_step(pBak, -1);
-          rc = sqlite3_backup_finish(pBak);
+          bentley_sqlite3_backup_step(pBak, -1);
+          rc = bentley_sqlite3_backup_finish(pBak);
         }else{
-          rc = sqlite3_errcode(copy);
+          rc = bentley_sqlite3_errcode(copy);
         }
-        sqlite3_close(copy);
+        bentley_sqlite3_close(copy);
       }
       sqllogglobal.bRec = 0;
 
@@ -321,22 +321,22 @@ static void sqllogCopydb(struct SLConn *p, const char *zSearch, int bLog){
           fclose(fd);
         }
       }else{
-        sqlite3_log(rc, "sqllogCopydb(): error backing up database");
+        bentley_sqlite3_log(rc, "sqllogCopydb(): error backing up database");
       }
     }
   }
 
   if( bLog ){
-    zFree = sqlite3_mprintf("ATTACH '%q' AS '%q'; -- clock=%d\n", 
+    zFree = bentley_sqlite3_mprintf("ATTACH '%q' AS '%q'; -- clock=%d\n", 
         zInit, zName, sqllogglobal.iClock++
     );
   }else{
-    zFree = sqlite3_mprintf("-- Main database is '%q'\n", zInit);
+    zFree = bentley_sqlite3_mprintf("-- Main database is '%q'\n", zInit);
   }
   fprintf(p->fd, "%s", zFree);
-  sqlite3_free(zFree);
+  bentley_sqlite3_free(zFree);
 
-  sqlite3_free(zInit);
+  bentley_sqlite3_free(zInit);
 }
 
 /*
@@ -365,11 +365,11 @@ static void sqllogOpenlog(struct SLConn *p){
     }
 
     /* Open the log file */
-    zLog = sqlite3_mprintf("%s_%d.sql", sqllogglobal.zPrefix, p->iLog);
+    zLog = bentley_sqlite3_mprintf("%s_%d.sql", sqllogglobal.zPrefix, p->iLog);
     p->fd = fopen(zLog, "w");
-    sqlite3_free(zLog);
+    bentley_sqlite3_free(zLog);
     if( p->fd==0 ){
-      sqlite3_log(SQLITE_IOERR, "sqllogOpenlog(): Failed to open log file");
+      bentley_sqlite3_log(SQLITE_IOERR, "sqllogOpenlog(): Failed to open log file");
     }
   }
 }
@@ -384,7 +384,7 @@ static void testSqllogStmt(struct SLConn *p, const char *zSql){
   int nFirst;                     /* Size of token zFirst in bytes */
 
   sqllogTokenize(zSql, &zFirst, &nFirst);
-  if( nFirst!=6 || 0!=sqlite3_strnicmp("ATTACH", zFirst, 6) ){
+  if( nFirst!=6 || 0!=bentley_sqlite3_strnicmp("ATTACH", zFirst, 6) ){
     /* Not an ATTACH statement. Write this directly to the log. */
     fprintf(p->fd, "%s; -- clock=%d\n", zSql, sqllogglobal.iClock++);
   }else{
@@ -398,30 +398,30 @@ static void testSqllogStmt(struct SLConn *p, const char *zSql){
 */
 static void testSqllog(void *pCtx, sqlite3 *db, const char *zSql, int eType){
   struct SLConn *p;
-  sqlite3_mutex *master = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+  sqlite3_mutex *master = bentley_sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
 
   assert( eType==0 || eType==1 || eType==2 );
   assert( (eType==2)==(zSql==0) );
 
   /* This is a database open command. */
   if( eType==0 ){
-    sqlite3_mutex_enter(master);
+    bentley_sqlite3_mutex_enter(master);
     if( sqllogglobal.mutex==0 ){
-      sqllogglobal.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_RECURSIVE);
+      sqllogglobal.mutex = bentley_sqlite3_mutex_alloc(SQLITE_MUTEX_RECURSIVE);
     }
     p = &sqllogglobal.aConn[sqllogglobal.nConn++];
     p->fd = 0;
     p->db = db;
     p->iLog = sqllogglobal.iNextLog++;
-    sqlite3_mutex_leave(master);
+    bentley_sqlite3_mutex_leave(master);
 
     /* Open the log and take a copy of the main database file */
-    sqlite3_mutex_enter(sqllogglobal.mutex);
+    bentley_sqlite3_mutex_enter(sqllogglobal.mutex);
     if( sqllogglobal.bRec==0 ){
       sqllogOpenlog(p);
       if( p->fd ) sqllogCopydb(p, "main", 0);
     }
-    sqlite3_mutex_leave(sqllogglobal.mutex);
+    bentley_sqlite3_mutex_leave(sqllogglobal.mutex);
   }
 
   else{
@@ -435,14 +435,14 @@ static void testSqllog(void *pCtx, sqlite3 *db, const char *zSql, int eType){
 
     /* A database handle close command */
     if( eType==2 ){
-      sqlite3_mutex_enter(master);
+      bentley_sqlite3_mutex_enter(master);
       if( p->fd ) fclose(p->fd);
       p->db = 0;
       p->fd = 0;
 
       sqllogglobal.nConn--;
       if( sqllogglobal.nConn==0 ){
-        sqlite3_mutex_free(sqllogglobal.mutex);
+        bentley_sqlite3_mutex_free(sqllogglobal.mutex);
         sqllogglobal.mutex = 0;
       }else{
         int nShift = &sqllogglobal.aConn[sqllogglobal.nConn] - p;
@@ -450,15 +450,15 @@ static void testSqllog(void *pCtx, sqlite3 *db, const char *zSql, int eType){
           memmove(p, &p[1], nShift*sizeof(struct SLConn));
         }
       }
-      sqlite3_mutex_leave(master);
+      bentley_sqlite3_mutex_leave(master);
 
     /* An ordinary SQL command. */
     }else if( p->fd ){
-      sqlite3_mutex_enter(sqllogglobal.mutex);
+      bentley_sqlite3_mutex_enter(sqllogglobal.mutex);
       if( sqllogglobal.bRec==0 ){
         testSqllogStmt(p, zSql);
       }
-      sqlite3_mutex_leave(sqllogglobal.mutex);
+      bentley_sqlite3_mutex_leave(sqllogglobal.mutex);
     }
   }
 }
@@ -471,7 +471,7 @@ static void testSqllog(void *pCtx, sqlite3 *db, const char *zSql, int eType){
 */
 void sqlite3_init_sqllog(void){
   if( getenv(ENVIRONMENT_VARIABLE1_NAME) ){
-    if( SQLITE_OK==sqlite3_config(SQLITE_CONFIG_SQLLOG, testSqllog, 0) ){
+    if( SQLITE_OK==bentley_sqlite3_config(SQLITE_CONFIG_SQLLOG, testSqllog, 0) ){
       memset(&sqllogglobal, 0, sizeof(sqllogglobal));
       sqllogglobal.bReuse = 1;
     }

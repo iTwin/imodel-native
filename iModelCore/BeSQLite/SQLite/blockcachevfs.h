@@ -111,12 +111,12 @@
 **     sqlite3_bcvfs_create("dirname", "myvfs", &pFs);
 **     // ... configure VFS ...
 **     sqlite3_bcvfs_attach(pFs, "azure", "myuser", "mycont", "myalias", 0, 0);
-**     sqlite3_open_v2("/myalias/mydb.db", &db, SQLITE_OPEN_READWRITE, "myvfs");
+**     bentley_sqlite3_open_v2("/myalias/mydb.db", &db, SQLITE_OPEN_READWRITE, "myvfs");
 **
 **   Assuming URI filenames are enabled (SQLITE_CONFIG_URI), the following
-**   may be used in place of the sqlite3_open_v2() call above:
+**   may be used in place of the bentley_sqlite3_open_v2() call above:
 **
-**     sqlite3_open("file:/myalias/mydb.db?vfs=myvfs", &db);
+**     bentley_sqlite3_open("file:/myalias/mydb.db?vfs=myvfs", &db);
 **
 ** Poll and Upload operations:
 **
@@ -522,7 +522,7 @@ int sqlite3_bcvfs_poll(sqlite3_bcvfs *pFs, const char *zCont, char **pzErr);
 ** If this function returns a value other than SQLITE_OK and parameter pzErr
 ** is not NULL, then (*pzErr) may be set to point to point to a buffer
 ** containing an English language error message. In this case it is the
-** responsibility of the caller to free the buffer using sqlite3_free().
+** responsibility of the caller to free the buffer using bentley_sqlite3_free().
 ** If it is not set to point to a buffer containing an error message,
 ** (*pzErr) is set to NULL.
 **
@@ -548,7 +548,7 @@ int sqlite3_bcvfs_upload(
 ** an SQLite error code. If parameter pzErr is not NULL, then (*pzErr)
 ** may be set to a buffer containing an English language error message.
 ** It is the responsibility of the caller to ensure that this buffer
-** is eventually freed using sqlite3_free().
+** is eventually freed using bentley_sqlite3_free().
 **
 ** It is an error if database zFrom does not exist within the attached
 ** container, or if database zTo already exists.
@@ -719,7 +719,7 @@ void sqlite3_bcvfs_prefetch_destroy(sqlite3_prefetch*);
 ** is returned and output variable (*pzErr) may be set to point to a buffer
 ** containing an English language error message. In this case it is the
 ** responsibility of the caller to eventually free the buffer using
-** sqlite3_free(). This function performs no network IO, so there is no
+** bentley_sqlite3_free(). This function performs no network IO, so there is no
 ** chance of an HTTP error code being returned.
 **
 ** This function fails with SQLITE_BUSY if there exist one or more clients

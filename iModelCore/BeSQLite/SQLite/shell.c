@@ -412,8 +412,8 @@ FILE *sqlite3_fopen(const char *zFilename, const char *zMode){
 
   sz1 = (int)strlen(zFilename);
   sz2 = (int)strlen(zMode);
-  b1 = sqlite3_malloc( (sz1+1)*sizeof(b1[0]) );
-  b2 = sqlite3_malloc( (sz2+1)*sizeof(b1[0]) );
+  b1 = bentley_sqlite3_malloc( (sz1+1)*sizeof(b1[0]) );
+  b2 = bentley_sqlite3_malloc( (sz2+1)*sizeof(b1[0]) );
   if( b1 && b2 ){
     sz1 = MultiByteToWideChar(CP_UTF8, 0, zFilename, sz1, b1, sz1);
     b1[sz1] = 0;
@@ -421,8 +421,8 @@ FILE *sqlite3_fopen(const char *zFilename, const char *zMode){
     b2[sz2] = 0;
     fp = _wfopen(b1, b2);
   }
-  sqlite3_free(b1);
-  sqlite3_free(b2);
+  bentley_sqlite3_free(b1);
+  bentley_sqlite3_free(b2);
   simBinaryOther = 0;
   return fp;
 }
@@ -438,8 +438,8 @@ FILE *sqlite3_popen(const char *zCommand, const char *zMode){
 
   sz1 = (int)strlen(zCommand);
   sz2 = (int)strlen(zMode);
-  b1 = sqlite3_malloc( (sz1+1)*sizeof(b1[0]) );
-  b2 = sqlite3_malloc( (sz2+1)*sizeof(b1[0]) );
+  b1 = bentley_sqlite3_malloc( (sz1+1)*sizeof(b1[0]) );
+  b2 = bentley_sqlite3_malloc( (sz2+1)*sizeof(b1[0]) );
   if( b1 && b2 ){
     sz1 = MultiByteToWideChar(CP_UTF8, 0, zCommand, sz1, b1, sz1);
     b1[sz1] = 0;
@@ -447,8 +447,8 @@ FILE *sqlite3_popen(const char *zCommand, const char *zMode){
     b2[sz2] = 0;
     fp = _wpopen(b1, b2);
   }
-  sqlite3_free(b1);
-  sqlite3_free(b2);
+  bentley_sqlite3_free(b1);
+  bentley_sqlite3_free(b2);
   return fp;
 }
 
@@ -462,7 +462,7 @@ char *sqlite3_fgets(char *buf, int sz, FILE *in){
     ** that into UTF-8.  Otherwise, non-ASCII characters all get translated
     ** into '?'.
     */
-    wchar_t *b1 = sqlite3_malloc( sz*sizeof(wchar_t) );
+    wchar_t *b1 = bentley_sqlite3_malloc( sz*sizeof(wchar_t) );
     if( b1==0 ) return 0;
 #ifdef SQLITE_USE_W32_FOR_CONSOLE_IO
     DWORD nRead = 0;
@@ -475,12 +475,12 @@ char *sqlite3_fgets(char *buf, int sz, FILE *in){
     {
       _setmode(_fileno(in), IsConsole(in) ? _O_WTEXT : _O_U8TEXT);
       if( fgetws(b1, sz/4, in)==0 ){
-        sqlite3_free(b1);
+        bentley_sqlite3_free(b1);
         return 0;
       }
     }
     WideCharToMultiByte(CP_UTF8, 0, b1, -1, buf, sz, 0, 0);
-    sqlite3_free(b1);
+    bentley_sqlite3_free(b1);
     return buf;
   }else{
     /* Reading from a file or other input source, just read bytes without
@@ -537,7 +537,7 @@ int sqlite3_fputs(const char *z, FILE *out){
     ** to the console on Windows. 
     */
     int sz = (int)strlen(z);
-    wchar_t *b1 = sqlite3_malloc( (sz+1)*sizeof(wchar_t) );
+    wchar_t *b1 = bentley_sqlite3_malloc( (sz+1)*sizeof(wchar_t) );
     if( b1==0 ) return 0;
     sz = MultiByteToWideChar(CP_UTF8, 0, z, sz, b1, sz);
     b1[sz] = 0;
@@ -562,7 +562,7 @@ int sqlite3_fputs(const char *z, FILE *out){
         fputws(b1, out);
       }
     }
-    sqlite3_free(b1);
+    bentley_sqlite3_free(b1);
     return 0;
   }
 }
@@ -581,11 +581,11 @@ int sqlite3_fprintf(FILE *out, const char *zFormat, ...){
     va_list ap;
 
     va_start(ap, zFormat);
-    z = sqlite3_vmprintf(zFormat, ap);
+    z = bentley_sqlite3_vmprintf(zFormat, ap);
     va_end(ap);
     sqlite3_fputs(z, out);
     rc = (int)strlen(z);
-    sqlite3_free(z);
+    bentley_sqlite3_free(z);
   }else{
     /* Writing to a file or other destination, just write bytes without
     ** any translation. */
@@ -650,7 +650,7 @@ static int cli_strncmp(const char *a, const char *b, size_t n){
 static sqlite3_int64 timeOfDay(void){
   static sqlite3_vfs *clockVfs = 0;
   sqlite3_int64 t;
-  if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
+  if( clockVfs==0 ) clockVfs = bentley_sqlite3_vfs_find(0);
   if( clockVfs==0 ) return 0;  /* Never actually happens */
   if( clockVfs->iVersion>=2 && clockVfs->xCurrentTimeInt64!=0 ){
     clockVfs->xCurrentTimeInt64(clockVfs, &t);
@@ -995,10 +995,10 @@ static void SQLITE_CDECL iotracePrintf(const char *zFormat, ...){
   char *z;
   if( iotrace==0 ) return;
   va_start(ap, zFormat);
-  z = sqlite3_vmprintf(zFormat, ap);
+  z = bentley_sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   sqlite3_fprintf(iotrace, "%s", z);
-  sqlite3_free(z);
+  bentley_sqlite3_free(z);
 }
 #endif
 
@@ -1357,14 +1357,14 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
       zResult = local_getline(zPrior, stdin);
       zPrior = 0;
       /* ^C trap creates a false EOF, so let "interrupt" thread catch up. */
-      if( zResult==0 ) sqlite3_sleep(50);
+      if( zResult==0 ) bentley_sqlite3_sleep(50);
     }while( zResult==0 && seenInterrupt>0 );
 #else
     free(zPrior);
     zResult = shell_readline(zPrompt);
     while( zResult==0 ){
       /* ^C trap creates a false EOF, so let "interrupt" thread catch up. */
-      sqlite3_sleep(50);
+      bentley_sqlite3_sleep(50);
       if( seenInterrupt==0 ) break;
       zResult = shell_readline("");
     }
@@ -1424,7 +1424,7 @@ static sqlite3_int64 integerValue(const char *zArg){
     }
   }
   for(i=0; i<ArraySize(aMult); i++){
-    if( sqlite3_stricmp(aMult[i].zSuffix, zArg)==0 ){
+    if( bentley_sqlite3_stricmp(aMult[i].zSuffix, zArg)==0 ){
       v *= aMult[i].iMult;
       break;
     }
@@ -1512,7 +1512,7 @@ static char quoteChar(const char *zName){
   for(i=0; zName[i]; i++){
     if( !isalnum((unsigned char)zName[i]) && zName[i]!='_' ) return '"';
   }
-  return sqlite3_keyword_check(zName, i) ? '"' : 0;
+  return bentley_sqlite3_keyword_check(zName, i) ? '"' : 0;
 }
 
 /*
@@ -1531,22 +1531,22 @@ static char *shellFakeSchema(
   char *zDiv = "(";
   int nRow = 0;
 
-  zSql = sqlite3_mprintf("PRAGMA \"%w\".table_info=%Q;",
+  zSql = bentley_sqlite3_mprintf("PRAGMA \"%w\".table_info=%Q;",
                          zSchema ? zSchema : "main", zName);
   shell_check_oom(zSql);
-  sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-  sqlite3_free(zSql);
+  bentley_sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  bentley_sqlite3_free(zSql);
   initText(&s);
   if( zSchema ){
     cQuote = quoteChar(zSchema);
-    if( cQuote && sqlite3_stricmp(zSchema,"temp")==0 ) cQuote = 0;
+    if( cQuote && bentley_sqlite3_stricmp(zSchema,"temp")==0 ) cQuote = 0;
     appendText(&s, zSchema, cQuote);
     appendText(&s, ".", 0);
   }
   cQuote = quoteChar(zName);
   appendText(&s, zName, cQuote);
-  while( sqlite3_step(pStmt)==SQLITE_ROW ){
-    const char *zCol = (const char*)sqlite3_column_text(pStmt, 1);
+  while( bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+    const char *zCol = (const char*)bentley_sqlite3_column_text(pStmt, 1);
     nRow++;
     appendText(&s, zDiv, 0);
     zDiv = ",";
@@ -1555,7 +1555,7 @@ static char *shellFakeSchema(
     appendText(&s, zCol, cQuote);
   }
   appendText(&s, ")", 0);
-  sqlite3_finalize(pStmt);
+  bentley_sqlite3_finalize(pStmt);
   if( nRow==0 ){
     freeText(&s);
     s.z = 0;
@@ -1575,10 +1575,10 @@ static void shellStrtod(
   int nVal,
   sqlite3_value **apVal
 ){
-  char *z = (char*)sqlite3_value_text(apVal[0]);
+  char *z = (char*)bentley_sqlite3_value_text(apVal[0]);
   UNUSED_PARAMETER(nVal);
   if( z==0 ) return;
-  sqlite3_result_double(pCtx, strtod(z,0));
+  bentley_sqlite3_result_double(pCtx, strtod(z,0));
 }
 
 /*
@@ -1593,13 +1593,13 @@ static void shellDtostr(
   int nVal,
   sqlite3_value **apVal
 ){
-  double r = sqlite3_value_double(apVal[0]);
-  int n = nVal>=2 ? sqlite3_value_int(apVal[1]) : 26;
+  double r = bentley_sqlite3_value_double(apVal[0]);
+  int n = nVal>=2 ? bentley_sqlite3_value_int(apVal[1]) : 26;
   char z[400];
   if( n<1 ) n = 1;
   if( n>350 ) n = 350;
-  sqlite3_snprintf(sizeof(z), z, "%#+.*e", n, r);
-  sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
+  bentley_sqlite3_snprintf(sizeof(z), z, "%#+.*e", n, r);
+  bentley_sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
 }
 
 
@@ -1617,11 +1617,11 @@ static void shellModuleSchema(
   const char *zName;
   char *zFake;
   UNUSED_PARAMETER(nVal);
-  zName = (const char*)sqlite3_value_text(apVal[0]);
-  zFake = zName? shellFakeSchema(sqlite3_context_db_handle(pCtx), 0, zName) : 0;
+  zName = (const char*)bentley_sqlite3_value_text(apVal[0]);
+  zFake = zName? shellFakeSchema(bentley_sqlite3_context_db_handle(pCtx), 0, zName) : 0;
   if( zFake ){
-    sqlite3_result_text(pCtx, sqlite3_mprintf("/* %s */", zFake),
-                        -1, sqlite3_free);
+    bentley_sqlite3_result_text(pCtx, bentley_sqlite3_mprintf("/* %s */", zFake),
+                        -1, bentley_sqlite3_free);
     free(zFake);
   }
 }
@@ -1659,10 +1659,10 @@ static void shellAddSchemaName(
      "VIRTUAL TABLE"
   };
   int i = 0;
-  const char *zIn = (const char*)sqlite3_value_text(apVal[0]);
-  const char *zSchema = (const char*)sqlite3_value_text(apVal[1]);
-  const char *zName = (const char*)sqlite3_value_text(apVal[2]);
-  sqlite3 *db = sqlite3_context_db_handle(pCtx);
+  const char *zIn = (const char*)bentley_sqlite3_value_text(apVal[0]);
+  const char *zSchema = (const char*)bentley_sqlite3_value_text(apVal[1]);
+  const char *zName = (const char*)bentley_sqlite3_value_text(apVal[2]);
+  sqlite3 *db = bentley_sqlite3_context_db_handle(pCtx);
   UNUSED_PARAMETER(nVal);
   if( zIn!=0 && cli_strncmp(zIn, "CREATE ", 7)==0 ){
     for(i=0; i<ArraySize(aPrefix); i++){
@@ -1672,10 +1672,10 @@ static void shellAddSchemaName(
         char *zFake = 0;
         if( zSchema ){
           char cQuote = quoteChar(zSchema);
-          if( cQuote && sqlite3_stricmp(zSchema,"temp")!=0 ){
-            z = sqlite3_mprintf("%.*s \"%w\".%s", n+7, zIn, zSchema, zIn+n+8);
+          if( cQuote && bentley_sqlite3_stricmp(zSchema,"temp")!=0 ){
+            z = bentley_sqlite3_mprintf("%.*s \"%w\".%s", n+7, zIn, zSchema, zIn+n+8);
           }else{
-            z = sqlite3_mprintf("%.*s %s.%s", n+7, zIn, zSchema, zIn+n+8);
+            z = bentley_sqlite3_mprintf("%.*s %s.%s", n+7, zIn, zSchema, zIn+n+8);
           }
         }
         if( zName
@@ -1683,20 +1683,20 @@ static void shellAddSchemaName(
          && (zFake = shellFakeSchema(db, zSchema, zName))!=0
         ){
           if( z==0 ){
-            z = sqlite3_mprintf("%s\n/* %s */", zIn, zFake);
+            z = bentley_sqlite3_mprintf("%s\n/* %s */", zIn, zFake);
           }else{
-            z = sqlite3_mprintf("%z\n/* %s */", z, zFake);
+            z = bentley_sqlite3_mprintf("%z\n/* %s */", z, zFake);
           }
           free(zFake);
         }
         if( z ){
-          sqlite3_result_text(pCtx, z, -1, sqlite3_free);
+          bentley_sqlite3_result_text(pCtx, z, -1, bentley_sqlite3_free);
           return;
         }
       }
     }
   }
-  sqlite3_result_value(pCtx, apVal[0]);
+  bentley_sqlite3_result_value(pCtx, apVal[0]);
 }
 
 /*
@@ -1925,14 +1925,14 @@ LPDIR opendir(
   const char *dirname
 ){
   struct _finddata_t data;
-  LPDIR dirp = (LPDIR)sqlite3_malloc(sizeof(DIR));
+  LPDIR dirp = (LPDIR)bentley_sqlite3_malloc(sizeof(DIR));
   SIZE_T namesize = sizeof(data.name) / sizeof(data.name[0]);
 
   if( dirp==NULL ) return NULL;
   memset(dirp, 0, sizeof(DIR));
 
   /* TODO: Remove this if Unix-style root paths are not used. */
-  if( sqlite3_stricmp(dirname, "/")==0 ){
+  if( bentley_sqlite3_stricmp(dirname, "/")==0 ){
     dirname = windirent_getenv("SystemDrive");
   }
 
@@ -2058,7 +2058,7 @@ INT closedir(
     result = _findclose(dirp->d_handle);
   }
 
-  sqlite3_free(dirp);
+  bentley_sqlite3_free(dirp);
   return result;
 }
 
@@ -2082,7 +2082,7 @@ INT closedir(
 **
 ** This file implements an extension that uses the SQLITE_CONFIG_MALLOC
 ** mechanism to add a tracing layer on top of SQLite.  If this extension
-** is registered prior to sqlite3_initialize(), it will cause all memory
+** is registered prior to bentley_sqlite3_initialize(), it will cause all memory
 ** allocation activities to be logged on standard output, or to some other
 ** FILE specified by the initializer.
 **
@@ -2155,9 +2155,9 @@ static sqlite3_mem_methods ersaztMethods = {
 int sqlite3MemTraceActivate(FILE *out){
   int rc = SQLITE_OK;
   if( memtraceBase.xMalloc==0 ){
-    rc = sqlite3_config(SQLITE_CONFIG_GETMALLOC, &memtraceBase);
+    rc = bentley_sqlite3_config(SQLITE_CONFIG_GETMALLOC, &memtraceBase);
     if( rc==SQLITE_OK ){
-      rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &ersaztMethods);
+      rc = bentley_sqlite3_config(SQLITE_CONFIG_MALLOC, &ersaztMethods);
     }
   }
   memtraceOut = out;
@@ -2168,7 +2168,7 @@ int sqlite3MemTraceActivate(FILE *out){
 int sqlite3MemTraceDeactivate(void){
   int rc = SQLITE_OK;
   if( memtraceBase.xMalloc!=0 ){
-    rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &memtraceBase);
+    rc = bentley_sqlite3_config(SQLITE_CONFIG_MALLOC, &memtraceBase);
     if( rc==SQLITE_OK ){
       memset(&memtraceBase, 0, sizeof(memtraceBase));
     }
@@ -2193,7 +2193,7 @@ int sqlite3MemTraceDeactivate(void){
 **
 ** This file implements an extension that uses the SQLITE_CONFIG_PCACHE2
 ** mechanism to add a tracing layer on top of pluggable page cache of
-** SQLite.  If this extension is registered prior to sqlite3_initialize(),
+** SQLite.  If this extension is registered prior to bentley_sqlite3_initialize(),
 ** it will cause all page cache activities to be logged on standard output,
 ** or to some other FILE specified by the initializer.
 **
@@ -2337,9 +2337,9 @@ static sqlite3_pcache_methods2 ersaztPcacheMethods = {
 int sqlite3PcacheTraceActivate(FILE *out){
   int rc = SQLITE_OK;
   if( pcacheBase.xFetch==0 ){
-    rc = sqlite3_config(SQLITE_CONFIG_GETPCACHE2, &pcacheBase);
+    rc = bentley_sqlite3_config(SQLITE_CONFIG_GETPCACHE2, &pcacheBase);
     if( rc==SQLITE_OK ){
-      rc = sqlite3_config(SQLITE_CONFIG_PCACHE2, &ersaztPcacheMethods);
+      rc = bentley_sqlite3_config(SQLITE_CONFIG_PCACHE2, &ersaztPcacheMethods);
     }
   }
   pcachetraceOut = out;
@@ -2350,7 +2350,7 @@ int sqlite3PcacheTraceActivate(FILE *out){
 int sqlite3PcacheTraceDeactivate(void){
   int rc = SQLITE_OK;
   if( pcacheBase.xFetch!=0 ){
-    rc = sqlite3_config(SQLITE_CONFIG_PCACHE2, &pcacheBase);
+    rc = bentley_sqlite3_config(SQLITE_CONFIG_PCACHE2, &pcacheBase);
     if( rc==SQLITE_OK ){
       memset(&pcacheBase, 0, sizeof(pcacheBase));
     }
@@ -2943,15 +2943,15 @@ static void sha3Func(
   sqlite3_value **argv
 ){
   SHA3Context cx;
-  int eType = sqlite3_value_type(argv[0]);
-  int nByte = sqlite3_value_bytes(argv[0]);
+  int eType = bentley_sqlite3_value_type(argv[0]);
+  int nByte = bentley_sqlite3_value_bytes(argv[0]);
   int iSize;
   if( argc==1 ){
     iSize = 256;
   }else{
-    iSize = sqlite3_value_int(argv[1]);
+    iSize = bentley_sqlite3_value_int(argv[1]);
     if( iSize!=224 && iSize!=256 && iSize!=384 && iSize!=512 ){
-      sqlite3_result_error(context, "SHA3 size should be one of: 224 256 "
+      bentley_sqlite3_result_error(context, "SHA3 size should be one of: 224 256 "
                                     "384 512", -1);
       return;
     }
@@ -2959,14 +2959,14 @@ static void sha3Func(
   if( eType==SQLITE_NULL ) return;
   SHA3Init(&cx, iSize);
   if( eType==SQLITE_BLOB ){
-    SHA3Update(&cx, sqlite3_value_blob(argv[0]), nByte);
+    SHA3Update(&cx, bentley_sqlite3_value_blob(argv[0]), nByte);
   }else{
-    SHA3Update(&cx, sqlite3_value_text(argv[0]), nByte);
+    SHA3Update(&cx, bentley_sqlite3_value_text(argv[0]), nByte);
   }
-  sqlite3_result_blob(context, SHA3Final(&cx), iSize/8, SQLITE_TRANSIENT);
+  bentley_sqlite3_result_blob(context, SHA3Final(&cx), iSize/8, SQLITE_TRANSIENT);
 }
 
-/* Compute a string using sqlite3_vsnprintf() with a maximum length
+/* Compute a string using bentley_sqlite3_vsnprintf() with a maximum length
 ** of 50 bytes and add it to the hash.
 */
 static void sha3_step_vformat(
@@ -2978,7 +2978,7 @@ static void sha3_step_vformat(
   int n;
   char zBuf[50];
   va_start(ap, zFormat);
-  sqlite3_vsnprintf(sizeof(zBuf),zBuf,zFormat,ap);
+  bentley_sqlite3_vsnprintf(sizeof(zBuf),zBuf,zFormat,ap);
   va_end(ap);
   n = (int)strlen(zBuf);
   SHA3Update(p, (unsigned char*)zBuf, n);
@@ -2988,7 +2988,7 @@ static void sha3_step_vformat(
 ** Update a SHA3Context using a single sqlite3_value.
 */
 static void sha3UpdateFromValue(SHA3Context *p, sqlite3_value *pVal){
-  switch( sqlite3_value_type(pVal) ){
+  switch( bentley_sqlite3_value_type(pVal) ){
     case SQLITE_NULL: {
       SHA3Update(p, (const unsigned char*)"N",1);
       break;
@@ -2997,7 +2997,7 @@ static void sha3UpdateFromValue(SHA3Context *p, sqlite3_value *pVal){
       sqlite3_uint64 u;
       int j;
       unsigned char x[9];
-      sqlite3_int64 v = sqlite3_value_int64(pVal);
+      sqlite3_int64 v = bentley_sqlite3_value_int64(pVal);
       memcpy(&u, &v, 8);
       for(j=8; j>=1; j--){
         x[j] = u & 0xff;
@@ -3011,7 +3011,7 @@ static void sha3UpdateFromValue(SHA3Context *p, sqlite3_value *pVal){
       sqlite3_uint64 u;
       int j;
       unsigned char x[9];
-      double r = sqlite3_value_double(pVal);
+      double r = bentley_sqlite3_value_double(pVal);
       memcpy(&u, &r, 8);
       for(j=8; j>=1; j--){
         x[j] = u & 0xff;
@@ -3022,15 +3022,15 @@ static void sha3UpdateFromValue(SHA3Context *p, sqlite3_value *pVal){
       break;
     }
     case SQLITE_TEXT: {
-      int n2 = sqlite3_value_bytes(pVal);
-      const unsigned char *z2 = sqlite3_value_text(pVal);
+      int n2 = bentley_sqlite3_value_bytes(pVal);
+      const unsigned char *z2 = bentley_sqlite3_value_text(pVal);
       sha3_step_vformat(p,"T%d:",n2);
       SHA3Update(p, z2, n2);
       break;
     }
     case SQLITE_BLOB: {
-      int n2 = sqlite3_value_bytes(pVal);
-      const unsigned char *z2 = sqlite3_value_blob(pVal);
+      int n2 = bentley_sqlite3_value_bytes(pVal);
+      const unsigned char *z2 = bentley_sqlite3_value_blob(pVal);
       sha3_step_vformat(p,"B%d:",n2);
       SHA3Update(p, z2, n2);
       break;
@@ -3075,8 +3075,8 @@ static void sha3QueryFunc(
   int argc,
   sqlite3_value **argv
 ){
-  sqlite3 *db = sqlite3_context_db_handle(context);
-  const char *zSql = (const char*)sqlite3_value_text(argv[0]);
+  sqlite3 *db = bentley_sqlite3_context_db_handle(context);
+  const char *zSql = (const char*)bentley_sqlite3_value_text(argv[0]);
   sqlite3_stmt *pStmt = 0;
   int nCol;                   /* Number of columns in the result set */
   int i;                      /* Loop counter */
@@ -3089,9 +3089,9 @@ static void sha3QueryFunc(
   if( argc==1 ){
     iSize = 256;
   }else{
-    iSize = sqlite3_value_int(argv[1]);
+    iSize = bentley_sqlite3_value_int(argv[1]);
     if( iSize!=224 && iSize!=256 && iSize!=384 && iSize!=512 ){
-      sqlite3_result_error(context, "SHA3 size should be one of: 224 256 "
+      bentley_sqlite3_result_error(context, "SHA3 size should be one of: 224 256 "
                                     "384 512", -1);
       return;
     }
@@ -3099,24 +3099,24 @@ static void sha3QueryFunc(
   if( zSql==0 ) return;
   SHA3Init(&cx, iSize);
   while( zSql[0] ){
-    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zSql);
+    rc = bentley_sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zSql);
     if( rc ){
-      char *zMsg = sqlite3_mprintf("error SQL statement [%s]: %s",
-                                   zSql, sqlite3_errmsg(db));
-      sqlite3_finalize(pStmt);
-      sqlite3_result_error(context, zMsg, -1);
-      sqlite3_free(zMsg);
+      char *zMsg = bentley_sqlite3_mprintf("error SQL statement [%s]: %s",
+                                   zSql, bentley_sqlite3_errmsg(db));
+      bentley_sqlite3_finalize(pStmt);
+      bentley_sqlite3_result_error(context, zMsg, -1);
+      bentley_sqlite3_free(zMsg);
       return;
     }
-    if( !sqlite3_stmt_readonly(pStmt) ){
-      char *zMsg = sqlite3_mprintf("non-query: [%s]", sqlite3_sql(pStmt));
-      sqlite3_finalize(pStmt);
-      sqlite3_result_error(context, zMsg, -1);
-      sqlite3_free(zMsg);
+    if( !bentley_sqlite3_stmt_readonly(pStmt) ){
+      char *zMsg = bentley_sqlite3_mprintf("non-query: [%s]", bentley_sqlite3_sql(pStmt));
+      bentley_sqlite3_finalize(pStmt);
+      bentley_sqlite3_result_error(context, zMsg, -1);
+      bentley_sqlite3_free(zMsg);
       return;
     }
-    nCol = sqlite3_column_count(pStmt);
-    z = sqlite3_sql(pStmt);
+    nCol = bentley_sqlite3_column_count(pStmt);
+    z = bentley_sqlite3_sql(pStmt);
     if( z ){
       n = (int)strlen(z);
       sha3_step_vformat(&cx,"S%d:",n);
@@ -3124,15 +3124,15 @@ static void sha3QueryFunc(
     }
 
     /* Compute a hash over the result of the query */
-    while( SQLITE_ROW==sqlite3_step(pStmt) ){
+    while( SQLITE_ROW==bentley_sqlite3_step(pStmt) ){
       SHA3Update(&cx,(const unsigned char*)"R",1);
       for(i=0; i<nCol; i++){
-        sha3UpdateFromValue(&cx, sqlite3_column_value(pStmt,i));
+        sha3UpdateFromValue(&cx, bentley_sqlite3_column_value(pStmt,i));
       }
     }
-    sqlite3_finalize(pStmt);
+    bentley_sqlite3_finalize(pStmt);
   }
-  sqlite3_result_blob(context, SHA3Final(&cx), iSize/8, SQLITE_TRANSIENT);
+  bentley_sqlite3_result_blob(context, SHA3Final(&cx), iSize/8, SQLITE_TRANSIENT);
 }
 
 /*
@@ -3144,12 +3144,12 @@ static void sha3AggStep(
   sqlite3_value **argv
 ){
   SHA3Context *p;
-  p = (SHA3Context*)sqlite3_aggregate_context(context, sizeof(*p));
+  p = (SHA3Context*)bentley_sqlite3_aggregate_context(context, sizeof(*p));
   if( p==0 ) return;
   if( p->nRate==0 ){
     int sz = 256;
     if( argc==2 ){
-      sz = sqlite3_value_int(argv[1]);
+      sz = bentley_sqlite3_value_int(argv[1]);
       if( sz!=224 && sz!=384 && sz!=512 ){
         sz = 256;
       }
@@ -3165,10 +3165,10 @@ static void sha3AggStep(
 */
 static void sha3AggFinal(sqlite3_context *context){
   SHA3Context *p;
-  p = (SHA3Context*)sqlite3_aggregate_context(context, sizeof(*p));
+  p = (SHA3Context*)bentley_sqlite3_aggregate_context(context, sizeof(*p));
   if( p==0 ) return;
   if( p->iSize ){
-    sqlite3_result_blob(context, SHA3Final(p), p->iSize/8, SQLITE_TRANSIENT);
+    bentley_sqlite3_result_blob(context, SHA3Final(p), p->iSize/8, SQLITE_TRANSIENT);
   }
 }
 
@@ -3185,31 +3185,31 @@ int sqlite3_shathree_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "sha3", 1,
+  rc = bentley_sqlite3_create_function(db, "sha3", 1,
                       SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
                       0, sha3Func, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha3", 2,
+    rc = bentley_sqlite3_create_function(db, "sha3", 2,
                       SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
                       0, sha3Func, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha3_agg", 1,
+    rc = bentley_sqlite3_create_function(db, "sha3_agg", 1,
                       SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
                       0, 0, sha3AggStep, sha3AggFinal);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha3_agg", 2,
+    rc = bentley_sqlite3_create_function(db, "sha3_agg", 2,
                       SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
                       0, 0, sha3AggStep, sha3AggFinal);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha3_query", 1,
+    rc = bentley_sqlite3_create_function(db, "sha3_query", 1,
                       SQLITE_UTF8 | SQLITE_DIRECTONLY,
                       0, sha3QueryFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha3_query", 2,
+    rc = bentley_sqlite3_create_function(db, "sha3_query", 2,
                       SQLITE_UTF8 | SQLITE_DIRECTONLY,
                       0, sha3QueryFunc, 0, 0);
   }
@@ -3394,7 +3394,7 @@ static void hash_step(
   (void)memcpy(&p->buffer[j], &data[i], len - i);
 }
 
-/* Compute a string using sqlite3_vsnprintf() and hash it */
+/* Compute a string using bentley_sqlite3_vsnprintf() and hash it */
 static void hash_step_vformat(
   SHA1Context *p,                 /* Add content to this context */
   const char *zFormat,
@@ -3404,7 +3404,7 @@ static void hash_step_vformat(
   int n;
   char zBuf[50];
   va_start(ap, zFormat);
-  sqlite3_vsnprintf(sizeof(zBuf),zBuf,zFormat,ap);
+  bentley_sqlite3_vsnprintf(sizeof(zBuf),zBuf,zFormat,ap);
   va_end(ap);
   n = (int)strlen(zBuf);
   hash_step(p, (unsigned char*)zBuf, n);
@@ -3464,24 +3464,24 @@ static void sha1Func(
   sqlite3_value **argv
 ){
   SHA1Context cx;
-  int eType = sqlite3_value_type(argv[0]);
-  int nByte = sqlite3_value_bytes(argv[0]);
+  int eType = bentley_sqlite3_value_type(argv[0]);
+  int nByte = bentley_sqlite3_value_bytes(argv[0]);
   char zOut[44];
 
   assert( argc==1 );
   if( eType==SQLITE_NULL ) return;
   hash_init(&cx);
   if( eType==SQLITE_BLOB ){
-    hash_step(&cx, sqlite3_value_blob(argv[0]), nByte);
+    hash_step(&cx, bentley_sqlite3_value_blob(argv[0]), nByte);
   }else{
-    hash_step(&cx, sqlite3_value_text(argv[0]), nByte);
+    hash_step(&cx, bentley_sqlite3_value_text(argv[0]), nByte);
   }
-  if( sqlite3_user_data(context)!=0 ){
+  if( bentley_sqlite3_user_data(context)!=0 ){
     hash_finish(&cx, zOut, 1);
-    sqlite3_result_blob(context, zOut, 20, SQLITE_TRANSIENT);
+    bentley_sqlite3_result_blob(context, zOut, 20, SQLITE_TRANSIENT);
   }else{
     hash_finish(&cx, zOut, 0);
-    sqlite3_result_blob(context, zOut, 40, SQLITE_TRANSIENT);
+    bentley_sqlite3_result_blob(context, zOut, 40, SQLITE_TRANSIENT);
   }
 }
 
@@ -3502,8 +3502,8 @@ static void sha1QueryFunc(
   int argc,
   sqlite3_value **argv
 ){
-  sqlite3 *db = sqlite3_context_db_handle(context);
-  const char *zSql = (const char*)sqlite3_value_text(argv[0]);
+  sqlite3 *db = bentley_sqlite3_context_db_handle(context);
+  const char *zSql = (const char*)bentley_sqlite3_value_text(argv[0]);
   sqlite3_stmt *pStmt = 0;
   int nCol;                   /* Number of columns in the result set */
   int i;                      /* Loop counter */
@@ -3517,33 +3517,33 @@ static void sha1QueryFunc(
   if( zSql==0 ) return;
   hash_init(&cx);
   while( zSql[0] ){
-    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zSql);
+    rc = bentley_sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zSql);
     if( rc ){
-      char *zMsg = sqlite3_mprintf("error SQL statement [%s]: %s",
-                                   zSql, sqlite3_errmsg(db));
-      sqlite3_finalize(pStmt);
-      sqlite3_result_error(context, zMsg, -1);
-      sqlite3_free(zMsg);
+      char *zMsg = bentley_sqlite3_mprintf("error SQL statement [%s]: %s",
+                                   zSql, bentley_sqlite3_errmsg(db));
+      bentley_sqlite3_finalize(pStmt);
+      bentley_sqlite3_result_error(context, zMsg, -1);
+      bentley_sqlite3_free(zMsg);
       return;
     }
-    if( !sqlite3_stmt_readonly(pStmt) ){
-      char *zMsg = sqlite3_mprintf("non-query: [%s]", sqlite3_sql(pStmt));
-      sqlite3_finalize(pStmt);
-      sqlite3_result_error(context, zMsg, -1);
-      sqlite3_free(zMsg);
+    if( !bentley_sqlite3_stmt_readonly(pStmt) ){
+      char *zMsg = bentley_sqlite3_mprintf("non-query: [%s]", bentley_sqlite3_sql(pStmt));
+      bentley_sqlite3_finalize(pStmt);
+      bentley_sqlite3_result_error(context, zMsg, -1);
+      bentley_sqlite3_free(zMsg);
       return;
     }
-    nCol = sqlite3_column_count(pStmt);
-    z = sqlite3_sql(pStmt);
+    nCol = bentley_sqlite3_column_count(pStmt);
+    z = bentley_sqlite3_sql(pStmt);
     n = (int)strlen(z);
     hash_step_vformat(&cx,"S%d:",n);
     hash_step(&cx,(unsigned char*)z,n);
 
     /* Compute a hash over the result of the query */
-    while( SQLITE_ROW==sqlite3_step(pStmt) ){
+    while( SQLITE_ROW==bentley_sqlite3_step(pStmt) ){
       hash_step(&cx,(const unsigned char*)"R",1);
       for(i=0; i<nCol; i++){
-        switch( sqlite3_column_type(pStmt,i) ){
+        switch( bentley_sqlite3_column_type(pStmt,i) ){
           case SQLITE_NULL: {
             hash_step(&cx, (const unsigned char*)"N",1);
             break;
@@ -3552,7 +3552,7 @@ static void sha1QueryFunc(
             sqlite3_uint64 u;
             int j;
             unsigned char x[9];
-            sqlite3_int64 v = sqlite3_column_int64(pStmt,i);
+            sqlite3_int64 v = bentley_sqlite3_column_int64(pStmt,i);
             memcpy(&u, &v, 8);
             for(j=8; j>=1; j--){
               x[j] = u & 0xff;
@@ -3566,7 +3566,7 @@ static void sha1QueryFunc(
             sqlite3_uint64 u;
             int j;
             unsigned char x[9];
-            double r = sqlite3_column_double(pStmt,i);
+            double r = bentley_sqlite3_column_double(pStmt,i);
             memcpy(&u, &r, 8);
             for(j=8; j>=1; j--){
               x[j] = u & 0xff;
@@ -3577,15 +3577,15 @@ static void sha1QueryFunc(
             break;
           }
           case SQLITE_TEXT: {
-            int n2 = sqlite3_column_bytes(pStmt, i);
-            const unsigned char *z2 = sqlite3_column_text(pStmt, i);
+            int n2 = bentley_sqlite3_column_bytes(pStmt, i);
+            const unsigned char *z2 = bentley_sqlite3_column_text(pStmt, i);
             hash_step_vformat(&cx,"T%d:",n2);
             hash_step(&cx, z2, n2);
             break;
           }
           case SQLITE_BLOB: {
-            int n2 = sqlite3_column_bytes(pStmt, i);
-            const unsigned char *z2 = sqlite3_column_blob(pStmt, i);
+            int n2 = bentley_sqlite3_column_bytes(pStmt, i);
+            const unsigned char *z2 = bentley_sqlite3_column_blob(pStmt, i);
             hash_step_vformat(&cx,"B%d:",n2);
             hash_step(&cx, z2, n2);
             break;
@@ -3593,10 +3593,10 @@ static void sha1QueryFunc(
         }
       }
     }
-    sqlite3_finalize(pStmt);
+    bentley_sqlite3_finalize(pStmt);
   }
   hash_finish(&cx, zOut, 0);
-  sqlite3_result_text(context, zOut, 40, SQLITE_TRANSIENT);
+  bentley_sqlite3_result_text(context, zOut, 40, SQLITE_TRANSIENT);
 }
 
 
@@ -3612,16 +3612,16 @@ int sqlite3_sha_init(
   static int one = 1;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "sha1", 1, 
+  rc = bentley_sqlite3_create_function(db, "sha1", 1, 
                        SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
                                 0, sha1Func, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha1b", 1, 
+    rc = bentley_sqlite3_create_function(db, "sha1b", 1, 
                        SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
                           (void*)&one, sha1Func, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha1_query", 1, 
+    rc = bentley_sqlite3_create_function(db, "sha1_query", 1, 
                                  SQLITE_UTF8|SQLITE_DIRECTONLY, 0,
                                  sha1QueryFunc, 0, 0);
   }
@@ -3720,7 +3720,7 @@ int sqlite3_uint_init(
 ){
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  return sqlite3_create_collation(db, "uint", SQLITE_UTF8, 0, uintCollFunc);
+  return bentley_sqlite3_create_collation(db, "uint", SQLITE_UTF8, 0, uintCollFunc);
 }
 
 /************************* End ../ext/misc/uint.c ********************/
@@ -3771,7 +3771,7 @@ struct Decimal {
 ** Release memory held by a Decimal, but do not free the object itself.
 */
 static void decimal_clear(Decimal *p){
-  sqlite3_free(p->a);
+  bentley_sqlite3_free(p->a);
 }
 
 /*
@@ -3780,7 +3780,7 @@ static void decimal_clear(Decimal *p){
 static void decimal_free(Decimal *p){
   if( p ){
     decimal_clear(p);
-    sqlite3_free(p);
+    bentley_sqlite3_free(p);
   }
 }
 
@@ -3793,7 +3793,7 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
   int i;
   int iExp = 0;
 
-  p = sqlite3_malloc( sizeof(*p) );
+  p = bentley_sqlite3_malloc( sizeof(*p) );
   if( p==0 ) goto new_from_text_failed;
   p->sign = 0;
   p->oom = 0;
@@ -3801,7 +3801,7 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
   p->isNull = 0;
   p->nDigit = 0;
   p->nFrac = 0;
-  p->a = sqlite3_malloc64( n+1 );
+  p->a = bentley_sqlite3_malloc64( n+1 );
   if( p->a==0 ) goto new_from_text_failed;
   for(i=0; isspace(zIn[i]); i++){}
   if( zIn[i]=='-' ){
@@ -3852,7 +3852,7 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
       }
     }
     if( iExp>0 ){   
-      p->a = sqlite3_realloc64(p->a, p->nDigit + iExp + 1 );
+      p->a = bentley_sqlite3_realloc64(p->a, p->nDigit + iExp + 1 );
       if( p->a==0 ) goto new_from_text_failed;
       memset(p->a+p->nDigit, 0, iExp);
       p->nDigit += iExp;
@@ -3871,7 +3871,7 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
       }
     }
     if( iExp>0 ){
-      p->a = sqlite3_realloc64(p->a, p->nDigit + iExp + 1 );
+      p->a = bentley_sqlite3_realloc64(p->a, p->nDigit + iExp + 1 );
       if( p->a==0 ) goto new_from_text_failed;
       memmove(p->a+iExp, p->a, p->nDigit);
       memset(p->a, 0, iExp);
@@ -3883,8 +3883,8 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
 
 new_from_text_failed:
   if( p ){
-    if( p->a ) sqlite3_free(p->a);
-    sqlite3_free(p);
+    if( p->a ) bentley_sqlite3_free(p->a);
+    bentley_sqlite3_free(p);
   }
   return 0;
 }
@@ -3909,22 +3909,22 @@ static Decimal *decimal_new(
   int bTextOnly                /* Always interpret pIn as text if true */
 ){
   Decimal *p = 0;
-  int eType = sqlite3_value_type(pIn);
+  int eType = bentley_sqlite3_value_type(pIn);
   if( bTextOnly && (eType==SQLITE_FLOAT || eType==SQLITE_BLOB) ){
     eType = SQLITE_TEXT;
   }
   switch( eType ){
     case SQLITE_TEXT:
     case SQLITE_INTEGER: {
-      const char *zIn = (const char*)sqlite3_value_text(pIn);
-      int n = sqlite3_value_bytes(pIn);
+      const char *zIn = (const char*)bentley_sqlite3_value_text(pIn);
+      int n = bentley_sqlite3_value_bytes(pIn);
       p = decimalNewFromText(zIn, n);
       if( p==0 ) goto new_failed;
       break;
     }
 
     case SQLITE_FLOAT: {
-      p = decimalFromDouble(sqlite3_value_double(pIn));
+      p = decimalFromDouble(bentley_sqlite3_value_double(pIn));
       break;
     }
 
@@ -3934,8 +3934,8 @@ static Decimal *decimal_new(
       sqlite3_uint64 v = 0;
       double r;
 
-      if( sqlite3_value_bytes(pIn)!=sizeof(r) ) break;
-      x = sqlite3_value_blob(pIn);
+      if( bentley_sqlite3_value_bytes(pIn)!=sizeof(r) ) break;
+      x = bentley_sqlite3_value_blob(pIn);
       for(i=0; i<sizeof(r); i++){
         v = (v<<8) | x[i];
       }
@@ -3951,8 +3951,8 @@ static Decimal *decimal_new(
   return p;
 
 new_failed:
-  if( pCtx ) sqlite3_result_error_nomem(pCtx);
-  sqlite3_free(p);
+  if( pCtx ) bentley_sqlite3_result_error_nomem(pCtx);
+  bentley_sqlite3_free(p);
   return 0;
 }
 
@@ -3964,16 +3964,16 @@ static void decimal_result(sqlite3_context *pCtx, Decimal *p){
   int i, j;
   int n;
   if( p==0 || p->oom ){
-    sqlite3_result_error_nomem(pCtx);
+    bentley_sqlite3_result_error_nomem(pCtx);
     return;
   }
   if( p->isNull ){
-    sqlite3_result_null(pCtx);
+    bentley_sqlite3_result_null(pCtx);
     return;
   }
-  z = sqlite3_malloc( p->nDigit+4 );
+  z = bentley_sqlite3_malloc( p->nDigit+4 );
   if( z==0 ){
-    sqlite3_result_error_nomem(pCtx);
+    bentley_sqlite3_result_error_nomem(pCtx);
     return;
   }
   i = 0;
@@ -4006,7 +4006,7 @@ static void decimal_result(sqlite3_context *pCtx, Decimal *p){
     }while( j<p->nDigit );
   }
   z[i] = 0;
-  sqlite3_result_text(pCtx, z, i, sqlite3_free);
+  bentley_sqlite3_result_text(pCtx, z, i, bentley_sqlite3_free);
 }
 
 /*
@@ -4025,20 +4025,20 @@ static void decimal_result_sci(sqlite3_context *pCtx, Decimal *p){
   signed char *a;       /* Array of digits */
 
   if( p==0 || p->oom ){
-    sqlite3_result_error_nomem(pCtx);
+    bentley_sqlite3_result_error_nomem(pCtx);
     return;
   }
   if( p->isNull ){
-    sqlite3_result_null(pCtx);
+    bentley_sqlite3_result_null(pCtx);
     return;
   }
   for(nDigit=p->nDigit; nDigit>0 && p->a[nDigit-1]==0; nDigit--){}
   for(nZero=0; nZero<nDigit && p->a[nZero]==0; nZero++){}
   nFrac = p->nFrac + (nDigit - p->nDigit);
   nDigit -= nZero;
-  z = sqlite3_malloc( nDigit+20 );
+  z = bentley_sqlite3_malloc( nDigit+20 );
   if( z==0 ){
-    sqlite3_result_error_nomem(pCtx);
+    bentley_sqlite3_result_error_nomem(pCtx);
     return;
   }
   if( nDigit==0 ){
@@ -4066,8 +4066,8 @@ static void decimal_result_sci(sqlite3_context *pCtx, Decimal *p){
     i = nDigit+2;
   }
   exp = nDigit - nFrac - 1;
-  sqlite3_snprintf(nDigit+20-i, &z[i], "e%+03d", exp);
-  sqlite3_result_text(pCtx, z, -1, sqlite3_free);
+  bentley_sqlite3_snprintf(nDigit+20-i, &z[i], "e%+03d", exp);
+  bentley_sqlite3_result_text(pCtx, z, -1, bentley_sqlite3_free);
 }
 
 /*
@@ -4127,7 +4127,7 @@ static void decimalCmpFunc(
   rc = decimal_cmp(pA, pB);
   if( rc<0 ) rc = -1;
   else if( rc>0 ) rc = +1;
-  sqlite3_result_int(context, rc);
+  bentley_sqlite3_result_int(context, rc);
 cmp_done:
   decimal_free(pA);
   decimal_free(pB);
@@ -4144,7 +4144,7 @@ static void decimal_expand(Decimal *p, int nDigit, int nFrac){
   nAddFrac = nFrac - p->nFrac;
   nAddSig = (nDigit - p->nDigit) - nAddFrac;
   if( nAddFrac==0 && nAddSig==0 ) return;
-  p->a = sqlite3_realloc64(p->a, nDigit+1);
+  p->a = bentley_sqlite3_realloc64(p->a, nDigit+1);
   if( p->a==0 ){
     p->oom = 1;
     return;
@@ -4249,7 +4249,7 @@ static void decimalMul(Decimal *pA, Decimal *pB){
   ){
     goto mul_end;
   }
-  acc = sqlite3_malloc64( pA->nDigit + pB->nDigit + 2 );
+  acc = bentley_sqlite3_malloc64( pA->nDigit + pB->nDigit + 2 );
   if( acc==0 ){
     pA->oom = 1;
     goto mul_end;
@@ -4269,7 +4269,7 @@ static void decimalMul(Decimal *pA, Decimal *pB){
     acc[k] = x%10;
     acc[k-1] += x/10;
   }
-  sqlite3_free(pA->a);
+  bentley_sqlite3_free(pA->a);
   pA->a = acc;
   acc = 0;
   pA->nDigit += pB->nDigit + 2;
@@ -4281,7 +4281,7 @@ static void decimalMul(Decimal *pA, Decimal *pB){
   }
 
 mul_end:
-  sqlite3_free(acc);
+  bentley_sqlite3_free(acc);
 }
 
 /*
@@ -4359,7 +4359,7 @@ static Decimal *decimalFromDouble(double r){
   }
 
   /* At this point m is the integer significand and e is the exponent */
-  sqlite3_snprintf(sizeof(zNum), zNum, "%lld", m);
+  bentley_sqlite3_snprintf(sizeof(zNum), zNum, "%lld", m);
   pA = decimalNewFromText(zNum, (int)strlen(zNum));
   pX = decimalPow2(e);
   decimalMul(pA, pX);
@@ -4388,7 +4388,7 @@ static void decimalFunc(
   Decimal *p =  decimal_new(context, argv[0], 0);
   UNUSED_PARAMETER(argc);
   if( p ){
-    if( sqlite3_user_data(context)!=0 ){
+    if( bentley_sqlite3_user_data(context)!=0 ){
       decimal_result_sci(context, p);
     }else{
       decimal_result(context, p);
@@ -4471,11 +4471,11 @@ static void decimalSumStep(
   Decimal *p;
   Decimal *pArg;
   UNUSED_PARAMETER(argc);
-  p = sqlite3_aggregate_context(context, sizeof(*p));
+  p = bentley_sqlite3_aggregate_context(context, sizeof(*p));
   if( p==0 ) return;
   if( !p->isInit ){
     p->isInit = 1;
-    p->a = sqlite3_malloc(2);
+    p->a = bentley_sqlite3_malloc(2);
     if( p->a==0 ){
       p->oom = 1;
     }else{
@@ -4484,7 +4484,7 @@ static void decimalSumStep(
     p->nDigit = 1;
     p->nFrac = 0;
   }
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  if( bentley_sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   pArg = decimal_new(context, argv[0], 1);
   decimal_add(p, pArg);
   decimal_free(pArg);
@@ -4497,21 +4497,21 @@ static void decimalSumInverse(
   Decimal *p;
   Decimal *pArg;
   UNUSED_PARAMETER(argc);
-  p = sqlite3_aggregate_context(context, sizeof(*p));
+  p = bentley_sqlite3_aggregate_context(context, sizeof(*p));
   if( p==0 ) return;
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  if( bentley_sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   pArg = decimal_new(context, argv[0], 1);
   if( pArg ) pArg->sign = !pArg->sign;
   decimal_add(p, pArg);
   decimal_free(pArg);
 }
 static void decimalSumValue(sqlite3_context *context){
-  Decimal *p = sqlite3_aggregate_context(context, 0);
+  Decimal *p = bentley_sqlite3_aggregate_context(context, 0);
   if( p==0 ) return;
   decimal_result(context, p);
 }
 static void decimalSumFinalize(sqlite3_context *context){
-  Decimal *p = sqlite3_aggregate_context(context, 0);
+  Decimal *p = bentley_sqlite3_aggregate_context(context, 0);
   if( p==0 ) return;
   decimal_result(context, p);
   decimal_clear(p);
@@ -4557,8 +4557,8 @@ static void decimalPow2Func(
   sqlite3_value **argv
 ){
   UNUSED_PARAMETER(argc);
-  if( sqlite3_value_type(argv[0])==SQLITE_INTEGER ){
-    Decimal *pA = decimalPow2(sqlite3_value_int(argv[0]));
+  if( bentley_sqlite3_value_type(argv[0])==SQLITE_INTEGER ){
+    Decimal *pA = decimalPow2(bentley_sqlite3_value_int(argv[0]));
     decimal_result_sci(context, pA);
     decimal_free(pA);
   }
@@ -4593,18 +4593,18 @@ int sqlite3_decimal_init(
   SQLITE_EXTENSION_INIT2(pApi);
 
   for(i=0; i<(int)(sizeof(aFunc)/sizeof(aFunc[0])) && rc==SQLITE_OK; i++){
-    rc = sqlite3_create_function(db, aFunc[i].zFuncName, aFunc[i].nArg,
+    rc = bentley_sqlite3_create_function(db, aFunc[i].zFuncName, aFunc[i].nArg,
                    SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,
                    aFunc[i].iArg ? db : 0, aFunc[i].xFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_window_function(db, "decimal_sum", 1,
+    rc = bentley_sqlite3_create_window_function(db, "decimal_sum", 1,
                    SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC, 0,
                    decimalSumStep, decimalSumFinalize,
                    decimalSumValue, decimalSumInverse, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_collation(db, "decimal", SQLITE_UTF8,
+    rc = bentley_sqlite3_create_collation(db, "decimal", SQLITE_UTF8,
                                   0, decimalCollFunc);
   }
   return rc;
@@ -4670,7 +4670,7 @@ int sqlite3_decimal_init(
 **
 **  (12)  The percentile(Y,P) is implemented as a single C99 source-code
 **        file that compiles into a shared-library or DLL that can be loaded
-**        into SQLite using the sqlite3_load_extension() interface.
+**        into SQLite using the bentley_sqlite3_load_extension() interface.
 **
 **  (13)  A separate median(Y) function is the equivalent percentile(Y,50).
 **
@@ -4824,18 +4824,18 @@ static int percentBinarySearch(Percentile *p, double y, int bExact){
 ** of the function.
 */
 static void percentError(sqlite3_context *pCtx, const char *zFormat, ...){
-  PercentileFunc *pFunc = (PercentileFunc*)sqlite3_user_data(pCtx);
+  PercentileFunc *pFunc = (PercentileFunc*)bentley_sqlite3_user_data(pCtx);
   char *zMsg1;
   char *zMsg2;
   va_list ap;
 
   va_start(ap, zFormat);
-  zMsg1 = sqlite3_vmprintf(zFormat, ap);
+  zMsg1 = bentley_sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
-  zMsg2 = zMsg1 ? sqlite3_mprintf(zMsg1, pFunc->zName) : 0;
-  sqlite3_result_error(pCtx, zMsg2, -1);
-  sqlite3_free(zMsg1);
-  sqlite3_free(zMsg2);
+  zMsg2 = zMsg1 ? bentley_sqlite3_mprintf(zMsg1, pFunc->zName) : 0;
+  bentley_sqlite3_result_error(pCtx, zMsg2, -1);
+  bentley_sqlite3_free(zMsg1);
+  bentley_sqlite3_free(zMsg2);
 }
 
 /*
@@ -4854,9 +4854,9 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
     rPct = 0.5;
   }else{
     /* Requirement 3:  P must be a number between 0 and 100 */
-    PercentileFunc *pFunc = (PercentileFunc*)sqlite3_user_data(pCtx);
-    eType = sqlite3_value_numeric_type(argv[1]);
-    rPct = sqlite3_value_double(argv[1])/(double)pFunc->mxFrac;
+    PercentileFunc *pFunc = (PercentileFunc*)bentley_sqlite3_user_data(pCtx);
+    eType = bentley_sqlite3_value_numeric_type(argv[1]);
+    rPct = bentley_sqlite3_value_double(argv[1])/(double)pFunc->mxFrac;
     if( (eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT)
      || rPct<0.0 || rPct>1.0
     ){
@@ -4868,7 +4868,7 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   }
 
   /* Allocate the session context. */
-  p = (Percentile*)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  p = (Percentile*)bentley_sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p==0 ) return;
 
   /* Remember the P value.  Throw an error if the P value is different
@@ -4883,7 +4883,7 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   }
 
   /* Ignore rows for which Y is NULL */
-  eType = sqlite3_value_type(argv[0]);
+  eType = bentley_sqlite3_value_type(argv[0]);
   if( eType==SQLITE_NULL ) return;
 
   /* If not NULL, then Y must be numeric.  Otherwise throw an error.
@@ -4894,7 +4894,7 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   }
 
   /* Throw an error if the Y value is infinity or NaN */
-  y = sqlite3_value_double(argv[0]);
+  y = bentley_sqlite3_value_double(argv[0]);
   if( percentIsInfinity(y) ){
     percentError(pCtx, "Inf input to %%s()");
     return;
@@ -4903,11 +4903,11 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   /* Allocate and store the Y */
   if( p->nUsed>=p->nAlloc ){
     unsigned n = p->nAlloc*2 + 250;
-    double *a = sqlite3_realloc64(p->a, sizeof(double)*n);
+    double *a = bentley_sqlite3_realloc64(p->a, sizeof(double)*n);
     if( a==0 ){
-      sqlite3_free(p->a);
+      bentley_sqlite3_free(p->a);
       memset(p, 0, sizeof(*p));
-      sqlite3_result_error_nomem(pCtx);
+      bentley_sqlite3_result_error_nomem(pCtx);
       return;
     }
     p->nAlloc = n;
@@ -5008,11 +5008,11 @@ static void percentInverse(sqlite3_context *pCtx,int argc,sqlite3_value **argv){
   assert( argc==2 || argc==1 );
 
   /* Allocate the session context. */
-  p = (Percentile*)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  p = (Percentile*)bentley_sqlite3_aggregate_context(pCtx, sizeof(*p));
   assert( p!=0 );
 
   /* Ignore rows for which Y is NULL */
-  eType = sqlite3_value_type(argv[0]);
+  eType = bentley_sqlite3_value_type(argv[0]);
   if( eType==SQLITE_NULL ) return;
 
   /* If not NULL, then Y must be numeric.  Otherwise throw an error.
@@ -5022,7 +5022,7 @@ static void percentInverse(sqlite3_context *pCtx,int argc,sqlite3_value **argv){
   }
 
   /* Ignore the Y value if it is infinity or NaN */
-  y = sqlite3_value_double(argv[0]);
+  y = bentley_sqlite3_value_double(argv[0]);
   if( percentIsInfinity(y) ){
     return;
   }
@@ -5049,11 +5049,11 @@ static void percentInverse(sqlite3_context *pCtx,int argc,sqlite3_value **argv){
 */
 static void percentCompute(sqlite3_context *pCtx, int bIsFinal){
   Percentile *p;
-  PercentileFunc *pFunc = (PercentileFunc*)sqlite3_user_data(pCtx);
+  PercentileFunc *pFunc = (PercentileFunc*)bentley_sqlite3_user_data(pCtx);
   unsigned i1, i2;
   double v1, v2;
   double ix, vx;
-  p = (Percentile*)sqlite3_aggregate_context(pCtx, 0);
+  p = (Percentile*)bentley_sqlite3_aggregate_context(pCtx, 0);
   if( p==0 ) return;
   if( p->a==0 ) return;
   if( p->nUsed ){
@@ -5072,10 +5072,10 @@ static void percentCompute(sqlite3_context *pCtx, int bIsFinal){
       v2 = p->a[i2];
       vx = v1 + (v2-v1)*(ix-i1);
     }
-    sqlite3_result_double(pCtx, vx);
+    bentley_sqlite3_result_double(pCtx, vx);
   }
   if( bIsFinal ){
-    sqlite3_free(p->a);
+    bentley_sqlite3_free(p->a);
     memset(p, 0, sizeof(*p));
   }else{
     p->bKeepSorted = 1;
@@ -5105,7 +5105,7 @@ int sqlite3_percentile_init(
 #endif
   (void)pzErrMsg;  /* Unused parameter */
   for(i=0; i<sizeof(aPercentFunc)/sizeof(aPercentFunc[0]); i++){
-    rc = sqlite3_create_window_function(db,
+    rc = bentley_sqlite3_create_window_function(db,
             aPercentFunc[i].zName,
             aPercentFunc[i].nArg,
             SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_SELFORDER1,
@@ -5329,63 +5329,63 @@ static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
 
 /* This function does the work for the SQLite base64(x) UDF. */
 static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
-  int nb, nc, nv = sqlite3_value_bytes(av[0]);
-  int nvMax = sqlite3_limit(sqlite3_context_db_handle(context),
+  int nb, nc, nv = bentley_sqlite3_value_bytes(av[0]);
+  int nvMax = bentley_sqlite3_limit(bentley_sqlite3_context_db_handle(context),
                             SQLITE_LIMIT_LENGTH, -1);
   char *cBuf;
   u8 *bBuf;
   assert(na==1);
-  switch( sqlite3_value_type(av[0]) ){
+  switch( bentley_sqlite3_value_type(av[0]) ){
   case SQLITE_BLOB:
     nb = nv;
     nc = 4*(nv+2/3); /* quads needed */
     nc += (nc+(B64_DARK_MAX-1))/B64_DARK_MAX + 1; /* LFs and a 0-terminator */
     if( nvMax < nc ){
-      sqlite3_result_error(context, "blob expanded to base64 too big", -1);
+      bentley_sqlite3_result_error(context, "blob expanded to base64 too big", -1);
       return;
     }
-    bBuf = (u8*)sqlite3_value_blob(av[0]);
+    bBuf = (u8*)bentley_sqlite3_value_blob(av[0]);
     if( !bBuf ){
-      if( SQLITE_NOMEM==sqlite3_errcode(sqlite3_context_db_handle(context)) ){
+      if( SQLITE_NOMEM==bentley_sqlite3_errcode(bentley_sqlite3_context_db_handle(context)) ){
         goto memFail;
       }
-      sqlite3_result_text(context,"",-1,SQLITE_STATIC);
+      bentley_sqlite3_result_text(context,"",-1,SQLITE_STATIC);
       break;
     }
-    cBuf = sqlite3_malloc(nc);
+    cBuf = bentley_sqlite3_malloc(nc);
     if( !cBuf ) goto memFail;
     nc = (int)(toBase64(bBuf, nb, cBuf) - cBuf);
-    sqlite3_result_text(context, cBuf, nc, sqlite3_free);
+    bentley_sqlite3_result_text(context, cBuf, nc, bentley_sqlite3_free);
     break;
   case SQLITE_TEXT:
     nc = nv;
     nb = 3*((nv+3)/4); /* may overestimate due to LF and padding */
     if( nvMax < nb ){
-      sqlite3_result_error(context, "blob from base64 may be too big", -1);
+      bentley_sqlite3_result_error(context, "blob from base64 may be too big", -1);
       return;
     }else if( nb<1 ){
       nb = 1;
     }
-    cBuf = (char *)sqlite3_value_text(av[0]);
+    cBuf = (char *)bentley_sqlite3_value_text(av[0]);
     if( !cBuf ){
-      if( SQLITE_NOMEM==sqlite3_errcode(sqlite3_context_db_handle(context)) ){
+      if( SQLITE_NOMEM==bentley_sqlite3_errcode(bentley_sqlite3_context_db_handle(context)) ){
         goto memFail;
       }
-      sqlite3_result_zeroblob(context, 0);
+      bentley_sqlite3_result_zeroblob(context, 0);
       break;
     }
-    bBuf = sqlite3_malloc(nb);
+    bBuf = bentley_sqlite3_malloc(nb);
     if( !bBuf ) goto memFail;
     nb = (int)(fromBase64(cBuf, nc, bBuf) - bBuf);
-    sqlite3_result_blob(context, bBuf, nb, sqlite3_free);
+    bentley_sqlite3_result_blob(context, bBuf, nb, bentley_sqlite3_free);
     break;
   default:
-    sqlite3_result_error(context, "base64 accepts only blob or text", -1);
+    bentley_sqlite3_result_error(context, "base64 accepts only blob or text", -1);
     return;
   }
   return;
  memFail:
-  sqlite3_result_error(context, "base64 OOM", -1);
+  bentley_sqlite3_result_error(context, "base64 OOM", -1);
 }
 
 /*
@@ -5402,7 +5402,7 @@ static int sqlite3_base64_init
 (sqlite3 *db, char **pzErr, const sqlite3_api_routines *pApi){
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErr;
-  return sqlite3_create_function
+  return bentley_sqlite3_create_function
     (db, "base64", 1,
      SQLITE_DETERMINISTIC|SQLITE_INNOCUOUS|SQLITE_DIRECTONLY|SQLITE_UTF8,
      0, base64, 0, 0);
@@ -5689,19 +5689,19 @@ static int allBase85( char *p, int len ){
 /* This function does the work for the SQLite is_base85(t) UDF. */
 static void is_base85(sqlite3_context *context, int na, sqlite3_value *av[]){
   assert(na==1);
-  switch( sqlite3_value_type(av[0]) ){
+  switch( bentley_sqlite3_value_type(av[0]) ){
   case SQLITE_TEXT:
     {
-      int rv = allBase85( (char *)sqlite3_value_text(av[0]),
-                          sqlite3_value_bytes(av[0]) );
-      sqlite3_result_int(context, rv);
+      int rv = allBase85( (char *)bentley_sqlite3_value_text(av[0]),
+                          bentley_sqlite3_value_bytes(av[0]) );
+      bentley_sqlite3_result_int(context, rv);
     }
     break;
   case SQLITE_NULL:
-    sqlite3_result_null(context);
+    bentley_sqlite3_result_null(context);
     break;
   default:
-    sqlite3_result_error(context, "is_base85 accepts only text or NULL", -1);
+    bentley_sqlite3_result_error(context, "is_base85 accepts only text or NULL", -1);
     return;
   }
 }
@@ -5709,63 +5709,63 @@ static void is_base85(sqlite3_context *context, int na, sqlite3_value *av[]){
 
 /* This function does the work for the SQLite base85(x) UDF. */
 static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
-  int nb, nc, nv = sqlite3_value_bytes(av[0]);
-  int nvMax = sqlite3_limit(sqlite3_context_db_handle(context),
+  int nb, nc, nv = bentley_sqlite3_value_bytes(av[0]);
+  int nvMax = bentley_sqlite3_limit(bentley_sqlite3_context_db_handle(context),
                             SQLITE_LIMIT_LENGTH, -1);
   char *cBuf;
   u8 *bBuf;
   assert(na==1);
-  switch( sqlite3_value_type(av[0]) ){
+  switch( bentley_sqlite3_value_type(av[0]) ){
   case SQLITE_BLOB:
     nb = nv;
     /*    ulongs    tail   newlines  tailenc+nul*/
     nc = 5*(nv/4) + nv%4 + nv/64+1 + 2;
     if( nvMax < nc ){
-      sqlite3_result_error(context, "blob expanded to base85 too big", -1);
+      bentley_sqlite3_result_error(context, "blob expanded to base85 too big", -1);
       return;
     }
-    bBuf = (u8*)sqlite3_value_blob(av[0]);
+    bBuf = (u8*)bentley_sqlite3_value_blob(av[0]);
     if( !bBuf ){
-      if( SQLITE_NOMEM==sqlite3_errcode(sqlite3_context_db_handle(context)) ){
+      if( SQLITE_NOMEM==bentley_sqlite3_errcode(bentley_sqlite3_context_db_handle(context)) ){
         goto memFail;
       }
-      sqlite3_result_text(context,"",-1,SQLITE_STATIC);
+      bentley_sqlite3_result_text(context,"",-1,SQLITE_STATIC);
       break;
     }
-    cBuf = sqlite3_malloc(nc);
+    cBuf = bentley_sqlite3_malloc(nc);
     if( !cBuf ) goto memFail;
     nc = (int)(toBase85(bBuf, nb, cBuf, "\n") - cBuf);
-    sqlite3_result_text(context, cBuf, nc, sqlite3_free);
+    bentley_sqlite3_result_text(context, cBuf, nc, bentley_sqlite3_free);
     break;
   case SQLITE_TEXT:
     nc = nv;
     nb = 4*(nv/5) + nv%5; /* may overestimate */
     if( nvMax < nb ){
-      sqlite3_result_error(context, "blob from base85 may be too big", -1);
+      bentley_sqlite3_result_error(context, "blob from base85 may be too big", -1);
       return;
     }else if( nb<1 ){
       nb = 1;
     }
-    cBuf = (char *)sqlite3_value_text(av[0]);
+    cBuf = (char *)bentley_sqlite3_value_text(av[0]);
     if( !cBuf ){
-      if( SQLITE_NOMEM==sqlite3_errcode(sqlite3_context_db_handle(context)) ){
+      if( SQLITE_NOMEM==bentley_sqlite3_errcode(bentley_sqlite3_context_db_handle(context)) ){
         goto memFail;
       }
-      sqlite3_result_zeroblob(context, 0);
+      bentley_sqlite3_result_zeroblob(context, 0);
       break;
     }
-    bBuf = sqlite3_malloc(nb);
+    bBuf = bentley_sqlite3_malloc(nb);
     if( !bBuf ) goto memFail;
     nb = (int)(fromBase85(cBuf, nc, bBuf) - bBuf);
-    sqlite3_result_blob(context, bBuf, nb, sqlite3_free);
+    bentley_sqlite3_result_blob(context, bBuf, nb, bentley_sqlite3_free);
     break;
   default:
-    sqlite3_result_error(context, "base85 accepts only blob or text.", -1);
+    bentley_sqlite3_result_error(context, "base85 accepts only blob or text.", -1);
     return;
   }
   return;
  memFail:
-  sqlite3_result_error(context, "base85 OOM", -1);
+  bentley_sqlite3_result_error(context, "base85 OOM", -1);
 }
 
 /*
@@ -5784,14 +5784,14 @@ static int sqlite3_base85_init
   (void)pzErr;
 # ifndef OMIT_BASE85_CHECKER
   {
-    int rc = sqlite3_create_function
+    int rc = bentley_sqlite3_create_function
       (db, "is_base85", 1,
        SQLITE_DETERMINISTIC|SQLITE_INNOCUOUS|SQLITE_UTF8,
        0, is_base85, 0, 0);
     if( rc!=SQLITE_OK ) return rc;
   }
 # endif
-  return sqlite3_create_function
+  return bentley_sqlite3_create_function
     (db, "base85", 1,
      SQLITE_DETERMINISTIC|SQLITE_INNOCUOUS|SQLITE_DIRECTONLY|SQLITE_UTF8,
      0, base85, 0, 0);
@@ -5991,10 +5991,10 @@ static void ieee754func(
     int isNeg;
     char zResult[100];
     assert( sizeof(m)==sizeof(r) );
-    if( sqlite3_value_type(argv[0])==SQLITE_BLOB
-     && sqlite3_value_bytes(argv[0])==sizeof(r)
+    if( bentley_sqlite3_value_type(argv[0])==SQLITE_BLOB
+     && bentley_sqlite3_value_bytes(argv[0])==sizeof(r)
     ){
-      const unsigned char *x = sqlite3_value_blob(argv[0]);
+      const unsigned char *x = bentley_sqlite3_value_blob(argv[0]);
       unsigned int i;
       sqlite3_uint64 v = 0;
       for(i=0; i<sizeof(r); i++){
@@ -6002,7 +6002,7 @@ static void ieee754func(
       }
       memcpy(&r, &v, sizeof(r));
     }else{
-      r = sqlite3_value_double(argv[0]);
+      r = bentley_sqlite3_value_double(argv[0]);
     }
     if( r<0.0 ){
       isNeg = 1;
@@ -6028,25 +6028,25 @@ static void ieee754func(
       }
       if( isNeg ) m = -m;
     }
-    switch( *(int*)sqlite3_user_data(context) ){
+    switch( *(int*)bentley_sqlite3_user_data(context) ){
       case 0:
-        sqlite3_snprintf(sizeof(zResult), zResult, "ieee754(%lld,%d)",
+        bentley_sqlite3_snprintf(sizeof(zResult), zResult, "ieee754(%lld,%d)",
                          m, e-1075);
-        sqlite3_result_text(context, zResult, -1, SQLITE_TRANSIENT);
+        bentley_sqlite3_result_text(context, zResult, -1, SQLITE_TRANSIENT);
         break;
       case 1:
-        sqlite3_result_int64(context, m);
+        bentley_sqlite3_result_int64(context, m);
         break;
       case 2:
-        sqlite3_result_int(context, e-1075);
+        bentley_sqlite3_result_int(context, e-1075);
         break;
     }
   }else{
     sqlite3_int64 m, e, a;
     double r;
     int isNeg = 0;
-    m = sqlite3_value_int64(argv[0]);
-    e = sqlite3_value_int64(argv[1]);
+    m = bentley_sqlite3_value_int64(argv[0]);
+    e = bentley_sqlite3_value_int64(argv[1]);
 
     /* Limit the range of e.  Ticket 22dea1cfdb9151e4 2021-03-02 */
     if( e>10000 ){
@@ -6060,7 +6060,7 @@ static void ieee754func(
       m = -m;
       if( m<0 ) return;
     }else if( m==0 && e>-1000 && e<1000 ){
-      sqlite3_result_double(context, 0.0);
+      bentley_sqlite3_result_double(context, 0.0);
       return;
     }
     while( (m>>32)&0xffe00000 ){
@@ -6087,7 +6087,7 @@ static void ieee754func(
     a |= e<<52;
     if( isNeg ) a |= ((sqlite3_uint64)1)<<63;
     memcpy(&r, &a, sizeof(r));
-    sqlite3_result_double(context, r);
+    bentley_sqlite3_result_double(context, r);
   }
 }
 
@@ -6100,18 +6100,18 @@ static void ieee754func_from_blob(
   sqlite3_value **argv
 ){
   UNUSED_PARAMETER(argc);
-  if( sqlite3_value_type(argv[0])==SQLITE_BLOB
-   && sqlite3_value_bytes(argv[0])==sizeof(double)
+  if( bentley_sqlite3_value_type(argv[0])==SQLITE_BLOB
+   && bentley_sqlite3_value_bytes(argv[0])==sizeof(double)
   ){
     double r;
-    const unsigned char *x = sqlite3_value_blob(argv[0]);
+    const unsigned char *x = bentley_sqlite3_value_blob(argv[0]);
     unsigned int i;
     sqlite3_uint64 v = 0;
     for(i=0; i<sizeof(r); i++){
       v = (v<<8) | x[i];
     }
     memcpy(&r, &v, sizeof(r));
-    sqlite3_result_double(context, r);
+    bentley_sqlite3_result_double(context, r);
   }
 }
 static void ieee754func_to_blob(
@@ -6120,10 +6120,10 @@ static void ieee754func_to_blob(
   sqlite3_value **argv
 ){
   UNUSED_PARAMETER(argc);
-  if( sqlite3_value_type(argv[0])==SQLITE_FLOAT
-   || sqlite3_value_type(argv[0])==SQLITE_INTEGER
+  if( bentley_sqlite3_value_type(argv[0])==SQLITE_FLOAT
+   || bentley_sqlite3_value_type(argv[0])==SQLITE_INTEGER
   ){
-    double r = sqlite3_value_double(argv[0]);
+    double r = bentley_sqlite3_value_double(argv[0]);
     sqlite3_uint64 v;
     unsigned char a[sizeof(r)];
     unsigned int i;
@@ -6132,7 +6132,7 @@ static void ieee754func_to_blob(
       a[sizeof(r)-i] = v&0xff;
       v >>= 8;
     }
-    sqlite3_result_blob(context, a, sizeof(r), SQLITE_TRANSIENT);
+    bentley_sqlite3_result_blob(context, a, sizeof(r), SQLITE_TRANSIENT);
   }
 }
 
@@ -6159,12 +6159,12 @@ static void ieee754inc(
   sqlite3_uint64 m1, m2;
   double r2;
   UNUSED_PARAMETER(argc);
-  r = sqlite3_value_double(argv[0]);
-  N = sqlite3_value_int64(argv[1]);
+  r = bentley_sqlite3_value_double(argv[0]);
+  N = bentley_sqlite3_value_int64(argv[1]);
   memcpy(&m1, &r, 8);
   m2 = m1 + N;
   memcpy(&r2, &m2, 8);
-  sqlite3_result_double(context, r2);
+  bentley_sqlite3_result_double(context, r2);
 }
 
 
@@ -6195,7 +6195,7 @@ int sqlite3_ieee_init(
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
-    rc = sqlite3_create_function(db, aFunc[i].zFName, aFunc[i].nArg,
+    rc = bentley_sqlite3_create_function(db, aFunc[i].zFName, aFunc[i].nArg,
                                SQLITE_UTF8|SQLITE_INNOCUOUS,
                                (void*)&aFunc[i].iAux,
                                aFunc[i].xFunc, 0, 0);
@@ -6469,7 +6469,7 @@ struct series_cursor {
 **
 **    (1) Allocate the series_vtab object and initialize all fields.
 **
-**    (2) Tell SQLite (via the sqlite3_declare_vtab() interface) what the
+**    (2) Tell SQLite (via the bentley_sqlite3_declare_vtab() interface) what the
 **        result set of queries against generate_series will look like.
 */
 static int seriesConnect(
@@ -6492,13 +6492,13 @@ static int seriesConnect(
   (void)argcUnused;
   (void)argvUnused;
   (void)pzErrUnused;
-  rc = sqlite3_declare_vtab(db,
+  rc = bentley_sqlite3_declare_vtab(db,
      "CREATE TABLE x(value,start hidden,stop hidden,step hidden)");
   if( rc==SQLITE_OK ){
-    pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
+    pNew = *ppVtab = bentley_sqlite3_malloc( sizeof(*pNew) );
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
-    sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
+    bentley_sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
   }
   return rc;
 }
@@ -6507,7 +6507,7 @@ static int seriesConnect(
 ** This method is the destructor for series_cursor objects.
 */
 static int seriesDisconnect(sqlite3_vtab *pVtab){
-  sqlite3_free(pVtab);
+  bentley_sqlite3_free(pVtab);
   return SQLITE_OK;
 }
 
@@ -6517,7 +6517,7 @@ static int seriesDisconnect(sqlite3_vtab *pVtab){
 static int seriesOpen(sqlite3_vtab *pUnused, sqlite3_vtab_cursor **ppCursor){
   series_cursor *pCur;
   (void)pUnused;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = bentley_sqlite3_malloc( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   *ppCursor = &pCur->base;
@@ -6528,7 +6528,7 @@ static int seriesOpen(sqlite3_vtab *pUnused, sqlite3_vtab_cursor **ppCursor){
 ** Destructor for a series_cursor.
 */
 static int seriesClose(sqlite3_vtab_cursor *cur){
-  sqlite3_free(cur);
+  bentley_sqlite3_free(cur);
   return SQLITE_OK;
 }
 
@@ -6559,7 +6559,7 @@ static int seriesColumn(
     case SERIES_COLUMN_STEP:   x = pCur->ss.iStep;      break;
     default:                   x = pCur->ss.iValueNow;  break;
   }
-  sqlite3_result_int64(ctx, x);
+  bentley_sqlite3_result_int64(ctx, x);
   return SQLITE_OK;
 }
 
@@ -6639,17 +6639,17 @@ static int seriesFilter(
 
   (void)idxStrUnused;
   if( idxNum & 0x01 ){
-    pCur->ss.iBase = sqlite3_value_int64(argv[i++]);
+    pCur->ss.iBase = bentley_sqlite3_value_int64(argv[i++]);
   }else{
     pCur->ss.iBase = 0;
   }
   if( idxNum & 0x02 ){
-    pCur->ss.iTerm = sqlite3_value_int64(argv[i++]);
+    pCur->ss.iTerm = bentley_sqlite3_value_int64(argv[i++]);
   }else{
     pCur->ss.iTerm = 0xffffffff;
   }
   if( idxNum & 0x04 ){
-    pCur->ss.iStep = sqlite3_value_int64(argv[i++]);
+    pCur->ss.iStep = bentley_sqlite3_value_int64(argv[i++]);
     if( pCur->ss.iStep==0 ){
       pCur->ss.iStep = 1;
     }else if( pCur->ss.iStep<0 ){
@@ -6678,9 +6678,9 @@ static int seriesFilter(
   ** The range must first be constrained by the limits on value.
   */
   if( idxNum & 0x20 ){
-    iLimit = sqlite3_value_int64(argv[i++]);
+    iLimit = bentley_sqlite3_value_int64(argv[i++]);
     if( idxNum & 0x40 ){
-      iOffset = sqlite3_value_int64(argv[i++]);
+      iOffset = bentley_sqlite3_value_int64(argv[i++]);
     }
   }
 
@@ -6689,10 +6689,10 @@ static int seriesFilter(
     ** constraints on the "value" column.
     */
     if( idxNum & 0x0080 ){
-      iMin = iMax = sqlite3_value_int64(argv[i++]);
+      iMin = iMax = bentley_sqlite3_value_int64(argv[i++]);
     }else{
       if( idxNum & 0x0300 ){
-        iMin = sqlite3_value_int64(argv[i++]);
+        iMin = bentley_sqlite3_value_int64(argv[i++]);
         if( idxNum & 0x0200 ){
           if( iMin==LARGEST_INT64 ){
             returnNoRows = 1;
@@ -6702,7 +6702,7 @@ static int seriesFilter(
         }
       }
       if( idxNum & 0x3000 ){
-        iMax = sqlite3_value_int64(argv[i++]);
+        iMax = bentley_sqlite3_value_int64(argv[i++]);
         if( idxNum & 0x2000 ){
           if( iMax==SMALLEST_INT64 ){
             returnNoRows = 1;
@@ -6761,7 +6761,7 @@ static int seriesFilter(
 
 
   for(i=0; i<argc; i++){
-    if( sqlite3_value_type(argv[i])==SQLITE_NULL ){
+    if( bentley_sqlite3_value_type(argv[i])==SQLITE_NULL ){
       /* If any of the constraints have a NULL value, then return no rows.
       ** See ticket https://www.sqlite.org/src/info/fac496b61722daf2 */
       returnNoRows = 1;
@@ -6951,8 +6951,8 @@ static int seriesBestIndex(
   ** to obtain the legacy behavior */
 #ifndef ZERO_ARGUMENT_GENERATE_SERIES
   if( !bStartSeen ){
-    sqlite3_free(pVTab->zErrMsg);
-    pVTab->zErrMsg = sqlite3_mprintf(
+    bentley_sqlite3_free(pVTab->zErrMsg);
+    pVTab->zErrMsg = bentley_sqlite3_mprintf(
         "first argument to \"generate_series()\" missing or unusable");
     return SQLITE_ERROR;
   }
@@ -7037,12 +7037,12 @@ int sqlite3_series_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( sqlite3_libversion_number()<3008012 && pzErrMsg!=0 ){
-    *pzErrMsg = sqlite3_mprintf(
+  if( bentley_sqlite3_libversion_number()<3008012 && pzErrMsg!=0 ){
+    *pzErrMsg = bentley_sqlite3_mprintf(
         "generate_series() requires SQLite 3.8.12 or later");
     return SQLITE_ERROR;
   }
-  rc = sqlite3_create_module(db, "generate_series", &seriesModule, 0);
+  rc = bentley_sqlite3_create_module(db, "generate_series", &seriesModule, 0);
 #endif
   return rc;
 }
@@ -7305,7 +7305,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
     pToFree = 0;
     aStateSet[0].aState = aSpace;
   }else{
-    pToFree = sqlite3_malloc64( sizeof(ReStateNumber)*2*pRe->nState );
+    pToFree = bentley_sqlite3_malloc64( sizeof(ReStateNumber)*2*pRe->nState );
     if( pToFree==0 ) return -1;
     aStateSet[0].aState = pToFree;
   }
@@ -7417,7 +7417,7 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
     if( pRe->aOp[x]==RE_OP_ACCEPT ){ rc = 1; break; }
   }
 re_match_end:
-  sqlite3_free(pToFree);
+  bentley_sqlite3_free(pToFree);
   return rc;
 }
 
@@ -7426,10 +7426,10 @@ re_match_end:
 static int re_resize(ReCompiled *p, int N){
   char *aOp;
   int *aArg;
-  aOp = sqlite3_realloc64(p->aOp, N*sizeof(p->aOp[0]));
+  aOp = bentley_sqlite3_realloc64(p->aOp, N*sizeof(p->aOp[0]));
   if( aOp==0 ) return 1;
   p->aOp = aOp;
-  aArg = sqlite3_realloc64(p->aArg, N*sizeof(p->aArg[0]));
+  aArg = bentley_sqlite3_realloc64(p->aArg, N*sizeof(p->aArg[0]));
   if( aArg==0 ) return 1;
   p->aArg = aArg;
   p->nAlloc = N;
@@ -7710,9 +7710,9 @@ static const char *re_subcompile_string(ReCompiled *p){
 static void re_free(void *p){
   ReCompiled *pRe = (ReCompiled*)p;
   if( pRe ){
-    sqlite3_free(pRe->aOp);
-    sqlite3_free(pRe->aArg);
-    sqlite3_free(pRe);
+    bentley_sqlite3_free(pRe->aOp);
+    bentley_sqlite3_free(pRe->aArg);
+    bentley_sqlite3_free(pRe);
   }
 }
 
@@ -7728,7 +7728,7 @@ static const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
   int i, j;
 
   *ppRe = 0;
-  pRe = sqlite3_malloc( sizeof(*pRe) );
+  pRe = bentley_sqlite3_malloc( sizeof(*pRe) );
   if( pRe==0 ){
     return "out of memory";
   }
@@ -7807,31 +7807,31 @@ static void re_sql_func(
   const char *zPattern;     /* The regular expression */
   const unsigned char *zStr;/* String being searched */
   const char *zErr;         /* Compile error message */
-  int setAux = 0;           /* True to invoke sqlite3_set_auxdata() */
+  int setAux = 0;           /* True to invoke bentley_sqlite3_set_auxdata() */
 
   (void)argc;  /* Unused */
-  pRe = sqlite3_get_auxdata(context, 0);
+  pRe = bentley_sqlite3_get_auxdata(context, 0);
   if( pRe==0 ){
-    zPattern = (const char*)sqlite3_value_text(argv[0]);
+    zPattern = (const char*)bentley_sqlite3_value_text(argv[0]);
     if( zPattern==0 ) return;
-    zErr = re_compile(&pRe, zPattern, sqlite3_user_data(context)!=0);
+    zErr = re_compile(&pRe, zPattern, bentley_sqlite3_user_data(context)!=0);
     if( zErr ){
       re_free(pRe);
-      sqlite3_result_error(context, zErr, -1);
+      bentley_sqlite3_result_error(context, zErr, -1);
       return;
     }
     if( pRe==0 ){
-      sqlite3_result_error_nomem(context);
+      bentley_sqlite3_result_error_nomem(context);
       return;
     }
     setAux = 1;
   }
-  zStr = (const unsigned char*)sqlite3_value_text(argv[1]);
+  zStr = (const unsigned char*)bentley_sqlite3_value_text(argv[1]);
   if( zStr!=0 ){
-    sqlite3_result_int(context, re_match(pRe, zStr, -1));
+    bentley_sqlite3_result_int(context, re_match(pRe, zStr, -1));
   }
   if( setAux ){
-    sqlite3_set_auxdata(context, 0, pRe, (void(*)(void*))re_free);
+    bentley_sqlite3_set_auxdata(context, 0, pRe, (void(*)(void*))re_free);
   }
 }
 
@@ -7857,37 +7857,37 @@ static void re_bytecode_func(
   char *z;
   (void)argc;
 
-  zPattern = (const char*)sqlite3_value_text(argv[0]);
+  zPattern = (const char*)bentley_sqlite3_value_text(argv[0]);
   if( zPattern==0 ) return;
-  zErr = re_compile(&pRe, zPattern, sqlite3_user_data(context)!=0);
+  zErr = re_compile(&pRe, zPattern, bentley_sqlite3_user_data(context)!=0);
   if( zErr ){
     re_free(pRe);
-    sqlite3_result_error(context, zErr, -1);
+    bentley_sqlite3_result_error(context, zErr, -1);
     return;
   }
   if( pRe==0 ){
-    sqlite3_result_error_nomem(context);
+    bentley_sqlite3_result_error_nomem(context);
     return;
   }
-  pStr = sqlite3_str_new(0);
+  pStr = bentley_sqlite3_str_new(0);
   if( pStr==0 ) goto re_bytecode_func_err;
   if( pRe->nInit>0 ){
-    sqlite3_str_appendf(pStr, "INIT     ");
+    bentley_sqlite3_str_appendf(pStr, "INIT     ");
     for(i=0; i<pRe->nInit; i++){
-      sqlite3_str_appendf(pStr, "%02x", pRe->zInit[i]);
+      bentley_sqlite3_str_appendf(pStr, "%02x", pRe->zInit[i]);
     }
-    sqlite3_str_appendf(pStr, "\n");
+    bentley_sqlite3_str_appendf(pStr, "\n");
   }
   for(i=0; (unsigned)i<pRe->nState; i++){
-    sqlite3_str_appendf(pStr, "%-8s %4d\n",
+    bentley_sqlite3_str_appendf(pStr, "%-8s %4d\n",
          ReOpName[(unsigned char)pRe->aOp[i]], pRe->aArg[i]);
   }
-  n = sqlite3_str_length(pStr);
-  z = sqlite3_str_finish(pStr);
+  n = bentley_sqlite3_str_length(pStr);
+  z = bentley_sqlite3_str_finish(pStr);
   if( n==0 ){
-    sqlite3_free(z);
+    bentley_sqlite3_free(z);
   }else{
-    sqlite3_result_text(context, z, n-1, sqlite3_free);
+    bentley_sqlite3_result_text(context, z, n-1, bentley_sqlite3_free);
   }
 
 re_bytecode_func_err:
@@ -7912,18 +7912,18 @@ int sqlite3_regexp_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused */
-  rc = sqlite3_create_function(db, "regexp", 2, 
+  rc = bentley_sqlite3_create_function(db, "regexp", 2, 
                             SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,
                             0, re_sql_func, 0, 0);
   if( rc==SQLITE_OK ){
     /* The regexpi(PATTERN,STRING) function is a case-insensitive version
     ** of regexp(PATTERN,STRING). */
-    rc = sqlite3_create_function(db, "regexpi", 2,
+    rc = bentley_sqlite3_create_function(db, "regexpi", 2,
                             SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,
                             (void*)db, re_sql_func, 0, 0);
 #if defined(SQLITE_DEBUG)
     if( rc==SQLITE_OK ){
-      rc = sqlite3_create_function(db, "regexp_bytecode", 1,
+      rc = bentley_sqlite3_create_function(db, "regexp_bytecode", 1,
                             SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,
                             0, re_bytecode_func, 0, 0);
     }
@@ -8094,24 +8094,24 @@ static void readFileContents(sqlite3_context *ctx, const char *zName){
   fseek(in, 0, SEEK_END);
   nIn = ftell(in);
   rewind(in);
-  db = sqlite3_context_db_handle(ctx);
-  mxBlob = sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1);
+  db = bentley_sqlite3_context_db_handle(ctx);
+  mxBlob = bentley_sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1);
   if( nIn>mxBlob ){
-    sqlite3_result_error_code(ctx, SQLITE_TOOBIG);
+    bentley_sqlite3_result_error_code(ctx, SQLITE_TOOBIG);
     fclose(in);
     return;
   }
-  pBuf = sqlite3_malloc64( nIn ? nIn : 1 );
+  pBuf = bentley_sqlite3_malloc64( nIn ? nIn : 1 );
   if( pBuf==0 ){
-    sqlite3_result_error_nomem(ctx);
+    bentley_sqlite3_result_error_nomem(ctx);
     fclose(in);
     return;
   }
   if( nIn==(sqlite3_int64)fread(pBuf, 1, (size_t)nIn, in) ){
-    sqlite3_result_blob64(ctx, pBuf, nIn, sqlite3_free);
+    bentley_sqlite3_result_blob64(ctx, pBuf, nIn, bentley_sqlite3_free);
   }else{
-    sqlite3_result_error_code(ctx, SQLITE_IOERR);
-    sqlite3_free(pBuf);
+    bentley_sqlite3_result_error_code(ctx, SQLITE_IOERR);
+    bentley_sqlite3_free(pBuf);
   }
   fclose(in);
 }
@@ -8128,7 +8128,7 @@ static void readfileFunc(
 ){
   const char *zName;
   (void)(argc);  /* Unused parameter */
-  zName = (const char*)sqlite3_value_text(argv[0]);
+  zName = (const char*)bentley_sqlite3_value_text(argv[0]);
   if( zName==0 ) return;
   readFileContents(context, zName);
 }
@@ -8141,9 +8141,9 @@ static void ctxErrorMsg(sqlite3_context *ctx, const char *zFmt, ...){
   char *zMsg = 0;
   va_list ap;
   va_start(ap, zFmt);
-  zMsg = sqlite3_vmprintf(zFmt, ap);
-  sqlite3_result_error(ctx, zMsg, -1);
-  sqlite3_free(zMsg);
+  zMsg = bentley_sqlite3_vmprintf(zFmt, ap);
+  bentley_sqlite3_result_error(ctx, zMsg, -1);
+  bentley_sqlite3_free(zMsg);
   va_end(ap);
 }
 
@@ -8182,10 +8182,10 @@ static sqlite3_uint64 fileTimeToUnixTime(
 #
 LPWSTR utf8_to_utf16(const char *z){
   int nAllot = MultiByteToWideChar(CP_UTF8, 0, z, -1, NULL, 0);
-  LPWSTR rv = sqlite3_malloc(nAllot * sizeof(WCHAR));
+  LPWSTR rv = bentley_sqlite3_malloc(nAllot * sizeof(WCHAR));
   if( rv!=0 && 0 < MultiByteToWideChar(CP_UTF8, 0, z, -1, rv, nAllot) )
     return rv;
-  sqlite3_free(rv);
+  bentley_sqlite3_free(rv);
   return 0;
 }
 #endif
@@ -8213,7 +8213,7 @@ static void statTimesToUtc(
       pStatBuf->st_mtime = (time_t)fileTimeToUnixTime(&fd.ftLastWriteTime);
       FindClose(hFindFile);
     }
-    sqlite3_free(zUnicodeName);
+    bentley_sqlite3_free(zUnicodeName);
   }
 }
 #endif
@@ -8268,7 +8268,7 @@ static int fileLinkStat(
 static int makeDirectory(
   const char *zFile
 ){
-  char *zCopy = sqlite3_mprintf("%s", zFile);
+  char *zCopy = bentley_sqlite3_mprintf("%s", zFile);
   int rc = SQLITE_OK;
 
   if( zCopy==0 ){
@@ -8295,7 +8295,7 @@ static int makeDirectory(
       i++;
     }
 
-    sqlite3_free(zCopy);
+    bentley_sqlite3_free(zCopy);
   }
 
   return rc;
@@ -8315,7 +8315,7 @@ static int writeFile(
   if( zFile==0 ) return 1;
 #if !defined(_WIN32) && !defined(WIN32)
   if( S_ISLNK(mode) ){
-    const char *zTo = (const char*)sqlite3_value_text(pData);
+    const char *zTo = (const char*)bentley_sqlite3_value_text(pData);
     if( zTo==0 ) return 1;
     unlink(zFile);
     if( symlink(zTo, zFile)<0 ) return 1;
@@ -8343,10 +8343,10 @@ static int writeFile(
       int rc = 0;
       FILE *out = sqlite3_fopen(zFile, "wb");
       if( out==0 ) return 1;
-      z = (const char*)sqlite3_value_blob(pData);
+      z = (const char*)bentley_sqlite3_value_blob(pData);
       if( z ){
-        sqlite3_int64 n = fwrite(z, 1, sqlite3_value_bytes(pData), out);
-        nWrite = sqlite3_value_bytes(pData);
+        sqlite3_int64 n = fwrite(z, 1, bentley_sqlite3_value_bytes(pData), out);
+        nWrite = bentley_sqlite3_value_bytes(pData);
         if( nWrite!=n ){
           rc = 1;
         }
@@ -8356,7 +8356,7 @@ static int writeFile(
         rc = 1;
       }
       if( rc ) return 2;
-      sqlite3_result_int64(pCtx, nWrite);
+      bentley_sqlite3_result_int64(pCtx, nWrite);
     }
   }
 
@@ -8385,7 +8385,7 @@ static int writeFile(
       zUnicodeName, FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING,
       FILE_FLAG_BACKUP_SEMANTICS, NULL
     );
-    sqlite3_free(zUnicodeName);
+    bentley_sqlite3_free(zUnicodeName);
     if( hFile!=INVALID_HANDLE_VALUE ){
       BOOL bResult = SetFileTime(hFile, NULL, &lastAccess, &lastWrite);
       CloseHandle(hFile);
@@ -8439,19 +8439,19 @@ static void writefileFunc(
   sqlite3_int64 mtime = -1;
 
   if( argc<2 || argc>4 ){
-    sqlite3_result_error(context, 
+    bentley_sqlite3_result_error(context, 
         "wrong number of arguments to function writefile()", -1
     );
     return;
   }
 
-  zFile = (const char*)sqlite3_value_text(argv[0]);
+  zFile = (const char*)bentley_sqlite3_value_text(argv[0]);
   if( zFile==0 ) return;
   if( argc>=3 ){
-    mode = (mode_t)sqlite3_value_int(argv[2]);
+    mode = (mode_t)bentley_sqlite3_value_int(argv[2]);
   }
   if( argc==4 ){
-    mtime = sqlite3_value_int64(argv[3]);
+    mtime = bentley_sqlite3_value_int64(argv[3]);
   }
 
   res = writeFile(context, zFile, argv[1], mode, mtime);
@@ -8484,7 +8484,7 @@ static void lsModeFunc(
   sqlite3_value **argv
 ){
   int i;
-  int iMode = sqlite3_value_int(argv[0]);
+  int iMode = bentley_sqlite3_value_int(argv[0]);
   char z[16];
   (void)argc;
   if( S_ISLNK(iMode) ){
@@ -8504,7 +8504,7 @@ static void lsModeFunc(
     a[2] = (m & 0x1) ? 'x' : '-';
   }
   z[10] = '\0';
-  sqlite3_result_text(context, z, -1, SQLITE_TRANSIENT);
+  bentley_sqlite3_result_text(context, z, -1, SQLITE_TRANSIENT);
 }
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -8556,12 +8556,12 @@ static int fsdirConnect(
   (void)argc;
   (void)argv;
   (void)pzErr;
-  rc = sqlite3_declare_vtab(db, "CREATE TABLE x" FSDIR_SCHEMA);
+  rc = bentley_sqlite3_declare_vtab(db, "CREATE TABLE x" FSDIR_SCHEMA);
   if( rc==SQLITE_OK ){
-    pNew = (fsdir_tab*)sqlite3_malloc( sizeof(*pNew) );
+    pNew = (fsdir_tab*)bentley_sqlite3_malloc( sizeof(*pNew) );
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
-    sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
+    bentley_sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
   }
   *ppVtab = (sqlite3_vtab*)pNew;
   return rc;
@@ -8571,7 +8571,7 @@ static int fsdirConnect(
 ** This method is the destructor for fsdir vtab objects.
 */
 static int fsdirDisconnect(sqlite3_vtab *pVtab){
-  sqlite3_free(pVtab);
+  bentley_sqlite3_free(pVtab);
   return SQLITE_OK;
 }
 
@@ -8581,7 +8581,7 @@ static int fsdirDisconnect(sqlite3_vtab *pVtab){
 static int fsdirOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   fsdir_cursor *pCur;
   (void)p;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = bentley_sqlite3_malloc( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->iLvl = -1;
@@ -8598,10 +8598,10 @@ static void fsdirResetCursor(fsdir_cursor *pCur){
   for(i=0; i<=pCur->iLvl; i++){
     FsdirLevel *pLvl = &pCur->aLvl[i];
     if( pLvl->pDir ) closedir(pLvl->pDir);
-    sqlite3_free(pLvl->zDir);
+    bentley_sqlite3_free(pLvl->zDir);
   }
-  sqlite3_free(pCur->zPath);
-  sqlite3_free(pCur->aLvl);
+  bentley_sqlite3_free(pCur->zPath);
+  bentley_sqlite3_free(pCur->aLvl);
   pCur->aLvl = 0;
   pCur->zPath = 0;
   pCur->zBase = 0;
@@ -8618,7 +8618,7 @@ static int fsdirClose(sqlite3_vtab_cursor *cur){
   fsdir_cursor *pCur = (fsdir_cursor*)cur;
 
   fsdirResetCursor(pCur);
-  sqlite3_free(pCur);
+  bentley_sqlite3_free(pCur);
   return SQLITE_OK;
 }
 
@@ -8629,7 +8629,7 @@ static int fsdirClose(sqlite3_vtab_cursor *cur){
 static void fsdirSetErrmsg(fsdir_cursor *pCur, const char *zFmt, ...){
   va_list ap;
   va_start(ap, zFmt);
-  pCur->base.pVtab->zErrMsg = sqlite3_vmprintf(zFmt, ap);
+  pCur->base.pVtab->zErrMsg = bentley_sqlite3_vmprintf(zFmt, ap);
   va_end(ap);
 }
 
@@ -8649,7 +8649,7 @@ static int fsdirNext(sqlite3_vtab_cursor *cur){
     if( iNew>=pCur->nLvl ){
       int nNew = iNew+1;
       sqlite3_int64 nByte = nNew*sizeof(FsdirLevel);
-      FsdirLevel *aNew = (FsdirLevel*)sqlite3_realloc64(pCur->aLvl, nByte);
+      FsdirLevel *aNew = (FsdirLevel*)bentley_sqlite3_realloc64(pCur->aLvl, nByte);
       if( aNew==0 ) return SQLITE_NOMEM;
       memset(&aNew[pCur->nLvl], 0, sizeof(FsdirLevel)*(nNew-pCur->nLvl));
       pCur->aLvl = aNew;
@@ -8675,8 +8675,8 @@ static int fsdirNext(sqlite3_vtab_cursor *cur){
        if( pEntry->d_name[1]=='.' && pEntry->d_name[2]=='\0' ) continue;
        if( pEntry->d_name[1]=='\0' ) continue;
       }
-      sqlite3_free(pCur->zPath);
-      pCur->zPath = sqlite3_mprintf("%s/%s", pLvl->zDir, pEntry->d_name);
+      bentley_sqlite3_free(pCur->zPath);
+      pCur->zPath = bentley_sqlite3_mprintf("%s/%s", pLvl->zDir, pEntry->d_name);
       if( pCur->zPath==0 ) return SQLITE_NOMEM;
       if( fileLinkStat(pCur->zPath, &pCur->sStat) ){
         fsdirSetErrmsg(pCur, "cannot stat file: %s", pCur->zPath);
@@ -8685,14 +8685,14 @@ static int fsdirNext(sqlite3_vtab_cursor *cur){
       return SQLITE_OK;
     }
     closedir(pLvl->pDir);
-    sqlite3_free(pLvl->zDir);
+    bentley_sqlite3_free(pLvl->zDir);
     pLvl->pDir = 0;
     pLvl->zDir = 0;
     pCur->iLvl--;
   }
 
   /* EOF */
-  sqlite3_free(pCur->zPath);
+  bentley_sqlite3_free(pCur->zPath);
   pCur->zPath = 0;
   return SQLITE_OK;
 }
@@ -8709,22 +8709,22 @@ static int fsdirColumn(
   fsdir_cursor *pCur = (fsdir_cursor*)cur;
   switch( i ){
     case FSDIR_COLUMN_NAME: {
-      sqlite3_result_text(ctx, &pCur->zPath[pCur->nBase], -1, SQLITE_TRANSIENT);
+      bentley_sqlite3_result_text(ctx, &pCur->zPath[pCur->nBase], -1, SQLITE_TRANSIENT);
       break;
     }
 
     case FSDIR_COLUMN_MODE:
-      sqlite3_result_int64(ctx, pCur->sStat.st_mode);
+      bentley_sqlite3_result_int64(ctx, pCur->sStat.st_mode);
       break;
 
     case FSDIR_COLUMN_MTIME:
-      sqlite3_result_int64(ctx, pCur->sStat.st_mtime);
+      bentley_sqlite3_result_int64(ctx, pCur->sStat.st_mtime);
       break;
 
     case FSDIR_COLUMN_DATA: {
       mode_t m = pCur->sStat.st_mode;
       if( S_ISDIR(m) ){
-        sqlite3_result_null(ctx);
+        bentley_sqlite3_result_null(ctx);
 #if !defined(_WIN32) && !defined(WIN32)
       }else if( S_ISLNK(m) ){
         char aStatic[64];
@@ -8735,17 +8735,17 @@ static int fsdirColumn(
         while( 1 ){
           n = readlink(pCur->zPath, aBuf, nBuf);
           if( n<nBuf ) break;
-          if( aBuf!=aStatic ) sqlite3_free(aBuf);
+          if( aBuf!=aStatic ) bentley_sqlite3_free(aBuf);
           nBuf = nBuf*2;
-          aBuf = sqlite3_malloc64(nBuf);
+          aBuf = bentley_sqlite3_malloc64(nBuf);
           if( aBuf==0 ){
-            sqlite3_result_error_nomem(ctx);
+            bentley_sqlite3_result_error_nomem(ctx);
             return SQLITE_NOMEM;
           }
         }
 
-        sqlite3_result_text(ctx, aBuf, n, SQLITE_TRANSIENT);
-        if( aBuf!=aStatic ) sqlite3_free(aBuf);
+        bentley_sqlite3_result_text(ctx, aBuf, n, SQLITE_TRANSIENT);
+        if( aBuf!=aStatic ) bentley_sqlite3_free(aBuf);
 #endif
       }else{
         readFileContents(ctx, pCur->zPath);
@@ -8803,19 +8803,19 @@ static int fsdirFilter(
   }
 
   assert( argc==idxNum && (argc==1 || argc==2) );
-  zDir = (const char*)sqlite3_value_text(argv[0]);
+  zDir = (const char*)bentley_sqlite3_value_text(argv[0]);
   if( zDir==0 ){
     fsdirSetErrmsg(pCur, "table function fsdir requires a non-NULL argument");
     return SQLITE_ERROR;
   }
   if( argc==2 ){
-    pCur->zBase = (const char*)sqlite3_value_text(argv[1]);
+    pCur->zBase = (const char*)bentley_sqlite3_value_text(argv[1]);
   }
   if( pCur->zBase ){
     pCur->nBase = (int)strlen(pCur->zBase)+1;
-    pCur->zPath = sqlite3_mprintf("%s/%s", pCur->zBase, zDir);
+    pCur->zPath = bentley_sqlite3_mprintf("%s/%s", pCur->zBase, zDir);
   }else{
-    pCur->zPath = sqlite3_mprintf("%s", zDir);
+    pCur->zPath = bentley_sqlite3_mprintf("%s", zDir);
   }
 
   if( pCur->zPath==0 ){
@@ -8938,7 +8938,7 @@ static int fsdirRegister(sqlite3 *db){
     0                          /* xIntegrity */
   };
 
-  int rc = sqlite3_create_module(db, "fsdir", &fsdirModule, 0);
+  int rc = bentley_sqlite3_create_module(db, "fsdir", &fsdirModule, 0);
   return rc;
 }
 #else         /* SQLITE_OMIT_VIRTUALTABLE */
@@ -8956,16 +8956,16 @@ int sqlite3_fileio_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "readfile", 1, 
+  rc = bentley_sqlite3_create_function(db, "readfile", 1, 
                                SQLITE_UTF8|SQLITE_DIRECTONLY, 0,
                                readfileFunc, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "writefile", -1,
+    rc = bentley_sqlite3_create_function(db, "writefile", -1,
                                  SQLITE_UTF8|SQLITE_DIRECTONLY, 0,
                                  writefileFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "lsmode", 1, SQLITE_UTF8, 0,
+    rc = bentley_sqlite3_create_function(db, "lsmode", 1, SQLITE_UTF8, 0,
                                  lsModeFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
@@ -9080,7 +9080,7 @@ struct completion_cursor {
 **
 **    (1) Allocate the completion_vtab object and initialize all fields.
 **
-**    (2) Tell SQLite (via the sqlite3_declare_vtab() interface) what the
+**    (2) Tell SQLite (via the bentley_sqlite3_declare_vtab() interface) what the
 **        result set of queries against completion will look like.
 */
 static int completionConnect(
@@ -9104,8 +9104,8 @@ static int completionConnect(
 #define COMPLETION_COLUMN_WHOLELINE 2  /* Entire line seen so far */
 #define COMPLETION_COLUMN_PHASE     3  /* ePhase - used for debugging only */
 
-  sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
-  rc = sqlite3_declare_vtab(db,
+  bentley_sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
+  rc = bentley_sqlite3_declare_vtab(db,
       "CREATE TABLE x("
       "  candidate TEXT,"
       "  prefix TEXT HIDDEN,"
@@ -9113,7 +9113,7 @@ static int completionConnect(
       "  phase INT HIDDEN"        /* Used for debugging only */
       ")");
   if( rc==SQLITE_OK ){
-    pNew = sqlite3_malloc( sizeof(*pNew) );
+    pNew = bentley_sqlite3_malloc( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
@@ -9126,7 +9126,7 @@ static int completionConnect(
 ** This method is the destructor for completion_cursor objects.
 */
 static int completionDisconnect(sqlite3_vtab *pVtab){
-  sqlite3_free(pVtab);
+  bentley_sqlite3_free(pVtab);
   return SQLITE_OK;
 }
 
@@ -9135,7 +9135,7 @@ static int completionDisconnect(sqlite3_vtab *pVtab){
 */
 static int completionOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   completion_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = bentley_sqlite3_malloc( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->db = ((completion_vtab*)p)->db;
@@ -9147,9 +9147,9 @@ static int completionOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 ** Reset the completion_cursor.
 */
 static void completionCursorReset(completion_cursor *pCur){
-  sqlite3_free(pCur->zPrefix);   pCur->zPrefix = 0;  pCur->nPrefix = 0;
-  sqlite3_free(pCur->zLine);     pCur->zLine = 0;    pCur->nLine = 0;
-  sqlite3_finalize(pCur->pStmt); pCur->pStmt = 0;
+  bentley_sqlite3_free(pCur->zPrefix);   pCur->zPrefix = 0;  pCur->nPrefix = 0;
+  bentley_sqlite3_free(pCur->zLine);     pCur->zLine = 0;    pCur->nLine = 0;
+  bentley_sqlite3_finalize(pCur->pStmt); pCur->pStmt = 0;
   pCur->j = 0;
 }
 
@@ -9158,7 +9158,7 @@ static void completionCursorReset(completion_cursor *pCur){
 */
 static int completionClose(sqlite3_vtab_cursor *cur){
   completionCursorReset((completion_cursor*)cur);
-  sqlite3_free(cur);
+  bentley_sqlite3_free(cur);
   return SQLITE_OK;
 }
 
@@ -9184,18 +9184,18 @@ static int completionNext(sqlite3_vtab_cursor *cur){
   while( pCur->ePhase!=COMPLETION_EOF ){
     switch( pCur->ePhase ){
       case COMPLETION_KEYWORDS: {
-        if( pCur->j >= sqlite3_keyword_count() ){
+        if( pCur->j >= bentley_sqlite3_keyword_count() ){
           pCur->zCurrentRow = 0;
           pCur->ePhase = COMPLETION_DATABASES;
         }else{
-          sqlite3_keyword_name(pCur->j++, &pCur->zCurrentRow, &pCur->szRow);
+          bentley_sqlite3_keyword_name(pCur->j++, &pCur->zCurrentRow, &pCur->szRow);
         }
         iCol = -1;
         break;
       }
       case COMPLETION_DATABASES: {
         if( pCur->pStmt==0 ){
-          sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1,
+          bentley_sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1,
                              &pCur->pStmt, 0);
         }
         iCol = 1;
@@ -9207,10 +9207,10 @@ static int completionNext(sqlite3_vtab_cursor *cur){
           sqlite3_stmt *pS2;
           char *zSql = 0;
           const char *zSep = "";
-          sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1, &pS2, 0);
-          while( sqlite3_step(pS2)==SQLITE_ROW ){
-            const char *zDb = (const char*)sqlite3_column_text(pS2, 1);
-            zSql = sqlite3_mprintf(
+          bentley_sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1, &pS2, 0);
+          while( bentley_sqlite3_step(pS2)==SQLITE_ROW ){
+            const char *zDb = (const char*)bentley_sqlite3_column_text(pS2, 1);
+            zSql = bentley_sqlite3_mprintf(
                "%z%s"
                "SELECT name FROM \"%w\".sqlite_schema",
                zSql, zSep, zDb
@@ -9218,9 +9218,9 @@ static int completionNext(sqlite3_vtab_cursor *cur){
             if( zSql==0 ) return SQLITE_NOMEM;
             zSep = " UNION ";
           }
-          sqlite3_finalize(pS2);
-          sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
-          sqlite3_free(zSql);
+          bentley_sqlite3_finalize(pS2);
+          bentley_sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+          bentley_sqlite3_free(zSql);
         }
         iCol = 0;
         eNextPhase = COMPLETION_COLUMNS;
@@ -9231,10 +9231,10 @@ static int completionNext(sqlite3_vtab_cursor *cur){
           sqlite3_stmt *pS2;
           char *zSql = 0;
           const char *zSep = "";
-          sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1, &pS2, 0);
-          while( sqlite3_step(pS2)==SQLITE_ROW ){
-            const char *zDb = (const char*)sqlite3_column_text(pS2, 1);
-            zSql = sqlite3_mprintf(
+          bentley_sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1, &pS2, 0);
+          while( bentley_sqlite3_step(pS2)==SQLITE_ROW ){
+            const char *zDb = (const char*)bentley_sqlite3_column_text(pS2, 1);
+            zSql = bentley_sqlite3_mprintf(
                "%z%s"
                "SELECT pti.name FROM \"%w\".sqlite_schema AS sm"
                        " JOIN pragma_table_xinfo(sm.name,%Q) AS pti"
@@ -9244,9 +9244,9 @@ static int completionNext(sqlite3_vtab_cursor *cur){
             if( zSql==0 ) return SQLITE_NOMEM;
             zSep = " UNION ";
           }
-          sqlite3_finalize(pS2);
-          sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
-          sqlite3_free(zSql);
+          bentley_sqlite3_finalize(pS2);
+          bentley_sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+          bentley_sqlite3_free(zSql);
         }
         iCol = 0;
         eNextPhase = COMPLETION_EOF;
@@ -9257,13 +9257,13 @@ static int completionNext(sqlite3_vtab_cursor *cur){
       /* This case is when the phase presets zCurrentRow */
       if( pCur->zCurrentRow==0 ) continue;
     }else{
-      if( sqlite3_step(pCur->pStmt)==SQLITE_ROW ){
+      if( bentley_sqlite3_step(pCur->pStmt)==SQLITE_ROW ){
         /* Extract the next row of content */
-        pCur->zCurrentRow = (const char*)sqlite3_column_text(pCur->pStmt, iCol);
-        pCur->szRow = sqlite3_column_bytes(pCur->pStmt, iCol);
+        pCur->zCurrentRow = (const char*)bentley_sqlite3_column_text(pCur->pStmt, iCol);
+        pCur->szRow = bentley_sqlite3_column_bytes(pCur->pStmt, iCol);
       }else{
         /* When all rows are finished, advance to the next phase */
-        sqlite3_finalize(pCur->pStmt);
+        bentley_sqlite3_finalize(pCur->pStmt);
         pCur->pStmt = 0;
         pCur->ePhase = eNextPhase;
         continue;
@@ -9271,7 +9271,7 @@ static int completionNext(sqlite3_vtab_cursor *cur){
     }
     if( pCur->nPrefix==0 ) break;
     if( pCur->nPrefix<=pCur->szRow
-     && sqlite3_strnicmp(pCur->zPrefix, pCur->zCurrentRow, pCur->nPrefix)==0
+     && bentley_sqlite3_strnicmp(pCur->zPrefix, pCur->zCurrentRow, pCur->nPrefix)==0
     ){
       break;
     }
@@ -9292,19 +9292,19 @@ static int completionColumn(
   completion_cursor *pCur = (completion_cursor*)cur;
   switch( i ){
     case COMPLETION_COLUMN_CANDIDATE: {
-      sqlite3_result_text(ctx, pCur->zCurrentRow, pCur->szRow,SQLITE_TRANSIENT);
+      bentley_sqlite3_result_text(ctx, pCur->zCurrentRow, pCur->szRow,SQLITE_TRANSIENT);
       break;
     }
     case COMPLETION_COLUMN_PREFIX: {
-      sqlite3_result_text(ctx, pCur->zPrefix, -1, SQLITE_TRANSIENT);
+      bentley_sqlite3_result_text(ctx, pCur->zPrefix, -1, SQLITE_TRANSIENT);
       break;
     }
     case COMPLETION_COLUMN_WHOLELINE: {
-      sqlite3_result_text(ctx, pCur->zLine, -1, SQLITE_TRANSIENT);
+      bentley_sqlite3_result_text(ctx, pCur->zLine, -1, SQLITE_TRANSIENT);
       break;
     }
     case COMPLETION_COLUMN_PHASE: {
-      sqlite3_result_int(ctx, pCur->ePhase);
+      bentley_sqlite3_result_int(ctx, pCur->ePhase);
       break;
     }
   }
@@ -9347,17 +9347,17 @@ static int completionFilter(
   (void)(argc);     /* Unused parameter */
   completionCursorReset(pCur);
   if( idxNum & 1 ){
-    pCur->nPrefix = sqlite3_value_bytes(argv[iArg]);
+    pCur->nPrefix = bentley_sqlite3_value_bytes(argv[iArg]);
     if( pCur->nPrefix>0 ){
-      pCur->zPrefix = sqlite3_mprintf("%s", sqlite3_value_text(argv[iArg]));
+      pCur->zPrefix = bentley_sqlite3_mprintf("%s", bentley_sqlite3_value_text(argv[iArg]));
       if( pCur->zPrefix==0 ) return SQLITE_NOMEM;
     }
     iArg = 1;
   }
   if( idxNum & 2 ){
-    pCur->nLine = sqlite3_value_bytes(argv[iArg]);
+    pCur->nLine = bentley_sqlite3_value_bytes(argv[iArg]);
     if( pCur->nLine>0 ){
-      pCur->zLine = sqlite3_mprintf("%s", sqlite3_value_text(argv[iArg]));
+      pCur->zLine = bentley_sqlite3_mprintf("%s", bentley_sqlite3_value_text(argv[iArg]));
       if( pCur->zLine==0 ) return SQLITE_NOMEM;
     }
   }
@@ -9368,7 +9368,7 @@ static int completionFilter(
     }
     pCur->nPrefix = pCur->nLine - i;
     if( pCur->nPrefix>0 ){
-      pCur->zPrefix = sqlite3_mprintf("%.*s", pCur->nPrefix, pCur->zLine + i);
+      pCur->zPrefix = bentley_sqlite3_mprintf("%.*s", pCur->nPrefix, pCur->zLine + i);
       if( pCur->zPrefix==0 ) return SQLITE_NOMEM;
     }
   }
@@ -9465,7 +9465,7 @@ static sqlite3_module completionModule = {
 int sqlite3CompletionVtabInit(sqlite3 *db){
   int rc = SQLITE_OK;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  rc = sqlite3_create_module(db, "completion", &completionModule, 0);
+  rc = bentley_sqlite3_create_module(db, "completion", &completionModule, 0);
 #endif
   return rc;
 }
@@ -9847,7 +9847,7 @@ static int apndFileControl(sqlite3_file *pFile, int op, void *pArg){
   if( op==SQLITE_FCNTL_SIZE_HINT ) *(sqlite3_int64*)pArg += paf->iPgOne;
   rc = pFile->pMethods->xFileControl(pFile, op, pArg);
   if( rc==SQLITE_OK && op==SQLITE_FCNTL_VFSNAME ){
-    *(char**)pArg = sqlite3_mprintf("apnd(%lld)/%z", paf->iPgOne,*(char**)pArg);
+    *(char**)pArg = bentley_sqlite3_mprintf("apnd(%lld)/%z", paf->iPgOne,*(char**)pArg);
   }
   return rc;
 }
@@ -10147,15 +10147,15 @@ int sqlite3_appendvfs_init(
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;
   (void)db;
-  pOrig = sqlite3_vfs_find(0);
+  pOrig = bentley_sqlite3_vfs_find(0);
   if( pOrig==0 ) return SQLITE_ERROR;
   apnd_vfs.iVersion = pOrig->iVersion;
   apnd_vfs.pAppData = pOrig;
   apnd_vfs.szOsFile = pOrig->szOsFile + sizeof(ApndFile);
-  rc = sqlite3_vfs_register(&apnd_vfs, 0);
+  rc = bentley_sqlite3_vfs_register(&apnd_vfs, 0);
 #ifdef APPENDVFS_TEST
   if( rc==SQLITE_OK ){
-    rc = sqlite3_auto_extension((void(*)(void))apndvfsRegister);
+    rc = bentley_sqlite3_auto_extension((void(*)(void))apndvfsRegister);
   }
 #endif
   if( rc==SQLITE_OK ) rc = SQLITE_OK_LOAD_PERMANENTLY;
@@ -10397,7 +10397,7 @@ struct ZipfileCDS {
   u16 iInternalAttr;
   u32 iExternalAttr;
   u32 iOffset;
-  char *zFile;                    /* Filename (sqlite3_malloc()) */
+  char *zFile;                    /* Filename (bentley_sqlite3_malloc()) */
 };
 
 /*
@@ -10486,9 +10486,9 @@ static void zipfileCtxErrorMsg(sqlite3_context *ctx, const char *zFmt, ...){
   char *zMsg = 0;
   va_list ap;
   va_start(ap, zFmt);
-  zMsg = sqlite3_vmprintf(zFmt, ap);
-  sqlite3_result_error(ctx, zMsg, -1);
-  sqlite3_free(zMsg);
+  zMsg = bentley_sqlite3_vmprintf(zFmt, ap);
+  bentley_sqlite3_result_error(ctx, zMsg, -1);
+  bentley_sqlite3_free(zMsg);
   va_end(ap);
 }
 
@@ -10542,9 +10542,9 @@ static int zipfileConnect(
   **
   **   CREATE VIRTUAL TABLE zipfile USING zipfile();
   */
-  assert( 0==sqlite3_stricmp(argv[0], "zipfile") );
-  if( (0!=sqlite3_stricmp(argv[2], "zipfile") && argc<4) || argc>4 ){
-    *pzErr = sqlite3_mprintf("zipfile constructor requires one argument");
+  assert( 0==bentley_sqlite3_stricmp(argv[0], "zipfile") );
+  if( (0!=bentley_sqlite3_stricmp(argv[2], "zipfile") && argc<4) || argc>4 ){
+    *pzErr = bentley_sqlite3_mprintf("zipfile constructor requires one argument");
     return SQLITE_ERROR;
   }
 
@@ -10553,9 +10553,9 @@ static int zipfileConnect(
     nFile = (int)strlen(zFile)+1;
   }
 
-  rc = sqlite3_declare_vtab(db, ZIPFILE_SCHEMA);
+  rc = bentley_sqlite3_declare_vtab(db, ZIPFILE_SCHEMA);
   if( rc==SQLITE_OK ){
-    pNew = (ZipfileTab*)sqlite3_malloc64((sqlite3_int64)nByte+nFile);
+    pNew = (ZipfileTab*)bentley_sqlite3_malloc64((sqlite3_int64)nByte+nFile);
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, nByte+nFile);
     pNew->db = db;
@@ -10566,7 +10566,7 @@ static int zipfileConnect(
       zipfileDequote(pNew->zFile);
     }
   }
-  sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
+  bentley_sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
   *ppVtab = (sqlite3_vtab*)pNew;
   return rc;
 }
@@ -10576,8 +10576,8 @@ static int zipfileConnect(
 */
 static void zipfileEntryFree(ZipfileEntry *p){
   if( p ){
-    sqlite3_free(p->cds.zFile);
-    sqlite3_free(p);
+    bentley_sqlite3_free(p->cds.zFile);
+    bentley_sqlite3_free(p);
   }
 }
 
@@ -10608,7 +10608,7 @@ static void zipfileCleanupTransaction(ZipfileTab *pTab){
 */
 static int zipfileDisconnect(sqlite3_vtab *pVtab){
   zipfileCleanupTransaction((ZipfileTab*)pVtab);
-  sqlite3_free(pVtab);
+  bentley_sqlite3_free(pVtab);
   return SQLITE_OK;
 }
 
@@ -10618,7 +10618,7 @@ static int zipfileDisconnect(sqlite3_vtab *pVtab){
 static int zipfileOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCsr){
   ZipfileTab *pTab = (ZipfileTab*)p;
   ZipfileCsr *pCsr;
-  pCsr = sqlite3_malloc(sizeof(*pCsr));
+  pCsr = bentley_sqlite3_malloc(sizeof(*pCsr));
   *ppCsr = (sqlite3_vtab_cursor*)pCsr;
   if( pCsr==0 ){
     return SQLITE_NOMEM;
@@ -10665,7 +10665,7 @@ static int zipfileClose(sqlite3_vtab_cursor *cur){
   for(pp=&pTab->pCsrList; *pp!=pCsr; pp=&((*pp)->pCsrNext));
   *pp = pCsr->pCsrNext;
 
-  sqlite3_free(pCsr);
+  bentley_sqlite3_free(pCsr);
   return SQLITE_OK;
 }
 
@@ -10676,15 +10676,15 @@ static int zipfileClose(sqlite3_vtab_cursor *cur){
 static void zipfileTableErr(ZipfileTab *pTab, const char *zFmt, ...){
   va_list ap;
   va_start(ap, zFmt);
-  sqlite3_free(pTab->base.zErrMsg);
-  pTab->base.zErrMsg = sqlite3_vmprintf(zFmt, ap);
+  bentley_sqlite3_free(pTab->base.zErrMsg);
+  pTab->base.zErrMsg = bentley_sqlite3_vmprintf(zFmt, ap);
   va_end(ap);
 }
 static void zipfileCursorErr(ZipfileCsr *pCsr, const char *zFmt, ...){
   va_list ap;
   va_start(ap, zFmt);
-  sqlite3_free(pCsr->base.pVtab->zErrMsg);
-  pCsr->base.pVtab->zErrMsg = sqlite3_vmprintf(zFmt, ap);
+  bentley_sqlite3_free(pCsr->base.pVtab->zErrMsg);
+  pCsr->base.pVtab->zErrMsg = bentley_sqlite3_vmprintf(zFmt, ap);
   va_end(ap);
 }
 
@@ -10696,20 +10696,20 @@ static void zipfileCursorErr(ZipfileCsr *pCsr, const char *zFmt, ...){
 ** If an error does occur, output variable (*pzErrmsg) may be set to point
 ** to an English language error message. It is the responsibility of the
 ** caller to eventually free this buffer using
-** sqlite3_free().
+** bentley_sqlite3_free().
 */
 static int zipfileReadData(
   FILE *pFile,                    /* Read from this file */
   u8 *aRead,                      /* Read into this buffer */
   int nRead,                      /* Number of bytes to read */
   i64 iOff,                       /* Offset to read from */
-  char **pzErrmsg                 /* OUT: Error message (from sqlite3_malloc) */
+  char **pzErrmsg                 /* OUT: Error message (from bentley_sqlite3_malloc) */
 ){
   size_t n;
   fseek(pFile, (long)iOff, SEEK_SET);
   n = fread(aRead, 1, nRead, pFile);
   if( (int)n!=nRead ){
-    *pzErrmsg = sqlite3_mprintf("error in fread()");
+    *pzErrmsg = bentley_sqlite3_mprintf("error in fread()");
     return SQLITE_ERROR;
   }
   return SQLITE_OK;
@@ -10725,7 +10725,7 @@ static int zipfileAppendData(
     fseek(pTab->pWriteFd, (long)pTab->szCurrent, SEEK_SET);
     n = fwrite(aWrite, 1, nWrite, pTab->pWriteFd);
     if( (int)n!=nWrite ){
-      pTab->base.zErrMsg = sqlite3_mprintf("error in fwrite()");
+      pTab->base.zErrMsg = bentley_sqlite3_mprintf("error in fwrite()");
       return SQLITE_ERROR;
     }
     pTab->szCurrent += nWrite;
@@ -11010,14 +11010,14 @@ static int zipfileGetEntry(
       nAlloc += zipfileGetU32(&aRead[ZIPFILE_CDS_SZCOMPRESSED_OFF]);
     }
 
-    pNew = (ZipfileEntry*)sqlite3_malloc64(nAlloc);
+    pNew = (ZipfileEntry*)bentley_sqlite3_malloc64(nAlloc);
     if( pNew==0 ){
       rc = SQLITE_NOMEM;
     }else{
       memset(pNew, 0, sizeof(ZipfileEntry));
       rc = zipfileReadCDS(aRead, &pNew->cds);
       if( rc!=SQLITE_OK ){
-        *pzErr = sqlite3_mprintf("failed to read CDS at offset %lld", iOff);
+        *pzErr = bentley_sqlite3_mprintf("failed to read CDS at offset %lld", iOff);
       }else if( aBlob==0 ){
         rc = zipfileReadData(
             pFile, aRead, nExtra+nFile, iOff+ZIPFILE_CDS_FIXED_SZ, pzErr
@@ -11029,7 +11029,7 @@ static int zipfileGetEntry(
 
     if( rc==SQLITE_OK ){
       u32 *pt = &pNew->mUnixTime;
-      pNew->cds.zFile = sqlite3_mprintf("%.*s", nFile, aRead); 
+      pNew->cds.zFile = bentley_sqlite3_mprintf("%.*s", nFile, aRead); 
       pNew->aExtra = (u8*)&pNew[1];
       memcpy(pNew->aExtra, &aRead[nFile], nExtra);
       if( pNew->cds.zFile==0 ){
@@ -11057,7 +11057,7 @@ static int zipfileGetEntry(
           memcpy(pNew->aData, &aBlob[pNew->iDataOff], pNew->cds.szCompressed);
         }
       }else{
-        *pzErr = sqlite3_mprintf("failed to read LFH at offset %d", 
+        *pzErr = bentley_sqlite3_mprintf("failed to read LFH at offset %d", 
             (int)pNew->cds.iOffset
         );
       }
@@ -11110,7 +11110,7 @@ static int zipfileNext(sqlite3_vtab_cursor *cur){
 }
 
 static void zipfileFree(void *p) { 
-  sqlite3_free(p); 
+  bentley_sqlite3_free(p); 
 }
 
 /*
@@ -11126,9 +11126,9 @@ static void zipfileInflate(
   int nIn,                        /* Size of buffer aIn[] in bytes */
   int nOut                        /* Expected output size */
 ){
-  u8 *aRes = sqlite3_malloc(nOut);
+  u8 *aRes = bentley_sqlite3_malloc(nOut);
   if( aRes==0 ){
-    sqlite3_result_error_nomem(pCtx);
+    bentley_sqlite3_result_error_nomem(pCtx);
   }else{
     int err;
     z_stream str;
@@ -11147,11 +11147,11 @@ static void zipfileInflate(
       if( err!=Z_STREAM_END ){
         zipfileCtxErrorMsg(pCtx, "inflate() failed (%d)", err);
       }else{
-        sqlite3_result_blob(pCtx, aRes, nOut, zipfileFree);
+        bentley_sqlite3_result_blob(pCtx, aRes, nOut, zipfileFree);
         aRes = 0;
       }
     }
-    sqlite3_free(aRes);
+    bentley_sqlite3_free(aRes);
     inflateEnd(&str);
   }
 }
@@ -11160,7 +11160,7 @@ static void zipfileInflate(
 ** Buffer aIn (size nIn bytes) contains uncompressed data. This function
 ** compresses it and sets (*ppOut) to point to a buffer containing the
 ** compressed data. The caller is responsible for eventually calling
-** sqlite3_free() to release buffer (*ppOut). Before returning, (*pnOut) 
+** bentley_sqlite3_free() to release buffer (*ppOut). Before returning, (*pnOut) 
 ** is set to the size of buffer (*ppOut) in bytes.
 **
 ** If no error occurs, SQLITE_OK is returned. Otherwise, an SQLite error
@@ -11184,7 +11184,7 @@ static int zipfileDeflate(
   deflateInit2(&str, 9, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
 
   nAlloc = deflateBound(&str, nIn);
-  aOut = (u8*)sqlite3_malloc64(nAlloc);
+  aOut = (u8*)bentley_sqlite3_malloc64(nAlloc);
   if( aOut==0 ){
     rc = SQLITE_NOMEM;
   }else{
@@ -11196,8 +11196,8 @@ static int zipfileDeflate(
       *ppOut = aOut;
       *pnOut = (int)str.total_out;
     }else{
-      sqlite3_free(aOut);
-      *pzErr = sqlite3_mprintf("zipfile: deflate() error");
+      bentley_sqlite3_free(aOut);
+      *pzErr = bentley_sqlite3_mprintf("zipfile: deflate() error");
       rc = SQLITE_ERROR;
     }
     deflateEnd(&str);
@@ -11221,25 +11221,25 @@ static int zipfileColumn(
   int rc = SQLITE_OK;
   switch( i ){
     case 0:   /* name */
-      sqlite3_result_text(ctx, pCDS->zFile, -1, SQLITE_TRANSIENT);
+      bentley_sqlite3_result_text(ctx, pCDS->zFile, -1, SQLITE_TRANSIENT);
       break;
     case 1:   /* mode */
       /* TODO: Whether or not the following is correct surely depends on
       ** the platform on which the archive was created.  */
-      sqlite3_result_int(ctx, pCDS->iExternalAttr >> 16);
+      bentley_sqlite3_result_int(ctx, pCDS->iExternalAttr >> 16);
       break;
     case 2: { /* mtime */
-      sqlite3_result_int64(ctx, pCsr->pCurrent->mUnixTime);
+      bentley_sqlite3_result_int64(ctx, pCsr->pCurrent->mUnixTime);
       break;
     }
     case 3: { /* sz */
-      if( sqlite3_vtab_nochange(ctx)==0 ){
-        sqlite3_result_int64(ctx, pCDS->szUncompressed);
+      if( bentley_sqlite3_vtab_nochange(ctx)==0 ){
+        bentley_sqlite3_result_int64(ctx, pCDS->szUncompressed);
       }
       break;
     }
     case 4:   /* rawdata */
-      if( sqlite3_vtab_nochange(ctx) ) break;
+      if( bentley_sqlite3_vtab_nochange(ctx) ) break;
     case 5: { /* data */
       if( i==4 || pCDS->iCompression==0 || pCDS->iCompression==8 ){
         int sz = pCDS->szCompressed;
@@ -11250,7 +11250,7 @@ static int zipfileColumn(
           if( pCsr->pCurrent->aData ){
             aBuf = pCsr->pCurrent->aData;
           }else{
-            aBuf = aFree = sqlite3_malloc64(sz);
+            aBuf = aFree = bentley_sqlite3_malloc64(sz);
             if( aBuf==0 ){
               rc = SQLITE_NOMEM;
             }else{
@@ -11267,10 +11267,10 @@ static int zipfileColumn(
             if( i==5 && pCDS->iCompression ){
               zipfileInflate(ctx, aBuf, sz, szFinal);
             }else{
-              sqlite3_result_blob(ctx, aBuf, sz, SQLITE_TRANSIENT);
+              bentley_sqlite3_result_blob(ctx, aBuf, sz, SQLITE_TRANSIENT);
             }
           }
-          sqlite3_free(aFree);
+          bentley_sqlite3_free(aFree);
         }else{
           /* Figure out if this is a directory or a zero-sized file. Consider
           ** it to be a directory either if the mode suggests so, or if
@@ -11280,18 +11280,18 @@ static int zipfileColumn(
            && pCDS->nFile>=1
            && pCDS->zFile[pCDS->nFile-1]!='/'
           ){
-            sqlite3_result_blob(ctx, "", 0, SQLITE_STATIC);
+            bentley_sqlite3_result_blob(ctx, "", 0, SQLITE_STATIC);
           }
         }
       }
       break;
     }
     case 6:   /* method */
-      sqlite3_result_int(ctx, pCDS->iCompression);
+      bentley_sqlite3_result_int(ctx, pCDS->iCompression);
       break;
     default:  /* z */
       assert( i==7 );
-      sqlite3_result_int64(ctx, pCsr->iId);
+      bentley_sqlite3_result_int64(ctx, pCsr->iId);
       break;
   }
 
@@ -11356,7 +11356,7 @@ static int zipfileReadEOCD(
       }
     }
     if( i<0 ){
-      pTab->base.zErrMsg = sqlite3_mprintf(
+      pTab->base.zErrMsg = bentley_sqlite3_mprintf(
           "cannot find end of central directory record"
       );
       return SQLITE_ERROR;
@@ -11448,10 +11448,10 @@ static int zipfileFilter(
   }else if( idxNum==0 ){
     zipfileCursorErr(pCsr, "zipfile() function requires an argument");
     return SQLITE_ERROR;
-  }else if( sqlite3_value_type(argv[0])==SQLITE_BLOB ){
+  }else if( bentley_sqlite3_value_type(argv[0])==SQLITE_BLOB ){
     static const u8 aEmptyBlob = 0;
-    const u8 *aBlob = (const u8*)sqlite3_value_blob(argv[0]);
-    int nBlob = sqlite3_value_bytes(argv[0]);
+    const u8 *aBlob = (const u8*)bentley_sqlite3_value_blob(argv[0]);
+    int nBlob = bentley_sqlite3_value_bytes(argv[0]);
     assert( pTab->pFirstEntry==0 );
     if( aBlob==0 ){
       aBlob = &aEmptyBlob;
@@ -11463,7 +11463,7 @@ static int zipfileFilter(
     if( rc!=SQLITE_OK ) return rc;
     bInMemory = 1;
   }else{
-    zFile = (const char*)sqlite3_value_text(argv[0]);
+    zFile = (const char*)bentley_sqlite3_value_text(argv[0]);
   }
 
   if( 0==pTab->pWriteFd && 0==bInMemory ){
@@ -11525,12 +11525,12 @@ static int zipfileBestIndex(
 
 static ZipfileEntry *zipfileNewEntry(const char *zPath){
   ZipfileEntry *pNew;
-  pNew = sqlite3_malloc(sizeof(ZipfileEntry));
+  pNew = bentley_sqlite3_malloc(sizeof(ZipfileEntry));
   if( pNew ){
     memset(pNew, 0, sizeof(ZipfileEntry));
-    pNew->cds.zFile = sqlite3_mprintf("%s", zPath);
+    pNew->cds.zFile = bentley_sqlite3_mprintf("%s", zPath);
     if( pNew->cds.zFile==0 ){
-      sqlite3_free(pNew);
+      bentley_sqlite3_free(pNew);
       pNew = 0;
     }
   }
@@ -11596,12 +11596,12 @@ static int zipfileGetMode(
   u32 *pMode,                     /* OUT: Mode value */
   char **pzErr                    /* OUT: Error message */
 ){
-  const char *z = (const char*)sqlite3_value_text(pVal);
+  const char *z = (const char*)bentley_sqlite3_value_text(pVal);
   u32 mode = 0;
   if( z==0 ){
     mode = (bIsDir ? (S_IFDIR + 0755) : (S_IFREG + 0644));
   }else if( z[0]>='0' && z[0]<='9' ){
-    mode = (unsigned int)sqlite3_value_int(pVal);
+    mode = (unsigned int)bentley_sqlite3_value_int(pVal);
   }else{
     const char zTemplate[11] = "-rwxrwxrwx";
     int i;
@@ -11620,14 +11620,14 @@ static int zipfileGetMode(
   if( ((mode & S_IFDIR)==0)==bIsDir ){
     /* The "mode" attribute is a directory, but data has been specified.
     ** Or vice-versa - no data but "mode" is a file or symlink.  */
-    *pzErr = sqlite3_mprintf("zipfile: mode does not match data");
+    *pzErr = bentley_sqlite3_mprintf("zipfile: mode does not match data");
     return SQLITE_CONSTRAINT;
   }
   *pMode = mode;
   return SQLITE_OK;
 
  parse_error:
-  *pzErr = sqlite3_mprintf("zipfile: parse error in mode: %s", z);
+  *pzErr = bentley_sqlite3_mprintf("zipfile: parse error in mode: %s", z);
   return SQLITE_ERROR;
 }
 
@@ -11649,7 +11649,7 @@ static int zipfileBegin(sqlite3_vtab *pVtab){
 
   assert( pTab->pWriteFd==0 );
   if( pTab->zFile==0 || pTab->zFile[0]==0 ){
-    pTab->base.zErrMsg = sqlite3_mprintf("zipfile: missing filename");
+    pTab->base.zErrMsg = bentley_sqlite3_mprintf("zipfile: missing filename");
     return SQLITE_ERROR;
   }
 
@@ -11659,7 +11659,7 @@ static int zipfileBegin(sqlite3_vtab *pVtab){
   ** in main-memory until the transaction is committed.  */
   pTab->pWriteFd = sqlite3_fopen(pTab->zFile, "ab+");
   if( pTab->pWriteFd==0 ){
-    pTab->base.zErrMsg = sqlite3_mprintf(
+    pTab->base.zErrMsg = bentley_sqlite3_mprintf(
         "zipfile: failed to open file %s for writing", pTab->zFile
         );
     rc = SQLITE_ERROR;
@@ -11681,7 +11681,7 @@ static int zipfileBegin(sqlite3_vtab *pVtab){
 ** time(2)).
 */
 static u32 zipfileTime(void){
-  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+  sqlite3_vfs *pVfs = bentley_sqlite3_vfs_find(0);
   u32 ret;
   if( pVfs==0 ) return 0;
   if( pVfs->iVersion>=2 && pVfs->xCurrentTimeInt64 ){
@@ -11704,10 +11704,10 @@ static u32 zipfileTime(void){
 ** cast to a 32-bit unsigned integer.
 */
 static u32 zipfileGetTime(sqlite3_value *pVal){
-  if( pVal==0 || sqlite3_value_type(pVal)==SQLITE_NULL ){
+  if( pVal==0 || bentley_sqlite3_value_type(pVal)==SQLITE_NULL ){
     return zipfileTime();
   }
-  return (u32)sqlite3_value_int64(pVal);
+  return (u32)bentley_sqlite3_value_int64(pVal);
 }
 
 /*
@@ -11770,11 +11770,11 @@ static int zipfileUpdate(
   }
 
   /* If this is a DELETE or UPDATE, find the archive entry to delete. */
-  if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
-    const char *zDelete = (const char*)sqlite3_value_text(apVal[0]);
+  if( bentley_sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
+    const char *zDelete = (const char*)bentley_sqlite3_value_text(apVal[0]);
     int nDelete = (int)strlen(zDelete);
     if( nVal>1 ){
-      const char *zUpdate = (const char*)sqlite3_value_text(apVal[1]);
+      const char *zUpdate = (const char*)bentley_sqlite3_value_text(apVal[1]);
       if( zUpdate && zipfileComparePath(zUpdate, zDelete, nDelete)!=0 ){
         bUpdate = 1;
       }
@@ -11789,27 +11789,27 @@ static int zipfileUpdate(
 
   if( nVal>1 ){
     /* Check that "sz" and "rawdata" are both NULL: */
-    if( sqlite3_value_type(apVal[5])!=SQLITE_NULL ){
+    if( bentley_sqlite3_value_type(apVal[5])!=SQLITE_NULL ){
       zipfileTableErr(pTab, "sz must be NULL");
       rc = SQLITE_CONSTRAINT;
     }
-    if( sqlite3_value_type(apVal[6])!=SQLITE_NULL ){
+    if( bentley_sqlite3_value_type(apVal[6])!=SQLITE_NULL ){
       zipfileTableErr(pTab, "rawdata must be NULL"); 
       rc = SQLITE_CONSTRAINT;
     }
 
     if( rc==SQLITE_OK ){
-      if( sqlite3_value_type(apVal[7])==SQLITE_NULL ){
+      if( bentley_sqlite3_value_type(apVal[7])==SQLITE_NULL ){
         /* data=NULL. A directory */
         bIsDir = 1;
       }else{
         /* Value specified for "data", and possibly "method". This must be
         ** a regular file or a symlink. */
-        const u8 *aIn = sqlite3_value_blob(apVal[7]);
-        int nIn = sqlite3_value_bytes(apVal[7]);
-        int bAuto = sqlite3_value_type(apVal[8])==SQLITE_NULL;
+        const u8 *aIn = bentley_sqlite3_value_blob(apVal[7]);
+        int nIn = bentley_sqlite3_value_bytes(apVal[7]);
+        int bAuto = bentley_sqlite3_value_type(apVal[8])==SQLITE_NULL;
 
-        iMethod = sqlite3_value_int(apVal[8]);
+        iMethod = bentley_sqlite3_value_int(apVal[8]);
         sz = nIn;
         pData = aIn;
         nData = nIn;
@@ -11838,7 +11838,7 @@ static int zipfileUpdate(
     }
 
     if( rc==SQLITE_OK ){
-      zPath = (const char*)sqlite3_value_text(apVal[2]);
+      zPath = (const char*)bentley_sqlite3_value_text(apVal[2]);
       if( zPath==0 ) zPath = "";
       nPath = (int)strlen(zPath);
       mTime = zipfileGetTime(apVal[4]);
@@ -11850,7 +11850,7 @@ static int zipfileUpdate(
       ** (the unzip command on unix). It does not create directories
       ** otherwise.  */
       if( nPath<=0 || zPath[nPath-1]!='/' ){
-        zFree = sqlite3_mprintf("%s/", zPath);
+        zFree = bentley_sqlite3_mprintf("%s/", zPath);
         zPath = (const char*)zFree;
         if( zFree==0 ){
           rc = SQLITE_NOMEM;
@@ -11867,7 +11867,7 @@ static int zipfileUpdate(
       ZipfileEntry *p;
       for(p=pTab->pFirstEntry; p; p=p->pNext){
         if( zipfileComparePath(p->cds.zFile, zPath, nPath)==0 ){
-          switch( sqlite3_vtab_on_conflict(pTab->db) ){
+          switch( bentley_sqlite3_vtab_on_conflict(pTab->db) ){
             case SQLITE_IGNORE: {
               goto zipfile_update_done;
             }
@@ -11924,8 +11924,8 @@ static int zipfileUpdate(
   }
 
 zipfile_update_done:
-  sqlite3_free(pFree);
-  sqlite3_free(zFree);
+  bentley_sqlite3_free(pFree);
+  bentley_sqlite3_free(zFree);
   return rc;
 }
 
@@ -12046,13 +12046,13 @@ static void zipfileFunctionCds(
   sqlite3_value **argv
 ){
   ZipfileCsr *pCsr;
-  ZipfileTab *pTab = (ZipfileTab*)sqlite3_user_data(context);
+  ZipfileTab *pTab = (ZipfileTab*)bentley_sqlite3_user_data(context);
   assert( argc>0 );
 
-  pCsr = zipfileFindCursor(pTab, sqlite3_value_int64(argv[0]));
+  pCsr = zipfileFindCursor(pTab, bentley_sqlite3_value_int64(argv[0]));
   if( pCsr ){
     ZipfileCDS *p = &pCsr->pCurrent->cds;
-    char *zRes = sqlite3_mprintf("{"
+    char *zRes = bentley_sqlite3_mprintf("{"
         "\"version-made-by\" : %u, "
         "\"version-to-extract\" : %u, "
         "\"flags\" : %u, "
@@ -12080,10 +12080,10 @@ static void zipfileFunctionCds(
     );
 
     if( zRes==0 ){
-      sqlite3_result_error_nomem(context);
+      bentley_sqlite3_result_error_nomem(context);
     }else{
-      sqlite3_result_text(context, zRes, -1, SQLITE_TRANSIENT);
-      sqlite3_free(zRes);
+      bentley_sqlite3_result_text(context, zRes, -1, SQLITE_TRANSIENT);
+      bentley_sqlite3_free(zRes);
     }
   }
 }
@@ -12099,7 +12099,7 @@ static int zipfileFindFunction(
   void **ppArg                    /* OUT: User data for *pxFunc */
 ){
   (void)nArg;
-  if( sqlite3_stricmp("zipfile_cds", zName)==0 ){
+  if( bentley_sqlite3_stricmp("zipfile_cds", zName)==0 ){
     *pxFunc = zipfileFunctionCds;
     *ppArg = (void*)pVtab;
     return 1;
@@ -12128,7 +12128,7 @@ static int zipfileBufferGrow(ZipfileBuffer *pBuf, int nByte){
     int nReq = pBuf->n + nByte;
 
     while( nNew<nReq ) nNew = nNew*2;
-    aNew = sqlite3_realloc64(pBuf->a, nNew);
+    aNew = bentley_sqlite3_realloc64(pBuf->a, nNew);
     if( aNew==0 ) return SQLITE_NOMEM;
     pBuf->a = aNew;
     pBuf->nAlloc = (int)nNew;
@@ -12173,12 +12173,12 @@ static void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
   int nByte;
 
   memset(&e, 0, sizeof(e));
-  p = (ZipfileCtx*)sqlite3_aggregate_context(pCtx, sizeof(ZipfileCtx));
+  p = (ZipfileCtx*)bentley_sqlite3_aggregate_context(pCtx, sizeof(ZipfileCtx));
   if( p==0 ) return;
 
   /* Martial the arguments into stack variables */
   if( nVal!=2 && nVal!=4 && nVal!=5 ){
-    zErr = sqlite3_mprintf("wrong number of arguments to function zipfile()");
+    zErr = bentley_sqlite3_mprintf("wrong number of arguments to function zipfile()");
     rc = SQLITE_ERROR;
     goto zipfile_step_out;
   }
@@ -12195,20 +12195,20 @@ static void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
   }
 
   /* Check that the 'name' parameter looks ok. */
-  zName = (char*)sqlite3_value_text(pName);
-  nName = sqlite3_value_bytes(pName);
+  zName = (char*)bentley_sqlite3_value_text(pName);
+  nName = bentley_sqlite3_value_bytes(pName);
   if( zName==0 ){
-    zErr = sqlite3_mprintf("first argument to zipfile() must be non-NULL");
+    zErr = bentley_sqlite3_mprintf("first argument to zipfile() must be non-NULL");
     rc = SQLITE_ERROR;
     goto zipfile_step_out;
   }
 
   /* Inspect the 'method' parameter. This must be either 0 (store), 8 (use
   ** deflate compression) or NULL (choose automatically).  */
-  if( pMethod && SQLITE_NULL!=sqlite3_value_type(pMethod) ){
-    iMethod = (int)sqlite3_value_int64(pMethod);
+  if( pMethod && SQLITE_NULL!=bentley_sqlite3_value_type(pMethod) ){
+    iMethod = (int)bentley_sqlite3_value_int64(pMethod);
     if( iMethod!=0 && iMethod!=8 ){
-      zErr = sqlite3_mprintf("illegal method value: %d", iMethod);
+      zErr = bentley_sqlite3_mprintf("illegal method value: %d", iMethod);
       rc = SQLITE_ERROR;
       goto zipfile_step_out;
     }
@@ -12217,12 +12217,12 @@ static void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
   /* Now inspect the data. If this is NULL, then the new entry must be a
   ** directory.  Otherwise, figure out whether or not the data should
   ** be deflated or simply stored in the zip archive. */
-  if( sqlite3_value_type(pData)==SQLITE_NULL ){
+  if( bentley_sqlite3_value_type(pData)==SQLITE_NULL ){
     bIsDir = 1;
     iMethod = 0;
   }else{
-    aData = sqlite3_value_blob(pData);
-    szUncompressed = nData = sqlite3_value_bytes(pData);
+    aData = bentley_sqlite3_value_blob(pData);
+    szUncompressed = nData = bentley_sqlite3_value_bytes(pData);
     iCrc32 = crc32(0, aData, nData);
     if( iMethod<0 || iMethod==8 ){
       int nOut = 0;
@@ -12252,13 +12252,13 @@ static void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
   ** ends in '/' it is an error. */
   if( bIsDir==0 ){
     if( nName>0 && zName[nName-1]=='/' ){
-      zErr = sqlite3_mprintf("non-directory name must not end with /");
+      zErr = bentley_sqlite3_mprintf("non-directory name must not end with /");
       rc = SQLITE_ERROR;
       goto zipfile_step_out;
     }
   }else{
     if( nName==0 || zName[nName-1]!='/' ){
-      zName = zFree = sqlite3_mprintf("%s/", zName);
+      zName = zFree = bentley_sqlite3_mprintf("%s/", zName);
       if( zName==0 ){
         rc = SQLITE_NOMEM;
         goto zipfile_step_out;
@@ -12304,16 +12304,16 @@ static void zipfileStep(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal){
   p->nEntry++;
 
  zipfile_step_out:
-  sqlite3_free(aFree);
-  sqlite3_free(zFree);
+  bentley_sqlite3_free(aFree);
+  bentley_sqlite3_free(zFree);
   if( rc ){
     if( zErr ){
-      sqlite3_result_error(pCtx, zErr, -1);
+      bentley_sqlite3_result_error(pCtx, zErr, -1);
     }else{
-      sqlite3_result_error_code(pCtx, rc);
+      bentley_sqlite3_result_error_code(pCtx, rc);
     }
   }
-  sqlite3_free(zErr);
+  bentley_sqlite3_free(zErr);
 }
 
 /*
@@ -12325,7 +12325,7 @@ static void zipfileFinal(sqlite3_context *pCtx){
   sqlite3_int64 nZip;
   u8 *aZip;
 
-  p = (ZipfileCtx*)sqlite3_aggregate_context(pCtx, sizeof(ZipfileCtx));
+  p = (ZipfileCtx*)bentley_sqlite3_aggregate_context(pCtx, sizeof(ZipfileCtx));
   if( p==0 ) return;
   if( p->nEntry>0 ){
     memset(&eocd, 0, sizeof(eocd));
@@ -12335,19 +12335,19 @@ static void zipfileFinal(sqlite3_context *pCtx){
     eocd.iOffset = p->body.n;
 
     nZip = p->body.n + p->cds.n + ZIPFILE_EOCD_FIXED_SZ;
-    aZip = (u8*)sqlite3_malloc64(nZip);
+    aZip = (u8*)bentley_sqlite3_malloc64(nZip);
     if( aZip==0 ){
-      sqlite3_result_error_nomem(pCtx);
+      bentley_sqlite3_result_error_nomem(pCtx);
     }else{
       memcpy(aZip, p->body.a, p->body.n);
       memcpy(&aZip[p->body.n], p->cds.a, p->cds.n);
       zipfileSerializeEOCD(&eocd, &aZip[p->body.n + p->cds.n]);
-      sqlite3_result_blob(pCtx, aZip, (int)nZip, zipfileFree);
+      bentley_sqlite3_result_blob(pCtx, aZip, (int)nZip, zipfileFree);
     }
   }
 
-  sqlite3_free(p->body.a);
-  sqlite3_free(p->cds.a);
+  bentley_sqlite3_free(p->body.a);
+  bentley_sqlite3_free(p->cds.a);
 }
 
 
@@ -12383,10 +12383,10 @@ static int zipfileRegister(sqlite3 *db){
     0                          /* xIntegrity */
   };
 
-  int rc = sqlite3_create_module(db, "zipfile"  , &zipfileModule, 0);
-  if( rc==SQLITE_OK ) rc = sqlite3_overload_function(db, "zipfile_cds", -1);
+  int rc = bentley_sqlite3_create_module(db, "zipfile"  , &zipfileModule, 0);
+  if( rc==SQLITE_OK ) rc = bentley_sqlite3_overload_function(db, "zipfile_cds", -1);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "zipfile", -1, SQLITE_UTF8, 0, 0, 
+    rc = bentley_sqlite3_create_function(db, "zipfile", -1, SQLITE_UTF8, 0, 0, 
         zipfileStep, zipfileFinal
     );
   }
@@ -12457,28 +12457,28 @@ static void sqlarCompressFunc(
   sqlite3_value **argv
 ){
   assert( argc==1 );
-  if( sqlite3_value_type(argv[0])==SQLITE_BLOB ){
-    const Bytef *pData = sqlite3_value_blob(argv[0]);
-    uLong nData = sqlite3_value_bytes(argv[0]);
+  if( bentley_sqlite3_value_type(argv[0])==SQLITE_BLOB ){
+    const Bytef *pData = bentley_sqlite3_value_blob(argv[0]);
+    uLong nData = bentley_sqlite3_value_bytes(argv[0]);
     uLongf nOut = compressBound(nData);
     Bytef *pOut;
 
-    pOut = (Bytef*)sqlite3_malloc(nOut);
+    pOut = (Bytef*)bentley_sqlite3_malloc(nOut);
     if( pOut==0 ){
-      sqlite3_result_error_nomem(context);
+      bentley_sqlite3_result_error_nomem(context);
       return;
     }else{
       if( Z_OK!=compress(pOut, &nOut, pData, nData) ){
-        sqlite3_result_error(context, "error in compress()", -1);
+        bentley_sqlite3_result_error(context, "error in compress()", -1);
       }else if( nOut<nData ){
-        sqlite3_result_blob(context, pOut, nOut, SQLITE_TRANSIENT);
+        bentley_sqlite3_result_blob(context, pOut, nOut, SQLITE_TRANSIENT);
       }else{
-        sqlite3_result_value(context, argv[0]);
+        bentley_sqlite3_result_value(context, argv[0]);
       }
-      sqlite3_free(pOut);
+      bentley_sqlite3_free(pOut);
     }
   }else{
-    sqlite3_result_value(context, argv[0]);
+    bentley_sqlite3_result_value(context, argv[0]);
   }
 }
 
@@ -12501,22 +12501,22 @@ static void sqlarUncompressFunc(
   sqlite3_int64 sz;
 
   assert( argc==2 );
-  sz = sqlite3_value_int(argv[1]);
+  sz = bentley_sqlite3_value_int(argv[1]);
 
-  if( sz<=0 || sz==(nData = sqlite3_value_bytes(argv[0])) ){
-    sqlite3_result_value(context, argv[0]);
+  if( sz<=0 || sz==(nData = bentley_sqlite3_value_bytes(argv[0])) ){
+    bentley_sqlite3_result_value(context, argv[0]);
   }else{
     uLongf szf = sz;
-    const Bytef *pData= sqlite3_value_blob(argv[0]);
-    Bytef *pOut = sqlite3_malloc(sz);
+    const Bytef *pData= bentley_sqlite3_value_blob(argv[0]);
+    Bytef *pOut = bentley_sqlite3_malloc(sz);
     if( pOut==0 ){
-      sqlite3_result_error_nomem(context);
+      bentley_sqlite3_result_error_nomem(context);
     }else if( Z_OK!=uncompress(pOut, &szf, pData, nData) ){
-      sqlite3_result_error(context, "error in uncompress()", -1);
+      bentley_sqlite3_result_error(context, "error in uncompress()", -1);
     }else{
-      sqlite3_result_blob(context, pOut, szf, SQLITE_TRANSIENT);
+      bentley_sqlite3_result_blob(context, pOut, szf, SQLITE_TRANSIENT);
     }
-    sqlite3_free(pOut);
+    bentley_sqlite3_free(pOut);
   }
 }
 
@@ -12531,11 +12531,11 @@ int sqlite3_sqlar_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "sqlar_compress", 1, 
+  rc = bentley_sqlite3_create_function(db, "sqlar_compress", 1, 
                                SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
                                sqlarCompressFunc, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sqlar_uncompress", 2,
+    rc = bentley_sqlite3_create_function(db, "sqlar_uncompress", 2,
                                  SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
                                  sqlarUncompressFunc, 0, 0);
   }
@@ -12570,7 +12570,7 @@ typedef struct sqlite3expert sqlite3expert;
 ** to NULL. Or, if an error occurs, NULL is returned and (*pzErr) set to
 ** an English-language error message. In this case it is the responsibility
 ** of the caller to eventually free the error message buffer using
-** sqlite3_free().
+** bentley_sqlite3_free().
 */
 sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErr);
 
@@ -12616,7 +12616,7 @@ int sqlite3_expert_config(sqlite3expert *p, int op, ...);
 ** due to a error in the SQL - an SQLite error code is returned and (*pzErr)
 ** may be set to point to an English language error message. In this case
 ** the caller is responsible for eventually freeing the error message buffer
-** using sqlite3_free().
+** using bentley_sqlite3_free().
 **
 ** If an error does occur while processing one of the statements in the
 ** buffer passed as the second argument, none of the statements in the
@@ -12644,7 +12644,7 @@ int sqlite3_expert_sql(
 ** an error occurs, an SQLite error code is returned and (*pzErr) set to 
 ** point to a buffer containing an English language error message. In this
 ** case it is the responsibility of the caller to eventually free the buffer
-** using sqlite3_free().
+** using bentley_sqlite3_free().
 **
 ** If an error does occur within this function, the sqlite3expert object
 ** is no longer useful for any purpose. At that point it is no longer
@@ -12887,14 +12887,14 @@ struct sqlite3expert {
 
 
 /*
-** Allocate and return nByte bytes of zeroed memory using sqlite3_malloc(). 
+** Allocate and return nByte bytes of zeroed memory using bentley_sqlite3_malloc(). 
 ** If the allocation fails, set *pRc to SQLITE_NOMEM and return NULL.
 */
 static void *idxMalloc(int *pRc, int nByte){
   void *pRet;
   assert( *pRc==SQLITE_OK );
   assert( nByte>0 );
-  pRet = sqlite3_malloc(nByte);
+  pRet = bentley_sqlite3_malloc(nByte);
   if( pRet ){
     memset(pRet, 0, nByte);
   }else{
@@ -12920,8 +12920,8 @@ static void idxHashClear(IdxHash *pHash){
     IdxHashEntry *pNext;
     for(pEntry=pHash->aHash[i]; pEntry; pEntry=pNext){
       pNext = pEntry->pHashNext;
-      sqlite3_free(pEntry->zVal2);
-      sqlite3_free(pEntry);
+      bentley_sqlite3_free(pEntry->zVal2);
+      bentley_sqlite3_free(pEntry);
     }
   }
   memset(pHash, 0, sizeof(IdxHash));
@@ -13033,7 +13033,7 @@ static void idxDatabaseError(
   sqlite3 *db,                    /* Database handle */
   char **pzErrmsg                 /* Write error here */
 ){
-  *pzErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+  *pzErrmsg = bentley_sqlite3_mprintf("%s", bentley_sqlite3_errmsg(db));
 }
 
 /*
@@ -13042,10 +13042,10 @@ static void idxDatabaseError(
 static int idxPrepareStmt(
   sqlite3 *db,                    /* Database handle to compile against */
   sqlite3_stmt **ppStmt,          /* OUT: Compiled SQL statement */
-  char **pzErrmsg,                /* OUT: sqlite3_malloc()ed error message */
+  char **pzErrmsg,                /* OUT: bentley_sqlite3_malloc()ed error message */
   const char *zSql                /* SQL statement to compile */
 ){
-  int rc = sqlite3_prepare_v2(db, zSql, -1, ppStmt, 0);
+  int rc = bentley_sqlite3_prepare_v2(db, zSql, -1, ppStmt, 0);
   if( rc!=SQLITE_OK ){
     *ppStmt = 0;
     idxDatabaseError(db, pzErrmsg);
@@ -13059,7 +13059,7 @@ static int idxPrepareStmt(
 static int idxPrintfPrepareStmt(
   sqlite3 *db,                    /* Database handle to compile against */
   sqlite3_stmt **ppStmt,          /* OUT: Compiled SQL statement */
-  char **pzErrmsg,                /* OUT: sqlite3_malloc()ed error message */
+  char **pzErrmsg,                /* OUT: bentley_sqlite3_malloc()ed error message */
   const char *zFmt,               /* printf() format of SQL statement */
   ...                             /* Trailing printf() arguments */
 ){
@@ -13067,12 +13067,12 @@ static int idxPrintfPrepareStmt(
   int rc;
   char *zSql;
   va_start(ap, zFmt);
-  zSql = sqlite3_vmprintf(zFmt, ap);
+  zSql = bentley_sqlite3_vmprintf(zFmt, ap);
   if( zSql==0 ){
     rc = SQLITE_NOMEM;
   }else{
     rc = idxPrepareStmt(db, ppStmt, pzErrmsg, zSql);
-    sqlite3_free(zSql);
+    bentley_sqlite3_free(zSql);
   }
   va_end(ap);
   return rc;
@@ -13097,7 +13097,7 @@ struct ExpertCsr {
 
 static char *expertDequote(const char *zIn){
   int n = STRLEN(zIn);
-  char *zRet = sqlite3_malloc(n);
+  char *zRet = bentley_sqlite3_malloc(n);
 
   assert( zIn[0]=='\'' );
   assert( zIn[n-1]=='\'' );
@@ -13139,21 +13139,21 @@ static int expertConnect(
   int rc;
 
   if( argc!=4 ){
-    *pzErr = sqlite3_mprintf("internal error!");
+    *pzErr = bentley_sqlite3_mprintf("internal error!");
     rc = SQLITE_ERROR;
   }else{
     char *zCreateTable = expertDequote(argv[3]);
     if( zCreateTable ){
-      rc = sqlite3_declare_vtab(db, zCreateTable);
+      rc = bentley_sqlite3_declare_vtab(db, zCreateTable);
       if( rc==SQLITE_OK ){
         p = idxMalloc(&rc, sizeof(ExpertVtab));
       }
       if( rc==SQLITE_OK ){
         p->pExpert = pExpert;
         p->pTab = pExpert->pTable;
-        assert( sqlite3_stricmp(p->pTab->zName, argv[2])==0 );
+        assert( bentley_sqlite3_stricmp(p->pTab->zName, argv[2])==0 );
       }
-      sqlite3_free(zCreateTable);
+      bentley_sqlite3_free(zCreateTable);
     }else{
       rc = SQLITE_NOMEM;
     }
@@ -13165,7 +13165,7 @@ static int expertConnect(
 
 static int expertDisconnect(sqlite3_vtab *pVtab){
   ExpertVtab *p = (ExpertVtab*)pVtab;
-  sqlite3_free(p);
+  bentley_sqlite3_free(p);
   return SQLITE_OK;
 }
 
@@ -13197,7 +13197,7 @@ static int expertBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pIdxInfo){
        && (pCons->op & opmask) 
       ){
         IdxConstraint *pNew;
-        const char *zColl = sqlite3_vtab_collation(pIdxInfo, i);
+        const char *zColl = bentley_sqlite3_vtab_collation(pIdxInfo, i);
         pNew = idxNewConstraint(&rc, zColl);
         if( pNew ){
           pNew->iCol = pCons->iColumn;
@@ -13266,8 +13266,8 @@ static int expertOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
 */
 static int expertClose(sqlite3_vtab_cursor *cur){
   ExpertCsr *pCsr = (ExpertCsr*)cur;
-  sqlite3_finalize(pCsr->pData);
-  sqlite3_free(pCsr);
+  bentley_sqlite3_finalize(pCsr->pData);
+  bentley_sqlite3_free(pCsr);
   return SQLITE_OK;
 }
 
@@ -13290,9 +13290,9 @@ static int expertNext(sqlite3_vtab_cursor *cur){
   int rc = SQLITE_OK;
 
   assert( pCsr->pData );
-  rc = sqlite3_step(pCsr->pData);
+  rc = bentley_sqlite3_step(pCsr->pData);
   if( rc!=SQLITE_ROW ){
-    rc = sqlite3_finalize(pCsr->pData);
+    rc = bentley_sqlite3_finalize(pCsr->pData);
     pCsr->pData = 0;
   }else{
     rc = SQLITE_OK;
@@ -13316,9 +13316,9 @@ static int expertRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 static int expertColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
   ExpertCsr *pCsr = (ExpertCsr*)cur;
   sqlite3_value *pVal;
-  pVal = sqlite3_column_value(pCsr->pData, i);
+  pVal = bentley_sqlite3_column_value(pCsr->pData, i);
   if( pVal ){
-    sqlite3_result_value(ctx, pVal);
+    bentley_sqlite3_result_value(ctx, pVal);
   }
   return SQLITE_OK;
 }
@@ -13340,7 +13340,7 @@ static int expertFilter(
   (void)idxStr;
   (void)argc;
   (void)argv;
-  rc = sqlite3_finalize(pCsr->pData);
+  rc = bentley_sqlite3_finalize(pCsr->pData);
   pCsr->pData = 0;
   if( rc==SQLITE_OK ){
     rc = idxPrintfPrepareStmt(pExpert->db, &pCsr->pData, &pVtab->base.zErrMsg,
@@ -13383,18 +13383,18 @@ static int idxRegisterVtab(sqlite3expert *p){
     0,                            /* xIntegrity */
   };
 
-  return sqlite3_create_module(p->dbv, "expert", &expertModule, (void*)p);
+  return bentley_sqlite3_create_module(p->dbv, "expert", &expertModule, (void*)p);
 }
 /*
 ** End of virtual table implementation.
 *************************************************************************/
 /*
 ** Finalize SQL statement pStmt. If (*pRc) is SQLITE_OK when this function
-** is called, set it to the return value of sqlite3_finalize() before
-** returning. Otherwise, discard the sqlite3_finalize() return value.
+** is called, set it to the return value of bentley_sqlite3_finalize() before
+** returning. Otherwise, discard the bentley_sqlite3_finalize() return value.
 */
 static void idxFinalize(int *pRc, sqlite3_stmt *pStmt){
-  int rc = sqlite3_finalize(pStmt);
+  int rc = bentley_sqlite3_finalize(pStmt);
   if( *pRc==SQLITE_OK ) *pRc = rc;
 }
 
@@ -13406,7 +13406,7 @@ static void idxFinalize(int *pRc, sqlite3_stmt *pStmt){
 ** set to point to an error string.
 **
 ** It is the responsibility of the caller to eventually free either the
-** IdxTable object or error message using sqlite3_free().
+** IdxTable object or error message using bentley_sqlite3_free().
 */
 static int idxGetTableInfo(
   sqlite3 *db,                    /* Database connection to read details from */
@@ -13428,23 +13428,23 @@ static int idxGetTableInfo(
   nTab = STRLEN(zTab);
   nByte = sizeof(IdxTable) + nTab + 1;
   rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_xinfo=%Q", zTab);
-  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
-    const char *zCol = (const char*)sqlite3_column_text(p1, 1);
+  while( rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(p1) ){
+    const char *zCol = (const char*)bentley_sqlite3_column_text(p1, 1);
     const char *zColSeq = 0;
     if( zCol==0 ){
       rc = SQLITE_ERROR;
       break;
     }
     nByte += 1 + STRLEN(zCol);
-    rc = sqlite3_table_column_metadata(
+    rc = bentley_sqlite3_table_column_metadata(
         db, "main", zTab, zCol, 0, &zColSeq, 0, 0, 0
     );
     if( zColSeq==0 ) zColSeq = "binary";
     nByte += 1 + STRLEN(zColSeq);
     nCol++;
-    nPk += (sqlite3_column_int(p1, 5)>0);
+    nPk += (bentley_sqlite3_column_int(p1, 5)>0);
   }
-  rc2 = sqlite3_reset(p1);
+  rc2 = bentley_sqlite3_reset(p1);
   if( rc==SQLITE_OK ) rc = rc2;
 
   nByte += sizeof(IdxColumn) * nCol;
@@ -13458,18 +13458,18 @@ static int idxGetTableInfo(
   }
 
   nCol = 0;
-  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
-    const char *zCol = (const char*)sqlite3_column_text(p1, 1);
+  while( rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(p1) ){
+    const char *zCol = (const char*)bentley_sqlite3_column_text(p1, 1);
     const char *zColSeq = 0;
     int nCopy;
     if( zCol==0 ) continue;
     nCopy = STRLEN(zCol) + 1;
     pNew->aCol[nCol].zName = pCsr;
-    pNew->aCol[nCol].iPk = (sqlite3_column_int(p1, 5)==1 && nPk==1);
+    pNew->aCol[nCol].iPk = (bentley_sqlite3_column_int(p1, 5)==1 && nPk==1);
     memcpy(pCsr, zCol, nCopy);
     pCsr += nCopy;
 
-    rc = sqlite3_table_column_metadata(
+    rc = bentley_sqlite3_table_column_metadata(
         db, "main", zTab, zCol, 0, &zColSeq, 0, 0, 0
     );
     if( rc==SQLITE_OK ){
@@ -13485,7 +13485,7 @@ static int idxGetTableInfo(
   idxFinalize(&rc, p1);
 
   if( rc!=SQLITE_OK ){
-    sqlite3_free(pNew);
+    bentley_sqlite3_free(pNew);
     pNew = 0;
   }else if( ALWAYS(pNew!=0) ){
     pNew->zName = pCsr;
@@ -13502,7 +13502,7 @@ static int idxGetTableInfo(
 **
 ** If *pRc is initially set to SQLITE_OK, then the text specified by
 ** the printf() style arguments is appended to zIn and the result returned
-** in a buffer allocated by sqlite3_malloc(). sqlite3_free() is called on
+** in a buffer allocated by bentley_sqlite3_malloc(). bentley_sqlite3_free() is called on
 ** zIn before returning.
 */
 static char *idxAppendText(int *pRc, char *zIn, const char *zFmt, ...){
@@ -13513,21 +13513,21 @@ static char *idxAppendText(int *pRc, char *zIn, const char *zFmt, ...){
   int nAppend = 0;
   va_start(ap, zFmt);
   if( *pRc==SQLITE_OK ){
-    zAppend = sqlite3_vmprintf(zFmt, ap);
+    zAppend = bentley_sqlite3_vmprintf(zFmt, ap);
     if( zAppend ){
       nAppend = STRLEN(zAppend);
-      zRet = (char*)sqlite3_malloc(nIn + nAppend + 1);
+      zRet = (char*)bentley_sqlite3_malloc(nIn + nAppend + 1);
     }
     if( zAppend && zRet ){
       if( nIn ) memcpy(zRet, zIn, nIn);
       memcpy(&zRet[nIn], zAppend, nAppend+1);
     }else{
-      sqlite3_free(zRet);
+      bentley_sqlite3_free(zRet);
       zRet = 0;
       *pRc = SQLITE_NOMEM;
     }
-    sqlite3_free(zAppend);
-    sqlite3_free(zIn);
+    bentley_sqlite3_free(zAppend);
+    bentley_sqlite3_free(zIn);
   }
   va_end(ap);
   return zRet;
@@ -13541,7 +13541,7 @@ static int idxIdentifierRequiresQuotes(const char *zId){
   int i;
   int nId = STRLEN(zId);
   
-  if( sqlite3_keyword_check(zId, nId) ) return 1;
+  if( bentley_sqlite3_keyword_check(zId, nId) ) return 1;
 
   for(i=0; zId[i]; i++){
     if( !(zId[i]=='_')
@@ -13575,7 +13575,7 @@ static char *idxAppendColDefn(
     zRet = idxAppendText(pRc, zRet, "%s", p->zName);
   }
 
-  if( sqlite3_stricmp(p->zColl, pCons->zColl) ){
+  if( bentley_sqlite3_stricmp(p->zColl, pCons->zColl) ){
     if( idxIdentifierRequiresQuotes(pCons->zColl) ){
       zRet = idxAppendText(pRc, zRet, " COLLATE %Q", pCons->zColl);
     }else{
@@ -13614,27 +13614,27 @@ static int idxFindCompatible(
   for(pIter=pEq; pIter; pIter=pIter->pLink) nEq++;
 
   rc = idxPrintfPrepareStmt(dbm, &pIdxList, 0, "PRAGMA index_list=%Q", zTbl);
-  while( rc==SQLITE_OK && sqlite3_step(pIdxList)==SQLITE_ROW ){
+  while( rc==SQLITE_OK && bentley_sqlite3_step(pIdxList)==SQLITE_ROW ){
     int bMatch = 1;
     IdxConstraint *pT = pTail;
     sqlite3_stmt *pInfo = 0;
-    const char *zIdx = (const char*)sqlite3_column_text(pIdxList, 1);
+    const char *zIdx = (const char*)bentley_sqlite3_column_text(pIdxList, 1);
     if( zIdx==0 ) continue;
 
     /* Zero the IdxConstraint.bFlag values in the pEq list */
     for(pIter=pEq; pIter; pIter=pIter->pLink) pIter->bFlag = 0;
 
     rc = idxPrintfPrepareStmt(dbm, &pInfo, 0, "PRAGMA index_xInfo=%Q", zIdx);
-    while( rc==SQLITE_OK && sqlite3_step(pInfo)==SQLITE_ROW ){
-      int iIdx = sqlite3_column_int(pInfo, 0);
-      int iCol = sqlite3_column_int(pInfo, 1);
-      const char *zColl = (const char*)sqlite3_column_text(pInfo, 4);
+    while( rc==SQLITE_OK && bentley_sqlite3_step(pInfo)==SQLITE_ROW ){
+      int iIdx = bentley_sqlite3_column_int(pInfo, 0);
+      int iCol = bentley_sqlite3_column_int(pInfo, 1);
+      const char *zColl = (const char*)bentley_sqlite3_column_text(pInfo, 4);
 
       if( iIdx<nEq ){
         for(pIter=pEq; pIter; pIter=pIter->pLink){
           if( pIter->bFlag ) continue;
           if( pIter->iCol!=iCol ) continue;
-          if( sqlite3_stricmp(pIter->zColl, zColl) ) continue;
+          if( bentley_sqlite3_stricmp(pIter->zColl, zColl) ) continue;
           pIter->bFlag = 1;
           break;
         }
@@ -13644,7 +13644,7 @@ static int idxFindCompatible(
         }
       }else{
         if( pT ){
-          if( pT->iCol!=iCol || sqlite3_stricmp(pT->zColl, zColl) ){
+          if( pT->iCol!=iCol || bentley_sqlite3_stricmp(pT->zColl, zColl) ){
             bMatch = 0;
             break;
           }
@@ -13655,7 +13655,7 @@ static int idxFindCompatible(
     idxFinalize(&rc, pInfo);
 
     if( rc==SQLITE_OK && bMatch ){
-      sqlite3_finalize(pIdxList);
+      bentley_sqlite3_finalize(pIdxList);
       return 1;
     }
   }
@@ -13665,7 +13665,7 @@ static int idxFindCompatible(
   return 0;
 }
 
-/* Callback for sqlite3_exec() with query with leading count(*) column.
+/* Callback for bentley_sqlite3_exec() with query with leading count(*) column.
  * The first argument is expected to be an int*, referent to be incremented
  * if that leading column is not exactly '0'.
  */
@@ -13713,17 +13713,17 @@ static int idxCreateFromCons(
         for(i=0; zCols[i]; i++){
           h += ((h<<3) + zCols[i]);
         }
-        sqlite3_free(zName);
-        zName = sqlite3_mprintf("%s_idx_%08x", zTable, h);
+        bentley_sqlite3_free(zName);
+        zName = bentley_sqlite3_mprintf("%s_idx_%08x", zTable, h);
         if( zName==0 ) break;
         /* Is is unique among table, view and index names? */
         zFmt = "SELECT count(*) FROM sqlite_schema WHERE name=%Q"
           " AND type in ('index','table','view')";
-        zFind = sqlite3_mprintf(zFmt, zName);
+        zFind = bentley_sqlite3_mprintf(zFmt, zName);
         i = 0;
-        rc = sqlite3_exec(dbm, zFind, countNonzeros, &i, 0);
+        rc = bentley_sqlite3_exec(dbm, zFind, countNonzeros, &i, 0);
         assert(rc==SQLITE_OK);
-        sqlite3_free(zFind);
+        bentley_sqlite3_free(zFind);
         if( i==0 ){
           collisions = 0;
           break;
@@ -13741,23 +13741,23 @@ static int idxCreateFromCons(
         }else{
           zFmt = "CREATE INDEX %s ON %s(%s)";
         }
-        zIdx = sqlite3_mprintf(zFmt, zName, zTable, zCols);
+        zIdx = bentley_sqlite3_mprintf(zFmt, zName, zTable, zCols);
         if( !zIdx ){
           rc = SQLITE_NOMEM;
         }else{
-          rc = sqlite3_exec(dbm, zIdx, 0, 0, p->pzErrmsg);
+          rc = bentley_sqlite3_exec(dbm, zIdx, 0, 0, p->pzErrmsg);
           if( rc!=SQLITE_OK ){
             rc = SQLITE_BUSY_TIMEOUT;
           }else{
             idxHashAdd(&rc, &p->hIdx, zName, zIdx);
           }
         }
-        sqlite3_free(zName);
-        sqlite3_free(zIdx);
+        bentley_sqlite3_free(zName);
+        bentley_sqlite3_free(zIdx);
       }
     }
 
-    sqlite3_free(zCols);
+    bentley_sqlite3_free(zCols);
   }
   return rc;
 }
@@ -13836,7 +13836,7 @@ static void idxConstraintFree(IdxConstraint *pConstraint){
 
   for(p=pConstraint; p; p=pNext){
     pNext = p->pNext;
-    sqlite3_free(p);
+    bentley_sqlite3_free(p);
   }
 }
 
@@ -13852,7 +13852,7 @@ static void idxScanFree(IdxScan *pScan, IdxScan *pLast){
     idxConstraintFree(p->pOrder);
     idxConstraintFree(p->pEq);
     idxConstraintFree(p->pRange);
-    sqlite3_free(p);
+    bentley_sqlite3_free(p);
   }
 }
 
@@ -13865,9 +13865,9 @@ static void idxStatementFree(IdxStatement *pStatement, IdxStatement *pLast){
   IdxStatement *pNext;
   for(p=pStatement; p!=pLast; p=pNext){
     pNext = p->pNext;
-    sqlite3_free(p->zEQP);
-    sqlite3_free(p->zIdx);
-    sqlite3_free(p);
+    bentley_sqlite3_free(p->zEQP);
+    bentley_sqlite3_free(p->zIdx);
+    bentley_sqlite3_free(p);
   }
 }
 
@@ -13879,7 +13879,7 @@ static void idxTableFree(IdxTable *pTab){
   IdxTable *pNext;
   for(pIter=pTab; pIter; pIter=pNext){
     pNext = pIter->pNext;
-    sqlite3_free(pIter);
+    bentley_sqlite3_free(pIter);
   }
 }
 
@@ -13891,7 +13891,7 @@ static void idxWriteFree(IdxWrite *pTab){
   IdxWrite *pNext;
   for(pIter=pTab; pIter; pIter=pNext){
     pNext = pIter->pNext;
-    sqlite3_free(pIter);
+    bentley_sqlite3_free(pIter);
   }
 }
 
@@ -13904,7 +13904,7 @@ static void idxWriteFree(IdxWrite *pTab){
 */
 static int idxFindIndexes(
   sqlite3expert *p,
-  char **pzErr                         /* OUT: Error message (sqlite3_malloc) */
+  char **pzErr                         /* OUT: Error message (bentley_sqlite3_malloc) */
 ){
   IdxStatement *pStmt;
   sqlite3 *dbm = p->dbm;
@@ -13920,11 +13920,11 @@ static int idxFindIndexes(
     rc = idxPrintfPrepareStmt(dbm, &pExplain, pzErr,
         "EXPLAIN QUERY PLAN %s", pStmt->zSql
     );
-    while( rc==SQLITE_OK && sqlite3_step(pExplain)==SQLITE_ROW ){
-      /* int iId = sqlite3_column_int(pExplain, 0); */
-      /* int iParent = sqlite3_column_int(pExplain, 1); */
-      /* int iNotUsed = sqlite3_column_int(pExplain, 2); */
-      const char *zDetail = (const char*)sqlite3_column_text(pExplain, 3);
+    while( rc==SQLITE_OK && bentley_sqlite3_step(pExplain)==SQLITE_ROW ){
+      /* int iId = bentley_sqlite3_column_int(pExplain, 0); */
+      /* int iParent = bentley_sqlite3_column_int(pExplain, 1); */
+      /* int iNotUsed = bentley_sqlite3_column_int(pExplain, 2); */
+      const char *zDetail = (const char*)bentley_sqlite3_column_text(pExplain, 3);
       int nDetail;
       int i;
 
@@ -13984,11 +13984,11 @@ static int idxAuthCallback(
   (void)z4;
   (void)zTrigger;
   if( eOp==SQLITE_INSERT || eOp==SQLITE_UPDATE || eOp==SQLITE_DELETE ){
-    if( sqlite3_stricmp(zDb, "main")==0 ){
+    if( bentley_sqlite3_stricmp(zDb, "main")==0 ){
       sqlite3expert *p = (sqlite3expert*)pCtx;
       IdxTable *pTab;
       for(pTab=p->pTable; pTab; pTab=pTab->pNext){
-        if( 0==sqlite3_stricmp(z3, pTab->zName) ) break;
+        if( 0==bentley_sqlite3_stricmp(z3, pTab->zName) ) break;
       }
       if( pTab ){
         IdxWrite *pWrite;
@@ -14029,21 +14029,21 @@ static int idxProcessOneTrigger(
 
   /* Create the table and its triggers in the temp schema */
   rc = idxPrintfPrepareStmt(p->db, &pSelect, pzErr, zSql, zTab, zTab);
-  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSelect) ){
-    const char *zCreate = (const char*)sqlite3_column_text(pSelect, 0);
+  while( rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(pSelect) ){
+    const char *zCreate = (const char*)bentley_sqlite3_column_text(pSelect, 0);
     if( zCreate==0 ) continue;
-    rc = sqlite3_exec(p->dbv, zCreate, 0, 0, pzErr);
+    rc = bentley_sqlite3_exec(p->dbv, zCreate, 0, 0, pzErr);
   }
   idxFinalize(&rc, pSelect);
 
   /* Rename the table in the temp schema to zInt */
   if( rc==SQLITE_OK ){
-    char *z = sqlite3_mprintf("ALTER TABLE temp.%Q RENAME TO %Q", zTab, zInt);
+    char *z = bentley_sqlite3_mprintf("ALTER TABLE temp.%Q RENAME TO %Q", zTab, zInt);
     if( z==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      rc = sqlite3_exec(p->dbv, z, 0, 0, pzErr);
-      sqlite3_free(z);
+      rc = bentley_sqlite3_exec(p->dbv, z, 0, 0, pzErr);
+      bentley_sqlite3_free(z);
     }
   }
 
@@ -14070,7 +14070,7 @@ static int idxProcessOneTrigger(
     default: {
       assert( pWrite->eOp==SQLITE_DELETE );
       if( rc==SQLITE_OK ){
-        zWrite = sqlite3_mprintf("DELETE FROM %Q", zInt);
+        zWrite = bentley_sqlite3_mprintf("DELETE FROM %Q", zInt);
         if( zWrite==0 ) rc = SQLITE_NOMEM;
       }
     }
@@ -14078,16 +14078,16 @@ static int idxProcessOneTrigger(
 
   if( rc==SQLITE_OK ){
     sqlite3_stmt *pX = 0;
-    rc = sqlite3_prepare_v2(p->dbv, zWrite, -1, &pX, 0);
+    rc = bentley_sqlite3_prepare_v2(p->dbv, zWrite, -1, &pX, 0);
     idxFinalize(&rc, pX);
     if( rc!=SQLITE_OK ){
       idxDatabaseError(p->dbv, pzErr);
     }
   }
-  sqlite3_free(zWrite);
+  bentley_sqlite3_free(zWrite);
 
   if( rc==SQLITE_OK ){
-    rc = sqlite3_exec(p->dbv, zDrop, 0, 0, pzErr);
+    rc = bentley_sqlite3_exec(p->dbv, zDrop, 0, 0, pzErr);
   }
 
   return rc;
@@ -14128,13 +14128,13 @@ static int expertDbContainsObject(
   int rc = SQLITE_OK;
   int ret = 0;
 
-  rc = sqlite3_prepare_v2(db, zSql, -1, &pSql, 0);
+  rc = bentley_sqlite3_prepare_v2(db, zSql, -1, &pSql, 0);
   if( rc==SQLITE_OK ){
-    sqlite3_bind_text(pSql, 1, zTab, -1, SQLITE_STATIC);
-    if( SQLITE_ROW==sqlite3_step(pSql) ){
+    bentley_sqlite3_bind_text(pSql, 1, zTab, -1, SQLITE_STATIC);
+    if( SQLITE_ROW==bentley_sqlite3_step(pSql) ){
       ret = 1;
     }
-    rc = sqlite3_finalize(pSql);
+    rc = bentley_sqlite3_finalize(pSql);
   }
 
   *pbContains = ret;
@@ -14157,11 +14157,11 @@ static int expertSchemaSql(sqlite3 *db, const char *zSql, char **pzErr){
   int rc = SQLITE_OK;
   char *zErr = 0;
 
-  rc = sqlite3_exec(db, zSql, 0, 0, &zErr);
+  rc = bentley_sqlite3_exec(db, zSql, 0, 0, &zErr);
   if( rc!=SQLITE_OK && zErr ){
     int nErr = STRLEN(zErr);
     if( nErr>=15 && memcmp(zErr, "no such module:", 15)==0 ){
-      sqlite3_free(zErr);
+      bentley_sqlite3_free(zErr);
       rc = SQLITE_OK;
       zErr = 0;
     }
@@ -14192,11 +14192,11 @@ static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
       "  AND tbl_name IN(SELECT name FROM sqlite_schema WHERE type = 'view') "
       "ORDER BY 4, 5 DESC, 1"
   );
-  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSchema) ){
-    const char *zType = (const char*)sqlite3_column_text(pSchema, 0);
-    const char *zName = (const char*)sqlite3_column_text(pSchema, 1);
-    const char *zSql = (const char*)sqlite3_column_text(pSchema, 2);
-    int bVirtual = sqlite3_column_int(pSchema, 4);
+  while( rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(pSchema) ){
+    const char *zType = (const char*)bentley_sqlite3_column_text(pSchema, 0);
+    const char *zName = (const char*)bentley_sqlite3_column_text(pSchema, 1);
+    const char *zSql = (const char*)bentley_sqlite3_column_text(pSchema, 2);
+    int bVirtual = bentley_sqlite3_column_int(pSchema, 4);
     int bExists = 0;
 
     if( zType==0 || zName==0 ) continue;
@@ -14216,7 +14216,7 @@ static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
         pTab->pNext = p->pTable;
         p->pTable = pTab;
 
-        /* The statement the vtab will pass to sqlite3_declare_vtab() */
+        /* The statement the vtab will pass to bentley_sqlite3_declare_vtab() */
         zInner = idxAppendText(&rc, 0, "CREATE TABLE x(");
         for(i=0; i<pTab->nCol; i++){
           zInner = idxAppendText(&rc, zInner, "%s%Q COLLATE %s", 
@@ -14230,10 +14230,10 @@ static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
             "CREATE VIRTUAL TABLE %Q USING expert(%Q)", zName, zInner
         );
         if( rc==SQLITE_OK ){
-          rc = sqlite3_exec(p->dbv, zOuter, 0, 0, pzErrmsg);
+          rc = bentley_sqlite3_exec(p->dbv, zOuter, 0, 0, pzErrmsg);
         }
-        sqlite3_free(zInner);
-        sqlite3_free(zOuter);
+        bentley_sqlite3_free(zInner);
+        bentley_sqlite3_free(zOuter);
       }
     }
   }
@@ -14253,7 +14253,7 @@ static void idxSampleFunc(
   int argc,
   sqlite3_value **argv
 ){
-  struct IdxSampleCtx *p = (struct IdxSampleCtx*)sqlite3_user_data(pCtx);
+  struct IdxSampleCtx *p = (struct IdxSampleCtx*)bentley_sqlite3_user_data(pCtx);
   int bRet;
 
   (void)argv;
@@ -14264,12 +14264,12 @@ static void idxSampleFunc(
     bRet = (p->nRet / p->nRow) <= p->target;
     if( bRet==0 ){
       unsigned short rnd;
-      sqlite3_randomness(2, (void*)&rnd);
+      bentley_sqlite3_randomness(2, (void*)&rnd);
       bRet = ((int)rnd % 100) <= p->iTarget;
     }
   }
 
-  sqlite3_result_int(pCtx, bRet);
+  bentley_sqlite3_result_int(pCtx, bRet);
   p->nRow += 1.0;
   p->nRet += (double)bRet;
 }
@@ -14294,12 +14294,12 @@ static void idxRemFunc(
   int argc,
   sqlite3_value **argv
 ){
-  struct IdxRemCtx *p = (struct IdxRemCtx*)sqlite3_user_data(pCtx);
+  struct IdxRemCtx *p = (struct IdxRemCtx*)bentley_sqlite3_user_data(pCtx);
   struct IdxRemSlot *pSlot;
   int iSlot;
   assert( argc==2 );
 
-  iSlot = sqlite3_value_int(argv[0]);
+  iSlot = bentley_sqlite3_value_int(argv[0]);
   assert( iSlot<p->nSlot );
   pSlot = &p->aSlot[iSlot];
 
@@ -14309,44 +14309,44 @@ static void idxRemFunc(
       break;
 
     case SQLITE_INTEGER:
-      sqlite3_result_int64(pCtx, pSlot->iVal);
+      bentley_sqlite3_result_int64(pCtx, pSlot->iVal);
       break;
 
     case SQLITE_FLOAT:
-      sqlite3_result_double(pCtx, pSlot->rVal);
+      bentley_sqlite3_result_double(pCtx, pSlot->rVal);
       break;
 
     case SQLITE_BLOB:
-      sqlite3_result_blob(pCtx, pSlot->z, pSlot->n, SQLITE_TRANSIENT);
+      bentley_sqlite3_result_blob(pCtx, pSlot->z, pSlot->n, SQLITE_TRANSIENT);
       break;
 
     case SQLITE_TEXT:
-      sqlite3_result_text(pCtx, pSlot->z, pSlot->n, SQLITE_TRANSIENT);
+      bentley_sqlite3_result_text(pCtx, pSlot->z, pSlot->n, SQLITE_TRANSIENT);
       break;
   }
 
-  pSlot->eType = sqlite3_value_type(argv[1]);
+  pSlot->eType = bentley_sqlite3_value_type(argv[1]);
   switch( pSlot->eType ){
     case SQLITE_NULL:
       /* no-op */
       break;
 
     case SQLITE_INTEGER:
-      pSlot->iVal = sqlite3_value_int64(argv[1]);
+      pSlot->iVal = bentley_sqlite3_value_int64(argv[1]);
       break;
 
     case SQLITE_FLOAT:
-      pSlot->rVal = sqlite3_value_double(argv[1]);
+      pSlot->rVal = bentley_sqlite3_value_double(argv[1]);
       break;
 
     case SQLITE_BLOB:
     case SQLITE_TEXT: {
-      int nByte = sqlite3_value_bytes(argv[1]);
+      int nByte = bentley_sqlite3_value_bytes(argv[1]);
       const void *pData = 0;
       if( nByte>pSlot->nByte ){
-        char *zNew = (char*)sqlite3_realloc(pSlot->z, nByte*2);
+        char *zNew = (char*)bentley_sqlite3_realloc(pSlot->z, nByte*2);
         if( zNew==0 ){
-          sqlite3_result_error_nomem(pCtx);
+          bentley_sqlite3_result_error_nomem(pCtx);
           return;
         }
         pSlot->nByte = nByte*2;
@@ -14354,10 +14354,10 @@ static void idxRemFunc(
       }
       pSlot->n = nByte;
       if( pSlot->eType==SQLITE_BLOB ){
-        pData = sqlite3_value_blob(argv[1]);
+        pData = bentley_sqlite3_value_blob(argv[1]);
         if( pData ) memcpy(pSlot->z, pData, nByte);
       }else{
-        pData = sqlite3_value_text(argv[1]);
+        pData = bentley_sqlite3_value_text(argv[1]);
         memcpy(pSlot->z, pData, nByte);
       }
       break;
@@ -14377,8 +14377,8 @@ static int idxLargestIndex(sqlite3 *db, int *pnMax, char **pzErr){
 
   *pnMax = 0;
   rc = idxPrepareStmt(db, &pMax, pzErr, zMax);
-  if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pMax) ){
-    *pnMax = sqlite3_column_int(pMax, 0) + 1;
+  if( rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(pMax) ){
+    *pnMax = bentley_sqlite3_column_int(pMax, 0) + 1;
   }
   idxFinalize(&rc, pMax);
 
@@ -14405,16 +14405,16 @@ static int idxPopulateOneStat1(
   assert( p->iSample>0 );
 
   /* Formulate the query text */
-  sqlite3_bind_text(pIndexXInfo, 1, zIdx, -1, SQLITE_STATIC);
-  while( SQLITE_OK==rc && SQLITE_ROW==sqlite3_step(pIndexXInfo) ){
+  bentley_sqlite3_bind_text(pIndexXInfo, 1, zIdx, -1, SQLITE_STATIC);
+  while( SQLITE_OK==rc && SQLITE_ROW==bentley_sqlite3_step(pIndexXInfo) ){
     const char *zComma = zCols==0 ? "" : ", ";
-    const char *zName = (const char*)sqlite3_column_text(pIndexXInfo, 0);
-    const char *zColl = (const char*)sqlite3_column_text(pIndexXInfo, 1);
+    const char *zName = (const char*)bentley_sqlite3_column_text(pIndexXInfo, 0);
+    const char *zColl = (const char*)bentley_sqlite3_column_text(pIndexXInfo, 1);
     if( zName==0 ){
       /* This index contains an expression. Ignore it. */
-      sqlite3_free(zCols);
-      sqlite3_free(zOrder);
-      return sqlite3_reset(pIndexXInfo);
+      bentley_sqlite3_free(zCols);
+      bentley_sqlite3_free(zOrder);
+      return bentley_sqlite3_reset(pIndexXInfo);
     }
     zCols = idxAppendText(&rc, zCols, 
         "%sx.%Q IS sqlite_expert_rem(%d, x.%Q) COLLATE %s", 
@@ -14422,39 +14422,39 @@ static int idxPopulateOneStat1(
     );
     zOrder = idxAppendText(&rc, zOrder, "%s%d", zComma, ++nCol);
   }
-  sqlite3_reset(pIndexXInfo);
+  bentley_sqlite3_reset(pIndexXInfo);
   if( rc==SQLITE_OK ){
     if( p->iSample==100 ){
-      zQuery = sqlite3_mprintf(
+      zQuery = bentley_sqlite3_mprintf(
           "SELECT %s FROM %Q x ORDER BY %s", zCols, zTab, zOrder
       );
     }else{
-      zQuery = sqlite3_mprintf(
+      zQuery = bentley_sqlite3_mprintf(
           "SELECT %s FROM temp."UNIQUE_TABLE_NAME" x ORDER BY %s", zCols, zOrder
       );
     }
   }
-  sqlite3_free(zCols);
-  sqlite3_free(zOrder);
+  bentley_sqlite3_free(zCols);
+  bentley_sqlite3_free(zOrder);
 
   /* Formulate the query text */
   if( rc==SQLITE_OK ){
     sqlite3 *dbrem = (p->iSample==100 ? p->db : p->dbv);
     rc = idxPrepareStmt(dbrem, &pQuery, pzErr, zQuery);
   }
-  sqlite3_free(zQuery);
+  bentley_sqlite3_free(zQuery);
 
   if( rc==SQLITE_OK ){
     aStat = (int*)idxMalloc(&rc, sizeof(int)*(nCol+1));
   }
-  if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pQuery) ){
+  if( rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(pQuery) ){
     IdxHashEntry *pEntry;
     char *zStat = 0;
     for(i=0; i<=nCol; i++) aStat[i] = 1;
-    while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pQuery) ){
+    while( rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(pQuery) ){
       aStat[0]++;
       for(i=0; i<nCol; i++){
-        if( sqlite3_column_int(pQuery, i)==0 ) break;
+        if( bentley_sqlite3_column_int(pQuery, i)==0 ) break;
       }
       for(/*no-op*/; i<nCol; i++){
         aStat[i+1]++;
@@ -14463,7 +14463,7 @@ static int idxPopulateOneStat1(
 
     if( rc==SQLITE_OK ){
       int s0 = aStat[0];
-      zStat = sqlite3_mprintf("%d", s0);
+      zStat = bentley_sqlite3_mprintf("%d", s0);
       if( zStat==0 ) rc = SQLITE_NOMEM;
       for(i=1; rc==SQLITE_OK && i<=nCol; i++){
         zStat = idxAppendText(&rc, zStat, " %d", (s0+aStat[i]/2) / aStat[i]);
@@ -14471,11 +14471,11 @@ static int idxPopulateOneStat1(
     }
 
     if( rc==SQLITE_OK ){
-      sqlite3_bind_text(pWriteStat, 1, zTab, -1, SQLITE_STATIC);
-      sqlite3_bind_text(pWriteStat, 2, zIdx, -1, SQLITE_STATIC);
-      sqlite3_bind_text(pWriteStat, 3, zStat, -1, SQLITE_STATIC);
-      sqlite3_step(pWriteStat);
-      rc = sqlite3_reset(pWriteStat);
+      bentley_sqlite3_bind_text(pWriteStat, 1, zTab, -1, SQLITE_STATIC);
+      bentley_sqlite3_bind_text(pWriteStat, 2, zIdx, -1, SQLITE_STATIC);
+      bentley_sqlite3_bind_text(pWriteStat, 3, zStat, -1, SQLITE_STATIC);
+      bentley_sqlite3_step(pWriteStat);
+      rc = bentley_sqlite3_reset(pWriteStat);
     }
 
     pEntry = idxHashFind(&p->hIdx, zIdx, STRLEN(zIdx));
@@ -14483,10 +14483,10 @@ static int idxPopulateOneStat1(
       assert( pEntry->zVal2==0 );
       pEntry->zVal2 = zStat;
     }else{
-      sqlite3_free(zStat);
+      bentley_sqlite3_free(zStat);
     }
   }
-  sqlite3_free(aStat);
+  bentley_sqlite3_free(aStat);
   idxFinalize(&rc, pQuery);
 
   return rc;
@@ -14496,15 +14496,15 @@ static int idxBuildSampleTable(sqlite3expert *p, const char *zTab){
   int rc;
   char *zSql;
 
-  rc = sqlite3_exec(p->dbv,"DROP TABLE IF EXISTS temp."UNIQUE_TABLE_NAME,0,0,0);
+  rc = bentley_sqlite3_exec(p->dbv,"DROP TABLE IF EXISTS temp."UNIQUE_TABLE_NAME,0,0,0);
   if( rc!=SQLITE_OK ) return rc;
 
-  zSql = sqlite3_mprintf(
+  zSql = bentley_sqlite3_mprintf(
       "CREATE TABLE temp." UNIQUE_TABLE_NAME " AS SELECT * FROM %Q", zTab
   );
   if( zSql==0 ) return SQLITE_NOMEM;
-  rc = sqlite3_exec(p->dbv, zSql, 0, 0, 0);
-  sqlite3_free(zSql);
+  rc = bentley_sqlite3_exec(p->dbv, zSql, 0, 0, 0);
+  bentley_sqlite3_free(zSql);
 
   return rc;
 }
@@ -14542,7 +14542,7 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
   rc = idxLargestIndex(p->dbm, &nMax, pzErr);
   if( nMax<=0 || rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_exec(p->dbm, "ANALYZE; PRAGMA writable_schema=1", 0, 0, 0);
+  rc = bentley_sqlite3_exec(p->dbm, "ANALYZE; PRAGMA writable_schema=1", 0, 0, 0);
 
   if( rc==SQLITE_OK ){
     int nByte = sizeof(struct IdxRemCtx) + (sizeof(struct IdxRemSlot) * nMax);
@@ -14551,12 +14551,12 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
 
   if( rc==SQLITE_OK ){
     sqlite3 *dbrem = (p->iSample==100 ? p->db : p->dbv);
-    rc = sqlite3_create_function(dbrem, "sqlite_expert_rem", 
+    rc = bentley_sqlite3_create_function(dbrem, "sqlite_expert_rem", 
         2, SQLITE_UTF8, (void*)pCtx, idxRemFunc, 0, 0
     );
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(p->db, "sqlite_expert_sample", 
+    rc = bentley_sqlite3_create_function(p->db, "sqlite_expert_sample", 
         0, SQLITE_UTF8, (void*)&samplectx, idxSampleFunc, 0, 0
     );
   }
@@ -14572,10 +14572,10 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
     rc = idxPrepareStmt(p->dbm, &pWrite, pzErr, zWrite);
   }
 
-  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pAllIndex) ){
-    i64 iRowid = sqlite3_column_int64(pAllIndex, 0);
-    const char *zTab = (const char*)sqlite3_column_text(pAllIndex, 1);
-    const char *zIdx = (const char*)sqlite3_column_text(pAllIndex, 2);
+  while( rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(pAllIndex) ){
+    i64 iRowid = bentley_sqlite3_column_int64(pAllIndex, 0);
+    const char *zTab = (const char*)bentley_sqlite3_column_text(pAllIndex, 1);
+    const char *zIdx = (const char*)bentley_sqlite3_column_text(pAllIndex, 2);
     if( zTab==0 || zIdx==0 ) continue;
     if( p->iSample<100 && iPrev!=iRowid ){
       samplectx.target = (double)p->iSample / 100.0;
@@ -14589,7 +14589,7 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
     iPrev = iRowid;
   }
   if( rc==SQLITE_OK && p->iSample<100 ){
-    rc = sqlite3_exec(p->dbv, 
+    rc = bentley_sqlite3_exec(p->dbv, 
         "DROP TABLE IF EXISTS temp." UNIQUE_TABLE_NAME, 0,0,0
     );
   }
@@ -14600,19 +14600,19 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
 
   if( pCtx ){
     for(i=0; i<pCtx->nSlot; i++){
-      sqlite3_free(pCtx->aSlot[i].z);
+      bentley_sqlite3_free(pCtx->aSlot[i].z);
     }
-    sqlite3_free(pCtx);
+    bentley_sqlite3_free(pCtx);
   }
 
   if( rc==SQLITE_OK ){
-    rc = sqlite3_exec(p->dbm, "ANALYZE sqlite_schema", 0, 0, 0);
+    rc = bentley_sqlite3_exec(p->dbm, "ANALYZE sqlite_schema", 0, 0, 0);
   }
 
-  sqlite3_create_function(p->db, "sqlite_expert_rem", 2, SQLITE_UTF8, 0,0,0,0);
-  sqlite3_create_function(p->db, "sqlite_expert_sample", 0,SQLITE_UTF8,0,0,0,0);
+  bentley_sqlite3_create_function(p->db, "sqlite_expert_rem", 2, SQLITE_UTF8, 0,0,0,0);
+  bentley_sqlite3_create_function(p->db, "sqlite_expert_sample", 0,SQLITE_UTF8,0,0,0,0);
 
-  sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp."UNIQUE_TABLE_NAME,0,0,0);
+  bentley_sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp."UNIQUE_TABLE_NAME,0,0,0);
   return rc;
 }
 
@@ -14632,7 +14632,7 @@ int dummyCompare(void *up1, int up2, const void *up3, int up4, const void *up5){
 /* And a callback to register above upon actual need */
 void useDummyCS(void *up1, sqlite3 *db, int etr, const char *zName){
   (void)up1;
-  sqlite3_create_collation_v2(db, zName, etr, 0, dummyCompare, 0);
+  bentley_sqlite3_create_collation_v2(db, zName, etr, 0, dummyCompare, 0);
 }
 
 #if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS) \
@@ -14656,17 +14656,17 @@ void dummyUDFvalue(sqlite3_context *up1){
 */
 int registerUDFs(sqlite3 *dbSrc, sqlite3 *dbDst){
   sqlite3_stmt *pStmt;
-  int rc = sqlite3_prepare_v2(dbSrc,
+  int rc = bentley_sqlite3_prepare_v2(dbSrc,
             "SELECT name,type,enc,narg,flags "
             "FROM pragma_function_list() "
             "WHERE builtin==0", -1, &pStmt, 0);
   if( rc==SQLITE_OK ){
-    while( SQLITE_ROW==(rc = sqlite3_step(pStmt)) ){
-      int nargs = sqlite3_column_int(pStmt,3);
-      int flags = sqlite3_column_int(pStmt,4);
-      const char *name = (char*)sqlite3_column_text(pStmt,0);
-      const char *type = (char*)sqlite3_column_text(pStmt,1);
-      const char *enc = (char*)sqlite3_column_text(pStmt,2);
+    while( SQLITE_ROW==(rc = bentley_sqlite3_step(pStmt)) ){
+      int nargs = bentley_sqlite3_column_int(pStmt,3);
+      int flags = bentley_sqlite3_column_int(pStmt,4);
+      const char *name = (char*)bentley_sqlite3_column_text(pStmt,0);
+      const char *type = (char*)bentley_sqlite3_column_text(pStmt,1);
+      const char *enc = (char*)bentley_sqlite3_column_text(pStmt,2);
       if( name==0 || type==0 || enc==0 ){
         /* no-op.  Only happens on OOM */
       }else{
@@ -14676,13 +14676,13 @@ int registerUDFs(sqlite3 *dbSrc, sqlite3 *dbDst){
         else if( strcmp(enc,"utf16be")==0 ) ienc = SQLITE_UTF16BE;
         ienc |= (flags & (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY));
         if( strcmp(type,"w")==0 ){
-          rcf = sqlite3_create_window_function(dbDst,name,nargs,ienc,0,
+          rcf = bentley_sqlite3_create_window_function(dbDst,name,nargs,ienc,0,
                                                dummyUDF,dummyUDFvalue,0,0,0);
         }else if( strcmp(type,"a")==0 ){
-          rcf = sqlite3_create_function(dbDst,name,nargs,ienc,0,
+          rcf = bentley_sqlite3_create_function(dbDst,name,nargs,ienc,0,
                                         0,dummyUDF,dummyUDFvalue);
         }else if( strcmp(type,"s")==0 ){
-          rcf = sqlite3_create_function(dbDst,name,nargs,ienc,0,
+          rcf = bentley_sqlite3_create_function(dbDst,name,nargs,ienc,0,
                                         dummyUDF,0,0);
         }
         if( rcf!=SQLITE_OK ){
@@ -14691,7 +14691,7 @@ int registerUDFs(sqlite3 *dbSrc, sqlite3 *dbDst){
         }
       }
     }
-    sqlite3_finalize(pStmt);
+    bentley_sqlite3_finalize(pStmt);
     if( rc==SQLITE_DONE ) rc = SQLITE_OK;
   }
   return rc;
@@ -14716,18 +14716,18 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
   if( rc==SQLITE_OK ){
     pNew->db = db;
     pNew->iSample = 100;
-    rc = sqlite3_open(":memory:", &pNew->dbv);
+    rc = bentley_sqlite3_open(":memory:", &pNew->dbv);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_open(":memory:", &pNew->dbm);
+    rc = bentley_sqlite3_open(":memory:", &pNew->dbm);
     if( rc==SQLITE_OK ){
-      sqlite3_db_config(pNew->dbm, SQLITE_DBCONFIG_TRIGGER_EQP, 1, (int*)0);
+      bentley_sqlite3_db_config(pNew->dbm, SQLITE_DBCONFIG_TRIGGER_EQP, 1, (int*)0);
     }
   }
 
   /* Allow custom collations to be dealt with through prepare. */
-  if( rc==SQLITE_OK ) rc = sqlite3_collation_needed(pNew->dbm,0,useDummyCS);
-  if( rc==SQLITE_OK ) rc = sqlite3_collation_needed(pNew->dbv,0,useDummyCS);
+  if( rc==SQLITE_OK ) rc = bentley_sqlite3_collation_needed(pNew->dbm,0,useDummyCS);
+  if( rc==SQLITE_OK ) rc = bentley_sqlite3_collation_needed(pNew->dbv,0,useDummyCS);
 
 #if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS) \
   && !defined(SQLITE_OMIT_INTROSPECTION_PRAGMAS)
@@ -14748,9 +14748,9 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
         " FROM sqlite_schema WHERE substr(name,1,7)!='sqlite_' COLLATE nocase"
         " ORDER BY 3 DESC, rowid"
     );
-    while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
-      const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
-      const char *zName = (const char*)sqlite3_column_text(pSql, 1);
+    while( rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(pSql) ){
+      const char *zSql = (const char*)bentley_sqlite3_column_text(pSql, 0);
+      const char *zName = (const char*)bentley_sqlite3_column_text(pSql, 1);
       int bExists = 0;
       rc = expertDbContainsObject(pNew->dbm, zName, &bExists);
       if( rc==SQLITE_OK && zSql && bExists==0 ){
@@ -14767,7 +14767,7 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
 
   /* Register the auth callback with dbv */
   if( rc==SQLITE_OK ){
-    sqlite3_set_authorizer(pNew->dbv, idxAuthCallback, (void*)pNew);
+    bentley_sqlite3_set_authorizer(pNew->dbv, idxAuthCallback, (void*)pNew);
   }
 
   /* If an error has occurred, free the new object and reutrn NULL. Otherwise,
@@ -14823,12 +14823,12 @@ int sqlite3_expert_sql(
     /* Ensure that the provided statement compiles against user's DB. */
     rc = idxPrepareStmt(p->db, &pStmt, pzErr, zStmt);
     if( rc!=SQLITE_OK ) break;
-    sqlite3_finalize(pStmt);
-    rc = sqlite3_prepare_v2(p->dbv, zStmt, -1, &pStmt, &zStmt);
+    bentley_sqlite3_finalize(pStmt);
+    rc = bentley_sqlite3_prepare_v2(p->dbv, zStmt, -1, &pStmt, &zStmt);
     if( rc==SQLITE_OK ){
       if( pStmt ){
         IdxStatement *pNew;
-        const char *z = sqlite3_sql(pStmt);
+        const char *z = bentley_sqlite3_sql(pStmt);
         int n = STRLEN(z);
         pNew = (IdxStatement*)idxMalloc(&rc, sizeof(IdxStatement) + n+1);
         if( rc==SQLITE_OK ){
@@ -14838,7 +14838,7 @@ int sqlite3_expert_sql(
           if( p->pStatement ) pNew->iId = p->pStatement->iId+1;
           p->pStatement = pNew;
         }
-        sqlite3_finalize(pStmt);
+        bentley_sqlite3_finalize(pStmt);
       }
     }else{
       idxDatabaseError(p->dbv, pzErr);
@@ -14867,7 +14867,7 @@ int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
     rc = idxCreateCandidates(p);
   }else if ( rc==SQLITE_BUSY_TIMEOUT ){
     if( pzErr )
-      *pzErr = sqlite3_mprintf("Cannot find a unique index name to propose.");
+      *pzErr = bentley_sqlite3_mprintf("Cannot find a unique index name to propose.");
     return rc;
   }
 
@@ -14937,15 +14937,15 @@ const char *sqlite3_expert_report(sqlite3expert *p, int iStmt, int eReport){
 */
 void sqlite3_expert_destroy(sqlite3expert *p){
   if( p ){
-    sqlite3_close(p->dbm);
-    sqlite3_close(p->dbv);
+    bentley_sqlite3_close(p->dbm);
+    bentley_sqlite3_close(p->dbv);
     idxScanFree(p->pScan, 0);
     idxStatementFree(p->pStatement, 0);
     idxTableFree(p->pTable);
     idxWriteFree(p->pWrite);
     idxHashClear(&p->hIdx);
-    sqlite3_free(p->zCandidates);
-    sqlite3_free(p);
+    bentley_sqlite3_free(p->zCandidates);
+    bentley_sqlite3_free(p);
   }
 }
 
@@ -15159,12 +15159,12 @@ const char *sqlite3_intck_test_sql(sqlite3_intck *pCk, const char *zObj);
 **
 ** zErr:
 **   If the object has entered the error state, this is the error message.
-**   Is freed using sqlite3_free() when the object is deleted.
+**   Is freed using bentley_sqlite3_free() when the object is deleted.
 **
 ** zTestSql:
 **   The value returned by the most recent call to sqlite3_intck_testsql().
 **   Each call to testsql() frees the previous zTestSql value (using
-**   sqlite3_free()) and replaces it with the new value it will return.
+**   bentley_sqlite3_free()) and replaces it with the new value it will return.
 */
 struct sqlite3_intck {
   sqlite3 *db;
@@ -15189,9 +15189,9 @@ struct sqlite3_intck {
 ** and error code currently held by the database handle in p->rc and p->zErr.
 */
 static void intckSaveErrmsg(sqlite3_intck *p){
-  p->rc = sqlite3_errcode(p->db);
-  sqlite3_free(p->zErr);
-  p->zErr = sqlite3_mprintf("%s", sqlite3_errmsg(p->db));
+  p->rc = bentley_sqlite3_errcode(p->db);
+  bentley_sqlite3_free(p->zErr);
+  p->zErr = bentley_sqlite3_mprintf("%s", bentley_sqlite3_errmsg(p->db));
 }
 
 /*
@@ -15205,7 +15205,7 @@ static void intckSaveErrmsg(sqlite3_intck *p){
 static sqlite3_stmt *intckPrepare(sqlite3_intck *p, const char *zSql){
   sqlite3_stmt *pRet = 0;
   if( p->rc==SQLITE_OK ){
-    p->rc = sqlite3_prepare_v2(p->db, zSql, -1, &pRet, 0);
+    p->rc = bentley_sqlite3_prepare_v2(p->db, zSql, -1, &pRet, 0);
     if( p->rc!=SQLITE_OK ){
       intckSaveErrmsg(p);
       assert( pRet==0 );
@@ -15229,12 +15229,12 @@ static sqlite3_stmt *intckPrepareFmt(sqlite3_intck *p, const char *zFmt, ...){
   va_list ap;
   char *zSql = 0;
   va_start(ap, zFmt);
-  zSql = sqlite3_vmprintf(zFmt, ap);
+  zSql = bentley_sqlite3_vmprintf(zFmt, ap);
   if( p->rc==SQLITE_OK && zSql==0 ){
     p->rc = SQLITE_NOMEM;
   }
   pRet = intckPrepare(p, zSql);
-  sqlite3_free(zSql);
+  bentley_sqlite3_free(zSql);
   va_end(ap);
   return pRet;
 }
@@ -15245,7 +15245,7 @@ static sqlite3_stmt *intckPrepareFmt(sqlite3_intck *p, const char *zFmt, ...){
 ** error in the handle.
 */
 static void intckFinalize(sqlite3_intck *p, sqlite3_stmt *pStmt){
-  int rc = sqlite3_finalize(pStmt);
+  int rc = bentley_sqlite3_finalize(pStmt);
   if( p->rc==SQLITE_OK && rc!=SQLITE_OK ){
     intckSaveErrmsg(p);
   }
@@ -15253,11 +15253,11 @@ static void intckFinalize(sqlite3_intck *p, sqlite3_stmt *pStmt){
 
 /*
 ** If there is already an error in handle p, return it. Otherwise, call
-** sqlite3_step() on the statement handle and return that value.
+** bentley_sqlite3_step() on the statement handle and return that value.
 */
 static int intckStep(sqlite3_intck *p, sqlite3_stmt *pStmt){
   if( p->rc ) return p->rc;
-  return sqlite3_step(pStmt);
+  return bentley_sqlite3_step(pStmt);
 }
 
 /*
@@ -15273,20 +15273,20 @@ static void intckExec(sqlite3_intck *p, const char *zSql){
 }
 
 /*
-** A wrapper around sqlite3_mprintf() that uses the sqlite3_intck error
+** A wrapper around bentley_sqlite3_mprintf() that uses the sqlite3_intck error
 ** code convention.
 */
 static char *intckMprintf(sqlite3_intck *p, const char *zFmt, ...){
   va_list ap;
   char *zRet = 0;
   va_start(ap, zFmt);
-  zRet = sqlite3_vmprintf(zFmt, ap);
+  zRet = bentley_sqlite3_vmprintf(zFmt, ap);
   if( p->rc==SQLITE_OK ){
     if( zRet==0 ){
       p->rc = SQLITE_NOMEM;
     }
   }else{
-    sqlite3_free(zRet);
+    bentley_sqlite3_free(zRet);
     zRet = 0;
   }
   return zRet;
@@ -15313,8 +15313,8 @@ static void intckSaveKey(sqlite3_intck *p){
       "WHERE s.type='index' AND s.name=%Q",
       p->zDb, p->zObj, p->zDb, p->zObj
   );
-  if( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXinfo) ){
-    zDir = (const char*)sqlite3_column_text(pXinfo, 0);
+  if( p->rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(pXinfo) ){
+    zDir = (const char*)bentley_sqlite3_column_text(pXinfo, 0);
   }
 
   if( zDir==0 ){
@@ -15332,8 +15332,8 @@ static void intckSaveKey(sqlite3_intck *p){
     assert( p->nKeyVal>1 );
     for(ii=p->nKeyVal; ii>0; ii--){
       int bLastIsDesc = zDir[ii-1]=='1';
-      int bLastIsNull = sqlite3_column_type(p->pCheck, ii)==SQLITE_NULL;
-      const char *zLast = sqlite3_column_name(p->pCheck, ii);
+      int bLastIsNull = bentley_sqlite3_column_type(p->pCheck, ii)==SQLITE_NULL;
+      const char *zLast = bentley_sqlite3_column_name(p->pCheck, ii);
       char *zLhs = 0;
       char *zRhs = 0;
       char *zWhere = 0;
@@ -15351,7 +15351,7 @@ static void intckSaveKey(sqlite3_intck *p){
         const char *zRhsSep = "";
         int jj;
         for(jj=0; jj<ii-1; jj++){
-          const char *zAlias = (const char*)sqlite3_column_name(p->pCheck,jj+1);
+          const char *zAlias = (const char*)bentley_sqlite3_column_name(p->pCheck,jj+1);
           zLhs = intckMprintf(p, "%z%s%s", zLhs, zLhsSep, zAlias);
           zRhs = intckMprintf(p, "%z%squote(?%d)", zRhs, zRhsSep, jj+1);
           zLhsSep = ",";
@@ -15380,15 +15380,15 @@ static void intckSaveKey(sqlite3_intck *p){
   pStmt = intckPrepare(p, zSql);
   if( p->rc==SQLITE_OK ){
     for(ii=0; ii<p->nKeyVal; ii++){
-      sqlite3_bind_value(pStmt, ii+1, sqlite3_column_value(p->pCheck, ii+1));
+      bentley_sqlite3_bind_value(pStmt, ii+1, bentley_sqlite3_column_value(p->pCheck, ii+1));
     }
-    if( SQLITE_ROW==sqlite3_step(pStmt) ){
-      p->zKey = intckMprintf(p,"%s",(const char*)sqlite3_column_text(pStmt, 0));
+    if( SQLITE_ROW==bentley_sqlite3_step(pStmt) ){
+      p->zKey = intckMprintf(p,"%s",(const char*)bentley_sqlite3_column_text(pStmt, 0));
     }
     intckFinalize(p, pStmt);
   }
 
-  sqlite3_free(zSql);
+  bentley_sqlite3_free(zSql);
   intckFinalize(p, pXinfo);
 }
 
@@ -15419,20 +15419,20 @@ static void intckFindObject(sqlite3_intck *p){
   );
 
   if( p->rc==SQLITE_OK ){
-    sqlite3_bind_text(pStmt, 1, zPrev, -1, SQLITE_TRANSIENT);
-    if( sqlite3_step(pStmt)==SQLITE_ROW ){
-      p->zObj = intckMprintf(p,"%s",(const char*)sqlite3_column_text(pStmt, 0));
+    bentley_sqlite3_bind_text(pStmt, 1, zPrev, -1, SQLITE_TRANSIENT);
+    if( bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+      p->zObj = intckMprintf(p,"%s",(const char*)bentley_sqlite3_column_text(pStmt, 0));
     }
   }
   intckFinalize(p, pStmt);
 
   /* If this is a new object, ensure the previous key value is cleared. */
-  if( sqlite3_stricmp(p->zObj, zPrev) ){
-    sqlite3_free(p->zKey);
+  if( bentley_sqlite3_stricmp(p->zObj, zPrev) ){
+    bentley_sqlite3_free(p->zKey);
     p->zKey = 0;
   }
 
-  sqlite3_free(zPrev);
+  bentley_sqlite3_free(zPrev);
 }
 
 /*
@@ -15534,8 +15534,8 @@ static const char *intckParseCreateIndex(const char *z, int iCol, int *pnByte){
     if( z[iOff]==')' ) nOpen--;
     nToken = intckGetToken(zToken);
 
-    if( (nToken==3 && 0==sqlite3_strnicmp(zToken, "ASC", nToken))
-     || (nToken==4 && 0==sqlite3_strnicmp(zToken, "DESC", nToken))
+    if( (nToken==3 && 0==bentley_sqlite3_strnicmp(zToken, "ASC", nToken))
+     || (nToken==4 && 0==bentley_sqlite3_strnicmp(zToken, "DESC", nToken))
     ){
       iEndOfCol = iOff;
     }else if( 0==intckIsSpace(zToken[0]) ){
@@ -15549,7 +15549,7 @@ static const char *intckParseCreateIndex(const char *z, int iCol, int *pnByte){
   ** CREATE INDEX statement. Try to find a WHERE clause to return.  */
   while( zRet==0 && z[iOff] ){
     int n = intckGetToken(&z[iOff]);
-    if( n==5 && 0==sqlite3_strnicmp(&z[iOff], "where", 5) ){
+    if( n==5 && 0==bentley_sqlite3_strnicmp(&z[iOff], "where", 5) ){
       zRet = &z[iOff+5];
       nRet = (int)strlen(zRet);
     }
@@ -15579,8 +15579,8 @@ static void intckParseCreateIndexFunc(
   int nVal, 
   sqlite3_value **apVal
 ){
-  const char *zSql = (const char*)sqlite3_value_text(apVal[0]);
-  int idx = sqlite3_value_int(apVal[1]);
+  const char *zSql = (const char*)bentley_sqlite3_value_text(apVal[0]);
+  int idx = bentley_sqlite3_value_int(apVal[1]);
   const char *zRes = 0;
   int nRes = 0;
 
@@ -15588,7 +15588,7 @@ static void intckParseCreateIndexFunc(
   if( zSql ){
     zRes = intckParseCreateIndex(zSql, idx, &nRes);
   }
-  sqlite3_result_text(pCtx, zRes, nRes, SQLITE_TRANSIENT);
+  bentley_sqlite3_result_text(pCtx, zRes, nRes, SQLITE_TRANSIENT);
 }
 
 /*
@@ -15600,7 +15600,7 @@ static int intckGetAutoIndex(sqlite3_intck *p){
   sqlite3_stmt *pStmt = 0;
   pStmt = intckPrepare(p, "PRAGMA automatic_index");
   if( SQLITE_ROW==intckStep(p, pStmt) ){
-    bRet = sqlite3_column_int(pStmt, 0);
+    bRet = bentley_sqlite3_column_int(pStmt, 0);
   }
   intckFinalize(p, pStmt);
   return bRet;
@@ -15616,7 +15616,7 @@ static int intckIsIndex(sqlite3_intck *p, const char *zObj){
       "SELECT 1 FROM %Q.sqlite_schema WHERE name=%Q AND type='index'",
       p->zDb, zObj
   );
-  if( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+  if( p->rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(pStmt) ){
     bRet = 1;
   }
   intckFinalize(p, pStmt);
@@ -15891,10 +15891,10 @@ static char *intckCheckObjectSql(
     );
   }
 
-  while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
-    zRet = intckMprintf(p, "%s", (const char*)sqlite3_column_text(pStmt, 0));
+  while( p->rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(pStmt) ){
+    zRet = intckMprintf(p, "%s", (const char*)bentley_sqlite3_column_text(pStmt, 0));
     if( pnKeyVal ){
-      *pnKeyVal = sqlite3_column_int(pStmt, 1);
+      *pnKeyVal = bentley_sqlite3_column_int(pStmt, 1);
     }
   }
   intckFinalize(p, pStmt);
@@ -15916,7 +15916,7 @@ int sqlite3_intck_open(
   const char *zDb = zDbArg ? zDbArg : "main";
   int nDb = (int)strlen(zDb);
 
-  pNew = (sqlite3_intck*)sqlite3_malloc(sizeof(*pNew) + nDb + 1);
+  pNew = (sqlite3_intck*)bentley_sqlite3_malloc(sizeof(*pNew) + nDb + 1);
   if( pNew==0 ){
     rc = SQLITE_NOMEM;
   }else{
@@ -15924,7 +15924,7 @@ int sqlite3_intck_open(
     pNew->db = db;
     pNew->zDb = (const char*)&pNew[1];
     memcpy(&pNew[1], zDb, nDb+1);
-    rc = sqlite3_create_function(db, "parse_create_index", 
+    rc = bentley_sqlite3_create_function(db, "parse_create_index", 
         2, SQLITE_UTF8, 0, intckParseCreateIndexFunc, 0, 0
     );
     if( rc!=SQLITE_OK ){
@@ -15942,16 +15942,16 @@ int sqlite3_intck_open(
 */
 void sqlite3_intck_close(sqlite3_intck *p){
   if( p ){
-    sqlite3_finalize(p->pCheck);
-    sqlite3_create_function(
+    bentley_sqlite3_finalize(p->pCheck);
+    bentley_sqlite3_create_function(
         p->db, "parse_create_index", 1, SQLITE_UTF8, 0, 0, 0, 0
     );
-    sqlite3_free(p->zObj);
-    sqlite3_free(p->zKey);
-    sqlite3_free(p->zTestSql);
-    sqlite3_free(p->zErr);
-    sqlite3_free(p->zMessage);
-    sqlite3_free(p);
+    bentley_sqlite3_free(p->zObj);
+    bentley_sqlite3_free(p->zKey);
+    bentley_sqlite3_free(p->zTestSql);
+    bentley_sqlite3_free(p->zErr);
+    bentley_sqlite3_free(p->zMessage);
+    bentley_sqlite3_free(p);
   }
 }
 
@@ -15962,7 +15962,7 @@ int sqlite3_intck_step(sqlite3_intck *p){
   if( p->rc==SQLITE_OK ){
 
     if( p->zMessage ){
-      sqlite3_free(p->zMessage);
+      bentley_sqlite3_free(p->zMessage);
       p->zMessage = 0;
     }
 
@@ -15976,8 +15976,8 @@ int sqlite3_intck_step(sqlite3_intck *p){
           char *zSql = 0;
           zSql = intckCheckObjectSql(p, p->zObj, p->zKey, &p->nKeyVal);
           p->pCheck = intckPrepare(p, zSql);
-          sqlite3_free(zSql);
-          sqlite3_free(p->zKey);
+          bentley_sqlite3_free(zSql);
+          bentley_sqlite3_free(p->zKey);
           p->zKey = 0;
         }else{
           p->rc = SQLITE_DONE;
@@ -15993,7 +15993,7 @@ int sqlite3_intck_step(sqlite3_intck *p){
 
     if( p->pCheck ){
       assert( p->rc==SQLITE_OK );
-      if( sqlite3_step(p->pCheck)==SQLITE_ROW ){
+      if( bentley_sqlite3_step(p->pCheck)==SQLITE_ROW ){
         /* Normal case, do nothing. */
       }else{
         intckFinalize(p, p->pCheck);
@@ -16022,7 +16022,7 @@ const char *sqlite3_intck_message(sqlite3_intck *p){
     return p->zMessage;
   }
   if( p->pCheck ){
-    return (const char*)sqlite3_column_text(p->pCheck, 0);
+    return (const char*)bentley_sqlite3_column_text(p->pCheck, 0);
   }
   return 0;
 }
@@ -16054,14 +16054,14 @@ int sqlite3_intck_unlock(sqlite3_intck *p){
 ** NULL, the current SQL statement.
 */
 const char *sqlite3_intck_test_sql(sqlite3_intck *p, const char *zObj){
-  sqlite3_free(p->zTestSql);
+  bentley_sqlite3_free(p->zTestSql);
   if( zObj ){
     p->zTestSql = intckCheckObjectSql(p, zObj, 0, 0);
   }else{
     if( p->zObj ){
       p->zTestSql = intckCheckObjectSql(p, p->zObj, p->zKey, 0);
     }else{
-      sqlite3_free(p->zTestSql);
+      bentley_sqlite3_free(p->zTestSql);
       p->zTestSql = 0;
     }
   }
@@ -16093,7 +16093,7 @@ const char *sqlite3_intck_test_sql(sqlite3_intck *p, const char *zObj){
 ** is used by the first invocation of this function only and is ignored
 ** for all subsequent calls within the same statement.
 **
-** Resetting a statement (sqlite3_reset()) also resets the random number
+** Resetting a statement (bentley_sqlite3_reset()) also resets the random number
 ** sequence.
 */
 /* #include "sqlite3ext.h" */
@@ -16121,31 +16121,31 @@ static void stmtrandFunc(
 ){
   Stmtrand *p;
 
-  p = (Stmtrand*)sqlite3_get_auxdata(context, STMTRAND_KEY);
+  p = (Stmtrand*)bentley_sqlite3_get_auxdata(context, STMTRAND_KEY);
   if( p==0 ){
     unsigned int seed;
-    p = sqlite3_malloc( sizeof(*p) );
+    p = bentley_sqlite3_malloc( sizeof(*p) );
     if( p==0 ){
-      sqlite3_result_error_nomem(context);
+      bentley_sqlite3_result_error_nomem(context);
       return;
     }
     if( argc>=1 ){
-      seed = (unsigned int)sqlite3_value_int(argv[0]);
+      seed = (unsigned int)bentley_sqlite3_value_int(argv[0]);
     }else{
       seed = 0;
     }
     p->x = seed | 1;
     p->y = seed;
-    sqlite3_set_auxdata(context, STMTRAND_KEY, p, sqlite3_free);
-    p = (Stmtrand*)sqlite3_get_auxdata(context, STMTRAND_KEY);
+    bentley_sqlite3_set_auxdata(context, STMTRAND_KEY, p, bentley_sqlite3_free);
+    p = (Stmtrand*)bentley_sqlite3_get_auxdata(context, STMTRAND_KEY);
     if( p==0 ){
-      sqlite3_result_error_nomem(context);
+      bentley_sqlite3_result_error_nomem(context);
       return;
     }
   }
   p->x = (p->x>>1) ^ ((1+~(p->x&1)) & 0xd0000001);
   p->y = p->y*1103515245 + 12345;
-  sqlite3_result_int(context, (int)((p->x ^ p->y)&0x7fffffff));
+  bentley_sqlite3_result_int(context, (int)((p->x ^ p->y)&0x7fffffff));
 }
 
 #ifdef _WIN32
@@ -16159,10 +16159,10 @@ int sqlite3_stmtrand_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "stmtrand", 1, SQLITE_UTF8, 0,
+  rc = bentley_sqlite3_create_function(db, "stmtrand", 1, SQLITE_UTF8, 0,
                                stmtrandFunc, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "stmtrand", 0, SQLITE_UTF8, 0,
+    rc = bentley_sqlite3_create_function(db, "stmtrand", 0, SQLITE_UTF8, 0,
                                  stmtrandFunc, 0, 0);
   }
   return rc;
@@ -16234,7 +16234,7 @@ int sqlite3_stmtrand_init(
 ** all database connections that are created and for which tracing is 
 ** desired.  This can be done by specifying the trace VFS using URI filename
 ** notation, or by specifying the trace VFS as the 4th parameter to
-** sqlite3_open_v2() or by making the trace VFS be the default (by setting
+** bentley_sqlite3_open_v2() or by making the trace VFS be the default (by setting
 ** the 5th parameter of vfstrace_register() to 1).
 **
 **
@@ -16428,10 +16428,10 @@ static void vfstrace_printf(
   char *zMsg;
   if( pInfo->bOn ){
     va_start(ap, zFormat);
-    zMsg = sqlite3_vmprintf(zFormat, ap);
+    zMsg = bentley_sqlite3_vmprintf(zFormat, ap);
     va_end(ap);
     pInfo->xOut(zMsg, pInfo->pOutArg);
-    sqlite3_free(zMsg);
+    bentley_sqlite3_free(zMsg);
   }
 }
 
@@ -16512,9 +16512,9 @@ static void vfstrace_print_errcode(
   if( zVal==0 ){
     zVal = vfstrace_errcode_name(rc&0xff);
     if( zVal ){
-      sqlite3_snprintf(sizeof(zBuf), zBuf, "%s | 0x%x", zVal, rc&0xffff00);
+      bentley_sqlite3_snprintf(sizeof(zBuf), zBuf, "%s | 0x%x", zVal, rc&0xffff00);
     }else{
-      sqlite3_snprintf(sizeof(zBuf), zBuf, "%d (0x%x)", rc, rc);
+      bentley_sqlite3_snprintf(sizeof(zBuf), zBuf, "%d (0x%x)", rc, rc);
     }
     zVal = zBuf;
   }
@@ -16550,7 +16550,7 @@ static int vfstraceClose(sqlite3_file *pFile){
   rc = p->pReal->pMethods->xClose(p->pReal);
   vfstrace_print_errcode(pInfo, " -> %s\n", rc);
   if( rc==SQLITE_OK ){
-    sqlite3_free((void*)p->base.pMethods);
+    bentley_sqlite3_free((void*)p->base.pMethods);
     p->base.pMethods = 0;
   }
   return rc;
@@ -16626,7 +16626,7 @@ static int vfstraceSync(sqlite3_file *pFile, int flags){
   else if( flags & SQLITE_SYNC_NORMAL ) strappend(zBuf, &i, "|NORMAL");
   if( flags & SQLITE_SYNC_DATAONLY )    strappend(zBuf, &i, "|DATAONLY");
   if( flags & ~(SQLITE_SYNC_FULL|SQLITE_SYNC_DATAONLY) ){
-    sqlite3_snprintf(sizeof(zBuf)-i, &zBuf[i], "|0x%x", flags);
+    bentley_sqlite3_snprintf(sizeof(zBuf)-i, &zBuf[i], "|0x%x", flags);
   }
   vfstraceOnOff(pInfo, VTR_SYNC);
   vfstrace_printf(pInfo, "%s.xSync(%s,%s)", pInfo->zVfsName, p->zFName,
@@ -16729,20 +16729,20 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
     case SQLITE_SET_LOCKPROXYFILE:         zOp = "SET_LOCKPROXYFILE";   break;
     case SQLITE_LAST_ERRNO:                zOp = "LAST_ERRNO";          break;
     case SQLITE_FCNTL_SIZE_HINT: {
-      sqlite3_snprintf(sizeof(zBuf), zBuf, "SIZE_HINT,%lld",
+      bentley_sqlite3_snprintf(sizeof(zBuf), zBuf, "SIZE_HINT,%lld",
                        *(sqlite3_int64*)pArg);
       zOp = zBuf;
       break;
     }
     case SQLITE_FCNTL_CHUNK_SIZE: {
-      sqlite3_snprintf(sizeof(zBuf), zBuf, "CHUNK_SIZE,%d", *(int*)pArg);
+      bentley_sqlite3_snprintf(sizeof(zBuf), zBuf, "CHUNK_SIZE,%d", *(int*)pArg);
       zOp = zBuf;
       break;
     }
     case SQLITE_FCNTL_FILE_POINTER:        zOp = "FILE_POINTER";        break;
     case SQLITE_FCNTL_WIN32_AV_RETRY:      zOp = "WIN32_AV_RETRY";      break;
     case SQLITE_FCNTL_PERSIST_WAL: {
-       sqlite3_snprintf(sizeof(zBuf), zBuf, "PERSIST_WAL,%d", *(int*)pArg);
+       bentley_sqlite3_snprintf(sizeof(zBuf), zBuf, "PERSIST_WAL,%d", *(int*)pArg);
        zOp = zBuf;
        break;
     }
@@ -16812,7 +16812,7 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
             if( zArg[0]=='x' && isalpha(zArg[1]) ) zArg++;
             for(n=0; isalpha(zArg[n]); n++){}
             for(jj=0; jj<(int)(sizeof(aKw)/sizeof(aKw[0])); jj++){
-              if( sqlite3_strnicmp(aKw[jj].z,(const char*)zArg,n)==0 ){
+              if( bentley_sqlite3_strnicmp(aKw[jj].z,(const char*)zArg,n)==0 ){
                 if( onOff ){
                   pInfo->mTrace |= aKw[jj].m;
                 }else{
@@ -16825,7 +16825,7 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
           }
         }
       }
-      sqlite3_snprintf(sizeof(zBuf), zBuf, "PRAGMA,[%s,%s]",a[1],a[2]);
+      bentley_sqlite3_snprintf(sizeof(zBuf), zBuf, "PRAGMA,[%s,%s]",a[1],a[2]);
       zOp = zBuf;
       break;
     }
@@ -16833,7 +16833,7 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
     case SQLITE_FCNTL_TEMPFILENAME:        zOp = "TEMPFILENAME";        break;
     case SQLITE_FCNTL_MMAP_SIZE: {
       sqlite3_int64 iMMap = *(sqlite3_int64*)pArg;
-      sqlite3_snprintf(sizeof(zBuf), zBuf, "MMAP_SIZE,%lld",iMMap);
+      bentley_sqlite3_snprintf(sizeof(zBuf), zBuf, "MMAP_SIZE,%lld",iMMap);
       zOp = zBuf;
       break;
     }
@@ -16856,7 +16856,7 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
        break;
     }
     case SQLITE_FCNTL_LOCK_TIMEOUT: {
-       sqlite3_snprintf(sizeof(zBuf), zBuf, "LOCK_TIMEOUT,%d", *(int*)pArg);
+       bentley_sqlite3_snprintf(sizeof(zBuf), zBuf, "LOCK_TIMEOUT,%d", *(int*)pArg);
        zOp = zBuf;
        break;
     }
@@ -16870,7 +16870,7 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
     case SQLITE_FCNTL_RESET_CACHE:         zOp = "RESET_CACHE";         break;
     case 0xca093fa0:                       zOp = "DB_UNCHANGED";        break;
     default: {
-      sqlite3_snprintf(sizeof zBuf, zBuf, "%d", op);
+      bentley_sqlite3_snprintf(sizeof zBuf, zBuf, "%d", op);
       zOp = zBuf;
       break;
     }
@@ -16881,19 +16881,19 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
   if( rc==SQLITE_OK ){
     switch( op ){
       case SQLITE_FCNTL_VFSNAME: {
-        *(char**)pArg = sqlite3_mprintf("vfstrace.%s/%z",
+        *(char**)pArg = bentley_sqlite3_mprintf("vfstrace.%s/%z",
                                     pInfo->zVfsName, *(char**)pArg);
         zRVal = *(char**)pArg;
         break;
       }
       case SQLITE_FCNTL_MMAP_SIZE: {
-        sqlite3_snprintf(sizeof(zBuf2), zBuf2, "%lld", *(sqlite3_int64*)pArg);
+        bentley_sqlite3_snprintf(sizeof(zBuf2), zBuf2, "%lld", *(sqlite3_int64*)pArg);
         zRVal = zBuf2;
         break;
       }
       case SQLITE_FCNTL_HAS_MOVED:
       case SQLITE_FCNTL_PERSIST_WAL: {
-        sqlite3_snprintf(sizeof(zBuf2), zBuf2, "%d", *(int*)pArg);
+        bentley_sqlite3_snprintf(sizeof(zBuf2), zBuf2, "%d", *(int*)pArg);
         zRVal = zBuf2;
         break;
       }
@@ -16968,7 +16968,7 @@ static int vfstraceShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   if( flags & SQLITE_SHM_SHARED )    strappend(zLck, &i, "|SHARED");
   if( flags & SQLITE_SHM_EXCLUSIVE ) strappend(zLck, &i, "|EXCLUSIVE");
   if( flags & ~(0xf) ){
-     sqlite3_snprintf(sizeof(zLck)-i, &zLck[i], "|0x%x", flags);
+     bentley_sqlite3_snprintf(sizeof(zLck)-i, &zLck[i], "|0x%x", flags);
   }
   if( ofst>=0 && ofst<(int)(sizeof(azLockName)/sizeof(azLockName[0])) ){
     vfstrace_printf(pInfo, "%s.xShmLock(%s,ofst=%d(%s),n=%d,%s)",
@@ -17064,7 +17064,7 @@ static int vfstraceOpen(
   vfstrace_printf(pInfo, "%s.xOpen(%s,flags=0x%x)",
                   pInfo->zVfsName, p->zFName, flags);
   if( p->pReal->pMethods ){
-    sqlite3_io_methods *pNew = sqlite3_malloc( sizeof(*pNew) );
+    sqlite3_io_methods *pNew = bentley_sqlite3_malloc( sizeof(*pNew) );
     const sqlite3_io_methods *pSub = p->pReal->pMethods;
     memset(pNew, 0, sizeof(*pNew));
     pNew->iVersion = pSub->iVersion;
@@ -17320,11 +17320,11 @@ int vfstrace_register(
   size_t nName;
   size_t nByte;
 
-  pRoot = sqlite3_vfs_find(zOldVfsName);
+  pRoot = bentley_sqlite3_vfs_find(zOldVfsName);
   if( pRoot==0 ) return SQLITE_NOTFOUND;
   nName = strlen(zTraceName);
   nByte = sizeof(*pNew) + sizeof(*pInfo) + nName + 1;
-  pNew = sqlite3_malloc64( nByte );
+  pNew = bentley_sqlite3_malloc64( nByte );
   if( pNew==0 ) return SQLITE_NOMEM;
   memset(pNew, 0, nByte);
   pInfo = (vfstrace_info*)&pNew[1];
@@ -17367,7 +17367,7 @@ int vfstrace_register(
   pInfo->bOn = 1;
   vfstrace_printf(pInfo, "%s.enabled_for(\"%s\")\n",
        pInfo->zVfsName, pRoot->zName);
-  return sqlite3_vfs_register(pNew, makeDefault);
+  return bentley_sqlite3_vfs_register(pNew, makeDefault);
 }
 
 /*
@@ -17375,11 +17375,11 @@ int vfstrace_register(
 ** and delete it.
 */
 void vfstrace_unregister(const char *zTraceName){
-  sqlite3_vfs *pVfs = sqlite3_vfs_find(zTraceName);
+  sqlite3_vfs *pVfs = bentley_sqlite3_vfs_find(zTraceName);
   if( pVfs==0 ) return;
   if( pVfs->xOpen!=vfstraceOpen ) return;
-  sqlite3_vfs_unregister(pVfs);
-  sqlite3_free(pVfs);
+  bentley_sqlite3_vfs_unregister(pVfs);
+  bentley_sqlite3_free(pVfs);
 }
 
 /************************* End ../ext/misc/vfstrace.c ********************/
@@ -17812,7 +17812,7 @@ struct DbdataTable {
 static int dbdataBufferSize(DbdataBuffer *pBuf, sqlite3_int64 nMin){
   if( nMin>pBuf->nBuf ){
     sqlite3_int64 nNew = nMin+16384;
-    u8 *aNew = (u8*)sqlite3_realloc64(pBuf->aBuf, nNew);
+    u8 *aNew = (u8*)bentley_sqlite3_realloc64(pBuf->aBuf, nNew);
 
     if( aNew==0 ) return SQLITE_NOMEM;
     pBuf->aBuf = aNew;
@@ -17825,7 +17825,7 @@ static int dbdataBufferSize(DbdataBuffer *pBuf, sqlite3_int64 nMin){
 ** Release the allocation managed by buffer pBuf.
 */
 static void dbdataBufferFree(DbdataBuffer *pBuf){
-  sqlite3_free(pBuf->aBuf);
+  bentley_sqlite3_free(pBuf->aBuf);
   memset(pBuf, 0, sizeof(*pBuf));
 }
 
@@ -17841,14 +17841,14 @@ static int dbdataConnect(
   char **pzErr
 ){
   DbdataTable *pTab = 0;
-  int rc = sqlite3_declare_vtab(db, pAux ? DBPTR_SCHEMA : DBDATA_SCHEMA);
+  int rc = bentley_sqlite3_declare_vtab(db, pAux ? DBPTR_SCHEMA : DBDATA_SCHEMA);
 
   (void)argc;
   (void)argv;
   (void)pzErr;
-  sqlite3_vtab_config(db, SQLITE_VTAB_USES_ALL_SCHEMAS);
+  bentley_sqlite3_vtab_config(db, SQLITE_VTAB_USES_ALL_SCHEMAS);
   if( rc==SQLITE_OK ){
-    pTab = (DbdataTable*)sqlite3_malloc64(sizeof(DbdataTable));
+    pTab = (DbdataTable*)bentley_sqlite3_malloc64(sizeof(DbdataTable));
     if( pTab==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -17868,8 +17868,8 @@ static int dbdataConnect(
 static int dbdataDisconnect(sqlite3_vtab *pVtab){
   DbdataTable *pTab = (DbdataTable*)pVtab;
   if( pTab ){
-    sqlite3_finalize(pTab->pStmt);
-    sqlite3_free(pVtab);
+    bentley_sqlite3_finalize(pTab->pStmt);
+    bentley_sqlite3_free(pVtab);
   }
   return SQLITE_OK;
 }
@@ -17940,7 +17940,7 @@ static int dbdataBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdx){
 static int dbdataOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   DbdataCursor *pCsr;
 
-  pCsr = (DbdataCursor*)sqlite3_malloc64(sizeof(DbdataCursor));
+  pCsr = (DbdataCursor*)bentley_sqlite3_malloc64(sizeof(DbdataCursor));
   if( pCsr==0 ){
     return SQLITE_NOMEM;
   }else{
@@ -17961,14 +17961,14 @@ static void dbdataResetCursor(DbdataCursor *pCsr){
   if( pTab->pStmt==0 ){
     pTab->pStmt = pCsr->pStmt;
   }else{
-    sqlite3_finalize(pCsr->pStmt);
+    bentley_sqlite3_finalize(pCsr->pStmt);
   }
   pCsr->pStmt = 0;
   pCsr->iPgno = 1;
   pCsr->iCell = 0;
   pCsr->iField = 0;
   pCsr->bOnePage = 0;
-  sqlite3_free(pCsr->aPage);
+  bentley_sqlite3_free(pCsr->aPage);
   dbdataBufferFree(&pCsr->rec);
   pCsr->aPage = 0;
   pCsr->nRec = 0;
@@ -17980,7 +17980,7 @@ static void dbdataResetCursor(DbdataCursor *pCsr){
 static int dbdataClose(sqlite3_vtab_cursor *pCursor){
   DbdataCursor *pCsr = (DbdataCursor*)pCursor;
   dbdataResetCursor(pCsr);
-  sqlite3_free(pCsr);
+  bentley_sqlite3_free(pCsr);
   return SQLITE_OK;
 }
 
@@ -18002,7 +18002,7 @@ static u32 get_uint32(unsigned char *a){
 ** If successful, set (*ppPage) to point to a buffer containing the page
 ** data, (*pnPage) to the size of that buffer in bytes and return
 ** SQLITE_OK. In this case it is the responsibility of the caller to
-** eventually free the buffer using sqlite3_free().
+** eventually free the buffer using bentley_sqlite3_free().
 **
 ** Or, if an error occurs, set both (*ppPage) and (*pnPage) to 0 and
 ** return an SQLite error code.
@@ -18020,16 +18020,16 @@ static int dbdataLoadPage(
   *ppPage = 0;
   *pnPage = 0;
   if( pgno>0 ){
-    sqlite3_bind_int64(pStmt, 2, pgno);
-    if( SQLITE_ROW==sqlite3_step(pStmt) ){
-      int nCopy = sqlite3_column_bytes(pStmt, 0);
+    bentley_sqlite3_bind_int64(pStmt, 2, pgno);
+    if( SQLITE_ROW==bentley_sqlite3_step(pStmt) ){
+      int nCopy = bentley_sqlite3_column_bytes(pStmt, 0);
       if( nCopy>0 ){
         u8 *pPage;
-        pPage = (u8*)sqlite3_malloc64(nCopy + DBDATA_PADDING_BYTES);
+        pPage = (u8*)bentley_sqlite3_malloc64(nCopy + DBDATA_PADDING_BYTES);
         if( pPage==0 ){
           rc = SQLITE_NOMEM;
         }else{
-          const u8 *pCopy = sqlite3_column_blob(pStmt, 0);
+          const u8 *pCopy = bentley_sqlite3_column_blob(pStmt, 0);
           memcpy(pPage, pCopy, nCopy);
           memset(&pPage[nCopy], 0, DBDATA_PADDING_BYTES);
         }
@@ -18037,7 +18037,7 @@ static int dbdataLoadPage(
         *pnPage = nCopy;
       }
     }
-    rc2 = sqlite3_reset(pStmt);
+    rc2 = bentley_sqlite3_reset(pStmt);
     if( rc==SQLITE_OK ) rc = rc2;
   }
 
@@ -18119,14 +18119,14 @@ static void dbdataValue(
         case 0: 
         case 10: 
         case 11: 
-          sqlite3_result_null(pCtx);
+          bentley_sqlite3_result_null(pCtx);
           break;
         
         case 8: 
-          sqlite3_result_int(pCtx, 0);
+          bentley_sqlite3_result_int(pCtx, 0);
           break;
         case 9:
-          sqlite3_result_int(pCtx, 1);
+          bentley_sqlite3_result_int(pCtx, 1);
           break;
     
         case 1: case 2: case 3: case 4: case 5: case 6: case 7: {
@@ -18144,9 +18144,9 @@ static void dbdataValue(
           if( eType==7 ){
             double r;
             memcpy(&r, &v, sizeof(r));
-            sqlite3_result_double(pCtx, r);
+            bentley_sqlite3_result_double(pCtx, r);
           }else{
-            sqlite3_result_int64(pCtx, (sqlite3_int64)v);
+            bentley_sqlite3_result_int64(pCtx, (sqlite3_int64)v);
           }
           break;
         }
@@ -18157,30 +18157,30 @@ static void dbdataValue(
             switch( enc ){
   #ifndef SQLITE_OMIT_UTF16
               case SQLITE_UTF16BE:
-                sqlite3_result_text16be(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
+                bentley_sqlite3_result_text16be(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
                 break;
               case SQLITE_UTF16LE:
-                sqlite3_result_text16le(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
+                bentley_sqlite3_result_text16le(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
                 break;
   #endif
               default:
-                sqlite3_result_text(pCtx, (char*)pData, n, SQLITE_TRANSIENT);
+                bentley_sqlite3_result_text(pCtx, (char*)pData, n, SQLITE_TRANSIENT);
                 break;
             }
           }else{
-            sqlite3_result_blob(pCtx, pData, n, SQLITE_TRANSIENT);
+            bentley_sqlite3_result_blob(pCtx, pData, n, SQLITE_TRANSIENT);
           }
         }
       }
     }else{
       if( eType==7 ){
-        sqlite3_result_double(pCtx, 0.0);
+        bentley_sqlite3_result_double(pCtx, 0.0);
       }else if( eType<7 ){
-        sqlite3_result_int(pCtx, 0);
+        bentley_sqlite3_result_int(pCtx, 0);
       }else if( eType%2 ){
-        sqlite3_result_text(pCtx, "", 0, SQLITE_STATIC);
+        bentley_sqlite3_result_text(pCtx, "", 0, SQLITE_STATIC);
       }else{
-        sqlite3_result_blob(pCtx, "", 0, SQLITE_STATIC);
+        bentley_sqlite3_result_blob(pCtx, "", 0, SQLITE_STATIC);
       }
     }
   }
@@ -18214,7 +18214,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
         rc = dbdataLoadPage(pCsr, pCsr->iPgno, &pCsr->aPage, &pCsr->nPage);
         if( rc!=SQLITE_OK ) return rc;
         if( pCsr->aPage && pCsr->nPage>=256 ) break;
-        sqlite3_free(pCsr->aPage);
+        bentley_sqlite3_free(pCsr->aPage);
         pCsr->aPage = 0;
         if( pCsr->bOnePage ) return SQLITE_OK;
         pCsr->iPgno++;
@@ -18234,7 +18234,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
       }
       pCsr->iCell++;
       if( pCsr->iCell>=pCsr->nCell ){
-        sqlite3_free(pCsr->aPage);
+        bentley_sqlite3_free(pCsr->aPage);
         pCsr->aPage = 0;
         if( pCsr->bOnePage ) return SQLITE_OK;
         pCsr->iPgno++;
@@ -18351,7 +18351,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
                 nRem -= nCopy;
 
                 pgnoOvfl = get_uint32(aOvfl);
-                sqlite3_free(aOvfl);
+                bentley_sqlite3_free(aOvfl);
               }
               nPayload -= nRem;
             }
@@ -18388,7 +18388,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
       }
 
       if( bNextPage ){
-        sqlite3_free(pCsr->aPage);
+        bentley_sqlite3_free(pCsr->aPage);
         pCsr->aPage = 0;
         pCsr->nRec = 0;
         if( pCsr->bOnePage ) return SQLITE_OK;
@@ -18444,18 +18444,18 @@ static int dbdataDbsize(DbdataCursor *pCsr, const char *zSchema){
   sqlite3_stmt *pStmt = 0;
 
   if( (nFunc = dbdataIsFunction(zSchema))>0 ){
-    zSql = sqlite3_mprintf("SELECT %.*s(0)", nFunc, zSchema);
+    zSql = bentley_sqlite3_mprintf("SELECT %.*s(0)", nFunc, zSchema);
   }else{
-    zSql = sqlite3_mprintf("PRAGMA %Q.page_count", zSchema);
+    zSql = bentley_sqlite3_mprintf("PRAGMA %Q.page_count", zSchema);
   }
   if( zSql==0 ) return SQLITE_NOMEM;
 
-  rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pStmt, 0);
-  sqlite3_free(zSql);
-  if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
-    pCsr->szDb = sqlite3_column_int(pStmt, 0);
+  rc = bentley_sqlite3_prepare_v2(pTab->db, zSql, -1, &pStmt, 0);
+  bentley_sqlite3_free(zSql);
+  if( rc==SQLITE_OK && bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+    pCsr->szDb = bentley_sqlite3_column_int(pStmt, 0);
   }
-  rc2 = sqlite3_finalize(pStmt);
+  rc2 = bentley_sqlite3_finalize(pStmt);
   if( rc==SQLITE_OK ) rc = rc2;
   return rc;
 }
@@ -18473,7 +18473,7 @@ static int dbdataGetEncoding(DbdataCursor *pCsr){
   if( rc==SQLITE_OK && nPg1>=(56+4) ){
     pCsr->enc = get_uint32(&aPg1[56]);
   }
-  sqlite3_free(aPg1);
+  bentley_sqlite3_free(aPg1);
   return rc;
 }
 
@@ -18496,11 +18496,11 @@ static int dbdataFilter(
   dbdataResetCursor(pCsr);
   assert( pCsr->iPgno==1 );
   if( idxNum & 0x01 ){
-    zSchema = (const char*)sqlite3_value_text(argv[0]);
+    zSchema = (const char*)bentley_sqlite3_value_text(argv[0]);
     if( zSchema==0 ) zSchema = "";
   }
   if( idxNum & 0x02 ){
-    pCsr->iPgno = sqlite3_value_int(argv[(idxNum & 0x01)]);
+    pCsr->iPgno = bentley_sqlite3_value_int(argv[(idxNum & 0x01)]);
     pCsr->bOnePage = 1;
   }else{
     rc = dbdataDbsize(pCsr, zSchema);
@@ -18512,22 +18512,22 @@ static int dbdataFilter(
       pCsr->pStmt = pTab->pStmt;
       pTab->pStmt = 0;
     }else if( (nFunc = dbdataIsFunction(zSchema))>0 ){
-      char *zSql = sqlite3_mprintf("SELECT %.*s(?2)", nFunc, zSchema);
+      char *zSql = bentley_sqlite3_mprintf("SELECT %.*s(?2)", nFunc, zSchema);
       if( zSql==0 ){
         rc = SQLITE_NOMEM;
       }else{
-        rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pCsr->pStmt, 0);
-        sqlite3_free(zSql);
+        rc = bentley_sqlite3_prepare_v2(pTab->db, zSql, -1, &pCsr->pStmt, 0);
+        bentley_sqlite3_free(zSql);
       }
     }else{
-      rc = sqlite3_prepare_v2(pTab->db, 
+      rc = bentley_sqlite3_prepare_v2(pTab->db, 
           "SELECT data FROM sqlite_dbpage(?) WHERE pgno=?", -1,
           &pCsr->pStmt, 0
       );
     }
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_bind_text(pCsr->pStmt, 1, zSchema, -1, SQLITE_TRANSIENT);
+    rc = bentley_sqlite3_bind_text(pCsr->pStmt, 1, zSchema, -1, SQLITE_TRANSIENT);
   }
 
   /* Try to determine the encoding of the db by inspecting the header
@@ -18537,7 +18537,7 @@ static int dbdataFilter(
   }
 
   if( rc!=SQLITE_OK ){
-    pTab->base.zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pTab->db));
+    pTab->base.zErrMsg = bentley_sqlite3_mprintf("%s", bentley_sqlite3_errmsg(pTab->db));
   }
 
   if( rc==SQLITE_OK ){
@@ -18559,7 +18559,7 @@ static int dbdataColumn(
   if( pTab->bPtr ){
     switch( i ){
       case DBPTR_COLUMN_PGNO:
-        sqlite3_result_int64(ctx, pCsr->iPgno);
+        bentley_sqlite3_result_int64(ctx, pCsr->iPgno);
         break;
       case DBPTR_COLUMN_CHILD: {
         int iOff = pCsr->iPgno==1 ? 100 : 0;
@@ -18571,7 +18571,7 @@ static int dbdataColumn(
           iOff = get_uint16(&pCsr->aPage[iOff]);
         }
         if( iOff<=pCsr->nPage ){
-          sqlite3_result_int64(ctx, get_uint32(&pCsr->aPage[iOff]));
+          bentley_sqlite3_result_int64(ctx, get_uint32(&pCsr->aPage[iOff]));
         }
         break;
       }
@@ -18579,17 +18579,17 @@ static int dbdataColumn(
   }else{
     switch( i ){
       case DBDATA_COLUMN_PGNO:
-        sqlite3_result_int64(ctx, pCsr->iPgno);
+        bentley_sqlite3_result_int64(ctx, pCsr->iPgno);
         break;
       case DBDATA_COLUMN_CELL:
-        sqlite3_result_int(ctx, pCsr->iCell);
+        bentley_sqlite3_result_int(ctx, pCsr->iCell);
         break;
       case DBDATA_COLUMN_FIELD:
-        sqlite3_result_int(ctx, pCsr->iField);
+        bentley_sqlite3_result_int(ctx, pCsr->iField);
         break;
       case DBDATA_COLUMN_VALUE: {
         if( pCsr->iField<0 ){
-          sqlite3_result_int64(ctx, pCsr->iIntkey);
+          bentley_sqlite3_result_int64(ctx, pCsr->iIntkey);
         }else if( &pCsr->rec.aBuf[pCsr->nRec] >= pCsr->pPtr ){
           sqlite3_int64 iType;
           dbdataGetVarintU32(pCsr->pHdrPtr, &iType);
@@ -18647,9 +18647,9 @@ static int sqlite3DbdataRegister(sqlite3 *db){
     0                             /* xIntegrity */
   };
 
-  int rc = sqlite3_create_module(db, "sqlite_dbdata", &dbdata_module, 0);
+  int rc = bentley_sqlite3_create_module(db, "sqlite_dbdata", &dbdata_module, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_module(db, "sqlite_dbptr", &dbdata_module, (void*)1);
+    rc = bentley_sqlite3_create_module(db, "sqlite_dbptr", &dbdata_module, (void*)1);
   }
   return rc;
 }
@@ -18963,15 +18963,15 @@ static RecoverGlobal recover_g;
 # define recoverLeaveMutex()
 #else
 static void recoverEnterMutex(void){
-  sqlite3_mutex_enter(sqlite3_mutex_alloc(RECOVER_MUTEX_ID));
+  bentley_sqlite3_mutex_enter(bentley_sqlite3_mutex_alloc(RECOVER_MUTEX_ID));
 }
 static void recoverLeaveMutex(void){
-  sqlite3_mutex_leave(sqlite3_mutex_alloc(RECOVER_MUTEX_ID));
+  bentley_sqlite3_mutex_leave(bentley_sqlite3_mutex_alloc(RECOVER_MUTEX_ID));
 }
 #endif
 #if SQLITE_THREADSAFE+0>=1 && defined(SQLITE_DEBUG)
 static void recoverAssertMutexHeld(void){
-  assert( sqlite3_mutex_held(sqlite3_mutex_alloc(RECOVER_MUTEX_ID)) );
+  assert( sqlite3_mutex_held(bentley_sqlite3_mutex_alloc(RECOVER_MUTEX_ID)) );
 }
 #else
 # define recoverAssertMutexHeld()
@@ -18999,7 +18999,7 @@ static void *recoverMalloc(sqlite3_recover *p, i64 nByte){
   void *pRet = 0;
   assert( nByte>0 );
   if( p->errCode==SQLITE_OK ){
-    pRet = sqlite3_malloc64(nByte);
+    pRet = bentley_sqlite3_malloc64(nByte);
     if( pRet ){
       memset(pRet, 0, nByte);
     }else{
@@ -19031,10 +19031,10 @@ static int recoverError(
   va_list ap;
   va_start(ap, zFmt);
   if( zFmt ){
-    z = sqlite3_vmprintf(zFmt, ap);
+    z = bentley_sqlite3_vmprintf(zFmt, ap);
   }
   va_end(ap);
-  sqlite3_free(p->zErrMsg);
+  bentley_sqlite3_free(p->zErrMsg);
   p->zErrMsg = z;
   p->errCode = errCode;
   return errCode;
@@ -19064,7 +19064,7 @@ static RecoverBitmap *recoverBitmapAlloc(sqlite3_recover *p, i64 nPg){
 ** Free a bitmap object allocated by recoverBitmapAlloc().
 */
 static void recoverBitmapFree(RecoverBitmap *pMap){
-  sqlite3_free(pMap);
+  bentley_sqlite3_free(pMap);
 }
 
 /*
@@ -19094,11 +19094,11 @@ static int recoverBitmapQuery(RecoverBitmap *pMap, i64 iPg){
 
 /*
 ** Set the recover handle error to the error code and message returned by
-** calling sqlite3_errcode() and sqlite3_errmsg(), respectively, on database
+** calling bentley_sqlite3_errcode() and bentley_sqlite3_errmsg(), respectively, on database
 ** handle db.
 */
 static int recoverDbError(sqlite3_recover *p, sqlite3 *db){
-  return recoverError(p, sqlite3_errcode(db), "%s", sqlite3_errmsg(db));
+  return recoverError(p, bentley_sqlite3_errcode(db), "%s", bentley_sqlite3_errmsg(db));
 }
 
 /*
@@ -19117,7 +19117,7 @@ static sqlite3_stmt *recoverPrepare(
 ){
   sqlite3_stmt *pStmt = 0;
   if( p->errCode==SQLITE_OK ){
-    if( sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0) ){
+    if( bentley_sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0) ){
       recoverDbError(p, db);
     }
   }
@@ -19145,20 +19145,20 @@ static sqlite3_stmt *recoverPreparePrintf(
     va_list ap;
     char *z;
     va_start(ap, zFmt);
-    z = sqlite3_vmprintf(zFmt, ap);
+    z = bentley_sqlite3_vmprintf(zFmt, ap);
     va_end(ap);
     if( z==0 ){
       p->errCode = SQLITE_NOMEM;
     }else{
       pStmt = recoverPrepare(p, db, z);
-      sqlite3_free(z);
+      bentley_sqlite3_free(z);
     }
   }
   return pStmt;
 }
 
 /*
-** Reset SQLite statement handle pStmt. If the call to sqlite3_reset() 
+** Reset SQLite statement handle pStmt. If the call to bentley_sqlite3_reset() 
 ** indicates that an error occurred, and there is not already an error
 ** in the recover handle passed as the first argument, set the error
 ** code and error message appropriately.
@@ -19167,22 +19167,22 @@ static sqlite3_stmt *recoverPreparePrintf(
 ** as the second argument.
 */
 static sqlite3_stmt *recoverReset(sqlite3_recover *p, sqlite3_stmt *pStmt){
-  int rc = sqlite3_reset(pStmt);
+  int rc = bentley_sqlite3_reset(pStmt);
   if( rc!=SQLITE_OK && rc!=SQLITE_CONSTRAINT && p->errCode==SQLITE_OK ){
-    recoverDbError(p, sqlite3_db_handle(pStmt));
+    recoverDbError(p, bentley_sqlite3_db_handle(pStmt));
   }
   return pStmt;
 }
 
 /*
-** Finalize SQLite statement handle pStmt. If the call to sqlite3_reset() 
+** Finalize SQLite statement handle pStmt. If the call to bentley_sqlite3_reset() 
 ** indicates that an error occurred, and there is not already an error
 ** in the recover handle passed as the first argument, set the error
 ** code and error message appropriately.
 */
 static void recoverFinalize(sqlite3_recover *p, sqlite3_stmt *pStmt){
-  sqlite3 *db = sqlite3_db_handle(pStmt);
-  int rc = sqlite3_finalize(pStmt);
+  sqlite3 *db = bentley_sqlite3_db_handle(pStmt);
+  int rc = bentley_sqlite3_finalize(pStmt);
   if( rc!=SQLITE_OK && p->errCode==SQLITE_OK ){
     recoverDbError(p, db);
   }
@@ -19199,7 +19199,7 @@ static void recoverFinalize(sqlite3_recover *p, sqlite3_stmt *pStmt){
 */
 static int recoverExec(sqlite3_recover *p, sqlite3 *db, const char *zSql){
   if( p->errCode==SQLITE_OK ){
-    int rc = sqlite3_exec(db, zSql, 0, 0, 0);
+    int rc = bentley_sqlite3_exec(db, zSql, 0, 0, 0);
     if( rc ){
       recoverDbError(p, db);
     }
@@ -19219,7 +19219,7 @@ static void recoverBindValue(
   sqlite3_value *pVal
 ){
   if( p->errCode==SQLITE_OK ){
-    int rc = sqlite3_bind_value(pStmt, iBind, pVal);
+    int rc = bentley_sqlite3_bind_value(pStmt, iBind, pVal);
     if( rc ) recoverError(p, rc, 0);
   }
 }
@@ -19231,9 +19231,9 @@ static void recoverBindValue(
 ** Otherwise, an attempt is made to interpret zFmt as a printf() style
 ** formatting string and the result of using the trailing arguments for
 ** parameter substitution with it written into a buffer obtained from
-** sqlite3_malloc(). If successful, a pointer to the buffer is returned.
+** bentley_sqlite3_malloc(). If successful, a pointer to the buffer is returned.
 ** It is the responsibility of the caller to eventually free the buffer
-** using sqlite3_free().
+** using bentley_sqlite3_free().
 **
 ** Or, if an error occurs, an error code and message is left in the recover
 ** handle and NULL returned.
@@ -19242,12 +19242,12 @@ static char *recoverMPrintf(sqlite3_recover *p, const char *zFmt, ...){
   va_list ap;
   char *z;
   va_start(ap, zFmt);
-  z = sqlite3_vmprintf(zFmt, ap);
+  z = bentley_sqlite3_vmprintf(zFmt, ap);
   va_end(ap);
   if( p->errCode==SQLITE_OK ){
     if( z==0 ) p->errCode = SQLITE_NOMEM;
   }else{
-    sqlite3_free(z);
+    bentley_sqlite3_free(z);
     z = 0;
   }
   return z;
@@ -19268,8 +19268,8 @@ static i64 recoverPageCount(sqlite3_recover *p){
     sqlite3_stmt *pStmt = 0;
     pStmt = recoverPreparePrintf(p, p->dbIn, "PRAGMA %Q.page_count", p->zDb);
     if( pStmt ){
-      sqlite3_step(pStmt);
-      nPg = sqlite3_column_int64(pStmt, 0);
+      bentley_sqlite3_step(pStmt);
+      nPg = bentley_sqlite3_column_int64(pStmt, 0);
     }
     recoverFinalize(p, pStmt);
   }
@@ -19294,9 +19294,9 @@ static void recoverReadI32(
   int iInt;
 
   assert( argc==2 );
-  nBlob = sqlite3_value_bytes(argv[0]);
-  pBlob = (const unsigned char*)sqlite3_value_blob(argv[0]);
-  iInt = sqlite3_value_int(argv[1]) & 0xFFFF;
+  nBlob = bentley_sqlite3_value_bytes(argv[0]);
+  pBlob = (const unsigned char*)bentley_sqlite3_value_blob(argv[0]);
+  iInt = bentley_sqlite3_value_int(argv[1]) & 0xFFFF;
 
   if( (iInt+1)*4<=nBlob ){
     const unsigned char *a = &pBlob[iInt*4];
@@ -19304,7 +19304,7 @@ static void recoverReadI32(
              + ((i64)a[1]<<16)
              + ((i64)a[2]<< 8)
              + ((i64)a[3]<< 0);
-    sqlite3_result_int64(context, iVal);
+    bentley_sqlite3_result_int64(context, iVal);
   }
 }
 
@@ -19325,10 +19325,10 @@ static void recoverPageIsUsed(
   int nArg,
   sqlite3_value **apArg
 ){
-  sqlite3_recover *p = (sqlite3_recover*)sqlite3_user_data(pCtx);
-  i64 pgno = sqlite3_value_int64(apArg[0]);
+  sqlite3_recover *p = (sqlite3_recover*)bentley_sqlite3_user_data(pCtx);
+  i64 pgno = bentley_sqlite3_value_int64(apArg[0]);
   assert( nArg==1 );
-  sqlite3_result_int(pCtx, recoverBitmapQuery(p->laf.pUsed, pgno));
+  bentley_sqlite3_result_int(pCtx, recoverBitmapQuery(p->laf.pUsed, pgno));
 }
 
 /*
@@ -19350,14 +19350,14 @@ static void recoverGetPage(
   int nArg,
   sqlite3_value **apArg
 ){
-  sqlite3_recover *p = (sqlite3_recover*)sqlite3_user_data(pCtx);
-  i64 pgno = sqlite3_value_int64(apArg[0]);
+  sqlite3_recover *p = (sqlite3_recover*)bentley_sqlite3_user_data(pCtx);
+  i64 pgno = bentley_sqlite3_value_int64(apArg[0]);
   sqlite3_stmt *pStmt = 0;
 
   assert( nArg==1 );
   if( pgno==0 ){
     i64 nPg = recoverPageCount(p);
-    sqlite3_result_int64(pCtx, nPg);
+    bentley_sqlite3_result_int64(pCtx, nPg);
     return;
   }else{
     if( p->pGetPage==0 ){
@@ -19369,25 +19369,25 @@ static void recoverGetPage(
     }
 
     if( pStmt ){
-      sqlite3_bind_int64(pStmt, 1, pgno);
-      if( SQLITE_ROW==sqlite3_step(pStmt) ){
+      bentley_sqlite3_bind_int64(pStmt, 1, pgno);
+      if( SQLITE_ROW==bentley_sqlite3_step(pStmt) ){
         const u8 *aPg;
         int nPg;
         assert( p->errCode==SQLITE_OK );
-        aPg = sqlite3_column_blob(pStmt, 0);
-        nPg = sqlite3_column_bytes(pStmt, 0);
+        aPg = bentley_sqlite3_column_blob(pStmt, 0);
+        nPg = bentley_sqlite3_column_bytes(pStmt, 0);
         if( pgno==1 && nPg==p->pgsz && 0==memcmp(p->pPage1Cache, aPg, nPg) ){
           aPg = p->pPage1Disk;
         }
-        sqlite3_result_blob(pCtx, aPg, nPg-p->nReserve, SQLITE_TRANSIENT);
+        bentley_sqlite3_result_blob(pCtx, aPg, nPg-p->nReserve, SQLITE_TRANSIENT);
       }
       recoverReset(p, pStmt);
     }
   }
 
   if( p->errCode ){
-    if( p->zErrMsg ) sqlite3_result_error(pCtx, p->zErrMsg, -1);
-    sqlite3_result_error_code(pCtx, p->errCode);
+    if( p->zErrMsg ) bentley_sqlite3_result_error(pCtx, p->zErrMsg, -1);
+    bentley_sqlite3_result_error_code(pCtx, p->errCode);
   }
 }
 
@@ -19407,7 +19407,7 @@ static const char *recoverUnusedString(
   if( strstr(z, zA)==0 ) return zA;
   if( strstr(z, zB)==0 ) return zB;
   do{
-    sqlite3_snprintf(20,zBuf,"(%s%u)", zA, i++);
+    bentley_sqlite3_snprintf(20,zBuf,"(%s%u)", zA, i++);
   }while( strstr(z,zBuf)!=0 );
   return zBuf;
 }
@@ -19429,10 +19429,10 @@ static void recoverEscapeCrlf(
   int argc, 
   sqlite3_value **argv
 ){
-  const char *zText = (const char*)sqlite3_value_text(argv[0]);
+  const char *zText = (const char*)bentley_sqlite3_value_text(argv[0]);
   (void)argc;
   if( zText && zText[0]=='\'' ){
-    int nText = sqlite3_value_bytes(argv[0]);
+    int nText = bentley_sqlite3_value_bytes(argv[0]);
     int i;
     char zBuf1[20];
     char zBuf2[20];
@@ -19456,9 +19456,9 @@ static void recoverEscapeCrlf(
       int iOut = 0;
       i64 nMax = (nNL > nCR) ? nNL : nCR;
       i64 nAlloc = nMax * nText + (nMax+64)*2;
-      char *zOut = (char*)sqlite3_malloc64(nAlloc);
+      char *zOut = (char*)bentley_sqlite3_malloc64(nAlloc);
       if( zOut==0 ){
-        sqlite3_result_error_nomem(context);
+        bentley_sqlite3_result_error_nomem(context);
         return;
       }
 
@@ -19493,13 +19493,13 @@ static void recoverEscapeCrlf(
         memcpy(&zOut[iOut], "', char(13))", 12); iOut += 12;
       }
 
-      sqlite3_result_text(context, zOut, iOut, SQLITE_TRANSIENT);
-      sqlite3_free(zOut);
+      bentley_sqlite3_result_text(context, zOut, iOut, SQLITE_TRANSIENT);
+      bentley_sqlite3_free(zOut);
       return;
     }
   }
 
-  sqlite3_result_value(context, argv[0]);
+  bentley_sqlite3_result_value(context, argv[0]);
 }
 
 /*
@@ -19577,7 +19577,7 @@ static void recoverTransferSettings(sqlite3_recover *p){
   ** any existing output db with a copy of it. */
   if( p->errCode==SQLITE_OK ){
     sqlite3 *db2 = 0;
-    int rc = sqlite3_open("", &db2);
+    int rc = bentley_sqlite3_open("", &db2);
     if( rc!=SQLITE_OK ){
       recoverDbError(p, db2);
       return;
@@ -19587,12 +19587,12 @@ static void recoverTransferSettings(sqlite3_recover *p){
       const char *zPrag = aPragma[ii];
       sqlite3_stmt *p1 = 0;
       p1 = recoverPreparePrintf(p, p->dbIn, "PRAGMA %Q.%s", p->zDb, zPrag);
-      if( p->errCode==SQLITE_OK && sqlite3_step(p1)==SQLITE_ROW ){
-        const char *zArg = (const char*)sqlite3_column_text(p1, 0);
+      if( p->errCode==SQLITE_OK && bentley_sqlite3_step(p1)==SQLITE_ROW ){
+        const char *zArg = (const char*)bentley_sqlite3_column_text(p1, 0);
         char *z2 = recoverMPrintf(p, "PRAGMA %s = %Q", zPrag, zArg);
         recoverSqlCallback(p, z2);
         recoverExec(p, db2, z2);
-        sqlite3_free(z2);
+        bentley_sqlite3_free(z2);
         if( zArg==0 ){
           recoverError(p, SQLITE_NOMEM, 0);
         }
@@ -19603,16 +19603,16 @@ static void recoverTransferSettings(sqlite3_recover *p){
 
     if( p->errCode==SQLITE_OK ){
       sqlite3 *db = p->dbOut;
-      sqlite3_backup *pBackup = sqlite3_backup_init(db, "main", db2, "main");
+      sqlite3_backup *pBackup = bentley_sqlite3_backup_init(db, "main", db2, "main");
       if( pBackup ){
-        sqlite3_backup_step(pBackup, -1);
-        p->errCode = sqlite3_backup_finish(pBackup);
+        bentley_sqlite3_backup_step(pBackup, -1);
+        p->errCode = bentley_sqlite3_backup_finish(pBackup);
       }else{
         recoverDbError(p, db);
       }
     }
 
-    sqlite3_close(db2);
+    bentley_sqlite3_close(db2);
   }
 }
 
@@ -19648,7 +19648,7 @@ static int recoverOpenOutput(sqlite3_recover *p){
 
   assert( p->dbOut==0 );
 
-  if( sqlite3_open_v2(p->zUri, &db, flags, 0) ){
+  if( bentley_sqlite3_open_v2(p->zUri, &db, flags, 0) ){
     recoverDbError(p, db);
   }
 
@@ -19664,7 +19664,7 @@ static int recoverOpenOutput(sqlite3_recover *p){
   for(ii=0;
       p->errCode==SQLITE_OK && ii<(int)(sizeof(aFunc)/sizeof(aFunc[0]));
       ii++){
-    p->errCode = sqlite3_create_function(db, aFunc[ii].zName, 
+    p->errCode = bentley_sqlite3_create_function(db, aFunc[ii].zName, 
         aFunc[ii].nArg, SQLITE_UTF8, (void*)p, aFunc[ii].xFunc, 0, 0
     );
   }
@@ -19686,7 +19686,7 @@ static void recoverOpenRecovery(sqlite3_recover *p){
       "CREATE TABLE recovery.map(pgno INTEGER PRIMARY KEY, parent INT);" 
       "CREATE TABLE recovery.schema(type, name, tbl_name, rootpage, sql);"
   );
-  sqlite3_free(zSql);
+  bentley_sqlite3_free(zSql);
 }
 
 
@@ -19719,9 +19719,9 @@ static void recoverAddTable(
     int nCol = 0;
     int nName = recoverStrlen(zName);
     int nByte = 0;
-    while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    while( bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
       nCol++;
-      nByte += (sqlite3_column_bytes(pStmt, 1)+1);
+      nByte += (bentley_sqlite3_column_bytes(pStmt, 1)+1);
     }
     nByte += sizeof(RecoverTable) + nCol*sizeof(RecoverColumn) + nName+1;
     recoverReset(p, pStmt);
@@ -19738,14 +19738,14 @@ static void recoverAddTable(
       memcpy(csr, zName, nName);
       csr += nName+1;
 
-      for(i=0; sqlite3_step(pStmt)==SQLITE_ROW; i++){
-        int iPKF = sqlite3_column_int(pStmt, 5);
-        int n = sqlite3_column_bytes(pStmt, 1);
-        const char *z = (const char*)sqlite3_column_text(pStmt, 1);
-        const char *zType = (const char*)sqlite3_column_text(pStmt, 2);
-        int eHidden = sqlite3_column_int(pStmt, 6);
+      for(i=0; bentley_sqlite3_step(pStmt)==SQLITE_ROW; i++){
+        int iPKF = bentley_sqlite3_column_int(pStmt, 5);
+        int n = bentley_sqlite3_column_bytes(pStmt, 1);
+        const char *z = (const char*)bentley_sqlite3_column_text(pStmt, 1);
+        const char *zType = (const char*)bentley_sqlite3_column_text(pStmt, 2);
+        int eHidden = bentley_sqlite3_column_int(pStmt, 6);
 
-        if( iPk==-1 && iPKF==1 && !sqlite3_stricmp("integer", zType) ) iPk = i;
+        if( iPk==-1 && iPKF==1 && !bentley_sqlite3_stricmp("integer", zType) ) iPk = i;
         if( iPKF>1 ) iPk = -2;
         pNew->aCol[i].zCol = csr;
         pNew->aCol[i].eHidden = eHidden;
@@ -19771,9 +19771,9 @@ static void recoverAddTable(
     recoverFinalize(p, pStmt);
 
     pStmt = recoverPreparePrintf(p, p->dbOut, "PRAGMA index_xinfo(%Q)", zName);
-    while( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
-      int iField = sqlite3_column_int(pStmt, 0);
-      int iCol = sqlite3_column_int(pStmt, 1);
+    while( pStmt && bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+      int iField = bentley_sqlite3_column_int(pStmt, 0);
+      int iCol = bentley_sqlite3_column_int(pStmt, 1);
 
       assert( iCol<pNew->nCol );
       pNew->aCol[iCol].iField = iField;
@@ -19836,13 +19836,13 @@ static int recoverWriteSchema1(sqlite3_recover *p){
   );
 
   if( pSelect ){
-    sqlite3_bind_int(pSelect, 1, p->bSlowIndexes);
-    while( sqlite3_step(pSelect)==SQLITE_ROW ){
-      i64 iRoot = sqlite3_column_int64(pSelect, 0);
-      int bTable = sqlite3_column_int(pSelect, 1);
-      int bVirtual = sqlite3_column_int(pSelect, 2);
-      const char *zName = (const char*)sqlite3_column_text(pSelect, 3);
-      const char *zSql = (const char*)sqlite3_column_text(pSelect, 4);
+    bentley_sqlite3_bind_int(pSelect, 1, p->bSlowIndexes);
+    while( bentley_sqlite3_step(pSelect)==SQLITE_ROW ){
+      i64 iRoot = bentley_sqlite3_column_int64(pSelect, 0);
+      int bTable = bentley_sqlite3_column_int(pSelect, 1);
+      int bVirtual = bentley_sqlite3_column_int(pSelect, 2);
+      const char *zName = (const char*)bentley_sqlite3_column_text(pSelect, 3);
+      const char *zSql = (const char*)bentley_sqlite3_column_text(pSelect, 4);
       char *zFree = 0;
       int rc = SQLITE_OK;
 
@@ -19852,12 +19852,12 @@ static int recoverWriteSchema1(sqlite3_recover *p){
             zName, zName, zSql
         ));
       }
-      rc = sqlite3_exec(p->dbOut, zSql, 0, 0, 0);
+      rc = bentley_sqlite3_exec(p->dbOut, zSql, 0, 0, 0);
       if( rc==SQLITE_OK ){
         recoverSqlCallback(p, zSql);
         if( bTable && !bVirtual ){
-          if( SQLITE_ROW==sqlite3_step(pTblname) ){
-            const char *zTbl = (const char*)sqlite3_column_text(pTblname, 0);
+          if( SQLITE_ROW==bentley_sqlite3_step(pTblname) ){
+            const char *zTbl = (const char*)bentley_sqlite3_column_text(pTblname, 0);
             if( zTbl ) recoverAddTable(p, zTbl, iRoot);
           }
           recoverReset(p, pTblname);
@@ -19865,7 +19865,7 @@ static int recoverWriteSchema1(sqlite3_recover *p){
       }else if( rc!=SQLITE_ERROR ){
         recoverDbError(p, p->dbOut);
       }
-      sqlite3_free(zFree);
+      bentley_sqlite3_free(zFree);
     }
   }
   recoverFinalize(p, pSelect);
@@ -19900,9 +19900,9 @@ static int recoverWriteSchema2(sqlite3_recover *p){
   );
 
   if( pSelect ){
-    while( sqlite3_step(pSelect)==SQLITE_ROW ){
-      const char *zSql = (const char*)sqlite3_column_text(pSelect, 1);
-      int rc = sqlite3_exec(p->dbOut, zSql, 0, 0, 0);
+    while( bentley_sqlite3_step(pSelect)==SQLITE_ROW ){
+      const char *zSql = (const char*)bentley_sqlite3_column_text(pSelect, 1);
+      int rc = bentley_sqlite3_exec(p->dbOut, zSql, 0, 0, 0);
       if( rc==SQLITE_OK ){
         recoverSqlCallback(p, zSql);
       }else if( rc!=SQLITE_ERROR ){
@@ -19948,7 +19948,7 @@ static int recoverWriteSchema2(sqlite3_recover *p){
 **          || quote(?3) || ')';
 **
 ** In either case, it is the responsibility of the caller to eventually
-** free the statement handle using sqlite3_finalize().
+** free the statement handle using bentley_sqlite3_finalize().
 */
 static sqlite3_stmt *recoverInsertStmt(
   sqlite3_recover *p, 
@@ -20011,9 +20011,9 @@ static sqlite3_stmt *recoverInsertStmt(
   }
 
   pRet = recoverPrepare(p, p->dbOut, zFinal);
-  sqlite3_free(zSql);
-  sqlite3_free(zBind);
-  sqlite3_free(zFinal);
+  bentley_sqlite3_free(zSql);
+  bentley_sqlite3_free(zBind);
+  bentley_sqlite3_free(zFinal);
   
   return pRet;
 }
@@ -20034,7 +20034,7 @@ static RecoverTable *recoverFindTable(sqlite3_recover *p, u32 iRoot){
 ** This function attempts to create a lost and found table within the 
 ** output db. If successful, it returns a pointer to a buffer containing
 ** the name of the new table. It is the responsibility of the caller to
-** eventually free this buffer using sqlite3_free().
+** eventually free this buffer using bentley_sqlite3_free().
 **
 ** If an error occurs, NULL is returned and an error code and error 
 ** message left in the recover handle.
@@ -20059,16 +20059,16 @@ static char *recoverLostAndFoundCreate(
     }
 
     if( p->errCode==SQLITE_OK ){
-      sqlite3_bind_text(pProbe, 1, zTbl, -1, SQLITE_STATIC);
-      if( SQLITE_ROW==sqlite3_step(pProbe) ){
+      bentley_sqlite3_bind_text(pProbe, 1, zTbl, -1, SQLITE_STATIC);
+      if( SQLITE_ROW==bentley_sqlite3_step(pProbe) ){
         bFail = 1;
       }
       recoverReset(p, pProbe);
     }
 
     if( bFail ){
-      sqlite3_clear_bindings(pProbe);
-      sqlite3_free(zTbl);
+      bentley_sqlite3_clear_bindings(pProbe);
+      bentley_sqlite3_free(zTbl);
       zTbl = 0;
     }
   }
@@ -20086,11 +20086,11 @@ static char *recoverLostAndFoundCreate(
     }
 
     zSql = recoverMPrintf(p, "CREATE TABLE %s(%s)", zTbl, zField);
-    sqlite3_free(zField);
+    bentley_sqlite3_free(zField);
 
     recoverExec(p, p->dbOut, zSql);
     recoverSqlCallback(p, zSql);
-    sqlite3_free(zSql);
+    bentley_sqlite3_free(zSql);
   }else if( p->errCode==SQLITE_OK ){
     recoverError(
         p, SQLITE_ERROR, "failed to create %s output table", p->zLostAndFound
@@ -20133,7 +20133,7 @@ static sqlite3_stmt *recoverLostAndFoundInsert(
     );
   }
 
-  sqlite3_free(zBind);
+  bentley_sqlite3_free(zBind);
   return pRet;
 }
 
@@ -20165,9 +20165,9 @@ static int recoverLostAndFoundFindRoot(
     );
   }
   if( p->errCode==SQLITE_OK ){
-    sqlite3_bind_int64(pLaf->pFindRoot, 1, iPg);
-    if( sqlite3_step(pLaf->pFindRoot)==SQLITE_ROW ){
-      *piRoot = sqlite3_column_int64(pLaf->pFindRoot, 0);
+    bentley_sqlite3_bind_int64(pLaf->pFindRoot, 1, iPg);
+    if( bentley_sqlite3_step(pLaf->pFindRoot)==SQLITE_ROW ){
+      *piRoot = bentley_sqlite3_column_int64(pLaf->pFindRoot, 0);
     }else{
       *piRoot = iPg;
     }
@@ -20194,33 +20194,33 @@ static void recoverLostAndFoundOnePage(sqlite3_recover *p, i64 iPage){
   int ii = 0;
 
   if( recoverLostAndFoundFindRoot(p, iPage, &iRoot) ) return;
-  sqlite3_bind_int64(pPageData, 1, iPage);
-  while( p->errCode==SQLITE_OK && SQLITE_ROW==sqlite3_step(pPageData) ){
-    int iCell = sqlite3_column_int64(pPageData, 0);
-    int iField = sqlite3_column_int64(pPageData, 1);
+  bentley_sqlite3_bind_int64(pPageData, 1, iPage);
+  while( p->errCode==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(pPageData) ){
+    int iCell = bentley_sqlite3_column_int64(pPageData, 0);
+    int iField = bentley_sqlite3_column_int64(pPageData, 1);
 
     if( iPrevCell!=iCell && nVal>=0 ){
       /* Insert the new row */
-      sqlite3_bind_int64(pInsert, 1, iRoot);      /* rootpgno */
-      sqlite3_bind_int64(pInsert, 2, iPage);      /* pgno */
-      sqlite3_bind_int(pInsert, 3, nVal);         /* nfield */
+      bentley_sqlite3_bind_int64(pInsert, 1, iRoot);      /* rootpgno */
+      bentley_sqlite3_bind_int64(pInsert, 2, iPage);      /* pgno */
+      bentley_sqlite3_bind_int(pInsert, 3, nVal);         /* nfield */
       if( bHaveRowid ){
-        sqlite3_bind_int64(pInsert, 4, iRowid);   /* id */
+        bentley_sqlite3_bind_int64(pInsert, 4, iRowid);   /* id */
       }
       for(ii=0; ii<nVal; ii++){
         recoverBindValue(p, pInsert, 5+ii, apVal[ii]);
       }
-      if( sqlite3_step(pInsert)==SQLITE_ROW ){
-        recoverSqlCallback(p, (const char*)sqlite3_column_text(pInsert, 0));
+      if( bentley_sqlite3_step(pInsert)==SQLITE_ROW ){
+        recoverSqlCallback(p, (const char*)bentley_sqlite3_column_text(pInsert, 0));
       }
       recoverReset(p, pInsert);
 
       /* Discard the accumulated row data */
       for(ii=0; ii<nVal; ii++){
-        sqlite3_value_free(apVal[ii]);
+        bentley_sqlite3_value_free(apVal[ii]);
         apVal[ii] = 0;
       }
-      sqlite3_clear_bindings(pInsert);
+      bentley_sqlite3_clear_bindings(pInsert);
       bHaveRowid = 0;
       nVal = -1;
     }
@@ -20229,12 +20229,12 @@ static void recoverLostAndFoundOnePage(sqlite3_recover *p, i64 iPage){
 
     if( iField<0 ){
       assert( nVal==-1 );
-      iRowid = sqlite3_column_int64(pPageData, 2);
+      iRowid = bentley_sqlite3_column_int64(pPageData, 2);
       bHaveRowid = 1;
       nVal = 0;
     }else if( iField<pLaf->nMaxField ){
-      sqlite3_value *pVal = sqlite3_column_value(pPageData, 2);
-      apVal[iField] = sqlite3_value_dup(pVal);
+      sqlite3_value *pVal = bentley_sqlite3_column_value(pPageData, 2);
+      apVal[iField] = bentley_sqlite3_value_dup(pVal);
       assert( iField==nVal || (nVal==-1 && iField==0) );
       nVal = iField+1;
       if( apVal[iField]==0 ){
@@ -20247,7 +20247,7 @@ static void recoverLostAndFoundOnePage(sqlite3_recover *p, i64 iPage){
   recoverReset(p, pPageData);
 
   for(ii=0; ii<nVal; ii++){
-    sqlite3_value_free(apVal[ii]);
+    bentley_sqlite3_value_free(apVal[ii]);
     apVal[ii] = 0;
   }
 }
@@ -20266,9 +20266,9 @@ static int recoverLostAndFound3Step(sqlite3_recover *p){
       return SQLITE_DONE;
     }else{
       if( p->errCode==SQLITE_OK ){
-        int res = sqlite3_step(pLaf->pAllPage);
+        int res = bentley_sqlite3_step(pLaf->pAllPage);
         if( res==SQLITE_ROW ){
-          i64 iPage = sqlite3_column_int64(pLaf->pAllPage, 0);
+          i64 iPage = bentley_sqlite3_column_int64(pLaf->pAllPage, 0);
           if( recoverBitmapQuery(pLaf->pUsed, iPage)==0 ){
             recoverLostAndFoundOnePage(p, iPage);
           }
@@ -20296,7 +20296,7 @@ static void recoverLostAndFound3Init(sqlite3_recover *p){
 
     zTab = recoverLostAndFoundCreate(p, pLaf->nMaxField);
     pLaf->pInsert = recoverLostAndFoundInsert(p, zTab, pLaf->nMaxField);
-    sqlite3_free(zTab);
+    bentley_sqlite3_free(zTab);
 
     pLaf->pAllPage = recoverPreparePrintf(p, p->dbOut,
         "WITH RECURSIVE seq(ii) AS ("
@@ -20370,9 +20370,9 @@ static void recoverWriteDataCleanup(sqlite3_recover *p){
   RecoverStateW1 *p1 = &p->w1;
   int ii;
   for(ii=0; ii<p1->nVal; ii++){
-    sqlite3_value_free(p1->apVal[ii]);
+    bentley_sqlite3_value_free(p1->apVal[ii]);
   }
-  sqlite3_free(p1->apVal);
+  bentley_sqlite3_free(p1->apVal);
   recoverFinalize(p, p1->pInsert);
   recoverFinalize(p, p1->pTbls);
   recoverFinalize(p, p1->pSel);
@@ -20391,8 +20391,8 @@ static int recoverWriteDataStep(sqlite3_recover *p){
   sqlite3_value **apVal = p1->apVal;
 
   if( p->errCode==SQLITE_OK && p1->pTab==0 ){
-    if( sqlite3_step(p1->pTbls)==SQLITE_ROW ){
-      i64 iRoot = sqlite3_column_int64(p1->pTbls, 0);
+    if( bentley_sqlite3_step(p1->pTbls)==SQLITE_ROW ){
+      i64 iRoot = bentley_sqlite3_column_int64(p1->pTbls, 0);
       p1->pTab = recoverFindTable(p, iRoot);
 
       recoverFinalize(p, p1->pInsert);
@@ -20407,7 +20407,7 @@ static int recoverWriteDataStep(sqlite3_recover *p){
       ** keys before recovering its contents. The p1->pTbls SELECT statement
       ** is rigged to deliver "sqlite_sequence" last of all, so we don't
       ** worry about it being modified after it is recovered. */
-      if( sqlite3_stricmp("sqlite_sequence", p1->pTab->zTab)==0 ){
+      if( bentley_sqlite3_stricmp("sqlite_sequence", p1->pTab->zTab)==0 ){
         recoverExec(p, p->dbOut, "DELETE FROM sqlite_sequence");
         recoverSqlCallback(p, "DELETE FROM sqlite_sequence");
       }
@@ -20415,7 +20415,7 @@ static int recoverWriteDataStep(sqlite3_recover *p){
       /* Bind the root page of this table within the original database to 
       ** SELECT statement p1->pSel. The SELECT statement will then iterate
       ** through cells that look like they belong to table pTab.  */
-      sqlite3_bind_int64(pSel, 1, iRoot);
+      bentley_sqlite3_bind_int64(pSel, 1, iRoot);
 
       p1->nVal = 0;
       p1->bHaveRowid = 0;
@@ -20427,13 +20427,13 @@ static int recoverWriteDataStep(sqlite3_recover *p){
   }
   assert( p->errCode!=SQLITE_OK || p1->pTab );
 
-  if( p->errCode==SQLITE_OK && sqlite3_step(pSel)==SQLITE_ROW ){
+  if( p->errCode==SQLITE_OK && bentley_sqlite3_step(pSel)==SQLITE_ROW ){
     RecoverTable *pTab = p1->pTab;
 
-    i64 iPage = sqlite3_column_int64(pSel, 0);
-    int iCell = sqlite3_column_int(pSel, 1);
-    int iField = sqlite3_column_int(pSel, 2);
-    sqlite3_value *pVal = sqlite3_column_value(pSel, 3);
+    i64 iPage = bentley_sqlite3_column_int64(pSel, 0);
+    int iCell = bentley_sqlite3_column_int(pSel, 1);
+    int iField = bentley_sqlite3_column_int(pSel, 2);
+    sqlite3_value *pVal = bentley_sqlite3_column_value(pSel, 3);
     int bNewCell = (p1->iPrevPage!=iPage || p1->iPrevCell!=iCell);
 
     assert( bNewCell==0 || (iField==-1 || iField==0) );
@@ -20454,27 +20454,27 @@ static int recoverWriteDataStep(sqlite3_recover *p){
             int iBind = pCol->iBind;
             if( iBind>0 ){
               if( pCol->bIPK ){
-                sqlite3_bind_int64(pInsert, iBind, p1->iRowid);
+                bentley_sqlite3_bind_int64(pInsert, iBind, p1->iRowid);
               }else if( pCol->iField<p1->nVal ){
                 recoverBindValue(p, pInsert, iBind, apVal[pCol->iField]);
               }
             }
           }
           if( p->bRecoverRowid && pTab->iRowidBind>0 && p1->bHaveRowid ){
-            sqlite3_bind_int64(pInsert, pTab->iRowidBind, p1->iRowid);
+            bentley_sqlite3_bind_int64(pInsert, pTab->iRowidBind, p1->iRowid);
           }
-          if( SQLITE_ROW==sqlite3_step(pInsert) ){
-            const char *z = (const char*)sqlite3_column_text(pInsert, 0);
+          if( SQLITE_ROW==bentley_sqlite3_step(pInsert) ){
+            const char *z = (const char*)bentley_sqlite3_column_text(pInsert, 0);
             recoverSqlCallback(p, z);
           }
           recoverReset(p, pInsert);
           assert( p->errCode || pInsert );
-          if( pInsert ) sqlite3_clear_bindings(pInsert);
+          if( pInsert ) bentley_sqlite3_clear_bindings(pInsert);
         }
       }
 
       for(ii=0; ii<p1->nVal; ii++){
-        sqlite3_value_free(apVal[ii]);
+        bentley_sqlite3_value_free(apVal[ii]);
         apVal[ii] = 0;
       }
       p1->nVal = -1;
@@ -20483,13 +20483,13 @@ static int recoverWriteDataStep(sqlite3_recover *p){
 
     if( iPage!=0 ){
       if( iField<0 ){
-        p1->iRowid = sqlite3_column_int64(pSel, 3);
+        p1->iRowid = bentley_sqlite3_column_int64(pSel, 3);
         assert( p1->nVal==-1 );
         p1->nVal = 0;
         p1->bHaveRowid = 1;
       }else if( iField<pTab->nCol ){
         assert( apVal[iField]==0 );
-        apVal[iField] = sqlite3_value_dup( pVal );
+        apVal[iField] = bentley_sqlite3_value_dup( pVal );
         if( apVal[iField]==0 ){
           recoverError(p, SQLITE_NOMEM, 0);
         }
@@ -20555,7 +20555,7 @@ static void recoverLostAndFound1Init(sqlite3_recover *p){
       " UNION ALL "
       "SELECT freepgno FROM freelist WHERE NOT ?"
   );
-  if( pStmt ) sqlite3_bind_int(pStmt, 1, p->bFreelistCorrupt);
+  if( pStmt ) bentley_sqlite3_bind_int(pStmt, 1, p->bFreelistCorrupt);
   pLaf->pUsedPages = pStmt;
 }
 
@@ -20569,9 +20569,9 @@ static int recoverLostAndFound1Step(sqlite3_recover *p){
   RecoverStateLAF *pLaf = &p->laf;
   int rc = p->errCode;
   if( rc==SQLITE_OK ){
-    rc = sqlite3_step(pLaf->pUsedPages);
+    rc = bentley_sqlite3_step(pLaf->pUsedPages);
     if( rc==SQLITE_ROW ){
-      i64 iPg = sqlite3_column_int64(pLaf->pUsedPages, 0);
+      i64 iPg = bentley_sqlite3_column_int64(pLaf->pUsedPages, 0);
       recoverBitmapSet(pLaf->pUsed, iPg);
       rc = SQLITE_OK;
     }else{
@@ -20621,19 +20621,19 @@ static void recoverLostAndFound2Init(sqlite3_recover *p){
 static int recoverLostAndFound2Step(sqlite3_recover *p){
   RecoverStateLAF *pLaf = &p->laf;
   if( p->errCode==SQLITE_OK ){
-    int res = sqlite3_step(pLaf->pAllAndParent);
+    int res = bentley_sqlite3_step(pLaf->pAllAndParent);
     if( res==SQLITE_ROW ){
-      i64 iChild = sqlite3_column_int(pLaf->pAllAndParent, 1);
+      i64 iChild = bentley_sqlite3_column_int(pLaf->pAllAndParent, 1);
       if( recoverBitmapQuery(pLaf->pUsed, iChild)==0 ){
-        sqlite3_bind_int64(pLaf->pMapInsert, 1, iChild);
-        sqlite3_bind_value(pLaf->pMapInsert, 2, 
-            sqlite3_column_value(pLaf->pAllAndParent, 0)
+        bentley_sqlite3_bind_int64(pLaf->pMapInsert, 1, iChild);
+        bentley_sqlite3_bind_value(pLaf->pMapInsert, 2, 
+            bentley_sqlite3_column_value(pLaf->pAllAndParent, 0)
         );
-        sqlite3_step(pLaf->pMapInsert);
+        bentley_sqlite3_step(pLaf->pMapInsert);
         recoverReset(p, pLaf->pMapInsert);
-        sqlite3_bind_int64(pLaf->pMaxField, 1, iChild);
-        if( SQLITE_ROW==sqlite3_step(pLaf->pMaxField) ){
-          int nMax = sqlite3_column_int(pLaf->pMaxField, 0);
+        bentley_sqlite3_bind_int64(pLaf->pMaxField, 1, iChild);
+        if( SQLITE_ROW==bentley_sqlite3_step(pLaf->pMaxField) ){
+          int nMax = bentley_sqlite3_column_int(pLaf->pMaxField, 0);
           if( nMax>pLaf->nMaxField ) pLaf->nMaxField = nMax;
         }
         recoverReset(p, pLaf->pMaxField);
@@ -20654,14 +20654,14 @@ static int recoverLostAndFound2Step(sqlite3_recover *p){
 static void recoverLostAndFoundCleanup(sqlite3_recover *p){
   recoverBitmapFree(p->laf.pUsed);
   p->laf.pUsed = 0;
-  sqlite3_finalize(p->laf.pUsedPages);
-  sqlite3_finalize(p->laf.pAllAndParent);
-  sqlite3_finalize(p->laf.pMapInsert);
-  sqlite3_finalize(p->laf.pMaxField);
-  sqlite3_finalize(p->laf.pFindRoot);
-  sqlite3_finalize(p->laf.pInsert);
-  sqlite3_finalize(p->laf.pAllPage);
-  sqlite3_finalize(p->laf.pPageData);
+  bentley_sqlite3_finalize(p->laf.pUsedPages);
+  bentley_sqlite3_finalize(p->laf.pAllAndParent);
+  bentley_sqlite3_finalize(p->laf.pMapInsert);
+  bentley_sqlite3_finalize(p->laf.pMaxField);
+  bentley_sqlite3_finalize(p->laf.pFindRoot);
+  bentley_sqlite3_finalize(p->laf.pInsert);
+  bentley_sqlite3_finalize(p->laf.pAllPage);
+  bentley_sqlite3_finalize(p->laf.pPageData);
   p->laf.pUsedPages = 0;
   p->laf.pAllAndParent = 0;
   p->laf.pMapInsert = 0;
@@ -20670,7 +20670,7 @@ static void recoverLostAndFoundCleanup(sqlite3_recover *p){
   p->laf.pInsert = 0;
   p->laf.pAllPage = 0;
   p->laf.pPageData = 0;
-  sqlite3_free(p->laf.apVal);
+  bentley_sqlite3_free(p->laf.apVal);
   p->laf.apVal = 0;
 }
 
@@ -20686,18 +20686,18 @@ static void recoverFinalCleanup(sqlite3_recover *p){
 
   for(pTab=p->pTblList; pTab; pTab=pNext){
     pNext = pTab->pNext;
-    sqlite3_free(pTab);
+    bentley_sqlite3_free(pTab);
   }
   p->pTblList = 0;
-  sqlite3_finalize(p->pGetPage);
+  bentley_sqlite3_finalize(p->pGetPage);
   p->pGetPage = 0;
-  sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_RESET_CACHE, 0);
+  bentley_sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_RESET_CACHE, 0);
 
   {
 #ifndef NDEBUG
     int res = 
 #endif
-       sqlite3_close(p->dbOut);
+       bentley_sqlite3_close(p->dbOut);
     assert( res==SQLITE_OK );
   }
   p->dbOut = 0;
@@ -20928,7 +20928,7 @@ static int recoverVfsDetectPagesize(
   u8 *aTmp = 0;
   int nBlk = 0;
 
-  aPg = (u8*)sqlite3_malloc(2*nMax);
+  aPg = (u8*)bentley_sqlite3_malloc(2*nMax);
   if( aPg==0 ) return SQLITE_NOMEM;
   aTmp = &aPg[nMax];
 
@@ -20962,7 +20962,7 @@ static int recoverVfsDetectPagesize(
   }while( 1 );
 
   p->detected_pgsz = pgsz;
-  sqlite3_free(aPg);
+  bentley_sqlite3_free(aPg);
   return rc;
 }
 
@@ -20976,7 +20976,7 @@ static int recoverVfsRead(sqlite3_file *pFd, void *aBuf, int nByte, i64 iOff){
     pFd->pMethods = recover_g.pMethods;
     rc = pFd->pMethods->xRead(pFd, aBuf, nByte, iOff);
     if( nByte==16 ){
-      sqlite3_randomness(16, aBuf);
+      bentley_sqlite3_randomness(16, aBuf);
     }else
     if( rc==SQLITE_OK && iOff==0 && nByte>=108 ){
       /* Ensure that the database has a valid header file. The only fields
@@ -21045,7 +21045,7 @@ static int recoverVfsRead(sqlite3_file *pFd, void *aBuf, int nByte, i64 iOff){
         enc = SQLITE_UTF8;
       }
 
-      sqlite3_free(p->pPage1Cache);
+      bentley_sqlite3_free(p->pPage1Cache);
       p->pPage1Cache = 0;
       p->pPage1Disk = 0;
 
@@ -21208,7 +21208,7 @@ static void recoverInstallWrapper(sqlite3_recover *p){
   sqlite3_file *pFd = 0;
   assert( recover_g.pMethods==0 );
   recoverAssertMutexHeld();
-  sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_FILE_POINTER, (void*)&pFd);
+  bentley_sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_FILE_POINTER, (void*)&pFd);
   assert( pFd==0 || pFd->pMethods!=&recover_methods );
   if( pFd && pFd->pMethods ){
     int iVersion = 1 + (pFd->pMethods->iVersion>1 && pFd->pMethods->xShmMap!=0);
@@ -21227,7 +21227,7 @@ static void recoverInstallWrapper(sqlite3_recover *p){
 static void recoverUninstallWrapper(sqlite3_recover *p){
   sqlite3_file *pFd = 0;
   recoverAssertMutexHeld();
-  sqlite3_file_control(p->dbIn, p->zDb,SQLITE_FCNTL_FILE_POINTER,(void*)&pFd);
+  bentley_sqlite3_file_control(p->dbIn, p->zDb,SQLITE_FCNTL_FILE_POINTER,(void*)&pFd);
   if( pFd && pFd->pMethods ){
     pFd->pMethods = recover_g.pMethods;
     recover_g.pMethods = 0;
@@ -21257,7 +21257,7 @@ static void recoverStep(sqlite3_recover *p){
       recoverOpenOutput(p);
 
       /* Open transactions on both the input and output databases. */
-      sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_RESET_CACHE, 0);
+      bentley_sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_RESET_CACHE, 0);
       recoverExec(p, p->dbIn, "PRAGMA writable_schema = on");
       recoverExec(p, p->dbIn, "BEGIN");
       if( p->errCode==SQLITE_OK ) p->bCloseTransaction = 1;
@@ -21329,7 +21329,7 @@ static void recoverStep(sqlite3_recover *p){
       ** database. Regardless of whether or not an error has occurred, make
       ** an attempt to end the read transaction on the input database.  */
       recoverExec(p, p->dbOut, "COMMIT");
-      rc = sqlite3_exec(p->dbIn, "END", 0, 0, 0);
+      rc = bentley_sqlite3_exec(p->dbIn, "END", 0, 0, 0);
       if( p->errCode==SQLITE_OK ) p->errCode = rc;
 
       recoverSqlCallback(p, "PRAGMA writable_schema = off");
@@ -21376,7 +21376,7 @@ sqlite3_recover *recoverInit(
   nUri = recoverStrlen(zUri);
 
   nByte = sizeof(sqlite3_recover) + nDb+1 + nUri+1;
-  pRet = (sqlite3_recover*)sqlite3_malloc(nByte);
+  pRet = (sqlite3_recover*)bentley_sqlite3_malloc(nByte);
   if( pRet ){
     memset(pRet, 0, nByte);
     pRet->dbIn = db;
@@ -21448,13 +21448,13 @@ int sqlite3_recover_config(sqlite3_recover *p, int op, void *pArg){
         ** connection and used to hold state information during the
         ** recovery process.  This option is for debugging use only and
         ** is subject to change or removal at any time. */
-        sqlite3_free(p->zStateDb);
+        bentley_sqlite3_free(p->zStateDb);
         p->zStateDb = recoverMPrintf(p, "%s", (char*)pArg);
         break;
 
       case SQLITE_RECOVER_LOST_AND_FOUND: {
         const char *zArg = (const char*)pArg;
-        sqlite3_free(p->zLostAndFound);
+        bentley_sqlite3_free(p->zLostAndFound);
         if( zArg ){
           p->zLostAndFound = recoverMPrintf(p, "%s", zArg);
         }else{
@@ -21524,16 +21524,16 @@ int sqlite3_recover_finish(sqlite3_recover *p){
     rc = SQLITE_NOMEM;
   }else{
     recoverFinalCleanup(p);
-    if( p->bCloseTransaction && sqlite3_get_autocommit(p->dbIn)==0 ){
-      rc = sqlite3_exec(p->dbIn, "END", 0, 0, 0);
+    if( p->bCloseTransaction && bentley_sqlite3_get_autocommit(p->dbIn)==0 ){
+      rc = bentley_sqlite3_exec(p->dbIn, "END", 0, 0, 0);
       if( p->errCode==SQLITE_OK ) p->errCode = rc;
     }
     rc = p->errCode;
-    sqlite3_free(p->zErrMsg);
-    sqlite3_free(p->zStateDb);
-    sqlite3_free(p->zLostAndFound);
-    sqlite3_free(p->pPage1Cache);
-    sqlite3_free(p);
+    bentley_sqlite3_free(p->zErrMsg);
+    bentley_sqlite3_free(p->zStateDb);
+    bentley_sqlite3_free(p->zLostAndFound);
+    bentley_sqlite3_free(p->pPage1Cache);
+    bentley_sqlite3_free(p);
   }
   return rc;
 }
@@ -21696,7 +21696,7 @@ static ShellState shellState;
 #define SHELL_OPEN_APPENDVFS   2      /* Use appendvfs */
 #define SHELL_OPEN_ZIPFILE     3      /* Use the zipfile virtual table */
 #define SHELL_OPEN_READONLY    4      /* Open a normal database read-only */
-#define SHELL_OPEN_DESERIALIZE 5      /* Open using sqlite3_deserialize() */
+#define SHELL_OPEN_DESERIALIZE 5      /* Open using bentley_sqlite3_deserialize() */
 #define SHELL_OPEN_HEXDB       6      /* Use "dbtotxt" output as data source */
 
 /* Allowed values for ShellState.eTraceType
@@ -21803,7 +21803,7 @@ static const char *modeDescr[] = {
 #define MAX_INPUT_NESTING 25
 
 /*
-** A callback for the sqlite3_log() interface.
+** A callback for the bentley_sqlite3_log() interface.
 */
 static void shellLog(void *pArg, int iErrCode, const char *zMsg){
   ShellState *p = (ShellState*)pArg;
@@ -21823,10 +21823,10 @@ static void shellPutsFunc(
   int nVal,
   sqlite3_value **apVal
 ){
-  ShellState *p = (ShellState*)sqlite3_user_data(pCtx);
+  ShellState *p = (ShellState*)bentley_sqlite3_user_data(pCtx);
   (void)nVal;
-  sqlite3_fprintf(p->out, "%s\n", sqlite3_value_text(apVal[0]));
-  sqlite3_result_value(pCtx, apVal[0]);
+  sqlite3_fprintf(p->out, "%s\n", bentley_sqlite3_value_text(apVal[0]));
+  bentley_sqlite3_result_value(pCtx, apVal[0]);
 }
 
 /*
@@ -21842,7 +21842,7 @@ static void failIfSafeMode(
     va_list ap;
     char *zMsg;
     va_start(ap, zErrMsg);
-    zMsg = sqlite3_vmprintf(zErrMsg, ap);
+    zMsg = bentley_sqlite3_vmprintf(zErrMsg, ap);
     va_end(ap);
     sqlite3_fprintf(stderr, "line %d: %s\n", p->lineno, zMsg);
     exit(1);
@@ -21884,87 +21884,87 @@ static void editFunc(
   unsigned char *p = 0;
 
   if( argc==2 ){
-    zEditor = (const char*)sqlite3_value_text(argv[1]);
+    zEditor = (const char*)bentley_sqlite3_value_text(argv[1]);
   }else{
     zEditor = getenv("VISUAL");
   }
   if( zEditor==0 ){
-    sqlite3_result_error(context, "no editor for edit()", -1);
+    bentley_sqlite3_result_error(context, "no editor for edit()", -1);
     return;
   }
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
-    sqlite3_result_error(context, "NULL input to edit()", -1);
+  if( bentley_sqlite3_value_type(argv[0])==SQLITE_NULL ){
+    bentley_sqlite3_result_error(context, "NULL input to edit()", -1);
     return;
   }
-  db = sqlite3_context_db_handle(context);
+  db = bentley_sqlite3_context_db_handle(context);
   zTempFile = 0;
-  sqlite3_file_control(db, 0, SQLITE_FCNTL_TEMPFILENAME, &zTempFile);
+  bentley_sqlite3_file_control(db, 0, SQLITE_FCNTL_TEMPFILENAME, &zTempFile);
   if( zTempFile==0 ){
     sqlite3_uint64 r = 0;
-    sqlite3_randomness(sizeof(r), &r);
-    zTempFile = sqlite3_mprintf("temp%llx", r);
+    bentley_sqlite3_randomness(sizeof(r), &r);
+    zTempFile = bentley_sqlite3_mprintf("temp%llx", r);
     if( zTempFile==0 ){
-      sqlite3_result_error_nomem(context);
+      bentley_sqlite3_result_error_nomem(context);
       return;
     }
   }
-  bBin = sqlite3_value_type(argv[0])==SQLITE_BLOB;
+  bBin = bentley_sqlite3_value_type(argv[0])==SQLITE_BLOB;
   /* When writing the file to be edited, do \n to \r\n conversions on systems
   ** that want \r\n line endings */
   f = sqlite3_fopen(zTempFile, bBin ? "wb" : "w");
   if( f==0 ){
-    sqlite3_result_error(context, "edit() cannot open temp file", -1);
+    bentley_sqlite3_result_error(context, "edit() cannot open temp file", -1);
     goto edit_func_end;
   }
-  sz = sqlite3_value_bytes(argv[0]);
+  sz = bentley_sqlite3_value_bytes(argv[0]);
   if( bBin ){
-    x = fwrite(sqlite3_value_blob(argv[0]), 1, (size_t)sz, f);
+    x = fwrite(bentley_sqlite3_value_blob(argv[0]), 1, (size_t)sz, f);
   }else{
-    const char *z = (const char*)sqlite3_value_text(argv[0]);
+    const char *z = (const char*)bentley_sqlite3_value_text(argv[0]);
     /* Remember whether or not the value originally contained \r\n */
     if( z && strstr(z,"\r\n")!=0 ) hasCRLF = 1;
-    x = fwrite(sqlite3_value_text(argv[0]), 1, (size_t)sz, f);
+    x = fwrite(bentley_sqlite3_value_text(argv[0]), 1, (size_t)sz, f);
   }
   fclose(f);
   f = 0;
   if( x!=sz ){
-    sqlite3_result_error(context, "edit() could not write the whole file", -1);
+    bentley_sqlite3_result_error(context, "edit() could not write the whole file", -1);
     goto edit_func_end;
   }
-  zCmd = sqlite3_mprintf("%s \"%s\"", zEditor, zTempFile);
+  zCmd = bentley_sqlite3_mprintf("%s \"%s\"", zEditor, zTempFile);
   if( zCmd==0 ){
-    sqlite3_result_error_nomem(context);
+    bentley_sqlite3_result_error_nomem(context);
     goto edit_func_end;
   }
   rc = system(zCmd);
-  sqlite3_free(zCmd);
+  bentley_sqlite3_free(zCmd);
   if( rc ){
-    sqlite3_result_error(context, "EDITOR returned non-zero", -1);
+    bentley_sqlite3_result_error(context, "EDITOR returned non-zero", -1);
     goto edit_func_end;
   }
   f = sqlite3_fopen(zTempFile, "rb");
   if( f==0 ){
-    sqlite3_result_error(context,
+    bentley_sqlite3_result_error(context,
       "edit() cannot reopen temp file after edit", -1);
     goto edit_func_end;
   }
   fseek(f, 0, SEEK_END);
   sz = ftell(f);
   rewind(f);
-  p = sqlite3_malloc64( sz+1 );
+  p = bentley_sqlite3_malloc64( sz+1 );
   if( p==0 ){
-    sqlite3_result_error_nomem(context);
+    bentley_sqlite3_result_error_nomem(context);
     goto edit_func_end;
   }
   x = fread(p, 1, (size_t)sz, f);
   fclose(f);
   f = 0;
   if( x!=sz ){
-    sqlite3_result_error(context, "could not read back the whole file", -1);
+    bentley_sqlite3_result_error(context, "could not read back the whole file", -1);
     goto edit_func_end;
   }
   if( bBin ){
-    sqlite3_result_blob64(context, p, sz, sqlite3_free);
+    bentley_sqlite3_result_blob64(context, p, sz, bentley_sqlite3_free);
   }else{
     sqlite3_int64 i, j;
     if( hasCRLF ){
@@ -21980,16 +21980,16 @@ static void editFunc(
       sz = j;
       p[sz] = 0;
     }
-    sqlite3_result_text64(context, (const char*)p, sz,
-                          sqlite3_free, SQLITE_UTF8);
+    bentley_sqlite3_result_text64(context, (const char*)p, sz,
+                          bentley_sqlite3_free, SQLITE_UTF8);
   }
   p = 0;
 
 edit_func_end:
   if( f ) fclose(f);
   unlink(zTempFile);
-  sqlite3_free(zTempFile);
-  sqlite3_free(p);
+  bentley_sqlite3_free(zTempFile);
+  bentley_sqlite3_free(p);
 }
 #endif /* SQLITE_NOHAVE_SYSTEM */
 
@@ -22031,7 +22031,7 @@ static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
   int i;
   unsigned char *aBlob = (unsigned char*)pBlob;
 
-  char *zStr = sqlite3_malloc(nBlob*2 + 1);
+  char *zStr = bentley_sqlite3_malloc(nBlob*2 + 1);
   shell_check_oom(zStr);
 
   for(i=0; i<nBlob; i++){
@@ -22045,7 +22045,7 @@ static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
   zStr[i*2] = '\0';
 
   sqlite3_fprintf(out, "X'%s'", zStr);
-  sqlite3_free(zStr);
+  bentley_sqlite3_free(zStr);
 }
 
 /*
@@ -22064,7 +22064,7 @@ static const char *unused_string(
   if( strstr(z, zA)==0 ) return zA;
   if( strstr(z, zB)==0 ) return zB;
   do{
-    sqlite3_snprintf(20,zBuf,"(%s%u)", zA, i++);
+    bentley_sqlite3_snprintf(20,zBuf,"(%s%u)", zA, i++);
   }while( strstr(z,zBuf)!=0 );
   return zBuf;
 }
@@ -22396,10 +22396,10 @@ static void output_csv(ShellState *p, const char *z, int bSep){
       }
     }
     if( i==0 || strstr(z, p->colSeparator)!=0 ){
-      char *zQuoted = sqlite3_mprintf("\"%w\"", z);
+      char *zQuoted = bentley_sqlite3_mprintf("\"%w\"", z);
       shell_check_oom(zQuoted);
       sqlite3_fputs(zQuoted, p->out);
-      sqlite3_free(zQuoted);
+      bentley_sqlite3_free(zQuoted);
     }else{
       sqlite3_fputs(z, p->out);
     }
@@ -22415,7 +22415,7 @@ static void output_csv(ShellState *p, const char *z, int bSep){
 static void interrupt_handler(int NotUsed){
   UNUSED_PARAMETER(NotUsed);
   if( ++seenInterrupt>1 ) exit(1);
-  if( globalDb ) sqlite3_interrupt(globalDb);
+  if( globalDb ) bentley_sqlite3_interrupt(globalDb);
 }
 
 #if (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
@@ -22470,7 +22470,7 @@ static int safeModeAuth(
     case SQLITE_FUNCTION: {
       int i;
       for(i=0; i<ArraySize(azProhibitedFunctions); i++){
-        if( sqlite3_stricmp(zA2, azProhibitedFunctions[i])==0 ){
+        if( bentley_sqlite3_stricmp(zA2, azProhibitedFunctions[i])==0 ){
           failIfSafeMode(p, "cannot use the %s() function in safe mode",
                          azProhibitedFunctions[i]);
         }
@@ -22547,7 +22547,7 @@ static void printSchemaLine(FILE *out, const char *z, const char *zTail){
     static const char *azTerm[] = { "", "*/", "\n" };
     int i;
     for(i=0; i<ArraySize(azTerm); i++){
-      char *zNew = sqlite3_mprintf("%s%s;", zOrig, azTerm[i]);
+      char *zNew = bentley_sqlite3_mprintf("%s%s;", zOrig, azTerm[i]);
       shell_check_oom(zNew);
       if( sqlite3_complete(zNew) ){
         size_t n = strlen(zNew);
@@ -22556,15 +22556,15 @@ static void printSchemaLine(FILE *out, const char *z, const char *zTail){
         z = zNew;
         break;
       }
-      sqlite3_free(zNew);
+      bentley_sqlite3_free(zNew);
     }
   }
-  if( sqlite3_strglob("CREATE TABLE ['\"]*", z)==0 ){
+  if( bentley_sqlite3_strglob("CREATE TABLE ['\"]*", z)==0 ){
     sqlite3_fprintf(out, "CREATE TABLE IF NOT EXISTS %s%s", z+13, zTail);
   }else{
     sqlite3_fprintf(out, "%s%s", z, zTail);
   }
-  sqlite3_free(zToFree);
+  bentley_sqlite3_free(zToFree);
 }
 static void printSchemaLineN(FILE *out, char *z, int n, const char *zTail){
   char c = z[n];
@@ -22599,7 +22599,7 @@ static void eqp_append(ShellState *p, int iEqpId, int p2, const char *zText){
   if( p->autoEQPtest ){
     sqlite3_fprintf(p->out, "%d,%d,%s\n", iEqpId, p2, zText);
   }
-  pNew = sqlite3_malloc64( sizeof(*pNew) + nText );
+  pNew = bentley_sqlite3_malloc64( sizeof(*pNew) + nText );
   shell_check_oom(pNew);
   pNew->iEqpId = iEqpId;
   pNew->iParentId = p2;
@@ -22621,7 +22621,7 @@ static void eqp_reset(ShellState *p){
   EQPGraphRow *pRow, *pNext;
   for(pRow = p->sGraph.pRow; pRow; pRow = pNext){
     pNext = pRow->pNext;
-    sqlite3_free(pRow);
+    bentley_sqlite3_free(pRow);
   }
   memset(&p->sGraph, 0, sizeof(p->sGraph));
 }
@@ -22668,7 +22668,7 @@ static void eqp_render(ShellState *p, i64 nCycle){
       }
       sqlite3_fprintf(p->out, "%s\n", pRow->zText+3);
       p->sGraph.pRow = pRow->pNext;
-      sqlite3_free(pRow);
+      bentley_sqlite3_free(pRow);
     }else if( nCycle>0 ){
       sqlite3_fprintf(p->out, "QUERY PLAN (cycles=%lld [100%%])\n", nCycle);
     }else{
@@ -22836,13 +22836,13 @@ static int shell_callback(
       int nLine = 0;
       assert( nArg==1 );
       if( azArg[0]==0 ) break;
-      if( sqlite3_strlike("CREATE VIEW%", azArg[0], 0)==0
-       || sqlite3_strlike("CREATE TRIG%", azArg[0], 0)==0
+      if( bentley_sqlite3_strlike("CREATE VIEW%", azArg[0], 0)==0
+       || bentley_sqlite3_strlike("CREATE TRIG%", azArg[0], 0)==0
       ){
         sqlite3_fprintf(p->out, "%s;\n", azArg[0]);
         break;
       }
-      z = sqlite3_mprintf("%s", azArg[0]);
+      z = bentley_sqlite3_mprintf("%s", azArg[0]);
       shell_check_oom(z);
       j = 0;
       for(i=0; IsSpace(z[i]); i++){}
@@ -22890,7 +22890,7 @@ static int shell_callback(
         z[j] = 0;
       }
       printSchemaLine(p->out, z, ";\n");
-      sqlite3_free(z);
+      bentley_sqlite3_free(z);
       break;
     }
     case MODE_List: {
@@ -22979,10 +22979,10 @@ static int shell_callback(
         for(i=0; i<nArg; i++){
           if( i>0 ) sqlite3_fputs(",", p->out);
           if( quoteChar(azCol[i]) ){
-            char *z = sqlite3_mprintf("\"%w\"", azCol[i]);
+            char *z = bentley_sqlite3_mprintf("\"%w\"", azCol[i]);
             shell_check_oom(z);
             sqlite3_fputs(z, p->out);
-            sqlite3_free(z);
+            bentley_sqlite3_free(z);
           }else{
             sqlite3_fprintf(p->out, "%s", azCol[i]);
           }
@@ -23004,7 +23004,7 @@ static int shell_callback(
           sqlite3_fputs(azArg[i], p->out);
         }else if( aiType && aiType[i]==SQLITE_FLOAT ){
           char z[50];
-          double r = sqlite3_column_double(p->pStmt, i);
+          double r = bentley_sqlite3_column_double(p->pStmt, i);
           sqlite3_uint64 ur;
           memcpy(&ur,&r,sizeof(r));
           if( ur==0x7ff0000000000000LL ){
@@ -23014,15 +23014,15 @@ static int shell_callback(
           }else{
             sqlite3_int64 ir = (sqlite3_int64)r;
             if( r==(double)ir ){
-              sqlite3_snprintf(50,z,"%lld.0", ir);
+              bentley_sqlite3_snprintf(50,z,"%lld.0", ir);
             }else{
-              sqlite3_snprintf(50,z,"%!.20g", r);
+              bentley_sqlite3_snprintf(50,z,"%!.20g", r);
             }
             sqlite3_fputs(z, p->out);
           }
         }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
-          const void *pBlob = sqlite3_column_blob(p->pStmt, i);
-          int nBlob = sqlite3_column_bytes(p->pStmt, i);
+          const void *pBlob = bentley_sqlite3_column_blob(p->pStmt, i);
+          int nBlob = bentley_sqlite3_column_bytes(p->pStmt, i);
           output_hex_blob(p->out, pBlob, nBlob);
         }else if( isNumber(azArg[i], 0) ){
           sqlite3_fputs(azArg[i], p->out);
@@ -23050,7 +23050,7 @@ static int shell_callback(
           sqlite3_fputs("null", p->out);
         }else if( aiType && aiType[i]==SQLITE_FLOAT ){
           char z[50];
-          double r = sqlite3_column_double(p->pStmt, i);
+          double r = bentley_sqlite3_column_double(p->pStmt, i);
           sqlite3_uint64 ur;
           memcpy(&ur,&r,sizeof(r));
           if( ur==0x7ff0000000000000LL ){
@@ -23058,12 +23058,12 @@ static int shell_callback(
           }else if( ur==0xfff0000000000000LL ){
             sqlite3_fputs("-9.0e+999", p->out);
           }else{
-            sqlite3_snprintf(50,z,"%!.20g", r);
+            bentley_sqlite3_snprintf(50,z,"%!.20g", r);
             sqlite3_fputs(z, p->out);
           }
         }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
-          const void *pBlob = sqlite3_column_blob(p->pStmt, i);
-          int nBlob = sqlite3_column_bytes(p->pStmt, i);
+          const void *pBlob = bentley_sqlite3_column_blob(p->pStmt, i);
+          int nBlob = bentley_sqlite3_column_bytes(p->pStmt, i);
           output_json_string(p->out, pBlob, nBlob);
         }else if( aiType && aiType[i]==SQLITE_TEXT ){
           output_json_string(p->out, azArg[i], -1);
@@ -23097,12 +23097,12 @@ static int shell_callback(
           sqlite3_fputs(azArg[i], p->out);
         }else if( aiType && aiType[i]==SQLITE_FLOAT ){
           char z[50];
-          double r = sqlite3_column_double(p->pStmt, i);
-          sqlite3_snprintf(50,z,"%!.20g", r);
+          double r = bentley_sqlite3_column_double(p->pStmt, i);
+          bentley_sqlite3_snprintf(50,z,"%!.20g", r);
           sqlite3_fputs(z, p->out);
         }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
-          const void *pBlob = sqlite3_column_blob(p->pStmt, i);
-          int nBlob = sqlite3_column_bytes(p->pStmt, i);
+          const void *pBlob = bentley_sqlite3_column_blob(p->pStmt, i);
+          int nBlob = bentley_sqlite3_column_bytes(p->pStmt, i);
           output_hex_blob(p->out, pBlob, nBlob);
         }else if( isNumber(azArg[i], 0) ){
           sqlite3_fputs(azArg[i], p->out);
@@ -23147,7 +23147,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
 }
 
 /*
-** This is the callback routine from sqlite3_exec() that appends all
+** This is the callback routine from bentley_sqlite3_exec() that appends all
 ** output onto the end of a ShellText object.
 */
 static int captureOutputCallback(void *pArg, int nArg, char **azArg, char **az){
@@ -23168,7 +23168,7 @@ static int captureOutputCallback(void *pArg, int nArg, char **azArg, char **az){
 */
 static void createSelftestTable(ShellState *p){
   char *zErrMsg = 0;
-  sqlite3_exec(p->db,
+  bentley_sqlite3_exec(p->db,
     "SAVEPOINT selftest_init;\n"
     "CREATE TABLE IF NOT EXISTS selftest(\n"
     "  tno INTEGER PRIMARY KEY,\n"   /* Test number */
@@ -23206,9 +23206,9 @@ static void createSelftestTable(ShellState *p){
     ,0,0,&zErrMsg);
   if( zErrMsg ){
     sqlite3_fprintf(stderr, "SELFTEST initialization failure: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
+    bentley_sqlite3_free(zErrMsg);
   }
-  sqlite3_exec(p->db, "RELEASE selftest_init",0,0,0);
+  bentley_sqlite3_exec(p->db, "RELEASE selftest_init",0,0,0);
 }
 
 
@@ -23245,11 +23245,11 @@ static void set_table_name(ShellState *p, const char *zName){
 /*
 ** Maybe construct two lines of text that point out the position of a
 ** syntax error.  Return a pointer to the text, in memory obtained from
-** sqlite3_malloc().  Or, if the most recent error does not involve a
+** bentley_sqlite3_malloc().  Or, if the most recent error does not involve a
 ** specific token that we can point to, return an empty string.
 **
-** In all cases, the memory returned is obtained from sqlite3_malloc64()
-** and should be released by the caller invoking sqlite3_free().
+** In all cases, the memory returned is obtained from bentley_sqlite3_malloc64()
+** and should be released by the caller invoking bentley_sqlite3_free().
 */
 static char *shell_error_context(const char *zSql, sqlite3 *db){
   int iOffset;
@@ -23259,10 +23259,10 @@ static char *shell_error_context(const char *zSql, sqlite3 *db){
   int i;
   if( db==0
    || zSql==0
-   || (iOffset = sqlite3_error_offset(db))<0
+   || (iOffset = bentley_sqlite3_error_offset(db))<0
    || iOffset>=(int)strlen(zSql)
   ){
-    return sqlite3_mprintf("");
+    return bentley_sqlite3_mprintf("");
   }
   while( iOffset>50 ){
     iOffset--;
@@ -23274,13 +23274,13 @@ static char *shell_error_context(const char *zSql, sqlite3 *db){
     len = 78;
     while( len>0 && (zSql[len]&0xc0)==0x80 ) len--;
   }
-  zCode = sqlite3_mprintf("%.*s", len, zSql);
+  zCode = bentley_sqlite3_mprintf("%.*s", len, zSql);
   shell_check_oom(zCode);
   for(i=0; zCode[i]; i++){ if( IsSpace(zSql[i]) ) zCode[i] = ' '; }
   if( iOffset<25 ){
-    zMsg = sqlite3_mprintf("\n  %z\n  %*s^--- error here", zCode,iOffset,"");
+    zMsg = bentley_sqlite3_mprintf("\n  %z\n  %*s^--- error here", zCode,iOffset,"");
   }else{
-    zMsg = sqlite3_mprintf("\n  %z\n  %*serror here ---^", zCode,iOffset-14,"");
+    zMsg = bentley_sqlite3_mprintf("\n  %z\n  %*serror here ---^", zCode,iOffset-14,"");
   }
   return zMsg;
 }
@@ -23305,22 +23305,22 @@ static int run_table_dump_query(
   int nResult;
   int i;
   const char *z;
-  rc = sqlite3_prepare_v2(p->db, zSelect, -1, &pSelect, 0);
+  rc = bentley_sqlite3_prepare_v2(p->db, zSelect, -1, &pSelect, 0);
   if( rc!=SQLITE_OK || !pSelect ){
     char *zContext = shell_error_context(zSelect, p->db);
     sqlite3_fprintf(p->out, "/**** ERROR: (%d) %s *****/\n%s",
-          rc, sqlite3_errmsg(p->db), zContext);
-    sqlite3_free(zContext);
+          rc, bentley_sqlite3_errmsg(p->db), zContext);
+    bentley_sqlite3_free(zContext);
     if( (rc&0xff)!=SQLITE_CORRUPT ) p->nErr++;
     return rc;
   }
-  rc = sqlite3_step(pSelect);
-  nResult = sqlite3_column_count(pSelect);
+  rc = bentley_sqlite3_step(pSelect);
+  nResult = bentley_sqlite3_column_count(pSelect);
   while( rc==SQLITE_ROW ){
-    z = (const char*)sqlite3_column_text(pSelect, 0);
+    z = (const char*)bentley_sqlite3_column_text(pSelect, 0);
     sqlite3_fprintf(p->out, "%s", z);
     for(i=1; i<nResult; i++){
-      sqlite3_fprintf(p->out, ",%s", sqlite3_column_text(pSelect, i));
+      sqlite3_fprintf(p->out, ",%s", bentley_sqlite3_column_text(pSelect, i));
     }
     if( z==0 ) z = "";
     while( z[0] && (z[0]!='-' || z[1]!='-') ) z++;
@@ -23329,12 +23329,12 @@ static int run_table_dump_query(
     }else{
       sqlite3_fputs(";\n", p->out);
     }
-    rc = sqlite3_step(pSelect);
+    rc = bentley_sqlite3_step(pSelect);
   }
-  rc = sqlite3_finalize(pSelect);
+  rc = bentley_sqlite3_finalize(pSelect);
   if( rc!=SQLITE_OK ){
     sqlite3_fprintf(p->out, "/**** ERROR: (%d) %s *****/\n",
-                    rc, sqlite3_errmsg(p->db));
+                    rc, bentley_sqlite3_errmsg(p->db));
     if( (rc&0xff)!=SQLITE_CORRUPT ) p->nErr++;
   }
   return rc;
@@ -23351,17 +23351,17 @@ static char *save_err_msg(
 ){
   char *zErr;
   char *zContext;
-  sqlite3_str *pStr = sqlite3_str_new(0);
-  sqlite3_str_appendf(pStr, "%s, %s", zPhase, sqlite3_errmsg(db));
+  sqlite3_str *pStr = bentley_sqlite3_str_new(0);
+  bentley_sqlite3_str_appendf(pStr, "%s, %s", zPhase, bentley_sqlite3_errmsg(db));
   if( rc>1 ){
-    sqlite3_str_appendf(pStr, " (%d)", rc);
+    bentley_sqlite3_str_appendf(pStr, " (%d)", rc);
   }
   zContext = shell_error_context(zSql, db);
   if( zContext ){
-    sqlite3_str_appendall(pStr, zContext);
-    sqlite3_free(zContext);
+    bentley_sqlite3_str_appendall(pStr, zContext);
+    bentley_sqlite3_free(zContext);
   }
-  zErr = sqlite3_str_finish(pStr);
+  zErr = bentley_sqlite3_str_finish(pStr);
   shell_check_oom(zErr);
   return zErr;
 }
@@ -23373,7 +23373,7 @@ static char *save_err_msg(
 static void displayLinuxIoStats(FILE *out){
   FILE *in;
   char z[200];
-  sqlite3_snprintf(sizeof(z), z, "/proc/%d/io", getpid());
+  bentley_sqlite3_snprintf(sizeof(z), z, "/proc/%d/io", getpid());
   in = sqlite3_fopen(z, "rb");
   if( in==0 ) return;
   while( sqlite3_fgets(z, sizeof(z), in)!=0 ){
@@ -23416,14 +23416,14 @@ static void displayStatLine(
   sqlite3_int64 iHiwtr = -1;
   int i, nPercent;
   char zLine[200];
-  sqlite3_status64(iStatusCtrl, &iCur, &iHiwtr, bReset);
+  bentley_sqlite3_status64(iStatusCtrl, &iCur, &iHiwtr, bReset);
   for(i=0, nPercent=0; zFormat[i]; i++){
     if( zFormat[i]=='%' ) nPercent++;
   }
   if( nPercent>1 ){
-    sqlite3_snprintf(sizeof(zLine), zLine, zFormat, iCur, iHiwtr);
+    bentley_sqlite3_snprintf(sizeof(zLine), zLine, zFormat, iCur, iHiwtr);
   }else{
-    sqlite3_snprintf(sizeof(zLine), zLine, zFormat, iHiwtr);
+    bentley_sqlite3_snprintf(sizeof(zLine), zLine, zFormat, iHiwtr);
   }
   sqlite3_fprintf(out, "%-36s %s\n", zLabel, zLine);
 }
@@ -23446,30 +23446,30 @@ static int display_stats(
     int nCol, i, x;
     sqlite3_stmt *pStmt = pArg->pStmt;
     char z[100];
-    nCol = sqlite3_column_count(pStmt);
+    nCol = bentley_sqlite3_column_count(pStmt);
     sqlite3_fprintf(out, "%-36s %d\n", "Number of output columns:", nCol);
     for(i=0; i<nCol; i++){
-      sqlite3_snprintf(sizeof(z),z,"Column %d %nname:", i, &x);
-      sqlite3_fprintf(out, "%-36s %s\n", z, sqlite3_column_name(pStmt,i));
+      bentley_sqlite3_snprintf(sizeof(z),z,"Column %d %nname:", i, &x);
+      sqlite3_fprintf(out, "%-36s %s\n", z, bentley_sqlite3_column_name(pStmt,i));
 #ifndef SQLITE_OMIT_DECLTYPE
-      sqlite3_snprintf(30, z+x, "declared type:");
-      sqlite3_fprintf(out, "%-36s %s\n", z, sqlite3_column_decltype(pStmt, i));
+      bentley_sqlite3_snprintf(30, z+x, "declared type:");
+      sqlite3_fprintf(out, "%-36s %s\n", z, bentley_sqlite3_column_decltype(pStmt, i));
 #endif
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
-      sqlite3_snprintf(30, z+x, "database name:");
+      bentley_sqlite3_snprintf(30, z+x, "database name:");
       sqlite3_fprintf(out, "%-36s %s\n", z,
-                           sqlite3_column_database_name(pStmt,i));
-      sqlite3_snprintf(30, z+x, "table name:");
-      sqlite3_fprintf(out, "%-36s %s\n", z, sqlite3_column_table_name(pStmt,i));
-      sqlite3_snprintf(30, z+x, "origin name:");
-      sqlite3_fprintf(out, "%-36s %s\n", z,sqlite3_column_origin_name(pStmt,i));
+                           bentley_sqlite3_column_database_name(pStmt,i));
+      bentley_sqlite3_snprintf(30, z+x, "table name:");
+      sqlite3_fprintf(out, "%-36s %s\n", z, bentley_sqlite3_column_table_name(pStmt,i));
+      bentley_sqlite3_snprintf(30, z+x, "origin name:");
+      sqlite3_fprintf(out, "%-36s %s\n", z,bentley_sqlite3_column_origin_name(pStmt,i));
 #endif
     }
   }
 
   if( pArg->statsOn==3 ){
     if( pArg->pStmt ){
-      iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_VM_STEP,bReset);
+      iCur = bentley_sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_VM_STEP,bReset);
       sqlite3_fprintf(out, "VM-steps: %d\n", iCur);
     }
     return 0;
@@ -23497,83 +23497,83 @@ static int display_stats(
   if( db ){
     if( pArg->shellFlgs & SHFLG_Lookaside ){
       iHiwtr = iCur = -1;
-      sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_USED,
+      bentley_sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_USED,
                         &iCur, &iHiwtr, bReset);
       sqlite3_fprintf(out, 
            "Lookaside Slots Used:                %d (max %d)\n", iCur, iHiwtr);
-      sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_HIT,
+      bentley_sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_HIT,
                         &iCur, &iHiwtr, bReset);
       sqlite3_fprintf(out,
            "Successful lookaside attempts:       %d\n", iHiwtr);
-      sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE,
+      bentley_sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE,
                         &iCur, &iHiwtr, bReset);
       sqlite3_fprintf(out,
            "Lookaside failures due to size:      %d\n", iHiwtr);
-      sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL,
+      bentley_sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL,
                         &iCur, &iHiwtr, bReset);
       sqlite3_fprintf(out,
            "Lookaside failures due to OOM:       %d\n", iHiwtr);
     }
     iHiwtr = iCur = -1;
-    sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_USED, &iCur, &iHiwtr, bReset);
+    bentley_sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_USED, &iCur, &iHiwtr, bReset);
     sqlite3_fprintf(out,
            "Pager Heap Usage:                    %d bytes\n", iCur);
     iHiwtr = iCur = -1;
-    sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_HIT, &iCur, &iHiwtr, 1);
+    bentley_sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_HIT, &iCur, &iHiwtr, 1);
     sqlite3_fprintf(out,
            "Page cache hits:                     %d\n", iCur);
     iHiwtr = iCur = -1;
-    sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_MISS, &iCur, &iHiwtr, 1);
+    bentley_sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_MISS, &iCur, &iHiwtr, 1);
     sqlite3_fprintf(out,
            "Page cache misses:                   %d\n", iCur);
     iHiwtr = iCur = -1;
-    sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHiwtr, 1);
+    bentley_sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHiwtr, 1);
     sqlite3_fprintf(out,
            "Page cache writes:                   %d\n", iCur);
     iHiwtr = iCur = -1;
-    sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_SPILL, &iCur, &iHiwtr, 1);
+    bentley_sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_SPILL, &iCur, &iHiwtr, 1);
     sqlite3_fprintf(out,
            "Page cache spills:                   %d\n", iCur);
     iHiwtr = iCur = -1;
-    sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHiwtr, bReset);
+    bentley_sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHiwtr, bReset);
     sqlite3_fprintf(out,
            "Schema Heap Usage:                   %d bytes\n", iCur);
     iHiwtr = iCur = -1;
-    sqlite3_db_status(db, SQLITE_DBSTATUS_STMT_USED, &iCur, &iHiwtr, bReset);
+    bentley_sqlite3_db_status(db, SQLITE_DBSTATUS_STMT_USED, &iCur, &iHiwtr, bReset);
     sqlite3_fprintf(out,
            "Statement Heap/Lookaside Usage:      %d bytes\n", iCur);
   }
 
   if( pArg->pStmt ){
     int iHit, iMiss;
-    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_FULLSCAN_STEP,
+    iCur = bentley_sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_FULLSCAN_STEP,
                                bReset);
     sqlite3_fprintf(out,
            "Fullscan Steps:                      %d\n", iCur);
-    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_SORT, bReset);
+    iCur = bentley_sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_SORT, bReset);
     sqlite3_fprintf(out,
            "Sort Operations:                     %d\n", iCur);
-    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_AUTOINDEX,bReset);
+    iCur = bentley_sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_AUTOINDEX,bReset);
     sqlite3_fprintf(out,
            "Autoindex Inserts:                   %d\n", iCur);
-    iHit = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_FILTER_HIT,
+    iHit = bentley_sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_FILTER_HIT,
                                bReset);
-    iMiss = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_FILTER_MISS,
+    iMiss = bentley_sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_FILTER_MISS,
                                 bReset);
     if( iHit || iMiss ){
       sqlite3_fprintf(out,
            "Bloom filter bypass taken:           %d/%d\n", iHit, iHit+iMiss);
     }
-    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_VM_STEP, bReset);
+    iCur = bentley_sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_VM_STEP, bReset);
     sqlite3_fprintf(out,
            "Virtual Machine Steps:               %d\n", iCur);
-    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_REPREPARE,bReset);
+    iCur = bentley_sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_REPREPARE,bReset);
     sqlite3_fprintf(out,
            "Reprepare operations:                %d\n", iCur);
-    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_RUN, bReset);
+    iCur = bentley_sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_RUN, bReset);
     sqlite3_fprintf(out,
            "Number of times run:                 %d\n", iCur);
-    iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_MEMUSED, bReset);
+    iCur = bentley_sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_MEMUSED, bReset);
     sqlite3_fprintf(out,
            "Memory used by prepared stmt:        %d\n", iCur);
   }
@@ -23662,33 +23662,33 @@ static void display_explain_scanstats(
     sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_PARENTID,f,(void*)&iPid);
     sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_NAME,f,(void*)&zName);
 
-    zText = sqlite3_mprintf("%s", zo);
+    zText = bentley_sqlite3_mprintf("%s", zo);
     if( nCycle>=0 || nLoop>=0 || nRow>=0 ){
       char *z = 0;
       if( nCycle>=0 && nTotal>0 ){
-        z = sqlite3_mprintf("%zcycles=%lld [%d%%]", z,
+        z = bentley_sqlite3_mprintf("%zcycles=%lld [%d%%]", z,
             nCycle, ((nCycle*100)+nTotal/2) / nTotal
         );
       }
       if( nLoop>=0 ){
-        z = sqlite3_mprintf("%z%sloops=%lld", z, z ? " " : "", nLoop);
+        z = bentley_sqlite3_mprintf("%z%sloops=%lld", z, z ? " " : "", nLoop);
       }
       if( nRow>=0 ){
-        z = sqlite3_mprintf("%z%srows=%lld", z, z ? " " : "", nRow);
+        z = bentley_sqlite3_mprintf("%z%srows=%lld", z, z ? " " : "", nRow);
       }
 
       if( zName && pArg->scanstatsOn>1 ){
         double rpl = (double)nRow / (double)nLoop;
-        z = sqlite3_mprintf("%z rpl=%.1f est=%.1f", z, rpl, rEst);
+        z = bentley_sqlite3_mprintf("%z rpl=%.1f est=%.1f", z, rpl, rEst);
       }
 
-      zText = sqlite3_mprintf(
+      zText = bentley_sqlite3_mprintf(
           "% *z (%z)", -1*(nWidth-scanStatsHeight(p, ii)*3), zText, z
       );
     }
 
     eqp_append(pArg, iId, iPid, zText);
-    sqlite3_free(zText);
+    bentley_sqlite3_free(zText);
   }
 
   eqp_render(pArg, nTotal);
@@ -23746,18 +23746,18 @@ static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
   ** passed to this function are equivalent to the leftmost 4 columns
   ** of EXPLAIN statement output. In practice the statement may be
   ** an EXPLAIN, or it may be a query on the bytecode() virtual table.  */
-  assert( sqlite3_column_count(pSql)>=4 );
-  assert( 0==sqlite3_stricmp( sqlite3_column_name(pSql, 0), "addr" ) );
-  assert( 0==sqlite3_stricmp( sqlite3_column_name(pSql, 1), "opcode" ) );
-  assert( 0==sqlite3_stricmp( sqlite3_column_name(pSql, 2), "p1" ) );
-  assert( 0==sqlite3_stricmp( sqlite3_column_name(pSql, 3), "p2" ) );
+  assert( bentley_sqlite3_column_count(pSql)>=4 );
+  assert( 0==bentley_sqlite3_stricmp( bentley_sqlite3_column_name(pSql, 0), "addr" ) );
+  assert( 0==bentley_sqlite3_stricmp( bentley_sqlite3_column_name(pSql, 1), "opcode" ) );
+  assert( 0==bentley_sqlite3_stricmp( bentley_sqlite3_column_name(pSql, 2), "p1" ) );
+  assert( 0==bentley_sqlite3_stricmp( bentley_sqlite3_column_name(pSql, 3), "p2" ) );
 
-  for(iOp=0; SQLITE_ROW==sqlite3_step(pSql); iOp++){
+  for(iOp=0; SQLITE_ROW==bentley_sqlite3_step(pSql); iOp++){
     int i;
-    int iAddr = sqlite3_column_int(pSql, 0);
-    const char *zOp = (const char*)sqlite3_column_text(pSql, 1);
-    int p1 = sqlite3_column_int(pSql, 2);
-    int p2 = sqlite3_column_int(pSql, 3);
+    int iAddr = bentley_sqlite3_column_int(pSql, 0);
+    const char *zOp = (const char*)bentley_sqlite3_column_text(pSql, 1);
+    int p1 = bentley_sqlite3_column_int(pSql, 2);
+    int p2 = bentley_sqlite3_column_int(pSql, 3);
 
     /* Assuming that p2 is an instruction address, set variable p2op to the
     ** index of that instruction in the aiIndent[] array. p2 and p2op may be
@@ -23768,9 +23768,9 @@ static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
     /* Grow the p->aiIndent array as required */
     if( iOp>=nAlloc ){
       nAlloc += 100;
-      p->aiIndent = (int*)sqlite3_realloc64(p->aiIndent, nAlloc*sizeof(int));
+      p->aiIndent = (int*)bentley_sqlite3_realloc64(p->aiIndent, nAlloc*sizeof(int));
       shell_check_oom(p->aiIndent);
-      abYield = (int*)sqlite3_realloc64(abYield, nAlloc*sizeof(int));
+      abYield = (int*)bentley_sqlite3_realloc64(abYield, nAlloc*sizeof(int));
       shell_check_oom(abYield);
     }
 
@@ -23786,15 +23786,15 @@ static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
   }
 
   p->iIndent = 0;
-  sqlite3_free(abYield);
-  sqlite3_reset(pSql);
+  bentley_sqlite3_free(abYield);
+  bentley_sqlite3_reset(pSql);
 }
 
 /*
 ** Free the array allocated by explain_data_prepare().
 */
 static void explain_data_delete(ShellState *p){
-  sqlite3_free(p->aiIndent);
+  bentley_sqlite3_free(p->aiIndent);
   p->aiIndent = 0;
   p->nIndent = 0;
   p->iIndent = 0;
@@ -23827,11 +23827,11 @@ static void display_scanstats(
 
     int rc = SQLITE_OK;
     sqlite3_stmt *pStmt = 0;
-    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+    rc = bentley_sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
     if( rc==SQLITE_OK ){
       sqlite3_stmt *pSave = pArg->pStmt;
       pArg->pStmt = pStmt;
-      sqlite3_bind_pointer(pStmt, 1, pSave, "stmt-pointer", 0);
+      bentley_sqlite3_bind_pointer(pStmt, 1, pSave, "stmt-pointer", 0);
 
       pArg->cnt = 0;
       pArg->cMode = MODE_ScanExp;
@@ -23839,7 +23839,7 @@ static void display_scanstats(
       exec_prepared_stmt(pArg, pStmt);
       explain_data_delete(pArg);
 
-      sqlite3_finalize(pStmt);
+      bentley_sqlite3_finalize(pStmt);
       pArg->pStmt = pSave;
     }
   }else{
@@ -23855,32 +23855,32 @@ static unsigned int savedSelectTrace;
 static unsigned int savedWhereTrace;
 static void disable_debug_trace_modes(void){
   unsigned int zero = 0;
-  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 0, &savedSelectTrace);
-  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &zero);
-  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 2, &savedWhereTrace);
-  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &zero);
+  bentley_sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 0, &savedSelectTrace);
+  bentley_sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &zero);
+  bentley_sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 2, &savedWhereTrace);
+  bentley_sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &zero);
 }
 static void restore_debug_trace_modes(void){
-  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &savedSelectTrace);
-  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &savedWhereTrace);
+  bentley_sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &savedSelectTrace);
+  bentley_sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &savedWhereTrace);
 }
 
 /* Create the TEMP table used to store parameter bindings */
 static void bind_table_init(ShellState *p){
   int wrSchema = 0;
   int defensiveMode = 0;
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, -1, &defensiveMode);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &wrSchema);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
-  sqlite3_exec(p->db,
+  bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, -1, &defensiveMode);
+  bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
+  bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &wrSchema);
+  bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
+  bentley_sqlite3_exec(p->db,
     "CREATE TABLE IF NOT EXISTS temp.sqlite_parameters(\n"
     "  key TEXT PRIMARY KEY,\n"
     "  value\n"
     ") WITHOUT ROWID;",
     0, 0, 0);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, 0);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, defensiveMode, 0);
+  bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, 0);
+  bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, defensiveMode, 0);
 }
 
 /*
@@ -23901,50 +23901,50 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
   int rc;
   sqlite3_stmt *pQ = 0;
 
-  nVar = sqlite3_bind_parameter_count(pStmt);
+  nVar = bentley_sqlite3_bind_parameter_count(pStmt);
   if( nVar==0 ) return;  /* Nothing to do */
-  if( sqlite3_table_column_metadata(pArg->db, "TEMP", "sqlite_parameters",
+  if( bentley_sqlite3_table_column_metadata(pArg->db, "TEMP", "sqlite_parameters",
                                     "key", 0, 0, 0, 0, 0)!=SQLITE_OK ){
     rc = SQLITE_NOTFOUND;
     pQ = 0;
   }else{
-    rc = sqlite3_prepare_v2(pArg->db,
+    rc = bentley_sqlite3_prepare_v2(pArg->db,
             "SELECT value FROM temp.sqlite_parameters"
             " WHERE key=?1", -1, &pQ, 0);
   }
   for(i=1; i<=nVar; i++){
     char zNum[30];
-    const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
+    const char *zVar = bentley_sqlite3_bind_parameter_name(pStmt, i);
     if( zVar==0 ){
-      sqlite3_snprintf(sizeof(zNum),zNum,"?%d",i);
+      bentley_sqlite3_snprintf(sizeof(zNum),zNum,"?%d",i);
       zVar = zNum;
     }
-    sqlite3_bind_text(pQ, 1, zVar, -1, SQLITE_STATIC);
-    if( rc==SQLITE_OK && pQ && sqlite3_step(pQ)==SQLITE_ROW ){
-      sqlite3_bind_value(pStmt, i, sqlite3_column_value(pQ, 0));
+    bentley_sqlite3_bind_text(pQ, 1, zVar, -1, SQLITE_STATIC);
+    if( rc==SQLITE_OK && pQ && bentley_sqlite3_step(pQ)==SQLITE_ROW ){
+      bentley_sqlite3_bind_value(pStmt, i, bentley_sqlite3_column_value(pQ, 0));
 #ifdef NAN
-    }else if( sqlite3_strlike("_NAN", zVar, 0)==0 ){
-      sqlite3_bind_double(pStmt, i, NAN);
+    }else if( bentley_sqlite3_strlike("_NAN", zVar, 0)==0 ){
+      bentley_sqlite3_bind_double(pStmt, i, NAN);
 #endif
 #ifdef INFINITY
-    }else if( sqlite3_strlike("_INF", zVar, 0)==0 ){
-      sqlite3_bind_double(pStmt, i, INFINITY);
+    }else if( bentley_sqlite3_strlike("_INF", zVar, 0)==0 ){
+      bentley_sqlite3_bind_double(pStmt, i, INFINITY);
 #endif
     }else if( strncmp(zVar, "$int_", 5)==0 ){
-      sqlite3_bind_int(pStmt, i, atoi(&zVar[5]));
+      bentley_sqlite3_bind_int(pStmt, i, atoi(&zVar[5]));
     }else if( strncmp(zVar, "$text_", 6)==0 ){
       size_t szVar = strlen(zVar);
-      char *zBuf = sqlite3_malloc64( szVar-5 );
+      char *zBuf = bentley_sqlite3_malloc64( szVar-5 );
       if( zBuf ){
         memcpy(zBuf, &zVar[6], szVar-5);
-        sqlite3_bind_text64(pStmt, i, zBuf, szVar-6, sqlite3_free, SQLITE_UTF8);
+        bentley_sqlite3_bind_text64(pStmt, i, zBuf, szVar-6, bentley_sqlite3_free, SQLITE_UTF8);
       }
     }else{
-      sqlite3_bind_null(pStmt, i);
+      bentley_sqlite3_bind_null(pStmt, i);
     }
-    sqlite3_reset(pQ);
+    bentley_sqlite3_reset(pQ);
   }
-  sqlite3_finalize(pQ);
+  bentley_sqlite3_finalize(pQ);
 }
 
 /*
@@ -24127,32 +24127,32 @@ static char *translateForDisplayAndDup(
 }
 
 /* Extract the value of the i-th current column for pStmt as an SQL literal
-** value.  Memory is obtained from sqlite3_malloc64() and must be freed by
+** value.  Memory is obtained from bentley_sqlite3_malloc64() and must be freed by
 ** the caller.
 */
 static char *quoted_column(sqlite3_stmt *pStmt, int i){
-  switch( sqlite3_column_type(pStmt, i) ){
+  switch( bentley_sqlite3_column_type(pStmt, i) ){
     case SQLITE_NULL: {
-      return sqlite3_mprintf("NULL");
+      return bentley_sqlite3_mprintf("NULL");
     }
     case SQLITE_INTEGER:
     case SQLITE_FLOAT: {
-      return sqlite3_mprintf("%s",sqlite3_column_text(pStmt,i));
+      return bentley_sqlite3_mprintf("%s",bentley_sqlite3_column_text(pStmt,i));
     }
     case SQLITE_TEXT: {
-      return sqlite3_mprintf("%Q",sqlite3_column_text(pStmt,i));
+      return bentley_sqlite3_mprintf("%Q",bentley_sqlite3_column_text(pStmt,i));
     }
     case SQLITE_BLOB: {
       int j;
-      sqlite3_str *pStr = sqlite3_str_new(0);
-      const unsigned char *a = sqlite3_column_blob(pStmt,i);
-      int n = sqlite3_column_bytes(pStmt,i);
-      sqlite3_str_append(pStr, "x'", 2);
+      sqlite3_str *pStr = bentley_sqlite3_str_new(0);
+      const unsigned char *a = bentley_sqlite3_column_blob(pStmt,i);
+      int n = bentley_sqlite3_column_bytes(pStmt,i);
+      bentley_sqlite3_str_append(pStr, "x'", 2);
       for(j=0; j<n; j++){
-        sqlite3_str_appendf(pStr, "%02x", a[j]);
+        bentley_sqlite3_str_appendf(pStr, "%02x", a[j]);
       }
-      sqlite3_str_append(pStr, "'", 1);
-      return sqlite3_str_finish(pStr);
+      bentley_sqlite3_str_append(pStr, "'", 1);
+      return bentley_sqlite3_str_finish(pStr);
     }
   }
   return 0; /* Not reached */
@@ -24192,23 +24192,23 @@ static void exec_prepared_stmt_columnar(
   const char *zEmpty = "";
   const char *zShowNull = p->nullValue;
 
-  rc = sqlite3_step(pStmt);
+  rc = bentley_sqlite3_step(pStmt);
   if( rc!=SQLITE_ROW ) return;
-  nColumn = sqlite3_column_count(pStmt);
+  nColumn = bentley_sqlite3_column_count(pStmt);
   if( nColumn==0 ) goto columnar_end;
   nAlloc = nColumn*4;
   if( nAlloc<=0 ) nAlloc = 1;
-  azData = sqlite3_malloc64( nAlloc*sizeof(char*) );
+  azData = bentley_sqlite3_malloc64( nAlloc*sizeof(char*) );
   shell_check_oom(azData);
-  azNextLine = sqlite3_malloc64( nColumn*sizeof(char*) );
+  azNextLine = bentley_sqlite3_malloc64( nColumn*sizeof(char*) );
   shell_check_oom(azNextLine);
   memset((void*)azNextLine, 0, nColumn*sizeof(char*) );
   if( p->cmOpts.bQuote ){
-    azQuoted = sqlite3_malloc64( nColumn*sizeof(char*) );
+    azQuoted = bentley_sqlite3_malloc64( nColumn*sizeof(char*) );
     shell_check_oom(azQuoted);
     memset(azQuoted, 0, nColumn*sizeof(char*) );
   }
-  abRowDiv = sqlite3_malloc64( nAlloc/nColumn );
+  abRowDiv = bentley_sqlite3_malloc64( nAlloc/nColumn );
   shell_check_oom(abRowDiv);
   if( nColumn>p->nWidth ){
     p->colWidth = realloc(p->colWidth, (nColumn+1)*2*sizeof(int));
@@ -24230,7 +24230,7 @@ static void exec_prepared_stmt_columnar(
       wx = p->cmOpts.iWrap;
     }
     if( wx<0 ) wx = -wx;
-    uz = (const unsigned char*)sqlite3_column_name(pStmt,i);
+    uz = (const unsigned char*)bentley_sqlite3_column_name(pStmt,i);
     if( uz==0 ) uz = (u8*)"";
     azData[i] = translateForDisplayAndDup(uz, &zNotUsed, wx, bw);
   }
@@ -24239,9 +24239,9 @@ static void exec_prepared_stmt_columnar(
     bNextLine = 0;
     if( (nRow+2)*nColumn >= nAlloc ){
       nAlloc *= 2;
-      azData = sqlite3_realloc64(azData, nAlloc*sizeof(char*));
+      azData = bentley_sqlite3_realloc64(azData, nAlloc*sizeof(char*));
       shell_check_oom(azData);
-      abRowDiv = sqlite3_realloc64(abRowDiv, nAlloc/nColumn);
+      abRowDiv = bentley_sqlite3_realloc64(abRowDiv, nAlloc/nColumn);
       shell_check_oom(abRowDiv);
     }
     abRowDiv[nRow] = 1;
@@ -24256,11 +24256,11 @@ static void exec_prepared_stmt_columnar(
         uz = azNextLine[i];
         if( uz==0 ) uz = (u8*)zEmpty;
       }else if( p->cmOpts.bQuote ){
-        sqlite3_free(azQuoted[i]);
+        bentley_sqlite3_free(azQuoted[i]);
         azQuoted[i] = quoted_column(pStmt,i);
         uz = (const unsigned char*)azQuoted[i];
       }else{
-        uz = (const unsigned char*)sqlite3_column_text(pStmt,i);
+        uz = (const unsigned char*)bentley_sqlite3_column_text(pStmt,i);
         if( uz==0 ) uz = (u8*)zShowNull;
       }
       azData[nRow*nColumn + i]
@@ -24271,7 +24271,7 @@ static void exec_prepared_stmt_columnar(
         bMultiLineRowExists = 1;
       }
     }
-  }while( bNextLine || sqlite3_step(pStmt)==SQLITE_ROW );
+  }while( bNextLine || bentley_sqlite3_step(pStmt)==SQLITE_ROW );
   nTotal = nColumn*(nRow+1);
   for(i=0; i<nTotal; i++){
     z = azData[i];
@@ -24384,12 +24384,12 @@ columnar_end:
     z = azData[i];
     if( z!=zEmpty && z!=zShowNull ) free(azData[i]);
   }
-  sqlite3_free(azData);
-  sqlite3_free((void*)azNextLine);
-  sqlite3_free(abRowDiv);
+  bentley_sqlite3_free(azData);
+  bentley_sqlite3_free((void*)azNextLine);
+  bentley_sqlite3_free(abRowDiv);
   if( azQuoted ){
-    for(i=0; i<nColumn; i++) sqlite3_free(azQuoted[i]);
-    sqlite3_free(azQuoted);
+    for(i=0; i<nColumn; i++) bentley_sqlite3_free(azQuoted[i]);
+    bentley_sqlite3_free(azQuoted);
   }
 }
 
@@ -24415,12 +24415,12 @@ static void exec_prepared_stmt(
   /* perform the first step.  this will tell us if we
   ** have a result set or not and how wide it is.
   */
-  rc = sqlite3_step(pStmt);
+  rc = bentley_sqlite3_step(pStmt);
   /* if we have a result set... */
   if( SQLITE_ROW == rc ){
     /* allocate space for col name ptr, value ptr, and type */
-    int nCol = sqlite3_column_count(pStmt);
-    void *pData = sqlite3_malloc64(3*nCol*sizeof(const char*) + 1);
+    int nCol = bentley_sqlite3_column_count(pStmt);
+    void *pData = bentley_sqlite3_malloc64(3*nCol*sizeof(const char*) + 1);
     if( !pData ){
       shell_out_of_memory();
     }else{
@@ -24431,20 +24431,20 @@ static void exec_prepared_stmt(
       assert(sizeof(int) <= sizeof(char *));
       /* save off ptrs to column names */
       for(i=0; i<nCol; i++){
-        azCols[i] = (char *)sqlite3_column_name(pStmt, i);
+        azCols[i] = (char *)bentley_sqlite3_column_name(pStmt, i);
       }
       do{
         nRow++;
         /* extract the data and data types */
         for(i=0; i<nCol; i++){
-          aiTypes[i] = x = sqlite3_column_type(pStmt, i);
+          aiTypes[i] = x = bentley_sqlite3_column_type(pStmt, i);
           if( x==SQLITE_BLOB
            && pArg
            && (pArg->cMode==MODE_Insert || pArg->cMode==MODE_Quote)
           ){
             azVals[i] = "";
           }else{
-            azVals[i] = (char*)sqlite3_column_text(pStmt, i);
+            azVals[i] = (char*)bentley_sqlite3_column_text(pStmt, i);
           }
           if( !azVals[i] && (aiTypes[i]!=SQLITE_NULL) ){
             rc = SQLITE_NOMEM;
@@ -24458,18 +24458,18 @@ static void exec_prepared_stmt(
           if( shell_callback(pArg, nCol, azVals, azCols, aiTypes) ){
             rc = SQLITE_ABORT;
           }else{
-            rc = sqlite3_step(pStmt);
+            rc = bentley_sqlite3_step(pStmt);
           }
         }
       } while( SQLITE_ROW == rc );
-      sqlite3_free(pData);
+      bentley_sqlite3_free(pData);
       if( pArg->cMode==MODE_Json ){
         sqlite3_fputs("]\n", pArg->out);
       }else if( pArg->cMode==MODE_Www ){
         sqlite3_fputs("</TABLE>\n<PRE>\n", pArg->out);
       }else if( pArg->cMode==MODE_Count ){
         char zBuf[200];
-        sqlite3_snprintf(sizeof(zBuf), zBuf, "%llu row%s\n",
+        bentley_sqlite3_snprintf(sizeof(zBuf), zBuf, "%llu row%s\n",
                          nRow, nRow!=1 ? "s" : "");
         printf("%s", zBuf);
       }
@@ -24486,7 +24486,7 @@ static void exec_prepared_stmt(
 ** If successful, SQLITE_OK is returned. Otherwise, an SQLite error
 ** code. In this case, (*pzErr) may be set to point to a buffer containing
 ** an English language error message. It is the responsibility of the
-** caller to eventually free this buffer using sqlite3_free().
+** caller to eventually free this buffer using bentley_sqlite3_free().
 */
 static int expertHandleSQL(
   ShellState *pState,
@@ -24506,7 +24506,7 @@ static int expertHandleSQL(
 ** If successful, SQLITE_OK is returned. Otherwise, an SQLite error
 ** code. In this case, (*pzErr) may be set to point to a buffer containing
 ** an English language error message. It is the responsibility of the
-** caller to eventually free this buffer using sqlite3_free().
+** caller to eventually free this buffer using bentley_sqlite3_free().
 */
 static int expertFinish(
   ShellState *pState,
@@ -24605,7 +24605,7 @@ static int expertDotCommand(
       );
     }
   }
-  sqlite3_free(zErr);
+  bentley_sqlite3_free(zErr);
 
   return rc;
 }
@@ -24616,7 +24616,7 @@ static int expertDotCommand(
 ** any result rows/columns depending on the current mode
 ** set via the supplied callback.
 **
-** This is very similar to SQLite's built-in sqlite3_exec()
+** This is very similar to SQLite's built-in bentley_sqlite3_exec()
 ** function except it takes a slightly different callback
 ** and callback data argument.
 */
@@ -24644,7 +24644,7 @@ static int shell_exec(
 
   while( zSql[0] && (SQLITE_OK == rc) ){
     static const char *zStmtSql;
-    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
+    rc = bentley_sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
     if( SQLITE_OK != rc ){
       if( pzErrMsg ){
         *pzErrMsg = save_err_msg(db, "in prepare", rc, zSql);
@@ -24656,7 +24656,7 @@ static int shell_exec(
         while( IsSpace(zSql[0]) ) zSql++;
         continue;
       }
-      zStmtSql = sqlite3_sql(pStmt);
+      zStmtSql = bentley_sqlite3_sql(pStmt);
       if( zStmtSql==0 ) zStmtSql = "";
       while( IsSpace(zStmtSql[0]) ) zStmtSql++;
 
@@ -24667,23 +24667,23 @@ static int shell_exec(
       }
 
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
-      if( pArg && pArg->autoEQP && sqlite3_stmt_isexplain(pStmt)==0 ){
+      if( pArg && pArg->autoEQP && bentley_sqlite3_stmt_isexplain(pStmt)==0 ){
         sqlite3_stmt *pExplain;
         int triggerEQP = 0;
         disable_debug_trace_modes();
-        sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, -1, &triggerEQP);
+        bentley_sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, -1, &triggerEQP);
         if( pArg->autoEQP>=AUTOEQP_trigger ){
-          sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 1, 0);
+          bentley_sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 1, 0);
         }
         pExplain = pStmt;
-        sqlite3_reset(pExplain);
-        rc = sqlite3_stmt_explain(pExplain, 2);
+        bentley_sqlite3_reset(pExplain);
+        rc = bentley_sqlite3_stmt_explain(pExplain, 2);
         if( rc==SQLITE_OK ){
           bind_prepared_stmt(pArg, pExplain);
-          while( sqlite3_step(pExplain)==SQLITE_ROW ){
-            const char *zEQPLine = (const char*)sqlite3_column_text(pExplain,3);
-            int iEqpId = sqlite3_column_int(pExplain, 0);
-            int iParentId = sqlite3_column_int(pExplain, 1);
+          while( bentley_sqlite3_step(pExplain)==SQLITE_ROW ){
+            const char *zEQPLine = (const char*)bentley_sqlite3_column_text(pExplain,3);
+            int iEqpId = bentley_sqlite3_column_int(pExplain, 0);
+            int iParentId = bentley_sqlite3_column_int(pExplain, 1);
             if( zEQPLine==0 ) zEQPLine = "";
             if( zEQPLine[0]=='-' ) eqp_render(pArg, 0);
             eqp_append(pArg, iEqpId, iParentId, zEQPLine);
@@ -24692,11 +24692,11 @@ static int shell_exec(
         }
         if( pArg->autoEQP>=AUTOEQP_full ){
           /* Also do an EXPLAIN for ".eqp full" mode */
-          sqlite3_reset(pExplain);
-          rc = sqlite3_stmt_explain(pExplain, 1);
+          bentley_sqlite3_reset(pExplain);
+          rc = bentley_sqlite3_stmt_explain(pExplain, 1);
           if( rc==SQLITE_OK ){
             pArg->cMode = MODE_Explain;
-            assert( sqlite3_stmt_isexplain(pExplain)==1 );
+            assert( bentley_sqlite3_stmt_isexplain(pExplain)==1 );
             bind_prepared_stmt(pArg, pExplain);
             explain_data_prepare(pArg, pExplain);
             exec_prepared_stmt(pArg, pExplain);
@@ -24704,21 +24704,21 @@ static int shell_exec(
           }
         }
         if( pArg->autoEQP>=AUTOEQP_trigger && triggerEQP==0 ){
-          sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, 0);
+          bentley_sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, 0);
         }
-        sqlite3_reset(pStmt);
-        sqlite3_stmt_explain(pStmt, 0);
+        bentley_sqlite3_reset(pStmt);
+        bentley_sqlite3_stmt_explain(pStmt, 0);
         restore_debug_trace_modes();
       }
 
       if( pArg ){
-        int bIsExplain = (sqlite3_stmt_isexplain(pStmt)==1);
+        int bIsExplain = (bentley_sqlite3_stmt_isexplain(pStmt)==1);
         pArg->cMode = pArg->mode;
         if( pArg->autoExplain ){
           if( bIsExplain ){
             pArg->cMode = MODE_Explain;
           }
-          if( sqlite3_stmt_isexplain(pStmt)==2 ){
+          if( bentley_sqlite3_stmt_isexplain(pStmt)==2 ){
             pArg->cMode = MODE_EQP;
           }
         }
@@ -24748,7 +24748,7 @@ static int shell_exec(
       /* Finalize the statement just executed. If this fails, save a
       ** copy of the error message. Otherwise, set zSql to point to the
       ** next statement to execute. */
-      rc2 = sqlite3_finalize(pStmt);
+      rc2 = bentley_sqlite3_finalize(pStmt);
       if( rc!=SQLITE_NOMEM ) rc = rc2;
       if( rc==SQLITE_OK ){
         zSql = zLeftover;
@@ -24773,10 +24773,10 @@ static int shell_exec(
 static void freeColumnList(char **azCol){
   int i;
   for(i=1; azCol[i]; i++){
-    sqlite3_free(azCol[i]);
+    bentley_sqlite3_free(azCol[i]);
   }
   /* azCol[0] is a static string */
-  sqlite3_free(azCol);
+  bentley_sqlite3_free(azCol);
 }
 
 /*
@@ -24803,23 +24803,23 @@ static char **tableColumnList(ShellState *p, const char *zTab){
   int preserveRowid = ShellHasFlag(p, SHFLG_PreserveRowid);
   int rc;
 
-  zSql = sqlite3_mprintf("PRAGMA table_info=%Q", zTab);
+  zSql = bentley_sqlite3_mprintf("PRAGMA table_info=%Q", zTab);
   shell_check_oom(zSql);
-  rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
-  sqlite3_free(zSql);
+  rc = bentley_sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+  bentley_sqlite3_free(zSql);
   if( rc ) return 0;
-  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+  while( bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
     if( nCol>=nAlloc-2 ){
       nAlloc = nAlloc*2 + nCol + 10;
-      azCol = sqlite3_realloc(azCol, nAlloc*sizeof(azCol[0]));
+      azCol = bentley_sqlite3_realloc(azCol, nAlloc*sizeof(azCol[0]));
       shell_check_oom(azCol);
     }
-    azCol[++nCol] = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 1));
+    azCol[++nCol] = bentley_sqlite3_mprintf("%s", bentley_sqlite3_column_text(pStmt, 1));
     shell_check_oom(azCol[nCol]);
-    if( sqlite3_column_int(pStmt, 5) ){
+    if( bentley_sqlite3_column_int(pStmt, 5) ){
       nPK++;
       if( nPK==1
-       && sqlite3_stricmp((const char*)sqlite3_column_text(pStmt,2),
+       && bentley_sqlite3_stricmp((const char*)bentley_sqlite3_column_text(pStmt,2),
                           "INTEGER")==0
       ){
         isIPK = 1;
@@ -24828,7 +24828,7 @@ static char **tableColumnList(ShellState *p, const char *zTab){
       }
     }
   }
-  sqlite3_finalize(pStmt);
+  bentley_sqlite3_finalize(pStmt);
   if( azCol==0 ) return 0;
   azCol[0] = 0;
   azCol[nCol+1] = 0;
@@ -24847,17 +24847,17 @@ static char **tableColumnList(ShellState *p, const char *zTab){
     ** there is a "pk" entry in "PRAGMA index_list".  There will be
     ** no "pk" index if the PRIMARY KEY really is an alias for the ROWID.
     */
-    zSql = sqlite3_mprintf("SELECT 1 FROM pragma_index_list(%Q)"
+    zSql = bentley_sqlite3_mprintf("SELECT 1 FROM pragma_index_list(%Q)"
                            " WHERE origin='pk'", zTab);
     shell_check_oom(zSql);
-    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
-    sqlite3_free(zSql);
+    rc = bentley_sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    bentley_sqlite3_free(zSql);
     if( rc ){
       freeColumnList(azCol);
       return 0;
     }
-    rc = sqlite3_step(pStmt);
-    sqlite3_finalize(pStmt);
+    rc = bentley_sqlite3_step(pStmt);
+    bentley_sqlite3_finalize(pStmt);
     preserveRowid = rc==SQLITE_ROW;
   }
   if( preserveRowid ){
@@ -24867,14 +24867,14 @@ static char **tableColumnList(ShellState *p, const char *zTab){
     int i, j;
     for(j=0; j<3; j++){
       for(i=1; i<=nCol; i++){
-        if( sqlite3_stricmp(azRowid[j],azCol[i])==0 ) break;
+        if( bentley_sqlite3_stricmp(azRowid[j],azCol[i])==0 ) break;
       }
       if( i>nCol ){
         /* At this point, we know that azRowid[j] is not the name of any
         ** ordinary column in the table.  Verify that azRowid[j] is a valid
         ** name for the rowid before adding it to azCol[0].  WITHOUT ROWID
         ** tables will fail this last check */
-        rc = sqlite3_table_column_metadata(p->db,0,zTab,azRowid[j],0,0,0,0,0);
+        rc = bentley_sqlite3_table_column_metadata(p->db,0,zTab,azRowid[j],0,0,0,0,0);
         if( rc==SQLITE_OK ) azCol[0] = azRowid[j];
         break;
       }
@@ -24890,14 +24890,14 @@ static void toggleSelectOrder(sqlite3 *db){
   sqlite3_stmt *pStmt = 0;
   int iSetting = 0;
   char zStmt[100];
-  sqlite3_prepare_v2(db, "PRAGMA reverse_unordered_selects", -1, &pStmt, 0);
-  if( sqlite3_step(pStmt)==SQLITE_ROW ){
-    iSetting = sqlite3_column_int(pStmt, 0);
+  bentley_sqlite3_prepare_v2(db, "PRAGMA reverse_unordered_selects", -1, &pStmt, 0);
+  if( bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+    iSetting = bentley_sqlite3_column_int(pStmt, 0);
   }
-  sqlite3_finalize(pStmt);
-  sqlite3_snprintf(sizeof(zStmt), zStmt,
+  bentley_sqlite3_finalize(pStmt);
+  bentley_sqlite3_snprintf(sizeof(zStmt), zStmt,
        "PRAGMA reverse_unordered_selects(%d)", !iSetting);
-  sqlite3_exec(db, zStmt, 0, 0, 0);
+  bentley_sqlite3_exec(db, zStmt, 0, 0, 0);
 }
 
 /*
@@ -24927,7 +24927,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
 
   if( cli_strcmp(zTable, "sqlite_sequence")==0 && !noSys ){
     /* no-op */
-  }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 && !noSys ){
+  }else if( bentley_sqlite3_strglob("sqlite_stat?", zTable)==0 && !noSys ){
     if( !dataOnly ) sqlite3_fputs("ANALYZE sqlite_schema;\n", p->out);
   }else if( cli_strncmp(zTable, "sqlite_", 7)==0 ){
     return 0;
@@ -24939,13 +24939,13 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
       sqlite3_fputs("PRAGMA writable_schema=ON;\n", p->out);
       p->writableSchema = 1;
     }
-    zIns = sqlite3_mprintf(
+    zIns = bentley_sqlite3_mprintf(
        "INSERT INTO sqlite_schema(type,name,tbl_name,rootpage,sql)"
        "VALUES('table','%q','%q',0,'%q');",
        zTable, zTable, zSql);
     shell_check_oom(zIns);
     sqlite3_fprintf(p->out, "%s\n", zIns);
-    sqlite3_free(zIns);
+    bentley_sqlite3_free(zIns);
     return 0;
   }else{
     printSchemaLine(p->out, zSql, ";\n");
@@ -25033,20 +25033,20 @@ static int run_schema_dump_query(
 ){
   int rc;
   char *zErr = 0;
-  rc = sqlite3_exec(p->db, zQuery, dump_callback, p, &zErr);
+  rc = bentley_sqlite3_exec(p->db, zQuery, dump_callback, p, &zErr);
   if( rc==SQLITE_CORRUPT ){
     char *zQ2;
     int len = strlen30(zQuery);
     sqlite3_fputs("/****** CORRUPTION ERROR *******/\n", p->out);
     if( zErr ){
       sqlite3_fprintf(p->out, "/****** %s ******/\n", zErr);
-      sqlite3_free(zErr);
+      bentley_sqlite3_free(zErr);
       zErr = 0;
     }
     zQ2 = malloc( len+100 );
     if( zQ2==0 ) return rc;
-    sqlite3_snprintf(len+100, zQ2, "%s ORDER BY rowid DESC", zQuery);
-    rc = sqlite3_exec(p->db, zQ2, dump_callback, p, &zErr);
+    bentley_sqlite3_snprintf(len+100, zQ2, "%s ORDER BY rowid DESC", zQuery);
+    rc = bentley_sqlite3_exec(p->db, zQ2, dump_callback, p, &zErr);
     if( rc ){
       sqlite3_fprintf(p->out, "/****** ERROR: %s ******/\n", zErr);
     }else{
@@ -25054,7 +25054,7 @@ static int run_schema_dump_query(
     }
     free(zQ2);
   }
-  sqlite3_free(zErr);
+  bentley_sqlite3_free(zErr);
   return rc;
 }
 
@@ -25113,7 +25113,7 @@ static const char *(azHelp[]) = {
   ".connection [close] [#]  Open or close an auxiliary database connection",
   ".crlf ?on|off?           Whether or not to use \\r\\n line endings",
   ".databases               List names and files of attached databases",
-  ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
+  ".dbconfig ?op? ?val?     List or change bentley_sqlite3_db_config() options",
 #if SQLITE_SHELL_HAVE_RECOVER
   ".dbinfo ?DB?             Show status information about the database",
 #endif
@@ -25143,7 +25143,7 @@ static const char *(azHelp[]) = {
 #endif
   ".expert                  EXPERIMENTAL. Suggest indexes for queries",
   ".explain ?on|off|auto?   Change the EXPLAIN formatting mode.  Default: auto",
-  ".filectrl CMD ...        Run various sqlite3_file_control() operations",
+  ".filectrl CMD ...        Run various bentley_sqlite3_file_control() operations",
   "   --schema SCHEMA         Use SCHEMA instead of \"main\"",
   "   --help                  Show CMD details",
   ".fullschema ?--indent?   Show schema and the content of sqlite_stat tables",
@@ -25231,7 +25231,7 @@ static const char *(azHelp[]) = {
   "        --append        Use appendvfs to append database to the end of FILE",
 #endif
 #ifndef SQLITE_OMIT_DESERIALIZE
-  "        --deserialize   Load into memory using sqlite3_deserialize()",
+  "        --deserialize   Load into memory using bentley_sqlite3_deserialize()",
   "        --hexdb         Load the output of \"dbtotxt\" as an in-memory db",
   "        --maxsize N     Maximum size for --hexdb or --deserialized database",
 #endif
@@ -25330,7 +25330,7 @@ static const char *(azHelp[]) = {
 #ifndef SQLITE_SHELL_FIDDLE
   ",testcase NAME           Begin redirecting output to 'testcase-out.txt'",
 #endif
-  ",testctrl CMD ...        Run various sqlite3_test_control() operations",
+  ",testctrl CMD ...        Run various bentley_sqlite3_test_control() operations",
   "                           Run \".testctrl\" with no arguments for details",
   ".timeout MS              Try opening locked tables for MS milliseconds",
   ".timer on|off            Turn SQL timer on or off",
@@ -25421,16 +25421,16 @@ static int showHelp(FILE *out, const char *zPattern){
     }
   }else{
     /* Seek documented commands for which zPattern is an exact prefix */
-    zPat = sqlite3_mprintf(".%s*", zPattern);
+    zPat = bentley_sqlite3_mprintf(".%s*", zPattern);
     shell_check_oom(zPat);
     for(i=0; i<ArraySize(azHelp); i++){
-      if( sqlite3_strglob(zPat, azHelp[i])==0 ){
+      if( bentley_sqlite3_strglob(zPat, azHelp[i])==0 ){
         sqlite3_fprintf(out, "%s\n", azHelp[i]);
         j = i+1;
         n++;
       }
     }
-    sqlite3_free(zPat);
+    bentley_sqlite3_free(zPat);
     if( n ){
       if( n==1 ){
         /* when zPattern is a prefix of exactly one command, then include
@@ -25444,7 +25444,7 @@ static int showHelp(FILE *out, const char *zPattern){
     }
     /* Look for documented commands that contain zPattern anywhere.
     ** Show complete text of all documented commands that match. */
-    zPat = sqlite3_mprintf("%%%s%%", zPattern);
+    zPat = bentley_sqlite3_mprintf("%%%s%%", zPattern);
     shell_check_oom(zPat);
     for(i=0; i<ArraySize(azHelp); i++){
       if( azHelp[i][0]==',' ){
@@ -25452,7 +25452,7 @@ static int showHelp(FILE *out, const char *zPattern){
         continue;
       }
       if( azHelp[i][0]=='.' ) j = i;
-      if( sqlite3_strlike(zPat, azHelp[i], 0)==0 ){
+      if( bentley_sqlite3_strlike(zPat, azHelp[i], 0)==0 ){
         sqlite3_fprintf(out, "%s\n", azHelp[j]);
         while( j<ArraySize(azHelp)-1 && azHelp[j+1][0]==' ' ){
           j++;
@@ -25462,7 +25462,7 @@ static int showHelp(FILE *out, const char *zPattern){
         n++;
       }
     }
-    sqlite3_free(zPat);
+    bentley_sqlite3_free(zPat);
   }
   return n;
 }
@@ -25471,7 +25471,7 @@ static int showHelp(FILE *out, const char *zPattern){
 static int process_input(ShellState *p);
 
 /*
-** Read the content of file zName into memory obtained from sqlite3_malloc64()
+** Read the content of file zName into memory obtained from bentley_sqlite3_malloc64()
 ** and return a pointer to the buffer. The caller is responsible for freeing
 ** the memory.
 **
@@ -25500,7 +25500,7 @@ static char *readFile(const char *zName, int *pnByte){
   }
   nIn = ftell(in);
   rewind(in);
-  pBuf = sqlite3_malloc64( nIn+1 );
+  pBuf = bentley_sqlite3_malloc64( nIn+1 );
   if( pBuf==0 ){
     sqlite3_fputs("Error: out of memory\n", stderr);
     fclose(in);
@@ -25509,7 +25509,7 @@ static char *readFile(const char *zName, int *pnByte){
   nRead = fread(pBuf, nIn, 1, in);
   fclose(in);
   if( nRead!=1 ){
-    sqlite3_free(pBuf);
+    bentley_sqlite3_free(pBuf);
     sqlite3_fprintf(stderr,"Error: cannot read '%s'\n", zName);
     return 0;
   }
@@ -25525,12 +25525,12 @@ static char *readFile(const char *zName, int *pnByte){
 */
 static void session_close(OpenSession *pSession){
   int i;
-  sqlite3session_delete(pSession->p);
-  sqlite3_free(pSession->zName);
+  bentley_sqlite3session_delete(pSession->p);
+  bentley_sqlite3_free(pSession->zName);
   for(i=0; i<pSession->nFilter; i++){
-    sqlite3_free(pSession->azFilter[i]);
+    bentley_sqlite3_free(pSession->azFilter[i]);
   }
-  sqlite3_free(pSession->azFilter);
+  bentley_sqlite3_free(pSession->azFilter);
   memset(pSession, 0, sizeof(OpenSession));
 }
 #endif
@@ -25560,7 +25560,7 @@ static int session_filter(void *pCtx, const char *zTab){
   OpenSession *pSession = (OpenSession*)pCtx;
   int i;
   for(i=0; i<pSession->nFilter; i++){
-    if( sqlite3_strglob(pSession->azFilter[i], zTab)==0 ) return 0;
+    if( bentley_sqlite3_strglob(pSession->azFilter[i], zTab)==0 ) return 0;
   }
   return 1;
 }
@@ -25581,7 +25581,7 @@ int deduceDatabaseType(const char *zName, int dfltZip){
   int rc = SHELL_OPEN_UNSPEC;
   char zBuf[100];
   if( f==0 ){
-    if( dfltZip && sqlite3_strlike("%.zip",zName,0)==0 ){
+    if( dfltZip && bentley_sqlite3_strlike("%.zip",zName,0)==0 ){
        return SHELL_OPEN_ZIPFILE;
     }else{
        return SHELL_OPEN_NORMAL;
@@ -25602,7 +25602,7 @@ int deduceDatabaseType(const char *zName, int dfltZip){
     if( n==1 && zBuf[0]==0x50 && zBuf[1]==0x4b && zBuf[2]==0x05
        && zBuf[3]==0x06 ){
       rc = SHELL_OPEN_ZIPFILE;
-    }else if( n==0 && dfltZip && sqlite3_strlike("%.zip",zName,0)==0 ){
+    }else if( n==0 && dfltZip && bentley_sqlite3_strlike("%.zip",zName,0)==0 ){
       rc = SHELL_OPEN_ZIPFILE;
     }
   }
@@ -25648,7 +25648,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   if( n<0 ) goto readHexDb_error;
   if( pgsz<512 || pgsz>65536 || (pgsz&(pgsz-1))!=0 ) goto readHexDb_error;
   n = (n+pgsz-1)&~(pgsz-1);  /* Round n up to the next multiple of pgsz */
-  a = sqlite3_malloc( n ? n : 1 );
+  a = bentley_sqlite3_malloc( n ? n : 1 );
   shell_check_oom(a);
   memset(a, 0, n);
   if( pgsz<512 || pgsz>65536 || (pgsz & (pgsz-1))!=0 ){
@@ -25693,24 +25693,24 @@ readHexDb_error:
     }
     p->lineno = nLine;
   }
-  sqlite3_free(a);
+  bentley_sqlite3_free(a);
   sqlite3_fprintf(stderr,"Error on line %d of --hexdb input\n", nLine);
   return 0;
 }
 #endif /* SQLITE_OMIT_DESERIALIZE */
 
 /*
-** Scalar function "usleep(X)" invokes sqlite3_sleep(X) and returns X.
+** Scalar function "usleep(X)" invokes bentley_sqlite3_sleep(X) and returns X.
 */
 static void shellUSleepFunc(
   sqlite3_context *context,
   int argcUnused,
   sqlite3_value **argv
 ){
-  int sleep = sqlite3_value_int(argv[0]);
+  int sleep = bentley_sqlite3_value_int(argv[0]);
   (void)argcUnused;
-  sqlite3_sleep(sleep/1000);
-  sqlite3_result_int(context, sleep);
+  bentley_sqlite3_sleep(sleep/1000);
+  bentley_sqlite3_result_int(context, sleep);
 }
 
 /* Flags for open_db().
@@ -25743,40 +25743,40 @@ static void open_db(ShellState *p, int openFlags){
     }
     switch( p->openMode ){
       case SHELL_OPEN_APPENDVFS: {
-        sqlite3_open_v2(zDbFilename, &p->db,
+        bentley_sqlite3_open_v2(zDbFilename, &p->db,
            SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|p->openFlags, "apndvfs");
         break;
       }
       case SHELL_OPEN_HEXDB:
       case SHELL_OPEN_DESERIALIZE: {
-        sqlite3_open(0, &p->db);
+        bentley_sqlite3_open(0, &p->db);
         break;
       }
       case SHELL_OPEN_ZIPFILE: {
-        sqlite3_open(":memory:", &p->db);
+        bentley_sqlite3_open(":memory:", &p->db);
         break;
       }
       case SHELL_OPEN_READONLY: {
-        sqlite3_open_v2(zDbFilename, &p->db,
+        bentley_sqlite3_open_v2(zDbFilename, &p->db,
             SQLITE_OPEN_READONLY|p->openFlags, 0);
         break;
       }
       case SHELL_OPEN_UNSPEC:
       case SHELL_OPEN_NORMAL: {
-        sqlite3_open_v2(zDbFilename, &p->db,
+        bentley_sqlite3_open_v2(zDbFilename, &p->db,
            SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|p->openFlags, 0);
         break;
       }
     }
-    if( p->db==0 || SQLITE_OK!=sqlite3_errcode(p->db) ){
+    if( p->db==0 || SQLITE_OK!=bentley_sqlite3_errcode(p->db) ){
       sqlite3_fprintf(stderr,"Error: unable to open database \"%s\": %s\n",
-            zDbFilename, sqlite3_errmsg(p->db));
+            zDbFilename, bentley_sqlite3_errmsg(p->db));
       if( (openFlags & OPEN_DB_KEEPALIVE)==0 ){
         exit(1);
       }
-      sqlite3_close(p->db);
-      sqlite3_open(":memory:", &p->db);
-      if( p->db==0 || SQLITE_OK!=sqlite3_errcode(p->db) ){
+      bentley_sqlite3_close(p->db);
+      bentley_sqlite3_open(":memory:", &p->db);
+      if( p->db==0 || SQLITE_OK!=bentley_sqlite3_errcode(p->db) ){
         sqlite3_fputs("Also: unable to open substitute in-memory database.\n",
                       stderr);
         exit(1);
@@ -25787,17 +25787,17 @@ static void open_db(ShellState *p, int openFlags){
       }
     }
     globalDb = p->db;
-    sqlite3_db_config(p->db, SQLITE_DBCONFIG_STMT_SCANSTATUS, (int)0, (int*)0);
+    bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_STMT_SCANSTATUS, (int)0, (int*)0);
 
     /* Reflect the use or absence of --unsafe-testing invocation. */
     {
       int testmode_on = ShellHasFlag(p,SHFLG_TestingMode);
-      sqlite3_db_config(p->db, SQLITE_DBCONFIG_TRUSTED_SCHEMA, testmode_on,0);
-      sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, !testmode_on,0);
+      bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_TRUSTED_SCHEMA, testmode_on,0);
+      bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, !testmode_on,0);
     }
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
-    sqlite3_enable_load_extension(p->db, 1);
+    bentley_sqlite3_enable_load_extension(p->db, 1);
 #endif
     sqlite3_sha_init(p->db, 0, 0);
     sqlite3_shathree_init(p->db, 0, 0);
@@ -25848,33 +25848,33 @@ static void open_db(ShellState *p, int openFlags){
     }
 #endif
 
-    sqlite3_create_function(p->db, "strtod", 1, SQLITE_UTF8, 0,
+    bentley_sqlite3_create_function(p->db, "strtod", 1, SQLITE_UTF8, 0,
                             shellStrtod, 0, 0);
-    sqlite3_create_function(p->db, "dtostr", 1, SQLITE_UTF8, 0,
+    bentley_sqlite3_create_function(p->db, "dtostr", 1, SQLITE_UTF8, 0,
                             shellDtostr, 0, 0);
-    sqlite3_create_function(p->db, "dtostr", 2, SQLITE_UTF8, 0,
+    bentley_sqlite3_create_function(p->db, "dtostr", 2, SQLITE_UTF8, 0,
                             shellDtostr, 0, 0);
-    sqlite3_create_function(p->db, "shell_add_schema", 3, SQLITE_UTF8, 0,
+    bentley_sqlite3_create_function(p->db, "shell_add_schema", 3, SQLITE_UTF8, 0,
                             shellAddSchemaName, 0, 0);
-    sqlite3_create_function(p->db, "shell_module_schema", 1, SQLITE_UTF8, 0,
+    bentley_sqlite3_create_function(p->db, "shell_module_schema", 1, SQLITE_UTF8, 0,
                             shellModuleSchema, 0, 0);
-    sqlite3_create_function(p->db, "shell_putsnl", 1, SQLITE_UTF8, p,
+    bentley_sqlite3_create_function(p->db, "shell_putsnl", 1, SQLITE_UTF8, p,
                             shellPutsFunc, 0, 0);
-    sqlite3_create_function(p->db, "usleep",1,SQLITE_UTF8,0,
+    bentley_sqlite3_create_function(p->db, "usleep",1,SQLITE_UTF8,0,
                             shellUSleepFunc, 0, 0);
 #ifndef SQLITE_NOHAVE_SYSTEM
-    sqlite3_create_function(p->db, "edit", 1, SQLITE_UTF8, 0,
+    bentley_sqlite3_create_function(p->db, "edit", 1, SQLITE_UTF8, 0,
                             editFunc, 0, 0);
-    sqlite3_create_function(p->db, "edit", 2, SQLITE_UTF8, 0,
+    bentley_sqlite3_create_function(p->db, "edit", 2, SQLITE_UTF8, 0,
                             editFunc, 0, 0);
 #endif
 
     if( p->openMode==SHELL_OPEN_ZIPFILE ){
-      char *zSql = sqlite3_mprintf(
+      char *zSql = bentley_sqlite3_mprintf(
          "CREATE VIRTUAL TABLE zip USING zipfile(%Q);", zDbFilename);
       shell_check_oom(zSql);
-      sqlite3_exec(p->db, zSql, 0, 0, 0);
-      sqlite3_free(zSql);
+      bentley_sqlite3_exec(p->db, zSql, 0, 0, 0);
+      bentley_sqlite3_free(zSql);
     }
 #ifndef SQLITE_OMIT_DESERIALIZE
     else
@@ -25890,23 +25890,23 @@ static void open_db(ShellState *p, int openFlags){
       if( aData==0 ){
         return;
       }
-      rc = sqlite3_deserialize(p->db, "main", aData, nData, nData,
+      rc = bentley_sqlite3_deserialize(p->db, "main", aData, nData, nData,
                    SQLITE_DESERIALIZE_RESIZEABLE |
                    SQLITE_DESERIALIZE_FREEONCLOSE);
       if( rc ){
-        sqlite3_fprintf(stderr,"Error: sqlite3_deserialize() returns %d\n", rc);
+        sqlite3_fprintf(stderr,"Error: bentley_sqlite3_deserialize() returns %d\n", rc);
       }
       if( p->szMax>0 ){
-        sqlite3_file_control(p->db, "main", SQLITE_FCNTL_SIZE_LIMIT, &p->szMax);
+        bentley_sqlite3_file_control(p->db, "main", SQLITE_FCNTL_SIZE_LIMIT, &p->szMax);
       }
     }
 #endif
   }
   if( p->db!=0 ){
     if( p->bSafeModePersist ){
-      sqlite3_set_authorizer(p->db, safeModeAuth, p);
+      bentley_sqlite3_set_authorizer(p->db, safeModeAuth, p);
     }
-    sqlite3_db_config(
+    bentley_sqlite3_db_config(
         p->db, SQLITE_DBCONFIG_STMT_SCANSTATUS, p->scanstatsOn, (int*)0
     );
   }
@@ -25916,10 +25916,10 @@ static void open_db(ShellState *p, int openFlags){
 ** Attempt to close the database connection.  Report errors.
 */
 void close_db(sqlite3 *db){
-  int rc = sqlite3_close(db);
+  int rc = bentley_sqlite3_close(db);
   if( rc ){
     sqlite3_fprintf(stderr,
-        "Error: sqlite3_close() returns %d: %s\n", rc, sqlite3_errmsg(db));
+        "Error: bentley_sqlite3_close() returns %d: %s\n", rc, bentley_sqlite3_errmsg(db));
   }
 }
 
@@ -25933,18 +25933,18 @@ static char *readline_completion_generator(const char *text, int state){
   char *zRet;
   if( state==0 ){
     char *zSql;
-    sqlite3_finalize(pStmt);
-    zSql = sqlite3_mprintf("SELECT DISTINCT candidate COLLATE nocase"
+    bentley_sqlite3_finalize(pStmt);
+    zSql = bentley_sqlite3_mprintf("SELECT DISTINCT candidate COLLATE nocase"
                            "  FROM completion(%Q) ORDER BY 1", text);
     shell_check_oom(zSql);
-    sqlite3_prepare_v2(globalDb, zSql, -1, &pStmt, 0);
-    sqlite3_free(zSql);
+    bentley_sqlite3_prepare_v2(globalDb, zSql, -1, &pStmt, 0);
+    bentley_sqlite3_free(zSql);
   }
-  if( sqlite3_step(pStmt)==SQLITE_ROW ){
-    const char *z = (const char*)sqlite3_column_text(pStmt,0);
+  if( bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+    const char *z = (const char*)bentley_sqlite3_column_text(pStmt,0);
     zRet = z ? strdup(z) : 0;
   }else{
-    sqlite3_finalize(pStmt);
+    bentley_sqlite3_finalize(pStmt);
     pStmt = 0;
     zRet = 0;
   }
@@ -25984,22 +25984,22 @@ static void linenoise_completion(
   if( i==nLine-1 ) return;
   iStart = i+1;
   memcpy(zBuf, zLine, iStart);
-  zSql = sqlite3_mprintf("SELECT DISTINCT candidate COLLATE nocase"
+  zSql = bentley_sqlite3_mprintf("SELECT DISTINCT candidate COLLATE nocase"
                          "  FROM completion(%Q,%Q) ORDER BY 1",
                          &zLine[iStart], zLine);
   shell_check_oom(zSql);
-  sqlite3_prepare_v2(globalDb, zSql, -1, &pStmt, 0);
-  sqlite3_free(zSql);
-  sqlite3_exec(globalDb, "PRAGMA page_count", 0, 0, 0); /* Load the schema */
-  while( sqlite3_step(pStmt)==SQLITE_ROW ){
-    const char *zCompletion = (const char*)sqlite3_column_text(pStmt, 0);
-    int nCompletion = sqlite3_column_bytes(pStmt, 0);
+  bentley_sqlite3_prepare_v2(globalDb, zSql, -1, &pStmt, 0);
+  bentley_sqlite3_free(zSql);
+  bentley_sqlite3_exec(globalDb, "PRAGMA page_count", 0, 0, 0); /* Load the schema */
+  while( bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+    const char *zCompletion = (const char*)bentley_sqlite3_column_text(pStmt, 0);
+    int nCompletion = bentley_sqlite3_column_bytes(pStmt, 0);
     if( iStart+nCompletion < (i64)sizeof(zBuf)-1 && zCompletion ){
       memcpy(zBuf+iStart, zCompletion, nCompletion+1);
       linenoiseAddCompletion(lc, zBuf);
     }
   }
-  sqlite3_finalize(pStmt);
+  bentley_sqlite3_finalize(pStmt);
 }
 #endif
 
@@ -26085,10 +26085,10 @@ static int booleanValue(const char *zArg){
     for(i=0; zArg[i]>='0' && zArg[i]<='9'; i++){}
   }
   if( i>0 && zArg[i]==0 ) return (int)(integerValue(zArg) & 0xffffffff);
-  if( sqlite3_stricmp(zArg, "on")==0 || sqlite3_stricmp(zArg,"yes")==0 ){
+  if( bentley_sqlite3_stricmp(zArg, "on")==0 || bentley_sqlite3_stricmp(zArg,"yes")==0 ){
     return 1;
   }
-  if( sqlite3_stricmp(zArg, "off")==0 || sqlite3_stricmp(zArg,"no")==0 ){
+  if( bentley_sqlite3_stricmp(zArg, "off")==0 || bentley_sqlite3_stricmp(zArg,"no")==0 ){
     return 0;
   }
   sqlite3_fprintf(stderr,
@@ -26161,17 +26161,17 @@ static int sql_trace_callback(
     pStmt = (sqlite3_stmt*)pP;
     switch( p->eTraceType ){
       case SHELL_TRACE_EXPANDED: {
-        zSql = sqlite3_expanded_sql(pStmt);
+        zSql = bentley_sqlite3_expanded_sql(pStmt);
         break;
       }
 #ifdef SQLITE_ENABLE_NORMALIZE
       case SHELL_TRACE_NORMALIZED: {
-        zSql = sqlite3_normalized_sql(pStmt);
+        zSql = bentley_sqlite3_normalized_sql(pStmt);
         break;
       }
 #endif
       default: {
-        zSql = sqlite3_sql(pStmt);
+        zSql = bentley_sqlite3_sql(pStmt);
         break;
       }
     }
@@ -26235,7 +26235,7 @@ static void import_cleanup(ImportCtx *p){
     p->xCloser(p->in);
     p->in = 0;
   }
-  sqlite3_free(p->z);
+  bentley_sqlite3_free(p->z);
   p->z = 0;
 }
 
@@ -26243,7 +26243,7 @@ static void import_cleanup(ImportCtx *p){
 static void import_append_char(ImportCtx *p, int c){
   if( p->n+1>=p->nAlloc ){
     p->nAlloc += p->nAlloc + 100;
-    p->z = sqlite3_realloc64(p->z, p->nAlloc);
+    p->z = bentley_sqlite3_realloc64(p->z, p->nAlloc);
     shell_check_oom(p->z);
   }
   p->z[p->n++] = (char)c;
@@ -26254,7 +26254,7 @@ static void import_append_char(ImportCtx *p, int c){
 **
 **   +  Input comes from p->in.
 **   +  Store results in p->z of length p->n.  Space to hold p->z comes
-**      from sqlite3_malloc64().
+**      from bentley_sqlite3_malloc64().
 **   +  Use p->cSep as the column separator.  The default is ",".
 **   +  Use p->rSep as the row separator.  The default is "\n".
 **   +  Keep track of the line number in p->nLine.
@@ -26344,7 +26344,7 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
 **
 **   +  Input comes from p->in.
 **   +  Store results in p->z of length p->n.  Space to hold p->z comes
-**      from sqlite3_malloc64().
+**      from bentley_sqlite3_malloc64().
 **   +  Use p->cSep as the column separator.  The default is "\x1F".
 **   +  Use p->rSep as the row separator.  The default is "\x1E".
 **   +  Keep track of the row number in p->nLine.
@@ -26395,18 +26395,18 @@ static void tryToCloneData(
   int cnt = 0;
   const int spinRate = 10000;
 
-  zQuery = sqlite3_mprintf("SELECT * FROM \"%w\"", zTable);
+  zQuery = bentley_sqlite3_mprintf("SELECT * FROM \"%w\"", zTable);
   shell_check_oom(zQuery);
-  rc = sqlite3_prepare_v2(p->db, zQuery, -1, &pQuery, 0);
+  rc = bentley_sqlite3_prepare_v2(p->db, zQuery, -1, &pQuery, 0);
   if( rc ){
     sqlite3_fprintf(stderr,"Error %d: %s on [%s]\n",
-          sqlite3_extended_errcode(p->db), sqlite3_errmsg(p->db), zQuery);
+          bentley_sqlite3_extended_errcode(p->db), bentley_sqlite3_errmsg(p->db), zQuery);
     goto end_data_xfer;
   }
-  n = sqlite3_column_count(pQuery);
-  zInsert = sqlite3_malloc64(200 + nTable + n*3);
+  n = bentley_sqlite3_column_count(pQuery);
+  zInsert = bentley_sqlite3_malloc64(200 + nTable + n*3);
   shell_check_oom(zInsert);
-  sqlite3_snprintf(200+nTable,zInsert,
+  bentley_sqlite3_snprintf(200+nTable,zInsert,
                    "INSERT OR IGNORE INTO \"%s\" VALUES(?", zTable);
   i = strlen30(zInsert);
   for(j=1; j<n; j++){
@@ -26414,48 +26414,48 @@ static void tryToCloneData(
     i += 2;
   }
   memcpy(zInsert+i, ");", 3);
-  rc = sqlite3_prepare_v2(newDb, zInsert, -1, &pInsert, 0);
+  rc = bentley_sqlite3_prepare_v2(newDb, zInsert, -1, &pInsert, 0);
   if( rc ){
     sqlite3_fprintf(stderr,"Error %d: %s on [%s]\n",
-          sqlite3_extended_errcode(newDb), sqlite3_errmsg(newDb), zInsert);
+          bentley_sqlite3_extended_errcode(newDb), bentley_sqlite3_errmsg(newDb), zInsert);
     goto end_data_xfer;
   }
   for(k=0; k<2; k++){
-    while( (rc = sqlite3_step(pQuery))==SQLITE_ROW ){
+    while( (rc = bentley_sqlite3_step(pQuery))==SQLITE_ROW ){
       for(i=0; i<n; i++){
-        switch( sqlite3_column_type(pQuery, i) ){
+        switch( bentley_sqlite3_column_type(pQuery, i) ){
           case SQLITE_NULL: {
-            sqlite3_bind_null(pInsert, i+1);
+            bentley_sqlite3_bind_null(pInsert, i+1);
             break;
           }
           case SQLITE_INTEGER: {
-            sqlite3_bind_int64(pInsert, i+1, sqlite3_column_int64(pQuery,i));
+            bentley_sqlite3_bind_int64(pInsert, i+1, bentley_sqlite3_column_int64(pQuery,i));
             break;
           }
           case SQLITE_FLOAT: {
-            sqlite3_bind_double(pInsert, i+1, sqlite3_column_double(pQuery,i));
+            bentley_sqlite3_bind_double(pInsert, i+1, bentley_sqlite3_column_double(pQuery,i));
             break;
           }
           case SQLITE_TEXT: {
-            sqlite3_bind_text(pInsert, i+1,
-                             (const char*)sqlite3_column_text(pQuery,i),
+            bentley_sqlite3_bind_text(pInsert, i+1,
+                             (const char*)bentley_sqlite3_column_text(pQuery,i),
                              -1, SQLITE_STATIC);
             break;
           }
           case SQLITE_BLOB: {
-            sqlite3_bind_blob(pInsert, i+1, sqlite3_column_blob(pQuery,i),
-                                            sqlite3_column_bytes(pQuery,i),
+            bentley_sqlite3_bind_blob(pInsert, i+1, bentley_sqlite3_column_blob(pQuery,i),
+                                            bentley_sqlite3_column_bytes(pQuery,i),
                                             SQLITE_STATIC);
             break;
           }
         }
       } /* End for */
-      rc = sqlite3_step(pInsert);
+      rc = bentley_sqlite3_step(pInsert);
       if( rc!=SQLITE_OK && rc!=SQLITE_ROW && rc!=SQLITE_DONE ){
         sqlite3_fprintf(stderr,"Error %d: %s\n",
-              sqlite3_extended_errcode(newDb), sqlite3_errmsg(newDb));
+              bentley_sqlite3_extended_errcode(newDb), bentley_sqlite3_errmsg(newDb));
       }
-      sqlite3_reset(pInsert);
+      bentley_sqlite3_reset(pInsert);
       cnt++;
       if( (cnt%spinRate)==0 ){
         printf("%c\b", "|/-\\"[(cnt/spinRate)%4]);
@@ -26463,12 +26463,12 @@ static void tryToCloneData(
       }
     } /* End while */
     if( rc==SQLITE_DONE ) break;
-    sqlite3_finalize(pQuery);
-    sqlite3_free(zQuery);
-    zQuery = sqlite3_mprintf("SELECT * FROM \"%w\" ORDER BY rowid DESC;",
+    bentley_sqlite3_finalize(pQuery);
+    bentley_sqlite3_free(zQuery);
+    zQuery = bentley_sqlite3_mprintf("SELECT * FROM \"%w\" ORDER BY rowid DESC;",
                              zTable);
     shell_check_oom(zQuery);
-    rc = sqlite3_prepare_v2(p->db, zQuery, -1, &pQuery, 0);
+    rc = bentley_sqlite3_prepare_v2(p->db, zQuery, -1, &pQuery, 0);
     if( rc ){
       sqlite3_fprintf(stderr,"Warning: cannot step \"%s\" backwards", zTable);
       break;
@@ -26476,10 +26476,10 @@ static void tryToCloneData(
   } /* End for(k=0...) */
 
 end_data_xfer:
-  sqlite3_finalize(pQuery);
-  sqlite3_finalize(pInsert);
-  sqlite3_free(zQuery);
-  sqlite3_free(zInsert);
+  bentley_sqlite3_finalize(pQuery);
+  bentley_sqlite3_finalize(pInsert);
+  bentley_sqlite3_free(zQuery);
+  bentley_sqlite3_free(zInsert);
 }
 
 
@@ -26502,26 +26502,26 @@ static void tryToCloneSchema(
   const unsigned char *zSql;
   char *zErrMsg = 0;
 
-  zQuery = sqlite3_mprintf("SELECT name, sql FROM sqlite_schema"
+  zQuery = bentley_sqlite3_mprintf("SELECT name, sql FROM sqlite_schema"
                            " WHERE %s ORDER BY rowid ASC", zWhere);
   shell_check_oom(zQuery);
-  rc = sqlite3_prepare_v2(p->db, zQuery, -1, &pQuery, 0);
+  rc = bentley_sqlite3_prepare_v2(p->db, zQuery, -1, &pQuery, 0);
   if( rc ){
     sqlite3_fprintf(stderr,
-          "Error: (%d) %s on [%s]\n", sqlite3_extended_errcode(p->db),
-          sqlite3_errmsg(p->db), zQuery);
+          "Error: (%d) %s on [%s]\n", bentley_sqlite3_extended_errcode(p->db),
+          bentley_sqlite3_errmsg(p->db), zQuery);
     goto end_schema_xfer;
   }
-  while( (rc = sqlite3_step(pQuery))==SQLITE_ROW ){
-    zName = sqlite3_column_text(pQuery, 0);
-    zSql = sqlite3_column_text(pQuery, 1);
+  while( (rc = bentley_sqlite3_step(pQuery))==SQLITE_ROW ){
+    zName = bentley_sqlite3_column_text(pQuery, 0);
+    zSql = bentley_sqlite3_column_text(pQuery, 1);
     if( zName==0 || zSql==0 ) continue;
-    if( sqlite3_stricmp((char*)zName, "sqlite_sequence")!=0 ){
+    if( bentley_sqlite3_stricmp((char*)zName, "sqlite_sequence")!=0 ){
       sqlite3_fprintf(stdout, "%s... ", zName); fflush(stdout);
-      sqlite3_exec(newDb, (const char*)zSql, 0, 0, &zErrMsg);
+      bentley_sqlite3_exec(newDb, (const char*)zSql, 0, 0, &zErrMsg);
       if( zErrMsg ){
         sqlite3_fprintf(stderr,"Error: %s\nSQL: [%s]\n", zErrMsg, zSql);
-        sqlite3_free(zErrMsg);
+        bentley_sqlite3_free(zErrMsg);
         zErrMsg = 0;
       }
     }
@@ -26531,27 +26531,27 @@ static void tryToCloneSchema(
     sputz(stdout, "done\n");
   }
   if( rc!=SQLITE_DONE ){
-    sqlite3_finalize(pQuery);
-    sqlite3_free(zQuery);
-    zQuery = sqlite3_mprintf("SELECT name, sql FROM sqlite_schema"
+    bentley_sqlite3_finalize(pQuery);
+    bentley_sqlite3_free(zQuery);
+    zQuery = bentley_sqlite3_mprintf("SELECT name, sql FROM sqlite_schema"
                              " WHERE %s ORDER BY rowid DESC", zWhere);
     shell_check_oom(zQuery);
-    rc = sqlite3_prepare_v2(p->db, zQuery, -1, &pQuery, 0);
+    rc = bentley_sqlite3_prepare_v2(p->db, zQuery, -1, &pQuery, 0);
     if( rc ){
       sqlite3_fprintf(stderr,"Error: (%d) %s on [%s]\n",
-            sqlite3_extended_errcode(p->db), sqlite3_errmsg(p->db), zQuery);
+            bentley_sqlite3_extended_errcode(p->db), bentley_sqlite3_errmsg(p->db), zQuery);
       goto end_schema_xfer;
     }
-    while( sqlite3_step(pQuery)==SQLITE_ROW ){
-      zName = sqlite3_column_text(pQuery, 0);
-      zSql = sqlite3_column_text(pQuery, 1);
+    while( bentley_sqlite3_step(pQuery)==SQLITE_ROW ){
+      zName = bentley_sqlite3_column_text(pQuery, 0);
+      zSql = bentley_sqlite3_column_text(pQuery, 1);
       if( zName==0 || zSql==0 ) continue;
-      if( sqlite3_stricmp((char*)zName, "sqlite_sequence")==0 ) continue;
+      if( bentley_sqlite3_stricmp((char*)zName, "sqlite_sequence")==0 ) continue;
       sqlite3_fprintf(stdout, "%s... ", zName); fflush(stdout);
-      sqlite3_exec(newDb, (const char*)zSql, 0, 0, &zErrMsg);
+      bentley_sqlite3_exec(newDb, (const char*)zSql, 0, 0, &zErrMsg);
       if( zErrMsg ){
         sqlite3_fprintf(stderr,"Error: %s\nSQL: [%s]\n", zErrMsg, zSql);
-        sqlite3_free(zErrMsg);
+        bentley_sqlite3_free(zErrMsg);
         zErrMsg = 0;
       }
       if( xForEach ){
@@ -26561,8 +26561,8 @@ static void tryToCloneSchema(
     }
   }
 end_schema_xfer:
-  sqlite3_finalize(pQuery);
-  sqlite3_free(zQuery);
+  bentley_sqlite3_finalize(pQuery);
+  bentley_sqlite3_free(zQuery);
 }
 
 /*
@@ -26577,17 +26577,17 @@ static void tryToClone(ShellState *p, const char *zNewDb){
     sqlite3_fprintf(stderr,"File \"%s\" already exists.\n", zNewDb);
     return;
   }
-  rc = sqlite3_open(zNewDb, &newDb);
+  rc = bentley_sqlite3_open(zNewDb, &newDb);
   if( rc ){
     sqlite3_fprintf(stderr,
-        "Cannot create output database: %s\n", sqlite3_errmsg(newDb));
+        "Cannot create output database: %s\n", bentley_sqlite3_errmsg(newDb));
   }else{
-    sqlite3_exec(p->db, "PRAGMA writable_schema=ON;", 0, 0, 0);
-    sqlite3_exec(newDb, "BEGIN EXCLUSIVE;", 0, 0, 0);
+    bentley_sqlite3_exec(p->db, "PRAGMA writable_schema=ON;", 0, 0, 0);
+    bentley_sqlite3_exec(newDb, "BEGIN EXCLUSIVE;", 0, 0, 0);
     tryToCloneSchema(p, newDb, "type='table'", tryToCloneData);
     tryToCloneSchema(p, newDb, "type!='table'", 0);
-    sqlite3_exec(newDb, "COMMIT;", 0, 0, 0);
-    sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
+    bentley_sqlite3_exec(newDb, "COMMIT;", 0, 0, 0);
+    bentley_sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
   }
   close_db(newDb);
 }
@@ -26640,16 +26640,16 @@ static void output_reset(ShellState *p){
       "xdg-open";
 #endif
       char *zCmd;
-      zCmd = sqlite3_mprintf("%s %s", zXdgOpenCmd, p->zTempFile);
+      zCmd = bentley_sqlite3_mprintf("%s %s", zXdgOpenCmd, p->zTempFile);
       if( system(zCmd) ){
         sqlite3_fprintf(stderr,"Failed: [%s]\n", zCmd);
       }else{
         /* Give the start/open/xdg-open command some time to get
         ** going before we continue, and potential delete the
         ** p->zTempFile data file out from under it */
-        sqlite3_sleep(2000);
+        bentley_sqlite3_sleep(2000);
       }
-      sqlite3_free(zCmd);
+      bentley_sqlite3_free(zCmd);
       outputModePop(p);
       p->doXdgOpen = 0;
     }
@@ -26673,14 +26673,14 @@ static int db_int(sqlite3 *db, const char *zSql, ...){
   char *z;
   va_list ap;
   va_start(ap, zSql);
-  z = sqlite3_vmprintf(zSql, ap);
+  z = bentley_sqlite3_vmprintf(zSql, ap);
   va_end(ap);
-  sqlite3_prepare_v2(db, z, -1, &pStmt, 0);
-  if( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
-    res = sqlite3_column_int(pStmt,0);
+  bentley_sqlite3_prepare_v2(db, z, -1, &pStmt, 0);
+  if( pStmt && bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+    res = bentley_sqlite3_column_int(pStmt,0);
   }
-  sqlite3_finalize(pStmt);
-  sqlite3_free(z);
+  bentley_sqlite3_finalize(pStmt);
+  bentley_sqlite3_free(z);
   return res;
 }
 
@@ -26735,25 +26735,25 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
   unsigned char aHdr[100];
   open_db(p, 0);
   if( p->db==0 ) return 1;
-  rc = sqlite3_prepare_v2(p->db,
+  rc = bentley_sqlite3_prepare_v2(p->db,
              "SELECT data FROM sqlite_dbpage(?1) WHERE pgno=1",
              -1, &pStmt, 0);
   if( rc ){
-    sqlite3_fprintf(stderr,"error: %s\n", sqlite3_errmsg(p->db));
-    sqlite3_finalize(pStmt);
+    sqlite3_fprintf(stderr,"error: %s\n", bentley_sqlite3_errmsg(p->db));
+    bentley_sqlite3_finalize(pStmt);
     return 1;
   }
-  sqlite3_bind_text(pStmt, 1, zDb, -1, SQLITE_STATIC);
-  if( sqlite3_step(pStmt)==SQLITE_ROW
-   && sqlite3_column_bytes(pStmt,0)>100
+  bentley_sqlite3_bind_text(pStmt, 1, zDb, -1, SQLITE_STATIC);
+  if( bentley_sqlite3_step(pStmt)==SQLITE_ROW
+   && bentley_sqlite3_column_bytes(pStmt,0)>100
   ){
-    const u8 *pb = sqlite3_column_blob(pStmt,0);
+    const u8 *pb = bentley_sqlite3_column_blob(pStmt,0);
     shell_check_oom(pb);
     memcpy(aHdr, pb, 100);
-    sqlite3_finalize(pStmt);
+    bentley_sqlite3_finalize(pStmt);
   }else{
     sqlite3_fputs("unable to read database header\n", stderr);
-    sqlite3_finalize(pStmt);
+    bentley_sqlite3_finalize(pStmt);
     return 1;
   }
   i = get2byteInt(aHdr+16);
@@ -26776,18 +26776,18 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
     sqlite3_fputs("\n", p->out);
   }
   if( zDb==0 ){
-    zSchemaTab = sqlite3_mprintf("main.sqlite_schema");
+    zSchemaTab = bentley_sqlite3_mprintf("main.sqlite_schema");
   }else if( cli_strcmp(zDb,"temp")==0 ){
-    zSchemaTab = sqlite3_mprintf("%s", "sqlite_temp_schema");
+    zSchemaTab = bentley_sqlite3_mprintf("%s", "sqlite_temp_schema");
   }else{
-    zSchemaTab = sqlite3_mprintf("\"%w\".sqlite_schema", zDb);
+    zSchemaTab = bentley_sqlite3_mprintf("\"%w\".sqlite_schema", zDb);
   }
   for(i=0; i<ArraySize(aQuery); i++){
     int val = db_int(p->db, aQuery[i].zSql, zSchemaTab);
     sqlite3_fprintf(p->out, "%-20s %d\n", aQuery[i].zName, val);
   }
-  sqlite3_free(zSchemaTab);
-  sqlite3_file_control(p->db, zDb, SQLITE_FCNTL_DATA_VERSION, &iDataVersion);
+  bentley_sqlite3_free(zSchemaTab);
+  bentley_sqlite3_file_control(p->db, zDb, SQLITE_FCNTL_DATA_VERSION, &iDataVersion);
   sqlite3_fprintf(p->out, "%-20s %u\n", "data version", iDataVersion);
   return 0;
 }
@@ -26813,28 +26813,28 @@ static int shell_dbtotxt_command(ShellState *p, int nArg, char **azArg){
   for(i=' '; i<='~'; i++){
     if( i!='{' && i!='}' && i!='"' && i!='\\' ) bShow[i] = (unsigned char)i;
   }
-  rc = sqlite3_prepare_v2(p->db, "PRAGMA page_size", -1, &pStmt, 0);
+  rc = bentley_sqlite3_prepare_v2(p->db, "PRAGMA page_size", -1, &pStmt, 0);
   if( rc ) goto dbtotxt_error;
   rc = 0;
-  if( sqlite3_step(pStmt)!=SQLITE_ROW ) goto dbtotxt_error;
-  pgSz = sqlite3_column_int(pStmt, 0);
-  sqlite3_finalize(pStmt);
+  if( bentley_sqlite3_step(pStmt)!=SQLITE_ROW ) goto dbtotxt_error;
+  pgSz = bentley_sqlite3_column_int(pStmt, 0);
+  bentley_sqlite3_finalize(pStmt);
   pStmt = 0;
   if( pgSz<512 || pgSz>65536 || (pgSz&(pgSz-1))!=0 ) goto dbtotxt_error;
-  rc = sqlite3_prepare_v2(p->db, "PRAGMA page_count", -1, &pStmt, 0);
+  rc = bentley_sqlite3_prepare_v2(p->db, "PRAGMA page_count", -1, &pStmt, 0);
   if( rc ) goto dbtotxt_error;
   rc = 0;
-  if( sqlite3_step(pStmt)!=SQLITE_ROW ) goto dbtotxt_error;
-  nPage = sqlite3_column_int64(pStmt, 0);
-  sqlite3_finalize(pStmt);
+  if( bentley_sqlite3_step(pStmt)!=SQLITE_ROW ) goto dbtotxt_error;
+  nPage = bentley_sqlite3_column_int64(pStmt, 0);
+  bentley_sqlite3_finalize(pStmt);
   pStmt = 0;
   if( nPage<1 ) goto dbtotxt_error;
-  rc = sqlite3_prepare_v2(p->db, "PRAGMA databases", -1, &pStmt, 0);
+  rc = bentley_sqlite3_prepare_v2(p->db, "PRAGMA databases", -1, &pStmt, 0);
   if( rc ) goto dbtotxt_error;
-  if( sqlite3_step(pStmt)!=SQLITE_ROW ){
+  if( bentley_sqlite3_step(pStmt)!=SQLITE_ROW ){
     zTail = "unk.db";
   }else{
-    const char *zFilename = (const char*)sqlite3_column_text(pStmt, 2);
+    const char *zFilename = (const char*)bentley_sqlite3_column_text(pStmt, 2);
     if( zFilename==0 || zFilename[0]==0 ) zFilename = "unk.db";
     zTail = strrchr(zFilename, '/');
 #if defined(_WIN32)
@@ -26845,14 +26845,14 @@ static int shell_dbtotxt_command(ShellState *p, int nArg, char **azArg){
   shell_check_oom(zName);
   sqlite3_fprintf(p->out, "| size %lld pagesize %d filename %s\n",
                   nPage*pgSz, pgSz, zName);
-  sqlite3_finalize(pStmt);
+  bentley_sqlite3_finalize(pStmt);
   pStmt = 0;
-  rc = sqlite3_prepare_v2(p->db,
+  rc = bentley_sqlite3_prepare_v2(p->db,
            "SELECT pgno, data FROM sqlite_dbpage ORDER BY pgno", -1, &pStmt, 0);
   if( rc ) goto dbtotxt_error;
-  while( sqlite3_step(pStmt)==SQLITE_ROW ){
-    sqlite3_int64 pgno = sqlite3_column_int64(pStmt, 0);
-    const u8 *aData = sqlite3_column_blob(pStmt, 1);
+  while( bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+    sqlite3_int64 pgno = bentley_sqlite3_column_int64(pStmt, 0);
+    const u8 *aData = bentley_sqlite3_column_blob(pStmt, 1);
     int seenPageLabel = 0;
     for(i=0; i<pgSz; i+=16){
       const u8 *aLine = aData+i;
@@ -26872,16 +26872,16 @@ static int shell_dbtotxt_command(ShellState *p, int nArg, char **azArg){
       sqlite3_fprintf(p->out, "\n");
     }
   }
-  sqlite3_finalize(pStmt);
+  bentley_sqlite3_finalize(pStmt);
   sqlite3_fprintf(p->out, "| end %s\n", zName);
   free(zName);
   return 0;
 
 dbtotxt_error:
   if( rc ){
-    sqlite3_fprintf(stderr, "ERROR: %s\n", sqlite3_errmsg(p->db));
+    sqlite3_fprintf(stderr, "ERROR: %s\n", bentley_sqlite3_errmsg(p->db));
   }
-  sqlite3_finalize(pStmt);
+  bentley_sqlite3_finalize(pStmt);
   free(zName);
   return 1;
 }
@@ -26893,10 +26893,10 @@ static void shellEmitError(const char *zErr){
   sqlite3_fprintf(stderr,"Error: %s\n", zErr);
 }
 /*
-** Print the current sqlite3_errmsg() value to stderr and return 1.
+** Print the current bentley_sqlite3_errmsg() value to stderr and return 1.
 */
 static int shellDatabaseError(sqlite3 *db){
-  shellEmitError(sqlite3_errmsg(db));
+  shellEmitError(bentley_sqlite3_errmsg(db));
   return 1;
 }
 
@@ -27017,7 +27017,7 @@ int shellDeleteFile(const char *zFilename){
 #ifdef _WIN32
   wchar_t *z = sqlite3_win32_utf8_to_unicode(zFilename);
   rc = _wunlink(z);
-  sqlite3_free(z);
+  bentley_sqlite3_free(z);
 #else
   rc = unlink(zFilename);
 #endif
@@ -27032,7 +27032,7 @@ static void clearTempFile(ShellState *p){
   if( p->zTempFile==0 ) return;
   if( p->doXdgOpen ) return;
   if( shellDeleteFile(p->zTempFile) ) return;
-  sqlite3_free(p->zTempFile);
+  bentley_sqlite3_free(p->zTempFile);
   p->zTempFile = 0;
 }
 
@@ -27041,17 +27041,17 @@ static void clearTempFile(ShellState *p){
 */
 static void newTempFile(ShellState *p, const char *zSuffix){
   clearTempFile(p);
-  sqlite3_free(p->zTempFile);
+  bentley_sqlite3_free(p->zTempFile);
   p->zTempFile = 0;
   if( p->db ){
-    sqlite3_file_control(p->db, 0, SQLITE_FCNTL_TEMPFILENAME, &p->zTempFile);
+    bentley_sqlite3_file_control(p->db, 0, SQLITE_FCNTL_TEMPFILENAME, &p->zTempFile);
   }
   if( p->zTempFile==0 ){
     /* If p->db is an in-memory database then the TEMPFILENAME file-control
     ** will not work and we will need to fallback to guessing */
     char *zTemp;
     sqlite3_uint64 r;
-    sqlite3_randomness(sizeof(r), &r);
+    bentley_sqlite3_randomness(sizeof(r), &r);
     zTemp = getenv("TEMP");
     if( zTemp==0 ) zTemp = getenv("TMP");
     if( zTemp==0 ){
@@ -27061,9 +27061,9 @@ static void newTempFile(ShellState *p, const char *zSuffix){
       zTemp = "/tmp";
 #endif
     }
-    p->zTempFile = sqlite3_mprintf("%s/temp%llx.%s", zTemp, r, zSuffix);
+    p->zTempFile = bentley_sqlite3_mprintf("%s/temp%llx.%s", zTemp, r, zSuffix);
   }else{
-    p->zTempFile = sqlite3_mprintf("%z.%s", p->zTempFile, zSuffix);
+    p->zTempFile = bentley_sqlite3_mprintf("%z.%s", p->zTempFile, zSuffix);
   }
   shell_check_oom(p->zTempFile);
 }
@@ -27089,7 +27089,7 @@ static void shellFkeyCollateClause(
   int nVal,
   sqlite3_value **apVal
 ){
-  sqlite3 *db = sqlite3_context_db_handle(pCtx);
+  sqlite3 *db = bentley_sqlite3_context_db_handle(pCtx);
   const char *zParent;
   const char *zParentCol;
   const char *zParentSeq;
@@ -27099,25 +27099,25 @@ static void shellFkeyCollateClause(
   int rc;
 
   assert( nVal==4 );
-  zParent = (const char*)sqlite3_value_text(apVal[0]);
-  zParentCol = (const char*)sqlite3_value_text(apVal[1]);
-  zChild = (const char*)sqlite3_value_text(apVal[2]);
-  zChildCol = (const char*)sqlite3_value_text(apVal[3]);
+  zParent = (const char*)bentley_sqlite3_value_text(apVal[0]);
+  zParentCol = (const char*)bentley_sqlite3_value_text(apVal[1]);
+  zChild = (const char*)bentley_sqlite3_value_text(apVal[2]);
+  zChildCol = (const char*)bentley_sqlite3_value_text(apVal[3]);
 
-  sqlite3_result_text(pCtx, "", -1, SQLITE_STATIC);
-  rc = sqlite3_table_column_metadata(
+  bentley_sqlite3_result_text(pCtx, "", -1, SQLITE_STATIC);
+  rc = bentley_sqlite3_table_column_metadata(
       db, "main", zParent, zParentCol, 0, &zParentSeq, 0, 0, 0
   );
   if( rc==SQLITE_OK ){
-    rc = sqlite3_table_column_metadata(
+    rc = bentley_sqlite3_table_column_metadata(
         db, "main", zChild, zChildCol, 0, &zChildSeq, 0, 0, 0
     );
   }
 
-  if( rc==SQLITE_OK && sqlite3_stricmp(zParentSeq, zChildSeq) ){
-    char *z = sqlite3_mprintf(" COLLATE %s", zParentSeq);
-    sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
-    sqlite3_free(z);
+  if( rc==SQLITE_OK && bentley_sqlite3_stricmp(zParentSeq, zChildSeq) ){
+    char *z = bentley_sqlite3_mprintf(" COLLATE %s", zParentSeq);
+    bentley_sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
+    bentley_sqlite3_free(z);
   }
 }
 
@@ -27153,7 +27153,7 @@ static int lintFkeyIndexes(
   **    implementation to optimize DELETE or UPDATE statements on the parent
   **    table.
   **
-  ** 1. A GLOB pattern suitable for sqlite3_strglob(). If the plan output by
+  ** 1. A GLOB pattern suitable for bentley_sqlite3_strglob(). If the plan output by
   **    the EXPLAIN QUERY PLAN command matches this pattern, then the schema
   **    contains an index that can be used to optimize the query.
   **
@@ -27205,10 +27205,10 @@ static int lintFkeyIndexes(
 
   for(i=2; i<nArg; i++){
     int n = strlen30(azArg[i]);
-    if( n>1 && sqlite3_strnicmp("-verbose", azArg[i], n)==0 ){
+    if( n>1 && bentley_sqlite3_strnicmp("-verbose", azArg[i], n)==0 ){
       bVerbose = 1;
     }
-    else if( n>1 && sqlite3_strnicmp("-groupbyparent", azArg[i], n)==0 ){
+    else if( n>1 && bentley_sqlite3_strnicmp("-groupbyparent", azArg[i], n)==0 ){
       bGroupByParent = 1;
       zIndent = "    ";
     }
@@ -27220,41 +27220,41 @@ static int lintFkeyIndexes(
   }
 
   /* Register the fkey_collate_clause() SQL function */
-  rc = sqlite3_create_function(db, "fkey_collate_clause", 4, SQLITE_UTF8,
+  rc = bentley_sqlite3_create_function(db, "fkey_collate_clause", 4, SQLITE_UTF8,
       0, shellFkeyCollateClause, 0, 0
   );
 
 
   if( rc==SQLITE_OK ){
-    rc = sqlite3_prepare_v2(db, zSql, -1, &pSql, 0);
+    rc = bentley_sqlite3_prepare_v2(db, zSql, -1, &pSql, 0);
   }
   if( rc==SQLITE_OK ){
-    sqlite3_bind_int(pSql, 1, bGroupByParent);
+    bentley_sqlite3_bind_int(pSql, 1, bGroupByParent);
   }
 
   if( rc==SQLITE_OK ){
     int rc2;
     char *zPrev = 0;
-    while( SQLITE_ROW==sqlite3_step(pSql) ){
+    while( SQLITE_ROW==bentley_sqlite3_step(pSql) ){
       int res = -1;
       sqlite3_stmt *pExplain = 0;
-      const char *zEQP = (const char*)sqlite3_column_text(pSql, 0);
-      const char *zGlob = (const char*)sqlite3_column_text(pSql, 1);
-      const char *zFrom = (const char*)sqlite3_column_text(pSql, 2);
-      const char *zTarget = (const char*)sqlite3_column_text(pSql, 3);
-      const char *zCI = (const char*)sqlite3_column_text(pSql, 4);
-      const char *zParent = (const char*)sqlite3_column_text(pSql, 5);
+      const char *zEQP = (const char*)bentley_sqlite3_column_text(pSql, 0);
+      const char *zGlob = (const char*)bentley_sqlite3_column_text(pSql, 1);
+      const char *zFrom = (const char*)bentley_sqlite3_column_text(pSql, 2);
+      const char *zTarget = (const char*)bentley_sqlite3_column_text(pSql, 3);
+      const char *zCI = (const char*)bentley_sqlite3_column_text(pSql, 4);
+      const char *zParent = (const char*)bentley_sqlite3_column_text(pSql, 5);
 
       if( zEQP==0 ) continue;
       if( zGlob==0 ) continue;
-      rc = sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
+      rc = bentley_sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
       if( rc!=SQLITE_OK ) break;
-      if( SQLITE_ROW==sqlite3_step(pExplain) ){
-        const char *zPlan = (const char*)sqlite3_column_text(pExplain, 3);
-        res = zPlan!=0 && (  0==sqlite3_strglob(zGlob, zPlan)
-                          || 0==sqlite3_strglob(zGlobIPK, zPlan));
+      if( SQLITE_ROW==bentley_sqlite3_step(pExplain) ){
+        const char *zPlan = (const char*)bentley_sqlite3_column_text(pExplain, 3);
+        res = zPlan!=0 && (  0==bentley_sqlite3_strglob(zGlob, zPlan)
+                          || 0==bentley_sqlite3_strglob(zGlobIPK, zPlan));
       }
-      rc = sqlite3_finalize(pExplain);
+      rc = bentley_sqlite3_finalize(pExplain);
       if( rc!=SQLITE_OK ) break;
 
       if( res<0 ){
@@ -27263,11 +27263,11 @@ static int lintFkeyIndexes(
       }else{
         if( bGroupByParent
         && (bVerbose || res==0)
-        && (zPrev==0 || sqlite3_stricmp(zParent, zPrev))
+        && (zPrev==0 || bentley_sqlite3_stricmp(zParent, zPrev))
         ){
           sqlite3_fprintf(out, "-- Parent table %s\n", zParent);
-          sqlite3_free(zPrev);
-          zPrev = sqlite3_mprintf("%s", zParent);
+          bentley_sqlite3_free(zPrev);
+          zPrev = bentley_sqlite3_mprintf("%s", zParent);
         }
 
         if( res==0 ){
@@ -27280,19 +27280,19 @@ static int lintFkeyIndexes(
         }
       }
     }
-    sqlite3_free(zPrev);
+    bentley_sqlite3_free(zPrev);
 
     if( rc!=SQLITE_OK ){
-      sqlite3_fprintf(stderr,"%s\n", sqlite3_errmsg(db));
+      sqlite3_fprintf(stderr,"%s\n", bentley_sqlite3_errmsg(db));
     }
 
-    rc2 = sqlite3_finalize(pSql);
+    rc2 = bentley_sqlite3_finalize(pSql);
     if( rc==SQLITE_OK && rc2!=SQLITE_OK ){
       rc = rc2;
-      sqlite3_fprintf(stderr,"%s\n", sqlite3_errmsg(db));
+      sqlite3_fprintf(stderr,"%s\n", bentley_sqlite3_errmsg(db));
     }
   }else{
-    sqlite3_fprintf(stderr,"%s\n", sqlite3_errmsg(db));
+    sqlite3_fprintf(stderr,"%s\n", bentley_sqlite3_errmsg(db));
   }
 
   return rc;
@@ -27308,7 +27308,7 @@ static int lintDotCommand(
 ){
   int n;
   n = (nArg>=2 ? strlen30(azArg[1]) : 0);
-  if( n<1 || sqlite3_strnicmp(azArg[1], "fkey-indexes", n) ) goto usage;
+  if( n<1 || bentley_sqlite3_strnicmp(azArg[1], "fkey-indexes", n) ) goto usage;
   return lintFkeyIndexes(pState, azArg, nArg);
 
  usage:
@@ -27326,10 +27326,10 @@ static void shellPrepare(
 ){
   *ppStmt = 0;
   if( *pRc==SQLITE_OK ){
-    int rc = sqlite3_prepare_v2(db, zSql, -1, ppStmt, 0);
+    int rc = bentley_sqlite3_prepare_v2(db, zSql, -1, ppStmt, 0);
     if( rc!=SQLITE_OK ){
       sqlite3_fprintf(stderr,
-         "sql error: %s (%d)\n", sqlite3_errmsg(db), sqlite3_errcode(db));
+         "sql error: %s (%d)\n", bentley_sqlite3_errmsg(db), bentley_sqlite3_errcode(db));
       *pRc = rc;
     }
   }
@@ -27350,13 +27350,13 @@ static void shellPreparePrintf(
     va_list ap;
     char *z;
     va_start(ap, zFmt);
-    z = sqlite3_vmprintf(zFmt, ap);
+    z = bentley_sqlite3_vmprintf(zFmt, ap);
     va_end(ap);
     if( z==0 ){
       *pRc = SQLITE_NOMEM;
     }else{
       shellPrepare(db, pRc, z, ppStmt);
-      sqlite3_free(z);
+      bentley_sqlite3_free(z);
     }
   }
 }
@@ -27369,11 +27369,11 @@ static void shellFinalize(
   sqlite3_stmt *pStmt
 ){
   if( pStmt ){
-    sqlite3 *db = sqlite3_db_handle(pStmt);
-    int rc = sqlite3_finalize(pStmt);
+    sqlite3 *db = bentley_sqlite3_db_handle(pStmt);
+    int rc = bentley_sqlite3_finalize(pStmt);
     if( *pRc==SQLITE_OK ){
       if( rc!=SQLITE_OK ){
-        sqlite3_fprintf(stderr,"SQL error: %s\n", sqlite3_errmsg(db));
+        sqlite3_fprintf(stderr,"SQL error: %s\n", bentley_sqlite3_errmsg(db));
       }
       *pRc = rc;
     }
@@ -27391,11 +27391,11 @@ void shellReset(
   int *pRc,
   sqlite3_stmt *pStmt
 ){
-  int rc = sqlite3_reset(pStmt);
+  int rc = bentley_sqlite3_reset(pStmt);
   if( *pRc==SQLITE_OK ){
     if( rc!=SQLITE_OK ){
-      sqlite3 *db = sqlite3_db_handle(pStmt);
-      sqlite3_fprintf(stderr,"SQL error: %s\n", sqlite3_errmsg(db));
+      sqlite3 *db = bentley_sqlite3_db_handle(pStmt);
+      sqlite3_fprintf(stderr,"SQL error: %s\n", bentley_sqlite3_errmsg(db));
     }
     *pRc = rc;
   }
@@ -27444,7 +27444,7 @@ static int arErrorMsg(ArCommand *pAr, const char *zFmt, ...){
   va_list ap;
   char *z;
   va_start(ap, zFmt);
-  z = sqlite3_vmprintf(zFmt, ap);
+  z = bentley_sqlite3_vmprintf(zFmt, ap);
   va_end(ap);
   shellEmitError(z);
   if( pAr->fromCmdLine ){
@@ -27452,7 +27452,7 @@ static int arErrorMsg(ArCommand *pAr, const char *zFmt, ...){
   }else{
     sqlite3_fputs("Use \".archive --help\" for more help\n", stderr);
   }
-  sqlite3_free(z);
+  bentley_sqlite3_free(z);
   return SQLITE_ERROR;
 }
 
@@ -27686,15 +27686,15 @@ static int arCheckEntries(ArCommand *pAr){
       : "SELECT name FROM %s WHERE name=$name";
 
     shellPreparePrintf(pAr->db, &rc, &pTest, zSel, pAr->zSrcTable);
-    j = sqlite3_bind_parameter_index(pTest, "$name");
+    j = bentley_sqlite3_bind_parameter_index(pTest, "$name");
     for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
       char *z = pAr->azArg[i];
       int n = strlen30(z);
       int bOk = 0;
       while( n>0 && z[n-1]=='/' ) n--;
       z[n] = '\0';
-      sqlite3_bind_text(pTest, j, z, -1, SQLITE_STATIC);
-      if( SQLITE_ROW==sqlite3_step(pTest) ){
+      bentley_sqlite3_bind_text(pTest, j, z, -1, SQLITE_STATIC);
+      if( SQLITE_ROW==bentley_sqlite3_step(pTest) ){
         bOk = 1;
       }
       shellReset(&rc, pTest);
@@ -27712,7 +27712,7 @@ static int arCheckEntries(ArCommand *pAr){
 ** Format a WHERE clause that can be used against the "sqlar" table to
 ** identify all archive members that match the command arguments held
 ** in (*pAr). Leave this WHERE clause in (*pzWhere) before returning.
-** The caller is responsible for eventually calling sqlite3_free() on
+** The caller is responsible for eventually calling bentley_sqlite3_free() on
 ** any non-NULL (*pzWhere) value. Here, "match" means strict equality
 ** when pAr->bGlob is false and GLOB match when pAr->bGlob is true.
 */
@@ -27725,13 +27725,13 @@ static void arWhereClause(
   const char *zSameOp = (pAr->bGlob)? "GLOB" : "=";
   if( *pRc==SQLITE_OK ){
     if( pAr->nArg==0 ){
-      zWhere = sqlite3_mprintf("1");
+      zWhere = bentley_sqlite3_mprintf("1");
     }else{
       int i;
       const char *zSep = "";
       for(i=0; i<pAr->nArg; i++){
         const char *z = pAr->azArg[i];
-        zWhere = sqlite3_mprintf(
+        zWhere = bentley_sqlite3_mprintf(
           "%z%s name %s '%q' OR substr(name,1,%d) %s '%q/'",
           zWhere, zSep, zSameOp, z, strlen30(z)+1, zSameOp, z
         );
@@ -27766,20 +27766,20 @@ static int arListCommand(ArCommand *pAr){
   shellPreparePrintf(pAr->db, &rc, &pSql, zSql, azCols[pAr->bVerbose],
                      pAr->zSrcTable, zWhere);
   if( pAr->bDryRun ){
-    sqlite3_fprintf(pAr->out, "%s\n", sqlite3_sql(pSql));
+    sqlite3_fprintf(pAr->out, "%s\n", bentley_sqlite3_sql(pSql));
   }else{
-    while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
+    while( rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(pSql) ){
       if( pAr->bVerbose ){
         sqlite3_fprintf(pAr->out, "%s % 10d  %s  %s\n",
-              sqlite3_column_text(pSql, 0), sqlite3_column_int(pSql, 1),
-              sqlite3_column_text(pSql, 2),sqlite3_column_text(pSql, 3));
+              bentley_sqlite3_column_text(pSql, 0), bentley_sqlite3_column_int(pSql, 1),
+              bentley_sqlite3_column_text(pSql, 2),bentley_sqlite3_column_text(pSql, 3));
       }else{
-        sqlite3_fprintf(pAr->out, "%s\n", sqlite3_column_text(pSql, 0));
+        sqlite3_fprintf(pAr->out, "%s\n", bentley_sqlite3_column_text(pSql, 0));
       }
     }
   }
   shellFinalize(&rc, pSql);
-  sqlite3_free(zWhere);
+  bentley_sqlite3_free(zWhere);
   return rc;
 }
 
@@ -27798,29 +27798,29 @@ static int arRemoveCommand(ArCommand *pAr){
     arWhereClause(&rc, pAr, &zWhere);
   }
   if( rc==SQLITE_OK ){
-    zSql = sqlite3_mprintf("DELETE FROM %s WHERE %s;",
+    zSql = bentley_sqlite3_mprintf("DELETE FROM %s WHERE %s;",
                            pAr->zSrcTable, zWhere);
     if( pAr->bDryRun ){
       sqlite3_fprintf(pAr->out, "%s\n", zSql);
     }else{
       char *zErr = 0;
-      rc = sqlite3_exec(pAr->db, "SAVEPOINT ar;", 0, 0, 0);
+      rc = bentley_sqlite3_exec(pAr->db, "SAVEPOINT ar;", 0, 0, 0);
       if( rc==SQLITE_OK ){
-        rc = sqlite3_exec(pAr->db, zSql, 0, 0, &zErr);
+        rc = bentley_sqlite3_exec(pAr->db, zSql, 0, 0, &zErr);
         if( rc!=SQLITE_OK ){
-          sqlite3_exec(pAr->db, "ROLLBACK TO ar; RELEASE ar;", 0, 0, 0);
+          bentley_sqlite3_exec(pAr->db, "ROLLBACK TO ar; RELEASE ar;", 0, 0, 0);
         }else{
-          rc = sqlite3_exec(pAr->db, "RELEASE ar;", 0, 0, 0);
+          rc = bentley_sqlite3_exec(pAr->db, "RELEASE ar;", 0, 0, 0);
         }
       }
       if( zErr ){
         sqlite3_fprintf(stdout, "ERROR: %s\n", zErr); /* stdout? */
-        sqlite3_free(zErr);
+        bentley_sqlite3_free(zErr);
       }
     }
   }
-  sqlite3_free(zWhere);
-  sqlite3_free(zSql);
+  bentley_sqlite3_free(zWhere);
+  bentley_sqlite3_free(zSql);
   return rc;
 }
 
@@ -27854,9 +27854,9 @@ static int arExtractCommand(ArCommand *pAr){
 
   if( rc==SQLITE_OK ){
     if( pAr->zDir ){
-      zDir = sqlite3_mprintf("%s/", pAr->zDir);
+      zDir = bentley_sqlite3_mprintf("%s/", pAr->zDir);
     }else{
-      zDir = sqlite3_mprintf("");
+      zDir = bentley_sqlite3_mprintf("");
     }
     if( zDir==0 ) rc = SQLITE_NOMEM;
   }
@@ -27866,8 +27866,8 @@ static int arExtractCommand(ArCommand *pAr){
   );
 
   if( rc==SQLITE_OK ){
-    j = sqlite3_bind_parameter_index(pSql, "$dir");
-    sqlite3_bind_text(pSql, j, zDir, -1, SQLITE_STATIC);
+    j = bentley_sqlite3_bind_parameter_index(pSql, "$dir");
+    bentley_sqlite3_bind_text(pSql, j, zDir, -1, SQLITE_STATIC);
 
     /* Run the SELECT statement twice. The first time, writefile() is called
     ** for all archive members that should be extracted. The second time,
@@ -27875,14 +27875,14 @@ static int arExtractCommand(ArCommand *pAr){
     ** extracted directories must be reset after they are populated (as
     ** populating them changes the timestamp).  */
     for(i=0; i<2; i++){
-      j = sqlite3_bind_parameter_index(pSql, "$dirOnly");
-      sqlite3_bind_int(pSql, j, i);
+      j = bentley_sqlite3_bind_parameter_index(pSql, "$dirOnly");
+      bentley_sqlite3_bind_int(pSql, j, i);
       if( pAr->bDryRun ){
-        sqlite3_fprintf(pAr->out, "%s\n", sqlite3_sql(pSql));
+        sqlite3_fprintf(pAr->out, "%s\n", bentley_sqlite3_sql(pSql));
       }else{
-        while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
+        while( rc==SQLITE_OK && SQLITE_ROW==bentley_sqlite3_step(pSql) ){
           if( i==0 && pAr->bVerbose ){
-            sqlite3_fprintf(pAr->out, "%s\n", sqlite3_column_text(pSql, 0));
+            sqlite3_fprintf(pAr->out, "%s\n", bentley_sqlite3_column_text(pSql, 0));
           }
         }
       }
@@ -27891,8 +27891,8 @@ static int arExtractCommand(ArCommand *pAr){
     shellFinalize(&rc, pSql);
   }
 
-  sqlite3_free(zDir);
-  sqlite3_free(zWhere);
+  bentley_sqlite3_free(zDir);
+  bentley_sqlite3_free(zWhere);
   return rc;
 }
 
@@ -27906,10 +27906,10 @@ static int arExecSql(ArCommand *pAr, const char *zSql){
     rc = SQLITE_OK;
   }else{
     char *zErr = 0;
-    rc = sqlite3_exec(pAr->db, zSql, 0, 0, &zErr);
+    rc = bentley_sqlite3_exec(pAr->db, zSql, 0, 0, &zErr);
     if( zErr ){
       sqlite3_fprintf(stdout, "ERROR: %s\n", zErr);
-      sqlite3_free(zErr);
+      bentley_sqlite3_free(zErr);
     }
   }
   return rc;
@@ -27986,15 +27986,15 @@ static int arCreateOrUpdateCommand(
     /* Initialize the zipfile virtual table, if necessary */
     if( pAr->zFile ){
       sqlite3_uint64 r;
-      sqlite3_randomness(sizeof(r),&r);
-      sqlite3_snprintf(sizeof(zTemp),zTemp,"zip%016llx",r);
+      bentley_sqlite3_randomness(sizeof(r),&r);
+      bentley_sqlite3_snprintf(sizeof(zTemp),zTemp,"zip%016llx",r);
       zTab = zTemp;
-      zSql = sqlite3_mprintf(
+      zSql = bentley_sqlite3_mprintf(
          "CREATE VIRTUAL TABLE temp.%s USING zipfile(%Q)",
          zTab, pAr->zFile
       );
       rc = arExecSql(pAr, zSql);
-      sqlite3_free(zSql);
+      bentley_sqlite3_free(zSql);
     }else{
       zTab = "zip";
     }
@@ -28008,35 +28008,35 @@ static int arCreateOrUpdateCommand(
     rc = arExecSql(pAr, zCreate);
   }
   if( bOnlyIfChanged ){
-    zExists = sqlite3_mprintf(
+    zExists = bentley_sqlite3_mprintf(
       " AND NOT EXISTS("
           "SELECT 1 FROM %s AS mem"
           " WHERE mem.name=disk.name"
           " AND mem.mtime=disk.mtime"
           " AND mem.mode=disk.mode)", zTab);
   }else{
-    zExists = sqlite3_mprintf("");
+    zExists = bentley_sqlite3_mprintf("");
   }
   if( zExists==0 ) rc = SQLITE_NOMEM;
   for(i=0; i<pAr->nArg && rc==SQLITE_OK; i++){
-    char *zSql2 = sqlite3_mprintf(zInsertFmt[pAr->bZip], zTab,
+    char *zSql2 = bentley_sqlite3_mprintf(zInsertFmt[pAr->bZip], zTab,
         pAr->bVerbose ? "shell_putsnl(name)" : "name",
         pAr->azArg[i], pAr->zDir, zExists);
     rc = arExecSql(pAr, zSql2);
-    sqlite3_free(zSql2);
+    bentley_sqlite3_free(zSql2);
   }
 end_ar_transaction:
   if( rc!=SQLITE_OK ){
-    sqlite3_exec(pAr->db, "ROLLBACK TO ar; RELEASE ar;", 0, 0, 0);
+    bentley_sqlite3_exec(pAr->db, "ROLLBACK TO ar; RELEASE ar;", 0, 0, 0);
   }else{
     rc = arExecSql(pAr, "RELEASE ar;");
     if( pAr->bZip && pAr->zFile ){
-      zSql = sqlite3_mprintf("DROP TABLE %s", zTemp);
+      zSql = bentley_sqlite3_mprintf("DROP TABLE %s", zTemp);
       arExecSql(pAr, zSql);
-      sqlite3_free(zSql);
+      bentley_sqlite3_free(zSql);
     }
   }
-  sqlite3_free(zExists);
+  bentley_sqlite3_free(zExists);
   return rc;
 }
 
@@ -28067,9 +28067,9 @@ static int arDotCommand(
     if( eDbType==SHELL_OPEN_ZIPFILE ){
       if( cmd.eCmd==AR_CMD_EXTRACT || cmd.eCmd==AR_CMD_LIST ){
         if( cmd.zFile==0 ){
-          cmd.zSrcTable = sqlite3_mprintf("zip");
+          cmd.zSrcTable = bentley_sqlite3_mprintf("zip");
         }else{
-          cmd.zSrcTable = sqlite3_mprintf("zipfile(%Q)", cmd.zFile);
+          cmd.zSrcTable = bentley_sqlite3_mprintf("zipfile(%Q)", cmd.zFile);
         }
       }
       cmd.bZip = 1;
@@ -28087,28 +28087,28 @@ static int arDotCommand(
         sqlite3_fprintf(cmd.out, "-- open database '%s'%s\n", cmd.zFile,
               eDbType==SHELL_OPEN_APPENDVFS ? " using 'apndvfs'" : "");
       }
-      rc = sqlite3_open_v2(cmd.zFile, &cmd.db, flags,
+      rc = bentley_sqlite3_open_v2(cmd.zFile, &cmd.db, flags,
              eDbType==SHELL_OPEN_APPENDVFS ? "apndvfs" : 0);
       if( rc!=SQLITE_OK ){
         sqlite3_fprintf(stderr, "cannot open file: %s (%s)\n",
-                        cmd.zFile, sqlite3_errmsg(cmd.db));
+                        cmd.zFile, bentley_sqlite3_errmsg(cmd.db));
         goto end_ar_command;
       }
       sqlite3_fileio_init(cmd.db, 0, 0);
       sqlite3_sqlar_init(cmd.db, 0, 0);
-      sqlite3_create_function(cmd.db, "shell_putsnl", 1, SQLITE_UTF8, cmd.p,
+      bentley_sqlite3_create_function(cmd.db, "shell_putsnl", 1, SQLITE_UTF8, cmd.p,
                               shellPutsFunc, 0, 0);
 
     }
     if( cmd.zSrcTable==0 && cmd.bZip==0 && cmd.eCmd!=AR_CMD_HELP ){
       if( cmd.eCmd!=AR_CMD_CREATE
-       && sqlite3_table_column_metadata(cmd.db,0,"sqlar","name",0,0,0,0,0)
+       && bentley_sqlite3_table_column_metadata(cmd.db,0,"sqlar","name",0,0,0,0,0)
       ){
         sqlite3_fprintf(stderr, "database does not contain an 'sqlar' table\n");
         rc = SQLITE_ERROR;
         goto end_ar_command;
       }
-      cmd.zSrcTable = sqlite3_mprintf("sqlar");
+      cmd.zSrcTable = bentley_sqlite3_mprintf("sqlar");
     }
 
     switch( cmd.eCmd ){
@@ -28146,7 +28146,7 @@ end_ar_command:
   if( cmd.db!=pState->db ){
     close_db(cmd.db);
   }
-  sqlite3_free(cmd.zSrcTable);
+  bentley_sqlite3_free(cmd.zSrcTable);
 
   return rc;
 }
@@ -28270,14 +28270,14 @@ static int intckDatabaseCmd(ShellState *pState, i64 nStepPerUnlock){
  * zAutoColumn(zCol, &db, ?) => Maybe init db, add column zCol to it.
  * zAutoColumn(0, &db, ?) => (db!=0) Form columns spec for CREATE TABLE,
  *   close db and set it to 0, and return the columns spec, to later
- *   be sqlite3_free()'ed by the caller.
+ *   be bentley_sqlite3_free()'ed by the caller.
  * The return is 0 when either:
  *   (a) The db was not initialized and zCol==0 (There are no columns.)
  *   (b) zCol!=0  (Column was added, db initialized as needed.)
  * The 3rd argument, pRenamed, references an out parameter. If the
  * pointer is non-zero, its referent will be set to a summary of renames
  * done if renaming was necessary, or set to 0 if none was done. The out
- * string (if any) must be sqlite3_free()'ed by the caller.
+ * string (if any) must be bentley_sqlite3_free()'ed by the caller.
  */
 #ifdef SHELL_DEBUG
 #define rc_err_oom_die(rc) \
@@ -28417,24 +28417,24 @@ FROM (\
   if( zColNew ){
     /* Add initial or additional column. Init db if necessary. */
     if( *pDb==0 ){
-      if( SQLITE_OK!=sqlite3_open(zCOL_DB, pDb) ) return 0;
+      if( SQLITE_OK!=bentley_sqlite3_open(zCOL_DB, pDb) ) return 0;
 #ifdef SHELL_COLFIX_DB
       if(*zCOL_DB!=':')
-        sqlite3_exec(*pDb,"drop table if exists ColNames;"
+        bentley_sqlite3_exec(*pDb,"drop table if exists ColNames;"
                      "drop view if exists RepeatedNames;",0,0,0);
 #endif
 #undef SHELL_COLFIX_DB
-      rc = sqlite3_exec(*pDb, zTabMake, 0, 0, 0);
+      rc = bentley_sqlite3_exec(*pDb, zTabMake, 0, 0, 0);
       rc_err_oom_die(rc);
     }
     assert(*pDb!=0);
-    rc = sqlite3_prepare_v2(*pDb, zTabFill, -1, &pStmt, 0);
+    rc = bentley_sqlite3_prepare_v2(*pDb, zTabFill, -1, &pStmt, 0);
     rc_err_oom_die(rc);
-    rc = sqlite3_bind_text(pStmt, 1, zColNew, -1, 0);
+    rc = bentley_sqlite3_bind_text(pStmt, 1, zColNew, -1, 0);
     rc_err_oom_die(rc);
-    rc = sqlite3_step(pStmt);
+    rc = bentley_sqlite3_step(pStmt);
     rc_err_oom_die(rc);
-    sqlite3_finalize(pStmt);
+    bentley_sqlite3_finalize(pStmt);
     return 0;
   }else if( *pDb==0 ){
     return 0;
@@ -28445,40 +28445,40 @@ FROM (\
     int nDigits = (hasDupes)? db_int(*pDb, "%s", zColDigits) : 0;
     if( hasDupes ){
 #ifdef SHELL_COLUMN_RENAME_CLEAN
-      rc = sqlite3_exec(*pDb, zDedoctor, 0, 0, 0);
+      rc = bentley_sqlite3_exec(*pDb, zDedoctor, 0, 0, 0);
       rc_err_oom_die(rc);
 #endif
-      rc = sqlite3_exec(*pDb, zSetReps, 0, 0, 0);
+      rc = bentley_sqlite3_exec(*pDb, zSetReps, 0, 0, 0);
       rc_err_oom_die(rc);
-      rc = sqlite3_prepare_v2(*pDb, zRenameRank, -1, &pStmt, 0);
+      rc = bentley_sqlite3_prepare_v2(*pDb, zRenameRank, -1, &pStmt, 0);
       rc_err_oom_die(rc);
-      sqlite3_bind_int(pStmt, 1, nDigits);
-      rc = sqlite3_step(pStmt);
-      sqlite3_finalize(pStmt);
+      bentley_sqlite3_bind_int(pStmt, 1, nDigits);
+      rc = bentley_sqlite3_step(pStmt);
+      bentley_sqlite3_finalize(pStmt);
       if( rc!=SQLITE_DONE ) rc_err_oom_die(SQLITE_NOMEM);
     }
     assert(db_int(*pDb, "%s", zHasDupes)==0); /* Consider: remove this */
-    rc = sqlite3_prepare_v2(*pDb, zCollectVar, -1, &pStmt, 0);
+    rc = bentley_sqlite3_prepare_v2(*pDb, zCollectVar, -1, &pStmt, 0);
     rc_err_oom_die(rc);
-    rc = sqlite3_step(pStmt);
+    rc = bentley_sqlite3_step(pStmt);
     if( rc==SQLITE_ROW ){
-      zColsSpec = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
+      zColsSpec = bentley_sqlite3_mprintf("%s", bentley_sqlite3_column_text(pStmt, 0));
     }else{
       zColsSpec = 0;
     }
     if( pzRenamed!=0 ){
       if( !hasDupes ) *pzRenamed = 0;
       else{
-        sqlite3_finalize(pStmt);
-        if( SQLITE_OK==sqlite3_prepare_v2(*pDb, zRenamesDone, -1, &pStmt, 0)
-            && SQLITE_ROW==sqlite3_step(pStmt) ){
-          *pzRenamed = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
+        bentley_sqlite3_finalize(pStmt);
+        if( SQLITE_OK==bentley_sqlite3_prepare_v2(*pDb, zRenamesDone, -1, &pStmt, 0)
+            && SQLITE_ROW==bentley_sqlite3_step(pStmt) ){
+          *pzRenamed = bentley_sqlite3_mprintf("%s", bentley_sqlite3_column_text(pStmt, 0));
         }else
           *pzRenamed = 0;
       }
     }
-    sqlite3_finalize(pStmt);
-    sqlite3_close(*pDb);
+    bentley_sqlite3_finalize(pStmt);
+    bentley_sqlite3_close(*pDb);
     *pDb = 0;
     return zColsSpec;
   }
@@ -28499,7 +28499,7 @@ static int outputDumpWarning(ShellState *p, const char *zLike){
     "SELECT 1 FROM sqlite_schema o WHERE "
     "sql LIKE 'CREATE VIRTUAL TABLE%%' AND %s", zLike ? zLike : "true"
   );
-  if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+  if( rc==SQLITE_OK && bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
     sqlite3_fputs("/* WARNING: "
           "Script requires that SQLITE_DBCONFIG_DEFENSIVE be disabled */\n",
           p->out
@@ -28609,11 +28609,11 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     open_db(p, 0);
     if( booleanValue(azArg[1]) ){
-      sqlite3_set_authorizer(p->db, shellAuth, p);
+      bentley_sqlite3_set_authorizer(p->db, shellAuth, p);
     }else if( p->bSafeModePersist ){
-      sqlite3_set_authorizer(p->db, safeModeAuth, p);
+      bentley_sqlite3_set_authorizer(p->db, safeModeAuth, p);
     }else{
-      sqlite3_set_authorizer(p->db, 0, 0);
+      bentley_sqlite3_set_authorizer(p->db, 0, 0);
     }
   }else
 #endif
@@ -28668,7 +28668,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       return 1;
     }
     if( zDb==0 ) zDb = "main";
-    rc = sqlite3_open_v2(zDestFile, &pDest,
+    rc = bentley_sqlite3_open_v2(zDestFile, &pDest,
                   SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, zVfs);
     if( rc!=SQLITE_OK ){
       sqlite3_fprintf(stderr,"Error: cannot open \"%s\"\n", zDestFile);
@@ -28676,18 +28676,18 @@ static int do_meta_command(char *zLine, ShellState *p){
       return 1;
     }
     if( bAsync ){
-      sqlite3_exec(pDest, "PRAGMA synchronous=OFF; PRAGMA journal_mode=OFF;",
+      bentley_sqlite3_exec(pDest, "PRAGMA synchronous=OFF; PRAGMA journal_mode=OFF;",
                    0, 0, 0);
     }
     open_db(p, 0);
-    pBackup = sqlite3_backup_init(pDest, "main", p->db, zDb);
+    pBackup = bentley_sqlite3_backup_init(pDest, "main", p->db, zDb);
     if( pBackup==0 ){
       shellDatabaseError(pDest);
       close_db(pDest);
       return 1;
     }
-    while(  (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK ){}
-    sqlite3_backup_finish(pBackup);
+    while(  (rc = bentley_sqlite3_backup_step(pBackup,100))==SQLITE_OK ){}
+    bentley_sqlite3_backup_finish(pBackup);
     if( rc==SQLITE_DONE ){
       rc = 0;
     }else{
@@ -28727,7 +28727,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 #if defined(_WIN32) || defined(WIN32)
       wchar_t *z = sqlite3_win32_utf8_to_unicode(azArg[1]);
       rc = !SetCurrentDirectoryW(z);
-      sqlite3_free(z);
+      bentley_sqlite3_free(z);
 #else
       rc = chdir(azArg[1]);
 #endif
@@ -28773,7 +28773,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_fprintf(p->out, "testcase-%s ok\n", p->zTestcase);
       p->nCheck++;
     }
-    sqlite3_free(zRes);
+    bentley_sqlite3_free(zRes);
   }else
 #endif /* !defined(SQLITE_SHELL_FIDDLE) */
 
@@ -28855,26 +28855,26 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_stmt *pStmt;
     int i;
     open_db(p, 0);
-    rc = sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
+    rc = bentley_sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
     if( rc ){
       shellDatabaseError(p->db);
       rc = 1;
     }else{
-      while( sqlite3_step(pStmt)==SQLITE_ROW ){
-        const char *zSchema = (const char *)sqlite3_column_text(pStmt,1);
-        const char *zFile = (const char*)sqlite3_column_text(pStmt,2);
+      while( bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+        const char *zSchema = (const char *)bentley_sqlite3_column_text(pStmt,1);
+        const char *zFile = (const char*)bentley_sqlite3_column_text(pStmt,2);
         if( zSchema==0 || zFile==0 ) continue;
-        azName = sqlite3_realloc(azName, (nName+1)*2*sizeof(char*));
+        azName = bentley_sqlite3_realloc(azName, (nName+1)*2*sizeof(char*));
         shell_check_oom(azName);
         azName[nName*2] = strdup(zSchema);
         azName[nName*2+1] = strdup(zFile);
         nName++;
       }
     }
-    sqlite3_finalize(pStmt);
+    bentley_sqlite3_finalize(pStmt);
     for(i=0; i<nName; i++){
-      int eTxn = sqlite3_txn_state(p->db, azName[i*2]);
-      int bRdonly = sqlite3_db_readonly(p->db, azName[i*2]);
+      int eTxn = bentley_sqlite3_txn_state(p->db, azName[i*2]);
+      int bRdonly = bentley_sqlite3_db_readonly(p->db, azName[i*2]);
       const char *z = azName[i*2+1];
       sqlite3_fprintf(p->out, "%s: %s %s%s\n",
             azName[i*2], z && z[0] ? z : "\"\"", bRdonly ? "r/o" : "r/w",
@@ -28883,7 +28883,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       free(azName[i*2]);
       free(azName[i*2+1]);
     }
-    sqlite3_free(azName);
+    bentley_sqlite3_free(azName);
   }else
 
   if( c=='d' && n>=3 && cli_strncmp(azArg[0], "dbconfig", n)==0 ){
@@ -28918,9 +28918,9 @@ static int do_meta_command(char *zLine, ShellState *p){
     for(ii=0; ii<ArraySize(aDbConfig); ii++){
       if( nArg>1 && cli_strcmp(azArg[1], aDbConfig[ii].zName)!=0 ) continue;
       if( nArg>=3 ){
-        sqlite3_db_config(p->db, aDbConfig[ii].op, booleanValue(azArg[2]), 0);
+        bentley_sqlite3_db_config(p->db, aDbConfig[ii].op, booleanValue(azArg[2]), 0);
       }
-      sqlite3_db_config(p->db, aDbConfig[ii].op, -1, &v);
+      bentley_sqlite3_db_config(p->db, aDbConfig[ii].op, -1, &v);
       sqlite3_fprintf(p->out, "%19s %s\n",
                       aDbConfig[ii].zName, v ? "on" : "off");
       if( nArg>1 ) break;
@@ -28960,7 +28960,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           eputz("The --preserve-rowids option is not compatible"
                 " with SQLITE_OMIT_VIRTUALTABLE\n");
           rc = 1;
-          sqlite3_free(zLike);
+          bentley_sqlite3_free(zLike);
           goto meta_command_exit;
 #else
           ShellSetFlag(p, SHFLG_PreserveRowid);
@@ -28979,7 +28979,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           sqlite3_fprintf(stderr,
                "Unknown option \"%s\" on \".dump\"\n", azArg[i]);
           rc = 1;
-          sqlite3_free(zLike);
+          bentley_sqlite3_free(zLike);
           goto meta_command_exit;
         }
       }else{
@@ -28988,7 +28988,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         ** the LIKE pattern, or the table appears to be a shadow table of
         ** a virtual table for which the name matches the LIKE pattern.
         */
-        char *zExpr = sqlite3_mprintf(
+        char *zExpr = bentley_sqlite3_mprintf(
             "name LIKE %Q ESCAPE '\\' OR EXISTS ("
             "  SELECT 1 FROM sqlite_schema WHERE "
             "    name LIKE %Q ESCAPE '\\' AND"
@@ -28998,7 +28998,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         );
 
         if( zLike ){
-          zLike = sqlite3_mprintf("%z OR %z", zLike, zExpr);
+          zLike = bentley_sqlite3_mprintf("%z OR %z", zLike, zExpr);
         }else{
           zLike = zExpr;
         }
@@ -29020,10 +29020,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     /* Set writable_schema=ON since doing so forces SQLite to initialize
     ** as much of the schema as it can even if the sqlite_schema table is
     ** corrupt. */
-    sqlite3_exec(p->db, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
+    bentley_sqlite3_exec(p->db, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
     p->nErr = 0;
-    if( zLike==0 ) zLike = sqlite3_mprintf("true");
-    zSql = sqlite3_mprintf(
+    if( zLike==0 ) zLike = bentley_sqlite3_mprintf("true");
+    zSql = bentley_sqlite3_mprintf(
       "SELECT name, type, sql FROM sqlite_schema AS o "
       "WHERE (%s) AND type=='table'"
       "  AND sql NOT NULL"
@@ -29031,9 +29031,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       zLike
     );
     run_schema_dump_query(p,zSql);
-    sqlite3_free(zSql);
+    bentley_sqlite3_free(zSql);
     if( (p->shellFlgs & SHFLG_DumpDataOnly)==0 ){
-      zSql = sqlite3_mprintf(
+      zSql = bentley_sqlite3_mprintf(
         "SELECT sql FROM sqlite_schema AS o "
         "WHERE (%s) AND sql NOT NULL"
         "  AND type IN ('index','trigger','view') "
@@ -29041,15 +29041,15 @@ static int do_meta_command(char *zLine, ShellState *p){
         zLike
       );
       run_table_dump_query(p, zSql);
-      sqlite3_free(zSql);
+      bentley_sqlite3_free(zSql);
     }
-    sqlite3_free(zLike);
+    bentley_sqlite3_free(zLike);
     if( p->writableSchema ){
       sqlite3_fputs("PRAGMA writable_schema=OFF;\n", p->out);
       p->writableSchema = 0;
     }
-    sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
-    sqlite3_exec(p->db, "RELEASE dump;", 0, 0, 0);
+    bentley_sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
+    bentley_sqlite3_exec(p->db, "RELEASE dump;", 0, 0, 0);
     if( (p->shellFlgs & SHFLG_DumpDataOnly)==0 ){
       sqlite3_fputs(p->nErr?"ROLLBACK; -- due to errors\n":"COMMIT;\n", p->out);
     }
@@ -29074,7 +29074,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( nArg==2 ){
       p->autoEQPtest = 0;
       if( p->autoEQPtrace ){
-        if( p->db ) sqlite3_exec(p->db, "PRAGMA vdbe_trace=OFF;", 0, 0, 0);
+        if( p->db ) bentley_sqlite3_exec(p->db, "PRAGMA vdbe_trace=OFF;", 0, 0, 0);
         p->autoEQPtrace = 0;
       }
       if( cli_strcmp(azArg[1],"full")==0 ){
@@ -29089,8 +29089,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->autoEQP = AUTOEQP_full;
         p->autoEQPtrace = 1;
         open_db(p, 0);
-        sqlite3_exec(p->db, "SELECT name FROM sqlite_schema LIMIT 1", 0, 0, 0);
-        sqlite3_exec(p->db, "PRAGMA vdbe_trace=ON;", 0, 0, 0);
+        bentley_sqlite3_exec(p->db, "SELECT name FROM sqlite_schema LIMIT 1", 0, 0, 0);
+        bentley_sqlite3_exec(p->db, "PRAGMA vdbe_trace=ON;", 0, 0, 0);
 #endif
       }else{
         p->autoEQP = (u8)booleanValue(azArg[1]);
@@ -29226,7 +29226,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         case SQLITE_FCNTL_SIZE_LIMIT: {
           if( nArg!=2 && nArg!=3 ) break;
           iRes = nArg==3 ? integerValue(azArg[2]) : -1;
-          sqlite3_file_control(p->db, zSchema, SQLITE_FCNTL_SIZE_LIMIT, &iRes);
+          bentley_sqlite3_file_control(p->db, zSchema, SQLITE_FCNTL_SIZE_LIMIT, &iRes);
           isOk = 1;
           break;
         }
@@ -29235,7 +29235,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           int x;
           if( nArg!=3 ) break;
           x = (int)integerValue(azArg[2]);
-          sqlite3_file_control(p->db, zSchema, filectrl, &x);
+          bentley_sqlite3_file_control(p->db, zSchema, filectrl, &x);
           isOk = 2;
           break;
         }
@@ -29244,7 +29244,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           int x;
           if( nArg!=2 && nArg!=3 ) break;
           x = nArg==3 ? booleanValue(azArg[2]) : -1;
-          sqlite3_file_control(p->db, zSchema, filectrl, &x);
+          bentley_sqlite3_file_control(p->db, zSchema, filectrl, &x);
           iRes = x;
           isOk = 1;
           break;
@@ -29253,7 +29253,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         case SQLITE_FCNTL_HAS_MOVED: {
           int x;
           if( nArg!=2 ) break;
-          sqlite3_file_control(p->db, zSchema, filectrl, &x);
+          bentley_sqlite3_file_control(p->db, zSchema, filectrl, &x);
           iRes = x;
           isOk = 1;
           break;
@@ -29261,10 +29261,10 @@ static int do_meta_command(char *zLine, ShellState *p){
         case SQLITE_FCNTL_TEMPFILENAME: {
           char *z = 0;
           if( nArg!=2 ) break;
-          sqlite3_file_control(p->db, zSchema, filectrl, &z);
+          bentley_sqlite3_file_control(p->db, zSchema, filectrl, &z);
           if( z ){
             sqlite3_fprintf(p->out, "%s\n", z);
-            sqlite3_free(z);
+            bentley_sqlite3_free(z);
           }
           isOk = 2;
           break;
@@ -29273,10 +29273,10 @@ static int do_meta_command(char *zLine, ShellState *p){
           int x;
           if( nArg>=3 ){
             x = atoi(azArg[2]);
-            sqlite3_file_control(p->db, zSchema, filectrl, &x);
+            bentley_sqlite3_file_control(p->db, zSchema, filectrl, &x);
           }
           x = -1;
-          sqlite3_file_control(p->db, zSchema, filectrl, &x);
+          bentley_sqlite3_file_control(p->db, zSchema, filectrl, &x);
           sqlite3_fprintf(p->out, "%d\n", x);
           isOk = 2;
           break;
@@ -29289,7 +29289,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
     }else if( isOk==1 ){
       char zBuf[100];
-      sqlite3_snprintf(sizeof(zBuf), zBuf, "%lld", iRes);
+      bentley_sqlite3_snprintf(sizeof(zBuf), zBuf, "%lld", iRes);
       sqlite3_fprintf(p->out, "%s\n", zBuf);
     }
   }else
@@ -29310,7 +29310,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       goto meta_command_exit;
     }
     open_db(p, 0);
-    rc = sqlite3_exec(p->db,
+    rc = bentley_sqlite3_exec(p->db,
        "SELECT sql FROM"
        "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
        "     FROM sqlite_schema UNION ALL"
@@ -29321,13 +29321,13 @@ static int do_meta_command(char *zLine, ShellState *p){
     );
     if( rc==SQLITE_OK ){
       sqlite3_stmt *pStmt;
-      rc = sqlite3_prepare_v2(p->db,
+      rc = bentley_sqlite3_prepare_v2(p->db,
                "SELECT rowid FROM sqlite_schema"
                " WHERE name GLOB 'sqlite_stat[134]'",
                -1, &pStmt, 0);
       if( rc==SQLITE_OK ){
-        doStats = sqlite3_step(pStmt)==SQLITE_ROW;
-        sqlite3_finalize(pStmt);
+        doStats = bentley_sqlite3_step(pStmt)==SQLITE_ROW;
+        bentley_sqlite3_finalize(pStmt);
       }
     }
     if( doStats==0 ){
@@ -29459,7 +29459,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         ** default output row separator, change it to the default input
         ** row separator.  This avoids having to maintain different input
         ** and output row separators. */
-        sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+        bentley_sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
         nSep = strlen30(p->rowSeparator);
       }
       if( nSep>1 ){
@@ -29500,7 +29500,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       output_c_string(p->out, zSep);
       sqlite3_fputs("\n", p->out);
     }
-    sCtx.z = sqlite3_malloc64(120);
+    sCtx.z = bentley_sqlite3_malloc64(120);
     if( sCtx.z==0 ){
       import_cleanup(&sCtx);
       shell_out_of_memory();
@@ -29510,7 +29510,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       while( xRead(&sCtx) && sCtx.cTerm==sCtx.cColSep ){}
     }
     import_append_char(&sCtx, 0);    /* To ensure sCtx.z is allocated */
-    if( sqlite3_table_column_metadata(p->db, zSchema, zTable,0,0,0,0,0,0) 
+    if( bentley_sqlite3_table_column_metadata(p->db, zSchema, zTable,0,0,0,0,0,0) 
      && 0==db_int(p->db, "SELECT count(*) FROM \"%w\".sqlite_schema"
                          " WHERE name=%Q AND type='view'",
                          zSchema ? zSchema : "main", zTable)
@@ -29519,7 +29519,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3 *dbCols = 0;
       char *zRenames = 0;
       char *zColDefs;
-      zCreate = sqlite3_mprintf("CREATE TABLE \"%w\".\"%w\"", 
+      zCreate = bentley_sqlite3_mprintf("CREATE TABLE \"%w\".\"%w\"", 
                     zSchema ? zSchema : "main", zTable);
       while( xRead(&sCtx) ){
         zAutoColumn(sCtx.z, &dbCols, 0);
@@ -29530,17 +29530,17 @@ static int do_meta_command(char *zLine, ShellState *p){
         sqlite3_fprintf((stdin_is_interactive && p->in==stdin)? p->out : stderr,
               "Columns renamed during .import %s due to duplicates:\n"
               "%s\n", sCtx.zFile, zRenames);
-        sqlite3_free(zRenames);
+        bentley_sqlite3_free(zRenames);
       }
       assert(dbCols==0);
       if( zColDefs==0 ){
         sqlite3_fprintf(stderr,"%s: empty file\n", sCtx.zFile);
         import_cleanup(&sCtx);
         rc = 1;
-        sqlite3_free(zCreate);
+        bentley_sqlite3_free(zCreate);
         goto meta_command_exit;
       }
-      zCreate = sqlite3_mprintf("%z%z\n", zCreate, zColDefs);
+      zCreate = bentley_sqlite3_mprintf("%z%z\n", zCreate, zColDefs);
       if( zCreate==0 ){
         import_cleanup(&sCtx);
         shell_out_of_memory();
@@ -29548,12 +29548,12 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( eVerbose>=1 ){
         sqlite3_fprintf(p->out, "%s\n", zCreate);
       }
-      rc = sqlite3_exec(p->db, zCreate, 0, 0, 0);
+      rc = bentley_sqlite3_exec(p->db, zCreate, 0, 0, 0);
       if( rc ){
         sqlite3_fprintf(stderr,
-             "%s failed:\n%s\n", zCreate, sqlite3_errmsg(p->db));
+             "%s failed:\n%s\n", zCreate, bentley_sqlite3_errmsg(p->db));
       }
-      sqlite3_free(zCreate);
+      bentley_sqlite3_free(zCreate);
       zCreate = 0;
       if( rc ){
         import_cleanup(&sCtx);
@@ -29561,28 +29561,28 @@ static int do_meta_command(char *zLine, ShellState *p){
         goto meta_command_exit;
       }
     }
-    zSql = sqlite3_mprintf("SELECT count(*) FROM pragma_table_info(%Q,%Q);",
+    zSql = bentley_sqlite3_mprintf("SELECT count(*) FROM pragma_table_info(%Q,%Q);",
                            zTable, zSchema);
     if( zSql==0 ){
       import_cleanup(&sCtx);
       shell_out_of_memory();
     }
-    rc =  sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
-    sqlite3_free(zSql);
+    rc =  bentley_sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    bentley_sqlite3_free(zSql);
     zSql = 0;
     if( rc ){
-      if (pStmt) sqlite3_finalize(pStmt);
+      if (pStmt) bentley_sqlite3_finalize(pStmt);
       shellDatabaseError(p->db);
       import_cleanup(&sCtx);
       rc = 1;
       goto meta_command_exit;
     }
-    if( sqlite3_step(pStmt)==SQLITE_ROW ){
-      nCol = sqlite3_column_int(pStmt, 0);
+    if( bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+      nCol = bentley_sqlite3_column_int(pStmt, 0);
     }else{
       nCol = 0;
     }
-    sqlite3_finalize(pStmt);
+    bentley_sqlite3_finalize(pStmt);
     pStmt = 0;
     if( nCol==0 ) return 0; /* no columns, no error */
 
@@ -29590,16 +29590,16 @@ static int do_meta_command(char *zLine, ShellState *p){
           + (zSchema ? strlen(zSchema)*2 + 2: 0)  /* Quoted schema name */
           + strlen(zTable)*2 + 2                  /* Quoted table name */
           + nCol*2;            /* Space for ",?" for each column */
-    zSql = sqlite3_malloc64( nByte );
+    zSql = bentley_sqlite3_malloc64( nByte );
     if( zSql==0 ){
       import_cleanup(&sCtx);
       shell_out_of_memory();
     }
     if( zSchema ){
-      sqlite3_snprintf(nByte, zSql, "INSERT INTO \"%w\".\"%w\" VALUES(?", 
+      bentley_sqlite3_snprintf(nByte, zSql, "INSERT INTO \"%w\".\"%w\" VALUES(?", 
                        zSchema, zTable);
     }else{
-      sqlite3_snprintf(nByte, zSql, "INSERT INTO \"%w\" VALUES(?", zTable);
+      bentley_sqlite3_snprintf(nByte, zSql, "INSERT INTO \"%w\" VALUES(?", zTable);
     }
     j = strlen30(zSql);
     for(i=1; i<nCol; i++){
@@ -29612,18 +29612,18 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( eVerbose>=2 ){
       sqlite3_fprintf(p->out, "Insert using: %s\n", zSql);
     }
-    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
-    sqlite3_free(zSql);
+    rc = bentley_sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    bentley_sqlite3_free(zSql);
     zSql = 0;
     if( rc ){
       shellDatabaseError(p->db);
-      if (pStmt) sqlite3_finalize(pStmt);
+      if (pStmt) bentley_sqlite3_finalize(pStmt);
       import_cleanup(&sCtx);
       rc = 1;
       goto meta_command_exit;
     }
-    needCommit = sqlite3_get_autocommit(p->db);
-    if( needCommit ) sqlite3_exec(p->db, "BEGIN", 0, 0, 0);
+    needCommit = bentley_sqlite3_get_autocommit(p->db);
+    if( needCommit ) bentley_sqlite3_exec(p->db, "BEGIN", 0, 0, 0);
     do{
       int startLine = sCtx.nLine;
       for(i=0; i<nCol; i++){
@@ -29647,13 +29647,13 @@ static int do_meta_command(char *zLine, ShellState *p){
         if( z==0 && (xRead==csv_read_one_field) && i==nCol-1 && i>0 ){
           z = "";
         }
-        sqlite3_bind_text(pStmt, i+1, z, -1, SQLITE_TRANSIENT);
+        bentley_sqlite3_bind_text(pStmt, i+1, z, -1, SQLITE_TRANSIENT);
         if( i<nCol-1 && sCtx.cTerm!=sCtx.cColSep ){
           sqlite3_fprintf(stderr,"%s:%d: expected %d columns but found %d"
                 " - filling the rest with NULL\n",
                 sCtx.zFile, startLine, nCol, i+1);
           i += 2;
-          while( i<=nCol ){ sqlite3_bind_null(pStmt, i); i++; }
+          while( i<=nCol ){ bentley_sqlite3_bind_null(pStmt, i); i++; }
         }
       }
       if( sCtx.cTerm==sCtx.cColSep ){
@@ -29666,11 +29666,11 @@ static int do_meta_command(char *zLine, ShellState *p){
               sCtx.zFile, startLine, nCol, i);
       }
       if( i>=nCol ){
-        sqlite3_step(pStmt);
-        rc = sqlite3_reset(pStmt);
+        bentley_sqlite3_step(pStmt);
+        rc = bentley_sqlite3_reset(pStmt);
         if( rc!=SQLITE_OK ){
           sqlite3_fprintf(stderr,"%s:%d: INSERT failed: %s\n",
-                sCtx.zFile, startLine, sqlite3_errmsg(p->db));
+                sCtx.zFile, startLine, bentley_sqlite3_errmsg(p->db));
           sCtx.nErr++;
         }else{
           sCtx.nRow++;
@@ -29679,8 +29679,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     }while( sCtx.cTerm!=EOF );
 
     import_cleanup(&sCtx);
-    sqlite3_finalize(pStmt);
-    if( needCommit ) sqlite3_exec(p->db, "COMMIT", 0, 0, 0);
+    bentley_sqlite3_finalize(pStmt);
+    if( needCommit ) bentley_sqlite3_exec(p->db, "COMMIT", 0, 0, 0);
     if( eVerbose>0 ){
       sqlite3_fprintf(p->out,
             "Added %d rows with %d errors using %d lines of input\n",
@@ -29704,7 +29704,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
       goto meta_command_exit;
     }
-    if( !(nArg==3 || (nArg==2 && sqlite3_stricmp(azArg[1],"off")==0)) ){
+    if( !(nArg==3 || (nArg==2 && bentley_sqlite3_stricmp(azArg[1],"off")==0)) ){
       eputz("Usage: .imposter INDEX IMPOSTER\n"
             "       .imposter off\n");
       /* Also allowed, but not documented:
@@ -29719,10 +29719,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     open_db(p, 0);
     if( nArg==2 ){
-      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 1);
+      bentley_sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 1);
       goto meta_command_exit;
     }
-    zSql = sqlite3_mprintf(
+    zSql = bentley_sqlite3_mprintf(
       "SELECT rootpage, 0 FROM sqlite_schema"
       " WHERE name='%q' AND type='index'"
       "UNION ALL "
@@ -29731,57 +29731,57 @@ static int do_meta_command(char *zLine, ShellState *p){
       "   AND sql LIKE '%%without%%rowid%%'",
       azArg[1], azArg[1]
     );
-    sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
-    sqlite3_free(zSql);
-    if( sqlite3_step(pStmt)==SQLITE_ROW ){
-      tnum = sqlite3_column_int(pStmt, 0);
-      isWO = sqlite3_column_int(pStmt, 1);
+    bentley_sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    bentley_sqlite3_free(zSql);
+    if( bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+      tnum = bentley_sqlite3_column_int(pStmt, 0);
+      isWO = bentley_sqlite3_column_int(pStmt, 1);
     }
-    sqlite3_finalize(pStmt);
-    zSql = sqlite3_mprintf("PRAGMA index_xinfo='%q'", azArg[1]);
-    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
-    sqlite3_free(zSql);
+    bentley_sqlite3_finalize(pStmt);
+    zSql = bentley_sqlite3_mprintf("PRAGMA index_xinfo='%q'", azArg[1]);
+    rc = bentley_sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    bentley_sqlite3_free(zSql);
     i = 0;
-    while( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+    while( rc==SQLITE_OK && bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
       char zLabel[20];
-      const char *zCol = (const char*)sqlite3_column_text(pStmt,2);
+      const char *zCol = (const char*)bentley_sqlite3_column_text(pStmt,2);
       i++;
       if( zCol==0 ){
-        if( sqlite3_column_int(pStmt,1)==-1 ){
+        if( bentley_sqlite3_column_int(pStmt,1)==-1 ){
           zCol = "_ROWID_";
         }else{
-          sqlite3_snprintf(sizeof(zLabel),zLabel,"expr%d",i);
+          bentley_sqlite3_snprintf(sizeof(zLabel),zLabel,"expr%d",i);
           zCol = zLabel;
         }
       }
-      if( isWO && lenPK==0 && sqlite3_column_int(pStmt,5)==0 && zCollist ){
+      if( isWO && lenPK==0 && bentley_sqlite3_column_int(pStmt,5)==0 && zCollist ){
         lenPK = (int)strlen(zCollist);
       }
       if( zCollist==0 ){
-        zCollist = sqlite3_mprintf("\"%w\"", zCol);
+        zCollist = bentley_sqlite3_mprintf("\"%w\"", zCol);
       }else{
-        zCollist = sqlite3_mprintf("%z,\"%w\"", zCollist, zCol);
+        zCollist = bentley_sqlite3_mprintf("%z,\"%w\"", zCollist, zCol);
       }
     }
-    sqlite3_finalize(pStmt);
+    bentley_sqlite3_finalize(pStmt);
     if( i==0 || tnum==0 ){
       sqlite3_fprintf(stderr,"no such index: \"%s\"\n", azArg[1]);
       rc = 1;
-      sqlite3_free(zCollist);
+      bentley_sqlite3_free(zCollist);
       goto meta_command_exit;
     }
     if( lenPK==0 ) lenPK = 100000;
-    zSql = sqlite3_mprintf(
+    zSql = bentley_sqlite3_mprintf(
           "CREATE TABLE \"%w\"(%s,PRIMARY KEY(%.*s))WITHOUT ROWID",
           azArg[2], zCollist, lenPK, zCollist);
-    sqlite3_free(zCollist);
-    rc = sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 1, tnum);
+    bentley_sqlite3_free(zCollist);
+    rc = bentley_sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 1, tnum);
     if( rc==SQLITE_OK ){
-      rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
-      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 0);
+      rc = bentley_sqlite3_exec(p->db, zSql, 0, 0, 0);
+      bentley_sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 0);
       if( rc ){
         sqlite3_fprintf(stderr,
-              "Error in [%s]: %s\n", zSql, sqlite3_errmsg(p->db));
+              "Error in [%s]: %s\n", zSql, bentley_sqlite3_errmsg(p->db));
       }else{
         sqlite3_fprintf(stdout, "%s;\n", zSql);
         sqlite3_fprintf(stdout,
@@ -29792,7 +29792,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_fprintf(stderr,"SQLITE_TESTCTRL_IMPOSTER returns %d\n", rc);
       rc = 1;
     }
-    sqlite3_free(zSql);
+    bentley_sqlite3_free(zSql);
   }else
 #endif /* !defined(SQLITE_OMIT_TEST_CONTROL) */
 
@@ -29857,7 +29857,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( nArg==1 ){
       for(i=0; i<ArraySize(aLimit); i++){
         sqlite3_fprintf(stdout, "%20s %d\n", aLimit[i].zLimitName,
-              sqlite3_limit(p->db, aLimit[i].limitCode, -1));
+              bentley_sqlite3_limit(p->db, aLimit[i].limitCode, -1));
       }
     }else if( nArg>3 ){
       eputz("Usage: .limit NAME ?NEW-VALUE?\n");
@@ -29867,7 +29867,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       int iLimit = -1;
       n2 = strlen30(azArg[1]);
       for(i=0; i<ArraySize(aLimit); i++){
-        if( sqlite3_strnicmp(aLimit[i].zLimitName, azArg[1], n2)==0 ){
+        if( bentley_sqlite3_strnicmp(aLimit[i].zLimitName, azArg[1], n2)==0 ){
           if( iLimit<0 ){
             iLimit = i;
           }else{
@@ -29885,11 +29885,11 @@ static int do_meta_command(char *zLine, ShellState *p){
         goto meta_command_exit;
       }
       if( nArg==3 ){
-        sqlite3_limit(p->db, aLimit[iLimit].limitCode,
+        bentley_sqlite3_limit(p->db, aLimit[iLimit].limitCode,
                       (int)integerValue(azArg[2]));
       }
       sqlite3_fprintf(stdout, "%20s %d\n", aLimit[iLimit].zLimitName,
-            sqlite3_limit(p->db, aLimit[iLimit].limitCode, -1));
+            bentley_sqlite3_limit(p->db, aLimit[iLimit].limitCode, -1));
     }
   }else
 
@@ -29912,10 +29912,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     zFile = azArg[1];
     zProc = nArg>=3 ? azArg[2] : 0;
     open_db(p, 0);
-    rc = sqlite3_load_extension(p->db, zFile, zProc, &zErrMsg);
+    rc = bentley_sqlite3_load_extension(p->db, zFile, zProc, &zErrMsg);
     if( rc!=SQLITE_OK ){
       shellEmitError(zErrMsg);
-      sqlite3_free(zErrMsg);
+      bentley_sqlite3_free(zErrMsg);
       rc = 1;
     }
   }else
@@ -30004,42 +30004,42 @@ static int do_meta_command(char *zLine, ShellState *p){
     n2 = strlen30(zMode);
     if( cli_strncmp(zMode,"lines",n2)==0 ){
       p->mode = MODE_Line;
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+      bentley_sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( cli_strncmp(zMode,"columns",n2)==0 ){
       p->mode = MODE_Column;
       if( (p->shellFlgs & SHFLG_HeaderSet)==0 ){
         p->showHeader = 1;
       }
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+      bentley_sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
       p->cmOpts = cmOpts;
     }else if( cli_strncmp(zMode,"list",n2)==0 ){
       p->mode = MODE_List;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Column);
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+      bentley_sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Column);
+      bentley_sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( cli_strncmp(zMode,"html",n2)==0 ){
       p->mode = MODE_Html;
     }else if( cli_strncmp(zMode,"tcl",n2)==0 ){
       p->mode = MODE_Tcl;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Space);
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+      bentley_sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Space);
+      bentley_sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( cli_strncmp(zMode,"csv",n2)==0 ){
       p->mode = MODE_Csv;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
+      bentley_sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
+      bentley_sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
     }else if( cli_strncmp(zMode,"tabs",n2)==0 ){
       p->mode = MODE_List;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Tab);
+      bentley_sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Tab);
     }else if( cli_strncmp(zMode,"insert",n2)==0 ){
       p->mode = MODE_Insert;
       set_table_name(p, zTabname ? zTabname : "table");
     }else if( cli_strncmp(zMode,"quote",n2)==0 ){
       p->mode = MODE_Quote;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+      bentley_sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
+      bentley_sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( cli_strncmp(zMode,"ascii",n2)==0 ){
       p->mode = MODE_Ascii;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Unit);
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Record);
+      bentley_sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Unit);
+      bentley_sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Record);
     }else if( cli_strncmp(zMode,"markdown",n2)==0 ){
       p->mode = MODE_Markdown;
       p->cmOpts = cmOpts;
@@ -30083,7 +30083,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='n' && cli_strncmp(azArg[0], "nullvalue", n)==0 ){
     if( nArg==2 ){
-      sqlite3_snprintf(sizeof(p->nullValue), p->nullValue,
+      bentley_sqlite3_snprintf(sizeof(p->nullValue), p->nullValue,
                        "%.*s", (int)ArraySize(p->nullValue)-1, azArg[1]);
     }else{
       eputz("Usage: .nullvalue STRING\n");
@@ -30142,7 +30142,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     close_db(p->db);
     p->db = 0;
     p->pAuxDb->zDbFilename = 0;
-    sqlite3_free(p->pAuxDb->zFreeOnClose);
+    bentley_sqlite3_free(p->pAuxDb->zFreeOnClose);
     p->pAuxDb->zFreeOnClose = 0;
     p->openMode = openMode;
     p->openFlags = 0;
@@ -30163,7 +30163,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       /* WASM mode has its own sandboxed pseudo-filesystem. */
 #endif
       if( zFN ){
-        zNewFilename = sqlite3_mprintf("%s", zFN);
+        zNewFilename = bentley_sqlite3_mprintf("%s", zFN);
         shell_check_oom(zNewFilename);
       }else{
         zNewFilename = 0;
@@ -30172,7 +30172,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       open_db(p, OPEN_DB_KEEPALIVE);
       if( p->db==0 ){
         sqlite3_fprintf(stderr,"Error: cannot open '%s'\n", zNewFilename);
-        sqlite3_free(zNewFilename);
+        bentley_sqlite3_free(zNewFilename);
       }else{
         p->pAuxDb->zFreeOnClose = zNewFilename;
       }
@@ -30231,9 +30231,9 @@ static int do_meta_command(char *zLine, ShellState *p){
           goto meta_command_exit;
         }
       }else if( zFile==0 && eMode==0 ){
-        zFile = sqlite3_mprintf("%s", z);
+        zFile = bentley_sqlite3_mprintf("%s", z);
         if( zFile && zFile[0]=='|' ){
-          while( i+1<nArg ) zFile = sqlite3_mprintf("%z %s", zFile, azArg[++i]);
+          while( i+1<nArg ) zFile = bentley_sqlite3_mprintf("%z %s", zFile, azArg[++i]);
           break;
         }
       }else{
@@ -30241,12 +30241,12 @@ static int do_meta_command(char *zLine, ShellState *p){
             "ERROR: extra parameter: \"%s\".  Usage:\n", azArg[i]);
         showHelp(p->out, azArg[0]);
         rc = 1;
-        sqlite3_free(zFile);
+        bentley_sqlite3_free(zFile);
         goto meta_command_exit;
       }
     }
     if( zFile==0 ){
-      zFile = sqlite3_mprintf("stdout");
+      zFile = bentley_sqlite3_mprintf("stdout");
     }
     shell_check_oom(zFile);
     if( bOnce ){
@@ -30264,8 +30264,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         newTempFile(p, "csv");
         ShellClearFlag(p, SHFLG_Echo);
         p->mode = MODE_Csv;
-        sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
-        sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
+        bentley_sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
+        bentley_sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
 #ifdef _WIN32
         zBom = zBomUtf8;  /* Always include the BOM on Windows, as Excel does
                           ** not work without it. */
@@ -30278,8 +30278,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         /* text editor mode */
         newTempFile(p, "txt");
       }
-      sqlite3_free(zFile);
-      zFile = sqlite3_mprintf("%s", p->zTempFile);
+      bentley_sqlite3_free(zFile);
+      zFile = bentley_sqlite3_mprintf("%s", p->zTempFile);
     }
 #endif /* SQLITE_NOHAVE_SYSTEM */
     shell_check_oom(zFile);
@@ -30297,7 +30297,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else{
         output_redir(p, pfPipe);
         if( zBom ) sqlite3_fputs(zBom, pfPipe);
-        sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
+        bentley_sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
 #endif
     }else{
@@ -30317,10 +30317,10 @@ static int do_meta_command(char *zLine, ShellState *p){
             pfFile
           );
         }
-        sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
+        bentley_sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
     }
-    sqlite3_free(zFile);
+    bentley_sqlite3_free(zFile);
   }else
 #endif /* !defined(SQLITE_SHELL_FIDDLE) */
 
@@ -30332,7 +30332,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     ** Clear all bind parameters by dropping the TEMP table that holds them.
     */
     if( nArg==2 && cli_strcmp(azArg[1],"clear")==0 ){
-      sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp.sqlite_parameters;",
+      bentley_sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp.sqlite_parameters;",
                    0, 0, 0);
     }else
 
@@ -30343,25 +30343,25 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_stmt *pStmt = 0;
       int rx;
       int len = 0;
-      rx = sqlite3_prepare_v2(p->db,
+      rx = bentley_sqlite3_prepare_v2(p->db,
              "SELECT max(length(key)) "
              "FROM temp.sqlite_parameters;", -1, &pStmt, 0);
-      if( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
-        len = sqlite3_column_int(pStmt, 0);
+      if( rx==SQLITE_OK && bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+        len = bentley_sqlite3_column_int(pStmt, 0);
         if( len>40 ) len = 40;
       }
-      sqlite3_finalize(pStmt);
+      bentley_sqlite3_finalize(pStmt);
       pStmt = 0;
       if( len ){
-        rx = sqlite3_prepare_v2(p->db,
+        rx = bentley_sqlite3_prepare_v2(p->db,
              "SELECT key, quote(value) "
              "FROM temp.sqlite_parameters;", -1, &pStmt, 0);
-        while( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+        while( rx==SQLITE_OK && bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
           sqlite3_fprintf(p->out,
-                "%-*s %s\n", len, sqlite3_column_text(pStmt,0),
-                sqlite3_column_text(pStmt,1));
+                "%-*s %s\n", len, bentley_sqlite3_column_text(pStmt,0),
+                bentley_sqlite3_column_text(pStmt,1));
         }
-        sqlite3_finalize(pStmt);
+        bentley_sqlite3_finalize(pStmt);
       }
     }else
 
@@ -30386,32 +30386,32 @@ static int do_meta_command(char *zLine, ShellState *p){
       const char *zKey = azArg[2];
       const char *zValue = azArg[3];
       bind_table_init(p);
-      zSql = sqlite3_mprintf(
+      zSql = bentley_sqlite3_mprintf(
                   "REPLACE INTO temp.sqlite_parameters(key,value)"
                   "VALUES(%Q,%s);", zKey, zValue);
       shell_check_oom(zSql);
       pStmt = 0;
-      rx = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
-      sqlite3_free(zSql);
+      rx = bentley_sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+      bentley_sqlite3_free(zSql);
       if( rx!=SQLITE_OK ){
-        sqlite3_finalize(pStmt);
+        bentley_sqlite3_finalize(pStmt);
         pStmt = 0;
-        zSql = sqlite3_mprintf(
+        zSql = bentley_sqlite3_mprintf(
                    "REPLACE INTO temp.sqlite_parameters(key,value)"
                    "VALUES(%Q,%Q);", zKey, zValue);
         shell_check_oom(zSql);
-        rx = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
-        sqlite3_free(zSql);
+        rx = bentley_sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+        bentley_sqlite3_free(zSql);
         if( rx!=SQLITE_OK ){
-          sqlite3_fprintf(p->out, "Error: %s\n", sqlite3_errmsg(p->db));
-          sqlite3_finalize(pStmt);
+          sqlite3_fprintf(p->out, "Error: %s\n", bentley_sqlite3_errmsg(p->db));
+          bentley_sqlite3_finalize(pStmt);
           pStmt = 0;
           rc = 1;
         }
       }
       bind_prepared_stmt(p, pStmt);
-      sqlite3_step(pStmt);
-      sqlite3_finalize(pStmt);
+      bentley_sqlite3_step(pStmt);
+      bentley_sqlite3_finalize(pStmt);
     }else
 
     /* .parameter unset NAME
@@ -30419,11 +30419,11 @@ static int do_meta_command(char *zLine, ShellState *p){
     ** exists.
     */
     if( nArg==3 && cli_strcmp(azArg[1],"unset")==0 ){
-      char *zSql = sqlite3_mprintf(
+      char *zSql = bentley_sqlite3_mprintf(
           "DELETE FROM temp.sqlite_parameters WHERE key=%Q", azArg[2]);
       shell_check_oom(zSql);
-      sqlite3_exec(p->db, zSql, 0, 0, 0);
-      sqlite3_free(zSql);
+      bentley_sqlite3_exec(p->db, zSql, 0, 0, 0);
+      bentley_sqlite3_free(zSql);
     }else
     /* If no command name matches, show a syntax error */
     parameter_syntax_error:
@@ -30556,27 +30556,27 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
       goto meta_command_exit;
     }
-    rc = sqlite3_open(zSrcFile, &pSrc);
+    rc = bentley_sqlite3_open(zSrcFile, &pSrc);
     if( rc!=SQLITE_OK ){
       sqlite3_fprintf(stderr,"Error: cannot open \"%s\"\n", zSrcFile);
       close_db(pSrc);
       return 1;
     }
     open_db(p, 0);
-    pBackup = sqlite3_backup_init(p->db, zDb, pSrc, "main");
+    pBackup = bentley_sqlite3_backup_init(p->db, zDb, pSrc, "main");
     if( pBackup==0 ){
       shellDatabaseError(p->db);
       close_db(pSrc);
       return 1;
     }
-    while( (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK
+    while( (rc = bentley_sqlite3_backup_step(pBackup,100))==SQLITE_OK
           || rc==SQLITE_BUSY  ){
       if( rc==SQLITE_BUSY ){
         if( nTimeout++ >= 3 ) break;
-        sqlite3_sleep(100);
+        bentley_sqlite3_sleep(100);
       }
     }
-    sqlite3_backup_finish(pBackup);
+    bentley_sqlite3_backup_finish(pBackup);
     if( rc==SQLITE_DONE ){
       rc = 0;
     }else if( rc==SQLITE_BUSY || rc==SQLITE_LOCKED ){
@@ -30604,7 +30604,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->scanstatsOn = (u8)booleanValue(azArg[1]);
       }
       open_db(p, 0);
-      sqlite3_db_config(
+      bentley_sqlite3_db_config(
           p->db, SQLITE_DBCONFIG_STMT_SCANSTATUS, p->scanstatsOn, (int*)0
       );
 #if !defined(SQLITE_ENABLE_STMT_SCANSTATUS)
@@ -30656,13 +30656,13 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }
     if( zName!=0 ){
-      int isSchema = sqlite3_strlike(zName, "sqlite_master", '\\')==0
-                  || sqlite3_strlike(zName, "sqlite_schema", '\\')==0
-                  || sqlite3_strlike(zName,"sqlite_temp_master", '\\')==0
-                  || sqlite3_strlike(zName,"sqlite_temp_schema", '\\')==0;
+      int isSchema = bentley_sqlite3_strlike(zName, "sqlite_master", '\\')==0
+                  || bentley_sqlite3_strlike(zName, "sqlite_schema", '\\')==0
+                  || bentley_sqlite3_strlike(zName,"sqlite_temp_master", '\\')==0
+                  || bentley_sqlite3_strlike(zName,"sqlite_temp_schema", '\\')==0;
       if( isSchema ){
         char *new_argv[2], *new_colv[2];
-        new_argv[0] = sqlite3_mprintf(
+        new_argv[0] = bentley_sqlite3_mprintf(
                       "CREATE TABLE %s (\n"
                       "  type text,\n"
                       "  name text,\n"
@@ -30675,29 +30675,29 @@ static int do_meta_command(char *zLine, ShellState *p){
         new_colv[0] = "sql";
         new_colv[1] = 0;
         callback(&data, 1, new_argv, new_colv);
-        sqlite3_free(new_argv[0]);
+        bentley_sqlite3_free(new_argv[0]);
       }
     }
     if( zDiv ){
       sqlite3_stmt *pStmt = 0;
-      rc = sqlite3_prepare_v2(p->db, "SELECT name FROM pragma_database_list",
+      rc = bentley_sqlite3_prepare_v2(p->db, "SELECT name FROM pragma_database_list",
                               -1, &pStmt, 0);
       if( rc ){
         shellDatabaseError(p->db);
-        sqlite3_finalize(pStmt);
+        bentley_sqlite3_finalize(pStmt);
         rc = 1;
         goto meta_command_exit;
       }
       appendText(&sSelect, "SELECT sql FROM", 0);
       iSchema = 0;
-      while( sqlite3_step(pStmt)==SQLITE_ROW ){
-        const char *zDb = (const char*)sqlite3_column_text(pStmt, 0);
+      while( bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
+        const char *zDb = (const char*)bentley_sqlite3_column_text(pStmt, 0);
         char zScNum[30];
-        sqlite3_snprintf(sizeof(zScNum), zScNum, "%d", ++iSchema);
+        bentley_sqlite3_snprintf(sizeof(zScNum), zScNum, "%d", ++iSchema);
         appendText(&sSelect, zDiv, 0);
         zDiv = " UNION ALL ";
         appendText(&sSelect, "SELECT shell_add_schema(sql,", 0);
-        if( sqlite3_stricmp(zDb, "main")!=0 ){
+        if( bentley_sqlite3_stricmp(zDb, "main")!=0 ){
           appendText(&sSelect, zDb, '\'');
         }else{
           appendText(&sSelect, "NULL", 0);
@@ -30710,7 +30710,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         appendText(&sSelect, zDb, quoteChar(zDb));
         appendText(&sSelect, ".sqlite_schema", 0);
       }
-      sqlite3_finalize(pStmt);
+      bentley_sqlite3_finalize(pStmt);
 #ifndef SQLITE_OMIT_INTROSPECTION_PRAGMAS
       if( zName ){
         appendText(&sSelect,
@@ -30721,7 +30721,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 #endif
       appendText(&sSelect, ") WHERE ", 0);
       if( zName ){
-        char *zQarg = sqlite3_mprintf("%Q", zName);
+        char *zQarg = bentley_sqlite3_mprintf("%Q", zName);
         int bGlob;
         shell_check_oom(zQarg);
         bGlob = strchr(zName, '*') != 0 || strchr(zName, '?') != 0 ||
@@ -30737,7 +30737,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           appendText(&sSelect, " ESCAPE '\\' ", 0);
         }
         appendText(&sSelect, " AND ", 0);
-        sqlite3_free(zQarg);
+        bentley_sqlite3_free(zQarg);
       }
       if( bNoSystemTabs ){
         appendText(&sSelect, "name NOT LIKE 'sqlite_%%' AND ", 0);
@@ -30747,13 +30747,13 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( bDebug ){
         sqlite3_fprintf(p->out, "SQL: %s;\n", sSelect.z);
       }else{
-        rc = sqlite3_exec(p->db, sSelect.z, callback, &data, &zErrMsg);
+        rc = bentley_sqlite3_exec(p->db, sSelect.z, callback, &data, &zErrMsg);
       }
       freeText(&sSelect);
     }
     if( zErrMsg ){
       shellEmitError(zErrMsg);
-      sqlite3_free(zErrMsg);
+      bentley_sqlite3_free(zErrMsg);
       rc = 1;
     }else if( rc != SQLITE_OK ){
       eputz("Error: querying schema information\n");
@@ -30767,7 +30767,7 @@ static int do_meta_command(char *zLine, ShellState *p){
    || (c=='t' && n==9  && cli_strncmp(azArg[0], "treetrace", n)==0)
   ){
     unsigned int x = nArg>=2? (unsigned int)integerValue(azArg[1]) : 0xffffffff;
-    sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &x);
+    bentley_sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &x);
   }else
 
 #if defined(SQLITE_ENABLE_SESSION)
@@ -30795,7 +30795,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
 
     /* .session attach TABLE
-    ** Invoke the sqlite3session_attach() interface to attach a particular
+    ** Invoke the bentley_sqlite3session_attach() interface to attach a particular
     ** table so that it is never filtered.
     */
     if( cli_strcmp(azCmd[0],"attach")==0 ){
@@ -30804,10 +30804,10 @@ static int do_meta_command(char *zLine, ShellState *p){
         session_not_open:
         eputz("ERROR: No sessions are open\n");
       }else{
-        rc = sqlite3session_attach(pSession->p, azCmd[1]);
+        rc = bentley_sqlite3session_attach(pSession->p, azCmd[1]);
         if( rc ){
           sqlite3_fprintf(stderr,
-               "ERROR: sqlite3session_attach() returns %d\n",rc);
+               "ERROR: bentley_sqlite3session_attach() returns %d\n",rc);
           rc = 0;
         }
       }
@@ -30832,9 +30832,9 @@ static int do_meta_command(char *zLine, ShellState *p){
         int szChng;
         void *pChng;
         if( azCmd[0][0]=='c' ){
-          rc = sqlite3session_changeset(pSession->p, &szChng, &pChng);
+          rc = bentley_sqlite3session_changeset(pSession->p, &szChng, &pChng);
         }else{
-          rc = sqlite3session_patchset(pSession->p, &szChng, &pChng);
+          rc = bentley_sqlite3session_patchset(pSession->p, &szChng, &pChng);
         }
         if( rc ){
           sqlite3_fprintf(stdout, "Error: error code %d\n", rc);
@@ -30845,7 +30845,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           sqlite3_fprintf(stderr,
               "ERROR: Failed to write entire %d-byte output\n", szChng);
         }
-        sqlite3_free(pChng);
+        bentley_sqlite3_free(pChng);
         fclose(out);
       }
     }else
@@ -30869,7 +30869,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( nCmd>2 ) goto session_syntax_error;
       ii = nCmd==1 ? -1 : booleanValue(azCmd[1]);
       if( pAuxDb->nSession ){
-        ii = sqlite3session_enable(pSession->p, ii);
+        ii = bentley_sqlite3session_enable(pSession->p, ii);
         sqlite3_fprintf(p->out,
             "session %s enable flag = %d\n", pSession->zName, ii);
       }
@@ -30883,14 +30883,14 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( nCmd<2 ) goto session_syntax_error;
       if( pAuxDb->nSession ){
         for(ii=0; ii<pSession->nFilter; ii++){
-          sqlite3_free(pSession->azFilter[ii]);
+          bentley_sqlite3_free(pSession->azFilter[ii]);
         }
-        sqlite3_free(pSession->azFilter);
+        bentley_sqlite3_free(pSession->azFilter);
         nByte = sizeof(pSession->azFilter[0])*(nCmd-1);
-        pSession->azFilter = sqlite3_malloc( nByte );
+        pSession->azFilter = bentley_sqlite3_malloc( nByte );
         shell_check_oom( pSession->azFilter );
         for(ii=1; ii<nCmd; ii++){
-          char *x = pSession->azFilter[ii-1] = sqlite3_mprintf("%s", azCmd[ii]);
+          char *x = pSession->azFilter[ii-1] = bentley_sqlite3_mprintf("%s", azCmd[ii]);
           shell_check_oom(x);
         }
         pSession->nFilter = ii-1;
@@ -30905,7 +30905,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( nCmd>2 ) goto session_syntax_error;
       ii = nCmd==1 ? -1 : booleanValue(azCmd[1]);
       if( pAuxDb->nSession ){
-        ii = sqlite3session_indirect(pSession->p, ii);
+        ii = bentley_sqlite3session_indirect(pSession->p, ii);
         sqlite3_fprintf(p->out,
             "session %s indirect flag = %d\n", pSession->zName, ii);
       }
@@ -30918,7 +30918,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       int ii;
       if( nCmd!=1 ) goto session_syntax_error;
       if( pAuxDb->nSession ){
-        ii = sqlite3session_isempty(pSession->p);
+        ii = bentley_sqlite3session_isempty(pSession->p);
         sqlite3_fprintf(p->out,
              "session %s isempty flag = %d\n", pSession->zName, ii);
       }
@@ -30954,16 +30954,16 @@ static int do_meta_command(char *zLine, ShellState *p){
         goto meta_command_exit;
       }
       pSession = &pAuxDb->aSession[pAuxDb->nSession];
-      rc = sqlite3session_create(p->db, azCmd[1], &pSession->p);
+      rc = bentley_sqlite3session_create(p->db, azCmd[1], &pSession->p);
       if( rc ){
         sqlite3_fprintf(stderr,"Cannot open session: error code=%d\n", rc);
         rc = 0;
         goto meta_command_exit;
       }
       pSession->nFilter = 0;
-      sqlite3session_table_filter(pSession->p, session_filter, pSession);
+      bentley_sqlite3session_table_filter(pSession->p, session_filter, pSession);
       pAuxDb->nSession++;
-      pSession->zName = sqlite3_mprintf("%s", zName);
+      pSession->zName = bentley_sqlite3_mprintf("%s", zName);
       shell_check_oom(pSession->zName);
     }else
     /* If no command name matches, show a syntax error */
@@ -30988,7 +30988,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       for(i=1; i<nArg; i++){
         char zBuf[200];
         v = integerValue(azArg[i]);
-        sqlite3_snprintf(sizeof(zBuf),zBuf,"%s: %lld 0x%llx\n", azArg[i],v,v);
+        bentley_sqlite3_snprintf(sizeof(zBuf),zBuf,"%s: %lld 0x%llx\n", azArg[i],v,v);
         sqlite3_fputs(zBuf, p->out);
       }
     }
@@ -31023,7 +31023,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         goto meta_command_exit;
       }
     }
-    if( sqlite3_table_column_metadata(p->db,"main","selftest",0,0,0,0,0,0)
+    if( bentley_sqlite3_table_column_metadata(p->db,"main","selftest",0,0,0,0,0,0)
            != SQLITE_OK ){
       bSelftestExists = 0;
     }else{
@@ -31037,11 +31037,11 @@ static int do_meta_command(char *zLine, ShellState *p){
     appendText(&str, "x", 0);
     for(k=bSelftestExists; k>=0; k--){
       if( k==1 ){
-        rc = sqlite3_prepare_v2(p->db,
+        rc = bentley_sqlite3_prepare_v2(p->db,
             "SELECT tno,op,cmd,ans FROM selftest ORDER BY tno",
             -1, &pStmt, 0);
       }else{
-        rc = sqlite3_prepare_v2(p->db,
+        rc = bentley_sqlite3_prepare_v2(p->db,
           "VALUES(0,'memo','Missing SELFTEST table - default checks only',''),"
           "      (1,'run','PRAGMA integrity_check','ok')",
           -1, &pStmt, 0);
@@ -31049,14 +31049,14 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( rc ){
         eputz("Error querying the selftest table\n");
         rc = 1;
-        sqlite3_finalize(pStmt);
+        bentley_sqlite3_finalize(pStmt);
         goto meta_command_exit;
       }
-      for(i=1; sqlite3_step(pStmt)==SQLITE_ROW; i++){
-        int tno = sqlite3_column_int(pStmt, 0);
-        const char *zOp = (const char*)sqlite3_column_text(pStmt, 1);
-        const char *zSql = (const char*)sqlite3_column_text(pStmt, 2);
-        const char *zAns = (const char*)sqlite3_column_text(pStmt, 3);
+      for(i=1; bentley_sqlite3_step(pStmt)==SQLITE_ROW; i++){
+        int tno = bentley_sqlite3_column_int(pStmt, 0);
+        const char *zOp = (const char*)bentley_sqlite3_column_text(pStmt, 1);
+        const char *zSql = (const char*)bentley_sqlite3_column_text(pStmt, 2);
+        const char *zAns = (const char*)bentley_sqlite3_column_text(pStmt, 3);
 
         if( zOp==0 ) continue;
         if( zSql==0 ) continue;
@@ -31072,7 +31072,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           char *zErrMsg = 0;
           str.n = 0;
           str.z[0] = 0;
-          rc = sqlite3_exec(p->db, zSql, captureOutputCallback, &str, &zErrMsg);
+          rc = bentley_sqlite3_exec(p->db, zSql, captureOutputCallback, &str, &zErrMsg);
           nTest++;
           if( bVerbose ){
             sqlite3_fprintf(p->out, "Result: %s\n", str.z);
@@ -31081,7 +31081,7 @@ static int do_meta_command(char *zLine, ShellState *p){
             nErr++;
             rc = 1;
             sqlite3_fprintf(p->out, "%d: error-code-%d: %s\n", tno, rc,zErrMsg);
-            sqlite3_free(zErrMsg);
+            bentley_sqlite3_free(zErrMsg);
           }else if( cli_strcmp(zAns,str.z)!=0 ){
             nErr++;
             rc = 1;
@@ -31096,7 +31096,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           break;
         }
       } /* End loop over rows of content from SELFTEST */
-      sqlite3_finalize(pStmt);
+      bentley_sqlite3_finalize(pStmt);
     } /* End loop over k */
     freeText(&str);
     sqlite3_fprintf(p->out, "%d errors out of %d tests\n", nErr, nTest);
@@ -31108,11 +31108,11 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
     }
     if( nArg>=2 ){
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator,
+      bentley_sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator,
                        "%.*s", (int)ArraySize(p->colSeparator)-1, azArg[1]);
     }
     if( nArg>=3 ){
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator,
+      bentley_sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator,
                        "%.*s", (int)ArraySize(p->rowSeparator)-1, azArg[2]);
     }
   }else
@@ -31160,7 +31160,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else{
         zLike = z;
         bSeparate = 1;
-        if( sqlite3_strlike("sqlite\\_%", zLike, '\\')==0 ) bSchema = 1;
+        if( bentley_sqlite3_strlike("sqlite\\_%", zLike, '\\')==0 ) bSchema = 1;
       }
     }
     if( bSchema ){
@@ -31174,15 +31174,15 @@ static int do_meta_command(char *zLine, ShellState *p){
              " AND name NOT LIKE 'sqlite_%'"
              " ORDER BY 1 collate nocase";
     }
-    sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    bentley_sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
     initText(&sQuery);
     initText(&sSql);
     appendText(&sSql, "WITH [sha3sum$query](a,b) AS(",0);
     zSep = "VALUES(";
-    while( SQLITE_ROW==sqlite3_step(pStmt) ){
-      const char *zTab = (const char*)sqlite3_column_text(pStmt,0);
+    while( SQLITE_ROW==bentley_sqlite3_step(pStmt) ){
+      const char *zTab = (const char*)bentley_sqlite3_column_text(pStmt,0);
       if( zTab==0 ) continue;
-      if( zLike && sqlite3_strlike(zLike, zTab, 0)!=0 ) continue;
+      if( zLike && bentley_sqlite3_strlike(zLike, zTab, 0)!=0 ) continue;
       if( cli_strncmp(zTab, "sqlite_",7)!=0 ){
         appendText(&sQuery,"SELECT * FROM ", 0);
         appendText(&sQuery,zTab,'"');
@@ -31208,15 +31208,15 @@ static int do_meta_command(char *zLine, ShellState *p){
       appendText(&sSql, zTab, '\'');
       zSep = "),(";
     }
-    sqlite3_finalize(pStmt);
+    bentley_sqlite3_finalize(pStmt);
     if( bSeparate ){
-      zSql = sqlite3_mprintf(
+      zSql = bentley_sqlite3_mprintf(
           "%s))"
           " SELECT lower(hex(sha3_query(a,%d))) AS hash, b AS label"
           "   FROM [sha3sum$query]",
           sSql.z, iSize);
     }else{
-      zSql = sqlite3_mprintf(
+      zSql = bentley_sqlite3_mprintf(
           "%s))"
           " SELECT lower(hex(sha3_query(group_concat(a,''),%d))) AS hash"
           "   FROM [sha3sum$query]",
@@ -31238,8 +31238,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         "WHERE type='table' AND coalesce(rootpage,0)>1\n"
         "AND name NOT LIKE 'sqlite_%%'%s\n"
         "ORDER BY 1 collate nocase";
-      zRevText = sqlite3_mprintf(zRevText, zLike? " AND name LIKE $tspec" : "");
-      zRevText = sqlite3_mprintf(
+      zRevText = bentley_sqlite3_mprintf(zRevText, zLike? " AND name LIKE $tspec" : "");
+      zRevText = bentley_sqlite3_mprintf(
           /* lower-case query is first run, producing upper-case query. */
           "with tabcols as materialized(\n"
           "select tname, cname\n"
@@ -31257,24 +31257,24 @@ static int do_meta_command(char *zLine, ShellState *p){
           , zRevText);
       shell_check_oom(zRevText);
       if( bDebug ) sqlite3_fprintf(p->out, "%s\n", zRevText);
-      lrc = sqlite3_prepare_v2(p->db, zRevText, -1, &pStmt, 0);
+      lrc = bentley_sqlite3_prepare_v2(p->db, zRevText, -1, &pStmt, 0);
       if( lrc!=SQLITE_OK ){
         /* assert(lrc==SQLITE_NOMEM); // might also be SQLITE_ERROR if the
         ** user does cruel and unnatural things like ".limit expr_depth 0". */
         rc = 1;
       }else{
-        if( zLike ) sqlite3_bind_text(pStmt,1,zLike,-1,SQLITE_STATIC);
-        lrc = SQLITE_ROW==sqlite3_step(pStmt);
+        if( zLike ) bentley_sqlite3_bind_text(pStmt,1,zLike,-1,SQLITE_STATIC);
+        lrc = SQLITE_ROW==bentley_sqlite3_step(pStmt);
         if( lrc ){
-          const char *zGenQuery = (char*)sqlite3_column_text(pStmt,0);
+          const char *zGenQuery = (char*)bentley_sqlite3_column_text(pStmt,0);
           sqlite3_stmt *pCheckStmt;
-          lrc = sqlite3_prepare_v2(p->db, zGenQuery, -1, &pCheckStmt, 0);
+          lrc = bentley_sqlite3_prepare_v2(p->db, zGenQuery, -1, &pCheckStmt, 0);
           if( bDebug ) sqlite3_fprintf(p->out, "%s\n", zGenQuery);
           if( lrc!=SQLITE_OK ){
             rc = 1;
           }else{
-            if( SQLITE_ROW==sqlite3_step(pCheckStmt) ){
-              double countIrreversible = sqlite3_column_double(pCheckStmt, 0);
+            if( SQLITE_ROW==bentley_sqlite3_step(pCheckStmt) ){
+              double countIrreversible = bentley_sqlite3_column_double(pCheckStmt, 0);
               if( countIrreversible>0 ){
                 int sz = (int)(countIrreversible + 0.5);
                 sqlite3_fprintf(stderr,
@@ -31282,16 +31282,16 @@ static int do_meta_command(char *zLine, ShellState *p){
                       sz, (sz>1)? "s": "");
               }
             }
-            sqlite3_finalize(pCheckStmt);
+            bentley_sqlite3_finalize(pCheckStmt);
           }
-          sqlite3_finalize(pStmt);
+          bentley_sqlite3_finalize(pStmt);
         }
       }
       if( rc ) eputz(".sha3sum failed.\n");
-      sqlite3_free(zRevText);
+      bentley_sqlite3_free(zRevText);
     }
 #endif /* !defined(*_OMIT_SCHEMA_PRAGMAS) && !defined(*_OMIT_VIRTUALTABLE) */
-    sqlite3_free(zSql);
+    bentley_sqlite3_free(zSql);
   }else
 
 #if !defined(SQLITE_NOHAVE_SYSTEM) && !defined(SQLITE_SHELL_FIDDLE)
@@ -31307,15 +31307,15 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
       goto meta_command_exit;
     }
-    zCmd = sqlite3_mprintf(strchr(azArg[1],' ')==0?"%s":"\"%s\"", azArg[1]);
+    zCmd = bentley_sqlite3_mprintf(strchr(azArg[1],' ')==0?"%s":"\"%s\"", azArg[1]);
     for(i=2; i<nArg && zCmd!=0; i++){
-      zCmd = sqlite3_mprintf(strchr(azArg[i],' ')==0?"%z %s":"%z \"%s\"",
+      zCmd = bentley_sqlite3_mprintf(strchr(azArg[i],' ')==0?"%z %s":"%z \"%s\"",
                              zCmd, azArg[i]);
     }
     /*consoleRestore();*/
     x = zCmd!=0 ? system(zCmd) : 1;
     /*consoleRenewSetup();*/
-    sqlite3_free(zCmd);
+    bentley_sqlite3_free(zCmd);
     if( x ) sqlite3_fprintf(stderr,"System command returns %d\n", x);
   }else
 #endif /* !defined(SQLITE_NOHAVE_SYSTEM) && !defined(SQLITE_SHELL_FIDDLE) */
@@ -31402,9 +31402,9 @@ static int do_meta_command(char *zLine, ShellState *p){
     ShellText s;
     initText(&s);
     open_db(p, 0);
-    rc = sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
+    rc = bentley_sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
     if( rc ){
-      sqlite3_finalize(pStmt);
+      bentley_sqlite3_finalize(pStmt);
       return shellDatabaseError(p->db);
     }
 
@@ -31414,14 +31414,14 @@ static int do_meta_command(char *zLine, ShellState *p){
       ** command does not. */
       eputz("Usage: .indexes ?LIKE-PATTERN?\n");
       rc = 1;
-      sqlite3_finalize(pStmt);
+      bentley_sqlite3_finalize(pStmt);
       goto meta_command_exit;
     }
-    for(ii=0; sqlite3_step(pStmt)==SQLITE_ROW; ii++){
-      const char *zDbName = (const char*)sqlite3_column_text(pStmt, 1);
+    for(ii=0; bentley_sqlite3_step(pStmt)==SQLITE_ROW; ii++){
+      const char *zDbName = (const char*)bentley_sqlite3_column_text(pStmt, 1);
       if( zDbName==0 ) continue;
       if( s.z && s.z[0] ) appendText(&s, " UNION ALL ", 0);
-      if( sqlite3_stricmp(zDbName, "main")==0 ){
+      if( bentley_sqlite3_stricmp(zDbName, "main")==0 ){
         appendText(&s, "SELECT name FROM ", 0);
       }else{
         appendText(&s, "SELECT ", 0);
@@ -31439,10 +31439,10 @@ static int do_meta_command(char *zLine, ShellState *p){
                       "   AND tbl_name LIKE ?1", 0);
       }
     }
-    rc = sqlite3_finalize(pStmt);
+    rc = bentley_sqlite3_finalize(pStmt);
     if( rc==SQLITE_OK ){
       appendText(&s, " ORDER BY 1", 0);
-      rc = sqlite3_prepare_v2(p->db, s.z, -1, &pStmt, 0);
+      rc = bentley_sqlite3_prepare_v2(p->db, s.z, -1, &pStmt, 0);
     }
     freeText(&s);
     if( rc ) return shellDatabaseError(p->db);
@@ -31452,24 +31452,24 @@ static int do_meta_command(char *zLine, ShellState *p){
     nRow = nAlloc = 0;
     azResult = 0;
     if( nArg>1 ){
-      sqlite3_bind_text(pStmt, 1, azArg[1], -1, SQLITE_TRANSIENT);
+      bentley_sqlite3_bind_text(pStmt, 1, azArg[1], -1, SQLITE_TRANSIENT);
     }else{
-      sqlite3_bind_text(pStmt, 1, "%", -1, SQLITE_STATIC);
+      bentley_sqlite3_bind_text(pStmt, 1, "%", -1, SQLITE_STATIC);
     }
-    while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    while( bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
       if( nRow>=nAlloc ){
         char **azNew;
         int n2 = nAlloc*2 + 10;
-        azNew = sqlite3_realloc64(azResult, sizeof(azResult[0])*n2);
+        azNew = bentley_sqlite3_realloc64(azResult, sizeof(azResult[0])*n2);
         shell_check_oom(azNew);
         nAlloc = n2;
         azResult = azNew;
       }
-      azResult[nRow] = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
+      azResult[nRow] = bentley_sqlite3_mprintf("%s", bentley_sqlite3_column_text(pStmt, 0));
       shell_check_oom(azResult[nRow]);
       nRow++;
     }
-    if( sqlite3_finalize(pStmt)!=SQLITE_OK ){
+    if( bentley_sqlite3_finalize(pStmt)!=SQLITE_OK ){
       rc = shellDatabaseError(p->db);
     }
 
@@ -31495,8 +31495,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }
 
-    for(ii=0; ii<nRow; ii++) sqlite3_free(azResult[ii]);
-    sqlite3_free(azResult);
+    for(ii=0; ii<nRow; ii++) bentley_sqlite3_free(azResult[ii]);
+    bentley_sqlite3_free(azResult);
   }else
 
 #ifndef SQLITE_SHELL_FIDDLE
@@ -31508,9 +31508,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       eputz("Error: cannot open 'testcase-out.txt'\n");
     }
     if( nArg>=2 ){
-      sqlite3_snprintf(sizeof(p->zTestcase), p->zTestcase, "%s", azArg[1]);
+      bentley_sqlite3_snprintf(sizeof(p->zTestcase), p->zTestcase, "%s", azArg[1]);
     }else{
-      sqlite3_snprintf(sizeof(p->zTestcase), p->zTestcase, "?");
+      bentley_sqlite3_snprintf(sizeof(p->zTestcase), p->zTestcase, "?");
     }
   }else
 #endif /* !defined(SQLITE_SHELL_FIDDLE) */
@@ -31652,7 +31652,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           unsigned int m;
           int ii;
           int nOff;
-          sqlite3_test_control(SQLITE_TESTCTRL_GETOPT, p->db, &curOpt);
+          bentley_sqlite3_test_control(SQLITE_TESTCTRL_GETOPT, p->db, &curOpt);
           newOpt = curOpt;
           for(ii=2; ii<nArg; ii++){
             const char *z = azArg[ii];
@@ -31670,7 +31670,7 @@ static int do_meta_command(char *zLine, ShellState *p){
             if( useLabel ){
               int jj;
               for(jj=0; jj<ArraySize(aLabel); jj++){
-                if( sqlite3_stricmp(zLabel, aLabel[jj].zLabel)==0 ) break;
+                if( bentley_sqlite3_stricmp(zLabel, aLabel[jj].zLabel)==0 ) break;
               }
               if( jj>=ArraySize(aLabel) ){
                 sqlite3_fprintf(stderr,
@@ -31691,7 +31691,7 @@ static int do_meta_command(char *zLine, ShellState *p){
             }
           }
           if( curOpt!=newOpt ){
-            sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,p->db,newOpt);
+            bentley_sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,p->db,newOpt);
           }
           for(ii=nOff=0, m=1; ii<32; ii++, m <<= 1){
             if( m & newOpt ) nOff++;
@@ -31718,41 +31718,41 @@ static int do_meta_command(char *zLine, ShellState *p){
           break;
         }
 
-        /* sqlite3_test_control(int, db, int) */
+        /* bentley_sqlite3_test_control(int, db, int) */
         case SQLITE_TESTCTRL_FK_NO_ACTION:
           if( nArg==3 ){
             unsigned int opt = (unsigned int)strtol(azArg[2], 0, 0);
-            rc2 = sqlite3_test_control(testctrl, p->db, opt);
+            rc2 = bentley_sqlite3_test_control(testctrl, p->db, opt);
             isOk = 3;
           }
           break;
 
-        /* sqlite3_test_control(int) */
+        /* bentley_sqlite3_test_control(int) */
         case SQLITE_TESTCTRL_PRNG_SAVE:
         case SQLITE_TESTCTRL_PRNG_RESTORE:
         case SQLITE_TESTCTRL_BYTEORDER:
           if( nArg==2 ){
-            rc2 = sqlite3_test_control(testctrl);
+            rc2 = bentley_sqlite3_test_control(testctrl);
             isOk = testctrl==SQLITE_TESTCTRL_BYTEORDER ? 1 : 3;
           }
           break;
 
-        /* sqlite3_test_control(int, uint) */
+        /* bentley_sqlite3_test_control(int, uint) */
         case SQLITE_TESTCTRL_PENDING_BYTE:
           if( nArg==3 ){
             unsigned int opt = (unsigned int)integerValue(azArg[2]);
-            rc2 = sqlite3_test_control(testctrl, opt);
+            rc2 = bentley_sqlite3_test_control(testctrl, opt);
             isOk = 3;
           }
           break;
 
-        /* sqlite3_test_control(int, int, sqlite3*) */
+        /* bentley_sqlite3_test_control(int, int, sqlite3*) */
         case SQLITE_TESTCTRL_PRNG_SEED:
           if( nArg==3 || nArg==4 ){
             int ii = (int)integerValue(azArg[2]);
             sqlite3 *db;
             if( ii==0 && cli_strcmp(azArg[2],"random")==0 ){
-              sqlite3_randomness(sizeof(ii),&ii);
+              bentley_sqlite3_randomness(sizeof(ii),&ii);
               sqlite3_fprintf(stdout, "-- random seed: %d\n", ii);
             }
             if( nArg==3 ){
@@ -31760,42 +31760,42 @@ static int do_meta_command(char *zLine, ShellState *p){
             }else{
               db = p->db;
               /* Make sure the schema has been loaded */
-              sqlite3_table_column_metadata(db, 0, "x", 0, 0, 0, 0, 0, 0);
+              bentley_sqlite3_table_column_metadata(db, 0, "x", 0, 0, 0, 0, 0, 0);
             }
-            rc2 = sqlite3_test_control(testctrl, ii, db);
+            rc2 = bentley_sqlite3_test_control(testctrl, ii, db);
             isOk = 3;
           }
           break;
 
-        /* sqlite3_test_control(int, int) */
+        /* bentley_sqlite3_test_control(int, int) */
         case SQLITE_TESTCTRL_ASSERT:
         case SQLITE_TESTCTRL_ALWAYS:
           if( nArg==3 ){
             int opt = booleanValue(azArg[2]);
-            rc2 = sqlite3_test_control(testctrl, opt);
+            rc2 = bentley_sqlite3_test_control(testctrl, opt);
             isOk = 1;
           }
           break;
 
-        /* sqlite3_test_control(int, int) */
+        /* bentley_sqlite3_test_control(int, int) */
         case SQLITE_TESTCTRL_LOCALTIME_FAULT:
         case SQLITE_TESTCTRL_NEVER_CORRUPT:
           if( nArg==3 ){
             int opt = booleanValue(azArg[2]);
-            rc2 = sqlite3_test_control(testctrl, opt);
+            rc2 = bentley_sqlite3_test_control(testctrl, opt);
             isOk = 3;
           }
           break;
 
-        /* sqlite3_test_control(sqlite3*) */
+        /* bentley_sqlite3_test_control(sqlite3*) */
         case SQLITE_TESTCTRL_INTERNAL_FUNCTIONS:
-          rc2 = sqlite3_test_control(testctrl, p->db);
+          rc2 = bentley_sqlite3_test_control(testctrl, p->db);
           isOk = 3;
           break;
 
         case SQLITE_TESTCTRL_IMPOSTER:
           if( nArg==5 ){
-            rc2 = sqlite3_test_control(testctrl, p->db,
+            rc2 = bentley_sqlite3_test_control(testctrl, p->db,
                           azArg[2],
                           integerValue(azArg[3]),
                           integerValue(azArg[4]));
@@ -31805,7 +31805,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
         case SQLITE_TESTCTRL_SEEK_COUNT: {
           u64 x = 0;
-          rc2 = sqlite3_test_control(testctrl, p->db, &x);
+          rc2 = bentley_sqlite3_test_control(testctrl, p->db, &x);
           sqlite3_fprintf(p->out, "%llu\n", x);
           isOk = 3;
           break;
@@ -31814,7 +31814,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 #ifdef YYCOVERAGE
         case SQLITE_TESTCTRL_PARSER_COVERAGE: {
           if( nArg==2 ){
-            sqlite3_test_control(testctrl, p->out);
+            bentley_sqlite3_test_control(testctrl, p->out);
             isOk = 3;
           }
           break;
@@ -31825,17 +31825,17 @@ static int do_meta_command(char *zLine, ShellState *p){
           if( nArg==4 ){
             int id = (int)integerValue(azArg[2]);
             int val = (int)integerValue(azArg[3]);
-            sqlite3_test_control(testctrl, id, &val);
+            bentley_sqlite3_test_control(testctrl, id, &val);
             isOk = 3;
           }else if( nArg==3 ){
             int id = (int)integerValue(azArg[2]);
-            sqlite3_test_control(testctrl, -id, &rc2);
+            bentley_sqlite3_test_control(testctrl, -id, &rc2);
             isOk = 1;
           }else if( nArg==2 ){
             int id = 1;
             while(1){
               int val = 0;
-              rc2 = sqlite3_test_control(testctrl, -id, &val);
+              rc2 = bentley_sqlite3_test_control(testctrl, -id, &val);
               if( rc2!=SQLITE_OK ) break;
               if( id>1 ) sqlite3_fputs("  ", p->out);
               sqlite3_fprintf(p->out, "%d: %d", id, val);
@@ -31850,7 +31850,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         case SQLITE_TESTCTRL_SORTER_MMAP:
           if( nArg==3 ){
             int opt = (unsigned int)integerValue(azArg[2]);
-            rc2 = sqlite3_test_control(testctrl, p->db, opt);
+            rc2 = bentley_sqlite3_test_control(testctrl, p->db, opt);
             isOk = 3;
           }
           break;
@@ -31862,7 +31862,7 @@ static int do_meta_command(char *zLine, ShellState *p){
             rc2 = booleanValue(azArg[2]);
             isOk = 3;
           }
-          sqlite3_test_control(testctrl, &rc2);
+          bentley_sqlite3_test_control(testctrl, &rc2);
           break;
         case SQLITE_TESTCTRL_FAULT_INSTALL: {
           int kk;
@@ -31872,16 +31872,16 @@ static int do_meta_command(char *zLine, ShellState *p){
             const char *z = azArg[kk];
             if( z[0]=='-' && z[1]=='-' ) z++;
             if( cli_strcmp(z,"off")==0 ){
-              sqlite3_test_control(testctrl, 0);
+              bentley_sqlite3_test_control(testctrl, 0);
             }else if( cli_strcmp(z,"on")==0 ){
               faultsim_state.iCnt = faultsim_state.nSkip;
               if( faultsim_state.iErr==0 ) faultsim_state.iErr = 1;
               faultsim_state.nHit = 0;
-              sqlite3_test_control(testctrl, faultsim_callback);
+              bentley_sqlite3_test_control(testctrl, faultsim_callback);
             }else if( cli_strcmp(z,"reset")==0 ){
               faultsim_state.iCnt = faultsim_state.nSkip;
               faultsim_state.nHit = 0;
-              sqlite3_test_control(testctrl, faultsim_callback);
+              bentley_sqlite3_test_control(testctrl, faultsim_callback);
             }else if( cli_strcmp(z,"status")==0 ){
               sqlite3_fprintf(p->out, "faultsim.iId:       %d\n",
                               faultsim_state.iId);
@@ -31913,7 +31913,7 @@ static int do_meta_command(char *zLine, ShellState *p){
               faultsim_state.nRepeat = atoi(azArg[++kk]);
            }else if( cli_strcmp(z,"-skip")==0 && kk+1<nArg ){
               faultsim_state.nSkip = atoi(azArg[++kk]);
-            }else if( cli_strcmp(z,"-?")==0 || sqlite3_strglob("*help*",z)==0){
+            }else if( cli_strcmp(z,"-?")==0 || bentley_sqlite3_strglob("*help*",z)==0){
               bShowHelp = 1;
             }else{
               sqlite3_fprintf(stderr,
@@ -31960,7 +31960,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='t' && n>4 && cli_strncmp(azArg[0], "timeout", n)==0 ){
     open_db(p, 0);
-    sqlite3_busy_timeout(p->db, nArg>=2 ? (int)integerValue(azArg[1]) : 0);
+    bentley_sqlite3_busy_timeout(p->db, nArg>=2 ? (int)integerValue(azArg[1]) : 0);
   }else
 
   if( c=='t' && n>=5 && cli_strncmp(azArg[0], "timer", n)==0 ){
@@ -32018,10 +32018,10 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }
     if( p->traceOut==0 ){
-      sqlite3_trace_v2(p->db, 0, 0, 0);
+      bentley_sqlite3_trace_v2(p->db, 0, 0, 0);
     }else{
       if( mType==0 ) mType = SQLITE_TRACE_STMT;
-      sqlite3_trace_v2(p->db, mType, sql_trace_callback, p);
+      bentley_sqlite3_trace_v2(p->db, mType, sql_trace_callback, p);
     }
   }else
 #endif /* !defined(SQLITE_OMIT_TRACE) */
@@ -32042,10 +32042,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     lenOpt = (int)strlen(zOpt);
     if( lenOpt>=3 && cli_strncmp(zOpt, "-allexcept",lenOpt)==0 ){
       assert( azArg[nArg]==0 );
-      sqlite3_drop_modules(p->db, nArg>2 ? (const char**)(azArg+2) : 0);
+      bentley_sqlite3_drop_modules(p->db, nArg>2 ? (const char**)(azArg+2) : 0);
     }else{
       for(ii=1; ii<nArg; ii++){
-        sqlite3_create_module(p->db, azArg[ii], 0, 0);
+        bentley_sqlite3_create_module(p->db, azArg[ii], 0, 0);
       }
     }
   }else
@@ -32054,7 +32054,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='v' && cli_strncmp(azArg[0], "version", n)==0 ){
     char *zPtrSz = sizeof(void*)==8 ? "64-bit" : "32-bit";
     sqlite3_fprintf(p->out, "SQLite %s %s\n" /*extra-version-info*/,
-          sqlite3_libversion(), sqlite3_sourceid());
+          bentley_sqlite3_libversion(), bentley_sqlite3_sourceid());
 #if SQLITE_HAVE_ZLIB
     sqlite3_fprintf(p->out, "zlib version %s\n", zlibVersion());
 #endif
@@ -32075,7 +32075,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     const char *zDbName = nArg==2 ? azArg[1] : "main";
     sqlite3_vfs *pVfs = 0;
     if( p->db ){
-      sqlite3_file_control(p->db, zDbName, SQLITE_FCNTL_VFS_POINTER, &pVfs);
+      bentley_sqlite3_file_control(p->db, zDbName, SQLITE_FCNTL_VFS_POINTER, &pVfs);
       if( pVfs ){
         sqlite3_fprintf(p->out, "vfs.zName      = \"%s\"\n", pVfs->zName);
         sqlite3_fprintf(p->out, "vfs.iVersion   = %d\n", pVfs->iVersion);
@@ -32089,9 +32089,9 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_vfs *pVfs;
     sqlite3_vfs *pCurrent = 0;
     if( p->db ){
-      sqlite3_file_control(p->db, "main", SQLITE_FCNTL_VFS_POINTER, &pCurrent);
+      bentley_sqlite3_file_control(p->db, "main", SQLITE_FCNTL_VFS_POINTER, &pCurrent);
     }
-    for(pVfs=sqlite3_vfs_find(0); pVfs; pVfs=pVfs->pNext){
+    for(pVfs=bentley_sqlite3_vfs_find(0); pVfs; pVfs=pVfs->pNext){
       sqlite3_fprintf(p->out, "vfs.zName      = \"%s\"%s\n", pVfs->zName,
             pVfs==pCurrent ? "  <--- CURRENT" : "");
       sqlite3_fprintf(p->out, "vfs.iVersion   = %d\n", pVfs->iVersion);
@@ -32107,17 +32107,17 @@ static int do_meta_command(char *zLine, ShellState *p){
     const char *zDbName = nArg==2 ? azArg[1] : "main";
     char *zVfsName = 0;
     if( p->db ){
-      sqlite3_file_control(p->db, zDbName, SQLITE_FCNTL_VFSNAME, &zVfsName);
+      bentley_sqlite3_file_control(p->db, zDbName, SQLITE_FCNTL_VFSNAME, &zVfsName);
       if( zVfsName ){
         sqlite3_fprintf(p->out, "%s\n", zVfsName);
-        sqlite3_free(zVfsName);
+        bentley_sqlite3_free(zVfsName);
       }
     }
   }else
 
   if( c=='w' && cli_strncmp(azArg[0], "wheretrace", n)==0 ){
     unsigned int x = nArg>=2? (unsigned int)integerValue(azArg[1]) : 0xffffffff;
-    sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &x);
+    bentley_sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &x);
   }else
 
   if( c=='w' && cli_strncmp(azArg[0], "width", n)==0 ){
@@ -32333,7 +32333,7 @@ static int doAutoDetectRestore(ShellState *p, const char *zSql){
   
           bIsDump = 1;
           shellPrepare(p->db, &rc, zQuery, &pStmt);
-          if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+          if( rc==SQLITE_OK && bentley_sqlite3_step(pStmt)==SQLITE_ROW ){
             bIsDump = 0;
           }
           shellFinalize(&rc, pStmt);
@@ -32341,10 +32341,10 @@ static int doAutoDetectRestore(ShellState *p, const char *zSql){
         if( bIsDump && rc==SQLITE_OK ){
           int bDefense = 0;
           int bDqsDdl = 0;
-          sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, -1, &bDefense);
-          sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, -1, &bDqsDdl);
-          sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
-          sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, 1, 0);
+          bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, -1, &bDefense);
+          bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, -1, &bDqsDdl);
+          bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
+          bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, 1, 0);
           p->eRestoreState = (bDefense ? 2 : 0) + (bDqsDdl ? 4 : 0);
         }else{
           p->eRestoreState = 7;
@@ -32353,12 +32353,12 @@ static int doAutoDetectRestore(ShellState *p, const char *zSql){
       }
   
       default: {
-        if( sqlite3_get_autocommit(p->db) ){
+        if( bentley_sqlite3_get_autocommit(p->db) ){
           if( (p->eRestoreState & 2) ){
-            sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 1, 0);
+            bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 1, 0);
           }
           if( (p->eRestoreState & 4) ){
-            sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, 0, 0);
+            bentley_sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, 0, 0);
           }
           p->eRestoreState = 7;
         }
@@ -32389,7 +32389,7 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
     const char *zErrorType;
     if( zErrMsg==0 ){
       zErrorType = "Error";
-      zErrorTail = sqlite3_errmsg(p->db);
+      zErrorTail = bentley_sqlite3_errmsg(p->db);
     }else if( cli_strncmp(zErrMsg, "in prepare, ",12)==0 ){
       zErrorType = "Parse error";
       zErrorTail = &zErrMsg[12];
@@ -32401,20 +32401,20 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
       zErrorTail = zErrMsg;
     }
     if( in!=0 || !stdin_is_interactive ){
-      sqlite3_snprintf(sizeof(zPrefix), zPrefix,
+      bentley_sqlite3_snprintf(sizeof(zPrefix), zPrefix,
                        "%s near line %d:", zErrorType, startline);
     }else{
-      sqlite3_snprintf(sizeof(zPrefix), zPrefix, "%s:", zErrorType);
+      bentley_sqlite3_snprintf(sizeof(zPrefix), zPrefix, "%s:", zErrorType);
     }
     sqlite3_fprintf(stderr,"%s %s\n", zPrefix, zErrorTail);
-    sqlite3_free(zErrMsg);
+    bentley_sqlite3_free(zErrMsg);
     zErrMsg = 0;
     return 1;
   }else if( ShellHasFlag(p, SHFLG_CountChanges) ){
     char zLineBuf[2000];
-    sqlite3_snprintf(sizeof(zLineBuf), zLineBuf,
+    bentley_sqlite3_snprintf(sizeof(zLineBuf), zLineBuf,
             "changes: %lld   total_changes: %lld",
-            sqlite3_changes64(p->db), sqlite3_total_changes64(p->db));
+            bentley_sqlite3_changes64(p->db), bentley_sqlite3_total_changes64(p->db));
     sqlite3_fprintf(p->out, "%s\n", zLineBuf);
   }
 
@@ -32631,7 +32631,7 @@ static char *find_home_dir(int clearFlag){
       n = strlen30(zDrive) + strlen30(zPath) + 1;
       home_dir = malloc( n );
       if( home_dir==0 ) return 0;
-      sqlite3_snprintf(n, home_dir, "%s%s", zDrive, zPath);
+      bentley_sqlite3_snprintf(n, home_dir, "%s%s", zDrive, zPath);
       return home_dir;
     }
     home_dir = "c:\\";
@@ -32657,7 +32657,7 @@ static char *find_home_dir(int clearFlag){
 ** look for $(HOME)/.config/sqlite3/sqliterc and if found
 ** return that.  If none of these are found, return 0.
 **
-** The string returned is obtained from sqlite3_malloc() and
+** The string returned is obtained from bentley_sqlite3_malloc() and
 ** should be freed by the caller.
 */
 static char *find_xdg_config(void){
@@ -32672,13 +32672,13 @@ static char *find_xdg_config(void){
   if( zXdgHome==0 ){
     const char *zHome = getenv("HOME");
     if( zHome==0 ) return 0;
-    zConfig = sqlite3_mprintf("%s/.config/sqlite3/sqliterc", zHome);
+    zConfig = bentley_sqlite3_mprintf("%s/.config/sqlite3/sqliterc", zHome);
   }else{
-    zConfig = sqlite3_mprintf("%s/sqlite3/sqliterc", zXdgHome);
+    zConfig = bentley_sqlite3_mprintf("%s/sqlite3/sqliterc", zXdgHome);
   }
   shell_check_oom(zConfig);
   if( access(zConfig,0)!=0 ){
-    sqlite3_free(zConfig);
+    bentley_sqlite3_free(zConfig);
     zConfig = 0;
   }
   return zConfig;
@@ -32712,7 +32712,7 @@ static void process_sqliterc(
             " cannot read ~/.sqliterc\n");
       return;
     }
-    zBuf = sqlite3_mprintf("%s/.sqliterc",home_dir);
+    zBuf = bentley_sqlite3_mprintf("%s/.sqliterc",home_dir);
     shell_check_oom(zBuf);
     sqliterc = zBuf;
   }
@@ -32729,7 +32729,7 @@ static void process_sqliterc(
   }
   p->in = inSaved;
   p->lineno = savedLineno;
-  sqlite3_free(zBuf);
+  bentley_sqlite3_free(zBuf);
 }
 
 /*
@@ -32749,7 +32749,7 @@ static const char zOptions[] =
   "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
 #if !defined(SQLITE_OMIT_DESERIALIZE)
-  "   -deserialize         open the database using sqlite3_deserialize()\n"
+  "   -deserialize         open the database using bentley_sqlite3_deserialize()\n"
 #endif
   "   -echo                print inputs before execution\n"
   "   -init FILENAME       read/process named file\n"
@@ -32776,7 +32776,7 @@ static const char zOptions[] =
   "   -newline SEP         set output row separator. Default: '\\n'\n"
   "   -nofollow            refuse to open symbolic links to database files\n"
   "   -nonce STRING        set the safe-mode escape nonce\n"
-  "   -no-rowid-in-view    Disable rowid-in-view using sqlite3_config()\n"
+  "   -no-rowid-in-view    Disable rowid-in-view using bentley_sqlite3_config()\n"
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
   "   -pagecache SIZE N    use N slots of SZ bytes each for page cache memory\n"
   "   -pcachetrace         trace all page cache operations\n"
@@ -32815,7 +32815,7 @@ static void usage(int showDetail){
 ** error message if it is initialized.
 */
 static void verify_uninitialized(void){
-  if( sqlite3_config(-1)==SQLITE_MISUSE ){
+  if( bentley_sqlite3_config(-1)==SQLITE_MISUSE ){
     sputz(stdout, "WARNING: attempt to configure SQLite after"
           " initialization.\n");
   }
@@ -32836,14 +32836,14 @@ static void main_init(ShellState *data) {
   memcpy(data->rowSeparator,SEP_Row, 2);
   data->showHeader = 0;
   data->shellFlgs = SHFLG_Lookaside;
-  sqlite3_config(SQLITE_CONFIG_LOG, shellLog, data);
+  bentley_sqlite3_config(SQLITE_CONFIG_LOG, shellLog, data);
 #if !defined(SQLITE_SHELL_FIDDLE)
   verify_uninitialized();
 #endif
-  sqlite3_config(SQLITE_CONFIG_URI, 1);
-  sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
-  sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
-  sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
+  bentley_sqlite3_config(SQLITE_CONFIG_URI, 1);
+  bentley_sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
+  bentley_sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
+  bentley_sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
 }
 
 /*
@@ -32950,7 +32950,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
   atexit(sayAbnormalExit);
 #ifdef SQLITE_DEBUG
-  mem_main_enter = sqlite3_memory_used();
+  mem_main_enter = bentley_sqlite3_memory_used();
 #endif
 #if !defined(_WIN32_WCE)
   if( getenv("SQLITE_DEBUG_BREAK") ){
@@ -32987,10 +32987,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
 
 #if USE_SYSTEM_SQLITE+0!=1
-  if( cli_strncmp(sqlite3_sourceid(),SQLITE_SOURCE_ID,60)!=0 ){
+  if( cli_strncmp(bentley_sqlite3_sourceid(),SQLITE_SOURCE_ID,60)!=0 ){
     sqlite3_fprintf(stderr,
           "SQLite header and source version mismatch\n%s\n%s\n",
-          sqlite3_sourceid(), SQLITE_SOURCE_ID);
+          bentley_sqlite3_sourceid(), SQLITE_SOURCE_ID);
     exit(1);
   }
 #endif
@@ -32998,12 +32998,12 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 
   /* On Windows, we must translate command-line arguments into UTF-8.
   ** The SQLite memory allocator subsystem has to be enabled in order to
-  ** do this.  But we want to run an sqlite3_shutdown() afterwards so that
-  ** subsequent sqlite3_config() calls will work.  So copy all results into
+  ** do this.  But we want to run an bentley_sqlite3_shutdown() afterwards so that
+  ** subsequent bentley_sqlite3_config() calls will work.  So copy all results into
   ** memory that does not come from the SQLite memory allocator.
   */
 #if !SQLITE_SHELL_IS_UTF8
-  sqlite3_initialize();
+  bentley_sqlite3_initialize();
   argvToFree = malloc(sizeof(argv[0])*argc*2);
   shell_check_oom(argvToFree);
   argcToFree = argc;
@@ -33017,9 +33017,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     shell_check_oom(argv[i]);
     memcpy(argv[i], z, n+1);
     argvToFree[i] = argv[i];
-    sqlite3_free(z);
+    bentley_sqlite3_free(z);
   }
-  sqlite3_shutdown();
+  bentley_sqlite3_shutdown();
 #endif
 
   assert( argc>=1 && argv && argv[0] );
@@ -33085,7 +33085,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-no-utf8")==0 ){
     }else if( cli_strcmp(z,"-no-rowid-in-view")==0 ){
       int val = 0;
-      sqlite3_config(SQLITE_CONFIG_ROWID_IN_VIEW, &val);
+      bentley_sqlite3_config(SQLITE_CONFIG_ROWID_IN_VIEW, &val);
       assert( val==0 );
     }else if( cli_strcmp(z,"-heap")==0 ){
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
@@ -33096,7 +33096,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       szHeap = integerValue(zSize);
       if( szHeap>0x7fff0000 ) szHeap = 0x7fff0000;
       verify_uninitialized();
-      sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
+      bentley_sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
 #else
       (void)cmdline_option_value(argc, argv, ++i);
 #endif
@@ -33110,7 +33110,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         n = 0xffffffffffffLL/sz;
       }
       verify_uninitialized();
-      sqlite3_config(SQLITE_CONFIG_PAGECACHE,
+      bentley_sqlite3_config(SQLITE_CONFIG_PAGECACHE,
                     (n>0 && sz>0) ? malloc(n*sz) : 0, sz, n);
       data.shellFlgs |= SHFLG_Pagecache;
     }else if( cli_strcmp(z,"-lookaside")==0 ){
@@ -33120,16 +33120,16 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       n = (int)integerValue(cmdline_option_value(argc,argv,++i));
       if( n<0 ) n = 0;
       verify_uninitialized();
-      sqlite3_config(SQLITE_CONFIG_LOOKASIDE, sz, n);
+      bentley_sqlite3_config(SQLITE_CONFIG_LOOKASIDE, sz, n);
       if( sz*n==0 ) data.shellFlgs &= ~SHFLG_Lookaside;
     }else if( cli_strcmp(z,"-threadsafe")==0 ){
       int n;
       n = (int)integerValue(cmdline_option_value(argc,argv,++i));
       verify_uninitialized();
       switch( n ){
-         case 0:  sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);  break;
-         case 2:  sqlite3_config(SQLITE_CONFIG_MULTITHREAD);   break;
-         default: sqlite3_config(SQLITE_CONFIG_SERIALIZED);    break;
+         case 0:  bentley_sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);  break;
+         case 2:  bentley_sqlite3_config(SQLITE_CONFIG_MULTITHREAD);   break;
+         default: bentley_sqlite3_config(SQLITE_CONFIG_SERIALIZED);    break;
       }
     }else if( cli_strcmp(z,"-vfstrace")==0 ){
       bEnableVfstrace = 1;
@@ -33141,12 +33141,12 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-mmap")==0 ){
       sqlite3_int64 sz = integerValue(cmdline_option_value(argc,argv,++i));
       verify_uninitialized();
-      sqlite3_config(SQLITE_CONFIG_MMAP_SIZE, sz, sz);
+      bentley_sqlite3_config(SQLITE_CONFIG_MMAP_SIZE, sz, sz);
 #if defined(SQLITE_ENABLE_SORTER_REFERENCES)
     }else if( cli_strcmp(z,"-sorterref")==0 ){
       sqlite3_int64 sz = integerValue(cmdline_option_value(argc,argv,++i));
       verify_uninitialized();
-      sqlite3_config(SQLITE_CONFIG_SORTERREF_SIZE, (int)sz);
+      bentley_sqlite3_config(SQLITE_CONFIG_SORTERREF_SIZE, (int)sz);
 #endif
     }else if( cli_strcmp(z,"-vfs")==0 ){
       zVfs = cmdline_option_value(argc, argv, ++i);
@@ -33196,21 +33196,21 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   {
     /* If the SQLITE_SHELL_INIT_PROC macro is defined, then it is the name
     ** of a C-function that will perform initialization actions on SQLite that
-    ** occur just before or after sqlite3_initialize(). Use this compile-time
+    ** occur just before or after bentley_sqlite3_initialize(). Use this compile-time
     ** option to embed this shell program in larger applications. */
     extern void SQLITE_SHELL_INIT_PROC(void);
     SQLITE_SHELL_INIT_PROC();
   }
 #else
-  /* All the sqlite3_config() calls have now been made. So it is safe
-  ** to call sqlite3_initialize() and process any command line -vfs option. */
-  sqlite3_initialize();
+  /* All the bentley_sqlite3_config() calls have now been made. So it is safe
+  ** to call bentley_sqlite3_initialize() and process any command line -vfs option. */
+  bentley_sqlite3_initialize();
 #endif
 
   if( zVfs ){
-    sqlite3_vfs *pVfs = sqlite3_vfs_find(zVfs);
+    sqlite3_vfs *pVfs = bentley_sqlite3_vfs_find(zVfs);
     if( pVfs ){
-      sqlite3_vfs_register(pVfs, 1);
+      bentley_sqlite3_vfs_register(pVfs, 1);
     }else{
       sqlite3_fprintf(stderr,"no such VFS: \"%s\"\n", zVfs);
       exit(1);
@@ -33267,8 +33267,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.mode = MODE_List;
     }else if( cli_strcmp(z,"-quote")==0 ){
       data.mode = MODE_Quote;
-      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator, SEP_Comma);
-      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator, SEP_Row);
+      bentley_sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator, SEP_Comma);
+      bentley_sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator, SEP_Row);
     }else if( cli_strcmp(z,"-line")==0 ){
       data.mode = MODE_Line;
     }else if( cli_strcmp(z,"-column")==0 ){
@@ -33302,20 +33302,20 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.openFlags |= SQLITE_OPEN_NOFOLLOW;
     }else if( cli_strcmp(z,"-ascii")==0 ){
       data.mode = MODE_Ascii;
-      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,SEP_Unit);
-      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,SEP_Record);
+      bentley_sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,SEP_Unit);
+      bentley_sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,SEP_Record);
     }else if( cli_strcmp(z,"-tabs")==0 ){
       data.mode = MODE_List;
-      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,SEP_Tab);
-      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,SEP_Row);
+      bentley_sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,SEP_Tab);
+      bentley_sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,SEP_Row);
     }else if( cli_strcmp(z,"-separator")==0 ){
-      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
+      bentley_sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
                        "%s",cmdline_option_value(argc,argv,++i));
     }else if( cli_strcmp(z,"-newline")==0 ){
-      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,
+      bentley_sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,
                        "%s",cmdline_option_value(argc,argv,++i));
     }else if( cli_strcmp(z,"-nullvalue")==0 ){
-      sqlite3_snprintf(sizeof(data.nullValue), data.nullValue,
+      bentley_sqlite3_snprintf(sizeof(data.nullValue), data.nullValue,
                        "%s",cmdline_option_value(argc,argv,++i));
     }else if( cli_strcmp(z,"-header")==0 ){
       data.showHeader = 1;
@@ -33344,7 +33344,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       /* No-op.  The bail_on_error flag should already be set. */
     }else if( cli_strcmp(z,"-version")==0 ){
       sqlite3_fprintf(stdout, "%s %s (%d-bit)\n",
-            sqlite3_libversion(), sqlite3_sourceid(), 8*(int)sizeof(char*));
+            bentley_sqlite3_libversion(), bentley_sqlite3_sourceid(), 8*(int)sizeof(char*));
       return 0;
     }else if( cli_strcmp(z,"-interactive")==0 ){
       /* Need to check for interactive override here to so that it can
@@ -33462,7 +33462,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
             sqlite3_fprintf(stderr,
                             "Error: unable to process SQL: %s\n", azCmd[i]);
           }
-          sqlite3_free(zErrMsg);
+          bentley_sqlite3_free(zErrMsg);
           if( rc==0 ) rc = 1;
           goto shell_main_exit;
         }
@@ -33478,7 +33478,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       sqlite3_fprintf(stdout,
             "SQLite version %s %.19s\n" /*extra-version-info*/
             "Enter \".help\" for usage hints.\n",
-            sqlite3_libversion(), sqlite3_sourceid());
+            bentley_sqlite3_libversion(), bentley_sqlite3_sourceid());
       if( warnInmemoryDb ){
         sputz(stdout, "Connected to a ");
         printBold("transient in-memory database");
@@ -33491,7 +33491,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       }else if( (zHome = find_home_dir(0))!=0 ){
         nHistory = strlen30(zHome) + 20;
         if( (zHistory = malloc(nHistory))!=0 ){
-          sqlite3_snprintf(nHistory, zHistory,"%s/.sqlite_history", zHome);
+          bentley_sqlite3_snprintf(nHistory, zHistory,"%s/.sqlite_history", zHome);
         }
       }
       if( zHistory ){ shell_read_history(zHistory); }
@@ -33530,7 +33530,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     close_db(data.db);
   }
   for(i=0; i<ArraySize(data.aAuxDb); i++){
-    sqlite3_free(data.aAuxDb[i].zFreeOnClose);
+    bentley_sqlite3_free(data.aAuxDb[i].zFreeOnClose);
     if( data.aAuxDb[i].db ){
       session_close_all(&data, i);
       close_db(data.aAuxDb[i].db);
@@ -33553,9 +33553,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     vfstrace_unregister("trace");
   }
 #ifdef SQLITE_DEBUG
-  if( sqlite3_memory_used()>mem_main_enter ){
+  if( bentley_sqlite3_memory_used()>mem_main_enter ){
     sqlite3_fprintf(stderr,"Memory leaked: %u bytes\n",
-          (unsigned int)(sqlite3_memory_used()-mem_main_enter));
+          (unsigned int)(bentley_sqlite3_memory_used()-mem_main_enter));
   }
 #endif
 #else /* SQLITE_SHELL_FIDDLE... */
@@ -33586,7 +33586,7 @@ sqlite3 * fiddle_db_handle(){
 sqlite3_vfs * fiddle_db_vfs(const char *zDbName){
   sqlite3_vfs * pVfs = 0;
   if(globalDb){
-    sqlite3_file_control(globalDb, zDbName ? zDbName : "main",
+    bentley_sqlite3_file_control(globalDb, zDbName ? zDbName : "main",
                          SQLITE_FCNTL_VFS_POINTER, &pVfs);
   }
   return pVfs;
@@ -33605,7 +33605,7 @@ sqlite3 * fiddle_db_arg(sqlite3 *arg){
 ** portable enough to make real use of.
 */
 void fiddle_interrupt(void){
-  if( globalDb ) sqlite3_interrupt(globalDb);
+  if( globalDb ) bentley_sqlite3_interrupt(globalDb);
 }
 
 /*
@@ -33614,7 +33614,7 @@ void fiddle_interrupt(void){
 */
 const char * fiddle_db_filename(const char * zDbName){
     return globalDb
-      ? sqlite3_db_filename(globalDb, zDbName ? zDbName : "main")
+      ? bentley_sqlite3_db_filename(globalDb, zDbName ? zDbName : "main")
       : NULL;
 }
 
@@ -33626,17 +33626,17 @@ const char * fiddle_db_filename(const char * zDbName){
 void fiddle_reset_db(void){
   if( globalDb ){
     int rc;
-    while( sqlite3_txn_state(globalDb,0)>0 ){
+    while( bentley_sqlite3_txn_state(globalDb,0)>0 ){
       /*
       ** Resolve problem reported in
       ** https://sqlite.org/forum/forumpost/0b41a25d65
       */
       sqlite3_fputs("Rolling back in-progress transaction.\n", stdout);
-      sqlite3_exec(globalDb,"ROLLBACK", 0, 0, 0);
+      bentley_sqlite3_exec(globalDb,"ROLLBACK", 0, 0, 0);
     }
-    rc = sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
-    if( 0==rc ) sqlite3_exec(globalDb, "VACUUM", 0, 0, 0);
-    sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
+    rc = bentley_sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
+    if( 0==rc ) bentley_sqlite3_exec(globalDb, "VACUUM", 0, 0, 0);
+    bentley_sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
   }
 }
 
@@ -33657,7 +33657,7 @@ int fiddle_export_db( int (*xCallback)(unsigned const char *zOut, int n) ){
   unsigned char buf[1024 * 8];
   int nBuf = (int)sizeof(buf);
   int rc = shellState.db
-    ? sqlite3_file_control(shellState.db, "main",
+    ? bentley_sqlite3_file_control(shellState.db, "main",
                            SQLITE_FCNTL_FILE_POINTER, &pFile)
     : SQLITE_NOTFOUND;
   if( rc ) return rc;

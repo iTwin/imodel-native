@@ -94,7 +94,7 @@ struct CommandSwitches {
 
 static void fatal_sql_error(sqlite3 *db, const char *zMsg){
   fprintf(stderr, "FATAL: SQL error in %s (rc=%d) (errmsg=%s)\n", 
-      zMsg, sqlite3_errcode(db), sqlite3_errmsg(db)
+      zMsg, bentley_sqlite3_errcode(db), bentley_sqlite3_errmsg(db)
   );
   abort();
 }
@@ -115,9 +115,9 @@ static void fatal_error(const char *zFmt, ...){
   char *zMsg;
   va_list ap;
   va_start(ap, zFmt);
-  zMsg = sqlite3_vmprintf(zFmt, ap);
+  zMsg = bentley_sqlite3_vmprintf(zFmt, ap);
   fprintf(stderr, "FATAL: %s\n", zMsg);
-  sqlite3_free(zMsg);
+  bentley_sqlite3_free(zMsg);
   va_end(ap);
   abort();
 }
@@ -130,7 +130,7 @@ void fatal_system_error(const char *zApi, int iError){
 }
 
 static void *bdMalloc(int n){
-  void *pRet = sqlite3_malloc(n);
+  void *pRet = bentley_sqlite3_malloc(n);
   if( pRet==0 ){
     fatal_oom_error();
   }
@@ -189,30 +189,30 @@ static int select_option(
   if( nMatch==0 ){
     int iCand = 0;
     if( bUnknownFatal==0 && zOpt[0]!='-' ) return -1;
-    zMsg = sqlite3_mprintf("unknown option \"%s\". Expected ", zOpt);
+    zMsg = bentley_sqlite3_mprintf("unknown option \"%s\". Expected ", zOpt);
     for(i=0; aOpt[i].zOpt; i++){
       if( aOpt[i].mask & mask ){
         iCand++;
         if( iCand<nCandidate ){
-          zMsg = sqlite3_mprintf("%z%s%s", zMsg, (i==0?"":", "), aOpt[i].zOpt);
+          zMsg = bentley_sqlite3_mprintf("%z%s%s", zMsg, (i==0?"":", "), aOpt[i].zOpt);
         }else{
-          zMsg = sqlite3_mprintf("%z or %s", zMsg, aOpt[i].zOpt);
+          zMsg = bentley_sqlite3_mprintf("%z or %s", zMsg, aOpt[i].zOpt);
         }
       }
     }
   }else{
     int iCand = 0;
     int bFirst = 1;
-    zMsg = sqlite3_mprintf("ambiguous option \"%s\" - could be ", zOpt);
+    zMsg = bentley_sqlite3_mprintf("ambiguous option \"%s\" - could be ", zOpt);
     for(i=0; aOpt[i].zOpt; i++){
       if( aOpt[i].mask & mask ){
         int n = strlen(aOpt[i].zOpt);
         if( n>=nOpt && 0==memcmp(zOpt, aOpt[i].zOpt, nOpt) ){
           iCand++;
           if( iCand==nMatch ){
-            zMsg = sqlite3_mprintf("%z or %s", zMsg, aOpt[i].zOpt);
+            zMsg = bentley_sqlite3_mprintf("%z or %s", zMsg, aOpt[i].zOpt);
           }else{
-            zMsg = sqlite3_mprintf("%z%s%s",zMsg,(bFirst?"":", "),aOpt[i].zOpt);
+            zMsg = bentley_sqlite3_mprintf("%z%s%s",zMsg,(bFirst?"":", "),aOpt[i].zOpt);
             bFirst = 0;
           }
         }
@@ -435,7 +435,7 @@ static void parse_more_switches(
 
     switch( aSwitch[iVal].eVal ){
       case -1: {
-        sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+        sqlite3_vfs *pVfs = bentley_sqlite3_vfs_find(0);
         int n = parse_seconds(azArg[i]);
         pVfs->xSleep(pVfs, 1000000*n);
         break;
@@ -451,7 +451,7 @@ static void parse_more_switches(
         char *p;
 
         /* Read the contents of file into a buffer obtained from
-        ** sqlite3_malloc(). Append a nul-terminator to the buffer. */
+        ** bentley_sqlite3_malloc(). Append a nul-terminator to the buffer. */
         fd = open(zFile, O_RDONLY|O_BINARY);
         if( fd<0 ){
           fatal_error("failed to open file %s", azArg[i]);
@@ -477,30 +477,30 @@ static void parse_more_switches(
           while( !bcv_isspace(*p) ) p++;
         }
         parse_more_switches(pCmd, azParse, nParse, 0, mask);
-        sqlite3_free(aBuf);
+        bentley_sqlite3_free(aBuf);
         break;
       }
       case COMMANDLINE_CONTAINER:
         pCmd->zContainer = bcvStrdup(azArg[i]);
         break;
       case COMMANDLINE_MODULE:
-        sqlite3_free(pCmd->zModule);
+        bentley_sqlite3_free(pCmd->zModule);
         pCmd->zModule = bcvStrdup(azArg[i]);
         break;
       case COMMANDLINE_USER:
-        sqlite3_free(pCmd->zUser);
+        bentley_sqlite3_free(pCmd->zUser);
         pCmd->zUser = bcvStrdup(azArg[i]);
         break;
       case COMMANDLINE_SECRET:
-        sqlite3_free(pCmd->zSecret);
+        bentley_sqlite3_free(pCmd->zSecret);
         pCmd->zSecret = bcvStrdup(azArg[i]);
         break;
       case COMMANDLINE_ALIAS:
-        sqlite3_free(pCmd->zAlias);
+        bentley_sqlite3_free(pCmd->zAlias);
         pCmd->zAlias = bcvStrdup(azArg[i]);
         break;
       case COMMANDLINE_ADDR:
-        sqlite3_free(pCmd->zAddr);
+        bentley_sqlite3_free(pCmd->zAddr);
         pCmd->zAddr = bcvStrdup(azArg[i]);
         break;
       case COMMANDLINE_PORT:
@@ -609,11 +609,11 @@ static void parse_switches(
 }
 
 static void free_parse_switches(CommandSwitches *pCmd){
-  sqlite3_free(pCmd->zContainer);
-  sqlite3_free(pCmd->zModule);
-  sqlite3_free(pCmd->zUser);
-  sqlite3_free(pCmd->zSecret);
-  sqlite3_free(pCmd->zAddr);
+  bentley_sqlite3_free(pCmd->zContainer);
+  bentley_sqlite3_free(pCmd->zModule);
+  bentley_sqlite3_free(pCmd->zUser);
+  bentley_sqlite3_free(pCmd->zSecret);
+  bentley_sqlite3_free(pCmd->zAddr);
   memset(pCmd, 0, sizeof(CommandSwitches));
 }
 
@@ -917,7 +917,7 @@ static int bdOpenLocalFile(
   int rc;
   zPath = bcvMprintf("%s%s%s%s", zCont, zCont?"/":"", zDb, bWal?"-wal":"");
   rc = bcvOpenLocal(zPath, bWal, bReadonly, ppFile);
-  sqlite3_free(zPath);
+  bentley_sqlite3_free(zPath);
   return rc;
 }
 
@@ -1155,7 +1155,7 @@ static void daemon_log_timestamp(DaemonCtx *p, char *zBuf){
     min = s/60;
     sec = s - min*60;
 
-    sqlite3_snprintf(128, zBuf,
+    bentley_sqlite3_snprintf(128, zBuf,
         " [%.4d/%.2d/%.2d %.2d:%.2d:%.2d.%.3d]", 
         year, month, day, hour, min, sec, ms%1000
     );
@@ -1165,7 +1165,7 @@ static void daemon_log_timestamp(DaemonCtx *p, char *zBuf){
 static void daemon_vlog(DaemonCtx *p, int flags, const char *zFmt, va_list ap){
   if( p->cmd.mLog & flags ){
     char zTime[128];
-    char *zMsg = sqlite3_vmprintf(zFmt, ap);
+    char *zMsg = bentley_sqlite3_vmprintf(zFmt, ap);
     daemon_log_timestamp(p, zTime);
     fprintf(stdout, "INFO(%s%s%s%s%s%s%s%s)%s: %s\n",
         (flags & BCV_LOG_POLL ? "p" : ""),
@@ -1178,7 +1178,7 @@ static void daemon_vlog(DaemonCtx *p, int flags, const char *zFmt, va_list ap){
         (flags & BCV_LOG_SCHEDULE ? "s" : ""),
         zTime, zMsg);
     fflush(stdout);
-    sqlite3_free(zMsg);
+    bentley_sqlite3_free(zMsg);
   }
 }
 
@@ -1213,10 +1213,10 @@ static void daemon_error(const char *zFmt, ...){
   char *zMsg;
   va_list ap;
   va_start(ap, zFmt);
-  zMsg = sqlite3_vmprintf(zFmt, ap);
+  zMsg = bentley_sqlite3_vmprintf(zFmt, ap);
   fprintf(stdout, "ERROR: %s\n", zMsg);
   fflush(stdout);
-  sqlite3_free(zMsg);
+  bentley_sqlite3_free(zMsg);
   va_end(ap);
 }
 
@@ -1298,7 +1298,7 @@ static void bdNewConnection(DaemonCtx *p){
 /*
 ** Return a string representation of the array of unsigned integers passed
 ** via the two arguments. e.g. "1,2,3,4,5". It is the responsibility of the
-** caller to eventually free the returned buffer using sqlite3_free().
+** caller to eventually free the returned buffer using bentley_sqlite3_free().
 */
 static char *bdArrayToString(u32 *aInt, int nInt){
   char *zRet = 0;
@@ -1345,14 +1345,14 @@ static void bdLogRecvMsg(DaemonCtx *p, DClient *pClient, BcvMessage *pMsg){
         daemon_msg_log(p, "%d->D: READ(%d, [%s])", 
             pClient->iClientId, (int)pMsg->u.read.iBlk, zArray
         );
-        sqlite3_free(zArray);
+        bentley_sqlite3_free(zArray);
         break;
       }
 
       case BCV_MESSAGE_END: {
         char *zArray = bdArrayToString(pMsg->u.end.aMru, pMsg->u.end.nMru);
         daemon_msg_log(p, "%d->D: END([%s])", pClient->iClientId, zArray);
-        sqlite3_free(zArray);
+        bentley_sqlite3_free(zArray);
         break;
       }
 
@@ -1428,7 +1428,7 @@ static void bdLogSendMsg(DaemonCtx *p, DClient *pClient, BcvMessage *pMsg){
             pMsg->u.read_r.zErrMsg,
             z
         );
-        sqlite3_free(z);
+        bentley_sqlite3_free(z);
         break;
       }
 
@@ -1474,7 +1474,7 @@ static void bdReleaseEntryRefs(DClient *pClient){
 static void bdClientDecrRefcount(DClient *pClient){
   pClient->nRef--;
   if( pClient->nRef==0 ){
-    sqlite3_free(pClient);
+    bentley_sqlite3_free(pClient);
   }
 }
 
@@ -1504,18 +1504,18 @@ static void bdDisconnectClient(
   pClient->fd = INVALID_SOCKET;
 
   /* Free any message that was waiting for a reply */
-  sqlite3_free(pClient->pMsg);
+  bentley_sqlite3_free(pClient->pMsg);
   pClient->pMsg = 0;
 
   if( pClient->apRef ){
     bdReleaseEntryRefs(pClient);
-    sqlite3_free(pClient->apRef);
+    bentley_sqlite3_free(pClient->apRef);
   }
   bcvManifestDeref(pClient->pMan);
 
   bcvContainerClose(pClient->pBcv);
-  sqlite3_free(pClient->zAuth);
-  sqlite3_free(pClient->prefetch.zErrMsg);
+  bentley_sqlite3_free(pClient->zAuth);
+  bentley_sqlite3_free(pClient->prefetch.zErrMsg);
 
   if( pClient->pCloseFd ){
     pClient->pCloseFd->pMethods->xShmUnmap(pClient->pCloseFd, 0);
@@ -1523,7 +1523,7 @@ static void bdDisconnectClient(
   bcvCloseLocal(pClient->pCloseFd);
   pClient->pCloseFd = 0;
 
-  sqlite3_free(pClient->zClientId);
+  bentley_sqlite3_free(pClient->zClientId);
   pClient->zClientId = 0;
 
   /* Free the client structure itself */
@@ -1546,7 +1546,7 @@ static DClient *bdFetchClient(FetchCtx *pDLCtx){
 static void bdBlockDownloadFree(FetchCtx *p){
   bdClientDecrRefcount(p->pClient);
   bcvIntEncryptionKeyFree(p->pKey);
-  sqlite3_free(p);
+  bentley_sqlite3_free(p);
 }
 
 /*
@@ -1562,7 +1562,7 @@ static void bcvCreateDir(int *pRc, BcvCommon *p, const char *zCont){
       *pRc = SQLITE_CANTOPEN;
     }
   }
-  sqlite3_free(zDir);
+  bentley_sqlite3_free(zDir);
 }
 
 static void bdAttachCb(
@@ -1594,7 +1594,7 @@ static void bdAttachCb(
   zName = pMsg->u.attach.zAlias?pMsg->u.attach.zAlias:pMsg->u.attach.zContainer;
   if( rc==SQLITE_OK && bcvfsFindContAlias(pCommon, zName, 0) ){
     if( pMsg->u.attach.flags & SQLITE_BCV_ATTACH_IFNOT ) goto attach_cb_out;
-    zErr = sqlite3_mprintf("container already attached: %s", zName);
+    zErr = bentley_sqlite3_mprintf("container already attached: %s", zName);
     rc = SQLITE_ERROR;
   }
 
@@ -1610,7 +1610,7 @@ static void bdAttachCb(
     if( pCommon->szBlk==0 ){
       pCommon->szBlk = pMan->szBlk;
     }else if( pCommon->szBlk!=pMan->szBlk ){
-      zErr = sqlite3_mprintf("block size mismatch for container: %s", zName);
+      zErr = bentley_sqlite3_mprintf("block size mismatch for container: %s", zName);
       rc = SQLITE_ERROR;
     }
   }
@@ -1622,7 +1622,7 @@ static void bdAttachCb(
   );
 
   if( rc==SQLITE_OK && (pMsg->u.attach.flags & SQLITE_BCV_ATTACH_SECURE) ){
-    sqlite3_randomness(BCV_LOCAL_KEYSIZE, pCont->aKey);
+    bentley_sqlite3_randomness(BCV_LOCAL_KEYSIZE, pCont->aKey);
     pCont->pKey = bcvIntEncryptionKeyNew(pCont->aKey);
     if( pCont->pKey==0 ) fatal_oom_error();
     pCont->iEnc = ++pClient->pCtx->iNextId;
@@ -1656,8 +1656,8 @@ static void bdAttachCb(
   bcvContainerClose(pClient->pBcv);
   pClient->pBcv = 0;
   pClient->pMsg = 0;
-  sqlite3_free(pMsg);
-  sqlite3_free(zErr);
+  bentley_sqlite3_free(pMsg);
+  bentley_sqlite3_free(zErr);
 }
 
 static void bdDispatchFetch(
@@ -1727,11 +1727,11 @@ static void bdHandleAttach(
     reply.u.error_r.zErrMsg = zErr;
     bdSendMsg(p, pClient, &reply);
     bcvContainerClose(pBcv);
-    sqlite3_free(pMsg);
+    bentley_sqlite3_free(pMsg);
     pClient->pMsg = 0;
     pClient->pBcv = 0;
   }
-  sqlite3_free(zErr);
+  bentley_sqlite3_free(zErr);
 }
 
 /*
@@ -1752,7 +1752,7 @@ static void bdHandleDetach(
     rc = SQLITE_ERROR;
   }else if( pCont->nClient>0 ){
     rc = SQLITE_ERROR;
-    zErr = sqlite3_mprintf("container is busy: %s", pMsg->u.detach.zName);
+    zErr = bentley_sqlite3_mprintf("container is busy: %s", pMsg->u.detach.zName);
   }else{
     rc = bcvContainerDetachAndFree(&p->c, pCont);
     if( rc!=SQLITE_OK ) fatal_sql_error(p->c.bdb, "bcvHandleDetach");
@@ -1763,8 +1763,8 @@ static void bdHandleDetach(
   reply.u.error_r.errCode = rc;
   reply.u.error_r.zErrMsg = zErr;
   bdSendMsg(p, pClient, &reply);
-  sqlite3_free(zErr);
-  sqlite3_free(pMsg);
+  bentley_sqlite3_free(zErr);
+  bentley_sqlite3_free(pMsg);
 }
 
 /*
@@ -1841,8 +1841,8 @@ static void bdHandleVtab(
   reply.u.vtab_r.iVersion = iVersion;
   bdSendMsg(p, pClient, &reply);
 
-  sqlite3_free(aData);
-  sqlite3_free(pMsg);
+  bentley_sqlite3_free(aData);
+  bentley_sqlite3_free(pMsg);
 }
 
 /*
@@ -1899,8 +1899,8 @@ static void bdHandleHello(
   }
 
   bdSendMsg(p, pClient, &reply);
-  sqlite3_free(pMsg);
-  sqlite3_free(zErr);
+  bentley_sqlite3_free(pMsg);
+  bentley_sqlite3_free(zErr);
 }
 
 /*
@@ -1928,12 +1928,12 @@ static void bdWriteBlock(
 ){
   int rc = SQLITE_OK;
   sqlite3_stmt *pStmt = pCommon->pInsertBlock;
-  sqlite3_bind_int(pStmt, 1, pEntry->iPos);
-  sqlite3_bind_blob(pStmt, 2, pEntry->aName, pEntry->nName, SQLITE_STATIC);
-  sqlite3_step(pStmt);
-  rc = sqlite3_reset(pStmt);
+  bentley_sqlite3_bind_int(pStmt, 1, pEntry->iPos);
+  bentley_sqlite3_bind_blob(pStmt, 2, pEntry->aName, pEntry->nName, SQLITE_STATIC);
+  bentley_sqlite3_step(pStmt);
+  rc = bentley_sqlite3_reset(pStmt);
   if( rc ) fatal_sql_error(pCommon->bdb, "bdWriteBlock()");
-  sqlite3_clear_bindings(pStmt);
+  bentley_sqlite3_clear_bindings(pStmt);
 }
 
 /*
@@ -1974,7 +1974,7 @@ static int bdWriteFile(
     rc = pFd->pMethods->xWrite(pFd, aWrite, nWrite, iOff+i);
   }
 
-  sqlite3_free(aBuf);
+  bentley_sqlite3_free(aBuf);
   return rc;
 }
 
@@ -2012,7 +2012,7 @@ static void bdBlockDownloadCb(
     ** mark the cache entry as unused.  */
     if( pClient ){
       bdReadReplyError(pClient, errCode, zETag);
-      sqlite3_free(pClient->pMsg);
+      bentley_sqlite3_free(pClient->pMsg);
       pClient->pMsg = 0;
     }
     bcvfsHashRemove(&p->c, pEntry);
@@ -2032,7 +2032,7 @@ static BcvContainer *bdUpdateBCV(DClient *pClient, const char *zAuth){
     int rc = SQLITE_OK;
 
     bcvContainerClose(pClient->pBcv);
-    sqlite3_free(pClient->zAuth);
+    bentley_sqlite3_free(pClient->zAuth);
     pClient->pBcv = 0;
     pClient->zAuth = 0;
 
@@ -2160,8 +2160,8 @@ static void bdHandleReadMsg(DaemonCtx *p, DClient *pClient){
     }
 
     bdSendMsg(p, pClient, &reply);
-    sqlite3_free(pClient->pMsg);
-    sqlite3_free(reply.u.read_r.aBlk);
+    bentley_sqlite3_free(pClient->pMsg);
+    bentley_sqlite3_free(reply.u.read_r.aBlk);
     pClient->pMsg = 0;
   }
 }
@@ -2198,7 +2198,7 @@ static void bdPollCb(
   DClient *pClient = bdFetchClient(pDLCtx);
   Container *pCont = pDLCtx->pCont;
   DaemonCtx *p = pDLCtx->pCtx;
-  char *zErr = 0;                 /* Error message (from sqlite3_malloc) */
+  char *zErr = 0;                 /* Error message (from bentley_sqlite3_malloc) */
   int rc = errCode;               /* Error code */
   Manifest *pMan = 0;             /* Parsed manifest object */
 
@@ -2220,12 +2220,12 @@ static void bdPollCb(
     reply.eType = BCV_MESSAGE_REPLY;
     reply.u.error_r.errCode = rc;
     reply.u.error_r.zErrMsg = zErr;
-    sqlite3_free(pClient->pMsg);
+    bentley_sqlite3_free(pClient->pMsg);
     pClient->pMsg = 0;
     bdSendMsg(pClient->pCtx, pClient, &reply); 
   }
 
-  sqlite3_free(zErr);
+  bentley_sqlite3_free(zErr);
   bdBlockDownloadFree(pDLCtx);
 }
 
@@ -2291,7 +2291,7 @@ static void bdHandleRead(
     Manifest *pMan = pClient->pCont->pMan;
     ManifestDb *pDb = bcvManifestDbidToDb(pMan, pClient->iDbId);
     if( pDb==0 ){
-      zErr = sqlite3_mprintf("database has been deleted");
+      zErr = bentley_sqlite3_mprintf("database has been deleted");
       rc = SQLITE_ERROR;
     }else{
       int nByte = pDb->nBlkLocal * sizeof(CacheEntry*);
@@ -2313,7 +2313,7 @@ static void bdHandleRead(
     pClient->pMsg = pMsg;
   }else{
     bdReadReplyError(pClient, SQLITE_ERROR, 0);
-    sqlite3_free(pMsg);
+    bentley_sqlite3_free(pMsg);
   }
 }
 
@@ -2327,12 +2327,12 @@ static void bdHandleEnd(
 ){
   bdProcessMRUList(p, pClient, pMsg->u.end.aMru, pMsg->u.end.nMru);
   bdReleaseEntryRefs(pClient);
-  sqlite3_free(pClient->apRef);
+  bentley_sqlite3_free(pClient->apRef);
   pClient->apRef = 0;
   bcvManifestDeref(pClient->pMan);
   pClient->pMan = 0;
   pClient->pManDb = 0;
-  sqlite3_free(pMsg);
+  bentley_sqlite3_free(pMsg);
 }
 
 static void bdPassCb(
@@ -2375,7 +2375,7 @@ static void bdHandlePass(
  
   pBcv = bdUpdateBCV(pClient, pMsg->u.pass.zAuth);
   bdDispatchFetch(p->pDisp, pBcv, BCV_MANIFEST_FILE, 0, 0, pDLCtx, bdPassCb);
-  sqlite3_free(pMsg);
+  bentley_sqlite3_free(pMsg);
 }
 
 static void bdHandleClient(
@@ -2385,13 +2385,13 @@ static void bdHandleClient(
 ){
   BcvMessage reply;
 
-  sqlite3_free(pClient->zClientId);
+  bentley_sqlite3_free(pClient->zClientId);
   pClient->zClientId = bdStrdup(pMsg->u.cmd.zAuth);
 
   memset(&reply, 0, sizeof(reply));
   reply.eType = BCV_MESSAGE_REPLY;
   bdSendMsg(p, pClient, &reply);
-  sqlite3_free(pMsg);
+  bentley_sqlite3_free(pMsg);
 }
 
 static void bdSendPrefetchReply(DClient *pClient){
@@ -2423,7 +2423,7 @@ static void bdSendPrefetchReply(DClient *pClient){
 
   pClient->prefetch.bReply = 0;
   pClient->prefetch.errCode = SQLITE_OK;
-  sqlite3_free(pClient->prefetch.zErrMsg);
+  bentley_sqlite3_free(pClient->prefetch.zErrMsg);
   pClient->prefetch.zErrMsg = 0;
   if( rc==HTTP_AUTH_ERROR ){
     pClient->prefetch.iNext = 0;
@@ -2468,7 +2468,7 @@ static void bdPrefetchCb(
 
     if( rc!=SQLITE_OK && pClient->prefetch.errCode==SQLITE_OK ){
       pClient->prefetch.errCode = rc;
-      pClient->prefetch.zErrMsg = sqlite3_mprintf("%s", zETag);
+      pClient->prefetch.zErrMsg = bentley_sqlite3_mprintf("%s", zETag);
     }
 
     if( pClient->prefetch.bReply ){
@@ -2543,7 +2543,7 @@ static void bdHandlePrefetch(
     bdSendPrefetchReply(pClient);
   }
 
-  sqlite3_free(pMsg);
+  bentley_sqlite3_free(pMsg);
 }
 
 /*
@@ -2671,7 +2671,7 @@ static void bdMainloop(DaemonCtx *p){
     }
 
     /* Check if it is time to bail out (due to -autoexit option) */ 
-    sqlite3_free(aWait);
+    bentley_sqlite3_free(aWait);
     if( p->cmd.bAutoexit && bClient && p->pClientList==0 ){
       break;
     }
@@ -2702,8 +2702,8 @@ static void bdWritePortNumber(DaemonCtx *pCtx, const char *zDir){
   if( rc!=SQLITE_OK ){
     fatal_error("failed to create and populate file: portnumber.bcv");
   }
-  sqlite3_free(aBuf);
-  sqlite3_free(zFile);
+  bentley_sqlite3_free(aBuf);
+  bentley_sqlite3_free(zFile);
   bcvCloseLocal(pFile);
 }
 
@@ -2711,7 +2711,7 @@ static void bdCleanup(DaemonCtx *p){
   bcvCommonDestroy(&p->c);
   bcvCloseLocal(p->pCacheFile);
   bcvDispatchFree(p->pDisp);
-  sqlite3_free(p);
+  bentley_sqlite3_free(p);
 }
 
 /*
@@ -2721,7 +2721,7 @@ static int main_daemon(int argc, char **argv){
   CommandSwitches *pCmd;
   DaemonCtx *p = 0;
   const char *zDir = 0;           /* DIRECTORY argument */
-  char *zFullDir = 0;             /* Full-path to zDir (from sqlite3_malloc) */
+  char *zFullDir = 0;             /* Full-path to zDir (from bentley_sqlite3_malloc) */
   sqlite3 *db = 0;                /* blocksdb.bcv */
   int rc = SQLITE_OK;
   i64 nUsed;
@@ -2747,21 +2747,21 @@ static int main_daemon(int argc, char **argv){
     fatal_error("failed to open and lock directory: %s (%s)", zDir, zErr);
   }
 
-  p->c.pVfs = sqlite3_vfs_find(0);
+  p->c.pVfs = bentley_sqlite3_vfs_find(0);
   p->c.bDaemon = 1;
   rc = bcvfsCacheInit(&p->c, db, zFullDir);
   p->c.nMaxCache = pCmd->szCache;
   if( rc!=SQLITE_OK ){
     fatal_error("failed to initialize in directory: %s", zDir);
   }else{
-    char *zCacheFile = sqlite3_mprintf(
+    char *zCacheFile = bentley_sqlite3_mprintf(
         "%s" BCV_PATH_SEPARATOR "%s", zFullDir, BCV_CACHEFILE_NAME
     );
     rc = bcvOpenLocal(zCacheFile, 0, 0, &p->pCacheFile);
     if( rc!=SQLITE_OK ){
       fatal_error("failed to open cachefile in directory: %s", zDir);
     }
-    sqlite3_free(zCacheFile);
+    bentley_sqlite3_free(zCacheFile);
   }
   
 
@@ -2801,8 +2801,8 @@ static int main_daemon(int argc, char **argv){
   ** leaked memory.  */
   bdCleanup(p);
   sqlite3_bcv_shutdown();
-  sqlite3_reset_auto_extension();
-  nUsed = sqlite3_memory_used();
+  bentley_sqlite3_reset_auto_extension();
+  nUsed = bentley_sqlite3_memory_used();
   if( nUsed>0 ){
     daemon_error("daemon leaked %d bytes of memory", (int)nUsed);
     return 1;
@@ -2849,7 +2849,7 @@ int main(int argc, char **argv){
 
   signal(SIGPIPE, SIG_IGN);
 
-  sqlite3_initialize();
+  bentley_sqlite3_initialize();
   bcvCustomInit();
 
   iCmd = select_option(argc>=2 ? argv[1] : "", aCmd, 0xFFFFFFFF, 1);

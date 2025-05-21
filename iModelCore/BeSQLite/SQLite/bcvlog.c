@@ -57,13 +57,13 @@ struct BcvLog {
 ** Allocate and return pointer to a new logging object.
 */
 BcvLog *bcvLogNew(){
-  BcvLog *p = sqlite3_malloc(sizeof(BcvLog));
+  BcvLog *p = bentley_sqlite3_malloc(sizeof(BcvLog));
   if( p ){
     memset(p, 0, sizeof(BcvLog));
-    p->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_RECURSIVE);
-    if( p->mutex==0 && sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MAIN) ){
-      /* OOM in sqlite3_mutex_alloc() */
-      sqlite3_free(p);
+    p->mutex = bentley_sqlite3_mutex_alloc(SQLITE_MUTEX_RECURSIVE);
+    if( p->mutex==0 && bentley_sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MAIN) ){
+      /* OOM in bentley_sqlite3_mutex_alloc() */
+      bentley_sqlite3_free(p);
       p = 0;
     }else{
       p->iTimeout = BCVLOG_DEFAULT_TIMEOUT;
@@ -80,11 +80,11 @@ void bcvLogDelete(BcvLog *pLog){
   if( pLog ){
     while( pLog->pFirst ){
       BcvLogHttp *pNext = pLog->pFirst->pNext;
-      sqlite3_free(pLog->pFirst);
+      bentley_sqlite3_free(pLog->pFirst);
       pLog->pFirst = pNext;
     }
-    sqlite3_mutex_free(pLog->mutex);
-    sqlite3_free(pLog);
+    bentley_sqlite3_mutex_free(pLog->mutex);
+    bentley_sqlite3_free(pLog);
   }
 }
 
@@ -113,7 +113,7 @@ static void bcvLogEnforceLimits(BcvLog *pLog){
     ){
       BcvLogHttp *pDel = pLog->pFirst;
       pLog->pFirst = pDel->pNext;
-      sqlite3_free(pDel);
+      bentley_sqlite3_free(pDel);
       pLog->nEntry--;
     }
     if( pLog->pFirst==0 ) pLog->pLast = 0;
@@ -155,7 +155,7 @@ int bcvLogRequest(
       if( nLogMsg ) memcpy(pNew->zMsg, zLogMsg, nLogMsg);
       iRequestTime = pNew->iRequestTime = sqlite_timestamp();
 
-      sqlite3_mutex_enter(pLog->mutex);
+      bentley_sqlite3_mutex_enter(pLog->mutex);
       *piLogId = pNew->iLogId = pLog->iNextLogId++;
       pNew->pPrev = pLog->pLast;
       if( pLog->pLast ){
@@ -168,7 +168,7 @@ int bcvLogRequest(
       pLog->pLast = pNew;
       pLog->nEntry++;
       bcvLogEnforceLimits(pLog);
-      sqlite3_mutex_leave(pLog->mutex);
+      bentley_sqlite3_mutex_leave(pLog->mutex);
     }
   }
 
@@ -189,7 +189,7 @@ int bcvLogReply(
     BcvLogHttp *pHttp = 0;
     i64 iReplyTime = sqlite_timestamp();
 
-    sqlite3_mutex_enter(pLog->mutex);
+    bentley_sqlite3_mutex_enter(pLog->mutex);
     for(pHttp=pLog->pLast; pHttp; pHttp=pHttp->pPrev){
       if( pHttp->iLogId==iLogId ) break;
     }
@@ -198,7 +198,7 @@ int bcvLogReply(
       pHttp->httpcode = httpcode;
       *piMs = pHttp->iReplyTime - pHttp->iRequestTime;
     }
-    sqlite3_mutex_leave(pLog->mutex);
+    bentley_sqlite3_mutex_leave(pLog->mutex);
   }
 
   return rc;
@@ -230,7 +230,7 @@ int bcvLogGetData(BcvLog *pLog, BcvBuffer *pBuf){
   int rc = SQLITE_OK;
   if( pLog ){
     BcvLogHttp *p;
-    sqlite3_mutex_enter(pLog->mutex);
+    bentley_sqlite3_mutex_enter(pLog->mutex);
     bcvLogEnforceLimits(pLog);
     for(p=pLog->pFirst; p; p=p->pNext){
       bcvBufferAppendU64(&rc, pBuf, p->iLogId);
@@ -242,7 +242,7 @@ int bcvLogGetData(BcvLog *pLog, BcvBuffer *pBuf){
       bcvBufferMsgString(&rc, pBuf, p->zFile);
       bcvBufferAppendU32(&rc, pBuf, p->httpcode);
     }
-    sqlite3_mutex_leave(pLog->mutex);
+    bentley_sqlite3_mutex_leave(pLog->mutex);
   }
   return rc;
 }
@@ -259,14 +259,14 @@ void bcvLogConfig(BcvLog *pLog, int op, i64 iVal){
   );
   
   if( pLog ){
-    sqlite3_mutex_enter(pLog->mutex);
+    bentley_sqlite3_mutex_enter(pLog->mutex);
     if( op==SQLITE_BCV_HTTPLOG_TIMEOUT ){
       pLog->iTimeout = iVal;
     }else{
       pLog->iMaxEntry = iVal;
     }
     bcvLogEnforceLimits(pLog);
-    sqlite3_mutex_leave(pLog->mutex);
+    bentley_sqlite3_mutex_leave(pLog->mutex);
   }
 }
 
@@ -306,7 +306,7 @@ void bcvTimeToString(i64 iTime, char *zBuf){
   iMin = s/60;
   iSec += s - iMin*60;
 
-  sqlite3_snprintf(64, zBuf, "%04d-%02d-%02d %02d:%02d:%02d.%03d", 
+  bentley_sqlite3_snprintf(64, zBuf, "%04d-%02d-%02d %02d:%02d:%02d.%03d", 
       iYear, iMonth, iDay, iHour, iMin, iSec, (iTime % 1000)
   );
 }
