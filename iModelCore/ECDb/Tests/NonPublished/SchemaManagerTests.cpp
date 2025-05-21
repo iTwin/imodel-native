@@ -3221,6 +3221,16 @@ TEST_F(SchemaManagerTests, SchemaWithChangesButSameVersionTest)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(changedSchema, changedSchemaXml, *readContext2));
     ASSERT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext2->GetCache().GetSchemas()));
     ASSERT_STREQ("Schema 'std' has changes but its version was not incremented. Proceeding with import, but this may lead to unexpected behavior.", logger.GetLastMessage(NativeLogging::LOG_WARNING)->second.c_str());
+
+    ReopenECDb();
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("std");
+    ASSERT_TRUE(schema != nullptr);
+    ECClassCP foo = schema->GetClassCP("Foo");
+    ASSERT_TRUE(foo != nullptr);
+    ECPropertyCP test1 = foo->GetPropertyP("Test1");
+    ASSERT_TRUE(test1 != nullptr);
+    ECPropertyCP test2 = foo->GetPropertyP("Test2");
+    ASSERT_TRUE(test2 != nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
