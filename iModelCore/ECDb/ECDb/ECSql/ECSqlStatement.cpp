@@ -214,7 +214,7 @@ ECSqlStatus ECSqlStatement::IsNavigationPropertyValid(Utf8StringCR propertyName,
         const auto relClass = GetECDb()->Schemas().GetClass(stmt.GetValueId<ECClassId>(0));
         if ( relClass == nullptr)
             {
-            LOG.errorv("The ECSql statement contains a relationship class id '%s' which does not correspond to any valid class in the schema.",
+            LOG.errorv("The ECSql statement contains a relationship class id '%s' which does not match the relationship class in the navigation property.",
                 relationshipECClassId.ToString().c_str());
             return ECSqlStatus::InvalidECSql;
             }
@@ -226,7 +226,7 @@ ECSqlStatus ECSqlStatement::IsNavigationPropertyValid(Utf8StringCR propertyName,
         if (!derivedClasses.IsValid()
             || std::none_of(derivedClasses.Value().begin(), derivedClasses.Value().end(), [&relationshipECClassId](const auto& checkClass) { return checkClass->GetId() == relationshipECClassId; }))
             {
-            LOG.errorv("The ECSql statement contains a relationship class id '%s' which does not correspond to any valid ECRelationship class in the schema.",
+            LOG.errorv("The ECSql statement contains a relationship class id '%s' which does not match the relationship class in the navigation property.",
                 relationshipECClassId.ToString().c_str());
             return ECSqlStatus::InvalidECSql;
             }

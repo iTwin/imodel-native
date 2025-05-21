@@ -461,7 +461,7 @@ namespace
             || std::none_of(derivedClasses.Value().begin(), derivedClasses.Value().end(),
                 [&relECClassIdToCheck](const auto& checkClass) { return checkClass->GetId() == relECClassIdToCheck; }))
             {
-            LOG.errorv("The ECSql statement contains a relationship class id '%s' that does not correspond to any valid ECRelationship class in the schema.",
+            LOG.errorv("The ECSql statement contains a relationship class id '%s' that does not match the relationship class in the navigation property.",
                 relECClassIdToCheck.ToString().c_str());
             return false;
             }

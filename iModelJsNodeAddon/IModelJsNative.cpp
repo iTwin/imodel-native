@@ -3808,7 +3808,7 @@ public:
 
                 const auto isNavPropValid = m_ecSqlStatement->IsNavigationPropertyValid(m_binder->GetBinderInfo().GetPropertyName(), relClassId);
                 if (isNavPropValid != ECSqlStatus::Success)
-                    THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not correspond to a valid ECRelationship class.", relClassName.c_str()).c_str());
+                    THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not match the relationship class in the navigation property.", relClassName.c_str()).c_str());
                 }
             }
 
