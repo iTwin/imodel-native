@@ -146,9 +146,15 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
+<<<<<<< HEAD
 #define SQLITE_VERSION        "3.47.2"
 #define SQLITE_VERSION_NUMBER 3047002
 #define SQLITE_SOURCE_ID      "2025-01-04 16:30:05 c3e9df4c4ee1c44eae93b364faf77616bf14f8b99482462d862e9db070cad32b"
+=======
+#define SQLITE_VERSION        "3.49.2"
+#define SQLITE_VERSION_NUMBER 3049002
+#define SQLITE_SOURCE_ID      "2025-05-22 18:04:48 af4bb36000ca632ff6d9fd6238cb6da74db41ddd8b938590dfd22d25300falt1"
+>>>>>>> 05c7bbc1 (Update Sqlite to 3.49.2 + cherry-pick 96e16194b8c6eda98e7b1a33f042233da7b7c64a (#1129))
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
