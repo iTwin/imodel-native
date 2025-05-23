@@ -1914,7 +1914,6 @@ void ShowProps(char const * name, ICurvePrimitiveR curve, double fraction, DPoin
 TEST(Spiral, MXCubicExample)
     {
     const double length = 20;
-    // const double startDirection = 3.397200148;
     double  endRadius = 160.0;
     double  startRadius = 0.0;
     Check::Print (length, "\nNominal Length");
@@ -1958,7 +1957,6 @@ TEST(Spiral, DirectSpiralWithViewingTransform)
     {
     auto oldVolume = Check::SetMaxVolume (100);
     const double length = 20;
-    // const double startDirection = 3.397200148;
     double  endRadius = 160.0;
     double  startRadius = 0.0;
     double startBearingRadians = 0.0;

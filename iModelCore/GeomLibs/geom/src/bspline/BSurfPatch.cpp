@@ -23,15 +23,12 @@ void bspsurf_setTimerControl (int select, int count)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BSurfPatch::BSurfPatch()
-{
-xyzw.clear();
-uKnots.clear();
-vKnots.clear();
-uOrder = vOrder = uIndex = vIndex = 0;
-uMin = uMax = vMin = vMax = 0.0;
-isNullU = isNullV = false;
-}
+BSurfPatch::BSurfPatch(): xyzw(), uKnots(), vKnots()
+    {
+    uOrder = vOrder = uIndex = vIndex = 0;
+    uMin = uMax = vMin = vMax = 0.0;
+    isNullU = isNullV = false;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
