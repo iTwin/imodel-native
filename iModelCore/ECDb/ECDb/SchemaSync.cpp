@@ -612,6 +612,38 @@ void SchemaSync::ParseQueryParams(Db::OpenParams& params, SyncDbUri const& uri){
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+Utf8String SchemaSync::GetStatusAsString(Status status) {
+    switch (status) {
+        case Status::OK:
+            return "OK";
+        case Status::ERROR:
+            return "ERROR";
+        case Status::ERROR_READONLY:
+            return "ERROR_READONLY";
+        case Status::ERROR_OPENING_SCHEMA_SYNC_DB:
+            return "ERROR_OPENING_SCHEMA_SYNC_DB";
+        case Status::ERROR_INVALID_SCHEMA_SYNC_DB:
+            return "ERROR_INVALID_SCHEMA_SYNC_DB";
+        case Status::ERROR_INVALID_LOCAL_SYNC_DB:
+            return "ERROR_INVALID_LOCAL_SYNC_DB";
+        case Status::ERROR_SCHEMA_SYNC_DB_ALREADY_INITIALIZED:
+            return "ERROR_SCHEMA_SYNC_DB_ALREADY_INITIALIZED";
+        case Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB:
+            return "ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB";
+        case Status::ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH:
+            return "ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH";
+        case Status::ERROR_UNABLE_TO_ATTACH:
+            return "ERROR_UNABLE_TO_ATTACH";
+        case Status::ERROR_SYNC_SQL_SCHEMA:
+            return "ERROR_SYNC_SQL_SCHEMA";
+        default:
+            return "SCHEMA_SYNC_FAIL";
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::Status SchemaSync::VerifySyncDb(SyncDbUri const& syncDbUri, bool isPull, bool isInit) const{
     if (m_conn.IsReadonly()) {
         m_conn.GetImpl().Issues().Report(

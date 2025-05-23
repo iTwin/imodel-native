@@ -141,6 +141,7 @@ public:
     ECDB_EXPORT Status Push(SyncDbUri const&);
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
+    ECDB_EXPORT static Utf8String GetStatusAsString(Status status);
 };
 //=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager
