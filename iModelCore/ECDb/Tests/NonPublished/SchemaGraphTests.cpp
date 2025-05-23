@@ -310,8 +310,10 @@ TEST_F(SchemaGraphTestFixture, CircularEmptySchemaReferenceInDb)
     context2->SetFinalSchemaLocater(sanitizingLocater);
     ECSchemaPtr foo2 = context2->LocateSchema(fooKey, SchemaMatchType::LatestReadCompatible);
     ASSERT_FALSE(foo2.IsValid());
+    foo2 = context2->LocateSchema(fooKey, SchemaMatchType::LatestReadCompatible);
+    ASSERT_FALSE(foo2.IsValid());   // Consecutive calls should not change the result
     ECSchemaPtr bar2 = context2->LocateSchema(barKey, SchemaMatchType::LatestReadCompatible);
-    ASSERT_TRUE(bar2.IsValid()); // TODO: THis actually returns true at the moment, schema is incompletely loaded. Should return nullptr.
+    ASSERT_FALSE(bar2.IsValid());
     }
 
 TEST_F(SchemaGraphTestFixture, DeepSchemaHierarchyWithNumerousUpdates)
