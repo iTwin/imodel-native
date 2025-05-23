@@ -426,10 +426,47 @@ struct ChangeSet : ChangeStream {
 
     BE_SQLITE_EXPORT DbResult Invert();
     BE_SQLITE_EXPORT DbResult ConcatenateWith(ChangeSet const& second);
+    // For debugging sqlite issues
+    BE_SQLITE_EXPORT DbResult Write(Utf8StringCR pathname) const;
+    // For debugging sqlite issues
+    BE_SQLITE_EXPORT DbResult Read(Utf8StringCR pathname);
 
     //! Determine whether this ChangeSet holds valid data or not.
     bool IsValid() const { return 0 != GetSize(); }
     bool _IsEmpty() const override final { return 0 == GetSize(); }
+};
+
+//=======================================================================================
+// @bsiclass
+// For debugging sqlite issues
+//=======================================================================================
+struct ChangesetFile : ChangeStream {
+    Utf8String m_fileName;
+    BeFile m_file;
+    struct Reader : Changes::Reader {
+        BeFile m_file;
+        Reader(ChangesetFile const& changeSet) {
+            m_file.Open(changeSet.m_fileName, BeFileAccess::Read);
+        }
+        DbResult _Read(Byte* data, int* pSize) override final {
+            auto sz = (uint32_t)(*pSize);
+            return m_file.Read(data, &sz, sz) == BeFileStatus::Success ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+        }
+    };
+
+    RefCountedPtr<Changes::Reader> _GetReader() const override final { return new Reader(*this); }
+    ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override {
+        BeAssert(false);
+        return ChangeSet::ConflictResolution::Abort;
+    }
+
+    bool IsValid() const { return 0 != GetSize(); }
+    bool _IsEmpty() const override final { return 0 == GetSize(); }
+
+    BE_SQLITE_EXPORT size_t GetSize() const;
+    BE_SQLITE_EXPORT DbResult _Append(Byte const* data, int size) final override;
+    BE_SQLITE_EXPORT ChangesetFile(Utf8String name);
+    BE_SQLITE_EXPORT virtual ~ChangesetFile();
 };
 
 //=======================================================================================
