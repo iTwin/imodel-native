@@ -1689,8 +1689,8 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
     //! replace "Phenom" with other xml tags
     //! the units count includes inverted and constants
     const int standardUnitSystemCount = 12;
-    const int standardPhenCount = 79;
-    const int standardUnitCount = 519;
+    const int standardPhenCount = 80;
+    const int standardUnitCount = 521;
     const int standardFormatCount = 10;
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "No schema elements are expected to be loaded at this point");
