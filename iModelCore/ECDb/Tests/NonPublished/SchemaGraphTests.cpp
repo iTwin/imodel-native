@@ -473,4 +473,124 @@ TEST_F(SchemaGraphTestFixture, DeepSchemaHierarchyWithNumerousUpdates)
     ASSERT_TRUE(a.get() == aFromB);
     }
     }
+
+
+TEST_F(SchemaGraphTestFixture, UpdatedBaseCASchema)
+    {
+    // Scenario hit by iTwin Studio
+    // Simplified Schema Hierarchy: DomainSchema <- BisCore <- CoreCustomAttributes
+    // DomainSchema and CoreCustomAttributes get imported, while BisCore comes from the DB.
+    // The first import works fine, but when we attempt to repeat the import, we got a lot of problems indicating that BisCore is modified without incrementing its version.
+    SetupECDbForCurrentTest();
+
+    TestLogger logger;
+    LogCatcher logCatcher(logger);
+
+    // Initial setup
+    SchemaKey myCustomAttributes_1_0_0_Key("MyCustomAttributes", 1, 0, 0);
+    Utf8String myCustomAttributes_1_0_0_Xml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="MyCustomAttributes" alias="mca" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECCustomAttributeClass typeName="IsFoo" modifier="Sealed" >
+            <ECProperty propertyName="FooValue" typeName="string" />
+        </ECCustomAttributeClass>
+    </ECSchema>)schema");
+
+    SchemaKey myCore_1_0_0_Key("MyCore", 1, 0, 0);
+    Utf8String myCore_1_0_0_Xml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="MyCore" alias="mc" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="MyCustomAttributes" version="01.00.00" alias="mca"/>
+        <ECEntityClass typeName="MyElement" modifier="Abstract">
+            <ECCustomAttributes>
+                <IsFoo xmlns="MyCustomAttributes.01.00.00">
+                    <FooValue>A</FooValue>
+                </IsFoo>
+            </ECCustomAttributes>
+        </ECEntityClass>
+    </ECSchema>)schema");
+
+    SchemaKey myDomain_1_0_0_Key("MyDomain", 1, 0, 0);
+    Utf8String myDomain_1_0_0_Xml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="MyDomain" alias="md" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="MyCore" version="01.00.00" alias="mc"/>
+        <ECEntityClass typeName="MyDomainElement" modifier="Sealed">
+            <BaseClass>mc:MyElement</BaseClass>
+        </ECEntityClass>
+    </ECSchema>)schema");
+
+    SchemaKey myCustomAttributes_1_0_1_Key("MyCustomAttributes", 1, 0, 1);
+    Utf8String myCustomAttributes_1_0_1_Xml(
+    R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    <ECSchema schemaName="MyCustomAttributes" alias="mca" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECCustomAttributeClass typeName="IsFoo" modifier="Sealed" >
+            <ECProperty propertyName="FooValue" typeName="string" />
+        </ECCustomAttributeClass>
+        <ECCustomAttributeClass typeName="IsBar" modifier="Sealed" >
+            <ECProperty propertyName="BarValue" typeName="string" />
+        </ECCustomAttributeClass>
+    </ECSchema>)schema");
+
+    { // initial import of CA and Core schemas
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    StringSchemaLocater locater;
+    locater.AddSchemaString(myCustomAttributes_1_0_0_Key, myCustomAttributes_1_0_0_Xml);
+    locater.AddSchemaString(myCore_1_0_0_Key, myCore_1_0_0_Xml);
+    context->AddSchemaLocater(locater);
+    SanitizingSchemaLocater sanitizingLocater(m_ecdb.GetSchemaLocater());
+    context->SetFinalSchemaLocater(sanitizingLocater);
+    ECSchemaPtr myCustomAttributes = context->LocateSchema(myCustomAttributes_1_0_0_Key, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(myCustomAttributes.IsValid());
+    ECSchemaPtr myCore = context->LocateSchema(myCore_1_0_0_Key, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(myCore.IsValid());
+    SchemaImportResult result = m_ecdb.Schemas().ImportSchemas({ myCustomAttributes.get(), myCore.get() });
+    ASSERT_EQ(SchemaImportResult::OK, result);
+    m_ecdb.SaveChanges();
+    }
+
+    ReopenECDb();
+
+    { // Now import updated CA and Domain schemas
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    StringSchemaLocater locater;
+    locater.AddSchemaString(myCustomAttributes_1_0_1_Key, myCustomAttributes_1_0_1_Xml);
+    locater.AddSchemaString(myDomain_1_0_0_Key, myDomain_1_0_0_Xml);
+    context->AddSchemaLocater(locater);
+    SanitizingSchemaLocater sanitizingLocater(m_ecdb.GetSchemaLocater());
+    context->SetFinalSchemaLocater(sanitizingLocater);
+    ECSchemaPtr myCustomAttributes = context->LocateSchema(myCustomAttributes_1_0_1_Key, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(myCustomAttributes.IsValid());
+    ECSchemaPtr myDomain = context->LocateSchema(myDomain_1_0_0_Key, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(myDomain.IsValid());
+    SchemaImportResult result = m_ecdb.Schemas().ImportSchemas({ myCustomAttributes.get(), myDomain.get() });
+    ASSERT_EQ(SchemaImportResult::OK, result);
+    m_ecdb.SaveChanges();
+    }
+
+    ReopenECDb();
+
+    { // Now import updated CA and Domain schemas again, here we ran into problems because ECDb thinks the Core schema is modified
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    StringSchemaLocater locater;
+    locater.AddSchemaString(myCustomAttributes_1_0_1_Key, myCustomAttributes_1_0_1_Xml);
+    locater.AddSchemaString(myDomain_1_0_0_Key, myDomain_1_0_0_Xml);
+    context->AddSchemaLocater(locater);
+    SanitizingSchemaLocater sanitizingLocater(m_ecdb.GetSchemaLocater());
+    context->SetFinalSchemaLocater(sanitizingLocater);
+    ECSchemaPtr myCustomAttributes = context->LocateSchema(myCustomAttributes_1_0_1_Key, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(myCustomAttributes.IsValid());
+    ECSchemaPtr myDomain = context->LocateSchema(myDomain_1_0_0_Key, SchemaMatchType::LatestReadCompatible);
+    ASSERT_TRUE(myDomain.IsValid());
+    SchemaImportResult result = m_ecdb.Schemas().ImportSchemas({ myCustomAttributes.get(), myDomain.get() });
+    ASSERT_EQ(SchemaImportResult::OK, result);
+    m_ecdb.SaveChanges();
+    }
+
+    CloseECDb();
+    // no errors or warnings should be logged.
+    ASSERT_TRUE(logger.GetLastMessage(NativeLogging::LOG_WARNING) == nullptr);
+    ASSERT_TRUE(logger.GetLastMessage(NativeLogging::LOG_ERROR) == nullptr);
+    // there is another test that checks the warning for non-references-only schemas in SchemaManagerTests.SchemaWithChangesButSameVersionTest
+    }
 END_ECDBUNITTESTS_NAMESPACE
