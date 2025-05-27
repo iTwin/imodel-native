@@ -31,6 +31,7 @@ protected:
     void _OnCommitted(TxnManager&) override;
     void _OnAppliedChanges(TxnManager&) override;
     void _OnAppliedChangesCommitted(TxnManager&) override;
+    void _OnUndoRedo(TxnManager&, TxnAction) override;
     void _OnClassUsed(ECDbCR, ECClassCR, bool polymorphically) override;
 
 public:
