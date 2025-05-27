@@ -402,51 +402,65 @@ namespace
         if (!exp || !propertyMap)
             return false;
 
-        if (!db.GetECSqlConfig().IsWriteValueValidationEnabled() || propertyMap->GetType() != PropertyMap::Type::NavigationRelECClassId)
+        if (!db.GetECSqlConfig().IsWriteValueValidationEnabled() || (propertyMap->GetType() != PropertyMap::Type::Navigation && propertyMap->GetType() != PropertyMap::Type::NavigationRelECClassId))
             return true;
 
         if (exp->GetType() == Exp::Type::UnaryValue)
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
                 "The ECSql statement contains an invalid or missing relationship class id.");
             return false;
             }
+        if (exp->GetType() != Exp::Type::LiteralValue)
+            return true;
 
         // Extract and validate the class ID value
-        Utf8String relClassIdValueGiven = (exp->GetType() == Exp::Type::LiteralValue) ? exp->GetAs<LiteralValueExp>().GetRawValue() : "";
-        if (relClassIdValueGiven.empty() || relClassIdValueGiven.CompareToI("NULL") == 0)
+        Utf8String relClassIdValueGiven = exp->GetAs<LiteralValueExp>().GetRawValue();
+        if (relClassIdValueGiven.empty())
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
                 "The ECSql statement contains an invalid relationship class id.");
             return false;
             }
+        if (relClassIdValueGiven.CompareToI("NULL") == 0)
+            return true;
 
-        // Convert and validate the ECClassId
+        // Convert the extracted ECClassId
         ECClassId relECClassIdToCheck;
         if (ECClassId::FromString(relECClassIdToCheck, relClassIdValueGiven.c_str()) != SUCCESS)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0741,
                 "The ECSql statement contains an invalid relationship class id '%s'.", relClassIdValueGiven.c_str());
             return false;
             }
 
+        // Check if the class ID refers to a valid relationship class
         ECClassCP relECClass = db.Schemas().GetClass(relECClassIdToCheck);
         if (!relECClass || !relECClass->IsRelationshipClass())
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0740,
-                "The ECSql statement contains a relationship class id '%s' that is not a valid relationship class.", relClassIdValueGiven.c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0741,
+                "The ECSql statement contains a class with id '%s' which is not a valid relationship class.", relClassIdValueGiven.c_str());
             return false;
             }
 
-        // Get relationship class from navigation property
-        const auto parentProp = propertyMap->GetParent();
-        if (!parentProp)
-            return false;
+        // Get navigation property and its relationship class
+        NavigationECPropertyCP navProp = nullptr;
+        if (propertyMap->GetType() == PropertyMap::Type::NavigationRelECClassId)
+            {
+            auto parent = propertyMap->GetParent();
+            if (!parent)
+                return false;
+            navProp = parent->GetProperty().GetAsNavigationProperty();
+            }
+        else
+            {
+            navProp = propertyMap->GetProperty().GetAsNavigationProperty();
+            }
 
-        NavigationECPropertyCP navProp = parentProp->GetProperty().GetAsNavigationProperty();
         if (!navProp)
             return false;
 
+        // Ensure the navigation property is valid and has a relationship class
         ECClassCP navPropRelClass = db.Schemas().GetClass(navProp->GetRelationshipClass()->GetId());
         if (!navPropRelClass)
             return false;
@@ -461,7 +475,7 @@ namespace
             || std::none_of(derivedClasses.Value().begin(), derivedClasses.Value().end(),
                 [&relECClassIdToCheck](const auto& checkClass) { return checkClass->GetId() == relECClassIdToCheck; }))
             {
-            LOG.errorv("The ECSql statement contains a relationship class id '%s' that does not match the relationship class in the navigation property.",
+            LOG.errorv("The ECSql statement contains a class id '%s' that does not match the relationship class in the navigation property.",
                 relECClassIdToCheck.ToString().c_str());
             return false;
             }

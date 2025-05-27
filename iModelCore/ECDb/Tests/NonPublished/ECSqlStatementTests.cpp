@@ -13149,7 +13149,7 @@ TEST_F(InvalidRelECClassIdTestFixture, InsertWithInvalidRelECClassId_WithPragma)
         { 15, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(17, %s)", "9999", "",ECSqlStatus::InvalidECSql },
         { 16, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(18, %s)", "0", "",ECSqlStatus::InvalidECSql },
         { 17, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(19, %s)", "-1", "",ECSqlStatus::InvalidECSql },
-        { 18, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(20, %s)", "null", "",ECSqlStatus::InvalidECSql },
+        { 18, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(20, %s)", "null", "",ECSqlStatus::Success },
 
         { 19, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(21, %s)", elementOwnsChildElementsId, "",ECSqlStatus::Success },
         { 20, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(22, %s)", elementOwnsChildElementDerivedId, "",ECSqlStatus::Success },
@@ -13276,7 +13276,7 @@ TEST_F(InvalidRelECClassIdTestFixture, UpdateWithInvalidRelECClassId_WithPragma)
         { 14, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "9999", "", ECSqlStatus::InvalidECSql },
         { 15, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "0", "", ECSqlStatus::InvalidECSql },
         { 16, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "-1", "", ECSqlStatus::InvalidECSql },
-        { 17, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "null", "", ECSqlStatus::InvalidECSql },
+        { 17, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "null", "", ECSqlStatus::Success },
 
         { 18, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::InvalidECSql },
         { 19, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::InvalidECSql },

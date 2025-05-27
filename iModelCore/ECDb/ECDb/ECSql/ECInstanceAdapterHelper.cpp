@@ -210,7 +210,7 @@ ECValueBindingInfoCollection::const_iterator ECValueBindingInfoCollection::end()
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ECInstanceAdapterHelper::BindValue(IECSqlBinder& binder, ECInstanceInfo const& instance, ECValueBindingInfo const& valueBindingInfo)
+BentleyStatus ECInstanceAdapterHelper::BindValue(IECSqlBinder& binder, ECInstanceInfo const& instance, ECValueBindingInfo const& valueBindingInfo, const ECSqlStatement* ecSqlStatement)
     {
     switch (valueBindingInfo.GetType())
         {
@@ -221,7 +221,7 @@ BentleyStatus ECInstanceAdapterHelper::BindValue(IECSqlBinder& binder, ECInstanc
             case ECValueBindingInfo::Type::Array:
                 return BindArrayValue(binder, instance, static_cast<ArrayECValueBindingInfo const&> (valueBindingInfo));
             case ECValueBindingInfo::Type::Navigation:
-                return BindNavigationValue(binder, instance, static_cast<NavigationECValueBindingInfo const&> (valueBindingInfo));
+                return BindNavigationValue(binder, instance, static_cast<NavigationECValueBindingInfo const&> (valueBindingInfo), ecSqlStatement);
             case ECValueBindingInfo::Type::ECSqlSystemProperty:
                 return BindECSqlSystemPropertyValue(binder, instance, static_cast<ECSqlSystemPropertyBindingInfo const&> (valueBindingInfo));
 
@@ -434,7 +434,7 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECIn
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ECInstanceAdapterHelper::BindNavigationValue(IECSqlBinder& binder, ECInstanceInfo const& instanceInfo, NavigationECValueBindingInfo const& valueBindingInfo)
+BentleyStatus ECInstanceAdapterHelper::BindNavigationValue(IECSqlBinder& binder, ECInstanceInfo const& instanceInfo, NavigationECValueBindingInfo const& valueBindingInfo, const ECSqlStatement* ecSqlStatement)
     {
     if (!instanceInfo.HasInstance()) // bind null in that case
         return SUCCESS;
@@ -449,6 +449,10 @@ BentleyStatus ECInstanceAdapterHelper::BindNavigationValue(IECSqlBinder& binder,
     ECValue::NavigationInfo const& navInfo = value.GetNavigationInfo();
     ECInstanceId navId = navInfo.GetId<ECInstanceId>();
     ECClassId relClassId = navInfo.GetRelationshipClassId();
+
+    if (ecSqlStatement != nullptr && ecSqlStatement->IsNavigationPropertyValid(binder.GetBinderInfo().GetPropertyName(), relClassId) != ECSqlStatus::Success)
+        return ERROR;
+
     return binder.BindNavigation(navId, relClassId) == ECSqlStatus::Success ? SUCCESS : ERROR;
     }
 

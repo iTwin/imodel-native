@@ -270,7 +270,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param[in] propertyName             The name of the navigation property to validate.
         //! @param[in] relationshipECClassId    The ECClassId of the ECRelationshipClass to validate for the navigation property.
         //! @return ECSqlStatus::Success if the relationship class ID is valid for the navigation property, ECSqlStatus::InvalidECSql otherwise.
-        ECDB_EXPORT ECSqlStatus IsNavigationPropertyValid(Utf8StringCR propertyName, const ECN::ECClassId& relationshipECClassId);
+        ECDB_EXPORT ECSqlStatus IsNavigationPropertyValid(Utf8StringCR propertyName, const ECN::ECClassId& relationshipECClassId) const;
 
         //! Gets the parameter index for a named parameter. Will log an error if parameter not found.
         //!
