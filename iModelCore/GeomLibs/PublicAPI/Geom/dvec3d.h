@@ -1159,17 +1159,18 @@ DVec3dCR        vector1
 
 //flex|| parallel and perpendicular tests || bool vectorA.IsPositiveParallelTo (vectorB) || bool vectorA.IsParallelTo (vectorB)  || vectorA.IsPerpendicularTo (vectorB) ||
 
-//! @description Tests if two vectors are parallel (opposites are considered parallel!)
+//! @description Tests if two vectors are parallel.
+//! * Note that opposite vectors are considered parallel.
 //! @param [in] vector2 The second vector
-//! @return true if the vectors are parallel within tolerance
+//! @return true if the vectors are parallel within Angle::SmallAngle() tolerance
 bool IsParallelTo (DVec3dCR vector2) const;
 
-//! @description Tests if two vectors are parallel (opposites are considered parallel!)
+//! @description Tests if two vectors are parallel.
+//! * Note that opposite vectors are considered parallel.
 //! @param [in] vector2 The second vector
-//! @param [in] radians tolerance in radians.
+//! @param [in] tolerance angular tolerance in radians
 //! @return true if the vectors are parallel within tolerance
-bool IsParallelTo (DVec3dCR vector2, double radians) const;
-
+bool IsParallelTo(DVec3dCR vector2, double tolerance) const;
 
 //! @description Tests if two vectors are parallel and have positive dot product (opposites are NOT considered parallel)
 //! @param [in] vector2 The second vector
