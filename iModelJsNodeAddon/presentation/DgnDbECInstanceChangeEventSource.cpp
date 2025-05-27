@@ -188,6 +188,15 @@ void DgnDbECInstanceChangeEventSource::_OnAppliedChangesCommitted(Dgn::TxnManage
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDbECInstanceChangeEventSource::_OnUndoRedo(Dgn::TxnManager& txns, TxnAction)
+    {
+    NotifyECInstancesChanged(txns.GetDgnDb(), m_changes);
+    m_changes.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDbECInstanceChangeEventSource::_OnClassUsed(ECDbCR db, ECN::ECClassCR ecClass, bool)
     {
     if (!ecClass.IsRelationshipClass())
