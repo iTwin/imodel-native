@@ -335,6 +335,85 @@ DbResult ChangeTracker::DifferenceToDb(Utf8StringP errMsgOut, BeFileNameCR baseF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeSet::Write(Utf8StringCR pathname) const {
+    BeFile file;
+    if (BeFileStatus::Success != file.Create(pathname))
+        return BE_SQLITE_ERROR;
+
+    for(auto& chunk : m_data.m_chunks) {
+        if (BeFileStatus::Success != file.Write(nullptr, (const void *)chunk.data(), (uint32_t)chunk.size())){
+            file.Close();
+            return BE_SQLITE_ERROR;
+        }
+    }
+    file.Flush();
+    file.Close();
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ChangesetFile::GetSize() const {
+    uint64_t size = 0;
+    m_file.GetSize(size);
+    return (size_t)size;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangesetFile::_Append(Byte const* data, int size) {
+    m_file.Write(nullptr, data, size);
+    m_file.Flush();
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangesetFile::ChangesetFile(Utf8String name) : m_fileName(name) {
+    m_file.Create(m_fileName);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangesetFile::~ChangesetFile() {
+    m_file.Flush();
+    m_file.Close();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeSet::Read(Utf8StringCR pathname) {
+    BeFile file;
+    if (BeFileStatus::Success != file.Open(pathname, BeFileAccess::Read ))
+        return BE_SQLITE_ERROR;
+
+    m_data.Clear();
+    uint8_t buffer[64 * 1024];
+    uint32_t bytesRead = 0;
+
+    if (BeFileStatus::Success != file.Read(buffer, & bytesRead, sizeof(buffer))) {
+        m_data.Clear();
+        return BE_SQLITE_ERROR;
+    }
+
+    while (bytesRead > 0) {
+        m_data.Append(buffer, bytesRead);
+        if (BeFileStatus::Success != file.Read(buffer, & bytesRead, sizeof(buffer))){
+            m_data.Clear();
+            return BE_SQLITE_ERROR;
+        }
+    }
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeSet::Invert() {
     if (!IsValid()) {
         BeAssert(false);
