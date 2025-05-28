@@ -351,7 +351,7 @@ protected:
 
     bool WriteDouble(double d) {
         if (internal::Double(d).IsNanOrInf()) {
-            if (!(writeFlags & kWriteNanAndInfFlag))
+            if (!(writeFlags & kWriteNanAndInfFlag) && !(writeFlags & kWriteNanAndInfNullFlag))
                 return false;
             if (writeFlags & kWriteNanAndInfNullFlag) {
                 PutReserve(*os_, 4);
