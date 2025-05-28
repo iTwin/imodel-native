@@ -59,9 +59,7 @@ RAPIDJSON_NAMESPACE_BEGIN
     User can define this as any \c WriteFlag combinations.
 */
 #ifndef RAPIDJSON_WRITE_DEFAULT_FLAGS
-// BENTLEY_CHANGES <<<<
-#define RAPIDJSON_WRITE_DEFAULT_FLAGS kWriteNanAndInfNullFlag
-// BENTLEY_CHANGES >>>>
+#define RAPIDJSON_WRITE_DEFAULT_FLAGS kWriteNoFlags
 #endif
 
 //! Combination of writeFlags
