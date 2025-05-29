@@ -858,7 +858,17 @@ ECSqlStatus ECSqlInsertPreparedStatement::PopulateProxyBinders(PrepareInfo const
                 }
 
             proxyBinder.AddBinder(*binder);
-            proxyBinder.SetBinderInfoWithPropertyName(binder->GetBinderInfo().GetPropertyName());
+
+            // Prepare to cache relationship class IDs for navigation property validation.
+            // Only do this if the statement is a write statement and value validation is enabled.
+            if (prepareInfo.GetContext().GetPreparedStatement().IsWriteStatement() && prepareInfo.GetContext().GetECDb().GetECSqlConfig().IsWriteValueValidationEnabled())
+                {
+                std::vector<ECClassId> relClassIds;
+                // Retrieve the set of valid relationship class IDs for the navigation property from the binder.
+                binder->GetBinderInfo().GetRelClassIdsForNavigationProperties(relClassIds);
+                // Pass the relationship class IDs to the proxy binder for use during parameter binding/validation.
+                proxyBinder.SetBinderInfoWithRelClassIds(relClassIds);
+                }
             }
         }
 
@@ -1356,6 +1366,9 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PrepareLeafStatements(PrepareInfo& pre
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlUpdatePreparedStatement::PopulateProxyBinders(PrepareInfo const& prepareInfo)
     {
+    const auto validateWriteStatement = (prepareInfo.GetContext().GetPreparedStatement().IsWriteStatement() 
+        && prepareInfo.GetContext().GetECDb().GetECSqlConfig().IsWriteValueValidationEnabled());
+
     for (auto const& parameterNameMapping : prepareInfo.GetECSqlRenderContext().GetParameterIndexNameMap())
         {
         const uint32_t paramIndex = (uint32_t) parameterNameMapping.first;
@@ -1365,6 +1378,8 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PopulateProxyBinders(PrepareInfo const
             m_parameterNameMap[paramName] = paramIndex;
 
         IProxyECSqlBinder& proxyBinder = *m_proxyBinders[(size_t) (paramIndex - 1)];
+
+        std::vector<ECClassId> relClassIds;
 
         auto itTable = prepareInfo.GetTablesByParameterIndex().find(paramIndex);
         if (itTable == prepareInfo.GetTablesByParameterIndex().end())
@@ -1380,7 +1395,13 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PopulateProxyBinders(PrepareInfo const
                 }
 
             proxyBinder.AddBinder(*binder);
-            proxyBinder.SetBinderInfoWithPropertyName(binder->GetBinderInfo().GetPropertyName());
+            if (validateWriteStatement)
+                {
+                // Retrieve the set of valid relationship class IDs for the navigation property from the binder.
+                binder->GetBinderInfo().GetRelClassIdsForNavigationProperties(relClassIds);
+                // Pass the relationship class IDs to the proxy binder for use during parameter binding/validation.
+                proxyBinder.SetBinderInfoWithRelClassIds(relClassIds);
+                }
             }
         else
             {
@@ -1397,7 +1418,13 @@ ECSqlStatus ECSqlUpdatePreparedStatement::PopulateProxyBinders(PrepareInfo const
                     }
 
                 proxyBinder.AddBinder(*binder);
-                proxyBinder.SetBinderInfoWithPropertyName(binder->GetBinderInfo().GetPropertyName());
+                if (validateWriteStatement)
+                    {
+                    // Retrieve the set of valid relationship class IDs for the navigation property from the binder.
+                    binder->GetBinderInfo().GetRelClassIdsForNavigationProperties(relClassIds);
+                    // Pass the relationship class IDs to the proxy binder for use during parameter binding/validation.
+                    proxyBinder.SetBinderInfoWithRelClassIds(relClassIds);
+                    }
                 }
             }
         }

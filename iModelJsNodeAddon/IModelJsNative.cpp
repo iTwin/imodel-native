@@ -3787,6 +3787,8 @@ public:
         if (SUCCESS != BeInt64Id::FromString(navId, navIdHexStr.c_str()))
             return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
 
+        const auto validateRelECClassId = m_ecSqlStatement && m_ecSqlStatement->IsWriteStatement() && m_ecdb->GetECSqlConfig().IsWriteValueValidationEnabled();
+
         ECClassId relClassId;
         if (!relClassName.empty())
             {
@@ -3797,7 +3799,7 @@ public:
 
             relClassId = m_ecdb->Schemas().GetClassId(tokens[0], tokens[1], SchemaLookupMode::AutoDetect, relClassTableSpaceName.c_str());
 
-            if (m_ecSqlStatement && m_ecSqlStatement->IsWriteStatement() && m_ecdb->GetECSqlConfig().IsWriteValueValidationEnabled())
+            if (validateRelECClassId)
                 {
                 auto relClass = m_ecdb->Schemas().GetClass(relClassId);
                 if (!relClass)
@@ -3805,14 +3807,13 @@ public:
         
                 if (!relClass->IsRelationshipClass())
                     THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not correspond to a valid ECRelationship class.", relClassName.c_str()).c_str());
-
-                const auto isNavPropValid = m_ecSqlStatement->IsNavigationPropertyValid(m_binder->GetBinderInfo().GetPropertyName(), relClassId);
-                if (isNavPropValid != ECSqlStatus::Success)
-                    THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not match the relationship class in the navigation property.", relClassName.c_str()).c_str());
                 }
             }
 
         ECSqlStatus stat = m_binder->BindNavigation(navId, relClassId);
+        if (validateRelECClassId && stat == ECSqlStatus::InvalidECSql)
+            THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not match the relationship class in the navigation property.", relClassName.c_str()).c_str());
+
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 

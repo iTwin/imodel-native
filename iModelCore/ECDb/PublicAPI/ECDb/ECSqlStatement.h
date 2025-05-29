@@ -239,7 +239,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //!            If an invalid @p relationshipECClassId is passed, NULL will be bound to it. This is only correct
         //!            if the relationshipECClassId is optional. ECDb does not validate the input.
         //! @return ECSqlStatus::Success or error codes
-        ECDB_EXPORT ECSqlStatus BindNavigationValue(int parameterIndex, BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId = ECN::ECClassId());
+        ECSqlStatus BindNavigationValue(int parameterIndex, BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId = ECN::ECClassId()) { return GetBinder(parameterIndex).BindNavigation(relatedInstanceId, relationshipECClassId); }
 
         //! Binds a VirtualSet to the SQL function @b InVirtualSet.
         //! The parameter must be the first parameter in the InVirtualSet function.
@@ -261,16 +261,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param[in] parameterIndex Parameter index.
         //! @return Parameter BinderInfo. If there is no valid binder on that index the it will still return BinderInfo with Binder type NoopECSqlBinderType
         ECDB_EXPORT BinderInfo const& GetBinderInfo(int parameterIndex) { return GetBinder(parameterIndex).GetBinderInfo(); }
-
-        //! Validates that the specified navigation property is associated with the given ECRelationshipClassId.
-        //!
-        //! Validation is performed only if the statement is an INSERT and insert value validation is enabled in the ECSqlConfig.
-        //! If any of these checks fail, an error is logged and ECSqlStatus::InvalidECSql is returned.
-        //!
-        //! @param[in] propertyName             The name of the navigation property to validate.
-        //! @param[in] relationshipECClassId    The ECClassId of the ECRelationshipClass to validate for the navigation property.
-        //! @return ECSqlStatus::Success if the relationship class ID is valid for the navigation property, ECSqlStatus::InvalidECSql otherwise.
-        ECDB_EXPORT ECSqlStatus IsNavigationPropertyValid(Utf8StringCR propertyName, const ECN::ECClassId& relationshipECClassId) const;
 
         //! Gets the parameter index for a named parameter. Will log an error if parameter not found.
         //!

@@ -260,7 +260,7 @@ DbResult ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IECInst
     for (ECValueBindingInfo const* bindingInfo : m_ecValueBindingInfos)
         {
         BeAssert(bindingInfo->HasECSqlParameterIndex());
-        auto stat = ECInstanceAdapterHelper::BindValue(m_statement.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo, &m_statement);
+        auto stat = ECInstanceAdapterHelper::BindValue(m_statement.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo);
         if (stat != SUCCESS)
             {
             Utf8String errorMessage;
@@ -370,7 +370,7 @@ DbResult ECInstanceInserter::Impl::InsertRelationship(ECInstanceKey& newInstance
     for (auto const* bindingInfo : m_ecValueBindingInfos)
         {
         BeAssert(bindingInfo->HasECSqlParameterIndex());
-        if (SUCCESS != ECInstanceAdapterHelper::BindValue(m_statement.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo, &m_statement))
+        if (SUCCESS != ECInstanceAdapterHelper::BindValue(m_statement.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo))
             {
             LOG.errorv("Failed to insert RelationshipECInstance: Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex(),
                                  m_statement.GetECSql());

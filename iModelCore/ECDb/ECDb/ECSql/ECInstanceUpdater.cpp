@@ -368,7 +368,7 @@ DbResult ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
     for (auto const* bindingInfo : m_ecValueBindingInfos)
         {
         BeAssert(bindingInfo->HasECSqlParameterIndex());
-        if (SUCCESS != ECInstanceAdapterHelper::BindValue(m_ecsqlStatement.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo, &m_ecsqlStatement))
+        if (SUCCESS != ECInstanceAdapterHelper::BindValue(m_ecsqlStatement.GetBinder(bindingInfo->GetECSqlParameterIndex()), instanceInfo, *bindingInfo))
             {
             Utf8String errorMessage;
             errorMessage.Sprintf("Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex(),

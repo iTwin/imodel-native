@@ -303,7 +303,7 @@ struct ECInstanceAdapterHelper final
 
         static BentleyStatus BindStructValue(IECSqlBinder&, ECInstanceInfo const&, StructECValueBindingInfo const&);
         static BentleyStatus BindArrayValue(IECSqlBinder&, ECInstanceInfo const&, ArrayECValueBindingInfo const&);
-        static BentleyStatus BindNavigationValue(IECSqlBinder&, ECInstanceInfo const&, NavigationECValueBindingInfo const&, const ECSqlStatement* ecSqlStatement = nullptr);
+        static BentleyStatus BindNavigationValue(IECSqlBinder&, ECInstanceInfo const&, NavigationECValueBindingInfo const&);
 
         static BentleyStatus BindECSqlSystemPropertyValue(IECSqlBinder&, ECInstanceInfo const&, ECSqlSystemPropertyBindingInfo const&);
 
@@ -317,7 +317,7 @@ struct ECInstanceAdapterHelper final
         //! @param[in,out] binder ECSQL statement binder representing the ECSQL parameter to which the value is bound to the ECSQL statement
         //! @param[in] instance ECInstance from which the ECValue to be bound is extracted
         //! @param[in] valueBindingInfo Information needed to extract the ECValue from the right property value from the ECInstance
-        static BentleyStatus BindValue(IECSqlBinder& binder, ECInstanceInfo const& instance, ECValueBindingInfo const& valueBindingInfo, const ECSqlStatement* ecSqlStatement = nullptr);
+        static BentleyStatus BindValue(IECSqlBinder& binder, ECInstanceInfo const& instance, ECValueBindingInfo const& valueBindingInfo);
 
         static bool IsOrContainsCalculatedProperty(ECN::ECPropertyCR prop);
 

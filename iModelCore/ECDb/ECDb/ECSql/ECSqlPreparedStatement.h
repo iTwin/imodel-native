@@ -69,6 +69,7 @@ struct IECSqlPreparedStatement
         ECSqlType GetType() const { return m_type; }
         bool IsInstanceQuery() const { return m_isInstanceQuery; }
         void SetIsInstanceQuery(const bool isInstanceQuery) { m_isInstanceQuery = isInstanceQuery; }
+        bool IsWriteStatement() const { return m_type == ECSqlType::Insert || m_type == ECSqlType::Update; }
     };
 
 //=======================================================================================
@@ -132,7 +133,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
             {
         private:
             virtual void _AddBinder(IECSqlBinder&) = 0;
-            virtual void _SetBinderInfoWithPropertyName(Utf8StringCR propertyName) = 0;
+            virtual void _SetBinderInfoWithRelClassIds(std::vector<ECClassId> const& relClassIds) = 0;
 
         protected:
             IProxyECSqlBinder() : IECSqlBinder() {}
@@ -140,7 +141,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
         public:
             virtual ~IProxyECSqlBinder() {}
             void AddBinder(IECSqlBinder& binder) { _AddBinder(binder); }
-            void SetBinderInfoWithPropertyName(Utf8StringCR propertyName) { _SetBinderInfoWithPropertyName(propertyName); }
+            void SetBinderInfoWithRelClassIds(std::vector<ECClassId> const& relClassIds) { _SetBinderInfoWithRelClassIds(relClassIds); }
             };
 
         //=======================================================================================
@@ -175,7 +176,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 BinderInfo& _GetBinderInfo() override { return m_binderInfo; }
 
                 void _AddBinder(IECSqlBinder& binder) override { BeAssert(m_idBinder == nullptr); m_idBinder = &binder; }
-                void _SetBinderInfoWithPropertyName(Utf8StringCR propertyName) override { m_binderInfo.SetPropertyName(propertyName); }
+                void _SetBinderInfoWithRelClassIds(std::vector<ECClassId> const& relClassIds) override { m_binderInfo.CacheRelClassIdsForPropertyMap(relClassIds); }
 
             public:
                 ProxyECInstanceIdECSqlBinder() : IProxyECSqlBinder(), m_binderInfo(BinderInfo::BinderType::ProxyECInstanceId) {}
@@ -219,7 +220,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 BinderInfo& _GetBinderInfo() override { return m_binderInfo; }
 
                 void _AddBinder(IECSqlBinder& binder) override { m_binders.push_back(&binder); }
-                void _SetBinderInfoWithPropertyName(Utf8StringCR propertyName) override { m_binderInfo.SetPropertyName(propertyName); }
+                void _SetBinderInfoWithRelClassIds(std::vector<ECClassId> const& relClassIds) override { m_binderInfo.CacheRelClassIdsForPropertyMap(relClassIds); }
 
             public:
                 ProxyECSqlBinder() : IProxyECSqlBinder(),m_binderInfo(BinderInfo::BinderType::Proxy) {}
