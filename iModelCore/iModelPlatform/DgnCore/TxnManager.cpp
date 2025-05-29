@@ -2701,6 +2701,12 @@ void TxnManager::OnGeometryGuidChanges(bset<DgnModelId> const& modelIds) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnUndoRedo(TxnAction action) {
     auto jsTxns = m_dgndb.GetJsTxns();
+    auto config = PullMergeConf::Load(m_dgndb);
+
+    if (!config.InProgress()) {
+        m_dgndb.SaveChanges();
+    }
+
     if (nullptr != jsTxns) {
         BeAssert(TxnAction::Reverse == action || TxnAction::Reinstate == action);
         bool isUndo = TxnAction::Reverse == action;
@@ -2879,6 +2885,7 @@ void TxnManager::PullMergeBegin() {
     if (st != BE_SQLITE_DONE) {
         m_dgndb.ThrowException("PullMergeBegin(): fail to save pull-merge conf ", (int)rc);
     }
+    CallMonitors([&](TxnMonitor& monitor) { monitor._OnPullMergeBegin(*this); });
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3025,6 +3032,8 @@ void TxnManager::PullMergeEnd() {
         m_dgndb.ThrowException("Unable to save merge state", static_cast<int>(rc));
     }
     Restart();
+
+    CallMonitors([&](TxnMonitor& monitor) { monitor._OnPullMergeEnd(*this); });
 }
 
 /*---------------------------------------------------------------------------------**//**

@@ -29,8 +29,10 @@ private:
 protected:
     void _OnCommit(TxnManager&) override;
     void _OnCommitted(TxnManager&) override;
-    void _OnAppliedChanges(TxnManager&) override;
+    void _OnAppliedChanges(TxnManager&) override; // collect changes
     void _OnClassUsed(ECDbCR, ECClassCR, bool polymorphically) override;
+    void _OnPullMergeEnd(TxnManager&) override; //ensure changes are saved
+    void _OnUndoRedo(TxnManager&, TxnAction) override; //ensure changes are saved
 
 public:
     DgnDbECInstanceChangeEventSource();
