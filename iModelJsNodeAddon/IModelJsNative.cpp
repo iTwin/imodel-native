@@ -2767,6 +2767,21 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return Napi::Boolean::New(Env(), db.Txns().PullMergeInProgress());
     }
 
+    static Napi::Value ComputeChangesetId(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, args);
+        auto parentId = args.Get("parentId").As<Napi::String>();
+        auto pathname = args.Get("pathname").As<Napi::String>();
+        if (!parentId.IsString() || !pathname.IsString())
+            BeNapi::ThrowJsException(info.Env(), "parentId and pathname are required attribute of ChangesetFileProps");
+
+        auto id = ChangesetProps::ComputeChangesetId(
+            parentId.Utf8Value().c_str(),
+            BeFileName(pathname.Utf8Value()),
+            info.Env()
+        );
+
+        return Napi::String::New(info.Env(), id.c_str());
+    }
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2975,6 +2990,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
             StaticMethod("zlibDecompress", &NativeDgnDb::ZlibDecompress),
+            StaticMethod("computeChangesetId", &NativeDgnDb::ComputeChangesetId),
         });
 
         exports.Set("DgnDb", t);
@@ -3020,7 +3036,7 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         bool extentIsValid = ARGUMENT_IS_ANY_OBJ(0);
         if (extentIsValid)
             BeJsGeomUtils::DRange2dFromJson(extentRange, info[0].As<Napi::Object>());
-        
+
         bool includeWorld = ARGUMENT_IS_BOOL(1) ? info[1].As<Napi::Boolean>().Value() : false;
         bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr, includeWorld );
 

@@ -567,27 +567,63 @@ public:
     // @bsimethod
     //---------------------------------------------------------------------------------------
     static Utf8String GenerateId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, DgnDbR dgndb) {
-        ChangesetFileReader fs(changesetFile, &dgndb);
+        return GenerateId(parentRevId, changesetFile, dgndb.m_private_iModelDbJs.Env());
+    }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod
+    //---------------------------------------------------------------------------------------
+    static Utf8String GenerateId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env) {
+        auto throwError = [&env](const char* message, ChangesetStatus status) {
+            if(env== nullptr) {
+                throw std::runtime_error(message);
+            }
+            BeNapi::ThrowJsException(env, message, (int)status);
+        };
+
+        if (parentRevId.length() != SHA1::HashBytes * 2 && !parentRevId.empty()) {
+            throwError("Invalid parent changeset id. Expect empty or SHA1 hash", ChangesetStatus::BadVersionId);
+        }
+
+        if (!changesetFile.DoesPathExist()) {
+            throwError("Invalid changeset file. File not not found.", ChangesetStatus::FileNotFound);
+        }
 
         ChangesetIdGenerator idGen;
         idGen.AddStringToHash(parentRevId);
 
+        ChangesetFileReader fs(changesetFile, nullptr);
         auto reader = fs.MakeReader();
+
         DbResult result;
         Utf8StringCR prefix = reader->GetPrefix(result);
-        if (BE_SQLITE_OK != result)
-            dgndb.ThrowException(result == BE_SQLITE_ERROR_InvalidChangeSetVersion ? "invalid changeset version" : "corrupted changeset header", result);
+        if (BE_SQLITE_OK != result) {
+            if (result == BE_SQLITE_ERROR_InvalidChangeSetVersion) {
+                throwError("Unsupported changeset persistence file version", ChangesetStatus::InvalidVersion);
+            } else {
+                throwError("Corrupted changeset file", ChangesetStatus::CorruptedChangeStream);
+            }
+        }
 
-        if (!prefix.empty())
+        if (!prefix.empty()) {
             idGen._Append((Byte const*)prefix.c_str(), (int)prefix.SizeInBytes());
+        }
 
         result = idGen.ReadFrom(*reader);
         if (BE_SQLITE_OK != result)
-            dgndb.ThrowException("corrupted changeset", result);
+            throwError("Corrupted changeset file", ChangesetStatus::CorruptedChangeStream);
 
         return idGen.m_hash.GetHashString();
     }
 };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8String ChangesetProps::ComputeChangesetId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env){
+    return ChangesetIdGenerator::GenerateId(parentRevId, changesetFile, env);
+}
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
