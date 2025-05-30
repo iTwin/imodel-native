@@ -31,6 +31,15 @@ interface IChange {
   isIndirect: boolean;
 }
 describe("Native changeset reader", () => {
+  it("computeChangesetId", () => {
+    const props = {
+      id: "22e5e7652fa738cd79a77c539b6a72736f5f7de3",
+      parentId: "115f80f24edf5aa7f24b51d9dface3223c42cff3",
+      pathname:path.join(getAssetsDir(), "f5f7de3.cs")
+    }
+    const id = iModelJsNative.DgnDb.computeChangesetId(props);
+    expect(id).equals(props.id)
+  });
   it("changeset reader", () => {
     const reader = new iModelJsNative.ChangesetReader();
     const testCsFile = path.join(getAssetsDir(), "test.cs");
