@@ -257,6 +257,26 @@ SchemaImportResult SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemas
     return SchemaImportResult::OK;
     }
 
+bool HasChangesExceptInReferences(ECN::SchemaChange& change)
+    {
+    if (change.Alias().IsChanged() || change.Name().IsChanged() || change.DisplayLabel().IsChanged() || change.Description().IsChanged())
+        return true;
+
+    if (change.Classes().IsChanged() ||
+        change.Enumerations().IsChanged() ||
+        change.Units().IsChanged() ||
+        change.Phenomena().IsChanged() ||
+        change.Formats().IsChanged() ||
+        change.KindOfQuantities().IsChanged() ||
+        change.PropertyCategories().IsChanged() ||
+        change.UnitSystems().IsChanged())
+        return true;
+    if (change.CustomAttributes().IsChanged())
+        return true;
+
+    return false;
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -288,7 +308,10 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
                     {
                     if (!schema->IsDynamicSchema() && !schemaChange->VersionWrite().IsChanged() && !schemaChange->VersionRead().IsChanged() && !schemaChange->VersionMinor().IsChanged())
                         {
-                        LOG.errorv("ECSchema import has failed. Schema %s has new changes, but the schema version is not incremented.", schema->GetName().c_str());
+                        if(HasChangesExceptInReferences(*schemaChange)) // changes to references are not considered a schema change that should log a warning
+                            {
+                            LOG.warningv("Schema '%s' has changes but its version was not incremented. Proceeding with import, but this may lead to unexpected behavior.", schema->GetName().c_str());
+                            }
                         }
 
                     existingSchema = schema;
@@ -2741,17 +2764,22 @@ BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContain
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, ECContainerId containerId, CustomAttributeChanges& caChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
     {
-    int customAttributeIndex = 0;
-    ECCustomAttributeInstanceIterable customAttributes = oldContainer.GetCustomAttributes(false);
-    auto itor = customAttributes.begin();
-    while (itor != customAttributes.end())
-        {
-        customAttributeIndex++;
-        ++itor;
-        }
-
     if (caChanges.IsEmpty() || caChanges.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
+
+    int customAttributeIndex = 0;
+    CachedStatementPtr stmt = ctx.GetCachedStatement("SELECT MAX(Ordinal) from main. " TABLE_CustomAttribute " WHERE ContainerId = ? AND ContainerType = ?");
+    if (stmt == nullptr)
+        return ERROR;
+
+    stmt->BindId(1, containerId);
+    stmt->BindInt(2, Enum::ToInt(containerType));
+
+    if (stmt->Step() != BE_SQLITE_ROW)
+        {
+        return ERROR;
+        }
+    customAttributeIndex = stmt->GetValueInt(0);
 
     BeAssert(caChanges.GetParent() != nullptr);
     const bool caContainerIsNew = caChanges.GetParent()->GetOpCode() == ECChange::OpCode::New;
