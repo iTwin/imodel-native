@@ -600,7 +600,7 @@
     <Part Name="CoreCustomAttributes" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/CoreCustomAttributes.01.00.04.ecschema.xml -dSCHEMA_PATTERN=CoreCustomAttributes.*ecschema.xml"/>
     <Part Name="BisCustomAttributes" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/BisCustomAttributes.01.00.00.ecschema.xml -dSCHEMA_PATTERN=BisCustomAttributes.*ecschema.xml"/>
     <Part Name="SchemaLocalizationCustomAttributes" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/SchemaLocalizationCustomAttributes.01.00.00.ecschema.xml -dSCHEMA_PATTERN=SchemaLocalizationCustomAttributes.*ecschema.xml"/>
-	  <Part Name="Units" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/Units.01.00.08.ecschema.xml -dSCHEMA_PATTERN=Units.*ecschema.xml"/>
+    <Part Name="Units" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/Units.01.00.09.ecschema.xml -dSCHEMA_PATTERN=Units.*ecschema.xml"/>
     <Part Name="Formats" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/Formats.01.00.00.ecschema.xml -dSCHEMA_PATTERN=Formats.*ecschema.xml"/>
     
     <Part Name="StandardSchemas">
