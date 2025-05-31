@@ -859,5 +859,39 @@ DbResult PragmaDbList::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaV
 	return BE_SQLITE_READONLY;
 }
 
+
+//=======================================================================================
+// PragmaCheckECSqlWriteValues
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PragmaCheckECSqlWriteValues::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options)   {
+	auto result = std::make_unique<StaticPragmaResult>(ecdb);
+	result->AppendProperty("validate_ecsql_writes", PRIMITIVETYPE_Boolean);
+	result->FreezeSchemaChanges();
+	auto row = result->AppendRow();
+	row.appendValue() = ecdb.GetImpl().GetECSqlConfig().IsWriteValueValidationEnabled();
+	rowSet = std::move(result);
+	return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PragmaCheckECSqlWriteValues::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val, PragmaManager::OptionsMap const& options) {
+	if (val.IsBool())
+		ecdb.GetImpl().GetECSqlConfig().SetWriteValueValidation(val.GetBool());
+
+	auto result = std::make_unique<StaticPragmaResult>(ecdb);
+	result->AppendProperty("validate_ecsql_writes", PRIMITIVETYPE_Boolean);
+	result->FreezeSchemaChanges();
+	auto row = result->AppendRow();
+	row.appendValue() = ecdb.GetImpl().GetECSqlConfig().IsWriteValueValidationEnabled();
+	rowSet = std::move(result);
+	return BE_SQLITE_OK;
+}
+
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
