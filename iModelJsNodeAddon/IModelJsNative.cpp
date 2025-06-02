@@ -3806,16 +3806,16 @@ public:
                 {
                 auto relClass = m_ecdb->Schemas().GetClass(relClassId);
                 if (!relClass)
-                    THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not correspond to any EC class.", relClassName.c_str()).c_str());
+                    THROW_JS_IMODEL_NATIVE_EXCEPTION(Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not correspond to any EC class.", relClassName.c_str()).c_str());
         
                 if (!relClass->IsRelationshipClass())
-                    THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not correspond to a valid ECRelationship class.", relClassName.c_str()).c_str());
+                    THROW_JS_IMODEL_NATIVE_EXCEPTION(Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not correspond to a valid ECRelationship class.", relClassName.c_str()).c_str());
                 }
             }
 
         ECSqlStatus stat = m_binder->BindNavigation(navId, relClassId);
         if (validateRelECClassId && stat == ECSqlStatus::InvalidECSql)
-            THROW_JS_EXCEPTION(Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not match the relationship class in the navigation property.", relClassName.c_str()).c_str());
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not match the relationship class in the navigation property.", relClassName.c_str()).c_str());
 
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
