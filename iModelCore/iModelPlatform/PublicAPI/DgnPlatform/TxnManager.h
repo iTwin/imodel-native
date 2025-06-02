@@ -64,6 +64,8 @@ enum class TxnType : int32_t {
 //=======================================================================================
 struct TxnMonitor {
     virtual ~TxnMonitor() { }
+    virtual void _OnPullMergeEnd(TxnManager&) {}
+    virtual void _OnPullMergeBegin(TxnManager&) {}
     virtual void _OnCommit(TxnManager&) {}
     virtual void _OnCommitted(TxnManager&) {}
     virtual void _OnAppliedChanges(TxnManager&) {}
