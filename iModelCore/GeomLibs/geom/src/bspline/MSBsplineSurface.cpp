@@ -1059,7 +1059,6 @@ bvector<bvector<DRange2d>> *knotRanges
     bvector<DPoint3d> cps;
     bvector<double> cws;
     DPoint3d point;
-    memset (&patch, 0, sizeof (patch));
 
     while (jPatch<num)
         {

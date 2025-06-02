@@ -209,7 +209,7 @@ uint32_t ClassMapColumnFactory::MaxColumnsRequiredToPersistProperty(ECN::ECPrope
         {
         if (primitive->GetType() == PrimitiveType::PRIMITIVETYPE_Point3d)
             return 3;
-        
+
         if (primitive->GetType() == PrimitiveType::PRIMITIVETYPE_Point2d)
             return 2;
 
@@ -414,6 +414,21 @@ DbColumn* ClassMapColumnFactory::AllocateSharedColumn(SchemaImportContext& ctx, 
     auto* column = ReuseOrCreateSharedColumn(ctx);
     return RegisterColumnMap(accessString, column);
     }
+    
+//------------------------------------------------------------------------------------------
+//@bsimethod
+//-----------------------------------------------------------------------------------------
+void ClassMapColumnFactory::EnsurePropertyGoesToOverflow(Utf8StringCR propertyName, SchemaImportContext& ctx) const
+    {
+    BeAssert(!propertyName.empty());
+    ECN::ECPropertyCP property = m_classMap.GetClass().GetPropertyP(propertyName);
+    if (property == nullptr)
+        {
+        BeAssert(false && "Property must exist in associated class map");
+        return;
+        }
+    m_putCurrentPropertyToOverflow = true;
+    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod
@@ -499,7 +514,7 @@ void ClassMapColumnFactory::EvaluateIfPropertyGoesToOverflow(uint32_t columnsReq
         if(requiredRemainingColumns <= 0)
             return;
         }
-    
+
     m_putCurrentPropertyToOverflow = true; // TODO: this flag is mutable and the current method is marked as const. Use return value instead?
     }
 
@@ -590,7 +605,7 @@ DbTable* ClassMapColumnFactory::GetOrCreateOverflowTable(SchemaImportContext& ct
         if (overflowTableNode->GetTable().GetType() == DbTable::Type::Overflow)
             m_overflowTable = &overflowTableNode->GetTableR();
         }
-    
+
     if (m_overflowTable == nullptr)
         {
         BeAssert(false && "Cannot create overflow table");
@@ -660,7 +675,7 @@ bool ClassMapColumnFactory::IsColumnUsedByAnyDerivedClass(DbColumn const& column
     // this ensures there is no other class down the hierarchy that occupies a column.
     if (!column.HasId()) // Not-yet-persisted columns cannot be used by subclasses
         return false;
-    
+
     ECClassCR ecClass = m_classMap.GetClass();
     if (!ecClass.HasId())
         { // Not-yet-persisted class
@@ -672,13 +687,13 @@ bool ClassMapColumnFactory::IsColumnUsedByAnyDerivedClass(DbColumn const& column
     BeInt64Id columnId = column.GetId();
     BeInt64Id classId = ecClass.GetId();
     ECDbCR ecdb = ctx.GetECDb();
-    
+
     CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(
         "SELECT EXISTS (SELECT 1 FROM main.ec_PropertyMap pm "
         "JOIN main.ec_cache_ClassHierarchy ch ON ch.ClassId = pm.ClassId "
         "WHERE pm.ColumnId = ? AND ch.BaseClassId = ? limit 1)");
     BeAssert(stmt.IsValid());
-    
+
     stmt->BindId(1, columnId);
     stmt->BindId(2, classId);
 

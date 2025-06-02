@@ -18,7 +18,7 @@ namespace dgn_ElementHandler {struct GeometryPart;};
 //! @see DgnGeometryParts
 //! @ingroup GROUP_Geometry
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnGeometryPart : DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE DgnGeometryPart : DefinitionElement, GeometryPartSource
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GeometryPart, DefinitionElement);
     friend struct dgn_ElementHandler::GeometryPart;
@@ -46,12 +46,14 @@ private:
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
 protected:
-    //! Only GeometryBuilder should have write access to the GeometryStream...
-    GeometryStreamR GetGeometryStreamR() {return m_geometry;}
-    void SetBoundingBox(ElementAlignedBox3dCR box) {m_bbox = box;}
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geometry.GetAllocSize();}
     DgnGeometryPartCP _ToGeometryPart() const override final {return this;}
 
+    ElementAlignedBox3dCR _GetPlacement() const override final { return m_bbox; }
+    void _SetPlacement(ElementAlignedBox3dCR bbox) override final { m_bbox = bbox; }
+    GeometryStreamCR _GetGeometryStream() const override final { return m_geometry; }
+    GeometryStreamR _GetGeometryStreamR() override final { return m_geometry;}
+    DgnDbR _GetSourceDgnDb() const override final { return GetDgnDb(); }
 public:
     BE_PROP_NAME(BBoxLow)
     BE_PROP_NAME(BBoxHigh)
@@ -75,12 +77,6 @@ public:
     //! Get the persistent Id of this DgnGeometryPart.
     //! @note Id will be invalid if not yet persisted.
     DgnGeometryPartId GetId() const {return DgnGeometryPartId(GetElementId().GetValue());}
-
-    //! Get the geometry for this part (part local coordinates)
-    GeometryStreamCR GetGeometryStream() const {return m_geometry;}
-
-    //! Get the bounding box for this part (part local coordinates)
-    ElementAlignedBox3dCR GetBoundingBox() const {return m_bbox;}
 
     //! Looks up a DgnGeometryPartId by its code.
     DGNPLATFORM_EXPORT static DgnGeometryPartId QueryGeometryPartId(DgnDbR db, DgnCodeCR code);
