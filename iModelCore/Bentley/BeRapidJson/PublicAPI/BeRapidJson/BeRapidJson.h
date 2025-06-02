@@ -8,6 +8,7 @@
 #include <Bentley/WString.h>
 
 PUSH_REVIEWED_STATIC_ANALYSIS_WARNING(6313) // Incorrect operator:  zero-valued flag cannot be tested with bitwise-and.  Use an equality test to check for zero-valued flags.
+#define RAPIDJSON_WRITE_DEFAULT_FLAGS 6 // kWriteNanAndInfFlag | kWriteNanAndInfNullFlag to allow writing Infinity, -Infinity and NaN as "null".
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
