@@ -502,6 +502,17 @@ struct PropertyArrayIndex
 };
 
 //=======================================================================================
+//! Common options given to Insert/Update/Delete methods of DgnElement.
+// @bsiclass
+//=======================================================================================
+struct CRUDOptions {
+    bool IsIndirectChange = false;
+
+    CRUDOptions() = default;
+    explicit CRUDOptions(bool isIndirectChange) : IsIndirectChange(isIndirectChange) {}
+};
+
+//=======================================================================================
 //! Helps with access to an individual element property
 // @bsiclass
 //=======================================================================================
@@ -1313,7 +1324,7 @@ protected:
     //! Override this method if your element needs to do additional Inserts into the database (for example,
     //! insert a relationship between the element and something else).
     //! @note If you override this method, you @em must call T_Super::_InsertInDb() first.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb();
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb(std::optional<CRUDOptions> options = std::nullopt);
 
     //! Called after a DgnElement was successfully inserted into the database.
     //! @note If you override this method, you @em must call T_Super::_OnInserted.
@@ -1336,7 +1347,7 @@ protected:
     //! override this method if your element needs to do additional work when updating the element, such as updating
     //! a relationship.
     //! @note If you override this method, you @em must call T_Super::_UpdateInDb, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb();
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb(std::optional<CRUDOptions> options = std::nullopt);
 
     //! Called on the replacement element, after a DgnElement was successfully updated, but before the data is
     //! copied into the original element and before its parent is notified.
@@ -1352,7 +1363,7 @@ protected:
 
     //! Called to delete a DgnElement from the DgnDb. Override to do any additional processing on delete.
     //! @note If you override this method, you @em must call T_Super::_DeleteInDb, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _DeleteInDb() const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _DeleteInDb(std::optional<CRUDOptions> options = std::nullopt) const;
 
     //! Called after a DgnElement was successfully deleted. Note that the element will not be marked as persistent when this is called.
     //! @note If you override this method, you @em must call T_Super::_OnDeleted.
@@ -1676,21 +1687,23 @@ public:
 
     //! Update the persistent state of a DgnElement in the DgnDb from this modified copy of it.
     //! This is merely a shortcut for el.GetDgnDb().Elements().Update(el);
+    //! @param[in] options Additional 
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnDbStatus Update();
-    DGNPLATFORM_EXPORT DgnElementCPtr UpdateAndGet(DgnDbStatus* stat=nullptr);
+    DGNPLATFORM_EXPORT DgnDbStatus Update(std::optional<CRUDOptions> options = std::nullopt);
+    DGNPLATFORM_EXPORT DgnElementCPtr UpdateAndGet(DgnDbStatus* stat=nullptr, std::optional<CRUDOptions> options = std::nullopt);
 
     //! Insert this DgnElement into the DgnDb.
     //! This is merely a shortcut for el.GetDgnDb().Elements().Insert(el, stat);
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnElementCPtr Insert(DgnDbStatus* stat=nullptr);
+    DGNPLATFORM_EXPORT DgnElementCPtr Insert(DgnDbStatus* stat=nullptr, std::optional<CRUDOptions> options = std::nullopt);
 
-    template<class T> RefCountedCPtr<T> InsertT(DgnDbStatus* stat=nullptr) {return dynamic_cast<T const*>(Insert(stat).get());}
+    //TODO: Seems unused?!
+    //template<class T> RefCountedCPtr<T> InsertT(DgnDbStatus* stat=nullptr, std::optional<CRUDOptions> options = std::nullopt) {return dynamic_cast<T const*>(Insert(stat, options).get());}
 
     //! Delete this DgnElement from the DgnDb,
     //! This is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnDbStatus Delete() const;
+    DGNPLATFORM_EXPORT DgnDbStatus Delete(std::optional<CRUDOptions> options = std::nullopt) const;
 
     //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
@@ -2249,8 +2262,8 @@ protected:
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb(std::optional<CRUDOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb(std::optional<CRUDOptions> options = std::nullopt) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
@@ -3887,13 +3900,13 @@ private:
     void AddToPool(DgnElementCR) const;
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, Utf8CP jsonProps, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
-    DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
-    DgnDbStatus PerformDelete(DgnElementCR);
+    DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&, std::optional<CRUDOptions> options = std::nullopt);
+    DgnDbStatus PerformDelete(DgnElementCR, std::optional<CRUDOptions> options = std::nullopt);
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
-    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat);
-    DGNPLATFORM_EXPORT DgnDbStatus UpdateElement(DgnElementR element);
+    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat, std::optional<CRUDOptions> options = std::nullopt);
+    DGNPLATFORM_EXPORT DgnDbStatus UpdateElement(DgnElementR element, std::optional<CRUDOptions> options = std::nullopt);
 
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
@@ -4008,31 +4021,36 @@ public:
     //! Insert a copy of the supplied DgnElement into this DgnDb.
     //! @param[in] element The DgnElement to insert.
     //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the insert was successful, error status otherwise.
+    //! @param[in] options Additional options for the insert operation, such as whether this is an indirect change.
     //! @return RefCountedCPtr to the newly persisted /b copy of /c element. Will be invalid if the insert failed.
     //! @note The element's code must be unique among all elements within the DgnDb, or this method will fail with DgnDbStatus::DuplicateCode.
     //! @note This function can only be safely invoked from the client thread.
-    template<class T> RefCountedCPtr<T> Insert(T& element, DgnDbStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
+    template<class T> RefCountedCPtr<T> Insert(T& element, DgnDbStatus* stat=nullptr, std::optional<CRUDOptions> options = std::nullopt) {return (T const*) InsertElement(element, stat, options).get();}
 
-    DgnDbStatus Update(DgnElementR modifiedElement) {return UpdateElement(modifiedElement);}
-    template<class T> RefCountedCPtr<T> UpdateAndGet(T& modifiedElement, DgnDbStatus* stat=nullptr) {
+    DgnDbStatus Update(DgnElementR modifiedElement, std::optional<CRUDOptions> options = std::nullopt) {return UpdateElement(modifiedElement, options);}
+
+    template<class T> RefCountedCPtr<T> UpdateAndGet(T& modifiedElement, DgnDbStatus* stat=nullptr, std::optional<CRUDOptions> options = std::nullopt) {
         DgnDbStatus temp;
         if (nullptr == stat)
             stat = &temp;
-        *stat = UpdateElement(modifiedElement);
+        *stat = UpdateElement(modifiedElement, options);
         return (DgnDbStatus::Success != *stat) ? nullptr : Get<T>(modifiedElement.GetElementId());
     }
 
 
     //! Delete a DgnElement from this DgnDb.
     //! @param[in] element The element to delete.
+    //! @param[in] options Additional options for the delete operation, such as whether this is an indirect change.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
+    DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element, std::optional<CRUDOptions> options = std::nullopt);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
+    //! @param[in] id The DgnElementId of the element to delete.
+    //! @param[in] options Additional options for the delete operation, such as whether this is an indirect change.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This method is merely a shortcut to #GetElement and then #Delete
-    DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::NotFound;}
+    DgnDbStatus Delete(DgnElementId id, std::optional<CRUDOptions> options = std::nullopt) {auto el=GetElement(id); return el.IsValid() ? Delete(*el, options) : DgnDbStatus::NotFound;}
 
     //! Set the maximum number of elements to be held by the "Most Recentley Used" element cache for this DgnDb.
     //! @param newMax The maximum number of elements to be held in the element MRU cache. After this many elements are in memory,

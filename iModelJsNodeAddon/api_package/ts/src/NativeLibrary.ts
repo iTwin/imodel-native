@@ -609,7 +609,7 @@ export declare namespace IModelJsNative {
     public createClassViewsInDb(): BentleyStatus;
     public createIModel(fileName: string, props: CreateEmptyStandaloneIModelProps): void;
     public deleteAllTxns(): void;
-    public deleteElement(elemIdJson: string): void;
+    public deleteElement(elemIdJson: string, options?: { indirect?: boolean }): void;
     public deleteElementAspect(aspectIdJson: string): void;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
     public deleteLocalValue(name: string): void;
@@ -689,7 +689,7 @@ export declare namespace IModelJsNative {
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
-    public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean }): Id64String;
+    public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean, indirect?: boolean }): Id64String;
     public insertElementAspect(aspectProps: ElementAspectProps): Id64String;
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
     public insertModel(modelProps: ModelProps): Id64String;
@@ -752,7 +752,7 @@ export declare namespace IModelJsNative {
     public disableChangesetStatsTracking(): void;
     public getChangesetHealthData(changesetId: string): ChangesetHealthStats;
     public getAllChangesetHealthData(): ChangesetHealthStats[];
-    public updateElement(elemProps: Partial<ElementProps>): void;
+    public updateElement(elemProps: Partial<ElementProps>, options?: { indirect?: boolean }): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;
     public updateIModelProps(props: IModelProps): void;

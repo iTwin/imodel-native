@@ -114,9 +114,9 @@ protected:
     double      m_doubleProps[4];
     DPoint3d    m_pointProps[4];
 
-    Dgn::DgnDbStatus _InsertInDb() override;
-    Dgn::DgnDbStatus _UpdateInDb() override;
-    Dgn::DgnDbStatus _DeleteInDb() const override;
+    Dgn::DgnDbStatus _InsertInDb(std::optional<CRUDOptions> options = std::nullopt) override;
+    Dgn::DgnDbStatus _UpdateInDb(std::optional<CRUDOptions> options = std::nullopt) override;
+    Dgn::DgnDbStatus _DeleteInDb(std::optional<CRUDOptions> options = std::nullopt) const override;
     Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     void _CopyFrom(Dgn::DgnElementCR el, CopyFromOptions const& opts) override;

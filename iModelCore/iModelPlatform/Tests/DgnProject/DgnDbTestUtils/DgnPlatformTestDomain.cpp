@@ -129,9 +129,9 @@ TestElementPtr TestElement::CreateWithoutGeometry(DgnDbR db, DgnModelId mid, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_InsertInDb()
+DgnDbStatus TestElement::_InsertInDb(std::optional<CRUDOptions> options)
 {
-    DgnDbStatus stat = T_Super::_InsertInDb();
+    DgnDbStatus stat = T_Super::_InsertInDb(options);
     if (DgnDbStatus::Success != stat)
         return stat;
     return DgnDbStatus::Success;
@@ -220,9 +220,9 @@ void TestElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_UpdateInDb()
+DgnDbStatus TestElement::_UpdateInDb(std::optional<CRUDOptions> options)
 {
-    DgnDbStatus status = T_Super::_UpdateInDb();
+    DgnDbStatus status = T_Super::_UpdateInDb(options);
     if (DgnDbStatus::Success != status)
         return status;
     return DgnDbStatus::Success;
@@ -231,9 +231,9 @@ DgnDbStatus TestElement::_UpdateInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_DeleteInDb() const
+DgnDbStatus TestElement::_DeleteInDb(std::optional<CRUDOptions> options) const
 {
-    DgnDbStatus status = T_Super::_DeleteInDb();
+    DgnDbStatus status = T_Super::_DeleteInDb(options);
     if (DgnDbStatus::Success != status)
         return status;
     return DgnDbStatus::Success;
