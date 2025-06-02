@@ -116,9 +116,9 @@ DgnDbStatus DgnGeometryPart::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnGeometryPart::_InsertInDb()
+DgnDbStatus DgnGeometryPart::_InsertInDb(std::optional<CRUDOptions> options)
     {
-    DgnDbStatus status = T_Super::_InsertInDb();
+    DgnDbStatus status = T_Super::_InsertInDb(options);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -128,9 +128,9 @@ DgnDbStatus DgnGeometryPart::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnGeometryPart::_UpdateInDb()
+DgnDbStatus DgnGeometryPart::_UpdateInDb(std::optional<CRUDOptions> options)
     {
-    DgnDbStatus status = T_Super::_UpdateInDb();
+    DgnDbStatus status = T_Super::_UpdateInDb(options);
     if (DgnDbStatus::Success != status)
         return status;
 

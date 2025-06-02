@@ -157,10 +157,13 @@ void DgnElement::ReplaceAppData(AppData::Key const& key, AppData* data) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_DeleteInDb() const
+DgnDbStatus DgnElement::_DeleteInDb(std::optional<CRUDOptions> options) const
     {
     CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("DELETE FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     stmt->BindId(1, m_elementId);
+
+    TxnManagerR txn = GetDgnDb().Txns();
+    TxnModeGuard guard(txn, options);
 
     switch (stmt->Step())
         {
@@ -1107,8 +1110,10 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnElement::_InsertInDb()
+DgnDbStatus DgnElement::_InsertInDb(std::optional<CRUDOptions> options)
     {
+    TxnManagerR txn = GetDgnDb().Txns();
+    TxnModeGuard guard(txn, options);
     CachedECSqlStatementPtr statement = GetDgnDb().Elements().GetPreparedInsertStatement(*this);
     if (statement.IsNull())
         return DgnDbStatus::WriteError;
@@ -1156,13 +1161,16 @@ DgnDbStatus DgnElement::_InsertInDb()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnElement::_UpdateInDb()
+DgnDbStatus DgnElement::_UpdateInDb(std::optional<CRUDOptions> options)
     {
     CachedECSqlStatementPtr stmt = GetDgnDb().Elements().GetPreparedUpdateStatement(*this);
     if (stmt.IsNull())
         return DgnDbStatus::WriteError;
 
     _BindWriteParams(*stmt, ForInsert::No);
+
+    TxnManagerR txn = GetDgnDb().Txns();
+    TxnModeGuard guard(txn, options);
 
     auto stmtResult = stmt->Step();
     if (BE_SQLITE_DONE != stmtResult)
@@ -1965,17 +1973,17 @@ DgnElementPtr DgnElement::CopyForEdit() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::Update() {return GetDgnDb().Elements().Update(*this);}
-DgnElementCPtr DgnElement::UpdateAndGet(DgnDbStatus* stat) {
+DgnDbStatus DgnElement::Update(std::optional<CRUDOptions> options) {return GetDgnDb().Elements().Update(*this, options);}
+DgnElementCPtr DgnElement::UpdateAndGet(DgnDbStatus* stat, std::optional<CRUDOptions> options) {
     DgnDbStatus temp;
     if (nullptr == stat)
         stat = &temp;
-    *stat = Update();
+    *stat = Update(options);
     return (*stat != DgnDbStatus::Success) ?  nullptr :  GetDgnDb().Elements().Get<DgnElement>(GetElementId());
 }
 
-DgnElementCPtr DgnElement::Insert(DgnDbStatus* stat) {return GetDgnDb().Elements().Insert(*this, stat);}
-DgnDbStatus DgnElement::Delete() const {return GetDgnDb().Elements().Delete(*this);}
+DgnElementCPtr DgnElement::Insert(DgnDbStatus* stat, std::optional<CRUDOptions> options) {return GetDgnDb().Elements().Insert(*this, stat, options);}
+DgnDbStatus DgnElement::Delete(std::optional<CRUDOptions> options) const {return GetDgnDb().Elements().Delete(*this, options);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -3781,18 +3789,18 @@ bool GeometricElement::_EqualProperty(ECN::ECPropertyValueCR expected, DgnElemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::_InsertInDb()
+DgnDbStatus GeometricElement::_InsertInDb(std::optional<CRUDOptions> options)
     {
-    auto stat = T_Super::_InsertInDb();
+    auto stat = T_Super::_InsertInDb(options);
     return DgnDbStatus::Success == stat ? InsertGeomStream() : stat;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::_UpdateInDb()
+DgnDbStatus GeometricElement::_UpdateInDb(std::optional<CRUDOptions> options)
     {
-    auto stat = T_Super::_UpdateInDb();
+    auto stat = T_Super::_UpdateInDb(options);
     return DgnDbStatus::Success == stat ? UpdateGeomStream() : stat;
     }
 

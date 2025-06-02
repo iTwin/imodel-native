@@ -460,7 +460,7 @@ DgnElementId ElementAspectIteratorEntry::GetElementId() const {return m_statemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat)
+DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat, std::optional<CRUDOptions> options)
     {
     if (element.m_flags.m_preassignedId)  {
         // the Id was supplied by the caller. Make sure we increase max value if the value we're inserting is higher than current.
@@ -486,7 +486,7 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
         return nullptr;
         }
 
-    if (DgnDbStatus::Success != (stat = element._InsertInDb()))
+    if (DgnDbStatus::Success != (stat = element._InsertInDb(options)))
         return nullptr;
 
     DgnElement::CopyFromOptions opts;
@@ -505,7 +505,7 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outStat)
+DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outStat, std::optional<CRUDOptions> options)
     {
     DgnDb::VerifyClientThread();
 
@@ -530,7 +530,7 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
         return nullptr;
         }
 
-    DgnElementCPtr newEl = PerformInsert(element, stat);
+    DgnElementCPtr newEl = PerformInsert(element, stat, options);
     if (!newEl.IsValid())
         element.m_elementId = DgnElementId(); // Insert failed, make sure to invalidate the DgnElementId so they don't accidentally use it
 
@@ -551,7 +551,7 @@ void DgnElement::CopyIdentityFrom(DgnElementId elementId, BeGuidCR federationGui
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement)
+DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement, std::optional<CRUDOptions> options)
     {
     DgnDb::VerifyClientThread();
 
@@ -592,7 +592,7 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement)
             return stat;
         }
 
-    stat = replacement._UpdateInDb();   // perform the actual update in the database
+    stat = replacement._UpdateInDb(options);   // perform the actual update in the database
     if (DgnDbStatus::Success != stat)
         return stat;
 
@@ -627,7 +627,7 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElements::PerformDelete(DgnElementCR element)
+DgnDbStatus DgnElements::PerformDelete(DgnElementCR element, std::optional<CRUDOptions> options)
     {
     // delete children, if any.
     DgnElementIdSet children = element.QueryChildren();
@@ -642,7 +642,7 @@ DgnDbStatus DgnElements::PerformDelete(DgnElementCR element)
             return stat;
         }
 
-    auto stat = element._DeleteInDb();
+    auto stat = element._DeleteInDb(options);
     if (DgnDbStatus::Success != stat)
         return stat;
 
@@ -653,7 +653,7 @@ DgnDbStatus DgnElements::PerformDelete(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
+DgnDbStatus DgnElements::Delete(DgnElementCR elementIn, std::optional<CRUDOptions> options)
     {
     DgnDb::VerifyClientThread();
 
@@ -675,7 +675,7 @@ DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
     if (parent.IsValid() && DgnDbStatus::Success != (stat=parent->_OnChildDelete(element)))
         return stat;
 
-    stat = PerformDelete(element);
+    stat = PerformDelete(element, options);
     if (DgnDbStatus::Success != stat)
         return stat;
 

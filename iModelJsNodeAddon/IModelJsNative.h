@@ -483,6 +483,7 @@ struct JsInterop {
     BE_JSON_NAME(value)
     BE_JSON_NAME(writeable)
     BE_JSON_NAME(yesNo)
+    BE_JSON_NAME(indirect)
 
 #define JSON_NAME(__val__) JsInterop::json_##__val__()
 
@@ -504,8 +505,8 @@ public:
     static DgnDbStatus GetSchemaItem(BeJsValue results, DgnDbR db, Utf8CP schemaName, Utf8CP itemName);
     static DgnDbStatus GetElement(BeJsValue results, DgnDbR db, Napi::Object);
     static Napi::String InsertElement(DgnDbR db, Napi::Object props, Napi::Value options);
-    static void UpdateElement(DgnDbR db, Napi::Object);
-    static void DeleteElement(DgnDbR db, Utf8StringCR eidStr);
+    static void UpdateElement(DgnDbR db, Napi::Object, Napi::Value options);
+    static void DeleteElement(DgnDbR db, Utf8StringCR eidStr, Napi::Value options);
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);
     static InlineGeometryPartsResult InlineGeometryParts(DgnDbR db);
     static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);
