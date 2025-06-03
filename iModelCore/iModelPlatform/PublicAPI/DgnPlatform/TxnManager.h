@@ -74,37 +74,6 @@ struct TxnMonitor {
     virtual void _OnGeometryGuidChanges(TxnManager&, bset<DgnModelId> const& modelIds) {}
 };
 
-//=======================================================================================
-//! Can be used to temporarily change the TxnManager mode (Direct or Indirect) for the duration of a scope.
-//! Automatically restores the previous mode when the guard is destroyed (unless the provided options are unset).
-// @bsiclass
-//=======================================================================================
-struct TxnModeGuard {
-    TxnManagerR m_txnMgr;
-    TxnManager::Mode m_prevMode;
-    bool m_restoreOnDestructor = false;
-
-    TxnModeGuard(TxnManagerR txnMgr, std::optional<CRUDOptions> const& options)
-        : m_txnMgr(txnMgr), m_prevMode(txnMgr.GetMode())
-    {
-        if (options.has_value()) {
-            bool isIndirect = options->IsIndirectChange;
-            if (m_prevMode != TxnManager::Mode::Indirect && isIndirect) {
-                m_txnMgr.SetMode(TxnManager::Mode::Indirect);
-            } else if (m_prevMode != TxnManager::Mode::Direct && !isIndirect) {
-                m_txnMgr.SetMode(TxnManager::Mode::Direct);
-            }
-
-            m_restoreOnDestructor = true;
-        }
-    }
-
-    ~TxnModeGuard() {
-        if (m_restoreOnDestructor)
-            m_txnMgr.SetMode(m_prevMode);
-    }
-};
-
 struct ChangesetFileReader;
 namespace dgn_TxnTable {
     struct Element;
@@ -743,6 +712,37 @@ public:
     DGNPLATFORM_EXPORT static uint64_t GetMaxReasonableTxnSize();
 
     void OnGeometryGuidChanges(bset<DgnModelId> const&);
+};
+
+//=======================================================================================
+//! Can be used to temporarily change the TxnManager mode (Direct or Indirect) for the duration of a scope.
+//! Automatically restores the previous mode when the guard is destroyed (unless the provided options are unset).
+// @bsiclass
+//=======================================================================================
+struct TxnModeGuard {
+    TxnManagerR m_txnMgr;
+    TxnManager::Mode m_prevMode;
+    bool m_restoreOnDestructor = false;
+
+    TxnModeGuard(TxnManagerR txnMgr, std::optional<CRUDOptions> const& options)
+        : m_txnMgr(txnMgr), m_prevMode(txnMgr.GetMode())
+    {
+        if (options.has_value()) {
+            bool isIndirect = options->IsIndirectChange;
+            if (m_prevMode != TxnManager::Mode::Indirect && isIndirect) {
+                m_txnMgr.SetMode(TxnManager::Mode::Indirect);
+            } else if (m_prevMode != TxnManager::Mode::Direct && !isIndirect) {
+                m_txnMgr.SetMode(TxnManager::Mode::Direct);
+            }
+
+            m_restoreOnDestructor = true;
+        }
+    }
+
+    ~TxnModeGuard() {
+        if (m_restoreOnDestructor)
+            m_txnMgr.SetMode(m_prevMode);
+    }
 };
 
 //=======================================================================================
