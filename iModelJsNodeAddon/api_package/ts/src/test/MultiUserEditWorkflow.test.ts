@@ -3,12 +3,14 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
+
 import { assert } from "chai";
-import { GuidString, Id64Array, Id64String, Logger, LogLevel } from "@itwin/core-bentley";
+import { DbChangeStage, DbOpcode, DbResult, GuidString, Id64Array, Id64String, Logger, LogLevel } from "@itwin/core-bentley";
 import { type ModelGeometryChangesProps, ProfileOptions, type RelatedElementProps, type RelationshipProps, type SubjectProps } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
-import { copyFile, dbFileName } from "./utils";
+import { copyFile, dbFileName, iModelJsNative } from "./utils";
 import { openDgnDb } from "./index";
+import { existsSync } from "node:fs";
 
 /* eslint-disable @typescript-eslint/explicit-member-accessibility */
 /* eslint-disable @typescript-eslint/naming-convention */
@@ -120,27 +122,28 @@ export interface ElementDrivesElementProps extends RelationshipProps {
   priority: number;
 }
 
-function _makeEDE(sourceId: Id64String, targetId: Id64String): ElementDrivesElementProps {
-  return {
-    classFullName: "BisCore:ElementDrivesElement",
-    priority: 0,
-    status: 0,
-    sourceId,
-    targetId,
-  };
-}
-
 function _updateElement(db1: IModelJsNative.DgnDb, elid: Id64String, newLabel: string) {
   const ed2 = db1.getElement({ id: elid });
   ed2.userLabel = newLabel;
   db1.updateElement(ed2);
 }
 
-describe.only("multi user edit workflow", () => {
+type ChangeValueType = Uint8Array | number | string | null | undefined;
 
+interface IChange {
+  tableName: string;
+  op: "updated" | "inserted" | "deleted";
+  after: ChangeValueType[] ;
+  isIndirect: boolean;
+}
+
+describe.only("multi user edit workflow", () => {
   const seedFileName = "multiUserEditSeed.bim";
   const user1FileName = "multiUserEdit1.bim";
+  const user2FileName = "multiUserEdit2.bim";
+  const changesetFileName = "multiUserEdit.changeset";
   let db: IModelJsNative.DgnDb;
+  let db2: IModelJsNative.DgnDb;
   before(async() => {
     // create a seed file
     const seedFilePath = copyFile(seedFileName, dbFileName);
@@ -152,11 +155,17 @@ describe.only("multi user edit workflow", () => {
     const user1FilePath = copyFile(user1FileName, seedFilePath);
     db = openDgnDb(user1FilePath);
     assert.isTrue(db !== undefined, "Failed to open iModel");
+
+    const user2FilePath = copyFile(user2FileName, seedFilePath);
+    db2 = openDgnDb(user2FilePath);
+    assert.isTrue(db2 !== undefined, "Failed to open iModel");
   });
 
   after(() => {
     db.closeFile();
     db = undefined!;
+    db2.closeFile();
+    db2 = undefined!;
   });
 
   it("create direct and indirect elements", () => {
@@ -171,53 +180,63 @@ describe.only("multi user edit workflow", () => {
     db.setIModelDb(mockJsDb);
     db.enableTxnTesting();
 
-    mockTxn.fmtElem = (_cn: string, id: Id64String) => {
-      return db.getElement({ id }).code.value!;
-    };
+    db.deleteAllTxns();
+
+    const beginResult = db.beginMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, beginResult, "Failed to begin multi user edit operation");
+    const txnId = db.getCurrentTxnId();
+    assert.isTrue(txnId !== undefined, "Failed to get current transaction id");
 
     const subject1Id = db.insertElement(makeSubject("subject1"), { indirect: false});
     assert.isDefined(subject1Id, "Failed to insert element subject1");
-    const subjectWithRel1Id = db.insertElement(makeSubject("subjectWithRel1", { id: subject1Id, relClassName: "BisCore.ElementOwnsChildElements" }));
-    assert.isDefined(subjectWithRel1Id, "Failed to insert element subjectWithRel1");
+    const subject2Id = db.insertElement(makeSubject("subjectWithRel1", { id: subject1Id, relClassName: "BisCore.ElementOwnsChildElements" }));
+    assert.isDefined(subject2Id, "Failed to insert element subjectWithRel1");
 
     const subject3Id = db.insertElement(makeSubject("subject3"), { indirect: true});
     assert.isDefined(subject3Id, "Failed to insert element subject3");
-    db.saveChanges(); // get the elements into the iModel
 
-    /*const ede_1_2 = makeEDE(rel1Id, rel2Id);
-    const ede_2_3 = makeEDE(rel2Id, e3id);
-    const ede_p2_p3 = makeEDE(subject1Id, subject2Id);
-    for (const rel of [ede_1_2, ede_2_3, ede_p2_p3])
-      rel.id = db.insertLinkTableRelationship(rel);
+    const endResult = db.endMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, endResult, "Failed to end multi user edit operation");
 
-    assert.equal(db.addChildPropagatesChangesToParentRelationship("BisCore", "ElementOwnsChildElements"), 0);
+    const saveResult = db.saveChanges();
+    assert.equal(DbResult.BE_SQLITE_OK, saveResult, "Failed to save changes");
+    const changesetProps = db.startCreateChangeset();
+    changesetProps.description = "create initial subjects";
+    const index = changesetProps.index;
+    const changesetFilePath = copyFile(changesetFileName, changesetProps.pathname);
+    db.completeCreateChangeset({index});
+    assert.isTrue(existsSync(changesetFilePath));
+    
+    assert.isTrue(db !== undefined);
+    const mockTxn2 = new MockTxn(db2);
+    const mockJsDb2 = { txns: mockTxn2};
+    db2.setIModelDb(mockJsDb2);
+    db2.enableTxnTesting();
+    db2.deleteAllTxns();
+    const changesetPropsCopy = JSON.parse(JSON.stringify(changesetProps));
+    changesetPropsCopy.pathname = changesetFilePath;
+    db2.applyChangeset(changesetPropsCopy, true);
+    const appliedElement = db2.getElement({ id: subject1Id });
+    assert.isDefined(appliedElement, "Failed to apply changeset to user2 iModel");
+    assert.equal(appliedElement.code.value, "subject1", "Applied element code value does not match expected value");
+    const appliedElement2 = db2.getElement({ id: subject2Id });
+    assert.isDefined(appliedElement2, "Failed to apply changeset to user2 iModel");
+    assert.equal(appliedElement2.code.value, "subjectWithRel1", "Applied element code value does not match expected value");
+    const appliedElement3 = db2.getElement({ id: subject3Id });
+    assert.isDefined(appliedElement3, "Failed to apply changeset to user2 iModel");
+    assert.equal(appliedElement3.code.value, "subject3", "Applied element code value does not match expected value");
 
-    // db.writeFullElementDependencyGraphToFile(writeDbFileName + ".dot");
-
-    // The full graph:
-    //     .-parent-> p2 -EDE-> p3
-    /     /;
-    //  e1 -EDE-> e2 -EDE-> e3
-    //
-    mockTxn.resetDependencyResults();
-    db.saveChanges(); // this will react to EDE inserts only.
-    // assert.deepEqual(mockTxn.dres.directChange, []);
-    assert.deepEqual(mockTxn.dres.beforeOutputs, []); // only roots get this callback, and only if they have been directly changed.
-    assert.deepEqual(mockTxn.dres.allInputsHandled, []); // No input elements have changed
-    assertRels(mockTxn.dres.rootChanged, [ede_1_2, ede_2_3, ede_p2_p3]); // we send out this callback even if only the relationship itself is new or changed.
-    // assertRels(mockTxn.dres.validateOutput, []); // this callback is made only on rels that share an output with another rel or whose output is directly changed
-
-    updateElement(db, rel1Id, "change e1");
-
-    mockTxn.resetDependencyResults();
-    db.saveChanges();
-
-    // assert.deepEqual(mockTxn.dres.directChange, []); // only called on directly changed non-root elements
-    assert.deepEqual(mockTxn.dres.beforeOutputs, [rel1Id]); // only called on directly changed root elements.
-    assert.deepEqual(mockTxn.dres.allInputsHandled, [rel2Id, subject1Id, e3id, subject2Id]);
-    assertRels(mockTxn.dres.rootChanged, [ede_1_2, ede_2_3, ede_p2_p3]);*/
-    // assertRels(mockTxn.dres.validateOutput, []); // this callback is made only on rels that share an output with another rel or whose output is directly changed
-
-    // db.writeAffectedElementDependencyGraphToFile(writeDbFileName + ".dot", [e1id]);
+    const reader = new iModelJsNative.ChangesetReader();
+    reader.openFile(changesetFilePath, false);
+        const changes: IChange[] = [];
+    while (reader.step()) {
+      changes.push({
+        tableName: reader.getTableName(),
+        op: reader.getOpCode() === DbOpcode.Delete ? "deleted" : (reader.getOpCode() === DbOpcode.Update ? "updated" : "inserted"),
+        after: reader.getRow(DbChangeStage.New),
+        isIndirect: reader.isIndirectChange(),
+      });
+    }
+    reader.close();
   });
 });
