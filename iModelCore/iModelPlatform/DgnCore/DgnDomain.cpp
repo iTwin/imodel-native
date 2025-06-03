@@ -613,19 +613,7 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
     SchemaKeyCR bimSchemaKey = bimSchema->GetSchemaKey();
 
     if (appSchema.IsDynamicSchema())
-        {
-        if (0 == bimSchemaKey.CompareByVersion(appSchemaKey) && canBeUpgradedWithoutVersionChange(appSchema))
-            {
-            LOG.debugv("Schema found in the BIM %s has the same version as that in the application %s.  The schema is dynamic so its contents must be checked for updates.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
-            return SchemaStatus::SchemaIsDynamic;
-            }
-
-        if (appSchema.IsDynamicSchema() && appSchemaKey.GetVersionRead() > bimSchemaKey.GetVersionRead())   // Major version change done for a dynamic schema
-            {
-            LOG.infov("Major version change detected. Schema in BIM %s. Schema in application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
-            return SchemaStatus::SchemaIsDynamic;
-            }
-        }
+        return SchemaStatus::SchemaIsDynamic;
 
 
     if (appSchemaKey.GetVersionRead() == bimSchemaKey.GetVersionRead() && appSchemaKey.GetVersionWrite() == bimSchemaKey.GetVersionWrite() && appSchemaKey.GetVersionMinor() <= bimSchemaKey.GetVersionMinor())
