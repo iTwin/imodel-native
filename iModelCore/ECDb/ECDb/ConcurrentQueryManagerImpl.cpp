@@ -705,7 +705,7 @@ std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::WaitForDequeue() {
 
     // If paused, wait until state changes to something else, if we return immediately, this would
     // cause the caller to immediately call again and loop infinitely.
-    while (m_state.load() == State::Paused) {
+    if (m_state.load() == State::Paused) {
         m_cond.wait(lock, [&](){ return m_state.load() != State::Paused; });
     }
 
