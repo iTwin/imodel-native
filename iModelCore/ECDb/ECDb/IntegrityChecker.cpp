@@ -989,16 +989,16 @@ DbResult IntegrityChecker::CheckClassIds(std::function<bool(Utf8CP, ECInstanceId
 			LOG.infov("integrity_check(check_entity_and_rel_class_Ids) analyzing joined table for [class: %s]", classCP->GetFullName());
 			std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.ECClassId FROM %s R LEFT JOIN meta.ECClassDef O ON O.ECInstanceId = R.ECClassId WHERE O.ECInstanceId IS NULL",
 											classCP->GetECSqlName().c_str()).GetUtf8CP();
-			ECSqlStatement stmt;
-			if (ECSqlStatus::Success != stmt.Prepare(m_conn, query.c_str())){
+			ECSqlStatement ecSqlStmt;
+			if (ECSqlStatus::Success != ecSqlStmt.Prepare(m_conn, query.c_str())){
 				m_lastError = "failed to prepared ecsql for nav prop integrity check";
 				return BE_SQLITE_ERROR;
 			}
-			while((rc = stmt.Step()) == BE_SQLITE_ROW) {
+			while((rc = ecSqlStmt.Step()) == BE_SQLITE_ROW) {
 				if (!callback(
 					classCP->GetFullName(),
-					stmt.GetValueId<ECInstanceId>(0),
-					stmt.GetValueId<ECClassId>(1), "joined")) {
+					ecSqlStmt.GetValueId<ECInstanceId>(0),
+					ecSqlStmt.GetValueId<ECClassId>(1), "joined")) {
 					return BE_SQLITE_OK;
 				}
 			}
@@ -1215,7 +1215,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
         StopWatch stopWatch(true);
         auto passed = true;
         rc = CheckDataColumns([&passed](std::string, std::string) {
-            return (passed = false);
+			passed = false;
+            return passed;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1226,7 +1227,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         auto passed = true;
         rc = CheckEcProfile([&passed](std::string, std::string, std::string) {
-            return (passed = false);
+			passed = false;
+            return passed;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1237,7 +1239,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         auto passed = true;
         rc = CheckNavClassIds([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
-            return (passed = false);
+			passed = false;
+            return passed;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1248,7 +1251,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         auto passed = true;
         rc = CheckNavIds([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
-            return (passed = false);
+			passed = false;
+            return passed;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1259,7 +1263,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         auto passed = true;
         rc = CheckLinkTableFkClassIds([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
-            return (passed = false);
+			passed = false;
+            return passed;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1270,7 +1275,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         auto passed = true;
         rc = CheckLinkTableFkIds([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
-            return (passed = false);
+			passed = false;
+            return passed;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1281,7 +1287,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         auto passed = true;
         rc = CheckClassIds([&passed](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP) {
-            return (passed = false);
+			passed = false;
+            return passed;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1292,7 +1299,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         auto passed = true;
         rc = CheckDataSchema([&passed](std::string, std::string) {
-            return (passed = false);
+			passed = false;
+            return passed;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1303,7 +1311,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 		StopWatch stopWatch(true);
         auto passed = true;
         rc = CheckSchemaLoad([&passed](Utf8CP) {
-            return (passed = false);
+			passed = false;
+            return passed;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
@@ -1316,7 +1325,8 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
         auto passed = true;
         rc = CheckMissingChildRows([&passed](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)
 			{
-            return (passed = false);
+			passed = false;
+            return passed;
         	});
 		if (rc != BE_SQLITE_OK)
 			{

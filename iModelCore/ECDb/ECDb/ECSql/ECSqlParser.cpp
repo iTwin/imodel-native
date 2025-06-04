@@ -892,9 +892,9 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                 return SUCCESS;
             } else {
                 std::unique_ptr<ValueExp> rhsExp;
-                const auto rc =  ParseExpressionPath(rhsExp, opt_extract_value->getFirst(), false);
-                if (rc != SUCCESS) {
-                    return rc;
+                const auto rc1 =  ParseExpressionPath(rhsExp, opt_extract_value->getFirst(), false);
+                if (rc1 != SUCCESS) {
+                    return rc1;
                 }
                 if (rhsExp->GetType() != Exp::Type::PropertyName) {
                     Issues().Report(

@@ -420,8 +420,8 @@ void CommonToolsInternal::WriteSchemaAndClassNamesToJson(BeJsValue json, Utf8Str
             indexOffset = 1;
             }
         Utf8StringCR schemaName = schemaAndClasses[0 + indexOffset];
-        bvector<Utf8String> classNames;
-        BeStringUtilities::Split(schemaAndClasses[1 + indexOffset].c_str(), ",", classNames);
+        bvector<Utf8String> classNamesArr;
+        BeStringUtilities::Split(schemaAndClasses[1 + indexOffset].c_str(), ",", classNamesArr);
 
         auto schemaIndexIter = schemaIndexes.find(schemaName);
         auto getSchemaJson = [&](BeJsConst jsonElement)
@@ -436,7 +436,7 @@ void CommonToolsInternal::WriteSchemaAndClassNamesToJson(BeJsValue json, Utf8Str
             };
 
         BeJsValue schemaJson = getSchemaJson(json);
-        for (Utf8StringR className : classNames)
+        for (Utf8StringR className : classNamesArr)
             {
             if (isExcludes)
                 className = Utf8String("E:").append(className);

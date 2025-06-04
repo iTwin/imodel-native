@@ -1158,7 +1158,7 @@ bool ECSqlUpdatePreparedStatement::IsWhereClauseSelectorStatementNeeded(PrepareI
             return false;
             }
 
-        if (!getTablesVisitor.Contains(*singleTableInvolvedInAssignment))
+        if (singleTableInvolvedInAssignment != nullptr && !getTablesVisitor.Contains(*singleTableInvolvedInAssignment))
             return true;
         }
 

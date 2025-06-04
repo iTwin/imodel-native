@@ -337,7 +337,7 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
 
             for (ECClassCP ecClass : *classes)
                 {
-                if (!ecClass->Is(modifierClass) && !modifierClass->Is(ecClass))
+                if ((!ecClass->Is(modifierClass) && !modifierClass->Is(ecClass)) || modifier == nullptr)
                     continue;
 
                 DiagnosticsHelpers::ReportRule(*modifier);

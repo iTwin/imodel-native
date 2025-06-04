@@ -2191,9 +2191,9 @@ static BeGuid QueryExistingNode(Db& db, StatementCache& statements, BeGuidCR hie
     DbResult result = stmt->Step();
     if (BE_SQLITE_ROW == result)
         {
-        BeGuid result = NodesCacheHelpers::GetGuid(*stmt, 0);
+        auto result1 = NodesCacheHelpers::GetGuid(*stmt, 0);
         DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::HierarchiesCache, stmt->Step() == BE_SQLITE_DONE, "Found more than one matching node in cached hierarchy level. Returning the first one.");
-        return result;
+        return result1;
         }
 
     return BeGuid();

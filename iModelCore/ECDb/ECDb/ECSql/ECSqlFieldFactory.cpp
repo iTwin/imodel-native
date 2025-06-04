@@ -90,13 +90,21 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
     ECSqlStatus stat = selectPreparedStatement.GetDynamicSelectClauseECClassR().GeneratePropertyIfRequired(generatedProperty, ctx, *derivedProperty, propNameExp, isDynamic);
     if (!stat.IsSuccess())
         return stat;
-
-    if(generatedProperty == nullptr && propNameExp == nullptr)
+    
+    if(propNameExp == nullptr && generatedProperty == nullptr)
+        {
         return ECSqlStatus::Error;
-
-    ECSqlColumnInfo ecsqlColumnInfo = CreateColumnInfoForProperty(ctx, generatedProperty, propNameExp, isDynamic);
-
-    return CreateField(ctx, selectPreparedStatement, startColumnIndex, ecsqlColumnInfo, *valueExp);
+        }
+    std::optional<ECSqlColumnInfo> ecsqlColumnInfo;
+    if (propNameExp != nullptr)
+        {
+        ecsqlColumnInfo = CreateColumnInfoForProperty(ctx, generatedProperty, *propNameExp, isDynamic);
+        }
+    if (!ecsqlColumnInfo.has_value())
+        {
+        return ECSqlStatus::Error;
+        }
+    return CreateField(ctx, selectPreparedStatement, startColumnIndex, ecsqlColumnInfo.value(), *valueExp);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -221,18 +229,18 @@ ECSqlStatus ECSqlFieldFactory::CreateFieldForView(ECSqlPrepareContext& ctx, Prop
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareContext const& ctx, ECPropertyCP generatedProperty, PropertyNameExp const* propertyNameExp, bool isDynamic)
+std::optional<ECSqlColumnInfo> ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareContext const& ctx, ECPropertyCP generatedProperty, PropertyNameExp const & propertyNameExp, bool isDynamic)
     {
     bool isGenerated = generatedProperty != nullptr;
     bool isSystem = false;
     ECSqlPropertyPath propertyPath;
     ECClassCP rootClass = nullptr;
-    PropertyNameExp const* resolvedPropertyName = propertyNameExp;
-    bool propertyNameExpRefersToProperty = propertyNameExp != nullptr;
+    PropertyNameExp const* resolvedPropertyName = &propertyNameExp;
+    bool propertyNameExpRefersToProperty = resolvedPropertyName != nullptr;
     //in this bool we perform additional checks below and may set it to false if the target is not a property
-    if(propertyNameExpRefersToProperty && propertyNameExp->IsPropertyRef())
+    if(propertyNameExpRefersToProperty && propertyNameExp.IsPropertyRef())
         {
-        auto* propRef = propertyNameExp->GetPropertyRef();
+        auto* propRef = propertyNameExp.GetPropertyRef();
         propertyNameExpRefersToProperty = propRef->IsPure() &&
                                           propRef->GetEndPointDerivedProperty().GetExpression()->GetType() == Exp::Type::PropertyName;
 
@@ -255,7 +263,11 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
             return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(*rootClass, nullptr), nullptr, isDynamic);
             }
         }
-
+    
+    if (resolvedPropertyName == nullptr)
+        {
+            return std::nullopt; //No valid property name
+        }
     PropertyPath const& internalPropPath = resolvedPropertyName->GetResolvedPropertyPath();
     size_t entryCount = internalPropPath.Size();
     ECSqlPropertyPath ecsqlPropPath;
@@ -266,7 +278,7 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
         }
 
     BeAssert(ecsqlPropPath.Size() > 0 && "Error in program logic. Property path must not be empty.");
-    const auto isVirtualProperty = propertyNameExp->IsVirtualProperty();
+    const auto isVirtualProperty = propertyNameExp.IsVirtualProperty();
     if (isVirtualProperty)
         {
         if(isGenerated)
