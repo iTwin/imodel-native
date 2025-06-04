@@ -2775,7 +2775,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto parentId = args.Get("parentId").As<Napi::String>();
         auto pathname = args.Get("pathname").As<Napi::String>();
         if (!parentId.IsString() || !pathname.IsString())
-            BeNapi::ThrowJsException(info.Env(), "parentId and pathname are required attribute of ChangesetFileProps");
+            BeNapi::ThrowJsException(info.Env(), "parentId and pathname are required attribute of ChangesetFileProps", ChangesetStatus::BadVersionId);
 
         auto id = ChangesetProps::ComputeChangesetId(
             parentId.Utf8Value().c_str(),
