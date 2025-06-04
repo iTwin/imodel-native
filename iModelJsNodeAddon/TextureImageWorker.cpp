@@ -48,14 +48,14 @@ DgnDbWorkerPtr TextureImageWorker::Create(DgnDbR db, Napi::CallbackInfo const& i
         textureId = DgnTextureId(BeInt64Id::FromString(textureIdStr.ToString().Utf8Value().c_str()).GetValueUnchecked());
 
     if (!textureId.IsValid())
-        THROW_JS_EXCEPTION("name property must be a valid Id64String");
+        THROW_JS_TYPE_EXCEPTION("name property must be a valid Id64String");
 
     uint32_t maxSize = 0;
     Napi::Value maxTextureSizeNumber = opts.Get("maxTextureSize");
     if (!maxTextureSizeNumber.IsUndefined())
         {
         if (!maxTextureSizeNumber.IsNumber() || static_cast<int32_t>(maxTextureSizeNumber.ToNumber()) <= 0)
-            THROW_JS_EXCEPTION("maxTextureSize property must be a positive number");
+            THROW_JS_TYPE_EXCEPTION("maxTextureSize property must be a positive number");
 
         maxSize = static_cast<uint32_t>(maxTextureSizeNumber.ToNumber());
         }
