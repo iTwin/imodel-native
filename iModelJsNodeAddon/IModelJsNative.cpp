@@ -2775,7 +2775,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto parentId = args.Get("parentId").As<Napi::String>();
         auto pathname = args.Get("pathname").As<Napi::String>();
         if (!parentId.IsString() || !pathname.IsString())
-            BeNapi::ThrowJsException(info.Env(), "parentId and pathname are required attribute of ChangesetFileProps", ChangesetStatus::BadVersionId);
+            BeNapi::ThrowJsException(info.Env(), "parentId and pathname are required attribute of ChangesetFileProps", (int)ChangesetStatus::BadVersionId);
 
         auto id = ChangesetProps::ComputeChangesetId(
             parentId.Utf8Value().c_str(),
@@ -6474,7 +6474,7 @@ public:
         if (nullptr == db)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
         DbResult result = m_importContext->SaveStateToDb(db->GetDb());
-        if (result != DbResult::BE_SQLITE_OK) 
+        if (result != DbResult::BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to serialize the state", result);
         return Env().Undefined();
         }
@@ -6488,7 +6488,7 @@ public:
         if (nullptr == db)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
         DbResult result = m_importContext->LoadStateFromDb(db->GetDb());
-        if (result != DbResult::BE_SQLITE_OK) 
+        if (result != DbResult::BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to load the state", result);
         return Env().Undefined();
         }
