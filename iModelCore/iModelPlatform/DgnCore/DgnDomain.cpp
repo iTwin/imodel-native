@@ -627,6 +627,7 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
             }
         }
 
+
     if (appSchemaKey.GetVersionRead() == bimSchemaKey.GetVersionRead() && appSchemaKey.GetVersionWrite() == bimSchemaKey.GetVersionWrite() && appSchemaKey.GetVersionMinor() <= bimSchemaKey.GetVersionMinor())
         return SchemaStatus::Success; // Most common case
 
