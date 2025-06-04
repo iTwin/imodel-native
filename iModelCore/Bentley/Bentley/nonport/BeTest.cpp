@@ -597,11 +597,8 @@ bool BeTest::EqStr (WCharCP s1, WCharCP s2, bool ignoreCase)
 BeTest::ExpectedResult::ExpectedResult (bool isAsExpected, CharCP actualExpression, CharCP expectedExpression, CharCP fileName, size_t  lineNum, bool abortImmediately)
     {
     m_abortImmediately = false;
-    #pragma warning (push)
-    #pragma warning (disable: 6326) //const comparison with const
     if (isAsExpected)
         return;
-    #pragma warning (pop)
 
     char lnStr [32];
     snprintf (lnStr, sizeof(lnStr), ":%d", (int)lineNum);

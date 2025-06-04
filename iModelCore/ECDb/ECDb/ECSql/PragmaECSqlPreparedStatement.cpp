@@ -346,12 +346,12 @@ DbResult  PragmaManager::Prepare(RowSet& rowset, Utf8StringCR name, PragmaVal co
         if (classP == nullptr) {
             return PrepareAny(rowset,name, val, op, path, options);
         }
-    }
-    if (path.size() >= 3) {
+        if (path.size() >= 3) {
             propertyP = classP->GetPropertyP(path[2]);
             if (propertyP == nullptr) {
                 return PrepareAny(rowset,name, val, op, path, options);
             }
+        }
     }
     if (propertyP && classP && schemaP) {
         return PrepareProperty(rowset,name, val, op, *propertyP, options);
