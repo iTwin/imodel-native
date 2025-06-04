@@ -11,14 +11,8 @@ rem @note that it requires cygwin be installed
 set sqlite_tag=itwin-sqlite-v3.50.0-r0
 set imodel_native_sqlite=%SrcRoot%imodel-native\iModelCore\BeSQLite\SQLite\
 set sqlite_root=%appdata%\itwin-sqlite
-set build_dir=outdir
 set make_target=sqlite3.c
 
-if  not exist %CYGWIN_BIN% (
-  echo "*** CYGWIN_BIN variable must be set ***"
-  popd
-  exit /b %errorlevel%
-)
 rem update tags
 git fetch --tags
 rem create folder in appdata if it does not already exist.
@@ -27,8 +21,6 @@ if not exist %sqlite_root% md %sqlite_root%
 rem save current folder
 pushd .
 cd /D %sqlite_root%
-rem configure and build sqlite
-if exist %build_dir% rmdir /s/q %build_dir%
 
 rem download or update sqlite source to appdata
 if not exist %sqlite_root%\configure (
@@ -52,29 +44,7 @@ if %errorlevel% neq 0 (
   exit /b %errorlevel%
 )
 
-SET PATH=%CYGWIN_BIN%;%PATH%
-
-mkdir %build_dir%
-cd %build_dir%
-sh ..\configure
-if %errorlevel% neq 0 (
-  rmdir /s/q %build_dir%
-  echo "*** Failed to configure sqlite source code ***"
-  echo "If source fail due EOL make sure you have following setting"
-  echo "      > git config --global core.autocrlf input"
-  popd
-  exit /b %errorlevel%
-)
-
-rem Build the target
-make %make_target%
-if %errorlevel% neq 0 (
-  rmdir /s/q %build_dir%
-  echo "*** Failed to build sqlite source code ***"
-  popd
-  exit /b %errorlevel%
-)
-rem Copy to bentley source tree
+nmake /f Makefile.msc clean sqlite3.c
 
 copy %make_target% %imodel_native_sqlite%
 copy sqlite3.h %imodel_native_sqlite%
