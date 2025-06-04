@@ -335,20 +335,22 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
             if (nullptr == classes)
                 continue;
 
+            auto currModifiers = modifiers;
+            auto currModifier = modifier;
             for (ECClassCP ecClass : *classes)
                 {
-                if ((!ecClass->Is(modifierClass) && !modifierClass->Is(ecClass)) || modifier == nullptr)
+                if (!ecClass->Is(modifierClass) && !modifierClass->Is(ecClass))
                     continue;
 
-                DiagnosticsHelpers::ReportRule(*modifier);
-                bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> createdSpecs = FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories()));
+                DiagnosticsHelpers::ReportRule(*currModifier);
+                bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> createdSpecs = FlattenedRelatedPropertiesSpecification::Create(currModifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(currModifier->GetPropertyCategories()));
                 if (createdSpecs.empty())
                     continue;
 
                 modifier = nullptr;
                 ++handledModifiersInPrevIteration;
                 FlattenedRelatedPropertiesSpecification::MoveNestedSpecification(specs, std::move(createdSpecs), flatSpec.GetFlattened(), flatSpec.GetSource());
-                ContainerHelpers::MovePush(specs, FlattenedRelatedPropertiesSpecification::CreateForNestedPropertiesFromModifiers(specs, modifiers, helper));
+                ContainerHelpers::MovePush(specs, FlattenedRelatedPropertiesSpecification::CreateForNestedPropertiesFromModifiers(specs, currModifiers, helper));
                 }
             }
         }
