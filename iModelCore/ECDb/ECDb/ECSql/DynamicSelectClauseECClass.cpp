@@ -135,9 +135,8 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
                     && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();
                 if (isSystem)
                     {
-                    auto aliasProp1 = static_cast<PrimitiveECPropertyP>(const_cast<ECPropertyP>(generatedProperty));
-                    aliasProp1->SetExtendedTypeName("Id");
-                    aliasProp1->SetId(leafProp->GetId());
+                    aliasProp->SetExtendedTypeName("Id");
+                    aliasProp->SetId(leafProp->GetId());
                     }
                 }
             }

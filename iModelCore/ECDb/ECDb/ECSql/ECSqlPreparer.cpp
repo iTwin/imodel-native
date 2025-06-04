@@ -2177,15 +2177,15 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameClauseExp(NativeSqlBuilder& nati
     if (!status.IsSuccess())
         return status;
 
-    if (WindowFrameStartExp const * e = exp.GetWindowFrameStartExp())
+    if (WindowFrameStartExp const * startExp = exp.GetWindowFrameStartExp())
         {
-        status = PrepareWindowFrameStartExp(nativeSqlBuilder, ctx, *e);
+        status = PrepareWindowFrameStartExp(nativeSqlBuilder, ctx, *startExp);
         if (!status.IsSuccess())
             return status;
         }
-    else if (WindowFrameBetweenExp const * e2 = exp.GetWindowFrameBetweenExp())
+    else if (WindowFrameBetweenExp const * betweenExp = exp.GetWindowFrameBetweenExp())
         {
-        status = PrepareWindowFrameBetweenExp(nativeSqlBuilder, ctx, *e2);
+        status = PrepareWindowFrameBetweenExp(nativeSqlBuilder, ctx, *betweenExp);
         if (!status.IsSuccess())
             return status;
         }
