@@ -49,6 +49,31 @@ BentleyStatus NavigationPropertyECSqlBinder::Initialize(ECSqlPrepareContext& ctx
         }
 
     AddChildMemberMappedSqlParameterIndices(*m_relECClassIdBinder);
+
+    // Only cache relationship class ids if validation is enabled
+    if (ctx.GetPreparedStatement().IsWriteStatement() && GetECDb().GetECSqlConfig().IsWriteValueValidationEnabled())
+        {
+        // Get the navigation property from the property map
+        const auto navProp = navPropMap.GetProperty().GetAsNavigationProperty();
+        if ( navProp == nullptr)
+            return ERROR;
+
+        // Get the relationship class associated with the navigation property
+        const auto relClass = navProp->GetRelationshipClass();
+        if (relClass == nullptr)
+            return ERROR;
+
+        std::vector<ECClassId> relECClassIds;
+        relECClassIds.push_back(relClass->GetId());
+
+        // Add all derived relationship class ids, if any exist
+        if (const auto derivedClasses = GetECDb().Schemas().GetAllDerivedClassesInternal(*relClass); derivedClasses.IsValid() && !derivedClasses.Value().empty())
+            std::for_each(derivedClasses.Value().begin(), derivedClasses.Value().end(), [&relECClassIds](ECN::ECClassCP derivedClass) { relECClassIds.push_back(derivedClass->GetId()); });
+            
+        // Cache the collected relationship class ids in the binder for faster validation at bind time
+        m_binderInfo.CacheRelClassIdsForPropertyMap(relECClassIds);
+        }
+
     return SUCCESS;
     }
 

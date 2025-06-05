@@ -111,6 +111,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @return true, if it is prepared. false otherwise
         ECDB_EXPORT bool IsPrepared() const;
 
+        //! Indicates whether this statement is a write statement (INSERT, UPDATE, or DELETE).
+        //!
+        //! This method returns true if the prepared ECSql statement is an INSERT, UPDATE, or DELETE statement,
+        //! i.e., if it modifies data in the database. It returns false for SELECT and other non-modifying statements.
+        //!
+        //! @return true if the statement is a write statement (INSERT, UPDATE, DELETE), false otherwise.
+        ECDB_EXPORT bool IsWriteStatement() const;
+
         //! @name Methods to bind values to an ECSQL parameter
         //! @{
 
