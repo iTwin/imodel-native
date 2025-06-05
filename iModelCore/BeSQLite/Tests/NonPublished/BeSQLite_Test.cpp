@@ -298,6 +298,32 @@ struct DisableAsserts {
     ~DisableAsserts() { BeTest::SetFailOnAssert(true); }
 };
 
+TEST_F(BeSQliteTestFixture, sqlite_stmt) {
+    auto db1 = Create("first.db");
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create table test(i)"));
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into test values (zeroblob(10))"));
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into test values (zeroblob(10))"));
+    db1->SaveChanges();
+
+    auto stmt = db1->GetCachedStatement("select * from test");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+
+    Statement stmt2;
+    ASSERT_EQ(BE_SQLITE_OK, stmt2.Prepare(*db1, "SELECT [sql] FROM [sqlite_stmt]"));
+
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
+
+    ASSERT_STREQ(stmt2.GetValueText(0), "SELECT [sql] FROM [sqlite_stmt]");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
+    ASSERT_STREQ(stmt2.GetValueText(0), "select * from test");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
+    ASSERT_STREQ(stmt2.GetValueText(0), "SELECT 1 FROM sqlite_master where type='table' AND name=?");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
+    ASSERT_STREQ(stmt2.GetValueText(0), "INSERT OR REPLACE INTO be_Prop (Namespace,Name,Id,SubId,TxnMode,RawSize,Data,StrData) VALUES(?,?,?,?,?,?,?,?)");
+    ASSERT_EQ(BE_SQLITE_DONE, stmt2.Step());
+}
+
 TEST_F(BeSQliteTestFixture, WAL_basic_test) {
     DisableAsserts _notused;
     auto getFileSize = [](Utf8CP name) {
