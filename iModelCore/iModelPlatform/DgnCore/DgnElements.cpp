@@ -460,7 +460,7 @@ DgnElementId ElementAspectIteratorEntry::GetElementId() const {return m_statemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat, std::optional<CRUDOptions> options)
+DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat, std::optional<EditOptions> options)
     {
     if (element.m_flags.m_preassignedId)  {
         // the Id was supplied by the caller. Make sure we increase max value if the value we're inserting is higher than current.
@@ -505,7 +505,7 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outStat, std::optional<CRUDOptions> options)
+DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outStat, std::optional<EditOptions> options)
     {
     DgnDb::VerifyClientThread();
 
@@ -551,7 +551,7 @@ void DgnElement::CopyIdentityFrom(DgnElementId elementId, BeGuidCR federationGui
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement, std::optional<CRUDOptions> options)
+DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement, std::optional<EditOptions> options)
     {
     DgnDb::VerifyClientThread();
 
@@ -627,7 +627,7 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement, std::optional<CR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElements::PerformDelete(DgnElementCR element, std::optional<CRUDOptions> options)
+DgnDbStatus DgnElements::PerformDelete(DgnElementCR element, std::optional<EditOptions> options)
     {
     // delete children, if any.
     DgnElementIdSet children = element.QueryChildren();
@@ -653,7 +653,7 @@ DgnDbStatus DgnElements::PerformDelete(DgnElementCR element, std::optional<CRUDO
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElements::Delete(DgnElementCR elementIn, std::optional<CRUDOptions> options)
+DgnDbStatus DgnElements::Delete(DgnElementCR elementIn, std::optional<EditOptions> options)
     {
     DgnDb::VerifyClientThread();
 
