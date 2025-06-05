@@ -714,7 +714,7 @@ struct TxnModeGuard {
     TxnManager::Mode m_prevMode;
     bool m_restoreOnDestructor = false;
 
-    TxnModeGuard(TxnManagerR txnMgr, std::optional<CRUDOptions> const& options)
+    TxnModeGuard(TxnManagerR txnMgr, std::optional<EditOptions> const& options)
         : m_txnMgr(txnMgr), m_prevMode(txnMgr.GetMode())
     {
         if (options.has_value()) {

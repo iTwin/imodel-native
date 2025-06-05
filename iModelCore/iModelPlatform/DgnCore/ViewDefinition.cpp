@@ -652,7 +652,7 @@ void CategorySelector::_RemapIds(DgnImportContext& importContext)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CategorySelector::_InsertInDb(std::optional<CRUDOptions> options)
+DgnDbStatus CategorySelector::_InsertInDb(std::optional<EditOptions> options)
     {
     auto status = T_Super::_InsertInDb(options);
     if (DgnDbStatus::Success != status)
@@ -819,7 +819,7 @@ void ModelSelector::_RemapIds(DgnImportContext& importContext)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::_InsertInDb(std::optional<CRUDOptions> options)
+DgnDbStatus ModelSelector::_InsertInDb(std::optional<EditOptions> options)
     {
     DgnDbStatus status = T_Super::_InsertInDb(options);
     if (DgnDbStatus::Success != status)

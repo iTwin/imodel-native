@@ -665,7 +665,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb(std::optional<CRUDOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb(std::optional<EditOptions> options = std::nullopt) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT void _OnDeleted() const override;
@@ -724,7 +724,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb(std::optional<CRUDOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb(std::optional<EditOptions> options = std::nullopt) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;

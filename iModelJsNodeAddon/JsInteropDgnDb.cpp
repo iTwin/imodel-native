@@ -463,12 +463,12 @@ static void callJsPreHandler(DgnDbR db, DgnClassId classId, Utf8CP methodName, N
     db.CallJsHandlerMethod(classId, methodName, arg);
 }
 
-static std::optional<CRUDOptions> GetCRUDOptionsFromJson(BeJsConst const& inJson) {
+static std::optional<EditOptions> GetEditOptionsFromJson(BeJsConst const& inJson) {
     if (!inJson.isObject())
         return std::nullopt;
 
     auto indirectVal = inJson.getMemberBoolean(JsInterop::json_indirect(), false);
-    return CRUDOptions{indirectVal};
+    return EditOptions{indirectVal};
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -509,7 +509,7 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
             el->CopyIdentityFrom(eid, el->GetFederationGuid());
         }
 
-        std::optional<CRUDOptions> options = GetCRUDOptionsFromJson(inOptionsJson);
+        std::optional<EditOptions> options = GetEditOptionsFromJson(inOptionsJson);
 
         SetNapiObjOnElement _v(*el, &obj);
         DgnDbStatus status;
@@ -546,7 +546,7 @@ void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj, Napi::Value option
 
         callJsPreHandler(dgndb, el->GetElementClassId(), "onUpdate", obj);
         el->FromJson(elProps);
-        std::optional<CRUDOptions> options = GetCRUDOptionsFromJson(optionsJson);
+        std::optional<EditOptions> options = GetEditOptionsFromJson(optionsJson);
 
         SetNapiObjOnElement _v(*el, &obj);
         DgnDbStatus status = el->Update(options);
@@ -691,7 +691,7 @@ void JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr, Napi::Value opt
         throwMissingId();
 
     BeJsConst optionsJson(optionsObj);
-    std::optional<CRUDOptions> options = GetCRUDOptionsFromJson(optionsJson);
+    std::optional<EditOptions> options = GetEditOptionsFromJson(optionsJson);
 
     auto stat =  elPersist->Delete(options);
     if (stat != DgnDbStatus::Success)
