@@ -90,21 +90,13 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
     ECSqlStatus stat = selectPreparedStatement.GetDynamicSelectClauseECClassR().GeneratePropertyIfRequired(generatedProperty, ctx, *derivedProperty, propNameExp, isDynamic);
     if (!stat.IsSuccess())
         return stat;
-    
-    if(propNameExp == nullptr && generatedProperty == nullptr)
-        {
+
+    if(generatedProperty == nullptr && propNameExp == nullptr)
         return ECSqlStatus::Error;
-        }
-    std::optional<ECSqlColumnInfo> ecsqlColumnInfo;
-    if (propNameExp != nullptr)
-        {
-        ecsqlColumnInfo = CreateColumnInfoForProperty(ctx, generatedProperty, *propNameExp, isDynamic);
-        }
-    if (!ecsqlColumnInfo.has_value())
-        {
-        return ECSqlStatus::Error;
-        }
-    return CreateField(ctx, selectPreparedStatement, startColumnIndex, ecsqlColumnInfo.value(), *valueExp);
+
+    ECSqlColumnInfo ecsqlColumnInfo = CreateColumnInfoForProperty(ctx, generatedProperty, propNameExp, isDynamic);
+
+    return CreateField(ctx, selectPreparedStatement, startColumnIndex, ecsqlColumnInfo, *valueExp);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -229,18 +221,18 @@ ECSqlStatus ECSqlFieldFactory::CreateFieldForView(ECSqlPrepareContext& ctx, Prop
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-std::optional<ECSqlColumnInfo> ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareContext const& ctx, ECPropertyCP generatedProperty, PropertyNameExp const & propertyNameExp, bool isDynamic)
+ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareContext const& ctx, ECPropertyCP generatedProperty, PropertyNameExp const* propertyNameExp, bool isDynamic)
     {
     bool isGenerated = generatedProperty != nullptr;
     bool isSystem = false;
     ECSqlPropertyPath propertyPath;
     ECClassCP rootClass = nullptr;
-    PropertyNameExp const* resolvedPropertyName = &propertyNameExp;
-    bool propertyNameExpRefersToProperty = resolvedPropertyName != nullptr;
+    PropertyNameExp const* resolvedPropertyName = propertyNameExp;
+    bool propertyNameExpRefersToProperty = propertyNameExp != nullptr;
     //in this bool we perform additional checks below and may set it to false if the target is not a property
-    if(propertyNameExpRefersToProperty && propertyNameExp.IsPropertyRef())
+    if(propertyNameExpRefersToProperty && propertyNameExp->IsPropertyRef())
         {
-        auto* propRef = propertyNameExp.GetPropertyRef();
+        auto* propRef = propertyNameExp->GetPropertyRef();
         propertyNameExpRefersToProperty = propRef->IsPure() &&
                                           propRef->GetEndPointDerivedProperty().GetExpression()->GetType() == Exp::Type::PropertyName;
 
@@ -263,10 +255,9 @@ std::optional<ECSqlColumnInfo> ECSqlFieldFactory::CreateColumnInfoForProperty(EC
             return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(*rootClass, nullptr), nullptr, isDynamic);
             }
         }
-    
     if (resolvedPropertyName == nullptr)
         {
-            return std::nullopt; //No valid property name
+        BeAssert(false && "Error in program logic. Resolved property name must not be null.");
         }
     PropertyPath const& internalPropPath = resolvedPropertyName->GetResolvedPropertyPath();
     size_t entryCount = internalPropPath.Size();
@@ -278,7 +269,11 @@ std::optional<ECSqlColumnInfo> ECSqlFieldFactory::CreateColumnInfoForProperty(EC
         }
 
     BeAssert(ecsqlPropPath.Size() > 0 && "Error in program logic. Property path must not be empty.");
-    const auto isVirtualProperty = propertyNameExp.IsVirtualProperty();
+    if (propertyNameExp == nullptr) 
+        {
+        BeAssert(false && "Error in program logic. Property path must not be empty.");
+        }
+    const auto isVirtualProperty = propertyNameExp->IsVirtualProperty();
     if (isVirtualProperty)
         {
         if(isGenerated)
