@@ -307,51 +307,45 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
     if (!flatSpec.GetFlattened().AllPropertiesIncluded())
         return specs;
 
-    int handledModifiersInPrevIteration = -1;
-    while (handledModifiersInPrevIteration != 0)
+    ECRelationshipConstraintClassList const* specClasses = GetClassFromRelationship(helper, flatSpec.GetFlattened());
+    if (nullptr == specClasses)
+        return specs;
+
+    for (auto modifier : modifiers)
         {
-        handledModifiersInPrevIteration = 0;
-        for (auto& modifier : modifiers)
+        if (nullptr == modifier || !modifier->ShouldApplyOnNestedContent())
+            continue;
+
+        if (!modifier->HasClassSpecified())
             {
-            if (nullptr == modifier || !modifier->ShouldApplyOnNestedContent())
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
+                DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
+            continue;
+            }
+
+        ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
+        if (nullptr == modifierClass)
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Content modifier specifies non-existing class: %s.%s.",
+                modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
+            continue;
+            }
+
+        for (ECClassCP specClass : *specClasses)
+            {
+            if (!specClass->Is(modifierClass) && !modifierClass->Is(specClass))
                 continue;
 
-            if (!modifier->HasClassSpecified())
-                {
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_DEBUG, Utf8PrintfString("ECClass was not specified in %s.",
-                    DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
-                continue;
-                }
-
-            ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
-            if (nullptr == modifierClass)
-                {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Content modifier specifies non-existing class: %s.%s.",
-                    modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
-                continue;
-                }
-
-            ECRelationshipConstraintClassList const* classes = GetClassFromRelationship(helper, flatSpec.GetFlattened());
-            if (nullptr == classes)
+            DiagnosticsHelpers::ReportRule(*modifier);
+            bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> createdSpecs = FlattenedRelatedPropertiesSpecification::Create(modifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(modifier->GetPropertyCategories()));
+            if (createdSpecs.empty())
                 continue;
 
-            auto currModifiers = modifiers;
-            auto currModifier = modifier;
-            for (ECClassCP ecClass : *classes)
-                {
-                if (!ecClass->Is(modifierClass) && !modifierClass->Is(ecClass))
-                    continue;
+            bvector<ContentModifierCP> currModifiers = modifiers;
+            ContainerHelpers::RemoveIf(currModifiers, [&modifier](auto curr){ return curr == modifier; });
 
-                DiagnosticsHelpers::ReportRule(*currModifier);
-                bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> createdSpecs = FlattenedRelatedPropertiesSpecification::Create(currModifier->GetRelatedProperties(), RelatedPropertiesSpecificationScopeInfo(currModifier->GetPropertyCategories()));
-                if (createdSpecs.empty())
-                    continue;
-
-                modifier = nullptr;
-                ++handledModifiersInPrevIteration;
-                FlattenedRelatedPropertiesSpecification::MoveNestedSpecification(specs, std::move(createdSpecs), flatSpec.GetFlattened(), flatSpec.GetSource());
-                ContainerHelpers::MovePush(specs, FlattenedRelatedPropertiesSpecification::CreateForNestedPropertiesFromModifiers(specs, currModifiers, helper));
-                }
+            FlattenedRelatedPropertiesSpecification::MoveNestedSpecification(specs, std::move(createdSpecs), flatSpec.GetFlattened(), flatSpec.GetSource());
+            ContainerHelpers::MovePush(specs, FlattenedRelatedPropertiesSpecification::CreateForNestedPropertiesFromModifiers(specs, currModifiers, helper));
             }
         }
     return specs;
