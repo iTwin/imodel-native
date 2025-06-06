@@ -2963,7 +2963,7 @@ static ECSchemaPtr ParseHeaderAndLocateSchema(WCharCP schemaXmlFile, ECSchemaRea
     SchemaKey searchKey;
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     pugi::xml_node schemaNode;
-    const auto status = SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
+    auto status = SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
     if (SchemaReadStatus::Success != status)
         {
         if (outStatus != nullptr)
@@ -2974,9 +2974,9 @@ static ECSchemaPtr ParseHeaderAndLocateSchema(WCharCP schemaXmlFile, ECSchemaRea
     ECSchemaPtr schema = schemaContext.LocateSchema(searchKey, matchType);
     if (!schema.IsValid())
         {
-        const auto status = ECSchema::ReadFromXmlFile(schema, schemaXmlFile, schemaContext);
+        const auto stat = ECSchema::ReadFromXmlFile(schema, schemaXmlFile, schemaContext);
         if (outStatus != nullptr)
-            *outStatus = status;
+            *outStatus = stat;
         }
     else {
         if (outStatus != nullptr)

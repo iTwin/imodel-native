@@ -850,7 +850,7 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
     }
 
     std::unique_ptr<ValueExp> lhsExp;
-    const auto rc =  ParseExpressionPath(lhsExp, parseNode->getFirst(), forceIntoPropertyNameExp);
+    auto rc =  ParseExpressionPath(lhsExp, parseNode->getFirst(), forceIntoPropertyNameExp);
     if (rc != SUCCESS) {
         return rc;
     }
@@ -892,7 +892,7 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                 return SUCCESS;
             } else {
                 std::unique_ptr<ValueExp> rhsExp;
-                const auto rc =  ParseExpressionPath(rhsExp, opt_extract_value->getFirst(), false);
+                rc =  ParseExpressionPath(rhsExp, opt_extract_value->getFirst(), false);
                 if (rc != SUCCESS) {
                     return rc;
                 }

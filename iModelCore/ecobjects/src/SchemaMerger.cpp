@@ -347,9 +347,9 @@ ECObjectsStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<EC
             }
 
         ECSchemaCP rightSchema = FindSchemaByName(right, schemaName);
-        auto status = MergeSchema(result, leftSchema, rightSchema, schemaChange, options);
-        if(status != ECObjectsStatus::Success)
-            return status;
+        auto stat = MergeSchema(result, leftSchema, rightSchema, schemaChange, options);
+        if(stat != ECObjectsStatus::Success)
+            return stat;
 
         result.m_modifiedSchemas.push_back(leftSchema);
         }
@@ -542,7 +542,7 @@ ECObjectsStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP l
             }
 
         ECClassP createdClass;
-        ECObjectsStatus status = left->CopyClass(createdClass, *newClass, true, className.c_str(), options.GetSkipValidation());
+        status = left->CopyClass(createdClass, *newClass, true, className.c_str(), options.GetSkipValidation());
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
           {
           result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0029,
@@ -559,7 +559,7 @@ ECObjectsStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP l
         Utf8CP className = classChange->GetChangeName();
         auto leftClass = left->GetClassP(className);
         auto rightClass = right->GetClassCP(className);
-        auto status = MergeClass(result, leftClass, rightClass, classChange, options);
+        status = MergeClass(result, leftClass, rightClass, classChange, options);
         if(status != ECObjectsStatus::Success)
             return status;
         }

@@ -240,11 +240,10 @@ WHERE [ecp].[Name] = ? AND ([col].[ColumnKind] = 4 OR ([col].[ColumnKind] = 0 AN
     while (getInfoStmt->Step() == BE_SQLITE_ROW)
         {
         results++;
-        ECClassId classId =  getInfoStmt->GetValueId<ECClassId>(11);
         ECPropertyId propertyId =  getInfoStmt->GetValueId<ECPropertyId>(6); //equals root property id
 
         cleanedPropertyIds.insert(propertyId);
-        auto& cleanedInfos = GetOrAddCleanedMappingInfo(classId);
+        auto& cleanedInfos = GetOrAddCleanedMappingInfo(getInfoStmt->GetValueId<ECClassId>(11));
         cleanedInfos.emplace_back(); //in c++ 17 emplace_back() already returns the reference, but we don't fully support that yet in our build chain.
         auto& cleanedInfo = cleanedInfos.back();
 
@@ -253,7 +252,7 @@ WHERE [ecp].[Name] = ? AND ([col].[ColumnKind] = 4 OR ([col].[ColumnKind] = 0 AN
         cleanedInfo.m_rootClassId = getInfoStmt->GetValueId<ECClassId>(2); //refers to the class that defines the property
         cleanedInfo.m_schemaName = getInfoStmt->GetValueText(3);
         cleanedInfo.m_className = getInfoStmt->GetValueText(4);
-        cleanedInfo.m_classId = classId;
+        cleanedInfo.m_classId = getInfoStmt->GetValueId<ECClassId>(11);
 
         cleanedInfo.m_propertyId = propertyId;
         cleanedInfo.m_propertyName = getInfoStmt->GetValueText(7);

@@ -297,6 +297,11 @@ template<typename T_Db> struct SQLiteOps {
         }
 
         auto db = &GetOpenedDb(info);
+        if (db == nullptr)
+            {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open", DgnDbStatus::NotOpen);
+            return;
+            }
         auto dgnDb = dynamic_cast<DgnDbP>(db);
         std::unique_ptr<FontDb> fontDbHolder;
 

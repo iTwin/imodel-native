@@ -191,10 +191,10 @@ void WindowFrameClauseExp::_ToECSql(ECSqlRenderContext &ctx) const
     {
     ctx.AppendToECSql(ExpHelper::ToSql(GetWindowFrameUnit())).AppendToECSql(" ");
 
-    if (WindowFrameBetweenExp const * e = GetWindowFrameBetweenExp())
-        ctx.AppendToECSql(*e);
-    else if (WindowFrameStartExp const * e = GetWindowFrameStartExp())
-        ctx.AppendToECSql(*e);
+    if (WindowFrameBetweenExp const * betweenExp = GetWindowFrameBetweenExp())
+        ctx.AppendToECSql(*betweenExp);
+    else if (WindowFrameStartExp const * startExp = GetWindowFrameStartExp())
+        ctx.AppendToECSql(*startExp);
     
     if (GetWindowFrameExclusionType() != WindowFrameClauseExp::WindowFrameExclusionType::NotSpecified)
         ctx.AppendToECSql(" ").AppendToECSql(ExpHelper::ToSql(GetWindowFrameExclusionType()));

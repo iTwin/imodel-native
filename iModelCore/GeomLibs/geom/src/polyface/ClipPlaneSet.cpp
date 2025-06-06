@@ -2291,14 +2291,14 @@ ValidatedDouble &colinearEdgeTolerance
 
                             if (clippedXYZ.size() > 0)
                                 {
-                                if (planeSections)
+                                if (planeSections != nullptr)
                                     clippedLoopsXYZ.push_back(clippedXYZ);
                                 if (linestrings)
                                     linestrings->push_back(clippedXYZ);
                                 }
                             }
                         }
-                    if (clippedLoopsXYZ.size() > 0)
+                    if (planeSections != nullptr && clippedLoopsXYZ.size() > 0)
                         {
                         Transform worldToLocal, localToWorld = plane.GetLocalToWorldTransform(false);
                         worldToLocal.InverseOf(localToWorld);
@@ -2314,7 +2314,7 @@ ValidatedDouble &colinearEdgeTolerance
                 }
             }
         }
-    if (planeSections)
+    if (planeSections != nullptr)
         (*planeSections)->Compress ();
     }
 

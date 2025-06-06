@@ -118,7 +118,7 @@ struct FormatParseStringTest : FormattingTestFixture
 
         void ParseStringToDouble(Utf8CP input, FormatCP expectedFormat, double const expectedMagnitude)
             {
-            FormatParsingSet fps(input, nullptr, expectedFormat);
+            FormatParsingSet fps(input, s_unitsContext->LookupUnit("MM"), expectedFormat);
             ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription();
 
             FormatProblemCode probCode;
