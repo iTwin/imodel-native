@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 
 #define SESSIONS_STRM_CHUNK_SIZE        64*1024
-#define SQLITE_DEFAULT_CACHE_SIZE       -8000 //-ive sign is pages besqlite_page_size:4kb so 4kb * 8000 = 32MB
+#define SQLITE_DEFAULT_CACHE_SIZE       8000
 #define SQLITE_DEFAULT_FOREIGN_KEYS     1
 #define SQLITE_ENABLE_COLUMN_METADATA   1
 #define SQLITE_ENABLE_DBSTAT_VTAB       1
