@@ -145,28 +145,43 @@ static RelationshipPathSpecification* CreateCombinedRelationshipPathSpecificatio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECRelationshipConstraintClassList const* GetClassFromRelationship(ECSchemaHelper const& helper, RelatedPropertiesSpecificationCR spec)
+static bvector<ECClassCP> GetClassFromRelationship(ECSchemaHelper const& helper, RelatedPropertiesSpecificationCR spec)
     {
+    bvector<ECClassCP> result;
     RelationshipPathSpecification const* pathSpec = spec.GetPropertiesSource();
     if (nullptr == pathSpec)
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Related properties specification does not contain relationship path specification."));
-        return nullptr;
-        }
-    RelationshipStepSpecification const* relationshipStep = pathSpec->GetSteps().back();
-    auto direction = relationshipStep->GetRelationDirection();
-    ECRelationshipClassCP relationshipClass = helper.GetECClass(relationshipStep->GetRelationshipClassName().c_str())->GetRelationshipClassCP();
-    switch (direction)
-        {
-        case RequiredRelationDirection_Backward:
-            return &relationshipClass->GetSource().GetConstraintClasses();
-        case RequiredRelationDirection_Forward:
-            return &relationshipClass->GetTarget().GetConstraintClasses();
+        return result;
         }
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to get relationship constraints from relationship step specification: %s. Direction: %s.",
-        relationshipStep->GetRelationshipClassName().c_str(), CommonToolsInternal::FormatRequiredDirectionString(direction)));
-    return nullptr;
+    RelationshipStepSpecification const* relationshipStep = pathSpec->GetSteps().back();
+    auto direction = relationshipStep->GetRelationDirection();
+    auto relationshipClasses = helper.GetECClassesFromClassList(relationshipStep->GetRelationshipClassName().c_str(), false);
+
+    for (auto const& relationshipClassInfo : relationshipClasses)
+        {
+        if (!relationshipClassInfo.GetClass().IsRelationshipClass())
+            continue;
+
+        auto const* relationshipClass = relationshipClassInfo.GetClass().GetRelationshipClassCP();
+        switch (direction)
+            {
+            case RequiredRelationDirection_Backward:
+                ContainerHelpers::Push(result, relationshipClass->GetSource().GetConstraintClasses());
+                break;
+            case RequiredRelationDirection_Forward:
+                ContainerHelpers::Push(result, relationshipClass->GetTarget().GetConstraintClasses());
+                break;
+            }
+        }
+
+    if (result.empty())
+        {
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to get relationship constraints from relationship step specification: %s. Direction: %s.",
+            relationshipStep->GetRelationshipClassName().c_str(), CommonToolsInternal::FormatRequiredDirectionString(direction)));
+        }
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -307,8 +322,8 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
     if (!flatSpec.GetFlattened().AllPropertiesIncluded())
         return specs;
 
-    ECRelationshipConstraintClassList const* specClasses = GetClassFromRelationship(helper, flatSpec.GetFlattened());
-    if (nullptr == specClasses)
+    auto specClasses = GetClassFromRelationship(helper, flatSpec.GetFlattened());
+    if (specClasses.empty())
         return specs;
 
     for (auto modifier : modifiers)
@@ -331,7 +346,7 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
             continue;
             }
 
-        for (ECClassCP specClass : *specClasses)
+        for (ECClassCP specClass : specClasses)
             {
             if (!specClass->Is(modifierClass) && !modifierClass->Is(specClass))
                 continue;
