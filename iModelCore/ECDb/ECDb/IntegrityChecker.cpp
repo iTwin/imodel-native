@@ -1213,107 +1213,97 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
     DbResult rc;
     if (Enum::Contains<Checks>(checks, Checks::CheckDataColumns)) {
         StopWatch stopWatch(true);
-        auto passed = true;
         rc = CheckDataColumns([](std::string, std::string) {
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-        callback(GetCheckName(Checks::CheckDataColumns), passed, stopWatch.GetCurrent());
+        callback(GetCheckName(Checks::CheckDataColumns), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckEcProfile)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
         rc = CheckEcProfile([](std::string, std::string, std::string) {
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckEcProfile), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckEcProfile), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckNavClassIds)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
         rc = CheckNavClassIds([](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckNavClassIds), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckNavClassIds), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckNavIds)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
         rc = CheckNavIds([](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckNavIds), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckNavIds), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckLinkTableFkClassIds)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
         rc = CheckLinkTableFkClassIds([](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckLinkTableFkClassIds), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckLinkTableFkClassIds), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckLinkTableFkIds)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
         rc = CheckLinkTableFkIds([](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckLinkTableFkIds), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckLinkTableFkIds), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckClassIds)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
         rc = CheckClassIds([](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP) {
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckClassIds), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckClassIds), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckDataSchema)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
         rc = CheckDataSchema([](std::string, std::string) {
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckDataSchema), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckDataSchema), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckSchemaLoad)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
         rc = CheckSchemaLoad([](Utf8CP) {
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckSchemaLoad), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckSchemaLoad), true, stopWatch.GetCurrent());
     }
 	if (Enum::Contains<Checks>(checks, Checks::CheckMissingChildRows))
 		{
 		StopWatch stopWatch(true);
-        auto passed = true;
         rc = CheckMissingChildRows([](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)
 			{
 			return false;
@@ -1322,7 +1312,7 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
 			{
             return rc;
         	}
-		callback(GetCheckName(Checks::CheckSchemaLoad), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckSchemaLoad), true, stopWatch.GetCurrent());
     	}
     return BE_SQLITE_OK;
 }
