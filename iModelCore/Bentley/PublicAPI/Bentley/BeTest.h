@@ -336,7 +336,7 @@ BENTLEYDLL_EXPORT static void TearDownTestCase(Utf8CP);
     #define BE_TEST_EXPECTED_RESULT_STRCASEEQ(val1,val2,fatal)          BeTest::ExpectedResult (BeTest::EqStr(val1,val2,true), #val1,     #val2,        __FILE__ , __LINE__,fatal)
     #define BE_TEST_EXPECTED_RESULT_STRNE(val1,val2,fatal)              BeTest::ExpectedResult (!BeTest::EqStr(val1,val2,false), #val1,     #val2,        __FILE__ , __LINE__,fatal)
     #define BE_TEST_EXPECTED_RESULT_TRUE(expression,fatal)              BeTest::ExpectedResult (expression, "TRUE",    #expression,  __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_FALSE(expression,fatal)             BeTest::ExpectedResult (!expression, "FALSE",   #expression,  __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_FALSE(expression,fatal)             BeTest::ExpectedResult (!(expression), "FALSE",   #expression,  __FILE__ , __LINE__,fatal)
     #define BE_TEST_EXPECTED_RESULT_LE(val1,val2,fatal)                 BeTest::ExpectedResult ((val1) <= (val2), #val1,     #val2,        __FILE__ , __LINE__,fatal)
     #define BE_TEST_EXPECTED_RESULT_LT(val1,val2,fatal)                 BeTest::ExpectedResult ((val1) <  (val2), #val1,     #val2,        __FILE__ , __LINE__,fatal)
     #define BE_TEST_EXPECTED_RESULT_GE(val1,val2,fatal)                 BeTest::ExpectedResult ((val1) >= (val2), #val1,     #val2,        __FILE__ , __LINE__,fatal)
