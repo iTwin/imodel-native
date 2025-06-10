@@ -100,6 +100,7 @@ describe("basic tests", () => {
     const stmt = new iModelJsNative.SqliteStatement();
     stmt.prepare(iModelDb, "SELECT [sql] FROM [sqlite_stmt]");
     assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
+    stmt.dispose();
   });
 
   it("schema synchronization", () => {
