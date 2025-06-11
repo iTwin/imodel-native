@@ -934,7 +934,9 @@ ContentRuleInputKeysContainer RulesPreprocessor::_GetContentSpecifications(Conte
              params.GetNodeLocater(), inputNodeKey.get(), m_rulesetVariables, m_usedVariablesListener, params.GetNodeLabelCalculator());
             return ECExpressionContextsProvider::GetContentRulesContext(contextParams);
             };
-        OptimizedExpressionsParameters optimizedParams(m_connections, m_connection, inputNodeKey.get(), params.GetPreferredDisplayType().c_str());
+        // Extending lifetime of preferredDisplayType
+        Utf8String preferredDisplayType = params.GetPreferredDisplayType();
+        OptimizedExpressionsParameters optimizedParams(m_connections, m_connection, inputNodeKey.get(), preferredDisplayType.c_str());
         for (ContentRuleCP rule : m_ruleset.GetContentRules())
             {
             if (!MeetsSchemaRequirements(m_connection.GetECDb(), rule->GetRequiredSchemaSpecifications(), *rule))
