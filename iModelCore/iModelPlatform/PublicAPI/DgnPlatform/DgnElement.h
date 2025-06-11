@@ -2996,8 +2996,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
 
 protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DefinitionElementCP _ToDefinitionElement() const override final {return this;}
+
 public:
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
 
