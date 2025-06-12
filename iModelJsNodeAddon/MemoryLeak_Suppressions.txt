@@ -5,4 +5,4 @@ leak:*/BentleyBuild/*
 leak:*/toolcache/*
 leak:*/node*/*
 leak:*interceptor_malloc
-leak:*imodeljs.node*
+leak:*UGS::CaeUtils*
