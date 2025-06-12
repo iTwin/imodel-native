@@ -5722,7 +5722,9 @@ bool GeometryBuilder::Append(GeometryParamsCR elParams, CoordSystem coord)
     if (m_elParams.IsEquivalent(elParams))
         return true;
 
-    m_subCategoryChanged = (!m_isPartCreate && (elParams.GetSubCategoryId() != m_elParams.GetSubCategoryId()));
+    // Don't clear changed status when another appearance opcode (ex. material, linestyle) is appended...
+    if (!m_subCategoryChanged)
+        m_subCategoryChanged = (!m_isPartCreate && (elParams.GetSubCategoryId() != m_elParams.GetSubCategoryId()));
     m_elParams = elParams;
     m_appearanceChanged = true; // Defer append until we actually have some geometry...
 
