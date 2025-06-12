@@ -3830,7 +3830,7 @@ public:
             }
 
         ECSqlStatus stat = m_binder->BindNavigation(navId, relClassId);
-        if (validateRelECClassId && stat == ECSqlStatus::InvalidECSql)
+        if (validateRelECClassId && stat == ECSqlStatus(BE_SQLITE_ERROR))
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not match the relationship class in the navigation property.", relClassName.c_str()).c_str(), IModelJsNativeErrorKey::ECClassError);
 
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
