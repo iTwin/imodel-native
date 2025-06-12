@@ -40,6 +40,18 @@ void expectToThrow(std::function<void()> fn, Utf8CP msg) {
     BeTest::SetFailOnAssert(true);
 }
 
+void expectToNotThrow(std::function<void()> fn, Utf8CP msg)
+    {
+    BeTest::SetFailOnAssert(false);
+    try {
+        fn();
+    } catch (std::exception const& e) {
+        EXPECT_STREQ(e.what(), msg);
+        ASSERT_TRUE(false) << "Expected no exception, but got one.";
+    }
+    BeTest::SetFailOnAssert(true);
+    }   
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -1829,11 +1841,7 @@ TEST_F(RevisionTestFixture, DeleteClassConstraintViolationInCacheTable)
     // Apply the changeset with the major schema update that deletes the class
     // This should not throw an exception, but rather apply the changes successfully
     // and the class should be deleted from the cache table
-    try {
-        EXPECT_EQ(m_db->Txns().PullMergeApply(*updatedRevision), ChangesetStatus::Success);
-    } catch (...) {
-        ASSERT_TRUE(false) << "Expected no exception, but got one.";
-    }
+    expectToNotThrow([&]() { EXPECT_EQ(m_db->Txns().PullMergeApply(*updatedRevision), ChangesetStatus::Success); }, "Detected 1 foreign key conflicts in ChangeSet. Aborting merge.");
 
     // Class should be deleted
     checkTestClassExists(false);
