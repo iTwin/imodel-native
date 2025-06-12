@@ -431,6 +431,8 @@ CloudResult CloudUtil::Init(CloudContainer const& container, int logLevel, int n
     if (httpTimeout <= 0)
         httpTimeout = DEFAULT_HTTP_TIMEOUT;
     sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_HTTPTIMEOUT, httpTimeout);
+    // todo: The following should be optional.
+    sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_NATIVECA, 1);
     return CloudResult();
 }
 

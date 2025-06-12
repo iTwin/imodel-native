@@ -78,6 +78,7 @@ struct sqlite3_bcv {
 
   int bTestNoKv;                  /* SQLITE_BCVCONFIG_TESTNOKV option */
   int bFindOrphans;               /* SQLITE_BCVCONFIG_FINDORPHANS option */
+  int bNativeCA;                  /* SQLITE_BCVCONFIG_NATIVECA option */
 
   bcv_log_cb xBcvLog;
   void *pBcvLogCtx;
@@ -90,6 +91,7 @@ typedef struct sqlite3_bcv_request BcvDispatchReq;
 struct BcvDispatch {
   CURLM *pMulti;                  /* The libcurl dispatcher ("multi-handle") */
   int bVerbose;                   /* True to make libcurl verbose */
+  int bNativeCA;
   int nHttpTimeout;
   int iNextRequestId;             /* Next request-id (for logging only) */
   int iDispatchId;                /* Dispatch id (for logging only) */
@@ -1135,7 +1137,8 @@ int sqlite3_bcv_open(
   if( pNew ){
     pNew->nRequest = 1;
     pNew->nHttpTimeout = BCV_DEFAULT_HTTPTIMEOUT;
-    pNew->bFindOrphans = BCV_DEFAULT_FINDORPHANS;
+    pNew->bFindOrphans = BCV_DEFAULT_FINDORPHANS;\
+    pNew->bNativeCA = BCV_DEFAULT_NATIVECA;
     pNew->errCode = bcvContainerOpen(
         zMod, zUser, zKey, zCont, &pNew->pCont, &pNew->zErrmsg
     );
@@ -1237,6 +1240,11 @@ int sqlite3_bcv_config(sqlite3_bcv *p, int eOp, ...){
         break;
       case SQLITE_BCVCONFIG_FINDORPHANS: {
         p->bFindOrphans = va_arg(ap, int);
+        break;
+      }
+      case SQLITE_BCVCONFIG_NATIVECA: {
+        p->bNativeCA = va_arg(ap, int);
+        bcvDispatchNativeCA(p->pDisp, p->bNativeCA);
         break;
       }
       default:
@@ -2303,12 +2311,16 @@ sqlite3_bcv_request *sqlite3_bcv_job_request(
   BcvDispatchReq *pNew = 0;
   pNew = bcvMallocRc(&pJob->rc, sizeof(BcvDispatchReq));
   if( pNew ){
+    BcvDispatch *pDisp = pJob->pDispatch;
     pNew->eMethod = SQLITE_BCV_METHOD_GET;
     pNew->xCallback = xCallback;
     pNew->pApp = pApp;
     pNew->pNext = pJob->pPending;
     pNew->pJob = pJob;
     pNew->pCurl = curl_easy_init();
+    if ( pDisp->bNativeCA ){
+      curl_easy_setopt(pNew->pCurl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
+    }
     pJob->pPending = pNew;
   }
   return pNew;
@@ -2720,6 +2732,10 @@ int bcvDispatchNew(BcvDispatch **pp){
 
 void bcvDispatchVerbose(BcvDispatch *pDisp, int bVerbose){
   pDisp->bVerbose = bVerbose;
+}
+
+void bcvDispatchNativeCA(BcvDispatch *pDisp, int bNativeCA){
+  pDisp->bNativeCA = bNativeCA;
 }
 
 void bcvDispatchTimeout(BcvDispatch *pDisp, int nHttpTimeout){

@@ -174,6 +174,11 @@ int sqlite3_bcv_config(sqlite3_bcv*, int eOp, ...);
 **   for deletion. Orphaned blocks are created when a client abruptly halts,
 **   is disconnected or encounters an error while uploading a change.
 **   
+** SQLITE_BCVCONFIG_NATIVECA:
+**   This option requires a single argument of type int, interpreted
+**   as a Boolean. If set to true, then the native certificate authority store
+**   is used to verify HTTPS requests. If set to false (the default), then the
+**   default CA store is used instead.
 */
 #define SQLITE_BCVCONFIG_VERBOSE     1      /* (int) */
 #define SQLITE_BCVCONFIG_PROGRESS    2      /* (void*,xProgress) */
@@ -183,6 +188,7 @@ int sqlite3_bcv_config(sqlite3_bcv*, int eOp, ...);
 #define SQLITE_BCVCONFIG_TESTNOKV    6      /* (int) */
 #define SQLITE_BCVCONFIG_HTTPTIMEOUT 7      /* (int) */
 #define SQLITE_BCVCONFIG_FINDORPHANS 8      /* (int) */
+#define SQLITE_BCVCONFIG_NATIVECA    9      /* (int) */
 
 /*
 ** Delete an sqlite3_bcv handle obtained via an earlier call to
