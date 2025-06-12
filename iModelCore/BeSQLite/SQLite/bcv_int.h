@@ -435,7 +435,6 @@ int bcvDispatchRunAll(BcvDispatch*);
 void bcvDispatchFree(BcvDispatch*);
 void bcvDispatchVerbose(BcvDispatch*, int);
 void bcvDispatchTimeout(BcvDispatch*, int);
-void bcvDispatchNativeCA(BcvDispatch*, int);
 void bcvDispatchLog(BcvDispatch*, void*, void (*xLog)(void*,int,const char*));
 void bcvDispatchLogObj(BcvDispatch*, BcvLog*);
 
