@@ -722,7 +722,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             }
 
         if (!ValidateNavRelECClassIdLiteral(m_ecdb, ctx, valueExp, propertyMap))
-            return ECSqlStatus::InvalidECSql;
+            return ECSqlStatus(BE_SQLITE_ERROR);
 
         prepareInfo.AddPropNameValueInfo(propNameValueInfo, *table);
         }
@@ -1186,7 +1186,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             }
 
         if (!ValidateNavRelECClassIdLiteral(m_ecdb, ctx, rhsExp, lhsPropMap))
-            return ECSqlStatus::InvalidECSql;
+            return ECSqlStatus(BE_SQLITE_ERROR);
         }
 
     if (prepareInfo.HasWhereExp())

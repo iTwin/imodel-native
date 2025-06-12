@@ -13127,6 +13127,8 @@ TEST_F(InvalidRelECClassIdTestFixture, InsertWithInvalidRelECClassId_WithPragma)
     getClassIdStrFromName("ts.ElementOwnsChildElementsGrandDerived", elementOwnsChildElementGrandDerivedId);
     getClassIdStrFromName("ts.ElementRefersToElements", elementRefersToElementsId);
 
+    const auto sqlErrorStatus = ECSqlStatus(BE_SQLITE_ERROR);
+
     // Test with hardcoded values in ecsql statements without binders
     for (const auto& [testCaseNumber, pragmaValue, sqlStmt, firstNavPropValue, secondNavPropValue, expectedResult] : std::vector<TestCase> {
         {  1, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(1, %s)", "9999", "",ECSqlStatus::Success },
@@ -13147,22 +13149,22 @@ TEST_F(InvalidRelECClassIdTestFixture, InsertWithInvalidRelECClassId_WithPragma)
         { 13, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(13, %s, 14, %s)", elementRefersToElementsId, elementOwnsChildElementDerivedId,ECSqlStatus::Success },
         { 14, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(15, %s, 16, %s)", elementOwnsChildElementDerivedId, elementRefersToElementsId, ECSqlStatus::Success },
         
-        { 15, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(17, %s)", "9999", "",ECSqlStatus::InvalidECSql },
-        { 16, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(18, %s)", "0", "",ECSqlStatus::InvalidECSql },
-        { 17, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(19, %s)", "-1", "",ECSqlStatus::InvalidECSql },
+        { 15, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(17, %s)", "9999", "",sqlErrorStatus },
+        { 16, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(18, %s)", "0", "",sqlErrorStatus },
+        { 17, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(19, %s)", "-1", "",sqlErrorStatus },
         { 18, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(20, %s)", "null", "",ECSqlStatus::Success },
 
         { 19, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(21, %s)", elementOwnsChildElementsId, "",ECSqlStatus::Success },
         { 20, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(22, %s)", elementOwnsChildElementDerivedId, "",ECSqlStatus::Success },
         { 21, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(23, %s)", elementOwnsChildElementGrandDerivedId, "",ECSqlStatus::Success },
-        { 22, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(24, %s)", elementRefersToElementsId, "",ECSqlStatus::InvalidECSql },
+        { 22, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(24, %s)", elementRefersToElementsId, "",sqlErrorStatus },
 
-        { 23, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(25, %s)", elementOwnsChildElementsId, "",ECSqlStatus::InvalidECSql },
-        { 24, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(26, %s)", elementOwnsChildElementDerivedId, "",ECSqlStatus::InvalidECSql },
-        { 25, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(27, %s)", elementOwnsChildElementGrandDerivedId, "",ECSqlStatus::InvalidECSql },
+        { 23, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(25, %s)", elementOwnsChildElementsId, "",sqlErrorStatus },
+        { 24, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(26, %s)", elementOwnsChildElementDerivedId, "",sqlErrorStatus },
+        { 25, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(27, %s)", elementOwnsChildElementGrandDerivedId, "",sqlErrorStatus },
         { 26, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(28, %s)", elementRefersToElementsId, "",ECSqlStatus::Success },
 
-        { 27, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(29, %s, 30, %s)", elementRefersToElementsId, elementOwnsChildElementDerivedId,ECSqlStatus::InvalidECSql },
+        { 27, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(29, %s, 30, %s)", elementRefersToElementsId, elementOwnsChildElementDerivedId,sqlErrorStatus },
         { 28, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(31, %s, 32, %s)", elementOwnsChildElementDerivedId, elementRefersToElementsId, ECSqlStatus::Success },
 
         { 29, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(31, %s, 32, %s)", elementOwnsChildElementDerivedId, elementRefersToElementsId, ECSqlStatus::Success },
@@ -13191,17 +13193,17 @@ TEST_F(InvalidRelECClassIdTestFixture, InsertWithInvalidRelECClassId_WithPragma)
         { 42, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementsId, "", ECSqlStatus::Success },
         { 43, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementDerivedId, "", ECSqlStatus::Success },
         { 44, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementGrandDerivedId, "", ECSqlStatus::Success },
-        { 45, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementRefersToElementsId, "", ECSqlStatus::InvalidECSql},
-        { 46, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", "9999", "", ECSqlStatus::InvalidECSql },
+        { 45, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementRefersToElementsId, "", sqlErrorStatus},
+        { 46, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", "9999", "", sqlErrorStatus },
 
-        { 47, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementsId, "", ECSqlStatus::InvalidECSql },
-        { 48, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementDerivedId, "", ECSqlStatus::InvalidECSql },
-        { 49, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementGrandDerivedId, "", ECSqlStatus::InvalidECSql },
+        { 47, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementsId, "", sqlErrorStatus },
+        { 48, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementDerivedId, "", sqlErrorStatus },
+        { 49, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementGrandDerivedId, "", sqlErrorStatus },
         { 50, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementRefersToElementsId, "", ECSqlStatus::Success},
-        { 51, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", "9999", "", ECSqlStatus::InvalidECSql },
+        { 51, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", "9999", "", sqlErrorStatus },
 
         { 52, true, "INSERT INTO ts.Element(OwnsChildElements, RefersToElements) VALUES(?, ?)", elementOwnsChildElementsId, elementRefersToElementsId, ECSqlStatus::Success },
-        { 53, true, "INSERT INTO ts.Element(RefersToElements, OwnsChildElements) VALUES(?, ?)", elementOwnsChildElementsId, elementRefersToElementsId, ECSqlStatus::InvalidECSql },
+        { 53, true, "INSERT INTO ts.Element(RefersToElements, OwnsChildElements) VALUES(?, ?)", elementOwnsChildElementsId, elementRefersToElementsId, sqlErrorStatus },
     }) {
         setPragma(testCaseNumber, pragmaValue);
         ECSqlStatement stmt;
@@ -13253,6 +13255,8 @@ TEST_F(InvalidRelECClassIdTestFixture, UpdateWithInvalidRelECClassId_WithPragma)
 
     m_ecdb.SaveChanges();
 
+    const auto sqlErrorStatus = ECSqlStatus(BE_SQLITE_ERROR);
+
     // Test with hardcoded values in ecsql statements without binders
     for (const auto& [testCaseNumber, pragmaValue, sqlStmt, firstNavPropValue, secondNavPropValue, expectedResult] : std::vector<TestCase> {
         {  1, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "9999", "", ECSqlStatus::Success },
@@ -13271,23 +13275,23 @@ TEST_F(InvalidRelECClassIdTestFixture, UpdateWithInvalidRelECClassId_WithPragma)
         { 12, false, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
         { 13, false, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
 
-        { 14, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "9999", "", ECSqlStatus::InvalidECSql },
-        { 15, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "0", "", ECSqlStatus::InvalidECSql },
-        { 16, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "-1", "", ECSqlStatus::InvalidECSql },
+        { 14, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "9999", "", sqlErrorStatus },
+        { 15, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "0", "", sqlErrorStatus },
+        { 16, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "-1", "", sqlErrorStatus },
         { 17, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "null", "", ECSqlStatus::Success },
 
-        { 18, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::InvalidECSql },
-        { 19, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::InvalidECSql },
+        { 18, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementRefersToElementsIdStr, "", sqlErrorStatus },
+        { 19, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", sqlErrorStatus },
 
         { 20, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
         { 21, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
         { 22, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
-        { 23, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::InvalidECSql },
-        { 24, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::InvalidECSql },
-        { 25, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::InvalidECSql },
+        { 23, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", sqlErrorStatus },
+        { 24, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementDerivedIdStr, "", sqlErrorStatus },
+        { 25, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", sqlErrorStatus },
         { 26, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
         { 27, true, "update ts.Element set OwnsChildElements.RelECClassId=%s, RefersToElements.RelECClassId=%s", elementOwnsChildElementsIdStr, elementRefersToElementsIdStr, ECSqlStatus::Success },
-        { 28, true, "update ts.Element set OwnsChildElements.RelECClassId=%s, RefersToElements.RelECClassId=%s", elementRefersToElementsIdStr, elementOwnsChildElementsIdStr, ECSqlStatus::InvalidECSql },
+        { 28, true, "update ts.Element set OwnsChildElements.RelECClassId=%s, RefersToElements.RelECClassId=%s", elementRefersToElementsIdStr, elementOwnsChildElementsIdStr, sqlErrorStatus },
     })
         {
         setPragma(testCaseNumber, pragmaValue);
@@ -13307,18 +13311,18 @@ TEST_F(InvalidRelECClassIdTestFixture, UpdateWithInvalidRelECClassId_WithPragma)
         { 36, false, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
         { 37, false, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
 
-        { 38, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", "9999", "", ECSqlStatus::InvalidECSql },
+        { 38, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", "9999", "", sqlErrorStatus },
         { 39, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
         { 40, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
         { 41, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
-        { 42, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::InvalidECSql },
+        { 42, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementRefersToElementsIdStr, "", sqlErrorStatus },
 
-        { 43, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::InvalidECSql },
-        { 44, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::InvalidECSql },
-        { 45, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::InvalidECSql },
+        { 43, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", sqlErrorStatus },
+        { 44, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementDerivedIdStr, "", sqlErrorStatus },
+        { 45, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", sqlErrorStatus },
         { 46, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
         { 47, true, "update ts.Element set OwnsChildElements=?, RefersToElements=?", elementOwnsChildElementsIdStr, elementRefersToElementsIdStr, ECSqlStatus::Success },
-        { 48, true, "update ts.Element set OwnsChildElements=?, RefersToElements=?", elementRefersToElementsIdStr, elementOwnsChildElementsIdStr, ECSqlStatus::InvalidECSql },
+        { 48, true, "update ts.Element set OwnsChildElements=?, RefersToElements=?", elementRefersToElementsIdStr, elementOwnsChildElementsIdStr, sqlErrorStatus },
     })
         {
         setPragma(testCaseNumber, pragmaValue);

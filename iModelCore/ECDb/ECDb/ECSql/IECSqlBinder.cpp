@@ -129,7 +129,7 @@ ECSqlStatus IECSqlBinder::BindNavigation(BeInt64Id relatedInstanceId, ECN::ECCla
         return ECSqlStatus::Success;
 
     if (!GetBinderInfo().IsClassIdValidForNavigationProperty(relationshipECClassId))
-        return ECSqlStatus::InvalidECSql;
+        return ECSqlStatus(BE_SQLITE_ERROR);
 
     IECSqlBinder& relClassIdBinder = _BindStructMember(ECDBSYS_PROP_NavPropRelECClassId);
     return relClassIdBinder.BindId(relationshipECClassId);
