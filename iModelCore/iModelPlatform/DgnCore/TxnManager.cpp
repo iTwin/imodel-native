@@ -492,7 +492,6 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName) {
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Txns) ||
                TABLE_NAME_STARTS_WITH(DGN_VTABLE_SpatialIndex) ||
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Rebase) ||
-               TABLE_NAME_STARTS_WITH("ec_cache_") ||
                DgnSearchableText::IsUntrackedFts5Table(tableName)
             ) ? TrackChangesForTable::No : TrackChangesForTable::Yes;
 }
@@ -969,6 +968,26 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
         m_dgndb.ThrowException("unable to save changes", (int) ChangesetStatus::SQLiteError);
 }
 
+namespace
+    {
+    bool IsCacheTableNameInChangeset(const Changes& changes)
+        {
+        for (const auto& change: changes)
+            {
+            Utf8CP tableName = nullptr;
+            int nCols, indirect;
+            DbOpcode opCode;
+            
+            if (const auto status = change.GetOperation(&tableName, &nCols, &opCode, &indirect);
+                status != BE_SQLITE_OK || tableName == nullptr || opCode == DbOpcode::Insert)  // we only care about update/delete operations
+                continue;
+
+            if (0 == strncmp(tableName, "ec_cache_", 9))
+                return true;
+            }
+        return false;
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
@@ -1027,7 +1046,7 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
             auto schemaApplyArgs = ApplyChangesArgs::Default()
                 .SetInvert(invert)
                 .SetIgnoreNoop(true)
-                .SetFkNoAction(true)
+                .SetFkNoAction(IsCacheTableNameInChangeset(changeStream.GetChanges()))
                 .ApplyOnlySchemaChanges();
 
             m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
@@ -1343,32 +1362,14 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     // apply schema part of changeset before data changes if schema changes are present
     if (containsSchemaChanges)
         {
-        // If the SQLITE_CHANGESETAPPLY_FKNOACTION flag is set, we need to check if the cache tables have been tracked in the changeset.
-        // If the cache tables are not tracked, we should set the flag to false to allow cascades and avoid any possible FK constraint violations.
-        auto isECCacheTableInChangeSet = false; // Is ec_cache_* table tracked in the changeset?
-        for (const auto& change: Changes(changeset, false))
-            {
-            Utf8CP tableName = nullptr;
-            int nCols, indirect;
-            DbOpcode opCode;
-            
-            if (const auto status = change.GetOperation(&tableName, &nCols, &opCode, &indirect);
-                status != BE_SQLITE_OK || tableName == nullptr || opCode == DbOpcode::Insert)  // we only care about update/delete operations
-                continue;
-
-            if (0 == strncmp(tableName, "ec_cache_", 9))
-                {
-                isECCacheTableInChangeSet = true;
-                break;
-                }
-            }
-
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
         auto schemaApplyArgs = ApplyChangesArgs::Default()
             .SetRebase(rebase)
             .SetInvert(invert)
             .SetIgnoreNoop(true)
-            .SetFkNoAction(isECCacheTableInChangeSet)
+            // If the SQLITE_CHANGESETAPPLY_FKNOACTION flag is set, we need to check if the cache tables have been tracked in the changeset.
+            // If the cache tables are not tracked, we should set the flag to false to allow cascades and avoid any possible FK constraint violations.
+            .SetFkNoAction(IsCacheTableNameInChangeset(Changes(changeset, false)))
             .ApplyOnlySchemaChanges();
 
         if(!m_dgndb.IsReadonly()) {
