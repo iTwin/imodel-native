@@ -1340,7 +1340,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     }
 
     // we want cascade delete to work during rebase.
-    const bool fkNoAction = !pmConf.IsRebasingLocalChanges();
+    bool fkNoAction = !pmConf.IsRebasingLocalChanges();
     const bool ignoreNoop = pmConf.IsRebasingLocalChanges();
     bool fastForwardEncounteredMergeConflict = false;
     auto fastForwardConflictHandler = [&fastForwardEncounteredMergeConflict](ChangeStream::ConflictCause _, Changes::Change change) {
@@ -1352,7 +1352,29 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     };
 
     // apply schema part of changeset before data changes if schema changes are present
-    if (containsSchemaChanges) {
+    if (containsSchemaChanges)
+        {
+        // If the SQLITE_CHANGESETAPPLY_FKNOACTION flag is set, we need to check if the cache tables have been tracked in the changeset.
+        // If the cache tables are not tracked, we should set the flag to false to allow cascades and avoid any possible FK constraint violations.
+        if (fkNoAction)
+            {
+            auto isECCacheTableInChangeSet = false; // Is ec_cache_* table tracked in the changeset?
+            for (const auto& change: Changes(changeset, false))
+                {
+                const auto dbOpCode = change.GetOpcode();
+                if (dbOpCode == DbOpcode::Insert)  // we only care about update/delete operations
+                    continue;
+                
+                if (const auto tableName = change.GetTableName();
+                    !tableName.empty() && 0 == strncmp(tableName.c_str(), "ec_cache_", 9))
+                    {
+                    isECCacheTableInChangeSet = true;
+                    break;
+                    }
+                }
+            fkNoAction = isECCacheTableInChangeSet;
+            }
+
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
         auto schemaApplyArgs = ApplyChangesArgs::Default()
             .SetInvert(invert)
