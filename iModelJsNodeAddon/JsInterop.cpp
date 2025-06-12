@@ -518,7 +518,7 @@ void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Nap
                 }
             }
             else {
-                BeNapi::ThrowJsException(Env(), "concurrent query: unsupported response type");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
             }
             callback.Call({ jsResp });
         });
@@ -549,7 +549,7 @@ void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Nap
                         jsResp[BlobIOResponse::JData] = blob;
                     }
                 } else {
-                    BeNapi::ThrowJsException(env, "concurrent query: unsupported response type");
+                    THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
                 }
                 jsCallback.Call({jsResp});
         }) != napi_ok) {
@@ -565,13 +565,13 @@ void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Nap
 DgnDbPtr JsInterop::CreateIModel(Utf8StringCR filenameIn, BeJsConst props) {
     auto rootSubject = props[json_rootSubject()];
     if (!rootSubject.isStringMember(json_name()))
-        BeNapi::ThrowJsException(Env(), "Root subject name is missing");
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "Root subject name is missing", IModelJsNativeErrorKey::BadArg);
 
     BeFileName filename(filenameIn);
     BeFileName path = filename.GetDirectoryName();
     if (!path.DoesPathExist()) {
         Utf8String err = Utf8String("Path [") + path.GetNameUtf8() + "] does not exist";
-        BeNapi::ThrowJsException(Env(), err.c_str());
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), err.c_str(), IModelJsNativeErrorKey::NotFound);
     }
 
     CreateDgnDbParams params(rootSubject[json_name()].asCString());
@@ -949,9 +949,9 @@ Napi::Value JsInterop::InsertInstance(ECDbR db, NapiInfoCR info) {
     auto rc = repo.Insert(inst, args, fmt, newKey);
     if (rc != BE_SQLITE_DONE) {
         if (repo.GetLastError().empty()) {
-            THROW_JS_EXCEPTION("Failed to insert instance");
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to insert instance", rc);
         }
-        THROW_JS_EXCEPTION(repo.GetLastError().c_str());
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
     }
 
     return Napi::Value::From(info.Env(), newKey.GetInstanceId().ToHexStr());
@@ -976,9 +976,9 @@ Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
     auto rc = repo.Update(inst, args, fmt);
     if (rc != BE_SQLITE_DONE) {
         if (repo.GetLastError().empty()) {
-            THROW_JS_EXCEPTION("Failed to insert instance");
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to insert instance", rc);
         }
-        THROW_JS_EXCEPTION(repo.GetLastError().c_str());
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
     }
     return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);
 }
@@ -1002,9 +1002,9 @@ Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
     auto rc = repo.Delete(key, args, fmt);
     if (rc != BE_SQLITE_DONE) {
         if (repo.GetLastError().empty()) {
-            THROW_JS_EXCEPTION("Failed to insert instance");
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to insert instance", rc);
         }
-        THROW_JS_EXCEPTION(repo.GetLastError().c_str());
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
     }
     return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);;
 }
@@ -1029,9 +1029,9 @@ Napi::Value JsInterop::ReadInstance(ECDbR db, NapiInfoCR info) {
     auto rc = repo.Read(key, outInstance, args, fmt);
     if (rc != BE_SQLITE_ROW) {
         if (repo.GetLastError().empty()) {
-            THROW_JS_EXCEPTION("Failed to read instance");
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to read instance", rc);
         }
-        THROW_JS_EXCEPTION(repo.GetLastError().c_str());
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
     }
     return outInstance;
 }
@@ -1349,7 +1349,7 @@ void NativeChangeset::OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool i
     input.AppendUtf8(changesetFile.c_str());
 
     if (!input.DoesPathExist()) {
-        BeNapi::ThrowJsException(env, "open(): changeset file specified does not exists", (int)BE_SQLITE_CANTOPEN);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "open(): changeset file specified does not exists", BE_SQLITE_CANTOPEN);
     }
 
     auto reader = std::make_unique<ChangesetFileReaderBase>(bvector<BeFileName>{input});
@@ -1366,11 +1366,11 @@ void NativeChangeset::OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool i
 //+---------------+---------------+---------------+---------------+---------------+------
 void NativeChangeset::OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream> changeStream, bool invert) {
     if (m_changeStream != nullptr) {
-        BeNapi::ThrowJsException(env, "openChangeStream(): reader is already in open state.", (int)BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "openChangeStream(): reader is already in open state.", BE_SQLITE_ERROR);
     }
 
     if (changeStream == nullptr) {
-        BeNapi::ThrowJsException(env, "openChangeStream(): could not open a empty changeStream", (int)BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "openChangeStream(): could not open a empty changeStream", BE_SQLITE_ERROR);
     }
 
     m_invert = invert;
@@ -1386,26 +1386,26 @@ void NativeChangeset::OpenGroup(Napi::Env env, T_Utf8StringVector const& changes
     for(auto& changesetFile : changesetFiles) {
         BeFileName inputFile(changesetFile);
         if (!inputFile.DoesPathExist()) {
-            BeNapi::ThrowJsException(env, SqlPrintfString("openGroup(): changeset file specified does not exists (%s)", inputFile.GetNameUtf8().c_str()), (int)BE_SQLITE_CANTOPEN);
+            THROW_JS_BE_SQLITE_EXCEPTION(env, SqlPrintfString("openGroup(): changeset file specified does not exists (%s)", inputFile.GetNameUtf8().c_str()), BE_SQLITE_CANTOPEN);
         }
 
         ChangesetFileReader reader(inputFile);
         bool containsSchemaChanges;
         DdlChanges ddlChanges;
         if (BE_SQLITE_OK != reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges)){
-            BeNapi::ThrowJsException(env, "openGroup(): unable to read schema changes", (int)BE_SQLITE_ERROR);
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "openGroup(): unable to read schema changes", BE_SQLITE_ERROR);
         }
         for(auto& ddl : ddlChanges.GetDDLs()) {
             ddlGroup.AddDDL(ddl.c_str());
         }
         if (BE_SQLITE_OK != reader.AddToChangeGroup(*m_changeGroup)){
-            BeNapi::ThrowJsException(env, "openGroup(): unable to add changeset to group", (int)BE_SQLITE_ERROR);
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "openGroup(): unable to add changeset to group", BE_SQLITE_ERROR);
         }
     }
 
     m_changeStream = std::make_unique<ChangeSet>();
     if (BE_SQLITE_OK != m_changeStream->FromChangeGroup(*m_changeGroup)){
-        BeNapi::ThrowJsException(env, "openGroup(): unable to create change stream", (int)BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "openGroup(): unable to create change stream", BE_SQLITE_ERROR);
     }
     m_ddl = ddlGroup.ToString();
     m_invert = invert;
@@ -1425,18 +1425,18 @@ void NativeChangeset::WriteToFile(Napi::Env env, Utf8String const& fileName, boo
     }
 
     if (outputFile.DoesPathExist() && !override) {
-        BeNapi::ThrowJsException(env, "writeToFile(): changeset file already exists", (int)BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): changeset file already exists", BE_SQLITE_ERROR);
     }
 
     if(outputFile.DoesPathExist() && override) {
         if (outputFile.BeDeleteFile() != BeFileNameStatus::Success) {
-            BeNapi::ThrowJsException(env, "writeToFile(): unable to delete existing changeset file", (int)BE_SQLITE_ERROR);
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to delete existing changeset file", BE_SQLITE_ERROR);
         }
     }
 
     ChangesetFileWriter writer(outputFile, containChanges, ddlChanges, nullptr);
     if (BE_SQLITE_OK !=  writer.Initialize()){
-        BeNapi::ThrowJsException(env, "writeToFile(): unable to initialize changeset writer", (int)BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to initialize changeset writer", BE_SQLITE_ERROR);
     }
 
     if(m_changeGroup){
@@ -1446,10 +1446,10 @@ void NativeChangeset::WriteToFile(Napi::Env env, Utf8String const& fileName, boo
         m_changeStream->AddToChangeGroup(changeGroup);
         writer.FromChangeGroup(changeGroup);
     } else {
-        BeNapi::ThrowJsException(env, "writeToFile(): no changeset to write", (int)BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): no changeset to write", BE_SQLITE_ERROR);
     }
     if (!outputFile.DoesPathExist()) {
-        BeNapi::ThrowJsException(env, "writeToFile(): unable to write changeset file", (int)BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to write changeset file", BE_SQLITE_ERROR);
     }
 }
 //---------------------------------------------------------------------------------------
@@ -1477,7 +1477,7 @@ void NativeChangeset::Reset(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::Step(Napi::Env env) {
     if (!IsOpen()) {
-        BeNapi::ThrowJsException(env, "step(): no changeset opened.", (int)BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "step(): no changeset opened.", BE_SQLITE_ERROR);
     }
 
     if (m_changes == nullptr) {
@@ -1493,12 +1493,12 @@ Napi::Value NativeChangeset::Step(Napi::Env env) {
 
     auto rc = m_currentChange.GetOperation(&m_tableName, &m_columnCount, &m_opcode, &m_indirect);
     if (rc != BE_SQLITE_OK) {
-        BeNapi::ThrowJsException(env, "step(): unable to read changeset", (int)rc);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "step(): unable to read changeset", rc);
     }
 
     rc = m_currentChange.GetPrimaryKeyColumns(&m_primaryKeyColumns, &m_primaryKeyColumnCount);
     if (rc != BE_SQLITE_OK) {
-        BeNapi::ThrowJsException(env, "step(): unable to read changeset", (int)rc);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "step(): unable to read changeset", rc);
     }
 
     m_primaryKeyCount = 0;
@@ -1515,7 +1515,7 @@ Napi::Value NativeChangeset::Step(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetTableName(Napi::Env env) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "getTableName(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getTableName(): there is no current row.", BE_SQLITE_ERROR);
     }
 
     return Napi::String::New(env, m_tableName);
@@ -1526,7 +1526,7 @@ Napi::Value NativeChangeset::GetTableName(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetOpCode(Napi::Env env) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "getOpCode(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getOpCode(): there is no current row.", BE_SQLITE_ERROR);
     }
 
     return Napi::Number::New(env, (int)m_opcode);
@@ -1537,7 +1537,7 @@ Napi::Value NativeChangeset::GetOpCode(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::IsIndirectChange(Napi::Env env) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "isIndirectChange(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "isIndirectChange(): there is no current row.", BE_SQLITE_ERROR);
     }
 
     return Napi::Boolean::New(env, (int)m_indirect);
@@ -1548,7 +1548,7 @@ Napi::Value NativeChangeset::IsIndirectChange(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetColumnCount(Napi::Env env) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "getColumnCount(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getColumnCount(): there is no current row.", BE_SQLITE_ERROR);
     }
 
     return Napi::Number::New(env, m_columnCount);
@@ -1748,7 +1748,7 @@ Napi::Value NativeChangeset::GetColumnValueType(Napi::Env env, int col, int targ
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetDdlChanges(Napi::Env env) {
     if (!IsOpen()) {
-        BeNapi::ThrowJsException(env, "getDdlChanges(): no changeset opened.", (int)BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getDdlChanges(): no changeset opened.", BE_SQLITE_ERROR);
     }
 
     if (!m_ddl.empty())
@@ -1785,7 +1785,7 @@ Napi::Value NativeChangeset::GetColumnValue(Napi::Env env, int col, int target) 
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetPrimaryKeyColumnIndexes(Napi::Env env) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "getPrimaryKeyColumnIndexes(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getPrimaryKeyColumnIndexes(): there is no current row.",  BE_SQLITE_ERROR);
     }
 
     auto row = Napi::Array::New(env, m_primaryKeyCount);
@@ -1803,7 +1803,7 @@ Napi::Value NativeChangeset::GetPrimaryKeyColumnIndexes(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetRow(Napi::Env env, int target) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "getRow(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getRow(): there is no current row.",  BE_SQLITE_ERROR);
     }
     // old value can be called by updated and deleted row.
     if (target == 0 && m_opcode == DbOpcode::Insert)
@@ -1825,7 +1825,7 @@ Napi::Value NativeChangeset::GetRow(Napi::Env env, int target) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetPrimaryKeys(Napi::Env env) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "getPrimaryKeys(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getPrimaryKeys(): there is no current row.",  BE_SQLITE_ERROR);
     }
 
     auto row = Napi::Array::New(env, m_primaryKeyCount);
