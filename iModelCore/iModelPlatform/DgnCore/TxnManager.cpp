@@ -488,6 +488,7 @@ BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker) {
 TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName) {
     // Skip these tables - they hold redundant data that will be automatically updated when the changeset is applied
     return (
+               TABLE_NAME_STARTS_WITH(BEDB_TABLE_Local) ||
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Txns) ||
                TABLE_NAME_STARTS_WITH(DGN_VTABLE_SpatialIndex) ||
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Rebase) ||
@@ -1340,13 +1341,34 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
 
 
     // apply schema part of changeset before data changes if schema changes are present
-    if (containsSchemaChanges) {
+    if (containsSchemaChanges)
+        {
+        // If the SQLITE_CHANGESETAPPLY_FKNOACTION flag is set, we need to check if the cache tables have been tracked in the changeset.
+        // If the cache tables are not tracked, we should set the flag to false to allow cascades and avoid any possible FK constraint violations.
+        auto isECCacheTableInChangeSet = false; // Is ec_cache_* table tracked in the changeset?
+        for (const auto& change: Changes(changeset, false))
+            {
+            Utf8CP tableName = nullptr;
+            int nCols, indirect;
+            DbOpcode opCode;
+            
+            if (const auto status = change.GetOperation(&tableName, &nCols, &opCode, &indirect);
+                status != BE_SQLITE_OK || tableName == nullptr || opCode == DbOpcode::Insert)  // we only care about update/delete operations
+                continue;
+
+            if (0 == strncmp(tableName, "ec_cache_", 9))
+                {
+                isECCacheTableInChangeSet = true;
+                break;
+                }
+            }
+
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
         auto schemaApplyArgs = ApplyChangesArgs::Default()
             .SetRebase(rebase)
             .SetInvert(invert)
             .SetIgnoreNoop(true)
-            .SetFkNoAction(true)
+            .SetFkNoAction(isECCacheTableInChangeSet)
             .ApplyOnlySchemaChanges();
 
         if(!m_dgndb.IsReadonly()) {
