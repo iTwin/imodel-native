@@ -75,8 +75,8 @@ int wmain(int argc, WCharCP argv[])
     }
 
 #ifdef __unix__
-extern "C" int main(int argc, char** argv) {
-    BentleyApi::bvector<wchar_t*> argv_w_ptrs;
+int main(int argc, char** argv) {
+    BentleyApi::bvector<WCharCP> argv_w_ptrs;
     for (int i = 0; i < argc; i++) {
         BentleyApi::WString argw(argv[i], BentleyApi::BentleyCharEncoding::Utf8);
         auto argp = new wchar_t[argw.size() + 1];
@@ -84,6 +84,6 @@ extern "C" int main(int argc, char** argv) {
         argv_w_ptrs.push_back(argp);
     }
 
-    return wmain(argc, (ARGV_TYPE)argv_w_ptrs.data());
+    return wmain(argc, argv_w_ptrs.data());
 }
 #endif
