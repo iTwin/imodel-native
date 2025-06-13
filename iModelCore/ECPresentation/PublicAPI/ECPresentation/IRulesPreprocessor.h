@@ -253,7 +253,7 @@ struct IRulesPreprocessor
     private:
         INavNodeLocaterCP m_nodeLocater;
         INavNodeKeysContainerCPtr m_inputNodeKeys;
-        Utf8StringCR m_preferredContentDisplayType;
+        Utf8String m_preferredContentDisplayType;
         SelectionInfo const* m_selectionInfo;
         INodeLabelCalculator const& m_nodeLabelCalculator;
         INodeInstanceKeysProvider const* m_instanceKeysProvider;
