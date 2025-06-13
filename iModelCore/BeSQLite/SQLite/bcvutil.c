@@ -62,6 +62,14 @@
 typedef int(*bcv_progress_cb)(void*, sqlite3_int64, sqlite3_int64);
 typedef void(*bcv_log_cb)(void*, const char *);
 
+struct BcvGlobalConfig {
+  int bNativeCA;                  /* SQLITE_BCVGLOBALCONFIG_NATIVECA option */
+};
+
+static struct BcvGlobalConfig bcvGlobalConfig = {
+  BCV_DEFAULT_NATIVECA,           /* Default to not using native CA */
+};
+
 struct sqlite3_bcv {
   BcvContainer *pCont;            /* Cloud module instance */
   BcvDispatch *pDisp;             /* Dispatcher to manage callbacks */
@@ -1135,7 +1143,7 @@ int sqlite3_bcv_open(
   if( pNew ){
     pNew->nRequest = 1;
     pNew->nHttpTimeout = BCV_DEFAULT_HTTPTIMEOUT;
-    pNew->bFindOrphans = BCV_DEFAULT_FINDORPHANS;
+    pNew->bFindOrphans = BCV_DEFAULT_FINDORPHANS;\
     pNew->errCode = bcvContainerOpen(
         zMod, zUser, zKey, zCont, &pNew->pCont, &pNew->zErrmsg
     );
@@ -1180,6 +1188,24 @@ static void bcvLogWrapper(void *pApp, int bRetry, const char *zMsg){
   if( p->xBcvLog ){
     p->xBcvLog(p->pBcvLogCtx, zMsg);
   }
+}
+
+int sqlite3_bcv_global_config(int eOp, ...){
+  int rc = SQLITE_OK;
+  va_list ap;
+  va_start(ap, eOp);
+
+  switch( eOp ){
+    case SQLITE_BCVGLOBALCONFIG_NATIVECA:
+      bcvGlobalConfig.bNativeCA = va_arg(ap, int);
+      break;
+    default:
+      rc = SQLITE_MISUSE;
+      break;
+  }
+
+  va_end(ap);
+  return rc;
 }
 
 int sqlite3_bcv_config(sqlite3_bcv *p, int eOp, ...){
@@ -2309,6 +2335,9 @@ sqlite3_bcv_request *sqlite3_bcv_job_request(
     pNew->pNext = pJob->pPending;
     pNew->pJob = pJob;
     pNew->pCurl = curl_easy_init();
+    if ( bcvGlobalConfig.bNativeCA ){
+      curl_easy_setopt(pNew->pCurl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
+    }
     pJob->pPending = pNew;
   }
   return pNew;
