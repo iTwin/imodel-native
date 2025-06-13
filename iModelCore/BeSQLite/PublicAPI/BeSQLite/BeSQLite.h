@@ -2374,6 +2374,14 @@ struct ProfileState final
     };
 
 //=======================================================================================
+// @bsiclass
+//=======================================================================================
+enum class DbProgressAction {
+    Continue = 0,
+    Interrupt = 1,
+};
+
+//=======================================================================================
 //! A physical Db file.
 // @bsiclass
 //=======================================================================================
@@ -2413,11 +2421,13 @@ protected:
     BeBriefcaseId m_briefcaseId;
     StatementCache m_statements;
     NoCaseCollation m_noCaseCollation;
+    mutable std::function<DbProgressAction()> m_progressHandler;
     DbTxns m_txns;
     std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc, m_base36Func;
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout);
     ~DbFile();
 
+    void SetProgressHandler(std::function<DbProgressAction()>, int) const;
     DbResult SetBusyTimeout(int ms);
     DbResult StartSavepoint(Savepoint&, BeSQLiteTxnMode);
     DbResult StopSavepoint(Savepoint&, bool isCommit, Utf8CP operation);
@@ -2795,7 +2805,7 @@ public:
 
     //! Get the StatementCache for this Db.
     StatementCache& GetStatementCache() const {return const_cast<StatementCache&>(m_statements);}
-
+    void SetProgressHandler(std::function<DbProgressAction()> cb, int n = 500) const { m_dbFile->SetProgressHandler(cb, n); }
     //! Get a CachedStatement for this Db. If the SQL string has already been prepared and a CachedStatement exists for it in the cache, it will
     //! be Reset (see Statement::Reset) and returned without the need to re-Prepare it. If, however, the SQL string has not been used before (or maybe just
     //! not recently) then a new CachedStatement will be created and Prepared.

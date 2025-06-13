@@ -1131,6 +1131,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     auto& stmt = cachedAdaptor.GetStatement();
     auto& adaptor = cachedAdaptor.GetJsonAdaptor();
     auto& options = adaptor.GetOptions();
+    auto conn = cachedAdaptor.GetWorkerConn();
     options.SetAbbreviateBlobs(abbreviateBlobs);
     options.SetConvertClassIdsToClassNames(classIdToClassNames);
     options.SetUseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
@@ -1149,12 +1150,24 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
             runnableRequest.SetResponse(runnableRequest.CreateCancelResponse());
         else
             runnableRequest.SetResponse(runnableRequest.CreateECSqlResponse(result, props, row_count, st == status::done));
+    
+        if (conn->IsDbOpen())
+            conn->SetProgressHandler(nullptr);
     };
     auto setError = [&] (QueryResponse::Status status, std::string err) {
         runnableRequest.SetResponse(runnableRequest.CreateErrorResponse(status, err));
         log_error("%s. (%s)", err.c_str(), QueryResponse::StatusToString(status));
     };
 
+    if(conn->IsDbOpen()) {
+        conn->SetProgressHandler([&](){
+            if (runnableRequest.IsTimeExceeded()) {
+                log_trace("%s monitor interrupt query [id=%" PRIu32 "] as it exceeded allowed time", GetTimestamp().c_str(), runnableRequest.GetId());
+                return DbProgressAction::Interrupt;
+            }
+            return DbProgressAction::Continue;
+        });
+    }
     // go over each row and serialize result
     auto rc = stmt.Step();
     while (rc == BE_SQLITE_ROW) {
@@ -1442,32 +1455,6 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor)
                 log_trace("%s monitor interrupt query [id=%" PRIu32 "] with timeout", GetTimestamp().c_str(), request.GetId());
                 return true;
                 });
-            m_executor.GetConnectionCache().InterruptIf([&](RunnableRequestBase const& request) {
-                if (request.GetRequest().UsePrimaryConnection()) {
-                    return false;
-                }
-                if (request.IsTimeExceeded() ){
-                    if (request.IsInterrupted()) {
-                        log_trace("%s monitor query [id=%" PRIu32 "] has it exceeded allowed time. (already interrupted)", GetTimestamp().c_str(), request.GetId());
-                    } else {
-                        log_trace("%s monitor interrupt query [id=%" PRIu32 "] as it exceeded allowed time", GetTimestamp().c_str(), request.GetId());
-                    }
-                    return true;
-                }
-                if (m_allowTestingArgs) {
-                    if (auto testingArgs = request.GetRequest().GetTestingArgs()) {
-                        if (testingArgs->isBoolMember("interrupt") && testingArgs->Get("interrupt").asBool(false)) {
-                            if (request.IsInterrupted()) {
-                                log_trace("%s monitor query [id=%" PRIu32 "] mark for interrupt by testing args. (already interrupted)", GetTimestamp().c_str(), request.GetId());
-                            } else {
-                                log_trace("%s monitor interrupt query [id=%" PRIu32 "] mark for interrupt by testing args", GetTimestamp().c_str(), request.GetId());
-                            }
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            }, false);
 
             m_executor.GetConnectionCache().SyncAttachDbs();
             m_queue.IfReadyForAutoShutdown([&](){
@@ -1477,6 +1464,7 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor)
                     ConcurrentQueryMgr::Shutdown(m_queue.GetECDb());
                 }).detach();
             });
+
             std::unique_lock<std::mutex> lock(m_queryMonitorMutex);
             m_queryMonitorCv.wait_for(lock,m_pollInterval,[&]{ return m_stop.load() == true; });
             m_queryMonitorCv.notify_all();

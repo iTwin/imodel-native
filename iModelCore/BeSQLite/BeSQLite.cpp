@@ -6623,6 +6623,22 @@ DbResult DbFile::SetBusyTimeout(int ms) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+void DbFile::SetProgressHandler(std::function<DbProgressAction()> cb, int n) const {
+    m_progressHandler = cb;
+    if (m_progressHandler != nullptr) {
+        sqlite3_progress_handler(m_sqlDb, 1, nullptr, nullptr);
+    } else {
+        sqlite3_progress_handler(m_sqlDb, n, [](void* ctx)->int {
+            auto& cb = static_cast<DbFile*>(ctx)->m_progressHandler;
+            if (cb != nullptr)
+                return static_cast<int>(cb());
+            return (int)DbProgressAction::Continue;
+        }, (void*)this);
+    }
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult Db::CheckDbIntegrity(BeFileNameCR dbFileName)
     {
     Utf8String dbName(dbFileName.c_str());
