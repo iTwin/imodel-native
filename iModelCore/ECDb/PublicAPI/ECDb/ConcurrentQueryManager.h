@@ -571,10 +571,6 @@ struct ConcurrentQueryMgr final {
         ECDB_EXPORT bool Resume();
         ECDB_EXPORT bool IsSuspended() const;
         // change config
-        ECDB_EXPORT void SetWorkerPoolSize(uint32_t);
-        ECDB_EXPORT void SetRequestQueueMaxSize(uint32_t);
-        ECDB_EXPORT void SetCacheStatementsPerWork(uint32_t);
-        ECDB_EXPORT void SetMaxQuota(QueryQuota const&);
         ECDB_EXPORT static ConcurrentQueryMgr& GetInstance(ECDb const&);
         ECDB_EXPORT static void Shutdown(ECDbCR ecdb);
 };

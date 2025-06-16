@@ -328,15 +328,7 @@ void ConnectionCache::InterruptIf(std::function<bool(RunnableRequestBase const&)
             conn->InterruptIf(predicate, cancel);
     }
 }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void ConnectionCache::SetCacheStatementsPerWork(uint32_t newSize) {
-    recursive_guard_t lock(m_mutex);
-    for (auto& conn: m_conns) {
-        conn->SetAdaptorCacheSize(newSize);
-    }
-}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -574,23 +566,7 @@ RunnableRequestQueue::RunnableRequestQueue(ECDbCR ecdb): m_nextId(0), m_state(St
     m_shutdownWhenIdleFor = env.GetAutoShutdowWhenIdlelForSeconds();
     m_lastDequeueTime = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::steady_clock::now());
 }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void RunnableRequestQueue::SetMaxQuota(QueryQuota const& quota) {
-    recursive_guard_t lock(m_mutex);
-    m_quota = quota;
-}
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void RunnableRequestQueue::SetRequestQueueMaxSize(uint32_t size) {
-    recursive_guard_t lock(m_mutex);
-    if (size < kMinQueueSize )
-        size = kMinQueueSize;
 
-    m_maxQueueSize = size;
-}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1317,13 +1293,7 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
         setError(QueryResponse::Status::Error, "unsupported kind of request");
     }
 }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void QueryExecutor::SetWorkerPoolSize(uint32_t newSize) {
-    m_maxPoolSize = newSize;
-    m_connCache.SetMaxPoolSize(newSize);
-}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1466,10 +1436,6 @@ void ConcurrentQueryMgr::Enqueue(QueryRequest::Ptr request, OnCompletion onCompl
 bool ConcurrentQueryMgr::Suspend(ClearCacheOption clearCache, DetachAttachDbs detachDbs) { return m_impl->Suspend(clearCache,detachDbs); }
 bool ConcurrentQueryMgr::Resume() { return m_impl->Resume(); }
 bool ConcurrentQueryMgr::IsSuspended() const { return m_impl->IsSuspended(); }
-void ConcurrentQueryMgr::SetWorkerPoolSize(uint32_t newSize) {m_impl->SetWorkerPoolSize(newSize);}
-void ConcurrentQueryMgr::SetRequestQueueMaxSize(uint32_t newSize) {m_impl->SetRequestQueueMaxSize(newSize);}
-void ConcurrentQueryMgr::SetCacheStatementsPerWork(uint32_t newSize) {m_impl->SetCacheStatementsPerWork(newSize);}
-void ConcurrentQueryMgr::SetMaxQuota(QueryQuota const& newQuota) {m_impl->SetMaxQuota(newQuota);}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------

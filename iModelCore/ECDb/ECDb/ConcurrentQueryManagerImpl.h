@@ -195,7 +195,6 @@ struct ConnectionCache final {
         CachedConnection& GetSyncConnection();
         void Interrupt(bool reset_conn, bool detachDbs);
         void InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel);
-        void SetCacheStatementsPerWork(uint32_t);
         void SetMaxPoolSize(uint32_t newSize)  {m_poolSize = newSize; }
         void SyncAttachDbs();
 };
@@ -317,8 +316,6 @@ struct RunnableRequestQueue final {
         explicit RunnableRequestQueue(ECDbCR ecdb);
         ~RunnableRequestQueue() { Stop();}
         bool CancelRequest(uint32_t id);
-        void SetRequestQueueMaxSize(uint32_t size);
-        void SetMaxQuota(QueryQuota const&);
         bool Suspend();
         bool Resume();
         ECDbCR GetECDb() const { return m_ecdb; }
@@ -344,7 +341,6 @@ struct QueryExecutor final {
     public:
         QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint32_t pool_size = 0);
         ~QueryExecutor();
-        void SetWorkerPoolSize(uint32_t);
         ConnectionCache& GetConnectionCache() {return m_connCache; }
 };
 
@@ -413,11 +409,6 @@ struct ConcurrentQueryMgr::Impl : ECDb::IECDbCacheClearListener {
         bool Suspend(ClearCacheOption clearCache, DetachAttachDbs detachDbs);
         bool Resume() {return m_queue.Resume();}
         bool IsSuspended() const { return m_queue.GetState() == RunnableRequestQueue::State::Paused;}
-        // change config
-        void SetWorkerPoolSize(uint32_t newSize) { m_executor.SetWorkerPoolSize(newSize); }
-        void SetRequestQueueMaxSize(uint32_t newSize) { m_queue.SetRequestQueueMaxSize(newSize); }
-        void SetCacheStatementsPerWork(uint32_t newSize) { m_executor.GetConnectionCache().SetCacheStatementsPerWork(newSize); }
-        void SetMaxQuota(QueryQuota const& newQuota) {m_queue.SetMaxQuota(newQuota); }
 };
 
 //=======================================================================================
