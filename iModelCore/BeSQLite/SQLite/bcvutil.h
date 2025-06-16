@@ -187,7 +187,7 @@ int sqlite3_bcv_config(sqlite3_bcv*, int eOp, ...);
 **   container for orphaned blocks before deleting blocks already scheduled 
 **   for deletion. Orphaned blocks are created when a client abruptly halts,
 **   is disconnected or encounters an error while uploading a change.
-**
+**   
 */
 #define SQLITE_BCVCONFIG_VERBOSE     1      /* (int) */
 #define SQLITE_BCVCONFIG_PROGRESS    2      /* (void*,xProgress) */
