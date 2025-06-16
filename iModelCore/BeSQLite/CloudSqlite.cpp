@@ -18,7 +18,6 @@ static const int DEFAULT_MAX_HTTP_CONNECTIONS = 6;
 // default for "httpTimeout" to SQLite apis (time in seconds to wait without a response before considering an http request as timed out).
 static const int DEFAULT_HTTP_TIMEOUT = 60;
 
-// Always enable the native CA store for HTTPS requests in curl.
 /**
  * Initializer for CloudSqlite that happens at load time.
  * Right now, this only enables the native CA store for HTTPS requests made via curl.
