@@ -1143,7 +1143,7 @@ int sqlite3_bcv_open(
   if( pNew ){
     pNew->nRequest = 1;
     pNew->nHttpTimeout = BCV_DEFAULT_HTTPTIMEOUT;
-    pNew->bFindOrphans = BCV_DEFAULT_FINDORPHANS;\
+    pNew->bFindOrphans = BCV_DEFAULT_FINDORPHANS;
     pNew->errCode = bcvContainerOpen(
         zMod, zUser, zKey, zCont, &pNew->pCont, &pNew->zErrmsg
     );
