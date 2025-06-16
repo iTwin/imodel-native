@@ -199,7 +199,7 @@ void CachedConnection::SetRequest(std::unique_ptr<RunnableRequestBase> request) 
 //---------------------------------------------------------------------------------------
 void CachedConnection::InterruptIf(std::function<bool(RunnableRequestBase const&)> cb, bool cancel) {
     recursive_guard_t lock(m_mutexReq);
-    if (m_request != nullptr  && CanBeInterrupted()) {
+    if (m_request != nullptr) {
         if (cb(*m_request)) {
             if (cancel) {
                 m_request->Cancel();
@@ -324,7 +324,7 @@ void ConnectionCache::SyncAttachDbs() {
 void ConnectionCache::InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel) {
     recursive_guard_t lock(m_mutex);
     for (auto& conn: m_conns) {
-        if (conn != nullptr && conn->CanBeInterrupted())
+        if (conn != nullptr)
             conn->InterruptIf(predicate, cancel);
     }
 }
@@ -391,7 +391,11 @@ void ConnectionCache::Interrupt(bool reset_conn, bool detach_dbs) {
             if (it.use_count() == 1)  {
                 ++used_count;
             } else {
-                it->Interrupt();
+                it->InterruptIf(
+                    [](RunnableRequestBase const& request) {
+                        return true;
+                    },
+                    true);
             }
         }
         std::this_thread::yield();
@@ -494,10 +498,7 @@ QueryResponse::Ptr RunnableRequestBase::CreateQueueFullResponse() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void RunnableRequestBase::Interrupt(CachedConnection& conn) {
-    if(!m_interrupted && conn.Id() == m_connId && conn.CanBeInterrupted()) {
-        conn.Interrupt();
-        m_interrupted = true;
-    }
+    m_interrupted = true;
 }
 
 //---------------------------------------------------------------------------------------
@@ -1162,7 +1163,12 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     if(conn->IsDbOpen()) {
         conn->SetProgressHandler([&](){
             if (runnableRequest.IsTimeExceeded()) {
-                log_trace("%s monitor interrupt query [id=%" PRIu32 "] as it exceeded allowed time", GetTimestamp().c_str(), runnableRequest.GetId());
+                log_trace("%s query cancelled [id=%" PRIu32 "] as it exceeded allowed time", GetTimestamp().c_str(), runnableRequest.GetId());
+                return DbProgressAction::Interrupt;
+            }
+
+            if(runnableRequest.IsInterrupted()) {
+                log_trace("%s query cancelled [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableRequest.GetId());
                 return DbProgressAction::Interrupt;
             }
             return DbProgressAction::Continue;
@@ -1255,39 +1261,7 @@ void QueryHelper::ReadBlob(ECDbCR conn, RunnableRequestBase& runnableRequest) {
     }
     setError(QueryResponse::Status::Error, "BlobIO: unable to read blob due to sqlite error");
 }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void QueryHelper::ExecutePing(Json::Value const& pingJson, RunnableRequestBase& runnableRequest) {
-    ECSqlRowProperty::List props;
-    props.append("", "", "id", "id", "long", false, "", 0);
 
-    const auto maxMem = (int64_t)ConcurrentQueryMgr::Config::Get().GetQuota().MaxMemoryAllowed();
-    auto pingResultSize = pingJson["ping"]["resultSize"].asInt64();
-    const auto pingSleepTime = std::chrono::milliseconds(pingJson["ping"]["sleepTime"].asUInt());
-    const auto sleepUntil = std::chrono::steady_clock::now() + pingSleepTime;
-
-    pingResultSize = pingResultSize < 0 ? 0 : pingResultSize;
-    pingResultSize = pingResultSize > maxMem ? maxMem : pingResultSize;
-    std::random_device rd;
-    std::mt19937 mt(rd());
-    std::uniform_int_distribution<int64_t> dist(std::numeric_limits<uint64_t>::min(), std::numeric_limits<uint64_t>::max());
-    std::string result = "[";
-    result.reserve(pingResultSize);
-    uint32_t rows = 0;
-    while (result.size() < (size_t)(pingResultSize)) {
-        if (rows > 0) {
-            result.append(",");
-        }
-        result.append("\"").append(BeInt64Id(dist(mt)).ToHexStr()).append("\"");
-        ++rows;
-    }
-    result.append("]");
-    if (pingSleepTime.count() > 0 && sleepUntil > std::chrono::steady_clock::now()) {
-        std::this_thread::sleep_until(sleepUntil);
-    }
-    runnableRequest.SetResponse(runnableRequest.CreateECSqlResponse(result, props, rows, true));
-}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1306,14 +1280,6 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
         QueryHelper::ReadBlob(conn, runnableRequest);
     } else if (runnableRequest.GetRequest().GetKind() == QueryRequest::Kind::ECSql) {
         auto& request = runnableRequest.GetRequest().GetAsConst<ECSqlRequest>();
-        // use for debugging performance issues.
-        if (request.GetQuery().size()> 1 && request.GetQuery().at(0) == '{') {
-            auto pingJson = Json::Value::From(request.GetQuery());
-            if (!pingJson.isNull() && pingJson.hasMember("ping")) {
-                QueryHelper::ExecutePing(pingJson, runnableRequest);
-                return;
-            }
-        }
         std::string sql = QueryHelper::FormatQuery(request.GetQuery().c_str());
         ECSqlStatus status;
         std::string err;
@@ -1346,9 +1312,7 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
         }
         BindLimits(adaptor->GetStatement(), request.GetLimit());
         recordPrepareTime();
-        adaptorCache.GetConnection().SetCanBeInterrupted(true);
         QueryHelper::Execute(*adaptor, runnableRequest);
-        adaptorCache.GetConnection().SetCanBeInterrupted(false);
     } else {
         setError(QueryResponse::Status::Error, "unsupported kind of request");
     }
@@ -1377,7 +1341,6 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
                     log_trace("%s executor [id=%" PRIu32 "] dequeued request [id=%" PRIu32 "]", GetTimestamp().c_str(), execId, runnableQuery->GetId());
                     std::shared_ptr<CachedConnection> conn;
                     conn = m_connCache.GetConnection();
-                    conn->SetCanBeInterrupted(false);
                     while (conn == nullptr) {
                         std::this_thread::yield();
                         std::this_thread::sleep_for(1s);

@@ -159,15 +159,11 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         std::vector<FunctionInfo> GetPrimaryDbSqlFunctions() const;
         void SetRequest(std::unique_ptr<RunnableRequestBase> request);
         void ClearRequest();
-        std::atomic_bool m_canBeInterrupted;
     public:
         CachedConnection(ConnectionCache& cache, uint16_t id):m_cache(cache), m_id(id), m_adaptorCache(*this),m_isChangeSummaryCacheAttached(false),m_retryHandler(QueryRetryHandler::Create(60s)){}
         recursive_mutex_t& GetMutex() { return m_mutexReq; }
         ~CachedConnection();
         void SyncAttachDbs();
-        void Interrupt() const { m_db.Interrupt();}
-        bool CanBeInterrupted() const { return m_canBeInterrupted.load(); }
-        void SetCanBeInterrupted(bool val) { return m_canBeInterrupted.store(val); }
         void Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)>, std::unique_ptr<RunnableRequestBase>);
         void Reset(bool detachDbs);
         void InterruptIf(std::function<bool(RunnableRequestBase const&)>,bool cancel);
@@ -362,7 +358,6 @@ struct QueryHelper final {
         static ECSqlRowProperty::List GetMetaInfo(CachedQueryAdaptor&,bool);
         static void Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& request);
         static void ReadBlob(ECDbCR conn, RunnableRequestBase& request);
-        static void ExecutePing(Json::Value const& pingJson, RunnableRequestBase& runnableRequest);
     public:
         static void Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& request);
 };
