@@ -391,7 +391,6 @@ struct QueryMonitor {
         QueryExecutor& m_executor;
         std::chrono::milliseconds m_pollInterval;
         bool m_allowTestingArgs;
-        cancel_callback_type m_cancelBeforeSchemaChanges;
     public:
         QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor);
         ~QueryMonitor();
