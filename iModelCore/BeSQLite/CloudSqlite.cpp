@@ -18,15 +18,21 @@ static const int DEFAULT_MAX_HTTP_CONNECTIONS = 6;
 // default for "httpTimeout" to SQLite apis (time in seconds to wait without a response before considering an http request as timed out).
 static const int DEFAULT_HTTP_TIMEOUT = 60;
 
+// Always enable the native CA store for HTTPS requests in curl.
+/**
+ * Initializer for CloudSqlite that happens at load time.
+ * Right now, this only enables the native CA store for HTTPS requests made via curl.
+ */
 struct CloudSqliteInit {
     CloudSqliteInit() {
-        // todo: should we always enable the native CA store?
-        // Enable the native CA store for HTTPS requests by default.
+        // Enable the native CA store for HTTPS requests made via curl.
         sqlite3_bcv_global_config(SQLITE_BCVGLOBALCONFIG_NATIVECA, 1);
     }
 };
 
-static CloudSqliteInit s_cloudSqliteInit; // ensure sqlite3_bcv_global_config is called before any other sqlite3_bcv_* calls
+// This is a static object that ensures the CloudSqliteInit constructor is called before any other CloudSqlite code runs.
+// Right now, ensure sqlite3_bcv_global_config is called before any other sqlite3_bcv_* calls
+static CloudSqliteInit s_cloudSqliteInit;
 
 Utf8String Db::OpenParams::SetFromContainer(Utf8CP dbName, CloudContainerP container) {
     if (nullptr == container)
