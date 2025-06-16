@@ -828,22 +828,6 @@ uint32_t RunnableRequestQueue::Count() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool RunnableRequestQueue::Suspend() {
-    if (m_state.load() == State::Paused || m_state.load() == State::Stop)
-        return false;
-
-    log_trace("%s suspending request queue.", GetTimestamp().c_str());
-    m_state.store(State::Paused);
-
-    recursive_guard_t lock(m_mutex);
-    m_cond.notify_all();
-    log_trace("%s request queue suspended.", GetTimestamp().c_str());
-    return true;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 bool RunnableRequestQueue::Stop() {
     if (m_state.load() == State::Stop)
         return false;
@@ -873,20 +857,6 @@ void RunnableRequestQueue::RemoveIf (std::function<bool(RunnableRequestBase&)> p
             ++it;
         }
     }
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-bool RunnableRequestQueue::Resume() {
-    if (m_state.load() == State::Running || m_state.load() == State::Stop)
-        return false;
-
-    log_trace("%s resuming request queue", GetTimestamp().c_str());
-    m_state.store(State::Running);
-    m_cond.notify_all();
-    log_trace("%s request queue resumed.", GetTimestamp().c_str());
-    return true;
 }
 
 //---------------------------------------------------------------------------------------
@@ -1498,23 +1468,10 @@ QueryMonitor::~QueryMonitor() {
         m_thread.join();
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-bool ConcurrentQueryMgr::Impl::Suspend(ClearCacheOption clearCache, DetachAttachDbs detachDbs) {
-    auto rc = m_queue.Suspend();
-    if (rc)
-        m_executor.GetConnectionCache().Interrupt(clearCache == ClearCacheOption::Yes, detachDbs == DetachAttachDbs::Yes);
-    return rc;
-}
-
 ConcurrentQueryMgr::ConcurrentQueryMgr(ECDbCR ecdb){ m_impl = new Impl(ecdb);}
 ConcurrentQueryMgr::~ConcurrentQueryMgr(){ delete m_impl;}
 QueryResponse::Future ConcurrentQueryMgr::Enqueue(QueryRequest::Ptr request) { return m_impl->Enqueue(std::move(request)); }
 void ConcurrentQueryMgr::Enqueue(QueryRequest::Ptr request, OnCompletion onCompletion){ m_impl->Enqueue(std::move(request), onCompletion); }
-bool ConcurrentQueryMgr::Suspend(ClearCacheOption clearCache, DetachAttachDbs detachDbs) { return m_impl->Suspend(clearCache,detachDbs); }
-bool ConcurrentQueryMgr::Resume() { return m_impl->Resume(); }
-bool ConcurrentQueryMgr::IsSuspended() const { return m_impl->IsSuspended(); }
 void ConcurrentQueryMgr::SetWorkerPoolSize(uint32_t newSize) {m_impl->SetWorkerPoolSize(newSize);}
 void ConcurrentQueryMgr::SetRequestQueueMaxSize(uint32_t newSize) {m_impl->SetRequestQueueMaxSize(newSize);}
 void ConcurrentQueryMgr::SetCacheStatementsPerWork(uint32_t newSize) {m_impl->SetCacheStatementsPerWork(newSize);}
@@ -1617,35 +1574,11 @@ void QueryResponse::Stats::ToJs(BeJsValue& v) const {
     v[kMemUsed] = m_memUsed;
     v[kPrepareTime] = (int64_t)m_prepareTime.count();
 }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void ConcurrentQueryMgr::Impl::_OnBeforeClearECDbCache() {
-    Suspend(ClearCacheOption::Yes, DetachAttachDbs::Yes);
-}
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-
-void ConcurrentQueryMgr::Impl::_OnAfterClearECDbCache() {
-    Resume();
-}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ConcurrentQueryMgr::Impl::Impl(ECDbCR ecdb): m_executor(m_queue, ecdb),m_monitor(m_queue, m_executor),m_queue(ecdb) {
-    auto removeBeforeSchemaChanges = ecdb.Schemas().OnBeforeSchemaChanges().AddListener([&](ECDbCR ecdb, SchemaChangeType type){
-        Suspend(ClearCacheOption::Yes, DetachAttachDbs::Yes);
-    });
-    auto removeAfterSchemaChanges = ecdb.Schemas().OnAfterSchemaChanges().AddListener([&](ECDbCR ecdb, SchemaChangeType type){
-        Resume();
-    });
-    m_removeEventHandlers = [=]() {
-        removeBeforeSchemaChanges();
-        removeAfterSchemaChanges();
-    };
-    const_cast<ECDbR>(ecdb).AddECDbCacheClearListener(*this);
 
 }
 //---------------------------------------------------------------------------------------
@@ -1653,8 +1586,6 @@ ConcurrentQueryMgr::Impl::Impl(ECDbCR ecdb): m_executor(m_queue, ecdb),m_monitor
 //---------------------------------------------------------------------------------------
 ConcurrentQueryMgr::Impl::~Impl() {
     m_queue.Stop();
-    m_removeEventHandlers();
-    const_cast<ECDbR>(m_executor.GetConnectionCache().GetPrimaryDb()).RemoveECDbCacheClearListener(*this);
 }
 
 ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::s_config = ConcurrentQueryMgr::Config::GetFromEnv();
@@ -1681,20 +1612,24 @@ const ConcurrentQueryMgr::Config& ConcurrentQueryMgr::Config::Reset(std::optiona
 // @bsimethod
 // static
 //---------------------------------------------------------------------------------------
-ConcurrentQueryMgr& ConcurrentQueryMgr::GetInstance(ECDbCR ecdb) {
+void ConcurrentQueryMgr::WithInstance(ECDbCR ecdb, std::function<void(ConcurrentQueryMgr&)> cb) {
     if (!ecdb.IsDbOpen()) {
         throw std::runtime_error("ecdb is closed or not open");
     }
 
-    BeMutexHolder lock (ecdb.GetImpl().GetMutex());
     auto& appKey = ConcurrentQueryAppData::GetKey();
-    auto appData = ecdb.FindAppDataOfType<ConcurrentQueryAppData>(appKey);
-    if (appData.IsNull()) {
-        appData = ConcurrentQueryAppData::Create(ecdb);
-        ecdb.AddAppData(appKey, appData.get());
+    RefCountedPtr<ConcurrentQueryAppData> appData;
+    if(true) {
+        BeMutexHolder lock (ecdb.GetImpl().GetMutex());
+        appData = ecdb.FindAppDataOfType<ConcurrentQueryAppData>(appKey);
+        if (appData.IsNull()) {
+            appData = ConcurrentQueryAppData::Create(ecdb);
+            ecdb.AddAppData(appKey, appData.get());
+        }
     }
-    return appData->GetConcurrentQuery();
+    cb (appData->GetConcurrentQuery());
 }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 // static

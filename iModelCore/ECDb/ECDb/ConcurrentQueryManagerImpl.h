@@ -323,8 +323,6 @@ struct RunnableRequestQueue final {
         bool CancelRequest(uint32_t id);
         void SetRequestQueueMaxSize(uint32_t size);
         void SetMaxQuota(QueryQuota const&);
-        bool Suspend();
-        bool Resume();
         ECDbCR GetECDb() const { return m_ecdb; }
         void RemoveIf (std::function<bool(RunnableRequestBase&)> predicate);
         State GetState() const { return m_state.load(); }
@@ -402,22 +400,17 @@ struct QueryMonitor {
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-struct ConcurrentQueryMgr::Impl : ECDb::IECDbCacheClearListener {
+struct ConcurrentQueryMgr::Impl  {
     private:
         RunnableRequestQueue m_queue;
         QueryExecutor m_executor;
         QueryMonitor m_monitor;
-        cancel_callback_type m_removeEventHandlers;
-        void _OnBeforeClearECDbCache() override;
-        void _OnAfterClearECDbCache() override;
     public:
         Impl(ECDbCR ecdb);
         ~Impl();
         QueryResponse::Future Enqueue(QueryRequest::Ptr request) { return m_queue.Enqueue(m_executor.GetConnectionCache(), std::move(request)); }
         void Enqueue(QueryRequest::Ptr request, OnCompletion completion) { m_queue.Enqueue(m_executor.GetConnectionCache(), std::move(request), completion); }
-        bool Suspend(ClearCacheOption clearCache, DetachAttachDbs detachDbs);
-        bool Resume() {return m_queue.Resume();}
-        bool IsSuspended() const { return m_queue.GetState() == RunnableRequestQueue::State::Paused;}
+
         // change config
         void SetWorkerPoolSize(uint32_t newSize) { m_executor.SetWorkerPoolSize(newSize); }
         void SetRequestQueueMaxSize(uint32_t newSize) { m_queue.SetRequestQueueMaxSize(newSize); }
