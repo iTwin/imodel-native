@@ -440,8 +440,8 @@ void CommonToolsInternal::WriteSchemaAndClassNamesToJson(BeJsValue json, Utf8Str
             {
             if (isExcludes)
                 className = Utf8String("E:").append(className);
-            BeJsValue classNames = schemaJson[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES];
-            classNames[classNames.size()] = className;
+            BeJsValue classNamesJson = schemaJson[MULTI_SCHEMA_CLASSES_SPECIFICATION_CLASSNAMES];
+            classNamesJson[classNamesJson.size()] = className;
             }
         }
     if (json.size() == 1)
