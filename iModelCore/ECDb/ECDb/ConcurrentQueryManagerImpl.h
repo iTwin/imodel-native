@@ -146,7 +146,6 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         ConnectionCache& m_cache;
         ECDb m_db;
         recursive_mutex_t m_mutexReq;
-        bool m_isChangeSummaryCacheAttached;
         std::unique_ptr<RunnableRequestBase> m_request;
         uint16_t m_id;
         QueryAdaptorCache m_adaptorCache;
@@ -161,7 +160,7 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         void ClearRequest();
         std::atomic_bool m_canBeInterrupted;
     public:
-        CachedConnection(ConnectionCache& cache, uint16_t id):m_cache(cache), m_id(id), m_adaptorCache(*this),m_isChangeSummaryCacheAttached(false),m_retryHandler(QueryRetryHandler::Create(60s)){}
+        CachedConnection(ConnectionCache& cache, uint16_t id):m_cache(cache), m_id(id), m_adaptorCache(*this),m_retryHandler(QueryRetryHandler::Create(60s)){}
         recursive_mutex_t& GetMutex() { return m_mutexReq; }
         ~CachedConnection();
         void SyncAttachDbs();

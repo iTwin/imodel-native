@@ -233,7 +233,6 @@ void CachedConnection::Reset(bool detachDbs) {
     m_db.ClearECDbCache();
     if (detachDbs) {
         m_db.DetachChangeCache();
-        m_isChangeSummaryCacheAttached = false;
     }
 }
 
