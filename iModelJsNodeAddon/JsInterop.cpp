@@ -421,9 +421,10 @@ POP_DISABLE_DEPRECATION_WARNINGS
 #endif
 
     static std::once_flag s_initFlag;
+    static std::unique_ptr<PlatformLib::Host> s_jsHost;
     std::call_once(s_initFlag, []() {
-        auto jsHost = new JsDgnHost();
-        PlatformLib::Initialize(*jsHost);
+        s_jsHost = std::make_unique<JsDgnHost>();
+        PlatformLib::Initialize(*s_jsHost);
         RegisterOptionalDomains();
         InitLogging();
         InitializeSolidKernel();

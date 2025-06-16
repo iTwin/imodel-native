@@ -92,6 +92,17 @@ describe("basic tests", () => {
     iModelDb.closeFile();
   });
 
+  it("sqlite_stmt vtab", () => {
+    const seedUri = path.join(getAssetsDir(), "test.bim");
+    const iModelDb = new iModelJsNative.DgnDb();
+    iModelDb.openIModel(seedUri, OpenMode.Readonly);
+    
+    const stmt = new iModelJsNative.SqliteStatement();
+    stmt.prepare(iModelDb, "SELECT [sql] FROM [sqlite_stmt]");
+    assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
+    stmt.dispose();
+  });
+
   it("schema synchronization", () => {
 
     const copyAndOverrideFile = (from: string, to: string) => {
