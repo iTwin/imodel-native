@@ -60,6 +60,7 @@ int sqlite3_bcv_global_config(int eOp, ...);
 **   as a Boolean. If set to true, then the native certificate authority store
 **   is used to verify HTTPS requests. If set to false (the default), then the
 **   default CA store is used instead.
+**
 */
 #define SQLITE_BCVGLOBALCONFIG_NATIVECA    1      /* (int) */
 
@@ -186,6 +187,7 @@ int sqlite3_bcv_config(sqlite3_bcv*, int eOp, ...);
 **   container for orphaned blocks before deleting blocks already scheduled 
 **   for deletion. Orphaned blocks are created when a client abruptly halts,
 **   is disconnected or encounters an error while uploading a change.
+**
 */
 #define SQLITE_BCVCONFIG_VERBOSE     1      /* (int) */
 #define SQLITE_BCVCONFIG_PROGRESS    2      /* (void*,xProgress) */
