@@ -1037,8 +1037,8 @@ TEST_F(ConcurrentQueryFixture, BlobIO) {
             auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.Foo", "B", ecId));
             auto resp = freq.Get();
             EXPECT_TRUE(resp->IsSuccess());
-            auto data = resp->GetAsConst<BlobIOResponse>().GetData();
-            auto len = resp->GetAsConst<BlobIOResponse>().GetLength();
+            auto data = resp->template GetAsConst<BlobIOResponse>().GetData();
+            auto len = resp->template GetAsConst<BlobIOResponse>().GetLength();
             auto& buff = buffers[ecId - 1];
             EXPECT_EQ(len, buff.size());
             EXPECT_EQ(memcmp(data, &buff[0], len), 0);
@@ -1048,8 +1048,8 @@ TEST_F(ConcurrentQueryFixture, BlobIO) {
             auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.Foo", "B", ecId, QueryLimit(10, 10)));
             auto resp = freq.Get();
             EXPECT_TRUE(resp->IsSuccess());
-            auto data = resp->GetAsConst<BlobIOResponse>().GetData();
-            auto len = resp->GetAsConst<BlobIOResponse>().GetLength();
+            auto data = resp->template GetAsConst<BlobIOResponse>().GetData();
+            auto len = resp->template GetAsConst<BlobIOResponse>().GetLength();
             auto& buff = buffers[ecId - 1];
             EXPECT_EQ(len, 10);
             EXPECT_EQ(memcmp(data, &buff[0] + 10, len), 0);
