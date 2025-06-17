@@ -567,11 +567,9 @@ struct ConcurrentQueryMgr final {
         ECDB_EXPORT ~ConcurrentQueryMgr();
         ECDB_EXPORT QueryResponse::Future Enqueue(QueryRequest::Ptr);
         ECDB_EXPORT void Enqueue(QueryRequest::Ptr, OnCompletion);
-        ECDB_EXPORT bool Suspend(ClearCacheOption clearCache, DetachAttachDbs detachDbs);
-        ECDB_EXPORT bool Resume();
-        ECDB_EXPORT bool IsSuspended() const;
+
         // change config
-        ECDB_EXPORT static ConcurrentQueryMgr& GetInstance(ECDb const&);
+        ECDB_EXPORT static void WithInstance(ECDb const&, std::function<void(ConcurrentQueryMgr&)>);
         ECDB_EXPORT static void Shutdown(ECDbCR ecdb);
 };
 
