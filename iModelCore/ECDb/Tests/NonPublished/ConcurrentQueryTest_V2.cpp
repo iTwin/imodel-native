@@ -469,7 +469,7 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
     config.SetQuota(QueryQuota(std::chrono::seconds(10), 1000));
     ConcurrentQueryMgr::Config::Reset(config);
 
-    ConcurrentQueryMgr::WithInstance(m_ecdb, [](auto& mgr) {
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         auto req = ECSqlRequest::MakeRequest(
             "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
             ECSqlParams().BindInt(1, 3));
@@ -490,7 +490,7 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_TimeLimitExceeded) {
     ConcurrentQueryMgr::Config::Reset(config);
 
     m_ecdb.AddFunction(SleepFunc::Instance());
-    ConcurrentQueryMgr::WithInstance(m_ecdb, [](auto& mgr) {
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         auto req = ECSqlRequest::MakeRequest(
             "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x,imodel_sleep(500, x)  from cnt",
             ECSqlParams().BindInt(1, 10));
@@ -738,7 +738,7 @@ TEST_F(ConcurrentQueryFixture, DelayRequest) {
     conf.SetIgnoreDelay(false);
     ConcurrentQueryMgr::Config::Reset(conf);
 
-    ConcurrentQueryMgr::WithInstance(m_ecdb, [](auto& mgr) {
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
         const auto delay = std::chrono::milliseconds(2000);
         req->SetDelay(delay);
@@ -758,7 +758,7 @@ TEST_F(ConcurrentQueryFixture, RestartToken) {
     conf.SetIgnoreDelay(false);
     ConcurrentQueryMgr::Config::Reset(conf);
 
-    ConcurrentQueryMgr::WithInstance(m_ecdb, [](auto& mgr) {
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         const auto sql = "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt";
         auto req0 = ECSqlRequest::MakeRequest(sql, ECSqlParams().BindInt(1, 5));
         req0->SetRestartToken("test token");
@@ -855,7 +855,7 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
     const auto rowsInserted = 100;
     populateDb(rowsInserted, 512);
     ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly));
-    ConcurrentQueryMgr::WithInstance(m_ecdb, [](auto& mgr) {
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         ECSqlReader reader(mgr, "select * from ts.foo");
         int rowCount = 0;
 
