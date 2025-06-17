@@ -3364,8 +3364,8 @@ DbFile::~DbFile() {
             Utf8String openStatement(sqlite3_sql(stmt)); // keep as separate line for debugging
             LOG.errorv("Statement not closed: '%s'", openStatement.c_str());
         };
-        for(auto stmt : stmts)
-            sqlite3_finalize(stmt);
+        for(auto stmtItr : stmts)
+            sqlite3_finalize(stmtItr);
 
         rc = (DbResult) sqlite3_close(m_sqlDb);
         if (rc != BE_SQLITE_OK) {
