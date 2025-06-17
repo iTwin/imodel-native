@@ -968,6 +968,21 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
         m_dgndb.ThrowException("unable to save changes", (int) ChangesetStatus::SQLiteError);
 }
 
+namespace
+    {
+    bool IsCacheTableNameInChangeset(const Changes& changes)
+        {
+        for (const auto& change: changes)
+            {
+            if (change.GetOpcode() == DbOpcode::Insert)  // we only care about update/delete operations
+                continue;
+            
+            if (const auto tableName = change.GetTableName(); !tableName.empty() && 0 == strncmp(tableName.c_str(), "ec_cache_", 9))
+                return true;
+            }
+        return false;
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
@@ -1026,7 +1041,7 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
             auto schemaApplyArgs = ApplyChangesArgs::Default()
                 .SetInvert(invert)
                 .SetIgnoreNoop(true)
-                .SetFkNoAction(true)
+                .SetFkNoAction(IsCacheTableNameInChangeset(changeStream.GetChanges()))
                 .ApplyOnlySchemaChanges();
 
             m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
@@ -1338,9 +1353,29 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
     }
 
+<<<<<<< HEAD
+=======
+    // we want cascade delete to work during rebase.
+    bool fkNoAction = !pmConf.IsRebasingLocalChanges();
+    const bool ignoreNoop = pmConf.IsRebasingLocalChanges();
+    bool fastForwardEncounteredMergeConflict = false;
+    auto fastForwardConflictHandler = [&fastForwardEncounteredMergeConflict](ChangeStream::ConflictCause _, Changes::Change change) {
+        if(change.IsIndirect())
+            return ChangeStream::ConflictResolution::Replace;
+
+        fastForwardEncounteredMergeConflict = true;
+        return ChangeStream::ConflictResolution::Abort;
+    };
+>>>>>>> 0daa8758 (Changeset containing a delete class can cause BE_SQLITE_CONSTRAINT when applied (#1152))
 
     // apply schema part of changeset before data changes if schema changes are present
-    if (containsSchemaChanges) {
+    if (containsSchemaChanges)
+        {
+        // If the SQLITE_CHANGESETAPPLY_FKNOACTION flag is set, we need to check if the cache tables have been tracked in the changeset.
+        // If the cache tables are not tracked, we should set the flag to false to allow cascades and avoid any possible FK constraint violations.
+        if (fkNoAction)
+            fkNoAction = IsCacheTableNameInChangeset(Changes(changeset, false));
+
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
         auto schemaApplyArgs = ApplyChangesArgs::Default()
             .SetRebase(rebase)
