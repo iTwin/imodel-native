@@ -1105,7 +1105,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     if(conn->IsDbOpen()) {
         conn->SetProgressHandler([&](){
             if (runnableRequest.IsTimeExceeded()) {
-                log_trace("%s query cancelled [id=%" PRIu32 "] as it exceeded allowed time", GetTimestamp().c_str(), runnableRequest.GetId());
+                log_trace("%s time exceeded for query [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableRequest.GetId());
                 return DbProgressAction::Interrupt;
             }
 
@@ -1337,7 +1337,6 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor)
     :m_stop(false), m_queue(queue), m_executor(executor) {
     const auto& config = ConcurrentQueryMgr::Config::Get();
     m_pollInterval = config.GetMonitorPollInterval();
-    m_allowTestingArgs = config.GetAllowTestingArgs();
     auto notifyThreadHasStarted = std::make_unique<std::promise<void>>();
     log_trace("%s monitor started.", GetTimestamp().c_str());
     m_thread = std::thread([&](std::promise<void>* notifyWhenThreadStarted) {
@@ -2008,8 +2007,7 @@ ConcurrentQueryMgr::Config::Config():
     m_autoShutdownWhenIdleForSeconds(DEFAULT_SHUTDOWN_WHEN_IDLE_FOR_SECONDS),
     m_monitorPollInterval(std::chrono::milliseconds(DEFAULT_MONITOR_POLL_INTERVAL)),
     m_progressOpCount(DEFAULT_PROGRESS_OP_COUNT),
-    m_statementCacheSizePerWorker(DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER), m_memoryMapFileSize(0),
-    m_allowTestingArgs(false) {
+    m_statementCacheSizePerWorker(DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER), m_memoryMapFileSize(0){
 }
 
 //---------------------------------------------------------------------------------------
@@ -2037,8 +2035,6 @@ bool ConcurrentQueryMgr::Config::Equals(Config const& rhs) const {
     if (m_monitorPollInterval != rhs.GetMonitorPollInterval())
         return false;
     if (m_memoryMapFileSize != rhs.GetMemoryMapFileSize())
-        return false;
-    if (m_allowTestingArgs != rhs.GetAllowTestingArgs())
         return false;
     return true;
 }
@@ -2083,7 +2079,6 @@ void ConcurrentQueryMgr::Config::To(BeJsValue val) const {
     val[Config::JStatementCacheSizePerWorker] = GetStatementCacheSizePerWorker();
     val[Config::JMonitorPollInterval] = static_cast<uint32_t>(GetMonitorPollInterval().count());
     val[Config::JMemoryMapFileSize] = GetMemoryMapFileSize();
-    val[Config::JAllowTestingArgs] = GetAllowTestingArgs();
     val[Config::JProgressOpCount] = GetProgressOpCount();
     auto quota = val[Config::JQuota];
     m_quota.ToJs(quota);
@@ -2160,10 +2155,6 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
     if (val.isNumericMember(Config::JMemoryMapFileSize)) {
         uint32_t memoryMapFileSize = (uint32_t)val[Config::JMemoryMapFileSize].asUInt(defaultConfig.GetMemoryMapFileSize());
         config.SetMemoryMapFileSize(memoryMapFileSize);
-    }
-    if (val.isBoolMember(Config::JAllowTestingArgs)) {
-        const auto allowTestingArgs = val[Config::JAllowTestingArgs].asBool(defaultConfig.GetAllowTestingArgs());
-        config.SetAllowTestingArgs(allowTestingArgs);
     }
     return config;
 }

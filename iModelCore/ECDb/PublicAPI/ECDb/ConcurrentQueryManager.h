@@ -483,7 +483,6 @@ struct ConcurrentQueryMgr final {
          static constexpr auto JStatementCacheSizePerWorker = "statementCacheSizePerWorker";
          static constexpr auto JMonitorPollInterval = "monitorPollInterval";
          static constexpr auto JMemoryMapFileSize = "memoryMapFileSize";
-         static constexpr auto JAllowTestingArgs = "allowTestingArgs";
          static constexpr auto JProgressOpCount = "progressOpCount";
      private:
          QueryQuota m_quota;
@@ -497,7 +496,6 @@ struct ConcurrentQueryMgr final {
          std::chrono::seconds m_autoShutdownWhenIdleForSeconds;
          static Config From(std::string const& json);
          uint32_t m_memoryMapFileSize;
-         bool m_allowTestingArgs;
          static Config s_config;
          uint32_t m_progressOpCount;
      public:
@@ -507,7 +505,6 @@ struct ConcurrentQueryMgr final {
         QueryQuota const& GetQuota() const { return m_quota; }
         uint32_t GetWorkerThreadCount() const { return m_workerThreadCount; }
         uint32_t GetRequestQueueSize() const { return m_requestQueueSize; }
-        bool GetAllowTestingArgs() const {return m_allowTestingArgs;}
         bool GetIgnorePriority() const { return m_ignorePriority; }
         bool GetIgnoreDelay() const { return m_ignoreDelay; }
         uint32_t GetProgressOpCount() const { return m_progressOpCount; }
@@ -527,10 +524,6 @@ struct ConcurrentQueryMgr final {
         }
         Config& SetMemoryMapFileSize(uint32_t memoryMapFileSize) {
             m_memoryMapFileSize = memoryMapFileSize;
-            return *this;
-        }
-        Config& SetAllowTestingArgs(bool allowTestingArgs) {
-            m_allowTestingArgs = allowTestingArgs;
             return *this;
         }
         Config& SetQuota(QueryQuota const& quota) { m_quota = quota; return *this; }
