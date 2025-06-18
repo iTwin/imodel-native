@@ -855,8 +855,8 @@ bool SchemaManager::Dispatcher::IsClassUnsupported(ECClassId classId) const
 
             while (expandClassIdsStmt.Step() == BE_SQLITE_ROW)
                 {
-                auto classId = expandClassIdsStmt.GetValueId<ECClassId>(0);
-                m_unsupportedClassIdCache.insert(classId);
+                auto classIdInsert = expandClassIdsStmt.GetValueId<ECClassId>(0);
+                m_unsupportedClassIdCache.insert(classIdInsert);
                 }
             }
         }
