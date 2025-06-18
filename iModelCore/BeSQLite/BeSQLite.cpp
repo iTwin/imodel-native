@@ -6625,7 +6625,7 @@ DbResult DbFile::SetBusyTimeout(int ms) {
 //---------------------------------------------------------------------------------------
 void DbFile::SetProgressHandler(std::function<DbProgressAction()> cb, int n) const {
     m_progressHandler = cb;
-    if (m_progressHandler != nullptr) {
+    if (m_progressHandler == nullptr) {
         sqlite3_progress_handler(m_sqlDb, 1, nullptr, nullptr);
     } else {
         sqlite3_progress_handler(m_sqlDb, n, [](void* ctx)->int {

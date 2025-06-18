@@ -9,6 +9,7 @@
 #include <Bentley/Logging.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <GeomSerialization/GeomLibsSerialization.h>
+#include <optional>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
@@ -562,7 +563,7 @@ RunnableRequestQueue::RunnableRequestQueue(ECDbCR ecdb): m_nextId(0), m_state(St
     auto env = ConcurrentQueryMgr::Config::Get();
     m_quota = env.GetQuota();
     m_maxQueueSize = env.GetRequestQueueSize();
-    m_shutdownWhenIdleFor = env.GetAutoShutdowWhenIdlelForSeconds();
+    m_shutdownWhenIdleFor = env.GetAutoShutdownWhenIdleForSeconds();
     m_lastDequeueTime = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::steady_clock::now());
 }
 
@@ -731,9 +732,7 @@ QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, Quer
             request->SetDelay(maxDelayAllowed);
         }
     }
-    if (!conf.GetAllowTestingArgs() && request->GetTestingArgs() != nullptr) {
-        request->ResetTestingArgs();
-    }
+
     auto adjustedQuota = AdjustQuota(request->GetQuota());
     auto runnableReq = std::unique_ptr<RunnableRequestBase>(new RunnableRequestWithPromise(*this, std::move(request), adjustedQuota, GetNextId()));
     auto future = ((RunnableRequestWithPromise*)runnableReq.get())->GetFuture();
@@ -770,9 +769,7 @@ void RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr req
             request->SetDelay(maxDelayAllowed);
         }
     }
-    if (!conf.GetAllowTestingArgs() && request->GetTestingArgs() != nullptr) {
-        request->ResetTestingArgs();
-    }
+
     auto adjustedQuota = AdjustQuota(request->GetQuota());
     auto runnableReq = std::unique_ptr<RunnableRequestBase>(new RunnableRequestWithCallback(*this, std::move(request), adjustedQuota, GetNextId(), onComplete));
     if (m_requests.size() >= m_maxQueueSize) {
@@ -1117,7 +1114,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
                 return DbProgressAction::Interrupt;
             }
             return DbProgressAction::Continue;
-        });
+        }, static_cast<int>(ConcurrentQueryMgr::Config::Get().GetProgressOpCount()));
     }
     // go over each row and serialize result
     auto rc = stmt.Step();
@@ -1584,9 +1581,6 @@ void QueryRequest::FromJs(BeJsConst const& val) {
     if (val.isNumericMember(JDelay)) {
         m_delay = std::chrono::milliseconds(val[JDelay].asInt());
     }
-    if (val.isObjectMember(JTestingArgs)) {
-        SetTestArgs(val[JTestingArgs]);
-    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -1650,19 +1644,7 @@ void ECSqlRequest::FromJs(BeJsConst const& val) {
         m_doNotConvertClassIdsToClassNamesWhenAliased = val[JsReadOptions::JDoNotConvertClassIdsToClassNamesWhenAliased].asBool();
     }
 }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-QueryRequest& QueryRequest::SetTestArgs(BeJsConst const& val) noexcept {
-    if (!val.isObject()) {
-        m_testingArgs.reset();
-        return *this;
-    }
 
-    m_testingArgs = std::make_unique<BeJsDocument>();
-    m_testingArgs->From(val);
-    return *this;
-}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -2023,8 +2005,9 @@ ConcurrentQueryMgr::Config::Config():
     m_ignorePriority(DEFAULT_IGNORE_PRIORITY),
     m_ignoreDelay(DEFAULT_IGNORE_DELAY),
     m_doNotUsePrimaryConnToPrepare(DEFAULT_DONOT_USE_PRIMARY_CONN_TO_PREPARE),
-    m_autoShutdowWhenIdlelForSeconds(DEFAULT_SHUTDOWN_WHEN_IDLE_FOR_SECONDS),
+    m_autoShutdownWhenIdleForSeconds(DEFAULT_SHUTDOWN_WHEN_IDLE_FOR_SECONDS),
     m_monitorPollInterval(std::chrono::milliseconds(DEFAULT_MONITOR_POLL_INTERVAL)),
+    m_progressOpCount(DEFAULT_PROGRESS_OP_COUNT),
     m_statementCacheSizePerWorker(DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER), m_memoryMapFileSize(0),
     m_allowTestingArgs(false) {
 }
@@ -2047,7 +2030,7 @@ bool ConcurrentQueryMgr::Config::Equals(Config const& rhs) const {
         return false;
     if (m_doNotUsePrimaryConnToPrepare != rhs.GetDoNotUsePrimaryConnToPrepare())
         return false;
-    if (m_autoShutdowWhenIdlelForSeconds != rhs.GetAutoShutdowWhenIdlelForSeconds())
+    if (m_autoShutdownWhenIdleForSeconds != rhs.GetAutoShutdownWhenIdleForSeconds())
         return false;
     if (m_statementCacheSizePerWorker != rhs.GetStatementCacheSizePerWorker())
         return false;
@@ -2096,11 +2079,12 @@ void ConcurrentQueryMgr::Config::To(BeJsValue val) const {
     val[Config::JIgnorePriority] = GetIgnorePriority();
     val[Config::JIgnoreDelay] = GetIgnoreDelay();
     val[Config::JDoNotUsePrimaryConnToPrepare] = GetDoNotUsePrimaryConnToPrepare();
-    val[Config::JAutoShutdowWhenIdlelForSeconds] =static_cast<uint32_t>(GetAutoShutdowWhenIdlelForSeconds().count());
+    val[Config::JAutoShutdownWhenIdleForSeconds] =static_cast<uint32_t>(GetAutoShutdownWhenIdleForSeconds().count());
     val[Config::JStatementCacheSizePerWorker] = GetStatementCacheSizePerWorker();
     val[Config::JMonitorPollInterval] = static_cast<uint32_t>(GetMonitorPollInterval().count());
     val[Config::JMemoryMapFileSize] = GetMemoryMapFileSize();
     val[Config::JAllowTestingArgs] = GetAllowTestingArgs();
+    val[Config::JProgressOpCount] = GetProgressOpCount();
     auto quota = val[Config::JQuota];
     m_quota.ToJs(quota);
 }
@@ -2120,6 +2104,13 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
             threads = Config::GetDefault().GetWorkerThreadCount();
         }
         config.SetWorkerThreadCount(threads);
+    }
+    if(val.isNumericMember(Config::JProgressOpCount)){
+        auto progressOpCount = val[Config::JProgressOpCount].asUInt(defaultConfig.GetProgressOpCount());
+        if (progressOpCount < MIN_PROGRESS_OP_COUNT || progressOpCount > MAX_PROGRESS_OP_COUNT) {
+            progressOpCount = Config::GetDefault().GetProgressOpCount();
+        }
+        config.SetProgressOpCount(progressOpCount);
     }
     if (val.isNumericMember(Config::JQueueSize)) {
         auto queueSize = val[Config::JQueueSize].asUInt(defaultConfig.GetRequestQueueSize());
@@ -2145,9 +2136,9 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
         const auto doNotUsePrimaryConnToPrepare = val[Config::JDoNotUsePrimaryConnToPrepare].asBool(defaultConfig.GetDoNotUsePrimaryConnToPrepare());
         config.SetDoNotUsePrimaryConnToPrepare(doNotUsePrimaryConnToPrepare);
     }
-    if (val.isNumericMember(Config::JAutoShutdowWhenIdlelForSeconds)) {
-        const auto autoShutdowWhenIdlelForSeconds = val[Config::JAutoShutdowWhenIdlelForSeconds].asUInt64(defaultConfig.GetAutoShutdowWhenIdlelForSeconds().count());
-        config.SetAutoShutdowWhenIdlelForSeconds(std::chrono::seconds(autoShutdowWhenIdlelForSeconds));
+    if (val.isNumericMember(Config::JAutoShutdownWhenIdleForSeconds)) {
+        const auto autoShutdownWhenIdleForSeconds = val[Config::JAutoShutdownWhenIdleForSeconds].asUInt64(defaultConfig.GetAutoShutdownWhenIdleForSeconds().count());
+        config.SetAutoShutdownWhenIdleForSeconds(std::chrono::seconds(autoShutdownWhenIdleForSeconds));
     }
     if (val.isNumericMember(Config::JStatementCacheSizePerWorker)) {
         auto statementCacheSizePerWorker = val[Config::JStatementCacheSizePerWorker].asUInt(defaultConfig.GetStatementCacheSizePerWorker());

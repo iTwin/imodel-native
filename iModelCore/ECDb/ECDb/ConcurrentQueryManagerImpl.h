@@ -27,7 +27,9 @@
 #define QUERY_WORKER_RESULT_RESERVE_BYTES           1024*4  // 4Kb and its cached buffer on for each thread.
 #define MAX_STATEMENT_CACHE_SIZE_PER_WORKER         100
 #define MIN_MONITOR_POLL_INTERVAL                   1000
-
+#define DEFAULT_PROGRESS_OP_COUNT                   5000
+#define MAX_PROGRESS_OP_COUNT                       50000
+#define MIN_PROGRESS_OP_COUNT                       500
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
 

@@ -70,14 +70,13 @@ struct QueryRequest {
         static constexpr auto JUsePrimaryConn = "usePrimaryConn";
         static constexpr auto JRestartToken = "restartToken";
         static constexpr auto JDelay = "delay";
-        static constexpr auto JTestingArgs = "testingArgs";
+
         QueryQuota m_quota;
         int32_t m_priority;
         Kind m_kind;
         bool m_usePrimaryConn;
         std::string m_restartToken;
         std::chrono::milliseconds m_delay;
-        std::unique_ptr<BeJsDocument> m_testingArgs;
 
     public:
         QueryRequest(Kind kind):m_usePrimaryConn(false), m_priority(0), m_kind(kind), m_delay(0u) {}
@@ -92,15 +91,12 @@ struct QueryRequest {
         QueryRequest& SetUsePrimaryConnection(bool usePrimary) { m_usePrimaryConn = usePrimary; return *this;}
         QueryRequest& SetRestartToken(std::string const& token) { m_restartToken = token; return *this;}
         QueryRequest& SetDelay(std::chrono::milliseconds t) noexcept { m_delay = t; return *this;}
-        QueryRequest& SetTestArgs(BeJsConst const& val) noexcept;
-        void ResetTestingArgs() { m_testingArgs.reset();}
         bool UsePrimaryConnection() const noexcept {return m_usePrimaryConn;}
         std::chrono::milliseconds GetDelay() const { return m_delay; }
         QueryQuota const& GetQuota() const noexcept {return m_quota;}
         std::string const& GetRestartToken() const { return m_restartToken; }
         int32_t GetPriority() const noexcept {return m_priority;}
         Kind GetKind() const noexcept {return m_kind;}
-        BeJsDocument* GetTestingArgs() const { return m_testingArgs.get(); }
         template <class T>
         T const& GetAsConst() const{
             static_assert(std::is_base_of<QueryRequest, T>::value, "T must inherit from QueryRequest");
@@ -483,12 +479,12 @@ struct ConcurrentQueryMgr final {
          static constexpr auto JQuota = "globalQuota";
          static constexpr auto JIgnoreDelay = "ignoreDelay";
          static constexpr auto JDoNotUsePrimaryConnToPrepare = "doNotUsePrimaryConnToPrepare";
-         static constexpr auto JAutoShutdowWhenIdlelForSeconds = "autoShutdowWhenIdlelForSeconds";
+         static constexpr auto JAutoShutdownWhenIdleForSeconds = "autoShutdownWhenIdleForSeconds";
          static constexpr auto JStatementCacheSizePerWorker = "statementCacheSizePerWorker";
          static constexpr auto JMonitorPollInterval = "monitorPollInterval";
          static constexpr auto JMemoryMapFileSize = "memoryMapFileSize";
          static constexpr auto JAllowTestingArgs = "allowTestingArgs";
-
+         static constexpr auto JProgressOpCount = "progressOpCount";
      private:
          QueryQuota m_quota;
          uint32_t m_workerThreadCount;
@@ -498,12 +494,12 @@ struct ConcurrentQueryMgr final {
          bool m_doNotUsePrimaryConnToPrepare;
          uint32_t m_statementCacheSizePerWorker;
          std::chrono::milliseconds m_monitorPollInterval;
-         std::chrono::seconds m_autoShutdowWhenIdlelForSeconds;
+         std::chrono::seconds m_autoShutdownWhenIdleForSeconds;
          static Config From(std::string const& json);
          uint32_t m_memoryMapFileSize;
          bool m_allowTestingArgs;
          static Config s_config;
-
+         uint32_t m_progressOpCount;
      public:
         ECDB_EXPORT Config();
         ECDB_EXPORT bool Equals(Config const& rhs) const;
@@ -514,11 +510,13 @@ struct ConcurrentQueryMgr final {
         bool GetAllowTestingArgs() const {return m_allowTestingArgs;}
         bool GetIgnorePriority() const { return m_ignorePriority; }
         bool GetIgnoreDelay() const { return m_ignoreDelay; }
+        uint32_t GetProgressOpCount() const { return m_progressOpCount; }
         bool GetDoNotUsePrimaryConnToPrepare() const { return m_doNotUsePrimaryConnToPrepare; }
         std::chrono::milliseconds GetMonitorPollInterval() const { return m_monitorPollInterval; }
         uint32_t GetStatementCacheSizePerWorker() const { return m_statementCacheSizePerWorker; }
-        std::chrono::seconds GetAutoShutdowWhenIdlelForSeconds() const { return m_autoShutdowWhenIdlelForSeconds; }
+        std::chrono::seconds GetAutoShutdownWhenIdleForSeconds() const { return m_autoShutdownWhenIdleForSeconds; }
         uint32_t GetMemoryMapFileSize() const { return m_memoryMapFileSize; }
+        Config& SetProgressOpCount(uint32_t progressOpCount) { m_progressOpCount = progressOpCount; return *this;}
         Config& SetIgnoreDelay(bool ignoreDelay) {
             m_ignoreDelay = ignoreDelay;
             return *this;
@@ -540,7 +538,7 @@ struct ConcurrentQueryMgr final {
         Config& SetRequestQueueSize(uint32_t requestQueueSize) { m_requestQueueSize = requestQueueSize; return *this;}
         Config& SetIgnorePriority(bool ignorePriority) { m_ignorePriority = ignorePriority; return *this;}
         Config& SetDoNotUsePrimaryConnToPrepare(bool doNotUsePrimaryConnToPrepare) { m_doNotUsePrimaryConnToPrepare = doNotUsePrimaryConnToPrepare; return *this;}
-        Config& SetAutoShutdowWhenIdlelForSeconds(std::chrono::seconds autoShutdowWhenIdlelForSeconds) { m_autoShutdowWhenIdlelForSeconds = autoShutdowWhenIdlelForSeconds; return *this;}
+        Config& SetAutoShutdownWhenIdleForSeconds(std::chrono::seconds autoShutdownWhenIdleForSeconds) { m_autoShutdownWhenIdleForSeconds = autoShutdownWhenIdleForSeconds; return *this;}
         Config& SetStatementCacheSizePerWorker(uint32_t statementCacheSizePerWorker) { m_statementCacheSizePerWorker = statementCacheSizePerWorker; return *this;}
 
         bool IsDefault() const { return this == &Config::GetDefault() || Config::GetDefault().Equals(*this);}
