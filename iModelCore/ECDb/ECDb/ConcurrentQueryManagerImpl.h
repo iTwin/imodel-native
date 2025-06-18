@@ -235,7 +235,7 @@ struct RunnableRequestBase {
         void Cancel() { m_cancelled.store(true); }
         bool IsReady() const { return GetTotalTime() >= m_request->GetDelay(); }
         bool IsCancelled () const {return m_cancelled.load(); }
-        bool IsTimeExceeded() const { return m_quota.MaxTimeAllowed() == 0s ? false : std::chrono::duration_cast<std::chrono::seconds>(GetTotalTime()) >  m_quota.MaxTimeAllowed();}
+        bool IsTimeExceeded() const { return m_quota.MaxTimeAllowed() == 0s ? false : GetTotalTime() >  std::chrono::duration_cast<std::chrono::milliseconds>(m_quota.MaxTimeAllowed());}
         bool IsMemoryExceeded(std::string const& result) const { return m_quota.MaxMemoryAllowed() == 0 ? false : result.size() > m_quota.MaxMemoryAllowed(); }
         bool IsTimeOrMemoryExceeded(std::string const& result) const { return IsTimeExceeded() || IsMemoryExceeded(result);}
         void Interrupt(CachedConnection& conn);
