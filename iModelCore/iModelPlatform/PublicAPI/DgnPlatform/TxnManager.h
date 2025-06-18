@@ -64,6 +64,8 @@ enum class TxnType : int32_t {
 //=======================================================================================
 struct TxnMonitor {
     virtual ~TxnMonitor() { }
+    virtual void _OnPullMergeEnd(TxnManager&) {}
+    virtual void _OnPullMergeBegin(TxnManager&) {}
     virtual void _OnCommit(TxnManager&) {}
     virtual void _OnCommitted(TxnManager&) {}
     virtual void _OnAppliedChanges(TxnManager&) {}
@@ -1017,6 +1019,7 @@ struct ChangesetProps : RefCountedBase {
     DGNPLATFORM_EXPORT bool ContainsDdlChanges(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void ValidateContent(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void Dump(DgnDbR dgndb) const;
+    DGNPLATFORM_EXPORT static Utf8String ComputeChangesetId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env);
 };
 
 //=======================================================================================

@@ -190,10 +190,10 @@ ECSqlStatus ECSqlExpPreparer::InsertSubquery(ECSqlPrepareContext& ctx, AllOrAnyE
 
                 NativeSqlBuilder::List selectClauseItemNativeSqlSnippets;
                 ctx.SetCreateField(false); // This is added so that when we create derived property expression from here we don't create additional fields for the select statement because in ALL we only need the fields for the first select statement not the second one
-                ECSqlStatus stat = ECSqlSelectPreparer::PrepareDerivedPropertyExp(selectClauseItemNativeSqlSnippets, ctx, childExp->GetAs<DerivedPropertyExp>(), 1);
+                auto prepStat = ECSqlSelectPreparer::PrepareDerivedPropertyExp(selectClauseItemNativeSqlSnippets, ctx, childExp->GetAs<DerivedPropertyExp>(), 1);
                 ctx.SetCreateField(true); // The flag is reverted here
-                if (!stat.IsSuccess())
-                    return stat;
+                if (!prepStat.IsSuccess())
+                    return prepStat;
                 if(selectClauseItemNativeSqlSnippets.size() == 0)
                 {
                     BeAssert(false && "Failed to prepare derived property expression of the select statement for the final WHERE check inside ALL");
@@ -224,10 +224,10 @@ ECSqlStatus ECSqlExpPreparer::InsertSubquery(ECSqlPrepareContext& ctx, AllOrAnyE
 
                 NativeSqlBuilder::List selectClauseItemNativeSqlSnippets;
                 ctx.SetCreateField(false); // This is added so that when we create derived property expression from here we don't create additional fields for the select statement because in ANY or SOME we only need the fields for the first select statement not the second one
-                ECSqlStatus stat = ECSqlSelectPreparer::PrepareDerivedPropertyExp(selectClauseItemNativeSqlSnippets, ctx, childExp->GetAs<DerivedPropertyExp>(),1);
+                auto prepStat = ECSqlSelectPreparer::PrepareDerivedPropertyExp(selectClauseItemNativeSqlSnippets, ctx, childExp->GetAs<DerivedPropertyExp>(),1);
                 ctx.SetCreateField(true); // The flag is reverted here
-                if (!stat.IsSuccess())
-                    return stat;
+                if (!prepStat.IsSuccess())
+                    return prepStat;
                 if(selectClauseItemNativeSqlSnippets.size() == 0)
                 {
                     BeAssert(false && "Failed to prepare derived property expression of the select statement ffor the final WHERE check inside ANY or SOME");
@@ -2194,15 +2194,15 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameClauseExp(NativeSqlBuilder& nati
     if (!status.IsSuccess())
         return status;
 
-    if (WindowFrameStartExp const * e = exp.GetWindowFrameStartExp())
+    if (WindowFrameStartExp const * startExp = exp.GetWindowFrameStartExp())
         {
-        status = PrepareWindowFrameStartExp(nativeSqlBuilder, ctx, *e);
+        status = PrepareWindowFrameStartExp(nativeSqlBuilder, ctx, *startExp);
         if (!status.IsSuccess())
             return status;
         }
-    else if (WindowFrameBetweenExp const * e = exp.GetWindowFrameBetweenExp())
+    else if (WindowFrameBetweenExp const * betweenExp = exp.GetWindowFrameBetweenExp())
         {
-        status = PrepareWindowFrameBetweenExp(nativeSqlBuilder, ctx, *e);
+        status = PrepareWindowFrameBetweenExp(nativeSqlBuilder, ctx, *betweenExp);
         if (!status.IsSuccess())
             return status;
         }
