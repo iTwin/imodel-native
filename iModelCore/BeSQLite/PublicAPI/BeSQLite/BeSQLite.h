@@ -2427,7 +2427,6 @@ protected:
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout);
     ~DbFile();
 
-    void SetProgressHandler(std::function<DbProgressAction()>, int) const;
     DbResult SetBusyTimeout(int ms);
     DbResult StartSavepoint(Savepoint&, BeSQLiteTxnMode);
     DbResult StopSavepoint(Savepoint&, bool isCommit, Utf8CP operation);
@@ -2446,6 +2445,7 @@ protected:
     void SaveCachedBlvs(bool isCommit);
     DbResult SetNoCaseCollation(NoCaseCollation col);
     NoCaseCollation GetNoCaseCollation() const { return m_noCaseCollation; }
+    BE_SQLITE_EXPORT void SetProgressHandler(std::function<DbProgressAction()>, int) const;
     BE_SQLITE_EXPORT DbResult SaveProperty(PropertySpecCR spec, Utf8CP strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT bool HasProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
     BE_SQLITE_EXPORT DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
