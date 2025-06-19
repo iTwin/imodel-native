@@ -1017,6 +1017,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         unionQuerySql.Append(" FROM ").AppendEscaped(partition->GetECInstanceIdColumn().GetTable().GetTableSpace().GetName()).AppendDot().AppendEscaped(partition->GetECInstanceIdColumn().GetTable().GetName());
         DbColumn const& refClassIdCol = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? *partition->GetSourceECClassIdColumn() : *partition->GetTargetECClassIdColumn();
         DbColumn const& referenceIdColumn = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? partition->GetSourceECInstanceIdColumn() : partition->GetTargetECInstanceIdColumn();
+        DbColumn const& foreignClassIdColumn = relationMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? *partition->GetSourceECClassIdColumn() : *partition->GetTargetECClassIdColumn();
         if (refClassIdCol.GetPersistenceType() == PersistenceType::Physical)
             {
             DbColumn const* idColumn = refClassIdCol.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
@@ -1048,6 +1049,21 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
                 unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId=%s)", ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), relationMap.GetClass().GetId().ToString().c_str());
             else
                 unionQuerySql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(relationMap.GetClass().GetId());
+            }
+        if (foreignClassIdColumn.GetPersistenceType() == PersistenceType::Physical && referenceIdColumn.IsShared())
+            {
+            unionQuerySql.Append(" AND ");
+            toSql(unionQuerySql, foreignClassIdColumn);
+            
+            ECRelationshipConstraintCR constraint = relationMap.GetConstraintMap(relationMap.GetForeignEnd()).GetRelationshipConstraint();
+            ECClassCP abstractConstraint = constraint.GetAbstractConstraint();
+            if (abstractConstraint == nullptr)
+                {
+                BeAssert(false && "Expected an abstract constraint class to be defined");
+                return ERROR;
+                }
+
+            unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId=%s)", ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), abstractConstraint->GetId().ToString().c_str());
             }
 
         unionList.push_back(unionQuerySql);
