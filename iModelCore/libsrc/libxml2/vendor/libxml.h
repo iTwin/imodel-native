@@ -34,7 +34,7 @@
 #else
     /* BENTLEY CHANGES */
     #if defined (_MSC_VER)
-        #include "include/win32config.h"
+        #include "win32/win32config.h"
     #else
         #include "../BeLibxml-unix-config.h"
     #endif
