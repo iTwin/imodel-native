@@ -51,6 +51,20 @@ extern "C" {
 typedef struct sqlite3_bcv sqlite3_bcv;
 
 /*
+** Configure the bcv globally.
+*/
+int sqlite3_bcv_global_config(int eOp, ...);
+/*
+** SQLITE_BCVGLOBALCONFIG_NATIVECA:
+**   This option requires a single argument of type int, interpreted
+**   as a Boolean. If set to true, then the native certificate authority store
+**   is used to verify HTTPS requests. If set to false (the default), then the
+**   default CA store is used instead.
+**
+*/
+#define SQLITE_BCVGLOBALCONFIG_NATIVECA    1      /* (int) */
+
+/*
 ** Allocate a new sqlite3_bcv handle. 
 **
 ** The first argument is passed the name of the module to use. This may
