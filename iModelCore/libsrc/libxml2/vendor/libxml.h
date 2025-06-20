@@ -37,6 +37,7 @@
         #include "win32/win32config.h"
     #else
         #include "../BeLibxml-unix-config.h"
+        #define XML_SYSCONFDIR "/etc"
     #endif
     #include <libxml/xmlversion.h>
 #endif
