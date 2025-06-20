@@ -489,73 +489,74 @@ Napi::Object JsInterop::ConcurrentQueryResetConfig(Napi::Env env, Napi::Object c
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Napi::Function callback) {
-    auto& mgr = ConcurrentQueryMgr::GetInstance(ecdb);
-    BeJsValue beJsReq(requestObj);
-    auto request = QueryRequest::Deserialize(beJsReq);
-    if (request->UsePrimaryConnection()) {
-        mgr.Enqueue(std::move(request), [&](QueryResponse::Ptr value) {
-            auto jsResp = Napi::Object::New(Env());
-            auto beJsResp = BeJsValue(jsResp);
-            if (value->GetKind() == QueryResponse::Kind::NoResult) {
-                value->ToJs(beJsResp, false);
-            }
-            else if (value->GetKind() == QueryResponse::Kind::ECSql) {
-                auto& resp = value->GetAsConst<ECSqlResponse>();
-                resp.ToJs(beJsResp, false);
-                if (!resp.asJsonString().empty()) {
-                    auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
-                    auto rows = Napi::String::New(Env(), resp.asJsonString());
-                    jsResp[ECSqlResponse::JData] = parse({ rows });
-                }
-            }
-            else if (value->GetKind() == QueryResponse::Kind::BlobIO) {
-                auto& resp = value->GetAsConst<BlobIOResponse>();
-                if (resp.GetLength() > 0) {
-                    resp.ToJs(beJsResp, false);
-                    auto blob = Napi::Uint8Array::New(Env(), resp.GetLength());
-                    memcpy(blob.Data(), resp.GetData(), resp.GetLength());
-                    jsResp[BlobIOResponse::JData] = blob;
-                }
-            }
-            else {
-                THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
-            }
-            callback.Call({ jsResp });
-        });
-        return;
-    }
-    auto threadSafeFunc = Napi::ThreadSafeFunction::New(requestObj.Env(), callback, "concurrent_query", 0, 1);
-    mgr.Enqueue(std::move(request), [=](QueryResponse::Ptr value) {
-        if(threadSafeFunc.BlockingCall (
-            [=]( Napi::Env env, Napi::Function jsCallback) {
-                auto jsResp = Napi::Object::New(env);
+    ConcurrentQueryMgr::WithInstance(ecdb, [&](ConcurrentQueryMgr& mgr) -> void {
+        BeJsValue beJsReq(requestObj);
+        auto request = QueryRequest::Deserialize(beJsReq);
+        if (request->UsePrimaryConnection()) {
+            mgr.Enqueue(std::move(request), [&](QueryResponse::Ptr value) {
+                auto jsResp = Napi::Object::New(Env());
                 auto beJsResp = BeJsValue(jsResp);
-                if (value->GetKind() ==  QueryResponse::Kind::NoResult) {
+                if (value->GetKind() == QueryResponse::Kind::NoResult) {
                     value->ToJs(beJsResp, false);
-                } else if (value->GetKind() ==  QueryResponse::Kind::ECSql) {
+                }
+                else if (value->GetKind() == QueryResponse::Kind::ECSql) {
                     auto& resp = value->GetAsConst<ECSqlResponse>();
                     resp.ToJs(beJsResp, false);
                     if (!resp.asJsonString().empty()) {
-                        auto parse = env.Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
-                        auto rows = Napi::String::New(env, resp.asJsonString());
-                        jsResp[ECSqlResponse::JData] = parse({rows});
+                        auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
+                        auto rows = Napi::String::New(Env(), resp.asJsonString());
+                        jsResp[ECSqlResponse::JData] = parse({ rows });
                     }
-                } else if (value->GetKind() ==  QueryResponse::Kind::BlobIO) {
+                }
+                else if (value->GetKind() == QueryResponse::Kind::BlobIO) {
                     auto& resp = value->GetAsConst<BlobIOResponse>();
                     if (resp.GetLength() > 0) {
                         resp.ToJs(beJsResp, false);
-                        auto blob = Napi::Uint8Array::New(env, resp.GetLength());
+                        auto blob = Napi::Uint8Array::New(Env(), resp.GetLength());
                         memcpy(blob.Data(), resp.GetData(), resp.GetLength());
                         jsResp[BlobIOResponse::JData] = blob;
                     }
-                } else {
-                    THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
                 }
-                jsCallback.Call({jsResp});
-        }) != napi_ok) {
-            // do nothing
+                else {
+                    THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
+                }
+                callback.Call({ jsResp });
+            });
+            return;
         }
-        const_cast<Napi::ThreadSafeFunction&>(threadSafeFunc).Release();
+        auto threadSafeFunc = Napi::ThreadSafeFunction::New(requestObj.Env(), callback, "concurrent_query", 0, 1);
+        mgr.Enqueue(std::move(request), [=](QueryResponse::Ptr value) {
+            if(threadSafeFunc.BlockingCall (
+                [=]( Napi::Env env, Napi::Function jsCallback) {
+                    auto jsResp = Napi::Object::New(env);
+                    auto beJsResp = BeJsValue(jsResp);
+                    if (value->GetKind() ==  QueryResponse::Kind::NoResult) {
+                        value->ToJs(beJsResp, false);
+                    } else if (value->GetKind() ==  QueryResponse::Kind::ECSql) {
+                        auto& resp = value->GetAsConst<ECSqlResponse>();
+                        resp.ToJs(beJsResp, false);
+                        if (!resp.asJsonString().empty()) {
+                            auto parse = env.Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
+                            auto rows = Napi::String::New(env, resp.asJsonString());
+                            jsResp[ECSqlResponse::JData] = parse({rows});
+                        }
+                    } else if (value->GetKind() ==  QueryResponse::Kind::BlobIO) {
+                        auto& resp = value->GetAsConst<BlobIOResponse>();
+                        if (resp.GetLength() > 0) {
+                            resp.ToJs(beJsResp, false);
+                            auto blob = Napi::Uint8Array::New(env, resp.GetLength());
+                            memcpy(blob.Data(), resp.GetData(), resp.GetLength());
+                            jsResp[BlobIOResponse::JData] = blob;
+                        }
+                    } else {
+                        THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
+                    }
+                    jsCallback.Call({jsResp});
+            }) != napi_ok) {
+                // do nothing
+            }
+            const_cast<Napi::ThreadSafeFunction&>(threadSafeFunc).Release();
+        });
     });
 }
 
