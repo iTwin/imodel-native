@@ -980,6 +980,9 @@ struct ChangesetProps : RefCountedBase {
         SchemaSync = Schema | 64,
     };
 
+    mutable BeJsDocument m_changeSetHealthStats;
+
+public:
     TxnManager::TxnId m_endTxnId;
     Utf8String m_id;
     int32_t m_index;
@@ -990,8 +993,10 @@ struct ChangesetProps : RefCountedBase {
     DateTime m_dateTime;
     Utf8String m_summary;
     ChangesetType m_changesetType;
+    size_t m_uncompressedSize;
+    bool m_performHealthCheck;
     ChangesetProps(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid, BeFileNameCR fileName, ChangesetType changesetType) :
-        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName), m_changesetType(changesetType) {}
+        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName), m_changesetType(changesetType), m_uncompressedSize(0), m_performHealthCheck(false) {}
 
     Utf8StringCR GetChangesetId() const { return m_id; }
     int32_t GetChangesetIndex() const { return m_index; }
@@ -1000,6 +1005,10 @@ struct ChangesetProps : RefCountedBase {
     Utf8StringCR GetDbGuid() const { return m_dbGuid; }
     ChangesetType GetChangesetType() const { return m_changesetType; };
     BeFileNameCR GetFileName() const { return m_fileName; }
+    size_t GetUncompressedSize() const { return m_uncompressedSize; }
+    void SetUncompressedSize(size_t size) { m_uncompressedSize = size; }
+    bool PerformHealthCheck() const { return m_performHealthCheck; }
+    void SetPerformHealthCheck(bool performHealthCheck) { m_performHealthCheck = performHealthCheck; }
 
     //! Get or set the user name
     Utf8StringCR GetUserName() const { return m_userName; }
@@ -1020,6 +1029,9 @@ struct ChangesetProps : RefCountedBase {
     DGNPLATFORM_EXPORT void ValidateContent(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void Dump(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT static Utf8String ComputeChangesetId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env);
+
+    Utf8String GetChangeSetHealthStatsAsString() const { return m_changeSetHealthStats.Stringify(); }
+    void SetChangeSetHealthStats(Utf8StringCR stats) const { m_changeSetHealthStats = stats; }
 };
 
 //=======================================================================================

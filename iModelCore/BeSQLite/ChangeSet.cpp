@@ -903,6 +903,57 @@ DbResult ChangeStream::ApplyChanges(DbR db, Rebase* rebase, bool invert, bool ig
     return result;
     }
 
+BeJsDocument ChangeStream::GetHealthStats() const
+    {
+    if (m_changesetHealthStats == nullptr)
+        return {};
+    return m_changesetHealthStats->GetStats();
+    }
+
+void ChangeStream::AppendToHealthStats(BeJsDocument& toJsonDoc, const BeJsDocument& fromJsonDoc)
+    {
+    fromJsonDoc.ForEachProperty([&](Utf8CP name, BeJsConst json)
+        {
+        toJsonDoc[name] = json.Stringify();
+        return false;
+        });
+    }
+
+void ChangeStream::ConfigureChangesetHealthStats(DbCR db)
+    {
+    if (m_changesetHealthStats == nullptr)
+        m_changesetHealthStats = std::make_unique<ChangesetHealthStats>();
+        
+    auto sqlStartsWith = [](const std::string_view str, const std::string_view prefix)
+        {
+        if (str.size() < prefix.size())
+            return false;
+        return std::equal(prefix.begin(), prefix.end(), str.begin(), [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+        };
+
+    db.ConfigTraceEvents(DbTrace::Profile, true);
+
+    db.GetTraceProfileEvent().AddListener([this, &sqlStartsWith] (const TraceContext& ctx, const int64_t nanoseconds)
+        {
+        const auto expandedSql = ctx.GetExpandedSql();
+        if (sqlStartsWith(expandedSql, "insert"))
+            {
+            m_changesetHealthStats->IncrementTotalInsertedRows();
+            m_changesetHealthStats->AddToTotalInsertedTime(nanoseconds / 1000000);
+            }
+        else if (sqlStartsWith(expandedSql, "update"))
+            {
+            m_changesetHealthStats->IncrementTotalUpdatedRows();
+            m_changesetHealthStats->AddToTotalUpdatedTime(nanoseconds / 1000000);
+            }
+        else if (sqlStartsWith(expandedSql, "delete"))
+            {
+            m_changesetHealthStats->IncrementTotalDeletedRows();
+            m_changesetHealthStats->AddToTotalDeletedTime(nanoseconds / 1000000);
+            }
+        });
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

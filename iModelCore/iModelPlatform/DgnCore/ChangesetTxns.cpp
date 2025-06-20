@@ -1031,6 +1031,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
 
     DdlChanges ddlChangeGroup;
     ChangeGroup dataChangeGroup(m_dgndb);
+    size_t uncompressedSize = 0;
     for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
         auto txnType = GetTxnType(currTxnId);
         if (txnType == TxnType::EcSchema) // if we have EcSchema changes, set the flag on the change group
@@ -1044,6 +1045,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
             for(auto& ddl : ddlChange.GetDDLs())
                 ddlChangeGroup.AddDDL(ddl.c_str());
 
+            uncompressedSize = ddlChange.m_data.m_size;
         } else {
             ChangeSet sqlChangeSet;
             if (BE_SQLITE_OK != ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None))
@@ -1052,6 +1054,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
             DbResult result = sqlChangeSet.AddToChangeGroup(dataChangeGroup);
             if (BE_SQLITE_OK != result)
                 m_dgndb.ThrowException("add to changes failed", (int) result);
+            uncompressedSize = sqlChangeSet.m_data.m_size;
         }
     }
 
@@ -1068,6 +1071,10 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     }
 
     m_changesetInProgress = new ChangesetProps(revId, -1, parentRevId, dbGuid, changesetFileName, changesetType);
+    m_changesetInProgress->m_uncompressedSize = uncompressedSize;
+
+    // TO-DO : Make this opt-in. There is already a setter for this. Test it out.
+    m_changesetInProgress->m_performHealthCheck = true;
     m_changesetInProgress->m_endTxnId = endTxnId;
 
     // clean this cruft up from older versions.
