@@ -879,12 +879,29 @@ ChangesetStatus TxnManager::MergeDdlChanges(ChangesetPropsCR revision, Changeset
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges, bool fastForward) {
     // Apply the changeset
+    const auto performHealthCheck = containsSchemaChanges && revision.PerformHealthCheck();
+    if (performHealthCheck)
+        {
+        BeJsDocument changeSetHealthStats;
+        changeSetHealthStats["Changeset Id"] = revision.GetChangesetId();
+        changeSetHealthStats["Uncompressed Size (bytes)"] = std::to_string(revision.GetUncompressedSize());
+
+        changeStream.AppendToHealthStats(revision.m_changeSetHealthStats, changeSetHealthStats);
+        changeStream.ConfigureChangesetHealthStats(m_dgndb);
+        }
     const auto result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, false, fastForward);
     if (result != BE_SQLITE_OK) {
         const auto errMsg = changeStream.GetLastErrorMessage();
         m_dgndb.ThrowException(errMsg.empty() ? "failed to apply changes" : errMsg.c_str(), result);
     }
     changeStream.ClearLastErrorMessage();
+
+    // TO-DO : Check if the tracking needs to be extended to cover possible inverts later.
+    // In that case, the AppendHealthStats logic will need to be updated to track those changes and metrics separately.
+    if (performHealthCheck) {
+        changeStream.AppendToHealthStats(revision.m_changeSetHealthStats, changeStream.GetHealthStats());
+        m_dgndb.DisableAllTraceEvents();
+    }
 
     // Save parent changeset info
     SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());

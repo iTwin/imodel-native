@@ -255,6 +255,54 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass
+//=======================================================================================
+class ChangesetHealthStats {
+private:
+    int m_totalRowCount = 0;
+    int m_totalInsertedRows = 0;
+    int m_totalUpdatedRows = 0;
+    int m_totalDeletedRows = 0;
+    int64_t m_totalApplyTime = 0;
+    int64_t m_totalInsertedTime = 0;
+    int64_t m_totalUpdatedTime = 0;
+    int64_t m_totalDeletedTime = 0;
+
+public:
+    // Getters
+    int GetTotalRowCount() const { return m_totalRowCount; }
+    int GetTotalInsertedRows() const { return m_totalInsertedRows; }
+    int GetTotalUpdatedRows() const { return m_totalUpdatedRows; }
+    int GetTotalDeletedRows() const { return m_totalDeletedRows; }
+    int64_t GetTotalApplyTime() const { return m_totalApplyTime; }
+    int64_t GetTotalInsertedTime() const { return m_totalInsertedTime; }
+    int64_t GetTotalUpdatedTime() const { return m_totalUpdatedTime; }
+    int64_t GetTotalDeletedTime() const { return m_totalDeletedTime; }
+
+    // Increment methods
+    void IncrementTotalInsertedRows() { ++m_totalInsertedRows; ++m_totalRowCount; }
+    void IncrementTotalUpdatedRows() { ++m_totalUpdatedRows; ++m_totalRowCount; }
+    void IncrementTotalDeletedRows() { ++m_totalDeletedRows; ++m_totalRowCount; }
+
+    void AddToTotalInsertedTime(int64_t time) { m_totalInsertedTime += time; m_totalApplyTime += time; }
+    void AddToTotalUpdatedTime(int64_t time) { m_totalUpdatedTime += time; m_totalApplyTime += time; }
+    void AddToTotalDeletedTime(int64_t time) { m_totalDeletedTime += time; m_totalApplyTime += time; }
+
+    BeJsDocument GetStats() const {
+        BeJsDocument stats;
+        stats["totalRowCount"] = m_totalRowCount;
+        stats["totalRowsInserted"] = m_totalInsertedRows;
+        stats["totalRowsUpdated"] = m_totalUpdatedRows;
+        stats["totalRowsDeleted"] = m_totalDeletedRows;
+        stats["totalTime (milliseconds)"] = m_totalApplyTime;
+        stats["totalTimeForInserts (milliseconds)"] = m_totalInsertedTime;
+        stats["totalTimeForUpdates (milliseconds)"] = m_totalUpdatedTime;
+        stats["totalTimeForDeletes (milliseconds)"] = m_totalDeletedTime;
+        return stats;
+    }
+};
+
+//=======================================================================================
 //! A base class for a streaming version of the ChangeSet. ChangeSets require that their
 //! entire contents be stored in large memory buffers. This streaming version is meant to
 //! be used in low memory environments where it is required to handle very large Change Sets.
@@ -284,6 +332,8 @@ protected:
     //! @return BE_SQLITE_OK if the data has been successfully processed. Return BE_SQLITE_ERROR otherwise.
     virtual DbResult _Append(Byte const* pData, int nData) = 0;
     static int AppendCallback(void* pOut, const void* pData, int nData) { return (int)((ChangeStream*)pOut)->_Append((Byte const*)pData, nData); }
+
+    std::unique_ptr<ChangesetHealthStats> m_changesetHealthStats;
 
 public:
     virtual bool _IsEmpty() const = 0;
@@ -328,6 +378,10 @@ public:
 
     //! Get a description of a conflict cause for debugging purposes.
     BE_SQLITE_EXPORT static Utf8CP InterpretConflictCause(ConflictCause, int detailLevel = 0);
+
+    BE_SQLITE_EXPORT BeJsDocument GetHealthStats() const;
+    BE_SQLITE_EXPORT void AppendToHealthStats(BeJsDocument& toJsonDoc, const BeJsDocument& fromJsonDoc);
+    BE_SQLITE_EXPORT void ConfigureChangesetHealthStats(DbCR db);
 };
 
 //=======================================================================================
