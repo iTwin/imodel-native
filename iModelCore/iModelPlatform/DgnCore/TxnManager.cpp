@@ -1408,6 +1408,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
                 return result;
             }
+            m_dgndb.DisableAllTraceEvents();
         }
 
         m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
@@ -1420,7 +1421,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
                     return result;
                 }
             }
-    }
+        }   
 
     auto dataApplyArgs = ApplyChangesArgs::Default()
         .SetInvert(invert)

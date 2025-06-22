@@ -903,12 +903,7 @@ DbResult ChangeStream::ApplyChanges(DbR db, Rebase* rebase, bool invert, bool ig
     return result;
     }
 
-BeJsDocument ChangeStream::GetHealthStats() const
-    {
-    if (m_changesetHealthStats == nullptr)
-        return {};
-    return m_changesetHealthStats->GetStats();
-    }
+BeJsDocument ChangeStream::GetHealthStats() const { return m_changesetHealthStats == nullptr ? BeJsDocument() : m_changesetHealthStats->GetStats(); }
 
 void ChangeStream::AppendToHealthStats(BeJsDocument& toJsonDoc, const BeJsDocument& fromJsonDoc)
     {
