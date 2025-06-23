@@ -338,6 +338,8 @@ $(o)krb5_gssapi$(oext) : $(BeCurlLibDir)vauth/krb5_gssapi.c ${MultiCompileDepend
 
 $(o)krb5_sspi$(oext) : $(BeCurlLibDir)vauth/krb5_sspi.c ${MultiCompileDepends}
 
+$(o)ntlm$(oext) : $(BeCurlLibDir)vauth/ntlm.c ${MultiCompileDepends}
+
 $(o)ntlm_sspi$(oext) : $(BeCurlLibDir)vauth/ntlm_sspi.c ${MultiCompileDepends}
 
 $(o)oauth2$(oext) : $(BeCurlLibDir)vauth/oauth2.c ${MultiCompileDepends}
