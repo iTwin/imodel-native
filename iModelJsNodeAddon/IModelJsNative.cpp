@@ -297,6 +297,11 @@ template<typename T_Db> struct SQLiteOps {
         }
 
         auto db = &GetOpenedDb(info);
+        if (db == nullptr)
+            {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open", DgnDbStatus::NotOpen);
+            return;
+            }
         auto dgnDb = dynamic_cast<DgnDbP>(db);
         std::unique_ptr<FontDb> fontDbHolder;
 
@@ -2782,6 +2787,21 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return Napi::Boolean::New(Env(), db.Txns().PullMergeInProgress());
     }
 
+    static Napi::Value ComputeChangesetId(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, args);
+        auto parentId = args.Get("parentId").As<Napi::String>();
+        auto pathname = args.Get("pathname").As<Napi::String>();
+        if (!parentId.IsString() || !pathname.IsString())
+            BeNapi::ThrowJsException(info.Env(), "parentId and pathname are required attribute of ChangesetFileProps", (int)ChangesetStatus::BadVersionId);
+
+        auto id = ChangesetProps::ComputeChangesetId(
+            parentId.Utf8Value().c_str(),
+            BeFileName(pathname.Utf8Value()),
+            info.Env()
+        );
+
+        return Napi::String::New(info.Env(), id.c_str());
+    }
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2991,6 +3011,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
             StaticMethod("zlibDecompress", &NativeDgnDb::ZlibDecompress),
+            StaticMethod("computeChangesetId", &NativeDgnDb::ComputeChangesetId),
         });
 
         exports.Set("DgnDb", t);
@@ -3036,7 +3057,7 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         bool extentIsValid = ARGUMENT_IS_ANY_OBJ(0);
         if (extentIsValid)
             BeJsGeomUtils::DRange2dFromJson(extentRange, info[0].As<Napi::Object>());
-        
+
         bool includeWorld = ARGUMENT_IS_BOOL(1) ? info[1].As<Napi::Boolean>().Value() : false;
         bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr, includeWorld );
 
@@ -3475,6 +3496,7 @@ private:
     DEFINE_CONSTRUCTOR;
     IECSqlBinder* m_binder = nullptr;
     ECDb const* m_ecdb = nullptr;
+    ECSqlStatement* m_ecSqlStatement = nullptr;
 
     static DbResult ToDbResult(ECSqlStatus status)
         {
@@ -3490,8 +3512,8 @@ private:
 public:
     NativeECSqlBinder(NapiInfoCR info) : BeObjectWrap<NativeECSqlBinder>(info)
         {
-        if (info.Length() != 2)
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder constructor expects two arguments.", IModelJsNativeErrorKey::BadArg);
+        if (info.Length() < 2 || info.Length() > 3)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder constructor expects either two or three arguments.", IModelJsNativeErrorKey::BadArg);
 
         m_binder = info[0].As<Napi::External<IECSqlBinder>>().Data();
         if (m_binder == nullptr)
@@ -3500,6 +3522,8 @@ public:
         m_ecdb = info[1].As<Napi::External<ECDb>>().Data();
         if (m_ecdb == nullptr)
             THROW_JS_TYPE_EXCEPTION("Invalid second arg for NativeECSqlBinder constructor. ECDb must not be nullptr");
+
+        m_ecSqlStatement = info[2].As<Napi::External<ECSqlStatement>>().Data();
         }
 
     ~NativeECSqlBinder() {SetInDestructor();}
@@ -3540,9 +3564,9 @@ public:
         SET_CONSTRUCTOR(t);
         }
 
-    static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb)
+    static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb, const ECSqlStatement* ecSqlStatement = nullptr)
         {
-        return Constructor().New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
+        return Constructor().New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb)), Napi::External<ECSqlStatement>::New(env, const_cast<ECSqlStatement*>(ecSqlStatement))});
         }
 
     Napi::Value BindNull(NapiInfoCR info)
@@ -3800,18 +3824,33 @@ public:
         if (SUCCESS != BeInt64Id::FromString(navId, navIdHexStr.c_str()))
             return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
 
+        const auto validateRelECClassId = m_ecSqlStatement && m_ecSqlStatement->IsWriteStatement() && m_ecdb->GetECSqlConfig().IsWriteValueValidationEnabled();
+
         ECClassId relClassId;
         if (!relClassName.empty())
             {
             bvector<Utf8String> tokens;
             BeStringUtilities::Split(relClassName.c_str(), ".:", tokens);
-            if (tokens.size() != 2)
+            if (tokens.size() < 2 || tokens.size() > 3)
                 return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
 
             relClassId = m_ecdb->Schemas().GetClassId(tokens[0], tokens[1], SchemaLookupMode::AutoDetect, relClassTableSpaceName.c_str());
+
+            if (validateRelECClassId)
+                {
+                auto relClass = m_ecdb->Schemas().GetClass(relClassId);
+                if (!relClass)
+                    THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not correspond to any EC class.", relClassName.c_str()).c_str(), IModelJsNativeErrorKey::ECClassError);
+        
+                if (!relClass->IsRelationshipClass())
+                    THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not correspond to a valid ECRelationship class.", relClassName.c_str()).c_str(), IModelJsNativeErrorKey::ECClassError);
+                }
             }
 
         ECSqlStatus stat = m_binder->BindNavigation(navId, relClassId);
+        if (validateRelECClassId && stat == ECSqlStatus(BE_SQLITE_ERROR))
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not match the relationship class in the navigation property.", relClassName.c_str()).c_str(), IModelJsNativeErrorKey::ECClassError);
+
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
@@ -4846,7 +4885,7 @@ public:
             paramIndex = m_stmt.GetParameterIndex(paramArg.ToString().Utf8Value().c_str());
 
         IECSqlBinder& binder = m_stmt.GetBinder(paramIndex);
-        return NativeECSqlBinder::New(info.Env(), binder, *m_stmt.GetECDb());
+        return NativeECSqlBinder::New(info.Env(), binder, *m_stmt.GetECDb(), &m_stmt);
     }
 
     Napi::Value Step(NapiInfoCR info) {
@@ -6471,7 +6510,7 @@ public:
         if (nullptr == db)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
         DbResult result = m_importContext->SaveStateToDb(db->GetDb());
-        if (result != DbResult::BE_SQLITE_OK) 
+        if (result != DbResult::BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to serialize the state", result);
         return Env().Undefined();
         }
@@ -6485,7 +6524,7 @@ public:
         if (nullptr == db)
             THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
         DbResult result = m_importContext->LoadStateFromDb(db->GetDb());
-        if (result != DbResult::BE_SQLITE_OK) 
+        if (result != DbResult::BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to load the state", result);
         return Env().Undefined();
         }

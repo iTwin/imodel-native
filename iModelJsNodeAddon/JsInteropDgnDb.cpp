@@ -1662,7 +1662,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
     Placement2d placement2d;
     Placement3d placement3d;
 
-    const auto geomBin = fmt == kBinaryStream;
+    const auto isBinaryStream = fmt == kBinaryStream;
     const auto jsIs2d = args.HasOwnProperty(kIs2d)?  args.Get(kIs2d).As<Napi::Boolean>().Value() : false;
     const auto jsCategoryId = args.HasOwnProperty(kCategoryId) ? args.Get(kCategoryId) : undefined;
     const auto jsPlacement = args.HasOwnProperty(kPlacement) ? args.Get(kPlacement) : undefined;
@@ -1765,7 +1765,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
             outResult["categoryId"] = Napi::String::New(info.Env(),  source->GetCategoryId().ToHexStr().c_str());
         }
 
-        if (geomBin) {
+        if (isBinaryStream) {
             auto geom = BeJsValue(outResult["geom"]);
             geom["geom"].SetBinary(source->GetGeometryStream().data(), source->GetGeometryStream().size());
         } else {
@@ -1787,7 +1787,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info)
             outResult["categoryId"] = Napi::String::New(info.Env(),  source->GetCategoryId().ToHexStr().c_str());
         }
 
-        if (geomBin) {
+        if (isBinaryStream) {
             auto geom = BeJsValue(outResult["geom"]);
             geom["geom"].SetBinary(source->GetGeometryStream().data(), source->GetGeometryStream().size());
         } else {
@@ -1817,7 +1817,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info) {
     DgnCategoryId categoryId;
     ElementAlignedBox3d bbox3d;
 
-    const auto geomBin = fmt == kBinaryStream;
+    const auto isBinaryStream = fmt == kBinaryStream;
     const auto jsIs2d = args.HasOwnProperty(kIs2d)?  args.Get(kIs2d).As<Napi::Boolean>().Value() : false;
     const auto jsBBox = args.HasOwnProperty(kBBox) ? args.Get(kBBox) : undefined;
     const auto hasBBox = jsBBox.IsObject();
@@ -1888,7 +1888,7 @@ Napi::Value JsInterop::ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info) {
         outResult["bbox"] = placement;
     }
 
-    if (geomBin) {
+    if (isBinaryStream) {
         auto geom = BeJsValue(outResult["geom"]);
         geom["geom"].SetBinary(geomSource->GetGeometryStream().data(), geomSource->GetGeometryStream().size());
     } else {
