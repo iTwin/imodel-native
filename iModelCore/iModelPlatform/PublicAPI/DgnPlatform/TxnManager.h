@@ -532,6 +532,7 @@ public:
 
     //! Returns true if the TxnManager is currently processing changes, so any changes made while this is true are considered "indirect" changes.
     bool IsPropagatingChanges() { return m_isPropagatingChanges; }
+    bool IsIndirectChanges() { return m_isPropagatingChanges || GetMode() == ChangeTracker::Mode::Indirect; }
     bool HasFatalError() {return m_fatalValidationError;}
     int NumValidationErrors() {return m_txnErrors;}
     void LogError(bool fatal) { ++m_txnErrors; m_fatalValidationError |= fatal;}
