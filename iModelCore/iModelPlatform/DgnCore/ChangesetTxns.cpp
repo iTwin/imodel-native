@@ -1072,9 +1072,6 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
 
     m_changesetInProgress = new ChangesetProps(revId, -1, parentRevId, dbGuid, changesetFileName, changesetType);
     m_changesetInProgress->m_uncompressedSize = uncompressedSize;
-
-    // TO-DO : Make this opt-in. There is already a setter for this. Test it out.
-    m_changesetInProgress->m_performHealthCheck = true;
     m_changesetInProgress->m_endTxnId = endTxnId;
 
     // clean this cruft up from older versions.

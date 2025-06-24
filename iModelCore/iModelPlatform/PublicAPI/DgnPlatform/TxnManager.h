@@ -1007,8 +1007,8 @@ public:
     BeFileNameCR GetFileName() const { return m_fileName; }
     size_t GetUncompressedSize() const { return m_uncompressedSize; }
     void SetUncompressedSize(size_t size) { m_uncompressedSize = size; }
-    bool PerformHealthCheck() const { return m_performHealthCheck; }
-    void SetPerformHealthCheck(bool performHealthCheck) { m_performHealthCheck = performHealthCheck; }
+    bool IsHealthCheckEnabled() const { return m_performHealthCheck; }
+    void PerformHealthCheck(bool performHealthCheck) { m_performHealthCheck = performHealthCheck; }
 
     //! Get or set the user name
     Utf8StringCR GetUserName() const { return m_userName; }
@@ -1030,8 +1030,8 @@ public:
     DGNPLATFORM_EXPORT void Dump(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT static Utf8String ComputeChangesetId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env);
 
-    Utf8String GetChangeSetHealthStatsAsString() const { return m_changeSetHealthStats.Stringify(); }
-    void SetChangeSetHealthStats(Utf8StringCR stats) const { m_changeSetHealthStats = stats; }
+    DGNPLATFORM_EXPORT Utf8String GetChangeSetHealthStatsAsString() const { return m_changeSetHealthStats.Stringify(); }
+
 };
 
 //=======================================================================================

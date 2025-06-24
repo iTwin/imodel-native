@@ -879,7 +879,7 @@ ChangesetStatus TxnManager::MergeDdlChanges(ChangesetPropsCR revision, Changeset
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges, bool fastForward) {
     // Apply the changeset
-    const auto performHealthCheck = containsSchemaChanges && revision.PerformHealthCheck();
+    const auto performHealthCheck = containsSchemaChanges && revision.IsHealthCheckEnabled();
     if (performHealthCheck)
         {
         BeJsDocument changeSetHealthStats;

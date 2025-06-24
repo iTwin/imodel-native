@@ -259,45 +259,48 @@ public:
 //=======================================================================================
 class ChangesetHealthStats {
 private:
-    int m_totalRowCount = 0;
+    int m_totalAffectedRows = 0;
     int m_totalInsertedRows = 0;
     int m_totalUpdatedRows = 0;
     int m_totalDeletedRows = 0;
-    int64_t m_totalApplyTime = 0;
-    int64_t m_totalInsertedTime = 0;
-    int64_t m_totalUpdatedTime = 0;
-    int64_t m_totalDeletedTime = 0;
+    int64_t m_totalApplyTimeMs = 0;
+    int64_t m_totalInsertTimeMs = 0;
+    int64_t m_totalUpdateTimeMs = 0;
+    int64_t m_totalDeleteTimeMs = 0;
+    std::vector<Utf8String> m_sqlStatements;
 
 public:
     // Getters
-    int GetTotalRowCount() const { return m_totalRowCount; }
+    int GetTotalRowCount() const { return m_totalAffectedRows; }
     int GetTotalInsertedRows() const { return m_totalInsertedRows; }
     int GetTotalUpdatedRows() const { return m_totalUpdatedRows; }
     int GetTotalDeletedRows() const { return m_totalDeletedRows; }
-    int64_t GetTotalApplyTime() const { return m_totalApplyTime; }
-    int64_t GetTotalInsertedTime() const { return m_totalInsertedTime; }
-    int64_t GetTotalUpdatedTime() const { return m_totalUpdatedTime; }
-    int64_t GetTotalDeletedTime() const { return m_totalDeletedTime; }
+    int64_t GetTotalApplyTime() const { return m_totalApplyTimeMs; }
+    int64_t GetTotalInsertedTime() const { return m_totalInsertTimeMs; }
+    int64_t GetTotalUpdatedTime() const { return m_totalUpdateTimeMs; }
+    int64_t GetTotalDeletedTime() const { return m_totalDeleteTimeMs; }
+    const std::vector<Utf8String>& GetSqlStatements() const { return m_sqlStatements; }
 
     // Increment methods
-    void IncrementTotalInsertedRows() { ++m_totalInsertedRows; ++m_totalRowCount; }
-    void IncrementTotalUpdatedRows() { ++m_totalUpdatedRows; ++m_totalRowCount; }
-    void IncrementTotalDeletedRows() { ++m_totalDeletedRows; ++m_totalRowCount; }
+    void IncrementTotalInsertedRows() { ++m_totalInsertedRows; ++m_totalAffectedRows; }
+    void IncrementTotalUpdatedRows() { ++m_totalUpdatedRows; ++m_totalAffectedRows; }
+    void IncrementTotalDeletedRows() { ++m_totalDeleteTimeMs; ++m_totalAffectedRows; }
 
-    void AddToTotalInsertedTime(int64_t time) { m_totalInsertedTime += time; m_totalApplyTime += time; }
-    void AddToTotalUpdatedTime(int64_t time) { m_totalUpdatedTime += time; m_totalApplyTime += time; }
-    void AddToTotalDeletedTime(int64_t time) { m_totalDeletedTime += time; m_totalApplyTime += time; }
+    void AddToTotalInsertedTime(int64_t time) { m_totalInsertTimeMs += time; m_totalApplyTimeMs += time; }
+    void AddToTotalUpdatedTime(int64_t time) { m_totalUpdateTimeMs += time; m_totalApplyTimeMs += time; }
+    void AddToTotalDeletedTime(int64_t time) { m_totalDeleteTimeMs += time; m_totalApplyTimeMs += time; }
+    void AddSqlStatement(Utf8String const& sql) { m_sqlStatements.push_back(sql); }
 
     BeJsDocument GetStats() const {
         BeJsDocument stats;
-        stats["totalRowCount"] = m_totalRowCount;
-        stats["totalRowsInserted"] = m_totalInsertedRows;
-        stats["totalRowsUpdated"] = m_totalUpdatedRows;
-        stats["totalRowsDeleted"] = m_totalDeletedRows;
-        stats["totalTime (milliseconds)"] = m_totalApplyTime;
-        stats["totalTimeForInserts (milliseconds)"] = m_totalInsertedTime;
-        stats["totalTimeForUpdates (milliseconds)"] = m_totalUpdatedTime;
-        stats["totalTimeForDeletes (milliseconds)"] = m_totalDeletedTime;
+        stats["totalAffectedRows"] = m_totalAffectedRows;
+        stats["totalInsertedRows"] = m_totalInsertedRows;
+        stats["totalUpdatedRows"] = m_totalUpdatedRows;
+        stats["totalDeletedRows"] = m_totalDeletedRows;
+        stats["totalApplyTimeMs"] = m_totalApplyTimeMs;
+        stats["totalInsertTimeMs"] = m_totalInsertTimeMs;
+        stats["totalUpdateTimeMs"] = m_totalUpdateTimeMs;
+        stats["totalDeleteTimeMs"] = m_totalDeleteTimeMs;
         return stats;
     }
 };
