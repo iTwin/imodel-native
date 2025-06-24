@@ -883,8 +883,8 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     if (performHealthCheck)
         {
         BeJsDocument changeSetHealthStats;
-        changeSetHealthStats["Changeset Id"] = revision.GetChangesetId();
-        changeSetHealthStats["Uncompressed Size (bytes)"] = std::to_string(revision.GetUncompressedSize());
+        changeSetHealthStats["changesetId"] = revision.GetChangesetId();
+        changeSetHealthStats["uncompressedSizeBytes"] = std::to_string(revision.GetUncompressedSize());
 
         changeStream.AppendToHealthStats(revision.m_changeSetHealthStats, changeSetHealthStats);
         changeStream.ConfigureChangesetHealthStats(m_dgndb);
