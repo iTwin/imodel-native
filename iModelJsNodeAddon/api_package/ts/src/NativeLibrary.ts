@@ -695,7 +695,7 @@ export declare namespace IModelJsNative {
     public insertModel(modelProps: ModelProps): Id64String;
     public isChangeCacheAttached(): boolean;
     public isGeometricModelTrackingSupported(): boolean;
-    // same as isPropagatingChanges. Kept for compatibility. The name is misleading.
+    // Inidcates whether the current operation is an indirect change (isPropagatingChanges or explicit indirect changes)
     public isIndirectChanges(): boolean;
     // Indicates whether the TxnManager is currently propagating changes
     public isPropagatingChanges(): boolean;

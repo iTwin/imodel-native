@@ -1475,6 +1475,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     Napi::Value GetRedoString(NapiInfoCR info) {return toJsString(Env(), GetOpenedDb(info).Txns().GetRedoString());}
     Napi::Value HasUnsavedChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().HasChanges());}
     Napi::Value HasPendingTxns(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().HasPendingTxns());}
+    Napi::Value IsIndirectChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsIndirectChanges());}
     Napi::Value IsPropagatingChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsPropagatingChanges());}
     Napi::Value IsRedoPossible(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsRedoPossible());}
     Napi::Value IsUndoPossible(NapiInfoCR info) {
@@ -2983,7 +2984,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("isGeometricModelTrackingSupported", &NativeDgnDb::IsGeometricModelTrackingSupported),
-            InstanceMethod("isIndirectChanges", &NativeDgnDb::IsPropagatingChanges),
+            InstanceMethod("isIndirectChanges", &NativeDgnDb::IsIndirectChanges),
             InstanceMethod("isPropagatingChanges", &NativeDgnDb::IsPropagatingChanges),
             InstanceMethod("isLinkTableRelationship", &NativeDgnDb::IsLinkTableRelationship),
             InstanceMethod("isOpen", &NativeDgnDb::IsDgnDbOpen),
