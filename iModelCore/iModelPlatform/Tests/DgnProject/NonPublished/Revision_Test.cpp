@@ -58,6 +58,18 @@ void expectToNotThrow(std::function<void()> fn, Utf8CP msg)
 struct RevisionTestFixture : ChangeTestFixture
 {
 DEFINE_T_SUPER(ChangeTestFixture)
+
+    struct ExpectedHealthStats
+        {
+        double totalAffectedRows;
+        double totalInsertedRows;
+        double totalUpdatedRows;
+        double totalDeletedRows;
+
+        ExpectedHealthStats(double affected = 0.0, double inserted = 0.0, double updated = 0.0, double deleted = 0.0) 
+            : totalAffectedRows(affected), totalInsertedRows(inserted), totalUpdatedRows(updated), totalDeletedRows(deleted) {}
+        };
+
 protected:
     int m_z = 0;
     WCharCP m_copyTestFileName = L"RevisionTestCopy.ibim";
@@ -65,7 +77,7 @@ protected:
     void InsertFloor(int xmax, int ymax);
     void ModifyElement(DgnElementId elementId);
 
-    ChangesetPropsPtr CreateRevision(Utf8CP);
+    ChangesetPropsPtr CreateRevision(Utf8CP, bool performHealthCheck = false);
     void DumpRevision(ChangesetPropsCR revision, Utf8CP summary = nullptr);
 
     void BackupTestFile();
@@ -73,9 +85,9 @@ protected:
 
     void ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCodeSet& discarded);
     void ProcessSchemaRevision(ChangesetPropsCR revision, RevisionProcessOption revisionProcessOption);
-    void MergeSchemaRevision(ChangesetPropsCR revision) {
-        EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(revision));
-    }
+    ChangesetStatus MergeSchemaRevision(ChangesetPropsCR revision) { return m_db->Txns().PullMergeApply(revision); }
+
+    void ValidateHealthStats(ChangesetPropsCR revision, const ExpectedHealthStats& expected) const;
 
     static Utf8String CodeToString(DgnCodeCR code) { return Utf8PrintfString("%s:%s\n", code.GetScopeString().c_str(), code.GetValueUtf8CP()); }
     static void ExpectCode(DgnCodeCR code, DgnCodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
@@ -225,13 +237,14 @@ void RevisionTestFixture::ModifyElement(DgnElementId elementId)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetPropsPtr RevisionTestFixture::CreateRevision(Utf8CP ext)
+ChangesetPropsPtr RevisionTestFixture::CreateRevision(Utf8CP ext, bool performHealthCheck)
     {
     ChangesetPropsPtr revision = m_db->Txns().StartCreateChangeset(ext);
     if (!revision.IsValid())
         return nullptr;
 
     m_db->Txns().FinishCreateChangeset(-1, ext != nullptr);
+    revision->PerformHealthCheck(performHealthCheck);
     return revision;
     }
 
@@ -253,6 +266,44 @@ void RevisionTestFixture::ProcessSchemaRevision(ChangesetPropsCR revision, Revis
 
     m_defaultModel = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
     ASSERT_TRUE(m_defaultModel.IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void RevisionTestFixture::ValidateHealthStats(ChangesetPropsCR revision, const ExpectedHealthStats& expected) const
+    {
+    const auto stats = BeJsDocument(revision.GetChangeSetHealthStatsAsString());
+    if (stats.empty())
+        return;
+
+    const auto changeSetId = stats["changesetId"].asString();
+    ASSERT_FALSE(changeSetId.empty());
+    EXPECT_STREQ(changeSetId.substr(1, changeSetId.size() - 2).c_str(), revision.GetChangesetId().c_str());
+
+    EXPECT_EQ(stats["uncompressedSizeBytes"].asInt64(), revision.GetUncompressedSize());
+
+    const auto totalAffectedRows = stats["totalAffectedRows"].asInt64();
+    const auto totalInsertedRows = stats["totalInsertedRows"].asInt64();
+    const auto totalUpdatedRows = stats["totalUpdatedRows"].asInt64();
+    const auto totalDeletedRows = stats["totalDeletedRows"].asInt64();
+
+    EXPECT_EQ(totalAffectedRows, totalInsertedRows + totalUpdatedRows + totalDeletedRows);
+    EXPECT_EQ(totalAffectedRows, expected.totalAffectedRows);
+    EXPECT_EQ(totalInsertedRows, expected.totalInsertedRows);
+    EXPECT_EQ(totalUpdatedRows, expected.totalUpdatedRows);
+    EXPECT_EQ(totalDeletedRows, expected.totalDeletedRows);
+
+    // const auto totalApplyTimeMs = stats["totalApplyTimeMs"].asDouble();
+    // const auto totalInsertTimeMs = stats["totalInsertTimeMs"].asDouble();
+    // const auto totalUpdateTimeMs = stats["totalUpdateTimeMs"].asDouble();
+    // const auto totalDeleteTimeMs = stats["totalDeleteTimeMs"].asDouble();
+
+    // EXPECT_EQ(totalApplyTimeMs, totalInsertTimeMs + totalUpdateTimeMs + totalDeleteTimeMs);
+    // EXPECT_GE(totalApplyTimeMs, expected.totalAffectedRows == 0 ? 0 : 1);
+    // EXPECT_GE(totalInsertTimeMs, expected.totalInsertedRows == 0 ? 0 : 1);
+    // EXPECT_GE(totalUpdateTimeMs, expected.totalUpdatedRows == 0 ? 0 : 1);
+    // EXPECT_GE(totalDeleteTimeMs, expected.totalDeletedRows == 0 ? 0 : 1);
     }
 
 //---------------------------------------------------------------------------------------
@@ -327,10 +378,7 @@ TEST_F(RevisionTestFixture, Workflow)
 
     // Merge all the saved revisions
     for (ChangesetPropsPtr const& rev : revisions)
-        {
-        ChangesetStatus status = m_db->Txns().PullMergeApply(*rev);
-        ASSERT_TRUE(status == ChangesetStatus::Success);
-        }
+        ASSERT_TRUE(MergeSchemaRevision(*rev) == ChangesetStatus::Success);
 
     // Check the updated revision id
     Utf8String mergedParentRevId = m_db->Txns().GetParentChangesetId();
@@ -388,26 +436,21 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     ASSERT_TRUE(revision3.IsValid());
     ASSERT_FALSE(revision3->ContainsDdlChanges(*m_db));
 
-    ChangesetStatus revStatus;
-
     // Merge Rev1 first
     RestoreTestFile();
     ASSERT_TRUE(m_defaultModel.IsValid());
-    revStatus = m_db->Txns().PullMergeApply(*revision1);
-    ASSERT_TRUE(revStatus == ChangesetStatus::Success);
+    ASSERT_EQ(MergeSchemaRevision(*revision1), ChangesetStatus::Success);
 
     // Merge Rev2 next
-    revStatus = m_db->Txns().PullMergeApply(*revision2);
-    ASSERT_TRUE(revStatus == ChangesetStatus::Success);
+    ASSERT_EQ(MergeSchemaRevision(*revision2), ChangesetStatus::Success);
 
     // Merge Rev3 next - should fail since the parent does not match
-    expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision3); }, "changeset out of order");
+    expectToThrow([&]() { MergeSchemaRevision(*revision3); }, "changeset out of order");
 
     // Merge Rev3 first
     RestoreTestFile();
     ASSERT_TRUE(m_defaultModel.IsValid());
-    revStatus = m_db->Txns().PullMergeApply(*revision3);
-    ASSERT_TRUE(revStatus == ChangesetStatus::Success);
+    ASSERT_EQ(MergeSchemaRevision(*revision3), ChangesetStatus::Success);
 
     // Delete model and Merge Rev1 - should fail since the model does not exist
     RestoreTestFile();
@@ -442,7 +485,7 @@ TEST_F(RevisionTestFixture, MergeToReadonlyBriefcase)
     RestoreTestFile(Db::OpenMode::Readonly);
 
     // Merge revision that was previously created to create a checkpoint file
-    expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision1); }, "file is readonly");
+    expectToThrow([&]() { MergeSchemaRevision(*revision1); }, "file is readonly");
     }
 
 //---------------------------------------------------------------------------------------
@@ -479,8 +522,7 @@ TEST_F(RevisionTestFixture, ResetIdSequencesAfterApply)
     // Restore baseline file, apply the change sets with the same element inserts, and validate the last sequence id
     RestoreTestFile();
 
-    ChangesetStatus status = m_db->Txns().PullMergeApply(*revision);
-    ASSERT_TRUE(status == ChangesetStatus::Success);
+    ASSERT_EQ(MergeSchemaRevision(*revision), ChangesetStatus::Success);
 
     DgnElementId idAfterMerge;
     result = m_db->GetElementIdSequence().GetNextValue(idAfterMerge);
@@ -684,7 +726,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
     RestoreTestFile();
 
     // Merge revision 1 (Schema changes - creating two tables)
-    MergeSchemaRevision(*revision1);
+    ASSERT_EQ(MergeSchemaRevision(*revision1), ChangesetStatus::Success);
 
     ASSERT_TRUE(m_db->TableExists("TestTable1"));
     ASSERT_TRUE(m_db->TableExists("TestTable2"));
@@ -699,13 +741,13 @@ TEST_F(RevisionTestFixture, DdlChanges)
 
     // Merge revision 2 (Data changes - inserts to both tables)
     LOG.infov("Merging Revision 2");
-    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*revision2));
+    EXPECT_EQ(MergeSchemaRevision(*revision2), ChangesetStatus::Success);
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable1 WHERE Id=1", 1));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable2 WHERE Id=1", 1));
 
     // Merge revision 3 (Schema changes to first table, and data changes to the second)
-    MergeSchemaRevision(*revision3);
+    ASSERT_EQ(MergeSchemaRevision(*revision3), ChangesetStatus::Success);
 
     ASSERT_TRUE(m_db->ColumnExists("TestTable1", "Column2"));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 0)); // i.e., null value
@@ -715,7 +757,7 @@ TEST_F(RevisionTestFixture, DdlChanges)
 
     // Merge revision 4 (Data changes to the first table, and schema changes to the other)
     LOG.infov("Merging Revision 4");
-    MergeSchemaRevision(*revision4);
+    ASSERT_EQ(MergeSchemaRevision(*revision4), ChangesetStatus::Success);
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 1));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=2", 2));
@@ -792,7 +834,7 @@ TEST_F(RevisionTestFixture, ManySchemaChanges)
         }
 
     m_db->SaveChanges("");
-    ChangesetPropsPtr revision = CreateRevision("-cs2");
+    ChangesetPropsPtr revision = CreateRevision("-cs2", true);
     ASSERT_TRUE(revision.IsValid());
     DumpRevision(*revision, "Revision containing many schema changes:");
 
@@ -800,7 +842,8 @@ TEST_F(RevisionTestFixture, ManySchemaChanges)
     RestoreTestFile();
 
     // Merge revision 1
-    MergeSchemaRevision(*revision);
+    ASSERT_EQ(MergeSchemaRevision(*revision), ChangesetStatus::Success);
+    ValidateHealthStats(*revision, ExpectedHealthStats(0, 0, 0, 0)); // Only DDL changes
 
     ASSERT_TRUE(m_db->TableExists("TestTable10"));
     ASSERT_TRUE(m_db->ColumnExists("TestTable10", "Column10"));
@@ -840,7 +883,7 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
     ASSERT_FALSE(m_db->Txns().HasDdlChanges());
 
     m_db->SaveChanges("Data changes");
-    MergeSchemaRevision(*schemaChangesRevision);
+    ASSERT_EQ(MergeSchemaRevision(*schemaChangesRevision), ChangesetStatus::Success);
 
     /* Create new revision with just the data changes */
     ChangesetPropsPtr dataChangesRevision = CreateRevision("-cs3");
@@ -861,18 +904,16 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
 
     /* Restore baseline, and merge revisions previously created */
     RestoreTestFile();
-    MergeSchemaRevision(*schemaChangesRevision);
+    ASSERT_EQ(MergeSchemaRevision(*schemaChangesRevision), ChangesetStatus::Success);
 
     ASSERT_TRUE(m_db->ColumnExists("TestTable", "Column2"));
 
-    ChangesetStatus status = m_db->Txns().PullMergeApply(*dataChangesRevision);
-    ASSERT_TRUE(status == ChangesetStatus::Success);
+    ASSERT_EQ(MergeSchemaRevision(*dataChangesRevision), ChangesetStatus::Success);
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 1));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=1", 0)); // i.e., null value
 
-    status = m_db->Txns().PullMergeApply(*moreDataChangesRevision);
-    ASSERT_TRUE(status == ChangesetStatus::Success);
+    ASSERT_EQ(MergeSchemaRevision(*moreDataChangesRevision), ChangesetStatus::Success);
 
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=1", 1));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=2", 2));
@@ -951,7 +992,7 @@ TEST_F(RevisionTestFixture, TableAndColumnAdditions)
     ASSERT_EQ(beforeCount, GetColumnCount(*m_db, "bis_DefinitionElement"));
     ASSERT_FALSE(m_db->TableExists("bis_DefinitionElement_Overflow"));
 
-    MergeSchemaRevision(*revision1);
+    ASSERT_EQ(MergeSchemaRevision(*revision1), ChangesetStatus::Success);
 
     ASSERT_EQ(afterCount, GetColumnCount(*m_db, "bis_DefinitionElement"));
     ASSERT_TRUE(m_db->TableExists("bis_DefinitionElement_Overflow"));
@@ -1676,7 +1717,7 @@ TEST_F(RevisionTestFixture, CheckProfileVersionUpdateAfterMerge)
     EXPECT_EQ(0, ecDbVersion.CompareTo(initialECDbVersion));
     }
 
-    EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().PullMergeApply(*revision));
+    EXPECT_EQ(MergeSchemaRevision(*revision), ChangesetStatus::Success);
 
     {
     auto dgnDbVersion = m_db->GetProfileVersion();
@@ -1718,7 +1759,7 @@ TEST_F(RevisionTestFixture, BrokenECDbProfileInRevision)
 
     RestoreTestFile();
 
-    expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision); }, "failed to apply changes");
+    expectToThrow([&]() { MergeSchemaRevision(*revision); }, "failed to apply changes");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1747,7 +1788,7 @@ TEST_F(RevisionTestFixture, BrokenDgnDbProfileInRevision)
 
     RestoreTestFile();
 
-    expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision); }, "failed to apply changes");
+    expectToThrow([&]() { MergeSchemaRevision(*revision); }, "failed to apply changes");
     }
 
 
@@ -1841,7 +1882,7 @@ TEST_F(RevisionTestFixture, DeleteClassConstraintViolationInCacheTable)
     // Apply the changeset with the major schema update that deletes the class
     // This should not throw an exception, but rather apply the changes successfully
     // and the class should be deleted from the cache table
-    expectToNotThrow([&]() { EXPECT_EQ(m_db->Txns().PullMergeApply(*updatedRevision), ChangesetStatus::Success); }, "Detected 1 foreign key conflicts in ChangeSet. Aborting merge.");
+    expectToNotThrow([&]() { MergeSchemaRevision(*updatedRevision); }, "Detected 1 foreign key conflicts in ChangeSet. Aborting merge.");
 
     // Class should be deleted
     checkTestClassExists(false);
@@ -1944,4 +1985,105 @@ TEST_F(RevisionTestFixture, Revert_DeleteClassConstraintViolationInCacheTable)
     // "AnotherTestClass" should be deleted
     checkTestClassExists(true, "TestClass");
     checkTestClassExists(false, "AnotherTestClass");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, CheckHealthStats)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"CheckHealthStats.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+    ASSERT_TRUE(CreateRevision("-initialize").IsValid());
+    BackupTestFile();
+
+    auto context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+
+    BeFileName searchDirs[2];
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDirs[0]);
+    searchDirs[0].AppendToPath(L"ECSchemas");
+    searchDirs[1] = searchDirs[0];
+
+    context->AddFirstSchemaPaths({ searchDirs[0].AppendToPath(L"Dgn"), searchDirs[1].AppendToPath(L"Standard") });
+
+    // Set up a base schema with a class
+    const auto baseSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty" typeName="string" />
+                <ECProperty propertyName="AnotherTestProperty" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr initialSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(initialSchema, baseSchemaXml, *context));
+    m_db->ImportSchemas({ initialSchema.get() }, true);
+    m_db->SaveChanges("Created Test Schema");
+
+    // Create a revision and a backup point
+    const auto importSchemaRevision = CreateRevision("-importSchema", true);
+    ASSERT_TRUE(importSchemaRevision.IsValid());
+
+    RestoreTestFile();
+    ASSERT_EQ(ChangesetStatus::Success, MergeSchemaRevision(*importSchemaRevision));
+    ValidateHealthStats(*importSchemaRevision, ExpectedHealthStats(1152, 56, 1096, 0));
+    
+    BackupTestFile();
+    // Schema update
+    auto updateSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr updateSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(updateSchema, updateSchemaXml, *context));
+    m_db->ImportSchemas({ updateSchema.get() }, true);
+    m_db->SaveChanges("Deleted AnotherTestProperty and did a type change on TestProperty");
+
+    // Create a revision and a backup point
+    const auto updateSchemaRevision = CreateRevision("-updateSchema", true);
+    ASSERT_TRUE(updateSchemaRevision.IsValid());
+
+    RestoreTestFile();
+    ASSERT_EQ(ChangesetStatus::Success, MergeSchemaRevision(*updateSchemaRevision));
+    ValidateHealthStats(*updateSchemaRevision, ExpectedHealthStats(7, 2, 2, 3));
+    
+    BackupTestFile();
+    // Another Schema update
+    updateSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+        </ECSchema>)xml";
+
+    ECSchemaPtr anotherSchemaUpdate;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(anotherSchemaUpdate, updateSchemaXml, *context));
+    m_db->ImportSchemas({ anotherSchemaUpdate.get() }, true);
+    m_db->SaveChanges("Deleted TestClass");
+
+    // Create a revision and a backup point
+    const auto anotherUpdateRevision = CreateRevision("-secondUpdate", true);
+    ASSERT_TRUE(anotherUpdateRevision.IsValid());
+
+    RestoreTestFile();
+    ASSERT_EQ(ChangesetStatus::Success, MergeSchemaRevision(*anotherUpdateRevision));
+    ValidateHealthStats(*anotherUpdateRevision, ExpectedHealthStats(1148, 0, 1097, 51));
     }

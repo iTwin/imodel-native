@@ -935,19 +935,19 @@ void ChangeStream::ConfigureChangesetHealthStats(DbCR db)
             {
             m_changesetHealthStats->AddSqlStatement(expandedSql);
             m_changesetHealthStats->IncrementTotalInsertedRows();
-            m_changesetHealthStats->AddToTotalInsertedTime(nanoseconds / 1000000);
+            m_changesetHealthStats->AddToTotalInsertedTime(nanoseconds / 1000000.0);
             }
         else if (sqlStartsWith(expandedSql, "update"))
             {
             m_changesetHealthStats->AddSqlStatement(expandedSql);
             m_changesetHealthStats->IncrementTotalUpdatedRows();
-            m_changesetHealthStats->AddToTotalUpdatedTime(nanoseconds / 1000000);
+            m_changesetHealthStats->AddToTotalUpdatedTime(nanoseconds / 1000000.0);
             }
         else if (sqlStartsWith(expandedSql, "delete"))
             {
             m_changesetHealthStats->AddSqlStatement(expandedSql);
             m_changesetHealthStats->IncrementTotalDeletedRows();
-            m_changesetHealthStats->AddToTotalDeletedTime(nanoseconds / 1000000);
+            m_changesetHealthStats->AddToTotalDeletedTime(nanoseconds / 1000000.0);
             }
         });
     }

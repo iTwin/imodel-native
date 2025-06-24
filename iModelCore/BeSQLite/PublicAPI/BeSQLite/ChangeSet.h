@@ -263,10 +263,10 @@ private:
     int m_totalInsertedRows = 0;
     int m_totalUpdatedRows = 0;
     int m_totalDeletedRows = 0;
-    int64_t m_totalApplyTimeMs = 0;
-    int64_t m_totalInsertTimeMs = 0;
-    int64_t m_totalUpdateTimeMs = 0;
-    int64_t m_totalDeleteTimeMs = 0;
+    double m_totalApplyTimeMs = 0.0;
+    double m_totalInsertTimeMs = 0.0;
+    double m_totalUpdateTimeMs = 0.0;
+    double m_totalDeleteTimeMs = 0.0;
     std::vector<Utf8String> m_sqlStatements;
 
 public:
@@ -275,20 +275,20 @@ public:
     int GetTotalInsertedRows() const { return m_totalInsertedRows; }
     int GetTotalUpdatedRows() const { return m_totalUpdatedRows; }
     int GetTotalDeletedRows() const { return m_totalDeletedRows; }
-    int64_t GetTotalApplyTime() const { return m_totalApplyTimeMs; }
-    int64_t GetTotalInsertedTime() const { return m_totalInsertTimeMs; }
-    int64_t GetTotalUpdatedTime() const { return m_totalUpdateTimeMs; }
-    int64_t GetTotalDeletedTime() const { return m_totalDeleteTimeMs; }
+    double GetTotalApplyTime() const { return m_totalApplyTimeMs; }
+    double GetTotalInsertedTime() const { return m_totalInsertTimeMs; }
+    double GetTotalUpdatedTime() const { return m_totalUpdateTimeMs; }
+    double GetTotalDeletedTime() const { return m_totalDeleteTimeMs; }
     const std::vector<Utf8String>& GetSqlStatements() const { return m_sqlStatements; }
 
     // Increment methods
     void IncrementTotalInsertedRows() { ++m_totalInsertedRows; ++m_totalAffectedRows; }
     void IncrementTotalUpdatedRows() { ++m_totalUpdatedRows; ++m_totalAffectedRows; }
-    void IncrementTotalDeletedRows() { ++m_totalDeleteTimeMs; ++m_totalAffectedRows; }
+    void IncrementTotalDeletedRows() { ++m_totalDeletedRows; ++m_totalAffectedRows; }
 
-    void AddToTotalInsertedTime(int64_t time) { m_totalInsertTimeMs += time; m_totalApplyTimeMs += time; }
-    void AddToTotalUpdatedTime(int64_t time) { m_totalUpdateTimeMs += time; m_totalApplyTimeMs += time; }
-    void AddToTotalDeletedTime(int64_t time) { m_totalDeleteTimeMs += time; m_totalApplyTimeMs += time; }
+    void AddToTotalInsertedTime(double time) { m_totalInsertTimeMs += time; m_totalApplyTimeMs += time; }
+    void AddToTotalUpdatedTime(double time) { m_totalUpdateTimeMs += time; m_totalApplyTimeMs += time; }
+    void AddToTotalDeletedTime(double time) { m_totalDeleteTimeMs += time; m_totalApplyTimeMs += time; }
     void AddSqlStatement(Utf8String const& sql) { m_sqlStatements.push_back(sql); }
 
     BeJsDocument GetStats() const {
