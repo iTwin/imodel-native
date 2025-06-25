@@ -977,6 +977,7 @@ class ChangesetHealthStats {
 private:
     Utf8String m_changeSetId;
     int64_t m_uncompressedSize = 0;
+    unsigned int m_sha1ValidationTimeMs = 0U;
 
     int m_totalAffectedRows = 0;
     int m_totalInsertedRows = 0;
@@ -990,6 +991,10 @@ private:
     std::vector<Utf8String> m_sqlStatements;
 
 public:
+    void SetChangeSetId(Utf8StringCR changeSetId) { m_changeSetId = changeSetId; }
+    void SetUncompressedSize(int64_t size) { m_uncompressedSize = size; }
+    void SetSha1ValidationTimeMs(unsigned int time) { m_sha1ValidationTimeMs = time; }
+
     // Increment methods
     void IncrementTotalInsertedRows() { ++m_totalInsertedRows; ++m_totalAffectedRows; }
     void IncrementTotalUpdatedRows() { ++m_totalUpdatedRows; ++m_totalAffectedRows; }
@@ -1000,7 +1005,7 @@ public:
     void AddToTotalInsertedTime(double time) { m_totalInsertTimeMs += time; m_totalApplyTimeMs += time; }
     void AddToTotalUpdatedTime(double time) { m_totalUpdateTimeMs += time; m_totalApplyTimeMs += time; }
     void AddToTotalDeletedTime(double time) { m_totalDeleteTimeMs += time; m_totalApplyTimeMs += time; }
-    void AddSqlStatement(Utf8String const& sql) { m_sqlStatements.push_back(sql); }
+    void AddSqlStatement(Utf8StringCR sql) { m_sqlStatements.push_back(sql); }
 
     // Getters consts
     Utf8String const& GetChangeSetId() const { return m_changeSetId; }
@@ -1014,6 +1019,7 @@ public:
     double GetTotalInsertedTime() const { return m_totalInsertTimeMs; }
     double GetTotalUpdatedTime() const { return m_totalUpdateTimeMs; }
     double GetTotalDeletedTime() const { return m_totalDeleteTimeMs; }
+    unsigned int GetSha1ValidationTimeMs() const { return m_sha1ValidationTimeMs; }
     const std::vector<Utf8String>& GetSqlStatements() const { return m_sqlStatements; }
     BeJsDocument GetHealthStats() const;
 };
@@ -1030,7 +1036,10 @@ struct ChangesetProps : RefCountedBase {
 
 
 private:
+    // Changeset Health Stats
+    // Since these metrics are captured during the changeset application, they need to be mutable.
     mutable std::unique_ptr<ChangesetHealthStats> m_changesetHealthStats;
+    bool m_performHealthCheck;
 
 public:
     TxnManager::TxnId m_endTxnId;
@@ -1043,10 +1052,9 @@ public:
     DateTime m_dateTime;
     Utf8String m_summary;
     ChangesetType m_changesetType;
-    size_t m_uncompressedSize;
-    bool m_performHealthCheck;
     ChangesetProps(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid, BeFileNameCR fileName, ChangesetType changesetType) :
-        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName), m_changesetType(changesetType), m_uncompressedSize(0), m_performHealthCheck(false), m_changesetHealthStats(std::make_unique<ChangesetHealthStats>()) {}
+        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName), m_changesetType(changesetType),
+        m_performHealthCheck(false), m_changesetHealthStats(std::make_unique<ChangesetHealthStats>()) {}
 
     Utf8StringCR GetChangesetId() const { return m_id; }
     int32_t GetChangesetIndex() const { return m_index; }
@@ -1055,8 +1063,6 @@ public:
     Utf8StringCR GetDbGuid() const { return m_dbGuid; }
     ChangesetType GetChangesetType() const { return m_changesetType; }
     BeFileNameCR GetFileName() const { return m_fileName; }
-    size_t GetUncompressedSize() const { return m_uncompressedSize; }
-    void SetUncompressedSize(size_t size) { m_uncompressedSize = size; }
     bool IsHealthCheckEnabled() const { return m_performHealthCheck; }
     void PerformHealthCheck(bool performHealthCheck) { m_performHealthCheck = performHealthCheck; }
 
@@ -1074,6 +1080,8 @@ public:
 
     bool ContainsEcChanges() const { return ((int)m_changesetType & (int)ChangesetType::Schema) > 0; }
 
+    ChangesetHealthStats& GetChangesetHealthStats() const { BeAssert(m_changesetHealthStats != nullptr); return *m_changesetHealthStats; }
+
     //! Determines if the revision contains schema changes
     DGNPLATFORM_EXPORT bool ContainsDdlChanges(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void ValidateContent(DgnDbR dgndb) const;
@@ -1081,7 +1089,7 @@ public:
     DGNPLATFORM_EXPORT static Utf8String ComputeChangesetId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env);
 
     DGNPLATFORM_EXPORT void InitializeHealthStatsListener(BeSQLite::DbCR db) const;
-    DGNPLATFORM_EXPORT BeJsDocument GetChangeSetHealthStats() const { return m_changesetHealthStats->GetHealthStats(); }
+    DGNPLATFORM_EXPORT BeJsDocument GetChangeSetHealthStatsJson() const { return m_changesetHealthStats->GetHealthStats(); }
     DGNPLATFORM_EXPORT Utf8String GetChangeSetHealthStatsAsString() const { return m_changesetHealthStats->GetHealthStats().Stringify(); }
 };
 

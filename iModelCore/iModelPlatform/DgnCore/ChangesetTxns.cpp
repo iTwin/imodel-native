@@ -628,20 +628,12 @@ Utf8String ChangesetProps::ComputeChangesetId(Utf8StringCR parentRevId, BeFileNa
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ChangesetHealthStats::InitializeFromChangeset(ChangesetPropsCR changeset)
-    {
-    m_changeSetId = changeset.GetChangesetId();
-    m_uncompressedSize = changeset.GetUncompressedSize();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 BeJsDocument ChangesetHealthStats::GetHealthStats() const
     {
     BeJsDocument stats;
     stats["changesetId"] = m_changeSetId;
     stats["uncompressedSizeBytes"] = m_uncompressedSize;
+    stats["sha1ValidationTimeMs"] = m_sha1ValidationTimeMs;
     stats["totalAffectedRows"] = m_totalAffectedRows;
     stats["totalInsertedRows"] = m_totalInsertedRows;
     stats["totalUpdatedRows"] = m_totalUpdatedRows;
@@ -658,8 +650,6 @@ BeJsDocument ChangesetHealthStats::GetHealthStats() const
 //---------------------------------------------------------------------------------------
 void ChangesetProps::InitializeHealthStatsListener(DbCR db) const
     {   
-    m_changesetHealthStats->InitializeFromChangeset(*this);
-
     auto sqlStartsWith = [](const std::string_view str, const std::string_view prefix)
         {
         if (str.size() < prefix.size())
@@ -734,8 +724,10 @@ void ChangesetProps::ValidateContent(DgnDbR dgndb) const {
     if (!m_fileName.DoesPathExist())
         dgndb.ThrowException("changeset file does not exist", (int) ChangesetStatus::FileNotFound);
 
+    const auto startMs = BeTimeUtilities::QueryMillisecondsCounterUInt32();
     if (m_id != ChangesetIdGenerator::GenerateId(m_parentId, m_fileName, dgndb))
       dgndb.ThrowException("incorrect id for changeset", (int) ChangesetStatus::CorruptedChangeStream);
+    GetChangesetHealthStats().SetSha1ValidationTimeMs(BeTimeUtilities::QueryMillisecondsCounterUInt32() - startMs);
 }
 
 /**
@@ -1138,7 +1130,9 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     }
 
     m_changesetInProgress = new ChangesetProps(revId, -1, parentRevId, dbGuid, changesetFileName, changesetType);
-    m_changesetInProgress->m_uncompressedSize = uncompressedSize;
+    auto& healthStats = m_changesetInProgress->GetChangesetHealthStats();
+    healthStats.SetUncompressedSize(uncompressedSize);
+    healthStats.SetChangeSetId(revId);
     m_changesetInProgress->m_endTxnId = endTxnId;
 
     // clean this cruft up from older versions.

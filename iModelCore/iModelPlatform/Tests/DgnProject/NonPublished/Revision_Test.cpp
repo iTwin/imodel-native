@@ -273,15 +273,13 @@ void RevisionTestFixture::ProcessSchemaRevision(ChangesetPropsCR revision, Revis
 //---------------------------------------------------------------------------------------
 void RevisionTestFixture::ValidateHealthStats(ChangesetPropsCR revision, const ExpectedHealthStats& expected) const
     {
-    const auto stats = revision.GetChangeSetHealthStats();
+    const auto stats = revision.GetChangeSetHealthStatsJson();
     if (stats.empty())
         return;
 
     const auto changeSetId = stats["changesetId"].asString();
     ASSERT_FALSE(changeSetId.empty());
     EXPECT_STREQ(changeSetId.c_str(), revision.GetChangesetId().c_str());
-
-    EXPECT_EQ(stats["uncompressedSizeBytes"].asInt64(), revision.GetUncompressedSize());
 
     const auto totalAffectedRows = stats["totalAffectedRows"].asInt64();
     const auto totalInsertedRows = stats["totalInsertedRows"].asInt64();
