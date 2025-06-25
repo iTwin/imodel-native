@@ -457,9 +457,12 @@ struct SetNapiObjOnElement {
 /*---------------------------------------------------------------------------------**/ /**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void callJsPreHandler(DgnDbR db, DgnClassId classId, Utf8CP methodName, Napi::Object obj)  {
+static void callJsPreHandler(DgnDbR db, DgnClassId classId, Utf8CP methodName, Napi::Object obj, std::optional<Napi::Value> options = std::nullopt) {
     auto arg = Napi::Object::New(obj.Env());
     arg.Set("props", obj);
+    if (options.has_value() && !options.value().IsUndefined()) {
+        arg.Set("options", options.value());
+    }
     db.CallJsHandlerMethod(classId, methodName, arg);
 }
 
@@ -479,7 +482,7 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
     BeJsConst inOptionsJson(optionsObj);
 
     auto classId = ECJsonUtilities::GetClassIdFromClassNameJson(inJson[DgnElement::json_classFullName()], dgndb.GetClassLocater());
-    callJsPreHandler(dgndb, classId, "onInsert", obj);
+    callJsPreHandler(dgndb, classId, "onInsert", obj, optionsObj);
 
     try {
         DgnElement::CreateParams params(dgndb, inJson);
