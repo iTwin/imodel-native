@@ -879,8 +879,7 @@ ChangesetStatus TxnManager::MergeDdlChanges(ChangesetPropsCR revision, Changeset
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges, bool fastForward) {
     // Apply the changeset
-    const auto performHealthCheck = containsSchemaChanges && revision.IsHealthCheckEnabled();
-    if (performHealthCheck)
+    if (revision.IsHealthCheckEnabled())
         {
         BeJsDocument changeSetHealthStats;
         changeSetHealthStats["changesetId"] = revision.GetChangesetId();
@@ -898,7 +897,7 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
 
     // TO-DO : Check if the tracking needs to be extended to cover possible inverts later.
     // In that case, the AppendHealthStats logic will need to be updated to track those changes and metrics separately.
-    if (performHealthCheck) {
+    if (revision.IsHealthCheckEnabled()) {
         changeStream.AppendToHealthStats(revision.m_changeSetHealthStats, changeStream.GetHealthStats());
         m_dgndb.DisableAllTraceEvents();
     }

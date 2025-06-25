@@ -1990,9 +1990,9 @@ TEST_F(RevisionTestFixture, Revert_DeleteClassConstraintViolationInCacheTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(RevisionTestFixture, CheckHealthStats)
+TEST_F(RevisionTestFixture, CheckHealthStatsWithSchemaChanges)
     {
-    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"CheckHealthStats.bim");
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"CheckHealthStatsWithSchemaChanges.bim");
     EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
     ASSERT_TRUE(CreateRevision("-initialize").IsValid());
     BackupTestFile();
@@ -2086,4 +2086,111 @@ TEST_F(RevisionTestFixture, CheckHealthStats)
     RestoreTestFile();
     ASSERT_EQ(ChangesetStatus::Success, MergeSchemaRevision(*anotherUpdateRevision));
     ValidateHealthStats(*anotherUpdateRevision, ExpectedHealthStats(1148, 0, 1097, 51));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"CheckHealthStatsWithElementCRUD.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+
+    auto context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+
+    BeFileName searchDirs[2];
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDirs[0]);
+    searchDirs[0].AppendToPath(L"ECSchemas");
+    searchDirs[1] = searchDirs[0];
+
+    context->AddFirstSchemaPaths({ searchDirs[0].AppendToPath(L"Dgn"), searchDirs[1].AppendToPath(L"Standard") });
+
+    // Set up a base schema with a class
+    const auto baseSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty" typeName="string" />
+                <ECProperty propertyName="AnotherTestProperty" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr initialSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(initialSchema, baseSchemaXml, *context));
+    m_db->ImportSchemas({ initialSchema.get() }, true);
+    m_db->SaveChanges("Created Test Schema");
+
+    ASSERT_TRUE(CreateRevision("-initialRevision").IsValid());
+
+    BackupTestFile();
+
+    ChangesetPropsPtr revision;
+    DgnElementId testElementId;
+    // Insert element
+    {
+        PhysicalModelPtr model = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
+        ASSERT_TRUE(model.IsValid());
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
+        builder->Append(*ICurvePrimitive::CreateArc(DEllipse3d::From(1, 2, 3, 0, 0, 2, 0, 3, 0, 0.0, Angle::TwoPi())));
+        
+        GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(*model, m_defaultCategoryId);
+        ASSERT_EQ(SUCCESS, builder->Finish(*testElement));
+        
+        DgnDbStatus statusInsert;
+        testElement->Insert(&statusInsert);
+        ASSERT_EQ(DgnDbStatus::Success, statusInsert);
+        
+        testElementId = testElement->GetElementId();
+        ASSERT_TRUE(testElementId.IsValid());
+        ASSERT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
+        m_db->SaveChanges("Inserted Element");
+        
+        revision = CreateRevision("-insertElement", true);
+        ASSERT_TRUE(revision.IsValid());
+    }
+
+    RestoreTestFile();
+    EXPECT_TRUE(m_db->Elements().GetElement(testElementId).IsNull());
+    ASSERT_EQ(ChangesetStatus::Success, MergeSchemaRevision(*revision));
+    ValidateHealthStats(*revision, ExpectedHealthStats(7, 5, 1, 1));
+    BackupTestFile();
+
+    // Update element
+    {
+        auto testElement = m_db->Elements().GetForEdit<PhysicalElement>(testElementId);
+        ASSERT_TRUE(testElement.IsValid());
+
+        testElement->SetPropertyValue("TestProperty", ECValue("UpdatedValue"));
+        testElement->SetPropertyValue("AnotherTestProperty", ECValue(20));
+        testElement->Update();
+        m_db->SaveChanges("Updated Element");
+
+        revision = CreateRevision("-updateElement", true);
+        ASSERT_TRUE(revision.IsValid());
+    }
+
+    RestoreTestFile();
+    EXPECT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
+    ASSERT_EQ(ChangesetStatus::Success, MergeSchemaRevision(*revision));
+    ValidateHealthStats(*revision, ExpectedHealthStats(4, 1, 2, 1));
+    BackupTestFile();
+
+    // Delete element
+    {
+        auto testElement = m_db->Elements().GetForEdit<PhysicalElement>(testElementId);
+        ASSERT_TRUE(testElement.IsValid());
+        testElement->Delete();
+        m_db->SaveChanges("Deleted Element");
+
+        revision = CreateRevision("-deleteElement", true);
+        ASSERT_TRUE(revision.IsValid());
+    }
+
+    RestoreTestFile();
+    EXPECT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
+    ASSERT_EQ(ChangesetStatus::Success, MergeSchemaRevision(*revision));
+    ValidateHealthStats(*revision, ExpectedHealthStats(7, 2, 1, 4));
     }
