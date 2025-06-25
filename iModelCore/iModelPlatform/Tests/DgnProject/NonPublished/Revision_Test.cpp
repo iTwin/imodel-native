@@ -273,13 +273,13 @@ void RevisionTestFixture::ProcessSchemaRevision(ChangesetPropsCR revision, Revis
 //---------------------------------------------------------------------------------------
 void RevisionTestFixture::ValidateHealthStats(ChangesetPropsCR revision, const ExpectedHealthStats& expected) const
     {
-    const auto stats = BeJsDocument(revision.GetChangeSetHealthStatsAsString());
+    const auto stats = revision.GetChangeSetHealthStats();
     if (stats.empty())
         return;
 
     const auto changeSetId = stats["changesetId"].asString();
     ASSERT_FALSE(changeSetId.empty());
-    EXPECT_STREQ(changeSetId.substr(1, changeSetId.size() - 2).c_str(), revision.GetChangesetId().c_str());
+    EXPECT_STREQ(changeSetId.c_str(), revision.GetChangesetId().c_str());
 
     EXPECT_EQ(stats["uncompressedSizeBytes"].asInt64(), revision.GetUncompressedSize());
 

@@ -880,14 +880,8 @@ ChangesetStatus TxnManager::MergeDdlChanges(ChangesetPropsCR revision, Changeset
 ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges, bool fastForward) {
     // Apply the changeset
     if (revision.IsHealthCheckEnabled())
-        {
-        BeJsDocument changeSetHealthStats;
-        changeSetHealthStats["changesetId"] = revision.GetChangesetId();
-        changeSetHealthStats["uncompressedSizeBytes"] = static_cast<int64_t>(revision.GetUncompressedSize());
+        revision.InitializeHealthStatsListener(m_dgndb);
 
-        changeStream.AppendToHealthStats(revision.m_changeSetHealthStats, changeSetHealthStats);
-        changeStream.ConfigureChangesetHealthStats(m_dgndb);
-        }
     const auto result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, false, fastForward);
     if (result != BE_SQLITE_OK) {
         const auto errMsg = changeStream.GetLastErrorMessage();
@@ -897,10 +891,8 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
 
     // TO-DO : Check if the tracking needs to be extended to cover possible inverts later.
     // In that case, the AppendHealthStats logic will need to be updated to track those changes and metrics separately.
-    if (revision.IsHealthCheckEnabled()) {
-        changeStream.AppendToHealthStats(revision.m_changeSetHealthStats, changeStream.GetHealthStats());
+    if (revision.IsHealthCheckEnabled())
         m_dgndb.DisableAllTraceEvents();
-    }
 
     // Save parent changeset info
     SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());

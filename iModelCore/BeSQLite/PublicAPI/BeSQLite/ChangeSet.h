@@ -255,57 +255,6 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass
-//=======================================================================================
-class ChangesetHealthStats {
-private:
-    int m_totalAffectedRows = 0;
-    int m_totalInsertedRows = 0;
-    int m_totalUpdatedRows = 0;
-    int m_totalDeletedRows = 0;
-    double m_totalApplyTimeMs = 0.0;
-    double m_totalInsertTimeMs = 0.0;
-    double m_totalUpdateTimeMs = 0.0;
-    double m_totalDeleteTimeMs = 0.0;
-    std::vector<Utf8String> m_sqlStatements;
-
-public:
-    // Getters
-    int GetTotalRowCount() const { return m_totalAffectedRows; }
-    int GetTotalInsertedRows() const { return m_totalInsertedRows; }
-    int GetTotalUpdatedRows() const { return m_totalUpdatedRows; }
-    int GetTotalDeletedRows() const { return m_totalDeletedRows; }
-    double GetTotalApplyTime() const { return m_totalApplyTimeMs; }
-    double GetTotalInsertedTime() const { return m_totalInsertTimeMs; }
-    double GetTotalUpdatedTime() const { return m_totalUpdateTimeMs; }
-    double GetTotalDeletedTime() const { return m_totalDeleteTimeMs; }
-    const std::vector<Utf8String>& GetSqlStatements() const { return m_sqlStatements; }
-
-    // Increment methods
-    void IncrementTotalInsertedRows() { ++m_totalInsertedRows; ++m_totalAffectedRows; }
-    void IncrementTotalUpdatedRows() { ++m_totalUpdatedRows; ++m_totalAffectedRows; }
-    void IncrementTotalDeletedRows() { ++m_totalDeletedRows; ++m_totalAffectedRows; }
-
-    void AddToTotalInsertedTime(double time) { m_totalInsertTimeMs += time; m_totalApplyTimeMs += time; }
-    void AddToTotalUpdatedTime(double time) { m_totalUpdateTimeMs += time; m_totalApplyTimeMs += time; }
-    void AddToTotalDeletedTime(double time) { m_totalDeleteTimeMs += time; m_totalApplyTimeMs += time; }
-    void AddSqlStatement(Utf8String const& sql) { m_sqlStatements.push_back(sql); }
-
-    BeJsDocument GetStats() const {
-        BeJsDocument stats;
-        stats["totalAffectedRows"] = m_totalAffectedRows;
-        stats["totalInsertedRows"] = m_totalInsertedRows;
-        stats["totalUpdatedRows"] = m_totalUpdatedRows;
-        stats["totalDeletedRows"] = m_totalDeletedRows;
-        stats["totalApplyTimeMs"] = m_totalApplyTimeMs;
-        stats["totalInsertTimeMs"] = m_totalInsertTimeMs;
-        stats["totalUpdateTimeMs"] = m_totalUpdateTimeMs;
-        stats["totalDeleteTimeMs"] = m_totalDeleteTimeMs;
-        return stats;
-    }
-};
-
-//=======================================================================================
 //! A base class for a streaming version of the ChangeSet. ChangeSets require that their
 //! entire contents be stored in large memory buffers. This streaming version is meant to
 //! be used in low memory environments where it is required to handle very large Change Sets.
@@ -335,8 +284,6 @@ protected:
     //! @return BE_SQLITE_OK if the data has been successfully processed. Return BE_SQLITE_ERROR otherwise.
     virtual DbResult _Append(Byte const* pData, int nData) = 0;
     static int AppendCallback(void* pOut, const void* pData, int nData) { return (int)((ChangeStream*)pOut)->_Append((Byte const*)pData, nData); }
-
-    std::unique_ptr<ChangesetHealthStats> m_changesetHealthStats;
 
 public:
     virtual bool _IsEmpty() const = 0;
@@ -381,10 +328,6 @@ public:
 
     //! Get a description of a conflict cause for debugging purposes.
     BE_SQLITE_EXPORT static Utf8CP InterpretConflictCause(ConflictCause, int detailLevel = 0);
-
-    BE_SQLITE_EXPORT BeJsDocument GetHealthStats() const;
-    BE_SQLITE_EXPORT void AppendToHealthStats(BeJsDocument& toJsonDoc, const BeJsDocument& fromJsonDoc);
-    BE_SQLITE_EXPORT void ConfigureChangesetHealthStats(DbCR db);
 };
 
 //=======================================================================================

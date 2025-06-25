@@ -625,6 +625,73 @@ Utf8String ChangesetProps::ComputeChangesetId(Utf8StringCR parentRevId, BeFileNa
     return ChangesetIdGenerator::GenerateId(parentRevId, changesetFile, env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ChangesetHealthStats::InitializeFromChangeset(ChangesetPropsCR changeset)
+    {
+    m_changeSetId = changeset.GetChangesetId();
+    m_uncompressedSize = changeset.GetUncompressedSize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BeJsDocument ChangesetHealthStats::GetHealthStats() const
+    {
+    BeJsDocument stats;
+    stats["changesetId"] = m_changeSetId;
+    stats["uncompressedSizeBytes"] = m_uncompressedSize;
+    stats["totalAffectedRows"] = m_totalAffectedRows;
+    stats["totalInsertedRows"] = m_totalInsertedRows;
+    stats["totalUpdatedRows"] = m_totalUpdatedRows;
+    stats["totalDeletedRows"] = m_totalDeletedRows;
+    stats["totalApplyTimeMs"] = m_totalApplyTimeMs;
+    stats["totalInsertTimeMs"] = m_totalInsertTimeMs;
+    stats["totalUpdateTimeMs"] = m_totalUpdateTimeMs;
+    stats["totalDeleteTimeMs"] = m_totalDeleteTimeMs;
+    return stats;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ChangesetProps::InitializeHealthStatsListener(DbCR db) const
+    {   
+    m_changesetHealthStats->InitializeFromChangeset(*this);
+
+    auto sqlStartsWith = [](const std::string_view str, const std::string_view prefix)
+        {
+        if (str.size() < prefix.size())
+            return false;
+        return std::equal(prefix.begin(), prefix.end(), str.begin(), [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+        };
+
+    db.ConfigTraceEvents(DbTrace::Profile, true);
+
+    db.GetTraceProfileEvent().AddListener([this, &sqlStartsWith] (const TraceContext& ctx, const int64_t nanoseconds)
+        {
+        const auto expandedSql = ctx.GetExpandedSql();
+        if (sqlStartsWith(expandedSql, "insert"))
+            {
+            m_changesetHealthStats->AddSqlStatement(expandedSql);
+            m_changesetHealthStats->IncrementTotalInsertedRows();
+            m_changesetHealthStats->AddToTotalInsertedTime(nanoseconds / 1000000.0);
+            }
+        else if (sqlStartsWith(expandedSql, "update"))
+            {
+            m_changesetHealthStats->AddSqlStatement(expandedSql);
+            m_changesetHealthStats->IncrementTotalUpdatedRows();
+            m_changesetHealthStats->AddToTotalUpdatedTime(nanoseconds / 1000000.0);
+            }
+        else if (sqlStartsWith(expandedSql, "delete"))
+            {
+            m_changesetHealthStats->AddSqlStatement(expandedSql);
+            m_changesetHealthStats->IncrementTotalDeletedRows();
+            m_changesetHealthStats->AddToTotalDeletedTime(nanoseconds / 1000000.0);
+            }
+        });
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
