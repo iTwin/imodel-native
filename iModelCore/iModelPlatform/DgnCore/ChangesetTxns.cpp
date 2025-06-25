@@ -625,6 +625,63 @@ Utf8String ChangesetProps::ComputeChangesetId(Utf8StringCR parentRevId, BeFileNa
     return ChangesetIdGenerator::GenerateId(parentRevId, changesetFile, env);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BeJsDocument ChangesetHealthStats::GetHealthStats() const
+    {
+    BeJsDocument stats;
+    stats["changesetId"] = m_changeSetId;
+    stats["uncompressedSizeBytes"] = m_uncompressedSize;
+    stats["sha1ValidationTimeMs"] = m_sha1ValidationTimeMs;
+    stats["totalAffectedRows"] = m_totalAffectedRows;
+    stats["totalInsertedRows"] = m_totalInsertedRows;
+    stats["totalUpdatedRows"] = m_totalUpdatedRows;
+    stats["totalDeletedRows"] = m_totalDeletedRows;
+    stats["totalApplyTimeMs"] = m_totalApplyTimeMs;
+    stats["totalInsertTimeMs"] = m_totalInsertTimeMs;
+    stats["totalUpdateTimeMs"] = m_totalUpdateTimeMs;
+    stats["totalDeleteTimeMs"] = m_totalDeleteTimeMs;
+    return stats;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ChangesetProps::InitializeHealthStatsListener(DbCR db) const
+    {   
+    auto sqlStartsWith = [](const std::string_view str, const std::string_view prefix)
+        {
+        if (str.size() < prefix.size())
+            return false;
+        return std::equal(prefix.begin(), prefix.end(), str.begin(), [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+        };
+
+    db.ConfigTraceEvents(DbTrace::Profile, true);
+
+    db.GetTraceProfileEvent().AddListener([this, &sqlStartsWith] (const TraceContext& ctx, const int64_t nanoseconds)
+        {
+        const auto expandedSql = ctx.GetExpandedSql();
+        if (sqlStartsWith(expandedSql, "insert"))
+            {
+            m_changesetHealthStats->AddSqlStatement(expandedSql);
+            m_changesetHealthStats->IncrementTotalInsertedRows();
+            m_changesetHealthStats->AddToTotalInsertedTime(nanoseconds / 1000000.0);
+            }
+        else if (sqlStartsWith(expandedSql, "update"))
+            {
+            m_changesetHealthStats->AddSqlStatement(expandedSql);
+            m_changesetHealthStats->IncrementTotalUpdatedRows();
+            m_changesetHealthStats->AddToTotalUpdatedTime(nanoseconds / 1000000.0);
+            }
+        else if (sqlStartsWith(expandedSql, "delete"))
+            {
+            m_changesetHealthStats->AddSqlStatement(expandedSql);
+            m_changesetHealthStats->IncrementTotalDeletedRows();
+            m_changesetHealthStats->AddToTotalDeletedTime(nanoseconds / 1000000.0);
+            }
+        });
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -667,8 +724,10 @@ void ChangesetProps::ValidateContent(DgnDbR dgndb) const {
     if (!m_fileName.DoesPathExist())
         dgndb.ThrowException("changeset file does not exist", (int) ChangesetStatus::FileNotFound);
 
+    const auto startMs = BeTimeUtilities::QueryMillisecondsCounterUInt32();
     if (m_id != ChangesetIdGenerator::GenerateId(m_parentId, m_fileName, dgndb))
       dgndb.ThrowException("incorrect id for changeset", (int) ChangesetStatus::CorruptedChangeStream);
+    GetChangesetHealthStats().SetSha1ValidationTimeMs(BeTimeUtilities::QueryMillisecondsCounterUInt32() - startMs);
 }
 
 /**
@@ -1031,6 +1090,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
 
     DdlChanges ddlChangeGroup;
     ChangeGroup dataChangeGroup(m_dgndb);
+    size_t uncompressedSize = 0;
     for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
         auto txnType = GetTxnType(currTxnId);
         if (txnType == TxnType::EcSchema) // if we have EcSchema changes, set the flag on the change group
@@ -1044,6 +1104,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
             for(auto& ddl : ddlChange.GetDDLs())
                 ddlChangeGroup.AddDDL(ddl.c_str());
 
+            uncompressedSize = ddlChange.m_data.m_size;
         } else {
             ChangeSet sqlChangeSet;
             if (BE_SQLITE_OK != ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None))
@@ -1052,6 +1113,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
             DbResult result = sqlChangeSet.AddToChangeGroup(dataChangeGroup);
             if (BE_SQLITE_OK != result)
                 m_dgndb.ThrowException("add to changes failed", (int) result);
+            uncompressedSize = sqlChangeSet.m_data.m_size;
         }
     }
 
@@ -1068,6 +1130,9 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     }
 
     m_changesetInProgress = new ChangesetProps(revId, -1, parentRevId, dbGuid, changesetFileName, changesetType);
+    auto& healthStats = m_changesetInProgress->GetChangesetHealthStats();
+    healthStats.SetUncompressedSize(uncompressedSize);
+    healthStats.SetChangeSetId(revId);
     m_changesetInProgress->m_endTxnId = endTxnId;
 
     // clean this cruft up from older versions.

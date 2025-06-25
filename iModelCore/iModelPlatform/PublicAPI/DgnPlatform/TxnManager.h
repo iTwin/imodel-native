@@ -973,6 +973,60 @@ namespace dgn_TableHandler {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+class ChangesetHealthStats {
+private:
+    Utf8String m_changeSetId;
+    int64_t m_uncompressedSize = 0;
+    unsigned int m_sha1ValidationTimeMs = 0U;
+
+    int m_totalAffectedRows = 0;
+    int m_totalInsertedRows = 0;
+    int m_totalUpdatedRows = 0;
+    int m_totalDeletedRows = 0;
+
+    double m_totalApplyTimeMs = 0.0;
+    double m_totalInsertTimeMs = 0.0;
+    double m_totalUpdateTimeMs = 0.0;
+    double m_totalDeleteTimeMs = 0.0;
+    std::vector<Utf8String> m_sqlStatements;
+
+public:
+    void SetChangeSetId(Utf8StringCR changeSetId) { m_changeSetId = changeSetId; }
+    void SetUncompressedSize(int64_t size) { m_uncompressedSize = size; }
+    void SetSha1ValidationTimeMs(unsigned int time) { m_sha1ValidationTimeMs = time; }
+
+    // Increment methods
+    void IncrementTotalInsertedRows() { ++m_totalInsertedRows; ++m_totalAffectedRows; }
+    void IncrementTotalUpdatedRows() { ++m_totalUpdatedRows; ++m_totalAffectedRows; }
+    void IncrementTotalDeletedRows() { ++m_totalDeletedRows; ++m_totalAffectedRows; }
+    
+    void InitializeFromChangeset(ChangesetPropsCR changeset);
+
+    void AddToTotalInsertedTime(double time) { m_totalInsertTimeMs += time; m_totalApplyTimeMs += time; }
+    void AddToTotalUpdatedTime(double time) { m_totalUpdateTimeMs += time; m_totalApplyTimeMs += time; }
+    void AddToTotalDeletedTime(double time) { m_totalDeleteTimeMs += time; m_totalApplyTimeMs += time; }
+    void AddSqlStatement(Utf8StringCR sql) { m_sqlStatements.push_back(sql); }
+
+    // Getters consts
+    Utf8String const& GetChangeSetId() const { return m_changeSetId; }
+    int64_t GetUncompressedSize() const { return m_uncompressedSize; }
+    
+    int GetTotalRowCount() const { return m_totalAffectedRows; }
+    int GetTotalInsertedRows() const { return m_totalInsertedRows; }
+    int GetTotalUpdatedRows() const { return m_totalUpdatedRows; }
+    int GetTotalDeletedRows() const { return m_totalDeletedRows; }
+    double GetTotalApplyTime() const { return m_totalApplyTimeMs; }
+    double GetTotalInsertedTime() const { return m_totalInsertTimeMs; }
+    double GetTotalUpdatedTime() const { return m_totalUpdateTimeMs; }
+    double GetTotalDeletedTime() const { return m_totalDeleteTimeMs; }
+    unsigned int GetSha1ValidationTimeMs() const { return m_sha1ValidationTimeMs; }
+    const std::vector<Utf8String>& GetSqlStatements() const { return m_sqlStatements; }
+    BeJsDocument GetHealthStats() const;
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 struct ChangesetProps : RefCountedBase {
     enum class ChangesetType {
         Regular  = 0,
@@ -980,6 +1034,14 @@ struct ChangesetProps : RefCountedBase {
         SchemaSync = Schema | 64,
     };
 
+
+private:
+    // Changeset Health Stats
+    // Since these metrics are captured during the changeset application, they need to be mutable.
+    mutable std::unique_ptr<ChangesetHealthStats> m_changesetHealthStats;
+    bool m_performHealthCheck;
+
+public:
     TxnManager::TxnId m_endTxnId;
     Utf8String m_id;
     int32_t m_index;
@@ -991,15 +1053,18 @@ struct ChangesetProps : RefCountedBase {
     Utf8String m_summary;
     ChangesetType m_changesetType;
     ChangesetProps(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid, BeFileNameCR fileName, ChangesetType changesetType) :
-        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName), m_changesetType(changesetType) {}
+        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName), m_changesetType(changesetType),
+        m_performHealthCheck(false), m_changesetHealthStats(std::make_unique<ChangesetHealthStats>()) {}
 
     Utf8StringCR GetChangesetId() const { return m_id; }
     int32_t GetChangesetIndex() const { return m_index; }
     void SetChangesetIndex(int32_t index) { m_index = index; }
     Utf8StringCR GetParentId() const { return m_parentId; }
     Utf8StringCR GetDbGuid() const { return m_dbGuid; }
-    ChangesetType GetChangesetType() const { return m_changesetType; };
+    ChangesetType GetChangesetType() const { return m_changesetType; }
     BeFileNameCR GetFileName() const { return m_fileName; }
+    bool IsHealthCheckEnabled() const { return m_performHealthCheck; }
+    void PerformHealthCheck(bool performHealthCheck) { m_performHealthCheck = performHealthCheck; }
 
     //! Get or set the user name
     Utf8StringCR GetUserName() const { return m_userName; }
@@ -1015,11 +1080,17 @@ struct ChangesetProps : RefCountedBase {
 
     bool ContainsEcChanges() const { return ((int)m_changesetType & (int)ChangesetType::Schema) > 0; }
 
+    ChangesetHealthStats& GetChangesetHealthStats() const { BeAssert(m_changesetHealthStats != nullptr); return *m_changesetHealthStats; }
+
     //! Determines if the revision contains schema changes
     DGNPLATFORM_EXPORT bool ContainsDdlChanges(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void ValidateContent(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void Dump(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT static Utf8String ComputeChangesetId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env);
+
+    DGNPLATFORM_EXPORT void InitializeHealthStatsListener(BeSQLite::DbCR db) const;
+    DGNPLATFORM_EXPORT BeJsDocument GetChangeSetHealthStatsJson() const { return m_changesetHealthStats->GetHealthStats(); }
+    DGNPLATFORM_EXPORT Utf8String GetChangeSetHealthStatsAsString() const { return m_changesetHealthStats->GetHealthStats().Stringify(); }
 };
 
 //=======================================================================================
