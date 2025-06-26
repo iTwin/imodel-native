@@ -3327,6 +3327,222 @@ TEST_F(ECSqlNavigationPropertyTestFixture, EndTablePolymorphicRelationshipTest)
     m_ecdb.SaveChanges();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, NavPropColumnCollisions)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NavPropColumnCollisions.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Parent" modifier="none">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                        <MaxSharedColumnsBeforeOverflow>20</MaxSharedColumnsBeforeOverflow>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="A" modifier="none">
+                <BaseClass>Parent</BaseClass>
+                <ECProperty propertyName="PS1" typeName="long"/>
+                <ECProperty propertyName="PS2" typeName="long"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="B" modifier="none">
+                <BaseClass>Parent</BaseClass>
+                <ECNavigationProperty propertyName="A" relationshipName="RelBA" direction="Forward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="C" modifier="Sealed">
+                <BaseClass>Parent</BaseClass>
+                <ECNavigationProperty propertyName="A" relationshipName="RelCA" direction="Forward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="X" modifier="none">
+                <BaseClass>A</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="Y" modifier="none">
+                <BaseClass>B</BaseClass>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="RelBA" strength="referencing" strengthDirection="Forward" modifier="none">
+                <Source multiplicity="(0..*)" polymorphic="True" roleLabel="references">
+                    <Class class="B" />
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="True" roleLabel="referenced by">
+                    <Class class="A" />
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="RelCA" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+                <Source multiplicity="(0..*)" polymorphic="True" roleLabel="references">
+                    <Class class="C" />
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="True" roleLabel="referenced by">
+                    <Class class="A" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    ECSqlStatementCache cache(20);
+    CachedECSqlStatementPtr stmt;
+    ECClassId relBA_ECClassId = m_ecdb.Schemas().GetClass("TestSchema", "RelBA")->GetId();
+    ECClassId relCA_ECClassId = m_ecdb.Schemas().GetClass("TestSchema", "RelCA")->GetId();
+
+    if ("Insert data")
+        {
+        ECInstanceKey instanceA1, instanceA2, instanceX;
+        stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.A(PS1, PS2) VALUES (?, ?)");
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindInt64(1, 0x2));
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindId(2, relBA_ECClassId));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step(instanceA1));
+
+        stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.A(PS1, PS2) VALUES (?, ?)");
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindInt64(1, 0x1));
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindId(2, relCA_ECClassId));
+        ASSERT_EQ (BE_SQLITE_DONE, stmt->Step(instanceA2));
+
+        stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.X(PS1, PS2) VALUES (?, ?)");
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindInt64(1, 0x2));
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindId(2, relCA_ECClassId));
+        ASSERT_EQ (BE_SQLITE_DONE, stmt->Step(instanceX));
+
+        stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.B(A) VALUES (?)");
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindNavigationValue(1, instanceA1.GetInstanceId(), relBA_ECClassId));
+        ASSERT_EQ (BE_SQLITE_DONE, stmt->Step());
+
+        stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.C(A) VALUES (?)");
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindNavigationValue(1, instanceA2.GetInstanceId(), relCA_ECClassId));
+        ASSERT_EQ (BE_SQLITE_DONE, stmt->Step());
+
+        stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.Y(A) VALUES (?)");
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindNavigationValue(1, instanceX.GetInstanceId(), relBA_ECClassId));
+        ASSERT_EQ (BE_SQLITE_DONE, stmt->Step());
+        }
+
+    if ("B.A.RelECClassId overlaps A.PS2")
+        {
+        Utf8CP ecsql = "SELECT TargetECInstanceId, TargetECClassId FROM ts.RelBA";
+        auto expected = JsonValue(R"json([{"targetClassName":"TestSchema.A","targetId":"0x1"}, {"targetClassName":"TestSchema.X","targetId":"0x3"}])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
+
+    if ("C.A.Id overlaps A.PS1")
+        {
+        Utf8CP ecsql = "SELECT TargetECInstanceId, TargetECClassId FROM ts.RelCA";
+        auto expected = JsonValue(R"json([{"targetClassName":"TestSchema.A","targetId":"0x2"}])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
+
+    m_ecdb.SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, NavPropColumnCollisionsBackward)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NavPropColumnCollisionsBackward.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Parent" modifier="none">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00">
+                        <MaxSharedColumnsBeforeOverflow>20</MaxSharedColumnsBeforeOverflow>
+                    </ShareColumns>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="A" modifier="none">
+                <BaseClass>Parent</BaseClass>
+                <ECProperty propertyName="PS1" typeName="long"/>
+                <ECProperty propertyName="PS2" typeName="long"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="B" modifier="none">
+                <BaseClass>Parent</BaseClass>
+                <ECNavigationProperty propertyName="A" relationshipName="RelBA" direction="Backward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="C" modifier="Sealed">
+                <BaseClass>Parent</BaseClass>
+                <ECNavigationProperty propertyName="A" relationshipName="RelCA" direction="Backward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="X" modifier="none">
+                <BaseClass>A</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="Y" modifier="none">
+                <BaseClass>B</BaseClass>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="RelBA" strength="referencing" strengthDirection="Forward" modifier="none">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                    <Class class="A" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="referenced by">
+                    <Class class="B" />
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="RelCA" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                    <Class class="A" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="referenced by">
+                    <Class class="C" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    ECSqlStatementCache cache(20);
+    CachedECSqlStatementPtr stmt;
+    ECClassId relBA_ECClassId = m_ecdb.Schemas().GetClass("TestSchema", "RelBA")->GetId();
+    ECClassId relCA_ECClassId = m_ecdb.Schemas().GetClass("TestSchema", "RelCA")->GetId();
+
+    if ("Insert data")
+        {
+        ECInstanceKey instanceA1, instanceA2, instanceX;
+        stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.A(PS1, PS2) VALUES (?, ?)");
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindInt64(1, 0x2));
+        ASSERT_EQ(ECSqlStatus::Success, stmt->BindId(2, relBA_ECClassId));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step(instanceA1));
+
+        stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.A(PS1, PS2) VALUES (?, ?)");
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindInt64(1, 0x1));
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindId(2, relCA_ECClassId));
+        ASSERT_EQ (BE_SQLITE_DONE, stmt->Step(instanceA2));
+
+        stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.X(PS1, PS2) VALUES (?, ?)");
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindInt64(1, 0x2));
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindId(2, relCA_ECClassId));
+        ASSERT_EQ (BE_SQLITE_DONE, stmt->Step(instanceX));
+
+        stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.B(A) VALUES (?)");
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindNavigationValue(1, instanceA1.GetInstanceId(), relBA_ECClassId));
+        ASSERT_EQ (BE_SQLITE_DONE, stmt->Step());
+
+        stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.C(A) VALUES (?)");
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindNavigationValue(1, instanceA2.GetInstanceId(), relCA_ECClassId));
+        ASSERT_EQ (BE_SQLITE_DONE, stmt->Step());
+
+        stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.Y(A) VALUES (?)");
+        ASSERT_EQ (ECSqlStatus::Success, stmt->BindNavigationValue(1, instanceX.GetInstanceId(), relBA_ECClassId));
+        ASSERT_EQ (BE_SQLITE_DONE, stmt->Step());
+        }
+
+    if ("B.A.RelECClassId overlaps A.PS2")
+        {
+        Utf8CP ecsql = "SELECT SourceECInstanceId, SourceECClassId FROM ts.RelBA";
+        auto expected = JsonValue(R"json([{"sourceClassName":"TestSchema.A","sourceId":"0x1"},{"sourceClassName":"TestSchema.X","sourceId":"0x3"}])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
+
+    if ("C.A.Id overlaps A.PS1")
+        {
+        Utf8CP ecsql = "SELECT SourceECInstanceId, SourceECClassId FROM ts.RelCA";
+        auto expected = JsonValue(R"json([{"sourceClassName":"TestSchema.A","sourceId":"0x2"}])json");
+        ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
+        }
+
+    m_ecdb.SaveChanges();
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
 
 
