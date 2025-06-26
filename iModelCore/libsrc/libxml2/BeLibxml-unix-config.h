@@ -339,6 +339,6 @@
 #define __MT__
 
 /* Include XML_SYSCONFDIR for unix. As of 2.14.4 this Macro is no longer defined in libxml.h */
-#ifndef _MS_VER
+#ifndef XML_SYSCONFDIR
   #define XML_SYSCONFDIR "/etc"
 #endif
