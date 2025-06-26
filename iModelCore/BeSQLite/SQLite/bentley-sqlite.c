@@ -3,34 +3,29 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-#define SQLITE_OMIT_DEPRECATED 1 // leave out all deprecated apis
-#define SQLITE_ENABLE_COLUMN_METADATA 1
-#define SQLITE_DEFAULT_FOREIGN_KEYS 1
-#define SQLITE_OMIT_AUTOINIT 1
-#define SQLITE_ENABLE_SESSION 1
-#define SQLITE_ENABLE_RTREE 1
-#define SQLITE_ENABLE_GEOPOLY 1
-#define SQLITE_ENABLE_PREUPDATE_HOOK 1
-#define SQLITE_USE_URI 1
-#define SQLITE_ENABLE_NULL_TRIM 1 // trim null columns from end of rows. Experimental for now, per DRH
-#define SQLITE_MAX_VARIABLE_NUMBER 20000 // this is the maximum number of variables in an SQL statement
-#define SQLITE_OMIT_COMPLETE 1
-#define SQLITE_OMIT_PROGRESS_CALLBACK 1
-#define SQLITE_MAX_EXPR_DEPTH 3000
-
-//Allocate around ~ 32 Mb
-#define SQLITE_DEFAULT_CACHE_SIZE 8000
-#define SQLITE_ENABLE_FTS5 1    // include support for full text search
-#define SQLITE_ENABLE_FTS4 1    // include support for full text search
-#define SESSIONS_STRM_CHUNK_SIZE 64*1024
-// https://sqlite.org/lang_mathfunc.htmlbb
-#define SQLITE_ENABLE_MATH_FUNCTIONS 1
-#define SQLITE_ENABLE_DBSTAT_VTAB 1
-#define SQLITE_ENABLE_NORMALIZE 1
-// Set max row or blob size to 2Gig-1 (SQLite's max). We override this when db is opened back to 1G.
-#define SQLITE_MAX_LENGTH 2147483647
-// Set max terms in the result set of a SELECT statement
-#define SQLITE_MAX_COLUMN 2200
+#define SESSIONS_STRM_CHUNK_SIZE        64*1024
+#define SQLITE_DEFAULT_CACHE_SIZE       8000
+#define SQLITE_DEFAULT_FOREIGN_KEYS     1
+#define SQLITE_ENABLE_COLUMN_METADATA   1
+#define SQLITE_ENABLE_DBSTAT_VTAB       1
+#define SQLITE_ENABLE_FTS4              1
+#define SQLITE_ENABLE_FTS5              1
+#define SQLITE_ENABLE_GEOPOLY           1
+#define SQLITE_ENABLE_MATH_FUNCTIONS    1
+#define SQLITE_ENABLE_NORMALIZE         1
+#define SQLITE_ENABLE_NULL_TRIM         1
+#define SQLITE_ENABLE_PREUPDATE_HOOK    1
+#define SQLITE_ENABLE_RTREE             1
+#define SQLITE_ENABLE_SESSION           1
+#define SQLITE_ENABLE_STMTVTAB          1
+#define SQLITE_MAX_COLUMN               2200
+#define SQLITE_MAX_EXPR_DEPTH           3000
+#define SQLITE_MAX_LENGTH               2147483647
+#define SQLITE_MAX_VARIABLE_NUMBER      20000
+#define SQLITE_OMIT_AUTOINIT            1
+#define SQLITE_OMIT_COMPLETE            1
+#define SQLITE_OMIT_DEPRECATED          1
+#define SQLITE_USE_URI                  1
 
 #define HAVE_STDINT_H
 

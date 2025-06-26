@@ -963,6 +963,21 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
         m_dgndb.ThrowException("unable to save changes", (int) ChangesetStatus::SQLiteError);
 }
 
+namespace
+    {
+    bool IsCacheTableNameInChangeset(const Changes& changes)
+        {
+        for (const auto& change: changes)
+            {
+            if (change.GetOpcode() == DbOpcode::Insert)  // we only care about update/delete operations
+                continue;
+            
+            if (const auto tableName = change.GetTableName(); !tableName.empty() && 0 == strncmp(tableName.c_str(), "ec_cache_", 9))
+                return true;
+            }
+        return false;
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
@@ -1021,7 +1036,7 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
             auto schemaApplyArgs = ApplyChangesArgs::Default()
                 .SetInvert(invert)
                 .SetIgnoreNoop(true)
-                .SetFkNoAction(true)
+                .SetFkNoAction(IsCacheTableNameInChangeset(changeStream.GetChanges()))
                 .ApplyOnlySchemaChanges();
 
             m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
@@ -1340,7 +1355,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     }
 
     // we want cascade delete to work during rebase.
-    const bool fkNoAction = !pmConf.IsRebasingLocalChanges();
+    bool fkNoAction = !pmConf.IsRebasingLocalChanges();
     const bool ignoreNoop = pmConf.IsRebasingLocalChanges();
     bool fastForwardEncounteredMergeConflict = false;
     auto fastForwardConflictHandler = [&fastForwardEncounteredMergeConflict](ChangeStream::ConflictCause _, Changes::Change change) {
@@ -1352,7 +1367,13 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     };
 
     // apply schema part of changeset before data changes if schema changes are present
-    if (containsSchemaChanges) {
+    if (containsSchemaChanges)
+        {
+        // If the SQLITE_CHANGESETAPPLY_FKNOACTION flag is set, we need to check if the cache tables have been tracked in the changeset.
+        // If the cache tables are not tracked, we should set the flag to false to allow cascades and avoid any possible FK constraint violations.
+        if (fkNoAction)
+            fkNoAction = IsCacheTableNameInChangeset(Changes(changeset, false));
+
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
         auto schemaApplyArgs = ApplyChangesArgs::Default()
             .SetInvert(invert)
@@ -2701,6 +2722,12 @@ void TxnManager::OnGeometryGuidChanges(bset<DgnModelId> const& modelIds) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnUndoRedo(TxnAction action) {
     auto jsTxns = m_dgndb.GetJsTxns();
+    auto config = PullMergeConf::Load(m_dgndb);
+
+    if (!config.InProgress()) {
+        m_dgndb.SaveChanges();
+    }
+
     if (nullptr != jsTxns) {
         BeAssert(TxnAction::Reverse == action || TxnAction::Reinstate == action);
         bool isUndo = TxnAction::Reverse == action;
@@ -2879,6 +2906,7 @@ void TxnManager::PullMergeBegin() {
     if (st != BE_SQLITE_DONE) {
         m_dgndb.ThrowException("PullMergeBegin(): fail to save pull-merge conf ", (int)rc);
     }
+    CallMonitors([&](TxnMonitor& monitor) { monitor._OnPullMergeBegin(*this); });
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3025,6 +3053,8 @@ void TxnManager::PullMergeEnd() {
         m_dgndb.ThrowException("Unable to save merge state", static_cast<int>(rc));
     }
     Restart();
+
+    CallMonitors([&](TxnMonitor& monitor) { monitor._OnPullMergeEnd(*this); });
 }
 
 /*---------------------------------------------------------------------------------**//**

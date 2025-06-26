@@ -32,6 +32,12 @@
     #error unknown compiler
 #endif
 
+#if defined (__APPLE__)
+    #include <TargetConditionals.h>
+    #if TARGET_OS_MAC
+        #include <mach-o/dyld.h>
+    #endif
+#endif
 #include <stdlib.h>
 #include "../BentleyInternal.h"
 #include <Bentley/WString.h>
@@ -2429,7 +2435,16 @@ BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP)
 /// This function will locate the path to our application on OS X
 static std::string macBundlePath()
 {
-    char path[1024];
+#if defined (__APPLE__)
+    #include <TargetConditionals.h>
+    #if TARGET_OS_MAC
+        char path [PATH_MAX]={0};
+        uint32_t bufsize = PATH_MAX;
+        _NSGetExecutablePath(path, &bufsize);
+        return std::string(path);
+    #endif
+#else
+    char path[PATH_MAX];
     CFBundleRef mainBundle = CFBundleGetMainBundle();
     if(!mainBundle)
         return "";
@@ -2448,6 +2463,7 @@ static std::string macBundlePath()
     CFRelease(cfStringRef);
 
     return std::string(path);
+#endif
 }
 
 /*---------------------------------------------------------------------------------**//**
