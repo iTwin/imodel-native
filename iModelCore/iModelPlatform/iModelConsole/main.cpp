@@ -84,6 +84,6 @@ extern "C" int main(int argc, char** argv) {
         argv_w_ptrs.push_back(argp);
     }
 
-    return wmain(argc, (ARGV_TYPE)argv_w_ptrs.data());
+    return wmain(argc, (const wchar_t **)argv_w_ptrs.data());
 }
 #endif
