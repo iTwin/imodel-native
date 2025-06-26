@@ -337,3 +337,8 @@
 
 /* Include multi-threading support like win32 already does. This triggers more in xmlversion.h. */
 #define __MT__
+
+/* Include XML_SYSCONFDIR for unix. As of 2.14.4 this Macro is no longer defined in libxml.h */
+#ifndef _MS_VER
+  #define XML_SYSCONFDIR "/etc"
+#endif
