@@ -547,7 +547,7 @@ void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj, Napi::Value option
         elProps[DgnElement::json_classFullName()] = el->GetElementClass()->GetFullName();
         elProps[DgnElement::json_model()] = el->GetModelId();
 
-        callJsPreHandler(dgndb, el->GetElementClassId(), "onUpdate", obj);
+        callJsPreHandler(dgndb, el->GetElementClassId(), "onUpdate", obj, optionsObj);
         el->FromJson(elProps);
         std::optional<EditOptions> options = GetEditOptionsFromJson(optionsJson);
 
