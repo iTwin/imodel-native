@@ -2898,8 +2898,21 @@ void TxnManager::PullMergeEnd() {
         return;
     }
 
+    if (HasChanges()) {
+        LOG.warning("PullMergeEnd: Do not expect change tracking to have any changes to be present at this point. This is unexpected and may lead to a failure");
+        auto changeset = ChangeSet{};
+        changeset.FromChangeTrack(*this);
+        bset<Utf8String> changedTables;
+        for(auto& change : changeset.GetChanges()) {
+            if (changedTables.find(change.GetTableName()) != changedTables.end()) {
+                continue;
+            }
+            changedTables.insert(change.GetTableName());
+            LOG.warningv("PullMergeEnd: unexpected changes to %s table. This may lead to a failure", change.GetTableName().c_str());
+        }
+    }
     conf.SetMergeStage(PullMergeConf::MergeStage::RebasingLocalChanges).Save(m_dgndb);
-    m_dgndb.SaveChanges();
+    m_dgndb.SaveChanges("PullMergeEnd: save pull-merge conf");
 
     enum class NotifyId {Begin, End};
     auto notifyJs = [&](NotifyId notifyId, TxnManager::TxnId id, Utf8StringCR descr, TxnType type) {
@@ -3028,7 +3041,7 @@ void TxnManager::PullMergeEnd() {
         .SetStartTxnId(TxnId(0))
         .Save(m_dgndb);
 
-    rc = m_dgndb.SaveChanges();
+    rc = m_dgndb.SaveChanges("PullMergeEnd: save pull-merge conf");
     if (rc != BE_SQLITE_OK ){
         m_dgndb.ThrowException("Unable to save merge state", static_cast<int>(rc));
     }
