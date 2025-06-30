@@ -187,7 +187,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsSpecifiedN
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", classA->GetFullName(), false));
     rules->AddPresentationRule(*rule);
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "A", "", "", "");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "A", "");
     groupingRule->AddGroup(*new SameLabelInstanceGroup(SameLabelInstanceGroupApplicationStage::PostProcess));
     rules->AddPresentationRule(*groupingRule);
 
@@ -389,7 +389,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GetsAllResultsWhenNumber
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), "Label"));
 
-    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, true);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
         "", classA->GetFullName(), false));
     rules->AddPresentationRule(*rootRule);
@@ -648,7 +648,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsNodesFromD
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", classD->GetFullName(), false));
     rules->AddPresentationRule(*rule);
 
-    auto groupingRule = new GroupingRule("", 1, false, classD->GetSchema().GetName(), classD->GetName(), "", "", "");
+    auto groupingRule = new GroupingRule("", 1, false, classD->GetSchema().GetName(), classD->GetName(), "");
     groupingRule->AddGroup(*new SameLabelInstanceGroup(SameLabelInstanceGroupApplicationStage::PostProcess));
     rules->AddPresentationRule(*groupingRule);
 

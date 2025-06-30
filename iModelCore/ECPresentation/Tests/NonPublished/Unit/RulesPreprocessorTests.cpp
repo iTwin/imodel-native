@@ -187,8 +187,6 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_KeepsPrim
     PresentationRuleSetPtr primary = PresentationRuleSet::CreateInstance("primary");
     primary->SetRulesetSchemaVersion(Version(1, 2, 3));
     primary->SetRulesetVersion(Version(4, 5, 6));
-    primary->SetSearchClasses("class1;class2");
-    primary->SetExtendedData("test");
     m_locater->AddRuleSet(*primary);
 
     PresentationRuleSetPtr supplemental = PresentationRuleSet::CreateInstance("supplementing");
@@ -202,10 +200,6 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_KeepsPrim
     EXPECT_FALSE(rules->GetIsSupplemental());
     EXPECT_STREQ("", rules->GetSupplementationPurpose().c_str());
     EXPECT_STREQ(primary->GetSupportedSchemas().c_str(), rules->GetSupportedSchemas().c_str());
-    EXPECT_STREQ(primary->GetPreferredImage().c_str(), rules->GetPreferredImage().c_str());
-    EXPECT_EQ(primary->GetIsSearchEnabled(), rules->GetIsSearchEnabled());
-    EXPECT_STREQ(primary->GetSearchClasses().c_str(), rules->GetSearchClasses().c_str());
-    EXPECT_STREQ(primary->GetExtendedData().c_str(), rules->GetExtendedData().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -214,8 +208,8 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_KeepsPrim
 static void AddRulesToRuleset(PresentationRuleSetR ruleset, int priority = 0)
     {
     // different priority for RootNodeRule and ChildNodeRule, so they won't be merged together as the same rules after ruleset supplemention
-    ruleset.AddPresentationRule(*new RootNodeRule("", priority, false, TargetTree_MainTree, false));
-    ruleset.AddPresentationRule(*new ChildNodeRule("", priority, false, TargetTree_MainTree));
+    ruleset.AddPresentationRule(*new RootNodeRule("", priority, false, false));
+    ruleset.AddPresentationRule(*new ChildNodeRule("", priority, false));
     ruleset.AddPresentationRule(*new ContentRule());
     ruleset.AddPresentationRule(*new ImageIdOverride());
     ruleset.AddPresentationRule(*new LabelOverride());
@@ -403,11 +397,10 @@ TEST_F(RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_UsesOnlySu
 TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_NoConditions)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    rules->AddPresentationRule(*new RootNodeRule("", 1, false, TargetTree_MainTree, false));
+    rules->AddPresentationRule(*new RootNodeRule("", 1, false, false));
     rules->GetRootNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification());
 
-    RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
-    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications(params);
+    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications();
     ASSERT_EQ(1, specs.size());
     }
 
@@ -417,15 +410,14 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_NoConditions)
 TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_RulesSortedByPriority)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    RootNodeRule* rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
+    RootNodeRule* rule = new RootNodeRule("", 1, false, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
-    rule = new RootNodeRule("", 2, false, TargetTree_MainTree, false);
+    rule = new RootNodeRule("", 2, false, false);
     rule->SetStopFurtherProcessing(true);
     rules->AddPresentationRule(*rule);
 
-    RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
-    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications(params);
+    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications();
     ASSERT_EQ(0, specs.size()); // rule with higher priority has no specs
     }
 
@@ -435,13 +427,12 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_RulesSortedByPriority)
 TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_SpecsSortedByPriority)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    rules->AddPresentationRule(*new RootNodeRule("", 1, false, TargetTree_MainTree, false));
+    rules->AddPresentationRule(*new RootNodeRule("", 1, false, false));
     rules->GetRootNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification(2, false, false, false, false, false, ""));
     rules->GetRootNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification(3, false, false, false, false, false, ""));
     rules->GetRootNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, ""));
 
-    RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
-    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications(params);
+    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications();
     ASSERT_EQ(3, specs.size());
     ASSERT_EQ(3, specs[0].GetPriority());
     ASSERT_EQ(2, specs[1].GetPriority());
@@ -454,15 +445,14 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_SpecsSortedByPriority)
 TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithConditions)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    RootNodeRule* rule = new RootNodeRule("1 = 2", 1, false, TargetTree_MainTree, false);
+    RootNodeRule* rule = new RootNodeRule("1 = 2", 1, false, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
-    rule = new RootNodeRule("1 = 1", 1, false, TargetTree_MainTree, false);
+    rule = new RootNodeRule("1 = 1", 1, false, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
 
-    RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
-    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications(params);
+    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications();
     ASSERT_EQ(1, specs.size());
     }
 
@@ -473,59 +463,22 @@ TEST_F(RulesPreprocessorTests, GetRootNodeSpecifications_WithRequiredSchemas)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
 
-    RootNodeRule* rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
+    RootNodeRule* rule = new RootNodeRule("", 1, false, false);
     rule->AddRequiredSchemaSpecification(*new RequiredSchemaSpecification("RulesEngineTest", Version(1, 0, 0)));
     rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
 
-    rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
+    rule = new RootNodeRule("", 1, false, false);
     rule->AddRequiredSchemaSpecification(*new RequiredSchemaSpecification("RulesEngineTest", Version(2, 0, 0)));
     rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
 
-    rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
+    rule = new RootNodeRule("", 1, false, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
 
-    RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
-    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications(params);
+    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications();
     ASSERT_EQ(2, specs.size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithTargetTree)
-    {
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    RootNodeRule* rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
-    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, true, "1"));
-    rules->AddPresentationRule(*rule);
-    rule = new RootNodeRule("", 1, false, TargetTree_SelectionTree, false);
-    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, true, "2"));
-    rules->AddPresentationRule(*rule);
-    rule = new RootNodeRule("", 1, false, TargetTree_Both, false);
-    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, true, "3"));
-    rules->AddPresentationRule(*rule);
-
-    // note: using "supported schemas" as a way to know which rule the specification came from
-    RulesPreprocessor preprocessor = GetTestRulesPreprocessor(*rules);
-    RulesPreprocessor::RootNodeRuleParameters paramsMainTree(TargetTree_MainTree);
-    RootNodeRuleSpecificationsList specs = preprocessor.GetRootNodeSpecifications(paramsMainTree);
-    ASSERT_EQ(2, specs.size());
-    ASSERT_STREQ("1", (static_cast<AllInstanceNodesSpecificationCP>(&specs[0].GetSpecification()))->GetSupportedSchemas().c_str());
-    ASSERT_STREQ("3", (static_cast<AllInstanceNodesSpecificationCP>(&specs[1].GetSpecification()))->GetSupportedSchemas().c_str());
-
-    RulesPreprocessor::RootNodeRuleParameters paramsSelectionTree(TargetTree_SelectionTree);
-    specs = preprocessor.GetRootNodeSpecifications(paramsSelectionTree);
-    ASSERT_EQ(2, specs.size());
-    ASSERT_STREQ("2", (static_cast<AllInstanceNodesSpecificationCP>(&specs[0].GetSpecification()))->GetSupportedSchemas().c_str());
-    ASSERT_STREQ("3", (static_cast<AllInstanceNodesSpecificationCP>(&specs[1].GetSpecification()))->GetSupportedSchemas().c_str());
-
-    RulesPreprocessor::RootNodeRuleParameters paramsBothTrees(TargetTree_Both);
-    specs = preprocessor.GetRootNodeSpecifications(paramsBothTrees);
-    ASSERT_EQ(1, specs.size());
-    ASSERT_STREQ("3", (static_cast<AllInstanceNodesSpecificationCP>(&specs[0].GetSpecification()))->GetSupportedSchemas().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -534,14 +487,13 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithTargetTree)
 TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithOnlyIfNotHandled)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    RootNodeRule* rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
+    RootNodeRule* rule = new RootNodeRule("", 1, false, false);
     rules->AddPresentationRule(*rule);
-    rule = new RootNodeRule("", 1, true, TargetTree_MainTree, false);
+    rule = new RootNodeRule("", 1, true, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
 
-    RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
-    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications(params);
+    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications();
     ASSERT_EQ(0, specs.size());
     }
 
@@ -552,17 +504,16 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithStopFurtherProcess
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
 
-    RootNodeRule* rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
+    RootNodeRule* rule = new RootNodeRule("", 1, false, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
 
-    rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
+    rule = new RootNodeRule("", 1, false, false);
     rule->SetStopFurtherProcessing(true);
     rule->AddSpecification(*new AllInstanceNodesSpecification());
     rules->AddPresentationRule(*rule);
 
-    RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
-    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications(params);
+    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications();
     ASSERT_EQ(1, specs.size());
     }
 
@@ -572,7 +523,7 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_WithStopFurtherProcess
 TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_IncludesSpecsFromSubConditions)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    RootNodeRule* rule = new RootNodeRule("", 1, false, TargetTree_MainTree, false);
+    RootNodeRule* rule = new RootNodeRule("", 1, false, false);
     rules->AddPresentationRule(*rule);
 
     // with truthy condition
@@ -602,8 +553,7 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_IncludesSpecsFromSubCo
     subcondition5->AddSpecification(*new AllInstanceNodesSpecification());
     rule->AddSubCondition(*subcondition5);
 
-    RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
-    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications(params);
+    RootNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetRootNodeSpecifications();
     ASSERT_EQ(3, specs.size());
     }
 
@@ -613,11 +563,11 @@ TEST_F (RulesPreprocessorTests, GetRootNodeSpecifications_IncludesSpecsFromSubCo
 TEST_F (RulesPreprocessorTests, GetChildNodeSpecifications)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    rules->AddPresentationRule(*new ChildNodeRule("", 1, false, TargetTree_MainTree));
+    rules->AddPresentationRule(*new ChildNodeRule("", 1, false));
     rules->GetChildNodesRules()[0]->AddSpecification(*new AllInstanceNodesSpecification());
 
     auto node = TestNodesHelper::CreateCustomNode(*m_connection, "TestType", "TestLabel", "");
-    RulesPreprocessor::ChildNodeRuleParameters params(*node, TargetTree_MainTree);
+    RulesPreprocessor::ChildNodeRuleParameters params(*node);
     ChildNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetChildNodeSpecifications(params);
     ASSERT_EQ(1, specs.size());
     }
@@ -652,7 +602,7 @@ TEST_F (RulesPreprocessorTests, GetChildNodeSpecifications_BySpecificationId)
     RulesPreprocessor preprocessor = GetTestRulesPreprocessor(*rules);
 
     auto node1 = TestNodesFactory(*m_connection, spec1->GetHash(), "").CreateCustomNode(nullptr, "TestLabel", "", "", "TestType");
-    RulesPreprocessor::ChildNodeRuleParameters params1(*node1, TargetTree_MainTree);
+    RulesPreprocessor::ChildNodeRuleParameters params1(*node1);
     ChildNodeRuleSpecificationsList specs = preprocessor.GetChildNodeSpecifications(params1);
 
     // all sub-specs of the the spec that generated the node
@@ -662,7 +612,7 @@ TEST_F (RulesPreprocessorTests, GetChildNodeSpecifications_BySpecificationId)
     ASSERT_STREQ("two", (static_cast<AllInstanceNodesSpecificationCP>(&specs[1].GetSpecification()))->GetSupportedSchemas().c_str());
 
     auto node2 = TestNodesFactory(*m_connection, spec2->GetHash(), "").CreateCustomNode(nullptr, "TestLabel", "", "", "TestType");
-    RulesPreprocessor::ChildNodeRuleParameters params2(*node2, TargetTree_MainTree);
+    RulesPreprocessor::ChildNodeRuleParameters params2(*node2);
     specs = preprocessor.GetChildNodeSpecifications(params2);
     // all sub-specs of the the spec that generated the node
     ASSERT_EQ(1, specs.size());
@@ -704,7 +654,7 @@ TEST_F(RulesPreprocessorTests, GetChildNodeSpecifications_FindsChildNodeSpecific
     RulesPreprocessor preprocessor = GetTestRulesPreprocessor(*rules);
 
     auto node1 = TestNodesFactory(*m_connection, nestedSpec1->GetHash(), "").CreateCustomNode(nullptr, "TestLabel", "", "", "TestType");
-    RulesPreprocessor::ChildNodeRuleParameters params1(*node1, TargetTree_MainTree);
+    RulesPreprocessor::ChildNodeRuleParameters params1(*node1);
     ChildNodeRuleSpecificationsList specs = preprocessor.GetChildNodeSpecifications(params1);
 
     // all sub-specs of the the spec that generated the node plus specs from root level
@@ -748,7 +698,7 @@ TEST_F(RulesPreprocessorTests, GetChildNodeSpecifications_BySpecificationIdWithR
     NavNodeExtendedData nodeExtendedDataWriter(*node);
     nodeExtendedDataWriter.SetRequestedSpecification(true);
 
-    RulesPreprocessor::ChildNodeRuleParameters params(*node, TargetTree_MainTree);
+    RulesPreprocessor::ChildNodeRuleParameters params(*node);
     ChildNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetChildNodeSpecifications(params);
     // all sub-specs of the the spec that generated the node
     ASSERT_EQ(1, specs.size());
@@ -786,7 +736,7 @@ TEST_F(RulesPreprocessorTests, GetChildNodeSpecifications_FindsRulesFromCorrectC
     rules->AddPresentationRule(*rootChildNodeRule);
 
     auto parentNode = TestNodesFactory(*m_connection, childNode2Spec->GetHash(), "test").CreateCustomNode(nullptr, "Child2", "", "", "T_CHILD_2");
-    RulesPreprocessor::ChildNodeRuleParameters params(*parentNode, TargetTree_MainTree);
+    RulesPreprocessor::ChildNodeRuleParameters params(*parentNode);
     ChildNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetChildNodeSpecifications(params);
     // only rootChildeNodeRule and nestedChild2NodeRule should be used for createing 'Child2' children
     ASSERT_EQ(2, specs.size());
@@ -982,9 +932,9 @@ TEST_F (RulesPreprocessorTests, GetSortingRules_VerifiesCondition)
 TEST_F (RulesPreprocessorTests, GetGroupingRules_SortedByPriority)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    GroupingRule* rule1 = new GroupingRule("", 1, false, "", "", "", "", "");
-    GroupingRule* rule2 = new GroupingRule("", 3, false, "", "", "", "", "");
-    GroupingRule* rule3 = new GroupingRule("", 2, false, "", "", "", "", "");
+    GroupingRule* rule1 = new GroupingRule("", 1, false, "", "", "");
+    GroupingRule* rule2 = new GroupingRule("", 3, false, "", "", "");
+    GroupingRule* rule3 = new GroupingRule("", 2, false, "", "", "");
     rules->AddPresentationRule(*rule1);
     rules->AddPresentationRule(*rule2);
     rules->AddPresentationRule(*rule3);
@@ -1004,8 +954,8 @@ TEST_F (RulesPreprocessorTests, GetGroupingRules_SortedByPriority)
 TEST_F (RulesPreprocessorTests, GetGroupingRules_VerifiesCondition)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    GroupingRule* rule1 = new GroupingRule("ParentNode.IsInstanceNode", 1, false, "", "", "", "", "");
-    GroupingRule* rule2 = new GroupingRule("ParentNode.IsPropertyGroupingNode", 2, false, "", "", "", "", "");
+    GroupingRule* rule1 = new GroupingRule("ParentNode.IsInstanceNode", 1, false, "", "", "");
+    GroupingRule* rule2 = new GroupingRule("ParentNode.IsPropertyGroupingNode", 2, false, "", "", "");
     rules->AddPresentationRule(*rule1);
     rules->AddPresentationRule(*rule2);
 
@@ -1025,8 +975,8 @@ TEST_F (RulesPreprocessorTests, GetGroupingRules_VerifiesCondition)
 TEST_F (RulesPreprocessorTests, GetGroupingRules_OnlyIfNotHandledFlagHandled)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    GroupingRule* rule1 = new GroupingRule("", 1, true, "", "", "", "", "");
-    GroupingRule* rule2 = new GroupingRule("", 2, false, "", "", "", "", "");
+    GroupingRule* rule1 = new GroupingRule("", 1, true, "", "", "");
+    GroupingRule* rule2 = new GroupingRule("", 2, false, "", "", "");
     rules->AddPresentationRule(*rule1);
     rules->AddPresentationRule(*rule2);
 
@@ -1399,15 +1349,15 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_ReturnsOneRuleIfOnlyIfN
 TEST_F(RulesPreprocessorTests, GetNestedGroupingRules_DoesNotFindRulesDefinedDeeperThanSpecification_ReturnsSortedByNestingLevel)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    rules->AddPresentationRule(*new ChildNodeRule("", 1, false, TargetTree_MainTree));
-    rules->AddPresentationRule(*new GroupingRule("", 1, false, "TestSchemaName1", "", "", "", ""));
+    rules->AddPresentationRule(*new ChildNodeRule("", 1, false));
+    rules->AddPresentationRule(*new GroupingRule("", 1, false, "TestSchemaName1", "", ""));
 
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
-    ChildNodeRule* nestedChildNodeRule = new ChildNodeRule("", 1, false, TargetTree_MainTree);
-    nestedChildNodeRule->AddCustomizationRule(*new GroupingRule("", 1, false, "TestSchemaName3", "", "", "", ""));
+    ChildNodeRule* nestedChildNodeRule = new ChildNodeRule("", 1, false);
+    nestedChildNodeRule->AddCustomizationRule(*new GroupingRule("", 1, false, "TestSchemaName3", "", ""));
     spec->AddNestedRule(*nestedChildNodeRule);
     rules->GetChildNodesRules()[0]->AddSpecification(*spec);
-    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new GroupingRule("", 1, false, "TestSchemaName2", "", "", "", ""));
+    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new GroupingRule("", 1, false, "TestSchemaName2", "", ""));
 
     RulesPreprocessor::AggregateCustomizationRuleParameters params(nullptr, spec->GetHash());
     bvector<GroupingRuleCP> groupingRules = GetTestRulesPreprocessor(*rules).GetGroupingRules(params);
@@ -1423,17 +1373,17 @@ TEST_F(RulesPreprocessorTests, GetNestedGroupingRules_DoesNotFindRulesDefinedDee
 TEST_F(RulesPreprocessorTests, GetNestedGroupingRules_FindsMostlyNestedRule_ReturnsSortedByPriority)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    rules->AddPresentationRule(*new ChildNodeRule("", 1, false, TargetTree_MainTree));
-    rules->AddPresentationRule(*new GroupingRule("", 3, false, "TestSchemaName1", "", "", "", ""));
+    rules->AddPresentationRule(*new ChildNodeRule("", 1, false));
+    rules->AddPresentationRule(*new GroupingRule("", 3, false, "TestSchemaName1", "", ""));
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
 
     AllInstanceNodesSpecification* nestedSpec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
-    ChildNodeRule* nestedChildNodeRule = new ChildNodeRule("", 1, false, TargetTree_MainTree);
-    nestedChildNodeRule->AddCustomizationRule(*new GroupingRule("", 2, false, "TestSchemaName2", "", "", "", ""));
+    ChildNodeRule* nestedChildNodeRule = new ChildNodeRule("", 1, false);
+    nestedChildNodeRule->AddCustomizationRule(*new GroupingRule("", 2, false, "TestSchemaName2", "", ""));
     nestedChildNodeRule->AddSpecification(*nestedSpec);
     spec->AddNestedRule(*nestedChildNodeRule);
     rules->GetChildNodesRules()[0]->AddSpecification(*spec);
-    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new GroupingRule("", 1, false, "TestSchemaName3", "", "", "", ""));
+    rules->GetChildNodesRules()[0]->AddCustomizationRule(*new GroupingRule("", 1, false, "TestSchemaName3", "", ""));
 
     RulesPreprocessor::AggregateCustomizationRuleParameters params(nullptr, nestedSpec->GetHash());
     bvector<GroupingRuleCP> groupingRules = GetTestRulesPreprocessor(*rules).GetGroupingRules(params);
@@ -1450,7 +1400,7 @@ TEST_F(RulesPreprocessorTests, GetNestedGroupingRules_FindsMostlyNestedRule_Retu
 TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_SameScope_SamePriorities_ReturnsFirstRule)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    rules->AddPresentationRule(*new ChildNodeRule("", 1, false, TargetTree_MainTree));
+    rules->AddPresentationRule(*new ChildNodeRule("", 1, false));
 
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
     rules->GetChildNodesRules()[0]->AddSpecification(*spec);
@@ -1472,7 +1422,7 @@ TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_SameScope_SamePriorit
 TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_SameScope_DifferentPriorities_ReturnsByPriority)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    rules->AddPresentationRule(*new ChildNodeRule("", 1, false, TargetTree_MainTree));
+    rules->AddPresentationRule(*new ChildNodeRule("", 1, false));
 
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
     rules->GetChildNodesRules()[0]->AddSpecification(*spec);
@@ -1494,7 +1444,7 @@ TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_SameScope_DifferentPr
 TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_DifferentScopes_DifferentPriorities_ReturnsHighestPriority)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    rules->AddPresentationRule(*new ChildNodeRule("", 1, false, TargetTree_MainTree));
+    rules->AddPresentationRule(*new ChildNodeRule("", 1, false));
     rules->AddPresentationRule(*new StyleOverride("", 2, "Green", "Red", "Bold"));
 
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
@@ -1516,7 +1466,7 @@ TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_DifferentScopes_Diffe
 TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_DifferentScopes_SamePriority_ReturnsMostlyNested)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    rules->AddPresentationRule(*new ChildNodeRule("", 1, false, TargetTree_MainTree));
+    rules->AddPresentationRule(*new ChildNodeRule("", 1, false));
     rules->AddPresentationRule(*new CheckBoxRule("", 1, false, "CheckBoxPropertyName2", false, false, ""));
 
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
@@ -1538,7 +1488,7 @@ TEST_F(RulesPreprocessorTests, GetNestedCustomizationRules_DifferentScopes_SameP
 TEST_F(RulesPreprocessorTests, GetCustomizationRule_WithConditions)
     {
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test");
-    rules->AddPresentationRule(*new ChildNodeRule("", 1, false, TargetTree_MainTree));
+    rules->AddPresentationRule(*new ChildNodeRule("", 1, false));
 
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
     rules->GetChildNodesRules()[0]->AddSpecification(*spec);

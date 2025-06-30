@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 #include <ECPresentation/Rules/SpecificationVisitor.h>
@@ -75,14 +74,6 @@ void ContentInstancesOfSpecificClassesSpecification::_Accept(PresentationRuleSpe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ContentInstancesOfSpecificClassesSpecification::_GetXmlElementName () const
-    {
-    return CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ContentInstancesOfSpecificClassesSpecification::SetClasses(bvector<MultiSchemaClass*> value)
     {
     CommonToolsInternal::FreePresentationRules(m_classes);
@@ -98,47 +89,6 @@ void ContentInstancesOfSpecificClassesSpecification::SetExcludedClasses(bvector<
     CommonToolsInternal::FreePresentationRules(m_excludedClasses);
     m_excludedClasses = value;
     InvalidateHash();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (!ContentSpecification::_ReadXml(xmlNode))
-        return false;
-
-    // optional:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_instanceFilter, COMMON_XML_ATTRIBUTE_INSTANCEFILTER))
-        m_instanceFilter = "";
-
-    bool defaultPolymorphism;
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(defaultPolymorphism, COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC))
-        defaultPolymorphism = false;
-
-    // required:
-    Utf8String classNames;
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(classNames, COMMON_XML_ATTRIBUTE_CLASSNAMES) ||
-        !CommonToolsInternal::ParseMultiSchemaClassesFromClassNamesString(classNames, defaultPolymorphism, m_classes, this) ||
-        m_classes.empty())
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES));
-        return false;
-        }
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentInstancesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    ContentSpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_CLASSNAMES, CommonToolsInternal::SchemaAndClassNamesToString(CommonToolsInternal::WriteMultiSchemaClassesToJson(m_classes)).c_str());
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
-
-    bool handlePolymorphically = m_classes.empty() ? false : m_classes.front()->GetArePolymorphic();
-    xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC, handlePolymorphically);
     }
 
 /*---------------------------------------------------------------------------------**//**
