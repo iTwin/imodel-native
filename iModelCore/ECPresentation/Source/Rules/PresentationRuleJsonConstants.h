@@ -142,8 +142,8 @@
 #define PROPERTY_GROUP_JSON_ATTRIBUTE_GROUPINGVALUE                                     "groupingValue"
 #define PROPERTY_GROUP_JSON_ATTRIBUTE_SORTINGVALUE                                      "sortingValue"
 #define PROPERTY_GROUP_JSON_ATTRIBUTE_RANGES                                            "ranges"
-#define PROPERTY_GROUP_JSON_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE                 "propertyValue"
-#define PROPERTY_GROUP_JSON_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL                  "displayLabel"
+#define PROPERTY_GROUP_JSON_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE                 "PropertyValue"
+#define PROPERTY_GROUP_JSON_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL                  "DisplayLabel"
 
 #define PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_LABEL                                       "label"
 #define PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_IMAGEID                                     "imageId"

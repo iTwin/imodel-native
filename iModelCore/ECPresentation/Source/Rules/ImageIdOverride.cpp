@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
@@ -21,37 +20,6 @@ ImageIdOverride::ImageIdOverride() {}
 ImageIdOverride::ImageIdOverride (Utf8StringCR condition, int priority, Utf8StringCR imageIdExpression)
     : ConditionalCustomizationRule (condition, priority, false), m_imageIdExpression (imageIdExpression)
     {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ImageIdOverride::_GetXmlElementName () const
-    {
-    return IMAGE_ID_OVERRIDE_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ImageIdOverride::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (!ConditionalCustomizationRule::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_imageIdExpression, IMAGE_ID_OVERRIDE_XML_ATTRIBUTE_IMAGEID))
-        m_imageIdExpression = "";
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ImageIdOverride::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    ConditionalCustomizationRule::_WriteXml (xmlNode);
-    xmlNode->AddAttributeStringValue (IMAGE_ID_OVERRIDE_XML_ATTRIBUTE_IMAGEID, m_imageIdExpression.c_str ());
     }
 
 /*---------------------------------------------------------------------------------**//**

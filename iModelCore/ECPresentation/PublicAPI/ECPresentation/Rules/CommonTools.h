@@ -6,7 +6,6 @@
 
 #include <ECPresentation/Rules/PresentationRulesTypes.h>
 #include <ECPresentation/Rules/PresentationRule.h>
-#include <BeXml/BeXml.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
