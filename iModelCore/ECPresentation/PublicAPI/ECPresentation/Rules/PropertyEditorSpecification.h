@@ -52,10 +52,6 @@ private:
     BeJsDocument m_json;
 
 protected:
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
-    ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -87,10 +83,6 @@ private:
     uint32_t m_height;
 
 protected:
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
-    ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -119,10 +111,6 @@ private:
     Nullable<double> m_max;
 
 protected:
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
-    ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -151,14 +139,9 @@ private:
     double m_min;
     double m_max;
     uint32_t m_intervalsCount;
-    uint32_t m_valueFactor;
     bool m_isVertical;
 
 protected:
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
-    ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP parentXmlNode) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -168,14 +151,13 @@ protected:
     PropertyEditorParametersSpecification* _Clone() const override {return new PropertyEditorSliderParameters(*this);}
 
 public:
-    PropertyEditorSliderParameters() : m_min(0), m_max(0), m_intervalsCount(1), m_valueFactor(1), m_isVertical(false) {}
+    PropertyEditorSliderParameters() : m_min(0), m_max(0), m_intervalsCount(1), m_isVertical(false) {}
     PropertyEditorSliderParameters(double min, double max, uint32_t intervalsCount = 1, uint32_t valueFactor = 1, bool isVertical = false)
-        : m_min(min), m_max(max), m_isVertical(isVertical), m_intervalsCount(intervalsCount), m_valueFactor(valueFactor)
+        : m_min(min), m_max(max), m_isVertical(isVertical), m_intervalsCount(intervalsCount)
         {}
     double GetMinimumValue() const {return m_min;}
     double GetMaximumValue() const {return m_max;}
     uint32_t GetIntervalsCount() const {return m_intervalsCount;}
-    uint32_t GetValueFactor() const {return m_valueFactor;}
     bool IsVertical() const {return m_isVertical;}
 };
 
@@ -193,10 +175,6 @@ private:
 
 protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
-    ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP xmlNode) const override;
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;

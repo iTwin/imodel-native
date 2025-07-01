@@ -25,7 +25,6 @@
 #define SQLITE_OMIT_AUTOINIT            1
 #define SQLITE_OMIT_COMPLETE            1
 #define SQLITE_OMIT_DEPRECATED          1
-#define SQLITE_OMIT_PROGRESS_CALLBACK   1
 #define SQLITE_USE_URI                  1
 
 #define HAVE_STDINT_H

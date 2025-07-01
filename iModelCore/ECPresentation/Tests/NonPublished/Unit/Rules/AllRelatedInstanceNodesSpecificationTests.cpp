@@ -54,7 +54,6 @@ TEST_F(AllRelatedInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues
     AllRelatedInstanceNodesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
     EXPECT_TRUE(spec.GetGroupByClass());
-    EXPECT_FALSE(spec.GetGroupByRelationship());
     EXPECT_TRUE(spec.GetGroupByLabel());
     EXPECT_EQ(0, spec.GetSkipRelatedLevel());
     EXPECT_STREQ("", spec.GetSupportedSchemas().c_str());
@@ -66,7 +65,7 @@ TEST_F(AllRelatedInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AllRelatedInstanceNodesSpecificationTests, WriteToJson)
     {
-    AllRelatedInstanceNodesSpecification spec(123, true, true, true, true, true, false, 5, "schema1, schema2");
+    AllRelatedInstanceNodesSpecification spec(123, ChildrenHint::Always, true, true, true, false, 5, "schema1, schema2");
     spec.SetRequiredRelationDirection(RequiredRelationDirection::RequiredRelationDirection_Forward);
     BeJsDocument json = spec.WriteJson();
     BeJsDocument expected(R"({
@@ -81,78 +80,6 @@ TEST_F(AllRelatedInstanceNodesSpecificationTests, WriteToJson)
         "supportedSchemas": {"schemaNames": ["schema1", "schema2"]}
     })");
     EXPECT_TRUE(expected.isExactEqual(json));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(AllRelatedInstanceNodesSpecificationTests, LoadsFromXml)
-    {
-    static Utf8CP xmlString = R"(
-        <AllRelatedInstances GroupByClass="false" GroupByRelationship="true" GroupByLabel="false"
-         SkipRelatedLevel="3" SupportedSchemas="TestSchema" RequiredDirection="Forward"/>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    AllRelatedInstanceNodesSpecification spec;
-    EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_FALSE(spec.GetGroupByClass());
-    EXPECT_TRUE(spec.GetGroupByRelationship());
-    EXPECT_FALSE(spec.GetGroupByLabel());
-    EXPECT_EQ(3, spec.GetSkipRelatedLevel());
-    EXPECT_STREQ("TestSchema", spec.GetSupportedSchemas().c_str());
-    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Forward, spec.GetRequiredRelationDirection());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(AllRelatedInstanceNodesSpecificationTests, LoadsFromXmlWithDefaultValues)
-    {
-    static Utf8CP xmlString = "<AllRelatedInstances/>";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    AllRelatedInstanceNodesSpecification spec;
-    EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_TRUE(spec.GetGroupByClass());
-    EXPECT_FALSE(spec.GetGroupByRelationship());
-    EXPECT_TRUE(spec.GetGroupByLabel());
-    EXPECT_EQ(0, spec.GetSkipRelatedLevel());
-    EXPECT_STREQ("", spec.GetSupportedSchemas().c_str());
-    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(AllRelatedInstanceNodesSpecificationTests, WriteToXml)
-    {
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
-    xml->AddNewElement("Root", nullptr, nullptr);
-
-    AllRelatedInstanceNodesSpecification spec;
-    spec.SetHasChildren(ChildrenHint::Never);
-    spec.SetGroupByClass(false);
-    spec.SetGroupByLabel(true);
-    spec.SetGroupByRelationship(false);
-    spec.SetSkipRelatedLevel(3);
-    spec.SetSupportedSchemas("TestSchema");
-    spec.SetRequiredRelationDirection(RequiredRelationDirection::RequiredRelationDirection_Forward);
-    spec.WriteXml(xml->GetRootElement());
-
-    static Utf8CP expected = ""
-        "<Root>"
-            R"(<AllRelatedInstances Priority="1000" HasChildren="Never" HideNodesInHierarchy="false"
-                HideIfNoChildren="false" DoNotSort="false" GroupByClass="false"
-                GroupByRelationship="false" GroupByLabel="true" SkipRelatedLevel="3"
-                SupportedSchemas="TestSchema" RequiredDirection="Forward"/>)"
-        "</Root>";
-    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

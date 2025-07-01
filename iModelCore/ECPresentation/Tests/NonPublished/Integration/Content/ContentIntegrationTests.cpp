@@ -3276,7 +3276,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     EXPECT_STREQ(BeInt64Id::FromString(instance->GetInstanceId().c_str()).ToHexStr().c_str(), jsonValues["CalculatedProperty_0"].GetString());
     EXPECT_STREQ(BeInt64Id::FromString(instance->GetInstanceId().c_str()).ToHexStr().c_str(), jsonDisplayValues["CalculatedProperty_0"].GetString());
-    
+
     EXPECT_STREQ(BeInt64Id(classA->GetId()).ToHexStr().c_str(), jsonValues["CalculatedProperty_1"].GetString());
     EXPECT_STREQ(BeInt64Id(classA->GetId()).ToHexStr().c_str(), jsonDisplayValues["CalculatedProperty_1"].GetString());
 
@@ -12957,7 +12957,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
 
     // set up navigation rule
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, false);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", classA->GetFullName(), false));
 
@@ -13014,7 +13014,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
 
     // set up navigation rule
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, false);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", classA->GetFullName(), false));
 
@@ -13081,16 +13081,16 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
 
     // set up navigation rules
     // Class B rule
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, false);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", classB->GetFullName(), false));
     // Class C rule
-    ChildNodeRuleP childRule = new ChildNodeRule("ParentNode.ClassName = \"B\"", 1, false, RuleTargetTree::TargetTree_MainTree);
+    ChildNodeRuleP childRule = new ChildNodeRule("ParentNode.ClassName = \"B\"", 1, false);
     rules->AddPresentationRule(*childRule);
     InstanceNodesOfSpecificClassesSpecification* childRuleSpec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", classC->GetFullName(), false);
     childRule->AddSpecification(*childRuleSpec);
     // Class A rule
-    ChildNodeRuleP nestedChildRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree);
+    ChildNodeRuleP nestedChildRule = new ChildNodeRule("", 1, false);
     nestedChildRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", classA->GetFullName(), false));
     childRuleSpec->AddNestedRule(*nestedChildRule);
 
@@ -13162,7 +13162,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
 
     // set up navigation rule
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, false);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", classA->GetFullName(), false));
 
@@ -13225,7 +13225,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
 
     // set up navigation rule
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, false);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", classA->GetFullName(), false));
 
@@ -13294,7 +13294,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedDisplayLa
     rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
 
     // set up navigation rule
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, false);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", Utf8PrintfString("%s:A,B", GetSchema()->GetName().c_str()), false));
 
@@ -13361,7 +13361,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedDisplayLa
     rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
 
     // set up navigation rule
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, false);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", Utf8PrintfString("%s:A,B", GetSchema()->GetName().c_str()), false));
 
@@ -13430,7 +13430,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysWhenDisplayLabelGrou
     rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
 
     // set up navigation rule
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, false);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", Utf8PrintfString("%s:A,B", GetSchema()->GetName().c_str()), false));
 
@@ -13498,7 +13498,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysWhenDisplayLabelGrou
     rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
 
     // set up navigation rule
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, false);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", Utf8PrintfString("%s:A,B", GetSchema()->GetName().c_str()), false));
 
@@ -13567,12 +13567,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECPropert
     rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
 
     // set up navigation rule
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, false);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", Utf8PrintfString("%s:A,B", GetSchema()->GetName().c_str()), false));
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), "A", "", "", "");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), "A", "");
     rules->AddPresentationRule(*groupingRule);
-    groupingRule->AddGroup(*new PropertyGroup("", "", false, "Property"));
+    groupingRule->AddGroup(*new PropertyGroup("", false, "Property"));
 
     // cache hierarchy
     NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
@@ -13633,12 +13633,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECPropert
     rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
 
     // set up navigation rule
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, false);
     rules->AddPresentationRule(*rootRule);
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false, "", Utf8PrintfString("%s:A,B", GetSchema()->GetName().c_str()), false));
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), "A", "", "", "");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), "A", "");
     rules->AddPresentationRule(*groupingRule);
-    groupingRule->AddGroup(*new PropertyGroup("", "", false, "Property"));
+    groupingRule->AddGroup(*new PropertyGroup("", false, "Property"));
 
     // cache hierarchy
     NavNodesContainer rootNodes = GetValidatedResponse(m_manager->GetNodes(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())));
@@ -15547,9 +15547,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retur
 
     RootNodeRule* nodeRule = new RootNodeRule("", 1000, false);
     nodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classA->GetFullName(), false));
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), classA->GetName(), "", "", "");;
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, GetSchema()->GetName(), classA->GetName(), "");
     nodeRules->AddPresentationRule(*groupingRule);
-    groupingRule->AddGroup(*new PropertyGroup("", "", false, "Property"));
+    groupingRule->AddGroup(*new PropertyGroup("", false, "Property"));
 
     nodeRules->AddPresentationRule(*nodeRule);
 
@@ -16155,7 +16155,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
 
     // setup ruleset
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, false);
     InstanceNodesOfSpecificClassesSpecificationP spec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true, "",
         bvector<MultiSchemaClass*> { new MultiSchemaClass(BeTest::GetNameOfCurrentTest(), true, bvector<Utf8String> { "A" })}, bvector<MultiSchemaClass*>());
     rootRule->AddSpecification(*spec);
@@ -16211,7 +16211,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
 
     // setup ruleset
     PresentationRuleSetPtr hierarchyRules = PresentationRuleSet::CreateInstance(Utf8PrintfString("%s_Nodes", BeTest::GetNameOfCurrentTest()));
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, false);
     InstanceNodesOfSpecificClassesSpecificationP spec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, true, "",
         bvector<MultiSchemaClass*> { new MultiSchemaClass(BeTest::GetNameOfCurrentTest(), true, bvector<Utf8String> { "A" })}, bvector<MultiSchemaClass*>());
     rootRule->AddSpecification(*spec);

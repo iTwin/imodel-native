@@ -11,9 +11,9 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RequiredSchemaSpecification : NoXmlSupport<PresentationKey>
+struct RequiredSchemaSpecification : PresentationKey
 {
-    DEFINE_T_SUPER(NoXmlSupport<PresentationKey>)
+    DEFINE_T_SUPER(PresentationKey)
 
 private:
     Utf8String m_name;
