@@ -1521,7 +1521,25 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         changesetInfo[JsInterop::json_parentId()] = changeset->GetParentId().c_str();
         changesetInfo[JsInterop::json_pathname()] = Utf8String(changeset->GetFileName()).c_str();
         changesetInfo[JsInterop::json_changesType()] = (int)changeset->GetChangesetType();
+        changesetInfo[JsInterop::json_uncompressedSize()] = static_cast<int64_t>(changeset->GetUncompressedSize());
         return changesetInfo;
+    }
+
+    void EnableChangesetStatsTracking(NapiInfoCR info) {
+        GetWritableDb(info).Txns().EnableChangesetStatsTracking();
+    }
+
+    void DisableChangesetStatsTracking(NapiInfoCR info) {
+        GetWritableDb(info).Txns().DisableChangesetStatsTracking();
+    }
+
+    Napi::Value GetChangesetHealthData(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(1, changesetId);
+        return BeJsNapiObject(Env(), GetWritableDb(info).Txns().GetChangesetHealthStatistics(changesetId).Stringify());
+    }
+
+    Napi::Value GetAllChangesetHealthData(NapiInfoCR info) {
+        return BeJsNapiObject(Env(), GetWritableDb(info).Txns().GetAllChangesetHealthStatistics().Stringify());
     }
 
     void CompleteCreateChangeset(NapiInfoCR info) {
@@ -2986,6 +3004,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("vacuum", &NativeDgnDb::Vacuum),
             InstanceMethod("enableWalMode", &NativeDgnDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
+            InstanceMethod("enableChangesetStatsTracking", &NativeDgnDb::EnableChangesetStatsTracking),
+            InstanceMethod("disableChangesetStatsTracking", &NativeDgnDb::DisableChangesetStatsTracking),
+            InstanceMethod("getChangesetHealthData", &NativeDgnDb::GetChangesetHealthData),
+            InstanceMethod("getAllChangesetHealthData", &NativeDgnDb::GetAllChangesetHealthData),
             InstanceMethod("setAutoCheckpointThreshold", &NativeDgnDb::SetAutoCheckpointThreshold),
             InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
             InstanceMethod("getNoCaseCollation", &NativeDgnDb::GetNoCaseCollation),

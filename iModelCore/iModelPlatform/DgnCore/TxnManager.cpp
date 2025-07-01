@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <BeSQLite/Profiler.h>
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -878,6 +879,9 @@ ChangesetStatus TxnManager::MergeDdlChanges(ChangesetPropsCR revision, Changeset
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges, bool fastForward) {
+    if (TrackChangesetHealthStats())
+        Profiler::InitScope(*changeStream.GetDb(), "Apply Changeset", revision.GetChangesetId().c_str(), Profiler::Params(false, true));
+
     DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, false, fastForward);
     if (result != BE_SQLITE_OK) {
         if (changeStream.GetLastErrorMessage().empty())
@@ -887,41 +891,65 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     }
     changeStream.ClearLastErrorMessage();
 
-    ChangesetStatus status = ChangesetStatus::Success;
-    UndoChangeSet indirectChanges;
+    // Save parent changeset info
+    SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());
 
-    if (status == ChangesetStatus::Success) {
-        SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());
+    // If in pull-merge, commit the transaction
+    if (PullMergeConf::Load(m_dgndb).InProgress()) {
+        const auto status = m_dgndb.SaveChanges();
+        // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one.
+        // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
+        // the merged changes are lost after this routine and cannot be used for change propagation anymore.
+        if (status != BE_SQLITE_OK) {
+            LOG.fatalv("MergeDataChanges failed to save: %s", BeSQLiteLib::GetErrorName(status));
+            BeAssert(false);
 
-        if (status == ChangesetStatus::Success) {
-            if (PullMergeConf::Load(m_dgndb).InProgress()) {
-                result = m_dgndb.SaveChanges();
-            }
-            // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one.
-            // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
-            // the merged changes are lost after this routine and cannot be used for change propagation anymore.
-            if (BE_SQLITE_OK != result) {
-                LOG.fatalv("MergeDataChanges failed to save: %s", BeSQLiteLib::GetErrorName(result));
-                BeAssert(false);
-                status = ChangesetStatus::SQLiteError;
-            }
+            // We were unable to merge the changes or save the revisionId, but the revision's changes were successfully applied. Back them out.
+            ChangeGroup changeGroup;
+            changeStream.AddToChangeGroup(changeGroup);
+            UndoChangeSet allChanges;
+            allChanges.FromChangeGroup(changeGroup);
+
+            const auto invertResult = ApplyChanges(allChanges, TxnAction::Reverse, containsSchemaChanges, true);
+            BeAssert(invertResult == BE_SQLITE_OK);
+            if (invertResult != BE_SQLITE_OK)
+                m_dgndb.ThrowException("Error applying changeset", (int) ChangesetStatus::ApplyError);
         }
     }
-    if (status != ChangesetStatus::Success) {
-        // we were unable to merge the changes or save the revisionId, but the revision's changes were successfully applied. Back them out, plus any indirect changes.
-        ChangeGroup changeGroup;
-        changeStream.AddToChangeGroup(changeGroup);
-        if (indirectChanges.IsValid()) {
-            result = indirectChanges.AddToChangeGroup(changeGroup);
-            BeAssert(result == BE_SQLITE_OK);
-        }
 
-        UndoChangeSet allChanges;
-        allChanges.FromChangeGroup(changeGroup);
-        result = ApplyChanges(allChanges, TxnAction::Reverse, containsSchemaChanges, true);
-        BeAssert(result == BE_SQLITE_OK);
+    if (TrackChangesetHealthStats())
+        SetChangesetHealthStatistics(revision);
+    return ChangesetStatus::Success;
+}
+
+void TxnManager::SetChangesetHealthStatistics(ChangesetPropsCR revision) {
+    const auto scope = Profiler::GetScope(m_dgndb);
+    if (scope == nullptr) {
+        BeAssert(false && "Profiler scope has not been defined");
+        return;
     }
-    return status;
+
+    auto stats = scope->GetDetailedSqlStats();
+    stats["changeset_id"] = revision.GetChangesetId();
+    stats["uncompressed_size_bytes"] = static_cast<int64_t>(revision.GetUncompressedSize());
+    stats["sha1_validation_time_ms"] = static_cast<int64_t>(revision.GetSha1ValidationTime());
+    m_changesetHealthStatistics[revision.GetChangesetId()] = stats.Stringify();
+}
+
+BeJsDocument TxnManager::GetAllChangesetHealthStatistics() const {
+    BeJsDocument stats;
+    auto changesets = stats["changesets"];
+    for (const auto& [changesetId, stat] : m_changesetHealthStatistics)
+        changesets.appendObject().From(stat);
+    return stats;
+}
+
+BeJsDocument TxnManager::GetChangesetHealthStatistics(Utf8StringCR changesetId) const {
+    if (const auto it = m_changesetHealthStatistics.find(changesetId); it != m_changesetHealthStatistics.end())
+        return BeJsDocument(it->second.Stringify());
+    
+    LOG.infov("No changeset health statistics found for changeset id: %s", changesetId.c_str());
+    return BeJsDocument();
 }
 
 /** throw an exception we are currently waiting for a changeset to be uploaded. */
@@ -1325,6 +1353,20 @@ struct DisableTracking {
     ~DisableTracking() { m_txns.EnableTracking(m_wasTracking); }
 };
 
+class ProfilerScope {
+    const Profiler::Scope* m_scope = nullptr;
+    bool m_isTrackingEnabled;
+public:
+    ProfilerScope(TxnManagerR txn) {
+        m_scope = Profiler::GetScope(txn.GetDgnDb());
+        m_isTrackingEnabled = m_scope != nullptr && txn.TrackChangesetHealthStats();
+    }
+
+    void Start() const { if (m_isTrackingEnabled) m_scope->Start(); }
+    void Pause() const { if (m_isTrackingEnabled) m_scope->Pause(); }
+    void Stop() const { if (m_isTrackingEnabled) m_scope->Stop(); }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * Apply a changeset to the database. Notify all TxnTables about what was in the Changeset afterwards.
 * @bsimethod
@@ -1366,6 +1408,8 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
         return ChangeStream::ConflictResolution::Abort;
     };
 
+    const auto scope = ProfilerScope(*this);
+    scope.Start();
     // apply schema part of changeset before data changes if schema changes are present
     if (containsSchemaChanges)
         {
@@ -1399,6 +1443,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
 
                 m_dgndb.AbandonChanges();
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
+                scope.Stop();
                 return result;
             }
         }
@@ -1410,6 +1455,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
                     LOG.errorv("ApplyChanges failed schema changes: %s", BeSQLiteLib::GetErrorName(result));
                     BeAssert(false);
                     m_dgndb.AbandonChanges();
+                    scope.Stop();
                     return result;
                 }
             }
@@ -1446,6 +1492,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
             if (containsSchemaChanges) {
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
             }
+            scope.Stop();
             return result;
         }
     }
@@ -1459,6 +1506,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
             if (containsSchemaChanges) {
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
             }
+            scope.Stop();
             return result;
         }
     }
@@ -1477,6 +1525,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     if (containsSchemaChanges)
         m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
 
+    scope.Stop();
     return BE_SQLITE_OK;
 }
 
