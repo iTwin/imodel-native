@@ -259,21 +259,22 @@ TEST_F(ConcurrentQueryFixture, Blob_Metadata) {
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     m_ecdb.SaveChanges();
 
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    auto req = ECSqlRequest::MakeRequest("SELECT bin FROM ts.testEntity");
-    req->SetIncludeMetaData(true);  // Metadata must be included for this test
-    auto r = mgr.Enqueue(std::move(req)).Get();
-    ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
-    auto res = ((ECSqlResponse*) r.get());
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr){
+        auto req = ECSqlRequest::MakeRequest("SELECT bin FROM ts.testEntity");
+        req->SetIncludeMetaData(true);  // Metadata must be included for this test
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        EXPECT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+        auto res = ((ECSqlResponse*) r.get());
 
-    BeJsDocument resJson;
-    res->ToJs(resJson, true);
-    auto metadataJson = resJson["meta"][0];
+        BeJsDocument resJson;
+        res->ToJs(resJson, true);
+        auto metadataJson = resJson["meta"][0];
 
-    ASSERT_STREQ(metadataJson["accessString"].asCString(), "bin");
-    ASSERT_STREQ(metadataJson["typeName"].asCString(), "binary");
-    ASSERT_STREQ(metadataJson["extendedType"].asCString(), "");
-    ASSERT_STREQ(metadataJson.Stringify(StringifyFormat::Indented).c_str(), expectedMetadataDoc.Stringify(StringifyFormat::Indented).c_str());
+        EXPECT_STREQ(metadataJson["accessString"].asCString(), "bin");
+        EXPECT_STREQ(metadataJson["typeName"].asCString(), "binary");
+        EXPECT_STREQ(metadataJson["extendedType"].asCString(), "");
+        EXPECT_STREQ(metadataJson.Stringify(StringifyFormat::Indented).c_str(), expectedMetadataDoc.Stringify(StringifyFormat::Indented).c_str());
+    });
 }
 
 //---------------------------------------------------------------------------------------
@@ -298,18 +299,19 @@ TEST_F(ConcurrentQueryFixture, Blob_NotAbbreviatedByDefault) {
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     m_ecdb.SaveChanges();
 
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    auto req = ECSqlRequest::MakeRequest("SELECT bin FROM ts.testEntity");
-    auto r = mgr.Enqueue(std::move(req)).Get();
-    ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
-    auto res = ((ECSqlResponse*) r.get());
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr){
+        auto req = ECSqlRequest::MakeRequest("SELECT bin FROM ts.testEntity");
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+        auto res = ((ECSqlResponse*) r.get());
 
-    BeJsDocument resJson;
-    res->ToJs(resJson, true);
-    BeJsDocument resData;
-    resData.Parse(resJson["data"].asString());
+        BeJsDocument resJson;
+        res->ToJs(resJson, true);
+        BeJsDocument resData;
+        resData.Parse(resJson["data"].asString());
 
-    ASSERT_STREQ(resData[0][0].asString().c_str(), "encoding=base64;AQEB");
+        EXPECT_STREQ(resData[0][0].asString().c_str(), "encoding=base64;AQEB");
+    });
 }
 
 //---------------------------------------------------------------------------------------
@@ -334,19 +336,20 @@ TEST_F(ConcurrentQueryFixture, Blob_NotAbbreviated) {
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     m_ecdb.SaveChanges();
 
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    auto req = ECSqlRequest::MakeRequest("SELECT bin FROM ts.testEntity");
-    req->SetAbbreviateBlobs(false);
-    auto r = mgr.Enqueue(std::move(req)).Get();
-    ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
-    auto res = ((ECSqlResponse*) r.get());
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        auto req = ECSqlRequest::MakeRequest("SELECT bin FROM ts.testEntity");
+        req->SetAbbreviateBlobs(false);
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+        auto res = ((ECSqlResponse*) r.get());
 
-    BeJsDocument resJson;
-    res->ToJs(resJson, true);
-    BeJsDocument resData;
-    resData.Parse(resJson["data"].asString());
+        BeJsDocument resJson;
+        res->ToJs(resJson, true);
+        BeJsDocument resData;
+        resData.Parse(resJson["data"].asString());
 
-    ASSERT_STREQ(resData[0][0].asString().c_str(), "encoding=base64;IvozGjPiOe/P1A==");
+        ASSERT_STREQ(resData[0][0].asString().c_str(), "encoding=base64;IvozGjPiOe/P1A==");
+    });
 }
 
 //---------------------------------------------------------------------------------------
@@ -371,19 +374,20 @@ TEST_F(ConcurrentQueryFixture, Blob_Abbreviated) {
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     m_ecdb.SaveChanges();
 
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    auto req = ECSqlRequest::MakeRequest("SELECT bin FROM ts.testEntity");
-    req->SetAbbreviateBlobs(true);
-    auto r = mgr.Enqueue(std::move(req)).Get();
-    ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
-    auto res = ((ECSqlResponse*) r.get());
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        auto req = ECSqlRequest::MakeRequest("SELECT bin FROM ts.testEntity");
+        req->SetAbbreviateBlobs(true);
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        EXPECT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+        auto res = ((ECSqlResponse*)r.get());
 
-    BeJsDocument resJson;
-    res->ToJs(resJson, true);
-    BeJsDocument resData;
-    resData.Parse(resJson["data"].asString());
+        BeJsDocument resJson;
+        res->ToJs(resJson, true);
+        BeJsDocument resData;
+        resData.Parse(resJson["data"].asString());
 
-    ASSERT_STREQ(resData[0][0].asString().c_str(), "{\"bytes\":13}");
+        EXPECT_STREQ(resData[0][0].asString().c_str(), "{\"bytes\":13}");
+    });
 }
 
 
@@ -412,19 +416,20 @@ TEST_F(ConcurrentQueryFixture, BlobColumnInfoRepeated) {
     m_ecdb.SaveChanges();
 
     auto checkBlobColumnInfo = [&](const std::string& expectedExtendedType, const std::string& expectedTypeName, std::optional<bool> abbreviateBlobs = std::nullopt) {
-        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-        auto req = ECSqlRequest::MakeRequest("SELECT bin FROM ts.testEntity");
-        if (abbreviateBlobs.has_value()) {
-            req->SetAbbreviateBlobs(abbreviateBlobs.value());
-        }
-        auto r = mgr.Enqueue(std::move(req)).Get();
-        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
-        auto res = ((ECSqlResponse*) r.get());
-        auto& rowProps = res->GetProperties();
-        ASSERT_EQ(rowProps.size(), 1);
-        auto& prop = rowProps[0];
-        ASSERT_STREQ(prop.GetExtendedType().c_str(), expectedExtendedType.c_str());
-        ASSERT_STREQ(prop.GetTypeName().c_str(), expectedTypeName.c_str());
+        ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+            auto req = ECSqlRequest::MakeRequest("SELECT bin FROM ts.testEntity");
+            if (abbreviateBlobs.has_value()) {
+                req->SetAbbreviateBlobs(abbreviateBlobs.value());
+            }
+            auto r = mgr.Enqueue(std::move(req)).Get();
+            EXPECT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+            auto res = ((ECSqlResponse*) r.get());
+            auto& rowProps = res->GetProperties();
+            EXPECT_EQ(rowProps.size(), 1);
+            auto& prop = rowProps[0];
+            EXPECT_STREQ(prop.GetExtendedType().c_str(), expectedExtendedType.c_str());
+            EXPECT_STREQ(prop.GetTypeName().c_str(), expectedTypeName.c_str());
+        });
     };
 
     checkBlobColumnInfo("", "binary");
@@ -446,11 +451,12 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_Timeout) {
     ConcurrentQueryMgr::Config::Reset(config);
 
     const auto delay = std::chrono::milliseconds(5000);
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
-    req->SetDelay(delay);
-    auto r = mgr.Enqueue(std::move(req)).Get();
-    ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Timeout);
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
+        req->SetDelay(delay);
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        EXPECT_EQ(r->GetStatus(), QueryResponse::Status::Timeout);
+    });
 }
 
 //---------------------------------------------------------------------------------------
@@ -463,13 +469,15 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_MemoryLimitExceeded) {
     config.SetQuota(QueryQuota(std::chrono::seconds(10), 1000));
     ConcurrentQueryMgr::Config::Reset(config);
 
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    auto req = ECSqlRequest::MakeRequest(
-        "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
-        ECSqlParams().BindInt(1, 3));
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        auto req = ECSqlRequest::MakeRequest(
+            "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+            ECSqlParams().BindInt(1, 3));
 
-    auto r = mgr.Enqueue(std::move(req)).Get();
-    ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Partial);
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        EXPECT_EQ(r->GetStatus(), QueryResponse::Status::Partial);
+    });
+
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -482,13 +490,14 @@ TEST_F(ConcurrentQueryFixture, InterruptCheck_TimeLimitExceeded) {
     ConcurrentQueryMgr::Config::Reset(config);
 
     m_ecdb.AddFunction(SleepFunc::Instance());
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    auto req = ECSqlRequest::MakeRequest(
-        "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x,imodel_sleep(500, x)  from cnt",
-        ECSqlParams().BindInt(1, 10));
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        auto req = ECSqlRequest::MakeRequest(
+            "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x,imodel_sleep(500, x)  from cnt",
+            ECSqlParams().BindInt(1, 10));
 
-    auto r = mgr.Enqueue(std::move(req)).Get();
-    ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Partial);
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        EXPECT_EQ(r->GetStatus(), QueryResponse::Status::Partial);
+    });
 }
 
 //---------------------------------------------------------------------------------------
@@ -729,13 +738,15 @@ TEST_F(ConcurrentQueryFixture, DelayRequest) {
     conf.SetIgnoreDelay(false);
     ConcurrentQueryMgr::Config::Reset(conf);
 
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
-    const auto delay = std::chrono::milliseconds(2000);
-    req->SetDelay(delay);
-    auto r = mgr.Enqueue(std::move(req)).Get();
-    ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
-    ASSERT_GT(r->GetStats().TotalTime(), delay);
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        auto req = ECSqlRequest::MakeRequest("with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt", ECSqlParams().BindInt(1, 1));
+        const auto delay = std::chrono::milliseconds(2000);
+        req->SetDelay(delay);
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        EXPECT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+        EXPECT_GT(r->GetStats().TotalTime(), delay);
+    });
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -747,21 +758,22 @@ TEST_F(ConcurrentQueryFixture, RestartToken) {
     conf.SetIgnoreDelay(false);
     ConcurrentQueryMgr::Config::Reset(conf);
 
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    const auto sql = "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt";
-    auto req0 = ECSqlRequest::MakeRequest(sql, ECSqlParams().BindInt(1, 5));
-    req0->SetRestartToken("test token");
-    req0->SetDelay(5000ms);
-    auto req1 = ECSqlRequest::MakeRequest(sql, ECSqlParams().BindInt(1, 5));
-    req1->SetRestartToken("test token");
-    auto r0 = mgr.Enqueue(std::move(req0));
-    auto r1 = mgr.Enqueue(std::move(req1));
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        const auto sql = "with cnt(x) as (values(0) union select x+1 from cnt where x < ? ) select x from cnt";
+        auto req0 = ECSqlRequest::MakeRequest(sql, ECSqlParams().BindInt(1, 5));
+        req0->SetRestartToken("test token");
+        req0->SetDelay(5000ms);
+        auto req1 = ECSqlRequest::MakeRequest(sql, ECSqlParams().BindInt(1, 5));
+        req1->SetRestartToken("test token");
+        auto r0 = mgr.Enqueue(std::move(req0));
+        auto r1 = mgr.Enqueue(std::move(req1));
 
-    auto f0 = r0.Get();
-    auto f1 = r1.Get();
+        auto f0 = r0.Get();
+        auto f1 = r1.Get();
 
-    ASSERT_EQ(f0->GetStatus(), QueryResponse::Status::Cancel);
-    ASSERT_EQ(f1->GetStatus(), QueryResponse::Status::Done);
+        EXPECT_EQ(f0->GetStatus(), QueryResponse::Status::Cancel);
+        EXPECT_EQ(f1->GetStatus(), QueryResponse::Status::Done);
+    });
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -797,16 +809,17 @@ TEST_F(ConcurrentQueryFixture, FutureAndCallback) {
     populateDb(rowsInserted, 512);
 
     ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly));
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    auto future = mgr.Enqueue(ECSqlRequest::MakeRequest("select * from ts.foo"));
-    std::promise<void> e;
-    mgr.Enqueue(ECSqlRequest::MakeRequest("select * from ts.foo"), [&](QueryResponse::Ptr r){
-        EXPECT_TRUE(r->IsSuccess());
-        e.set_value();
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr){
+        auto future = mgr.Enqueue(ECSqlRequest::MakeRequest("select * from ts.foo"));
+        std::promise<void> e;
+        mgr.Enqueue(ECSqlRequest::MakeRequest("select * from ts.foo"), [&](QueryResponse::Ptr r){
+            EXPECT_TRUE(r->IsSuccess());
+            e.set_value();
+        });
+        auto response = future.Get();
+        EXPECT_TRUE(response->IsSuccess());
+        e.get_future().get();
     });
-    auto response = future.Get();
-    ASSERT_TRUE(response->IsSuccess());
-    e.get_future().get();
 }
 
 //---------------------------------------------------------------------------------------
@@ -842,14 +855,12 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
     const auto rowsInserted = 100;
     populateDb(rowsInserted, 512);
     ReopenECDb(ECDb::OpenParams(Db::OpenMode::Readonly));
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    ECSqlReader reader(mgr, "select * from ts.foo");
-    int rowCount = 0;
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        ECSqlReader reader(mgr, "select * from ts.foo");
+        int rowCount = 0;
 
-    BeJsDocument expectedMeta;
-    expectedMeta.Parse(R"(
-        [
-        {
+        BeJsDocument expectedMeta;
+        expectedMeta.Parse(R"([{
             "className": "",
             "accessString": "ECInstanceId",
             "generated": false,
@@ -858,8 +869,7 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
             "name": "ECInstanceId",
             "extendedType": "Id",
             "typeName": "long"
-        },
-        {
+        }, {
             "className": "",
             "accessString": "ECClassId",
             "generated": false,
@@ -868,8 +878,7 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
             "name": "ECClassId",
             "extendedType": "ClassId",
             "typeName": "long"
-        },
-        {
+        }, {
             "className": "TestSchema:Foo",
             "accessString": "I",
             "generated": false,
@@ -878,8 +887,7 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
             "name": "I",
             "extendedType": "",
             "typeName": "int"
-        },
-        {
+        }, {
             "className": "TestSchema:Foo",
             "accessString": "S",
             "generated": false,
@@ -888,22 +896,18 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
             "name": "S",
             "extendedType": "",
             "typeName": "string"
-        }
-        ]
-    )");
-    reader.Next();
-    ++rowCount;
-    ASSERT_STREQ(reader.GetColumns().Stringify().c_str(), expectedMeta.Stringify().c_str());
-    while(reader.Next()) {
+        }])");
+        reader.Next();
         ++rowCount;
-    }
-    ASSERT_EQ(rowCount, rowsInserted);
-    ECSqlReader reader1(mgr, "select COUNT(*) from ts.foo");
-    reader1.Next();
-    BeJsDocument expectedMeta2;
-    expectedMeta2.Parse(R"json(
-        [
-        {
+        EXPECT_STREQ(reader.GetColumns().Stringify().c_str(), expectedMeta.Stringify().c_str());
+        while (reader.Next()) {
+            ++rowCount;
+        }
+        EXPECT_EQ(rowCount, rowsInserted);
+        ECSqlReader reader1(mgr, "select COUNT(*) from ts.foo");
+        reader1.Next();
+        BeJsDocument expectedMeta2;
+        expectedMeta2.Parse(R"json([{
             "className" : "",
             "accessString": "COUNT(*)",
             "generated" : true,
@@ -912,43 +916,17 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
             "name" : "COUNT(*)",
             "extendedType" : "",
             "typeName" : "long"
-        }
-        ]
-    )json");
-    ASSERT_STREQ(reader1.GetColumns().Stringify().c_str(), expectedMeta2.Stringify().c_str());
-    auto cntJson0 = Json::Value::From(R"j({"cOUNT(*)" : 100.0})j");
-    auto cntJson1 = Json::Value::From(R"j({"COUNT(*)" : 100.0})j");
-    ASSERT_STREQ(reader1.GetRow().ToJson(ECSqlReader::Row::Format::UseJsonName).toStyledString().c_str(), cntJson0.toStyledString().c_str());
-    ASSERT_STREQ(reader1.GetRow().ToJson(ECSqlReader::Row::Format::UseName).toStyledString().c_str(), cntJson1.toStyledString().c_str());
-    ASSERT_EQ(reader1.GetRow()[0].asInt(), 100);
-    ASSERT_EQ(reader1.GetRow()["cOUNT(*)"].asInt(), 100);
-
+        }])json");
+        EXPECT_STREQ(reader1.GetColumns().Stringify().c_str(), expectedMeta2.Stringify().c_str());
+        auto cntJson0 = Json::Value::From(R"j({"cOUNT(*)" : 100.0})j");
+        auto cntJson1 = Json::Value::From(R"j({"COUNT(*)" : 100.0})j");
+        EXPECT_STREQ(reader1.GetRow().ToJson(ECSqlReader::Row::Format::UseJsonName).toStyledString().c_str(), cntJson0.toStyledString().c_str());
+        EXPECT_STREQ(reader1.GetRow().ToJson(ECSqlReader::Row::Format::UseName).toStyledString().c_str(), cntJson1.toStyledString().c_str());
+        EXPECT_EQ(reader1.GetRow()[0].asInt(), 100);
+        EXPECT_EQ(reader1.GetRow()["cOUNT(*)"].asInt(), 100);
+    });
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-// TEST_F(ConcurrentQueryFixture, pragma_file_info) {
-//     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("pragma_test.ecdb"));
-//     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-//     ECSqlReader reader(mgr, "PRAGMA file_info");
-//     int i = 0;
-//     while(reader.Next()) {
-//         if (BeStringUtilities::StricmpAscii("ecsql_ver", reader.GetRow()["key"].asCString()) == 0) {
-//             ASSERT_STREQ(reader.GetRow()["value"].asCString(), "1.0.0.0");
-//             ++i;
-//         }
-//         if (BeStringUtilities::StricmpAscii("ecdb_profile_ver", reader.GetRow()["key"].asCString()) == 0) {
-//             ASSERT_STREQ(reader.GetRow()["value"].asCString(), "4.0.0.2");
-//             ++i;
-//         }
-//         if (BeStringUtilities::StricmpAscii("journal_mode", reader.GetRow()["key"].asCString()) == 0) {
-//             ASSERT_STREQ(reader.GetRow()["value"].asCString(), "delete");
-//             ++i;
-//         }
-//     }
-//     ASSERT_EQ(i, 3);
-// }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -969,46 +947,47 @@ TEST_F(ConcurrentQueryFixture, ReaderBinding) {
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ConcurrentQuery_Simple.ecdb", testSchema));
 
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    ECSqlReader  classReader(mgr, "select * from meta.ECClassDef where name=?",
-        ECSqlParams().BindString(1, "Foo"));
-    int cols = 0;
-    while(classReader.Next()) {
-        auto classRow = classReader.GetRow();
-        for (int i =0; i < classReader.GetColumns().size(); ++i, ++cols) {
-            auto& col = classReader.GetColumns()[i];
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        ECSqlReader classReader(mgr, "select * from meta.ECClassDef where name=?",
+                                ECSqlParams().BindString(1, "Foo"));
+        int cols = 0;
+        while (classReader.Next()) {
+            auto classRow = classReader.GetRow();
+            for (int i = 0; i < classReader.GetColumns().size(); ++i, ++cols) {
+                auto& col = classReader.GetColumns()[i];
 
-            auto& v0 = classRow[i];
-            auto& v1 = classRow[col];
-            auto& v2 = classRow[col.GetJsonName()];
-            ASSERT_STREQ(v0.ToString().c_str(), v1.ToString().c_str());
-            ASSERT_STREQ(v1.ToString().c_str(), v2.ToString().c_str());
-            ASSERT_STREQ(v2.ToString().c_str(), v0.ToString().c_str());
+                auto& v0 = classRow[i];
+                auto& v1 = classRow[col];
+                auto& v2 = classRow[col.GetJsonName()];
+                EXPECT_STREQ(v0.ToString().c_str(), v1.ToString().c_str());
+                EXPECT_STREQ(v1.ToString().c_str(), v2.ToString().c_str());
+                EXPECT_STREQ(v2.ToString().c_str(), v0.ToString().c_str());
+            }
         }
-    }
 
-    ASSERT_EQ(cols,11);
-    // cte
-    ECSqlReader  cteReader(mgr, "with cnt(x) as (values(1) union select x+1 from cnt where x < 1000 ) select * from cnt");
-    int cntRowCount = 0;
-    while(cteReader.Next()) {
-       cntRowCount++;
-    }
-    ASSERT_EQ(cntRowCount,1000);
+        EXPECT_EQ(cols, 11);
+        // cte
+        ECSqlReader cteReader(mgr, "with cnt(x) as (values(1) union select x+1 from cnt where x < 1000 ) select * from cnt");
+        int cntRowCount = 0;
+        while (cteReader.Next()) {
+            cntRowCount++;
+        }
+        EXPECT_EQ(cntRowCount, 1000);
 
-    BeIdSet idSet;
-    idSet.insert(BeInt64Id(10));
-    idSet.insert(BeInt64Id(20));
-    idSet.insert(BeInt64Id(30));
-    idSet.insert(BeInt64Id(40));
-    int vsRowCount = 0;
-    ECSqlReader  vsReader(mgr, "with cnt(x) as (values(1) union select x+1 from cnt where x < 1000 ) select * from cnt where invirtualset(?, x)",
-        ECSqlParams().BindIdSet(1, idSet));
+        BeIdSet idSet;
+        idSet.insert(BeInt64Id(10));
+        idSet.insert(BeInt64Id(20));
+        idSet.insert(BeInt64Id(30));
+        idSet.insert(BeInt64Id(40));
+        int vsRowCount = 0;
+        ECSqlReader vsReader(mgr, "with cnt(x) as (values(1) union select x+1 from cnt where x < 1000 ) select * from cnt where invirtualset(?, x)",
+                             ECSqlParams().BindIdSet(1, idSet));
 
-    while(vsReader.Next()) {
-       vsRowCount++;
-    }
-    ASSERT_EQ(vsRowCount,4);
+        while (vsReader.Next()) {
+            vsRowCount++;
+        }
+        EXPECT_EQ(vsRowCount, 4);
+    });
 }
 //---------------------------------------------------------------------------------------
 //@bsimethod
@@ -1052,56 +1031,56 @@ TEST_F(ConcurrentQueryFixture, BlobIO) {
     }
 
     m_ecdb.SaveChanges();
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        if ("read a full blob") {
+            auto ecId = 1;
+            auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.Foo", "B", ecId));
+            auto resp = freq.Get();
+            EXPECT_TRUE(resp->IsSuccess());
+            auto data = resp->template GetAsConst<BlobIOResponse>().GetData();
+            auto len = resp->template GetAsConst<BlobIOResponse>().GetLength();
+            auto& buff = buffers[ecId - 1];
+            EXPECT_EQ(len, buff.size());
+            EXPECT_EQ(memcmp(data, &buff[0], len), 0);
+        }
+        if ("read a partial blob") {
+            auto ecId = 1;
+            auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.Foo", "B", ecId, QueryLimit(10, 10)));
+            auto resp = freq.Get();
+            EXPECT_TRUE(resp->IsSuccess());
+            auto data = resp->template GetAsConst<BlobIOResponse>().GetData();
+            auto len = resp->template GetAsConst<BlobIOResponse>().GetLength();
+            auto& buff = buffers[ecId - 1];
+            EXPECT_EQ(len, 10);
+            EXPECT_EQ(memcmp(data, &buff[0] + 10, len), 0);
+        }
+        if ("wrong class fail with error") {
+            auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.UnknowClass", "B", 1));
+            auto resp = freq.Get();
+            EXPECT_TRUE(resp->IsError());
+            EXPECT_STREQ(resp->GetError().c_str(), "BlobIO: unable to find classname 'ts.UnknowClass'");
+        }
+        if ("wrong property fail with error") {
+            auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.Foo", "UnknownProperty", 1));
+            auto resp = freq.Get();
+            EXPECT_TRUE(resp->IsError());
+            EXPECT_STREQ(resp->GetError().c_str(), "BlobIO: unable to open blob for classname 'ts.Foo' , accessString 'UnknownProperty' for instanceId '0x1'");
+        }
+        if ("wrong ec instance id fail with error") {
+            auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.Foo", "B", 0xffffff));
+            auto resp = freq.Get();
+            EXPECT_TRUE(resp->IsError());
+            printf("%s\n", resp->GetError().c_str());
+            EXPECT_STREQ(resp->GetError().c_str(), "BlobIO: unable to open blob for classname 'ts.Foo' , accessString 'B' for instanceId '0xffffff'");
+        }
 
-    if ("read a full blob") {
-        auto ecId = 1;
-        auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.Foo", "B", ecId));
-        auto resp = freq.Get();
-        ASSERT_TRUE(resp->IsSuccess());
-        auto data = resp->GetAsConst<BlobIOResponse>().GetData();
-        auto len = resp->GetAsConst<BlobIOResponse>().GetLength();
-        auto& buff = buffers[ecId-1];
-        ASSERT_EQ(len, buff.size());
-        ASSERT_EQ(memcmp(data, &buff[0], len), 0);
-    }
-    if ("read a partial blob") {
-        auto ecId = 1;
-        auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.Foo", "B", ecId, QueryLimit(10, 10)));
-        auto resp = freq.Get();
-        ASSERT_TRUE(resp->IsSuccess());
-        auto data = resp->GetAsConst<BlobIOResponse>().GetData();
-        auto len = resp->GetAsConst<BlobIOResponse>().GetLength();
-        auto& buff = buffers[ecId-1];
-        ASSERT_EQ(len, 10);
-        ASSERT_EQ(memcmp(data, &buff[0]+10, len), 0);
-    }
-    if ("wrong class fail with error") {
-        auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.UnknowClass", "B", 1));
-        auto resp = freq.Get();
-        ASSERT_TRUE(resp->IsError());
-        ASSERT_STREQ(resp->GetError().c_str(), "BlobIO: unable to find classname 'ts.UnknowClass'");
-    }
-    if ("wrong property fail with error") {
-        auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.Foo", "UnknownProperty", 1));
-        auto resp = freq.Get();
-        ASSERT_TRUE(resp->IsError());
-        ASSERT_STREQ(resp->GetError().c_str(), "BlobIO: unable to open blob for classname 'ts.Foo' , accessString 'UnknownProperty' for instanceId '0x1'");
-    }
-    if ("wrong ec instance id fail with error") {
-        auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.Foo", "B", 0xffffff));
-        auto resp = freq.Get();
-        ASSERT_TRUE(resp->IsError());
-        printf("%s\n", resp->GetError().c_str());
-        ASSERT_STREQ(resp->GetError().c_str(), "BlobIO: unable to open blob for classname 'ts.Foo' , accessString 'B' for instanceId '0xffffff'");
-    }
-
-    if ("wrong offset/length fail with error") {
-        auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.Foo", "B", 1, QueryLimit(kSize+1024, 1024)));
-        auto resp = freq.Get();
-        ASSERT_TRUE(resp->IsError());
-        ASSERT_STREQ(resp->GetError().c_str(), "BlobIO: offset + length provided is greater then size of blob");
-    }
+        if ("wrong offset/length fail with error") {
+            auto freq = mgr.Enqueue(BlobIORequest::MakeRequest("ts.Foo", "B", 1, QueryLimit(kSize + 1024, 1024)));
+            auto resp = freq.Get();
+            EXPECT_TRUE(resp->IsError());
+            EXPECT_STREQ(resp->GetError().c_str(), "BlobIO: offset + length provided is greater then size of blob");
+        }
+    });
 }
 //---------------------------------------------------------------------------------------
 //@bsimethod
@@ -1120,43 +1099,39 @@ TEST_F(ConcurrentQueryFixture, CommentAtEndOfECSql) {
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     m_ecdb.SaveChanges();
 
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        if (true) {
+            auto req = ECSqlRequest::MakeRequest("SELECT entity_id FROM ts.testEntity -- This is a comment");
+            auto r = mgr.Enqueue(std::move(req)).Get();
+            EXPECT_EQ(r->GetStatus(), QueryResponse::Status::Done);
 
-    {
-        auto req = ECSqlRequest::MakeRequest("SELECT entity_id FROM ts.testEntity -- This is a comment");
-        auto r = mgr.Enqueue(std::move(req)).Get();
-        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+            auto res = ((ECSqlResponse*)r.get());
+            BeJsDocument resJson;
+            res->ToJs(resJson, true);
+            EXPECT_EQ(res->asJsonString(), "[[1]]");
+        }
 
-        auto res = ((ECSqlResponse*) r.get());
-        BeJsDocument resJson;
-        res->ToJs(resJson, true);
-        ASSERT_EQ(res->asJsonString(), "[[1]]");
-    }
+        // Additional test with a WITH clause
+        if (true) {
+            auto req = ECSqlRequest::MakeRequest(
+                "WITH baseQuery AS (SELECT entity_id FROM ts.testEntity) SELECT * FROM baseQuery -- This is a comment");
+            auto r = mgr.Enqueue(std::move(req)).Get();
+            EXPECT_EQ(r->GetStatus(), QueryResponse::Status::Done);
 
-    // Additional test with a WITH clause
-    {
-        auto req = ECSqlRequest::MakeRequest(
-            "WITH baseQuery AS (SELECT entity_id FROM ts.testEntity) SELECT * FROM baseQuery -- This is a comment"
-        );
-        auto r = mgr.Enqueue(std::move(req)).Get();
-        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
-
-        auto res = ((ECSqlResponse*) r.get());
-        BeJsDocument resJson;
-        res->ToJs(resJson, true);
-        ASSERT_EQ(res->asJsonString(), "[[1]]");
-    }
-
+            auto res = ((ECSqlResponse*)r.get());
+            BeJsDocument resJson;
+            res->ToJs(resJson, true);
+            EXPECT_EQ(res->asJsonString(), "[[1]]");
+        }
+    });
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
-
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ConcurrentQuery_Simple.ecdb"));
     ConcurrentQueryFixture::EnableECSqlExperimentalFeatures(m_ecdb, true);
-        {
-        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         BeIdSet idSet;
         idSet.insert(BeInt64Id(10));
         idSet.insert(BeInt64Id(20));
@@ -1169,15 +1144,15 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
 
         int i = 1;
         while(vsReaderIdSet.Next()) {
-        auto classRow = vsReaderIdSet.GetRow();
-        ASSERT_EQ(i*10, BeStringUtilities::ParseHex(classRow[0].asString().c_str()));
-        i++;
-        vsRowCount++;
+            auto classRow = vsReaderIdSet.GetRow();
+            EXPECT_EQ(i*10, BeStringUtilities::ParseHex(classRow[0].asString().c_str()));
+            i++;
+            vsRowCount++;
         }
-        ASSERT_EQ(vsRowCount,4);
-        }
-        {
-        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+        EXPECT_EQ(vsRowCount,4);
+    });
+
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         BeIdSet idSet;
         idSet.insert(BeInt64Id(10));
         idSet.insert(BeInt64Id(20));
@@ -1190,30 +1165,29 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
 
         int i = 1;
         while(vsReaderIdSet.Next()) {
-        auto classRow = vsReaderIdSet.GetRow();
-        ASSERT_EQ(i*10, BeStringUtilities::ParseHex(classRow[0].asString().c_str()));
-        i++;
-        vsRowCount++;
+            auto classRow = vsReaderIdSet.GetRow();
+            EXPECT_EQ(i * 10, BeStringUtilities::ParseHex(classRow[0].asString().c_str()));
+            i++;
+            vsRowCount++;
         }
-        ASSERT_EQ(vsRowCount,4);
-        }
-        {
-        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-        int vsRowCount = 0;
+        EXPECT_EQ(vsRowCount,4);
+    });
 
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        int vsRowCount = 0;
         ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, IdSet(?) where ECInstanceId = id",
             ECSqlParams().BindId(1, BeInt64Id(33)));
 
         while(vsReaderIdSet.Next())
             {
             vsRowCount++;
-            }
-        ASSERT_EQ(vsRowCount,0);
         }
+        EXPECT_EQ(vsRowCount,0);
+    });
+
     ConcurrentQueryMgr::Shutdown(m_ecdb);
     ConcurrentQueryFixture::EnableECSqlExperimentalFeatures(m_ecdb, false);
-        {
-        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         BeIdSet idSet;
         idSet.insert(BeInt64Id(10));
         idSet.insert(BeInt64Id(20));
@@ -1226,12 +1200,11 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
 
         try{
             vsReaderIdSet.Next();
-            }
-        catch (std::runtime_error e){
-            ASSERT_STREQ("'IdSet' virtual table is experimental feature and disabled by default.", e.what());
-            ASSERT_EQ(vsRowCount,0);
-            }
+        } catch (std::runtime_error e) {
+            EXPECT_STREQ("'IdSet' virtual table is experimental feature and disabled by default.", e.what());
+            EXPECT_EQ(vsRowCount,0);
         }
+    });
 }
 
 //---------------------------------------------------------------------------------------
@@ -1253,19 +1226,17 @@ TEST_F(ConcurrentQueryFixture, ImportSchemaShouldClearQueryCache) {
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     m_ecdb.SaveChanges();
 
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-
-    {
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         auto req = ECSqlRequest::MakeRequest("SELECT entity_id FROM ts.testEntity");
         req->SetUsePrimaryConnection(true);
         auto r = mgr.Enqueue(std::move(req)).Get();
-        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+        EXPECT_EQ(r->GetStatus(), QueryResponse::Status::Done);
 
         auto res = ((ECSqlResponse*) r.get());
         BeJsDocument resJson;
         res->ToJs(resJson, true);
-        ASSERT_EQ(res->asJsonString(), "[[1]]");
-    }
+        EXPECT_EQ(res->asJsonString(), "[[1]]");
+    });
 
     // Import a new schema to clear the cache
     SchemaItem updatedSchema(
@@ -1277,17 +1248,17 @@ TEST_F(ConcurrentQueryFixture, ImportSchemaShouldClearQueryCache) {
     </ECSchema>)xml");
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(updatedSchema));
     // Run an identical query again
-    {
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         auto req = ECSqlRequest::MakeRequest("SELECT entity_id FROM ts.testEntity");
         req->SetUsePrimaryConnection(true);
         auto r = mgr.Enqueue(std::move(req)).Get();
-        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+        EXPECT_EQ(r->GetStatus(), QueryResponse::Status::Done);
 
         auto res = ((ECSqlResponse*) r.get());
         BeJsDocument resJson;
         res->ToJs(resJson, true);
-        ASSERT_EQ(res->asJsonString(), "[[1]]");
-    }
+        EXPECT_EQ(res->asJsonString(), "[[1]]");
+    });
 }
 
 END_ECDBUNITTESTS_NAMESPACE

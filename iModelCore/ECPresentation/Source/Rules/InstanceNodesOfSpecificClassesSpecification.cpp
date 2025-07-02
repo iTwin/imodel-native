@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 #include <ECPresentation/Rules/SpecificationVisitor.h>
@@ -16,7 +15,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpecification()
-    : ChildNodeSpecification(), m_groupByClass(true), m_groupByLabel(true), m_showEmptyGroups(false)
+    : ChildNodeSpecification(), m_groupByClass(true), m_groupByLabel(true)
     {
     }
 
@@ -48,7 +47,7 @@ InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpeci
         bool hideIfNoChildren, bool groupByClass, bool groupByLabel, Utf8StringCR instanceFilter, bvector<MultiSchemaClass*> classes,
         bvector<MultiSchemaClass*> excludedClasses)
     : ChildNodeSpecification(priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren),
-    m_groupByClass(groupByClass), m_groupByLabel(groupByLabel), m_showEmptyGroups(false),
+    m_groupByClass(groupByClass), m_groupByLabel(groupByLabel),
     m_instanceFilter(instanceFilter), m_classes(classes), m_excludedClasses(excludedClasses)
     {
     }
@@ -57,7 +56,7 @@ InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpeci
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpecification(InstanceNodesOfSpecificClassesSpecification const& other)
-    : ChildNodeSpecification(other), m_groupByClass(other.m_groupByClass), m_groupByLabel(other.m_groupByLabel), m_showEmptyGroups(other.m_showEmptyGroups),
+    : ChildNodeSpecification(other), m_groupByClass(other.m_groupByClass), m_groupByLabel(other.m_groupByLabel),
     m_instanceFilter(other.m_instanceFilter)
     {
     CommonToolsInternal::CopyRules(m_classes, other.m_classes, this);
@@ -68,7 +67,7 @@ InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpeci
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpecification(InstanceNodesOfSpecificClassesSpecification&& other)
-    : ChildNodeSpecification(std::move(other)), m_groupByClass(other.m_groupByClass), m_groupByLabel(other.m_groupByLabel), m_showEmptyGroups(other.m_showEmptyGroups),
+    : ChildNodeSpecification(std::move(other)), m_groupByClass(other.m_groupByClass), m_groupByLabel(other.m_groupByLabel),
     m_instanceFilter(std::move(other.m_instanceFilter))
     {
     CommonToolsInternal::SwapRules(m_classes, other.m_classes, this);
@@ -88,68 +87,6 @@ InstanceNodesOfSpecificClassesSpecification::~InstanceNodesOfSpecificClassesSpec
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceNodesOfSpecificClassesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const { visitor._Visit(*this); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP InstanceNodesOfSpecificClassesSpecification::_GetXmlElementName() const
-    {
-    return INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceNodesOfSpecificClassesSpecification::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!ChildNodeSpecification::_ReadXml(xmlNode))
-        return false;
-
-    // optional:
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_groupByClass, COMMON_XML_ATTRIBUTE_GROUPBYCLASS))
-        m_groupByClass = true;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_groupByLabel, COMMON_XML_ATTRIBUTE_GROUPBYLABEL))
-        m_groupByLabel = true;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_showEmptyGroups, COMMON_XML_ATTRIBUTE_SHOWEMPTYGROUPS))
-        m_showEmptyGroups = false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_instanceFilter, COMMON_XML_ATTRIBUTE_INSTANCEFILTER))
-        m_instanceFilter = "";
-
-    bool defaultPolymorphism;
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(defaultPolymorphism, COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC))
-        defaultPolymorphism = false;
-
-    // required:
-    Utf8String classNames;
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(classNames, COMMON_XML_ATTRIBUTE_CLASSNAMES) ||
-        !CommonToolsInternal::ParseMultiSchemaClassesFromClassNamesString(classNames, defaultPolymorphism, m_classes, this) ||
-        m_classes.empty())
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES));
-        return false;
-        }
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceNodesOfSpecificClassesSpecification::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    ChildNodeSpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_CLASSNAMES, CommonToolsInternal::SchemaAndClassNamesToString(CommonToolsInternal::WriteMultiSchemaClassesToJson(m_classes)).c_str());
-    xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
-    xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
-    xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_SHOWEMPTYGROUPS, m_showEmptyGroups);
-    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str());
-
-    bool arePolymorphic = m_classes.empty() ? false : m_classes.front()->GetArePolymorphic();
-    xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC, arePolymorphic);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -233,16 +170,6 @@ void InstanceNodesOfSpecificClassesSpecification::SetGroupByLabel(bool value) { 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceNodesOfSpecificClassesSpecification::GetShowEmptyGroups(void) const { return m_showEmptyGroups; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceNodesOfSpecificClassesSpecification::SetShowEmptyGroups(bool value) { m_showEmptyGroups = value; InvalidateHash(); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceNodesOfSpecificClassesSpecification::SetClasses(bvector<MultiSchemaClass*> value)
     {
     CommonToolsInternal::FreePresentationRules(m_classes);
@@ -281,8 +208,6 @@ MD5 InstanceNodesOfSpecificClassesSpecification::_ComputeHash() const
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, COMMON_JSON_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
     if (!m_groupByLabel)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, COMMON_JSON_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
-    if (m_showEmptyGroups)
-        ADD_PRIMITIVE_VALUE_TO_HASH(md5, COMMON_XML_ATTRIBUTE_SHOWEMPTYGROUPS, m_showEmptyGroups);
     if (!m_instanceFilter.empty())
         ADD_STR_VALUE_TO_HASH(md5, COMMON_JSON_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter);
     if (!m_classes.empty())

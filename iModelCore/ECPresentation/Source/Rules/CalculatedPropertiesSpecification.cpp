@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/CommonTools.h>
 #include <ECPresentation/Rules/PresentationRules.h>
@@ -45,42 +44,6 @@ CalculatedPropertiesSpecification::~CalculatedPropertiesSpecification()
     {
     DELETE_AND_CLEAR(m_renderer);
     DELETE_AND_CLEAR(m_editor);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP CalculatedPropertiesSpecification::_GetXmlElementName() const {return CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CalculatedPropertiesSpecification::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!PrioritizedPresentationKey::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_label, CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_LABEL))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME, CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_LABEL));
-        return false;
-        }
-
-    if (BEXML_Success != xmlNode->GetContent(m_value) || m_value.empty())
-        return false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CalculatedPropertiesSpecification::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    PrioritizedPresentationKey::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_LABEL, m_label.c_str());
-    if (!m_value.empty())
-        xmlNode->SetContentFast(m_value.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

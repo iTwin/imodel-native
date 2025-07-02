@@ -527,6 +527,7 @@ CachedStatementPtr ECDb::Impl::GetCachedSqliteStatement(Utf8CP sql) const
 void ECDb::Impl::ClearECDbCache() const
     {
     BeMutexHolder lock(m_mutex);
+    ConcurrentQueryMgr::Shutdown(m_ecdb);
 
     // this event allows consuming code to free anything that relies on the ECDb cache (like ECSchemas, ECSqlStatements etc)
     for (auto listener : m_ecdbCacheClearListeners)
@@ -552,7 +553,6 @@ void ECDb::Impl::ClearECDbCache() const
     //increment the counter. This allows code (e.g. ECSqlStatement) that depends on objects in the cache to invalidate itself
     //after the cache was cleared.
     m_clearCacheCounter.Increment();
-
     for (auto listener : m_ecdbCacheClearListeners)
         listener->_OnAfterClearECDbCache();
 
