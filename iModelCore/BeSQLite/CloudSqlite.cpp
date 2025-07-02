@@ -26,6 +26,10 @@ struct CloudSqliteInit {
     CloudSqliteInit() {
         // Enable the native CA store for HTTPS requests made via curl.
         sqlite3_bcv_global_config(SQLITE_BCVGLOBALCONFIG_NATIVECA, 1);
+        char *revokeBestEffort = getenv("BESQLITE_REVOKE_BEST_EFFORT");
+        if (revokeBestEffort && strcmp(revokeBestEffort, "1") == 0) {
+            sqlite3_bcv_global_config(SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT, 1);
+        }
     }
 };
 

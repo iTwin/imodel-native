@@ -62,13 +62,17 @@
 typedef int(*bcv_progress_cb)(void*, sqlite3_int64, sqlite3_int64);
 typedef void(*bcv_log_cb)(void*, const char *);
 
+/* BEGIN BENTLEY CHANGES */
 struct BcvGlobalConfig {
   int bNativeCA;                  /* SQLITE_BCVGLOBALCONFIG_NATIVECA option */
+  int bRevokeBestEffort;          /* SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT option */
 };
 
 static struct BcvGlobalConfig bcvGlobalConfig = {
   BCV_DEFAULT_NATIVECA,           /* Default to not using native CA */
+  BCV_DEFAULT_REVOKEBESTEFFORT    /* Default to not revoking best effort */
 };
+/* END BENTLEY CHANGES */
 
 struct sqlite3_bcv {
   BcvContainer *pCont;            /* Cloud module instance */
@@ -1190,6 +1194,7 @@ static void bcvLogWrapper(void *pApp, int bRetry, const char *zMsg){
   }
 }
 
+/* BEGIN BENTLEY CHANGES */
 int sqlite3_bcv_global_config(int eOp, ...){
   int rc = SQLITE_OK;
   va_list ap;
@@ -1199,6 +1204,9 @@ int sqlite3_bcv_global_config(int eOp, ...){
     case SQLITE_BCVGLOBALCONFIG_NATIVECA:
       bcvGlobalConfig.bNativeCA = va_arg(ap, int);
       break;
+    case SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT:
+      bcvGlobalConfig.bRevokeBestEffort = va_arg(ap, int);
+      break;
     default:
       rc = SQLITE_MISUSE;
       break;
@@ -1207,6 +1215,7 @@ int sqlite3_bcv_global_config(int eOp, ...){
   va_end(ap);
   return rc;
 }
+/* END BENTLEY CHANGES */
 
 int sqlite3_bcv_config(sqlite3_bcv *p, int eOp, ...){
   int rc = SQLITE_OK;
@@ -2321,6 +2330,21 @@ int sqlite3_bcv_create(sqlite3_bcv *p, int szName, int szBlock){
   return p->errCode;
 }
 
+/* BEGIN BENTLEY CHANGES */
+static void configure_curl_ssl_options(CURL *pCurl){
+  int sslOptions = 0;
+  if ( bcvGlobalConfig.bNativeCA ){
+    sslOptions = sslOptions | CURLSSLOPT_NATIVE_CA;
+  }
+  if ( bcvGlobalConfig.bRevokeBestEffort ){
+    sslOptions = sslOptions | CURLSSLOPT_REVOKE_BEST_EFFORT;
+  }
+  if ( sslOptions != 0 ){
+    curl_easy_setopt(pCurl, CURLOPT_SSL_OPTIONS, sslOptions);
+  }
+}
+/* END BENTLEY CHANGES */
+
 sqlite3_bcv_request *sqlite3_bcv_job_request(
   sqlite3_bcv_job *pJob,          /* Call contex */
   void *pApp,                     /* 3rd argument for xCallback */
@@ -2335,10 +2359,8 @@ sqlite3_bcv_request *sqlite3_bcv_job_request(
     pNew->pNext = pJob->pPending;
     pNew->pJob = pJob;
     pNew->pCurl = curl_easy_init();
-    if ( bcvGlobalConfig.bNativeCA ){
-      curl_easy_setopt(pNew->pCurl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
-    }
     pJob->pPending = pNew;
+    configure_curl_ssl_options(pNew->pCurl); /* BENTLEY CHANGE */
   }
   return pNew;
 }
