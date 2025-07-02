@@ -131,11 +131,7 @@ $(o)HTMLparser$(oext)       : $(baseDir)HTMLparser.c ${BeLibxmlCompileDepends}
 
 $(o)HTMLtree$(oext)         : $(baseDir)HTMLtree.c ${BeLibxmlCompileDepends}
 
-$(o)legacy$(oext)           : $(baseDir)legacy.c ${BeLibxmlCompileDepends}
-
 $(o)list$(oext)             : $(baseDir)list.c ${BeLibxmlCompileDepends}
-
-$(o)nanoftp$(oext)          : $(baseDir)nanoftp.c ${BeLibxmlCompileDepends}
 
 $(o)nanohttp$(oext)         : $(baseDir)nanohttp.c ${BeLibxmlCompileDepends}
 
@@ -146,8 +142,6 @@ $(o)parserInternals$(oext)  : $(baseDir)parserInternals.c ${BeLibxmlCompileDepen
 $(o)pattern$(oext)          : $(baseDir)pattern.c ${BeLibxmlCompileDepends}
 
 $(o)relaxng$(oext)          : $(baseDir)relaxng.c ${BeLibxmlCompileDepends}
-
-$(o)SAX$(oext)              : $(baseDir)SAX.c ${BeLibxmlCompileDepends}
 
 $(o)SAX2$(oext)             : $(baseDir)SAX2.c ${BeLibxmlCompileDepends}
 
@@ -217,7 +211,6 @@ $(o)xzlib$(oext)            : $(baseDir)xzlib.c ${BeLibxmlCompileDepends}
     testRelax.c
     testSAX.c
     testSchemas.c
-    testThreads.c
     testURI.c
     testXPath.c
     xmllint.c
