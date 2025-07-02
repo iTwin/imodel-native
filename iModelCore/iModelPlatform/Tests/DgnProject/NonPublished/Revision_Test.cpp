@@ -2062,9 +2062,9 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithSchemaChanges) {
     };
 
     std::unordered_map<Utf8String, TestCase> revisionsData = {
-        { revisions[0]->GetChangesetId(), { 8, 2, 2, 7, 12 } },
-        { revisions[1]->GetChangesetId(), { 4, 1, 5, 7, 10 } },
-        { revisions[2]->GetChangesetId(), { 3, 1097, 54, 7, 16 } },
+        { revisions[0]->GetChangesetId(), { 5, 2, 0, 0, 7 } },
+        { revisions[1]->GetChangesetId(), { 1, 1, 3, 0, 5 } },
+        { revisions[2]->GetChangesetId(), { 0, 1097, 51, 0, 11 } },
     };
 
     auto changesets = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
@@ -2162,11 +2162,11 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
     EXPECT_EQ(insertChangeset.size(), 1);
     insertChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
         EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
-        EXPECT_EQ(changeset["inserted_rows"].asUInt(), 5);
+        EXPECT_EQ(changeset["inserted_rows"].asUInt(), 4);
         EXPECT_EQ(changeset["updated_rows"].asUInt(), 2);
-        EXPECT_EQ(changeset["deleted_rows"].asUInt(), 1);
-        EXPECT_EQ(changeset["scan_count"].asUInt(), 1);
-        EXPECT_EQ(changeset["health_stats"].size(), 8);
+        EXPECT_EQ(changeset["deleted_rows"].asUInt(), 0);
+        EXPECT_EQ(changeset["scan_count"].asUInt(), 0);
+        EXPECT_EQ(changeset["health_stats"].size(), 6);
         return false;
     });
 
@@ -2195,11 +2195,11 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
     EXPECT_EQ(updateChangeset.size(), 1);
     updateChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
         EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
-        EXPECT_EQ(changeset["inserted_rows"].asUInt(), 1);
+        EXPECT_EQ(changeset["inserted_rows"].asUInt(), 0);
         EXPECT_EQ(changeset["updated_rows"].asUInt(), 4);
-        EXPECT_EQ(changeset["deleted_rows"].asUInt(), 1);
-        EXPECT_EQ(changeset["scan_count"].asUInt(), 1);
-        EXPECT_EQ(changeset["health_stats"].size(), 6);
+        EXPECT_EQ(changeset["deleted_rows"].asUInt(), 0);
+        EXPECT_EQ(changeset["scan_count"].asUInt(), 0);
+        EXPECT_EQ(changeset["health_stats"].size(), 4);
         return false;
     });
 
@@ -2225,11 +2225,11 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
     EXPECT_EQ(deleteChangeset.size(), 1);
     deleteChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
         EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
-        EXPECT_EQ(changeset["inserted_rows"].asUInt(), 2);
+        EXPECT_EQ(changeset["inserted_rows"].asUInt(), 1);
         EXPECT_EQ(changeset["updated_rows"].asUInt(), 2);
-        EXPECT_EQ(changeset["deleted_rows"].asUInt(), 4);
-        EXPECT_EQ(changeset["scan_count"].asUInt(), 1);
-        EXPECT_EQ(changeset["health_stats"].size(), 8);
+        EXPECT_EQ(changeset["deleted_rows"].asUInt(), 3);
+        EXPECT_EQ(changeset["scan_count"].asUInt(), 0);
+        EXPECT_EQ(changeset["health_stats"].size(), 6);
         return false;
     });
 }

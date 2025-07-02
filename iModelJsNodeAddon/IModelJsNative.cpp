@@ -1526,11 +1526,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
 
     void EnableChangesetStatsTracking(NapiInfoCR info) {
-        GetWritableDb(info).Txns().EnableChangesetStatsTracking();
+        GetWritableDb(info).Txns().EnableChangesetHealthStatsTracking();
     }
 
     void DisableChangesetStatsTracking(NapiInfoCR info) {
-        GetWritableDb(info).Txns().DisableChangesetStatsTracking();
+        GetWritableDb(info).Txns().DisableChangesetHealthStatsTracking();
     }
 
     Napi::Value GetChangesetHealthData(NapiInfoCR info) {

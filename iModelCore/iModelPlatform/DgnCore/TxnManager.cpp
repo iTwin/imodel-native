@@ -1363,6 +1363,7 @@ public:
     }
 
     void Start() const { if (m_isTrackingEnabled) m_scope->Start(); }
+    void Resume() const { if (m_isTrackingEnabled && m_scope->IsPaused()) m_scope->Resume(); }
     void Pause() const { if (m_isTrackingEnabled) m_scope->Pause(); }
     void Stop() const { if (m_isTrackingEnabled) m_scope->Stop(); }
 };
@@ -1448,6 +1449,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
             }
         }
 
+        scope.Pause();
         m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
             if (action == TxnAction::Merge) {
                 const auto result = m_dgndb.AfterSchemaChangeSetApplied();
@@ -1475,6 +1477,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
         dataApplyArgs.ApplyOnlyDataChanges();
     }
 
+    scope.Resume();
     if (!m_dgndb.IsReadonly()) {
         const auto result = [&]() {
             auto _v = pmConf.IsRebasingLocalChanges() ? nullptr : std::make_unique<DisableTracking>(*this);
@@ -1496,6 +1499,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
             return result;
         }
     }
+    scope.Stop();
 
     if (action == TxnAction::Merge) {
         auto result = m_dgndb.AfterDataChangeSetApplied(containsSchemaChanges);
@@ -1506,7 +1510,6 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
             if (containsSchemaChanges) {
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
             }
-            scope.Stop();
             return result;
         }
     }
@@ -1525,7 +1528,6 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     if (containsSchemaChanges)
         m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
 
-    scope.Stop();
     return BE_SQLITE_OK;
 }
 

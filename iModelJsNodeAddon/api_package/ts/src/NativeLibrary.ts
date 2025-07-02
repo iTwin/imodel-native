@@ -374,6 +374,23 @@ export declare namespace IModelJsNative {
     size?: number;
     pathname: string;
   }
+
+  interface PerStatementHealthStats {
+    sqlStatement: string;
+    dbOperation: string;
+    rowCount: number;
+    elapsedMs: number;
+    fullTableScans: number;
+  }
+  interface ChangesetHealthStats {
+    changesetId: string;
+    insertedRows: number;
+    updatedRows: number;
+    deletedRows: number;
+    totalElapsedMs: number;
+    totalFullTableScans: number;
+    perStatementStats: [PerStatementHealthStats];
+  }
   interface ECSqlRowAdaptorOptions {
     abbreviateBlobs?: boolean;
     classIdsToClassNames?: boolean;
@@ -730,7 +747,9 @@ export declare namespace IModelJsNative {
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
     public stopProfiler(): { rc: DbResult, elapsedTime?: number, scopeId?: number, fileName?: string };
     public enableChangesetStatsTracking(): void;
-    public disableChangesetStatsTracking(): void
+    public disableChangesetStatsTracking(): void;
+    public getChangesetHealthData(changesetId: string): ChangesetHealthStats;
+    public getAllChangesetHealthData(): ChangesetHealthStats;
     public updateElement(elemProps: Partial<ElementProps>): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;
