@@ -514,7 +514,10 @@
     */
 #  include <float.h>
 
-#  if (defined(__MWERKS__) && defined(macintosh)) || defined(applec) || \
+/* BENTLEY_CHANGE Use math.h instead of fp.h for builds on Mac with clang 17+. */
+#  if (defined(TARGET_OS_MAC) || defined(TARGET_OS_IPHONE) || defined(TARGET_IPHONE_SIMULATOR)) && __clang_major__ >= 17
+#    include <math.h>
+#  elif (defined(__MWERKS__) && defined(macintosh)) || defined(applec) || \
     defined(THINK_C) || defined(__SC__) || defined(TARGET_OS_MAC)
    /* We need to check that <math.h> hasn't already been included earlier
     * as it seems it doesn't agree with <fp.h>, yet we should really use
