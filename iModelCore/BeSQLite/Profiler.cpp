@@ -540,7 +540,6 @@ BeJsDocument Profiler::Scope::GetDetailedSqlStats() const {
     };
 
     SqlSessionStats sqlStats;
-    auto firstRow = true;
     while (stmt.Step() == BE_SQLITE_ROW) {
         Utf8String sql(stmt.GetValueText(0));
         Utf8String op(stmt.GetValueText(1));
