@@ -891,35 +891,44 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     }
     changeStream.ClearLastErrorMessage();
 
-    // Save parent changeset info
-    SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());
+    ChangesetStatus status = ChangesetStatus::Success;
+    UndoChangeSet indirectChanges;
 
-    // If in pull-merge, commit the transaction
-    if (PullMergeConf::Load(m_dgndb).InProgress()) {
-        const auto status = m_dgndb.SaveChanges();
-        // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one.
-        // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
-        // the merged changes are lost after this routine and cannot be used for change propagation anymore.
-        if (status != BE_SQLITE_OK) {
-            LOG.fatalv("MergeDataChanges failed to save: %s", BeSQLiteLib::GetErrorName(status));
-            BeAssert(false);
+    if (status == ChangesetStatus::Success) {
+        SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());
 
-            // We were unable to merge the changes or save the revisionId, but the revision's changes were successfully applied. Back them out.
-            ChangeGroup changeGroup;
-            changeStream.AddToChangeGroup(changeGroup);
-            UndoChangeSet allChanges;
-            allChanges.FromChangeGroup(changeGroup);
-
-            const auto invertResult = ApplyChanges(allChanges, TxnAction::Reverse, containsSchemaChanges, true);
-            BeAssert(invertResult == BE_SQLITE_OK);
-            if (invertResult != BE_SQLITE_OK)
-                m_dgndb.ThrowException("Error applying changeset", (int) ChangesetStatus::ApplyError);
+        if (status == ChangesetStatus::Success) {
+            if (PullMergeConf::Load(m_dgndb).InProgress()) {
+                result = m_dgndb.SaveChanges();
+            }
+            // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one.
+            // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
+            // the merged changes are lost after this routine and cannot be used for change propagation anymore.
+            if (BE_SQLITE_OK != result) {
+                LOG.fatalv("MergeDataChanges failed to save: %s", BeSQLiteLib::GetErrorName(result));
+                BeAssert(false);
+                status = ChangesetStatus::SQLiteError;
+            }
         }
+    }
+    if (status != ChangesetStatus::Success) {
+        // we were unable to merge the changes or save the revisionId, but the revision's changes were successfully applied. Back them out, plus any indirect changes.
+        ChangeGroup changeGroup;
+        changeStream.AddToChangeGroup(changeGroup);
+        if (indirectChanges.IsValid()) {
+            result = indirectChanges.AddToChangeGroup(changeGroup);
+            BeAssert(result == BE_SQLITE_OK);
+        }
+
+        UndoChangeSet allChanges;
+        allChanges.FromChangeGroup(changeGroup);
+        result = ApplyChanges(allChanges, TxnAction::Reverse, containsSchemaChanges, true);
+        BeAssert(result == BE_SQLITE_OK);
     }
 
     if (TrackChangesetHealthStats())
         SetChangesetHealthStatistics(revision);
-    return ChangesetStatus::Success;
+    return status;
 }
 
 void TxnManager::SetChangesetHealthStatistics(ChangesetPropsCR revision) {

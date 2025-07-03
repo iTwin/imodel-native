@@ -384,6 +384,8 @@ export declare namespace IModelJsNative {
   }
   interface ChangesetHealthStats {
     changesetId: string;
+    uncompressedSizeBytes: number;
+    sha1ValidationTimeMs: number;
     insertedRows: number;
     updatedRows: number;
     deletedRows: number;
@@ -749,7 +751,7 @@ export declare namespace IModelJsNative {
     public enableChangesetStatsTracking(): void;
     public disableChangesetStatsTracking(): void;
     public getChangesetHealthData(changesetId: string): ChangesetHealthStats;
-    public getAllChangesetHealthData(): ChangesetHealthStats;
+    public getAllChangesetHealthData(): ChangesetHealthStats[];
     public updateElement(elemProps: Partial<ElementProps>): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;

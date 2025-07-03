@@ -1539,7 +1539,46 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
 
     Napi::Value GetAllChangesetHealthData(NapiInfoCR info) {
-        return BeJsNapiObject(Env(), GetWritableDb(info).Txns().GetAllChangesetHealthStatistics().Stringify());
+        auto statsDoc = GetWritableDb(info).Txns().GetAllChangesetHealthStatistics();
+        auto changesets = statsDoc["changesets"];
+        auto env = info.Env();
+
+        if (!changesets.isArray())
+            return Napi::Array::New(env);
+
+        auto jsArray = Napi::Array::New(env, changesets.size());
+        changesets.ForEachArrayMember([&](BeJsValue::ArrayIndex changesetIdx, BeJsConst changeset) {
+            auto jsObj = Napi::Object::New(env);
+
+            // Map top-level fields
+            jsObj.Set("changesetId", Napi::String::New(env, changeset["changeset_id"].asString().c_str()));
+            jsObj.Set("uncompressedSizeBytes", Napi::Number::New(env, changeset["uncompressed_size_bytes"].asUInt()));
+            jsObj.Set("sha1ValidationTimeMs", Napi::Number::New(env, changeset["sha1_validation_time_ms"].asUInt()));
+            jsObj.Set("insertedRows", Napi::Number::New(env, changeset["inserted_rows"].asUInt()));
+            jsObj.Set("updatedRows", Napi::Number::New(env, changeset["updated_rows"].asUInt()));
+            jsObj.Set("deletedRows", Napi::Number::New(env, changeset["deleted_rows"].asUInt()));
+            jsObj.Set("totalElapsedMs", Napi::Number::New(env, changeset["total_elapsed_ms"].asUInt()));
+            jsObj.Set("totalFullTableScans", Napi::Number::New(env, changeset["scan_count"].asUInt()));
+
+            // Map health_stats array to perStatementStats
+            auto perStmtArr = Napi::Array::New(env);
+            if (const auto healthStats = changeset["health_stats"]; healthStats.isArray()) {
+                healthStats.ForEachArrayMember([&](BeJsValue::ArrayIndex stmtIdx, BeJsConst stmt) {
+                    auto stmtObj = Napi::Object::New(env);
+                    stmtObj.Set("sqlStatement", Napi::String::New(env, stmt["statement"].asString().c_str()));
+                    stmtObj.Set("dbOperation", Napi::String::New(env, stmt["op"].asString().c_str()));
+                    stmtObj.Set("rowCount", Napi::Number::New(env, stmt["row_count"].asUInt()));
+                    stmtObj.Set("elapsedMs", Napi::Number::New(env, stmt["elapsed_ms"].asUInt()));
+                    stmtObj.Set("fullTableScans", Napi::Number::New(env, stmt["scan_count"].asUInt()));
+                    perStmtArr.Set(stmtIdx, stmtObj);
+                    return false;
+                });
+            }
+            jsObj.Set("perStatementStats", perStmtArr);
+            jsArray.Set(changesetIdx, jsObj);
+            return false;
+        });
+        return jsArray;
     }
 
     void CompleteCreateChangeset(NapiInfoCR info) {
