@@ -2078,7 +2078,8 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithSchemaChanges) {
         if (it == revisionsData.end()) {
             EXPECT_FALSE(true) << "Changeset " << id << " not found in expected data.";
             return false; // Continue to next iteration
-        }        
+        }
+        EXPECT_GT(changeset["uncompressed_size_bytes"].asUInt(), 1U) << "Uncompressed size mismatch for changeset: " << id;
         const auto& expected = it->second;
 
         EXPECT_EQ(changeset["inserted_rows"].asUInt(), expected.insertedRows) << "Inserted rows mismatch for changeset: " << id;
@@ -2162,6 +2163,7 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
     EXPECT_EQ(insertChangeset.size(), 1);
     insertChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
         EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
+        EXPECT_GT(changeset["uncompressed_size_bytes"].asUInt(), 1U);
         EXPECT_EQ(changeset["inserted_rows"].asUInt(), 4);
         EXPECT_EQ(changeset["updated_rows"].asUInt(), 2);
         EXPECT_EQ(changeset["deleted_rows"].asUInt(), 0);
@@ -2195,6 +2197,7 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
     EXPECT_EQ(updateChangeset.size(), 1);
     updateChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
         EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
+        EXPECT_GT(changeset["uncompressed_size_bytes"].asUInt(), 1U);
         EXPECT_EQ(changeset["inserted_rows"].asUInt(), 0);
         EXPECT_EQ(changeset["updated_rows"].asUInt(), 4);
         EXPECT_EQ(changeset["deleted_rows"].asUInt(), 0);
@@ -2225,6 +2228,7 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
     EXPECT_EQ(deleteChangeset.size(), 1);
     deleteChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
         EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
+        EXPECT_GT(changeset["uncompressed_size_bytes"].asUInt(), 1U);
         EXPECT_EQ(changeset["inserted_rows"].asUInt(), 1);
         EXPECT_EQ(changeset["updated_rows"].asUInt(), 2);
         EXPECT_EQ(changeset["deleted_rows"].asUInt(), 3);
