@@ -11,6 +11,7 @@
 #include <string>
 #include <unordered_map>
 #include <list>
+#include <regex>
 
 #define LOG (NativeLogging::CategoryLogger("BeSQLite"))
 
@@ -98,6 +99,22 @@ DbResult Profiler::Scope::Resume() const {
     return BE_SQLITE_OK;
 }
 
+DbResult Profiler::Scope::ResetProfiler() const {
+    if (m_running) {
+        LOG.error("The profiler is currently active and cannot be reset. Call Stop() if you want your profiled data committed, else call Pause() to abandon the changes tracked so far.");
+        return BE_SQLITE_ERROR;
+    }
+    m_running = false;
+    m_paused = false;
+    m_profile.clear();
+    m_sqlList.clear();
+    m_scopeId = 0;
+    m_timepoint = std::chrono::steady_clock::now();
+    m_pauseTimePoint = m_timepoint;
+    m_lastError.clear();
+    return BE_SQLITE_OK;
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -178,6 +195,7 @@ void Profiler::Scope::RemoveListener() const {
         m_cancelCb = nullptr;
     }
     m_running = false;
+    m_paused = false;
 }
 
 //---------------------------------------------------------------------------------------
@@ -263,6 +281,20 @@ DbResult Profiler::Scope::InitProfileDb() const {
                 WHERE  [v_perf_profile].[sql_id] = [sql_list].[id]
                         AND [sql] NOT LIKE 'PRAGMA%')
         ORDER  BY [elapsed_sec] DESC;
+
+        CREATE VIEW [v_perf_sql_stats] AS
+        SELECT
+            [sql_list].[sql] as sql,
+            SUBSTR(TRIM([sql_list].[sql]), 1, 6) AS op,
+            SUM([sql_profile].row_count) AS row_count,
+            CAST(ROUND(SUM([sql_profile].[elapsed_ns]) / 1000000.0) AS INTEGER) AS elapsed_ms,
+            [sql_list].[scan] AS scan_count
+        FROM   [sql_profile]
+        JOIN [sql_list] ON [sql_profile].[sql_id] = [sql_list].[id]
+        WHERE op NOT LIKE 'PRAGMA%' AND op NOT LIKE 'SELECT%'
+        GROUP BY sql
+        ORDER BY elapsed_ms DESC;
+
         CREATE INDEX [idx_sql_list_list] ON [sql_list]([sql]);
         CREATE INDEX [idx_sql_profile_scope_id] ON [sql_profile]([scope_id]);
         CREATE INDEX [idx_sql_profile_sql_id] ON [sql_profile]([sql_id]);)") != BE_SQLITE_OK) {
@@ -459,5 +491,80 @@ Profiler::Scope const* Profiler::GetScope(DbCR db) {
     return nullptr;
 }
 
+BeJsDocument Profiler::Scope::GetDetailedSqlStats() const {
+    auto sql = SqlPrintfString("select sql, op, row_count, elapsed_ms, scan_count from v_perf_sql_stats");
+
+    Statement stmt;
+    if (stmt.Prepare(m_profileDb, sql.GetUtf8CP()) != BE_SQLITE_OK)
+            return BeJsDocument();
+
+    struct SqlSessionStats {
+        unsigned int elapsedMs = 0;
+        unsigned int insertedRows = 0;
+        unsigned int updatedRows = 0;
+        unsigned int deletedRows = 0;
+        unsigned int scanCount = 0;
+        BeJsDocument perStmtStatsArray;
+    };
+
+    auto processSqlAndCounts = [](Utf8StringR sqlStmt, Utf8StringR dbOp, SqlSessionStats& sessionStats, unsigned int rowCount, unsigned int scanCount, unsigned int elapsedMs) {
+        if (sqlStmt.empty() || dbOp.empty())
+            return;
+
+        // Normalize SQL statement (remove newlines, trim, collapse spaces)
+        sqlStmt.ReplaceAll("\n", " ");
+        sqlStmt.ReplaceAll("\r", " ");
+        sqlStmt = std::regex_replace(sqlStmt, std::regex("\\s+"), " ");
+        sqlStmt.Trim();
+
+        if (dbOp.StartsWithI("INSERT")) {
+            sessionStats.insertedRows += rowCount;
+        } else if (dbOp.StartsWithI("UPDATE")) {
+            sessionStats.updatedRows += rowCount;
+        } else if (dbOp.StartsWithI("DELETE")) {
+            sessionStats.deletedRows += rowCount;
+        } else if (dbOp.StartsWithI("WITH ")) {
+            if (dbOp.ContainsI("INSERT INTO"))
+                sessionStats.insertedRows += rowCount;
+            else if (dbOp.ContainsI("UPDATE"))
+                sessionStats.updatedRows += rowCount;
+            else if (dbOp.ContainsI("DELETE"))
+                sessionStats.deletedRows += rowCount;
+            dbOp = "CTE";
+        } else {
+            LOG.errorv("Invalid Sql: %s. Omitting from the stats.", sqlStmt.c_str());
+        }
+
+        sessionStats.scanCount += scanCount;
+        sessionStats.elapsedMs += elapsedMs;
+    };
+
+    SqlSessionStats sqlStats;
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        Utf8String sql(stmt.GetValueText(0));
+        Utf8String op(stmt.GetValueText(1));
+        const auto rowCount = stmt.GetValueInt(2);
+        const auto scanCount = stmt.GetValueInt(4);
+        const auto elapsedMs = stmt.GetValueInt(3);
+
+        processSqlAndCounts(sql, op, sqlStats, rowCount, scanCount, elapsedMs);
+
+        auto stat = sqlStats.perStmtStatsArray.appendObject();
+        stat["statement"] = sql;
+        stat["op"] = op;
+        stat["row_count"] = rowCount;
+        stat["elapsed_ms"] = elapsedMs;
+        stat["scan_count"] = scanCount;
+    }
+
+    BeJsDocument result;
+    result["inserted_rows"] = sqlStats.insertedRows;
+    result["updated_rows"] = sqlStats.updatedRows;
+    result["deleted_rows"] = sqlStats.deletedRows;
+    result["scan_count"] = sqlStats.scanCount;
+    result["total_elapsed_ms"] = sqlStats.elapsedMs;
+    result["health_stats"].From(sqlStats.perStmtStatsArray);
+    return result;
+}
 
 END_BENTLEY_SQLITE_NAMESPACE

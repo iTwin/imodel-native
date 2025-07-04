@@ -65,12 +65,15 @@ struct Profiler final {
             BE_SQLITE_EXPORT DbResult Start() const;
             BE_SQLITE_EXPORT DbResult Pause() const;
             BE_SQLITE_EXPORT DbResult Resume() const;
+            BE_SQLITE_EXPORT DbResult ResetProfiler() const;
             bool IsRunning() const { return m_running; }
             bool IsPaused() const { return m_paused; }
             BE_SQLITE_EXPORT int64_t GetElapsedTime() const;
             int64_t GetScopeId() const { return m_scopeId; }
+            Utf8StringCR GetSessionName() const { return m_scenarioName; }
             Utf8StringCR GetLastError() const { return m_lastError; }
             BE_SQLITE_EXPORT static RefCountedPtr<Scope> Create(DbCR db, Utf8CP scopeName, Utf8CP sessionName, Profiler::Params param);
+            BE_SQLITE_EXPORT BeJsDocument GetDetailedSqlStats() const;
         };
          
     private:

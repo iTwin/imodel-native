@@ -718,6 +718,9 @@ ChangesetPropsPtr JsInterop::GetChangesetProps(Utf8StringCR dbGuid, BeJsConst ar
     if (arg.isStringMember("pushDate"))
         changeset->SetDateTime(DateTime::FromString(arg["pushDate"].asString().c_str()));
 
+    if (arg.hasMember("uncompressedSize"))
+        changeset->SetUncompressedSize(arg["uncompressedSize"].asInt64());
+
     return changeset;
 }
 
