@@ -433,7 +433,7 @@ private:
     bool m_trackChangesetHealthStats = false;
     bvector<ECN::ECClassId> m_childPropagatesChangesToParentRels;
     ChangesetPropsPtr m_changesetInProgress;
-    std::unordered_map<Utf8String, BeJsDocument> m_changesetHealthStatistics;
+    std::map<Utf8String, BeJsDocument> m_changesetHealthStatistics;
 
 public:
     ModelChanges m_modelChanges;
