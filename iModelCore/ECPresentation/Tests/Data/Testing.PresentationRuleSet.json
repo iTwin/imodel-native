@@ -1,0 +1,77 @@
+{
+    "id": "CustomNodeTesting",
+    "rules": [
+        {
+            "ruleType": "RootNodes",
+            "specifications": [
+                {
+                    "specType": "CustomNode",
+                    "type": "NODE_TYPE_RootTestNode",
+                    "description": "Test for Root Node",
+                    "label": "RootNode",
+                    "imageId": "Image://RootCustomNode"
+                },
+                {
+                    "specType": "CustomNode",
+                    "type": "NODE_TYPE_ClassTestNode",
+                    "description": "Test for Class Node",
+                    "label": "ClassNode",
+                    "imageId": "Image://ClassCustomNode"
+                }
+            ]
+        },
+        {
+            "ruleType": "ChildNodes",
+            "condition": "NOT ParentNode.Type=\"NODE_TYPE_BottomTestNode\" AND NOT ParentNode.Type=\"NODE_TYPE_EmptyTestNode\"",
+            "specifications": [
+                {
+                    "specType": "CustomNode",
+                    "type": "NODE_TYPE_EmptyTestNode",
+                    "description": "Test for Empty Node",
+                    "label": "EmptyNode",
+                    "imageId": "Image://EmptyCustomNode",
+                    "hideIfNoChildren": true
+                }
+            ]
+        },
+        {
+            "ruleType": "ChildNodes",
+            "condition": "ParentNode.Type=\"NODE_TYPE_RootTestNode\"",
+            "specifications": [
+                {
+                    "specType": "CustomNode",
+                    "type": "NODE_TYPE_ChildTestNode",
+                    "description": "Test for Child Node",
+                    "label": "ChildNode",
+                    "imageId": "Image://ChildCustomNode"
+                }
+            ]
+        },
+        {
+            "ruleType": "ChildNodes",
+            "condition": "ParentNode.Type=\"NODE_TYPE_RootTestNode\" OR ParentNode.Type=\"NODE_TYPE_ClassTestNode\"",
+            "specifications": [
+                {
+                    "specType": "CustomNode",
+                    "type": "NODE_TYPE_ElementTestNode",
+                    "description": "Test for Element Node",
+                    "label": "ElementNode",
+                    "imageId": "Image://ElementCustomNode"
+                }
+            ]
+        },
+        {
+            "ruleType": "ChildNodes",
+            "condition": "NOT ParentNode.Type=\"NODE_TYPE_BottomTestNode\" AND NOT ParentNode.Type=\"NODE_TYPE_EmptyTestNode\"",
+            "specifications": [
+                {
+                    "specType": "CustomNode",
+                    "type": "NODE_TYPE_BottomTestNode",
+                    "description": "Test for Bottom Node",
+                    "label": "BottomNode",
+                    "imageId": "Image://BottomCustomNode"
+                }
+            ]
+        }
+    ]
+}

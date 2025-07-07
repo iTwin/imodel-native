@@ -2241,8 +2241,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    groupingRule->AddGroup(*new ClassGroup("", true, "", ""));
+    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    groupingRule->AddGroup(*new ClassGroup(true, "", ""));
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rootRule = new RootNodeRule();
@@ -2320,8 +2320,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    groupingRule->AddGroup(*new ClassGroup("", true, "", ""));
+    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    groupingRule->AddGroup(*new ClassGroup(true, "", ""));
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rootRule = new RootNodeRule();
@@ -2398,8 +2398,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    groupingRule->AddGroup(*new PropertyGroup("", "", true, "GuidProp"));
+    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    groupingRule->AddGroup(*new PropertyGroup("", true, "GuidProp"));
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rootRule = new RootNodeRule();
@@ -2466,8 +2466,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    groupingRule->AddGroup(*new PropertyGroup("", "", true, "Prop"));
+    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    groupingRule->AddGroup(*new PropertyGroup("", true, "Prop"));
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rootRule = new RootNodeRule();
@@ -2547,8 +2547,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    groupingRule->AddGroup(*new PropertyGroup("", "", true, "Prop"));
+    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    groupingRule->AddGroup(*new PropertyGroup("", true, "Prop"));
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rootRule = new RootNodeRule();
@@ -2654,8 +2654,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
 
-    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    groupingRule->AddGroup(*new PropertyGroup("", "", true, "GroupingProp"));
+    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    groupingRule->AddGroup(*new PropertyGroup("", true, "GroupingProp"));
     rules->AddPresentationRule(*groupingRule);
 
     RootNodeRule* rootRule = new RootNodeRule();
@@ -2731,7 +2731,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), { new InstanceLabelOverridePropertyValueSpecification("LabelProp") }));
 
-    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
+    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
     groupingRule->AddGroup(*new SameLabelInstanceGroup());
     rules->AddPresentationRule(*groupingRule);
 
@@ -2808,7 +2808,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 
     rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), { new InstanceLabelOverridePropertyValueSpecification("LabelProp") }));
 
-    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
+    auto groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
     groupingRule->AddGroup(*new SameLabelInstanceGroup());
     rules->AddPresentationRule(*groupingRule);
 

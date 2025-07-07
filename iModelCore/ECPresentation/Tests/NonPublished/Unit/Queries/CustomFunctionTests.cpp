@@ -594,7 +594,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_Formats)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_GroupingByNullValue_LabelIsNotSpecified)
     {
-    PropertyGroup spec("", "", true, "MyID");
+    PropertyGroup spec("", true, "MyID");
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
@@ -611,7 +611,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_GroupingByNullValue_LabelI
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsOtherRange)
     {
-    PropertyGroup spec("", "", true, "DoubleProperty");
+    PropertyGroup spec("", true, "DoubleProperty");
     spec.AddRange(*new PropertyRangeGroupSpecification("One", "", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("Two", "", "6", "9"));
 
@@ -635,7 +635,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsOtherRan
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsRangeLabel)
     {
-    PropertyGroup spec("", "", true, "DoubleProperty");
+    PropertyGroup spec("", true, "DoubleProperty");
     spec.AddRange(*new PropertyRangeGroupSpecification("One", "", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("Two", "", "6", "9"));
 
@@ -659,7 +659,7 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsRangeLab
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_RangeBased_ReturnsRangeValues)
     {
-    PropertyGroup spec("", "", true, "DoubleProperty");
+    PropertyGroup spec("", true, "DoubleProperty");
     spec.AddRange(*new PropertyRangeGroupSpecification("", "", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("", "", "6", "9"));
 
@@ -764,7 +764,7 @@ struct CustomAttributeSetter
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetRangeIndex_PropertyValueDoesntMatchAnyRange)
     {
-    PropertyGroup spec("", "", true, "DoubleProperty");
+    PropertyGroup spec("", true, "DoubleProperty");
     spec.AddRange(*new PropertyRangeGroupSpecification("One", "", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("Two", "", "6", "9"));
 
@@ -786,7 +786,7 @@ TEST_F(CustomFunctionTests, GetRangeIndex_PropertyValueDoesntMatchAnyRange)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetRangeIndex_ReturnsValidRangeIndex)
     {
-    PropertyGroup spec("", "", true, "DoubleProperty");
+    PropertyGroup spec("", true, "DoubleProperty");
     spec.AddRange(*new PropertyRangeGroupSpecification("One", "", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("Two", "", "6", "9"));
 
@@ -808,7 +808,7 @@ TEST_F(CustomFunctionTests, GetRangeIndex_ReturnsValidRangeIndex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetRangeImageId_ReturnsEmptyStringIfValueDoesntMatchAnyRange)
     {
-    PropertyGroup spec("", "", true, "DoubleProperty");
+    PropertyGroup spec("", true, "DoubleProperty");
     spec.AddRange(*new PropertyRangeGroupSpecification("One", "Image1", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("Two", "Image2", "6", "9"));
 
@@ -830,7 +830,7 @@ TEST_F(CustomFunctionTests, GetRangeImageId_ReturnsEmptyStringIfValueDoesntMatch
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetRangeImageId_ReturnsRangeImageIdIfValueMatches)
     {
-    PropertyGroup spec("", "", true, "DoubleProperty");
+    PropertyGroup spec("", true, "DoubleProperty");
     spec.AddRange(*new PropertyRangeGroupSpecification("One", "Image1", "1", "5"));
     spec.AddRange(*new PropertyRangeGroupSpecification("Two", "Image2", "6", "9"));
 
