@@ -1348,6 +1348,9 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void populateGeoCoordResult(BeJsValue result, bvector<DPoint3d> const& points, bvector<ReprojectStatus> const& statuses)
     {
+    // Initialize to an empty array, in case `points` and `statuses` are empty.
+    result.toArray();
+
     for (size_t i = 0; i < points.size(); i++)
         {
         auto outputPointWithStatus = result[static_cast<Json::ArrayIndex>(i)];
