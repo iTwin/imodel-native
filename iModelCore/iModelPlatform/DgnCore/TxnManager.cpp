@@ -1332,7 +1332,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     if (!IsInAbandon())
         OnBeginApplyChanges();
 
-
+    
     if (containsSchemaChanges)  {
         // notify ECPresentation and ConcurrentQuery to stop/cancel all running task before applying schema changeset.
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
@@ -1355,6 +1355,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
         {
 
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
+        m_dgndb.Schemas().ClearCacheTables(); // clear the cache tables before applying schema changes
         auto schemaApplyArgs = ApplyChangesArgs::Default()
             .SetInvert(invert)
             .SetIgnoreNoop(true)
@@ -1666,7 +1667,16 @@ void TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action) {
     UndoChangeSet changeset;
     ReadDataChanges(changeset, rowId, action);
 
-    auto rc = ApplyChanges(changeset, action, false);
+    auto hasECChanges = [](ChangeSetR cs) {
+        for (auto& change : cs.GetChanges()) {
+            if (change.GetTableName().StartsWithIAscii("ec_")) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    auto rc = ApplyChanges(changeset, action, hasECChanges(changeset));
     BeAssert(!HasDataChanges());
 
     if (BE_SQLITE_OK != rc || m_dgndb.IsReadonly())

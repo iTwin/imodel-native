@@ -80,7 +80,7 @@ public:
     static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&);
     static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);
     static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
-
+    static BentleyStatus ClearCacheTables(ECDbCR);
  
     //!Safe method to cast an integer value to the MapStrategy enum.
     //!It makes sure the integer is a valid value for the enum.

@@ -12,6 +12,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 //static
+BentleyStatus DbSchemaPersistenceManager::ClearCacheTables(ECDbCR db)
+    {
+    ECDB_PERF_LOG_SCOPE("Clear cache tables");
+    if (BE_SQLITE_OK != db.ExecuteSql("DELETE FROM main." TABLE_ClassHierarchyCache))
+        return ERROR;
+
+    if (BE_SQLITE_OK != db.ExecuteSql("DELETE FROM main." TABLE_ClassHasTablesCache))
+        return ERROR;
+
+    PERFLOG_FINISH("ECDb", "Clear cache tables");
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECDbCR ecdb)
     {
     ECDB_PERF_LOG_SCOPE("Repopulate table " TABLE_ClassHierarchyCache);

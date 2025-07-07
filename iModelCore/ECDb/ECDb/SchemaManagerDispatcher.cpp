@@ -2426,6 +2426,20 @@ BentleyStatus MainSchemaManager::CreateClassViews(bvector<ECN::ECClassId> const&
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+BentleyStatus MainSchemaManager::ClearCacheTables() const
+    {
+    BeMutexHolder lock(m_mutex);
+    if (SUCCESS != DbSchemaPersistenceManager::ClearCacheTables(m_ecdb))
+        {
+        LOG.error("Failed to clear ECDb's cache tables.");
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 BentleyStatus MainSchemaManager::RepopulateCacheTables() const
     {
     BeMutexHolder lock(m_mutex);
