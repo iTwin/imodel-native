@@ -2,6 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
+#include <BeSQLite/Profiler.h>
 #include "ChangeTestFixture.h"
 #include <DgnPlatform/DgnChangeSummary.h>
 #include <DgnPlatform/GenericDomain.h>
@@ -1945,3 +1946,294 @@ TEST_F(RevisionTestFixture, Revert_DeleteClassConstraintViolationInCacheTable)
     checkTestClassExists(true, "TestClass");
     checkTestClassExists(false, "AnotherTestClass");
     }
+
+TEST_F(RevisionTestFixture, CheckHealthStatsWithSchemaChanges) {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"CheckHealthStatsWithSchemaChanges.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+    ASSERT_TRUE(CreateRevision("-initialize").IsValid());
+    BackupTestFile();
+
+    auto context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+    BeFileName searchDirs[2];
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDirs[0]);
+    searchDirs[0].AppendToPath(L"ECSchemas");
+    searchDirs[1] = searchDirs[0];
+    context->AddFirstSchemaPaths({ searchDirs[0].AppendToPath(L"Dgn"), searchDirs[1].AppendToPath(L"Standard") });
+
+    auto importSchemaAndCreateRevision = [&](const std::pair<Utf8String, Utf8String>& importSchemaInfo, ECN::ECSchemaReadContext& ctx) -> ChangesetPropsPtr {
+        ECSchemaPtr schema;
+        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, importSchemaInfo.first.c_str(), ctx)) {
+            ADD_FAILURE() << "Failed to read schema from XML: " << importSchemaInfo.first.c_str();
+            return nullptr;
+        }
+        if (!schema.IsValid()) {
+            ADD_FAILURE() << "Schema is not valid: " << importSchemaInfo.first.c_str();
+            return nullptr;
+        }
+        m_db->ImportSchemas({ schema.get() }, true);
+        m_db->SaveChanges(importSchemaInfo.second.c_str());
+        const auto revision = CreateRevision(importSchemaInfo.second.c_str());
+        if (!revision.IsValid()) {
+            ADD_FAILURE() << "Failed to create revision: " << importSchemaInfo.second.c_str();
+            return nullptr;
+        }
+        return revision;
+    };
+
+    std::vector<std::pair<Utf8String, Utf8String>> importSchemaInfo = { std::make_pair(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", "-importSchema"),
+
+        std::make_pair(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty" typeName="int" />
+                <ECProperty propertyName="AnotherTestProperty" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml", "-firstUpdate"),
+
+        std::make_pair(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty" typeName="int" />
+            </ECEntityClass>
+
+            <ECEnumeration typeName="EnumVal" backingTypeName="string" isStrict="true" description="Defines the layers in the BIS schema hierarchy.">
+                <ECEnumerator name="First" displayLabel="First" value="First" description="" />
+                <ECEnumerator name="Second" displayLabel="Second" value="Second" description="" />
+            </ECEnumeration>
+        </ECSchema>)xml", "-secondUpdate"),
+
+        std::make_pair(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+
+            <ECEnumeration typeName="EnumVal" backingTypeName="string" isStrict="true" description="Defines the layers in the BIS schema hierarchy.">
+                <ECEnumerator name="First" displayLabel="First" value="First" description="" />
+                <ECEnumerator name="Second" displayLabel="Second" value="Second" description="" />
+            </ECEnumeration>
+        </ECSchema>)xml", "-majorUpdate") };
+
+    // Import initial schema (not tracked in revisions vector)
+    importSchemaAndCreateRevision(importSchemaInfo[0], *context);
+
+    BackupTestFile();
+    std::vector<ChangesetPropsPtr> revisions;
+    for (int i = 1; i < 4; ++i)
+        revisions.push_back(importSchemaAndCreateRevision(importSchemaInfo[i], *context));
+
+    RestoreTestFile();
+    m_db->Txns().EnableChangesetHealthStatsTracking();
+    for (const auto& revision : revisions)
+        MergeSchemaRevision(*revision);
+
+    struct TestCase {
+        unsigned int insertedRows;
+        unsigned int updatedRows;
+        unsigned int deletedRows;
+        unsigned int scanCount;
+        unsigned int sqlStatementCount;
+    };
+
+    std::unordered_map<Utf8String, TestCase> revisionsData = {
+        { revisions[0]->GetChangesetId(), { 5, 2, 0, 0, 7 } },
+        { revisions[1]->GetChangesetId(), { 1, 1, 3, 0, 5 } },
+        { revisions[2]->GetChangesetId(), { 0, 1097, 51, 0, 11 } },
+    };
+
+    auto changesets = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
+    ASSERT_TRUE(changesets.isArray());
+    ASSERT_EQ(revisions.size(), changesets.size());
+
+    // Validate health stats for each revision
+    changesets.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
+        Utf8String id = changeset["changeset_id"].asString();
+        auto it = revisionsData.find(id);
+        if (it == revisionsData.end()) {
+            EXPECT_FALSE(true) << "Changeset " << id << " not found in expected data.";
+            return false; // Continue to next iteration
+        }
+        EXPECT_GT(changeset["uncompressed_size_bytes"].asUInt(), 1U) << "Uncompressed size mismatch for changeset: " << id;
+        const auto& expected = it->second;
+
+        EXPECT_EQ(changeset["inserted_rows"].asUInt(), expected.insertedRows) << "Inserted rows mismatch for changeset: " << id;
+        EXPECT_EQ(changeset["updated_rows"].asUInt(), expected.updatedRows) << "Updated rows mismatch for changeset: " << id;
+        EXPECT_EQ(changeset["deleted_rows"].asUInt(), expected.deletedRows) << "Deleted rows mismatch for changeset: " << id;
+        EXPECT_EQ(changeset["scan_count"].asUInt(), expected.scanCount) << "Scan count mismatch for changeset: " << id;
+        EXPECT_EQ(changeset["health_stats"].size(), expected.sqlStatementCount) << "SQL statement count mismatch for changeset: " << id;
+
+        return false;
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, CheckHealthStatsWithElementCRUD) {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"CheckHealthStatsWithElementCRUD.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+
+    auto context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+
+    BeFileName searchDirs[2];
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDirs[0]);
+    searchDirs[0].AppendToPath(L"ECSchemas");
+    searchDirs[1] = searchDirs[0];
+
+    context->AddFirstSchemaPaths({ searchDirs[0].AppendToPath(L"Dgn"), searchDirs[1].AppendToPath(L"Standard") });
+
+    // Set up a base schema with a class
+    const auto baseSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty" typeName="string" />
+                <ECProperty propertyName="AnotherTestProperty" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr initialSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(initialSchema, baseSchemaXml, *context));
+    m_db->ImportSchemas({ initialSchema.get() }, true);
+    m_db->SaveChanges("Created Test Schema");
+
+    ASSERT_TRUE(CreateRevision("-initialRevision").IsValid());
+
+    BackupTestFile();
+
+    ChangesetPropsPtr revision;
+    DgnElementId testElementId;
+    // Insert element
+    {
+        PhysicalModelPtr model = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
+        ASSERT_TRUE(model.IsValid());
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
+        builder->Append(*ICurvePrimitive::CreateArc(DEllipse3d::From(1, 2, 3, 0, 0, 2, 0, 3, 0, 0.0, Angle::TwoPi())));
+
+        GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(*model, m_defaultCategoryId);
+        ASSERT_EQ(SUCCESS, builder->Finish(*testElement));
+
+        DgnDbStatus statusInsert;
+        testElement->Insert(&statusInsert);
+        ASSERT_EQ(DgnDbStatus::Success, statusInsert);
+
+        testElementId = testElement->GetElementId();
+        ASSERT_TRUE(testElementId.IsValid());
+        ASSERT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
+        m_db->SaveChanges("Inserted Element");
+
+        revision = CreateRevision("-insertElement");
+        ASSERT_TRUE(revision.IsValid());
+    }
+
+    RestoreTestFile();
+    m_db->Txns().EnableChangesetHealthStatsTracking();
+    EXPECT_TRUE(m_db->Elements().GetElement(testElementId).IsNull());
+    MergeSchemaRevision(*revision);
+
+    const auto insertChangeset = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
+    EXPECT_EQ(insertChangeset.size(), 1);
+    insertChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
+        EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
+        EXPECT_GT(changeset["uncompressed_size_bytes"].asUInt(), 1U);
+        EXPECT_EQ(changeset["inserted_rows"].asUInt(), 4);
+        EXPECT_EQ(changeset["updated_rows"].asUInt(), 2);
+        EXPECT_EQ(changeset["deleted_rows"].asUInt(), 0);
+        EXPECT_EQ(changeset["scan_count"].asUInt(), 0);
+        EXPECT_EQ(changeset["health_stats"].size(), 6);
+        return false;
+    });
+
+    BackupTestFile();
+
+    // Update element
+    {
+        auto testElement = m_db->Elements().GetForEdit<PhysicalElement>(testElementId);
+        ASSERT_TRUE(testElement.IsValid());
+
+        testElement->SetPropertyValue("TestProperty", ECValue("UpdatedValue"));
+        testElement->SetPropertyValue("AnotherTestProperty", ECValue(20));
+        testElement->Update();
+        m_db->SaveChanges("Updated Element");
+
+        revision = CreateRevision("-updateElement");
+        ASSERT_TRUE(revision.IsValid());
+    }
+
+    RestoreTestFile();
+    m_db->Txns().EnableChangesetHealthStatsTracking();
+    EXPECT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
+    MergeSchemaRevision(*revision);
+    
+    const auto updateChangeset = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
+    EXPECT_EQ(updateChangeset.size(), 1);
+    updateChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
+        EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
+        EXPECT_GT(changeset["uncompressed_size_bytes"].asUInt(), 1U);
+        EXPECT_EQ(changeset["inserted_rows"].asUInt(), 0);
+        EXPECT_EQ(changeset["updated_rows"].asUInt(), 4);
+        EXPECT_EQ(changeset["deleted_rows"].asUInt(), 0);
+        EXPECT_EQ(changeset["scan_count"].asUInt(), 0);
+        EXPECT_EQ(changeset["health_stats"].size(), 4);
+        return false;
+    });
+
+    BackupTestFile();
+
+    // Delete element
+    {
+        auto testElement = m_db->Elements().GetForEdit<PhysicalElement>(testElementId);
+        ASSERT_TRUE(testElement.IsValid());
+        testElement->Delete();
+        m_db->SaveChanges("Deleted Element");
+
+        revision = CreateRevision("-deleteElement");
+        ASSERT_TRUE(revision.IsValid());
+    }
+
+    RestoreTestFile();
+    m_db->Txns().EnableChangesetHealthStatsTracking();
+    EXPECT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
+    MergeSchemaRevision(*revision);
+    
+    const auto deleteChangeset = m_db->Txns().GetAllChangesetHealthStatistics()["changesets"];
+    EXPECT_EQ(deleteChangeset.size(), 1);
+    deleteChangeset.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst changeset) {
+        EXPECT_STREQ(changeset["changeset_id"].asString().c_str(), revision->GetChangesetId().c_str());
+        EXPECT_GT(changeset["uncompressed_size_bytes"].asUInt(), 1U);
+        EXPECT_EQ(changeset["inserted_rows"].asUInt(), 1);
+        EXPECT_EQ(changeset["updated_rows"].asUInt(), 2);
+        EXPECT_EQ(changeset["deleted_rows"].asUInt(), 3);
+        EXPECT_EQ(changeset["scan_count"].asUInt(), 0);
+        EXPECT_EQ(changeset["health_stats"].size(), 6);
+        return false;
+    });
+}
