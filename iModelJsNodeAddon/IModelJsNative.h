@@ -486,6 +486,7 @@ struct JsInterop {
     BE_JSON_NAME(value)
     BE_JSON_NAME(writeable)
     BE_JSON_NAME(yesNo)
+    BE_JSON_NAME(uncompressedSize)
 
 #define JSON_NAME(__val__) JsInterop::json_##__val__()
 

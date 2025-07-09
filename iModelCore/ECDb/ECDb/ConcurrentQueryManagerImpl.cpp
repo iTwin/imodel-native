@@ -9,6 +9,7 @@
 #include <Bentley/Logging.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <GeomSerialization/GeomLibsSerialization.h>
+#include <optional>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
@@ -199,7 +200,7 @@ void CachedConnection::SetRequest(std::unique_ptr<RunnableRequestBase> request) 
 //---------------------------------------------------------------------------------------
 void CachedConnection::InterruptIf(std::function<bool(RunnableRequestBase const&)> cb, bool cancel) {
     recursive_guard_t lock(m_mutexReq);
-    if (m_request != nullptr  && CanBeInterrupted()) {
+    if (m_request != nullptr) {
         if (cb(*m_request)) {
             if (cancel) {
                 m_request->Cancel();
@@ -323,19 +324,11 @@ void ConnectionCache::SyncAttachDbs() {
 void ConnectionCache::InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel) {
     recursive_guard_t lock(m_mutex);
     for (auto& conn: m_conns) {
-        if (conn != nullptr && conn->CanBeInterrupted())
+        if (conn != nullptr)
             conn->InterruptIf(predicate, cancel);
     }
 }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void ConnectionCache::SetCacheStatementsPerWork(uint32_t newSize) {
-    recursive_guard_t lock(m_mutex);
-    for (auto& conn: m_conns) {
-        conn->SetAdaptorCacheSize(newSize);
-    }
-}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -390,7 +383,11 @@ void ConnectionCache::Interrupt(bool reset_conn, bool detach_dbs) {
             if (it.use_count() == 1)  {
                 ++used_count;
             } else {
-                it->Interrupt();
+                it->InterruptIf(
+                    [](RunnableRequestBase const& request) {
+                        return true;
+                    },
+                    true);
             }
         }
         std::this_thread::yield();
@@ -493,10 +490,7 @@ QueryResponse::Ptr RunnableRequestBase::CreateQueueFullResponse() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void RunnableRequestBase::Interrupt(CachedConnection& conn) {
-    if(!m_interrupted && conn.Id() == m_connId && conn.CanBeInterrupted()) {
-        conn.Interrupt();
-        m_interrupted = true;
-    }
+    m_interrupted = true;
 }
 
 //---------------------------------------------------------------------------------------
@@ -569,26 +563,10 @@ RunnableRequestQueue::RunnableRequestQueue(ECDbCR ecdb): m_nextId(0), m_state(St
     auto env = ConcurrentQueryMgr::Config::Get();
     m_quota = env.GetQuota();
     m_maxQueueSize = env.GetRequestQueueSize();
-    m_shutdownWhenIdleFor = env.GetAutoShutdowWhenIdlelForSeconds();
+    m_shutdownWhenIdleFor = env.GetAutoShutdownWhenIdleForSeconds();
     m_lastDequeueTime = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::steady_clock::now());
 }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void RunnableRequestQueue::SetMaxQuota(QueryQuota const& quota) {
-    recursive_guard_t lock(m_mutex);
-    m_quota = quota;
-}
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void RunnableRequestQueue::SetRequestQueueMaxSize(uint32_t size) {
-    recursive_guard_t lock(m_mutex);
-    if (size < kMinQueueSize )
-        size = kMinQueueSize;
 
-    m_maxQueueSize = size;
-}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -754,9 +732,7 @@ QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, Quer
             request->SetDelay(maxDelayAllowed);
         }
     }
-    if (!conf.GetAllowTestingArgs() && request->GetTestingArgs() != nullptr) {
-        request->ResetTestingArgs();
-    }
+
     auto adjustedQuota = AdjustQuota(request->GetQuota());
     auto runnableReq = std::unique_ptr<RunnableRequestBase>(new RunnableRequestWithPromise(*this, std::move(request), adjustedQuota, GetNextId()));
     auto future = ((RunnableRequestWithPromise*)runnableReq.get())->GetFuture();
@@ -793,9 +769,7 @@ void RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr req
             request->SetDelay(maxDelayAllowed);
         }
     }
-    if (!conf.GetAllowTestingArgs() && request->GetTestingArgs() != nullptr) {
-        request->ResetTestingArgs();
-    }
+
     auto adjustedQuota = AdjustQuota(request->GetQuota());
     auto runnableReq = std::unique_ptr<RunnableRequestBase>(new RunnableRequestWithCallback(*this, std::move(request), adjustedQuota, GetNextId(), onComplete));
     if (m_requests.size() >= m_maxQueueSize) {
@@ -1100,6 +1074,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     auto& stmt = cachedAdaptor.GetStatement();
     auto& adaptor = cachedAdaptor.GetJsonAdaptor();
     auto& options = adaptor.GetOptions();
+    auto conn = cachedAdaptor.GetWorkerConn();
     options.SetAbbreviateBlobs(abbreviateBlobs);
     options.SetConvertClassIdsToClassNames(classIdToClassNames);
     options.SetUseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
@@ -1118,12 +1093,29 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
             runnableRequest.SetResponse(runnableRequest.CreateCancelResponse());
         else
             runnableRequest.SetResponse(runnableRequest.CreateECSqlResponse(result, props, row_count, st == status::done));
+    
+        if (conn->IsDbOpen())
+            conn->SetProgressHandler(nullptr);
     };
     auto setError = [&] (QueryResponse::Status status, std::string err) {
         runnableRequest.SetResponse(runnableRequest.CreateErrorResponse(status, err));
         log_error("%s. (%s)", err.c_str(), QueryResponse::StatusToString(status));
     };
 
+    if(conn->IsDbOpen()) {
+        conn->SetProgressHandler([&](){
+            if (runnableRequest.IsTimeExceeded()) {
+                log_trace("%s time exceeded for query [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableRequest.GetId());
+                return DbProgressAction::Interrupt;
+            }
+
+            if(runnableRequest.IsInterrupted()) {
+                log_trace("%s query cancelled [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableRequest.GetId());
+                return DbProgressAction::Interrupt;
+            }
+            return DbProgressAction::Continue;
+        }, static_cast<int>(ConcurrentQueryMgr::Config::Get().GetProgressOpCount()));
+    }
     // go over each row and serialize result
     auto rc = stmt.Step();
     while (rc == BE_SQLITE_ROW) {
@@ -1211,39 +1203,7 @@ void QueryHelper::ReadBlob(ECDbCR conn, RunnableRequestBase& runnableRequest) {
     }
     setError(QueryResponse::Status::Error, "BlobIO: unable to read blob due to sqlite error");
 }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void QueryHelper::ExecutePing(Json::Value const& pingJson, RunnableRequestBase& runnableRequest) {
-    ECSqlRowProperty::List props;
-    props.append("", "", "id", "id", "long", false, "", 0);
 
-    const auto maxMem = (int64_t)ConcurrentQueryMgr::Config::Get().GetQuota().MaxMemoryAllowed();
-    auto pingResultSize = pingJson["ping"]["resultSize"].asInt64();
-    const auto pingSleepTime = std::chrono::milliseconds(pingJson["ping"]["sleepTime"].asUInt());
-    const auto sleepUntil = std::chrono::steady_clock::now() + pingSleepTime;
-
-    pingResultSize = pingResultSize < 0 ? 0 : pingResultSize;
-    pingResultSize = pingResultSize > maxMem ? maxMem : pingResultSize;
-    std::random_device rd;
-    std::mt19937 mt(rd());
-    std::uniform_int_distribution<int64_t> dist(std::numeric_limits<uint64_t>::min(), std::numeric_limits<uint64_t>::max());
-    std::string result = "[";
-    result.reserve(pingResultSize);
-    uint32_t rows = 0;
-    while (result.size() < (size_t)(pingResultSize)) {
-        if (rows > 0) {
-            result.append(",");
-        }
-        result.append("\"").append(BeInt64Id(dist(mt)).ToHexStr()).append("\"");
-        ++rows;
-    }
-    result.append("]");
-    if (pingSleepTime.count() > 0 && sleepUntil > std::chrono::steady_clock::now()) {
-        std::this_thread::sleep_until(sleepUntil);
-    }
-    runnableRequest.SetResponse(runnableRequest.CreateECSqlResponse(result, props, rows, true));
-}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1262,14 +1222,6 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
         QueryHelper::ReadBlob(conn, runnableRequest);
     } else if (runnableRequest.GetRequest().GetKind() == QueryRequest::Kind::ECSql) {
         auto& request = runnableRequest.GetRequest().GetAsConst<ECSqlRequest>();
-        // use for debugging performance issues.
-        if (request.GetQuery().size()> 1 && request.GetQuery().at(0) == '{') {
-            auto pingJson = Json::Value::From(request.GetQuery());
-            if (!pingJson.isNull() && pingJson.hasMember("ping")) {
-                QueryHelper::ExecutePing(pingJson, runnableRequest);
-                return;
-            }
-        }
         std::string sql = QueryHelper::FormatQuery(request.GetQuery().c_str());
         ECSqlStatus status;
         std::string err;
@@ -1302,20 +1254,12 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
         }
         BindLimits(adaptor->GetStatement(), request.GetLimit());
         recordPrepareTime();
-        adaptorCache.GetConnection().SetCanBeInterrupted(true);
         QueryHelper::Execute(*adaptor, runnableRequest);
-        adaptorCache.GetConnection().SetCanBeInterrupted(false);
     } else {
         setError(QueryResponse::Status::Error, "unsupported kind of request");
     }
 }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void QueryExecutor::SetWorkerPoolSize(uint32_t newSize) {
-    m_maxPoolSize = newSize;
-    m_connCache.SetMaxPoolSize(newSize);
-}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1333,7 +1277,6 @@ QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint
                     log_trace("%s executor [id=%" PRIu32 "] dequeued request [id=%" PRIu32 "]", GetTimestamp().c_str(), execId, runnableQuery->GetId());
                     std::shared_ptr<CachedConnection> conn;
                     conn = m_connCache.GetConnection();
-                    conn->SetCanBeInterrupted(false);
                     while (conn == nullptr) {
                         std::this_thread::yield();
                         std::this_thread::sleep_for(1s);
@@ -1394,7 +1337,6 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor)
     :m_stop(false), m_queue(queue), m_executor(executor) {
     const auto& config = ConcurrentQueryMgr::Config::Get();
     m_pollInterval = config.GetMonitorPollInterval();
-    m_allowTestingArgs = config.GetAllowTestingArgs();
     auto notifyThreadHasStarted = std::make_unique<std::promise<void>>();
     log_trace("%s monitor started.", GetTimestamp().c_str());
     m_thread = std::thread([&](std::promise<void>* notifyWhenThreadStarted) {
@@ -1411,32 +1353,6 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor)
                 log_trace("%s monitor interrupt query [id=%" PRIu32 "] with timeout", GetTimestamp().c_str(), request.GetId());
                 return true;
                 });
-            m_executor.GetConnectionCache().InterruptIf([&](RunnableRequestBase const& request) {
-                if (request.GetRequest().UsePrimaryConnection()) {
-                    return false;
-                }
-                if (request.IsTimeExceeded() ){
-                    if (request.IsInterrupted()) {
-                        log_trace("%s monitor query [id=%" PRIu32 "] has it exceeded allowed time. (already interrupted)", GetTimestamp().c_str(), request.GetId());
-                    } else {
-                        log_trace("%s monitor interrupt query [id=%" PRIu32 "] as it exceeded allowed time", GetTimestamp().c_str(), request.GetId());
-                    }
-                    return true;
-                }
-                if (m_allowTestingArgs) {
-                    if (auto testingArgs = request.GetRequest().GetTestingArgs()) {
-                        if (testingArgs->isBoolMember("interrupt") && testingArgs->Get("interrupt").asBool(false)) {
-                            if (request.IsInterrupted()) {
-                                log_trace("%s monitor query [id=%" PRIu32 "] mark for interrupt by testing args. (already interrupted)", GetTimestamp().c_str(), request.GetId());
-                            } else {
-                                log_trace("%s monitor interrupt query [id=%" PRIu32 "] mark for interrupt by testing args", GetTimestamp().c_str(), request.GetId());
-                            }
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            }, false);
 
             m_executor.GetConnectionCache().SyncAttachDbs();
             m_queue.IfReadyForAutoShutdown([&](){
@@ -1446,6 +1362,7 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor)
                     ConcurrentQueryMgr::Shutdown(m_queue.GetECDb());
                 }).detach();
             });
+
             std::unique_lock<std::mutex> lock(m_queryMonitorMutex);
             m_queryMonitorCv.wait_for(lock,m_pollInterval,[&]{ return m_stop.load() == true; });
             m_queryMonitorCv.notify_all();
@@ -1471,10 +1388,6 @@ ConcurrentQueryMgr::ConcurrentQueryMgr(ECDbCR ecdb){ m_impl = new Impl(ecdb);}
 ConcurrentQueryMgr::~ConcurrentQueryMgr(){ delete m_impl;}
 QueryResponse::Future ConcurrentQueryMgr::Enqueue(QueryRequest::Ptr request) { return m_impl->Enqueue(std::move(request)); }
 void ConcurrentQueryMgr::Enqueue(QueryRequest::Ptr request, OnCompletion onCompletion){ m_impl->Enqueue(std::move(request), onCompletion); }
-void ConcurrentQueryMgr::SetWorkerPoolSize(uint32_t newSize) {m_impl->SetWorkerPoolSize(newSize);}
-void ConcurrentQueryMgr::SetRequestQueueMaxSize(uint32_t newSize) {m_impl->SetRequestQueueMaxSize(newSize);}
-void ConcurrentQueryMgr::SetCacheStatementsPerWork(uint32_t newSize) {m_impl->SetCacheStatementsPerWork(newSize);}
-void ConcurrentQueryMgr::SetMaxQuota(QueryQuota const& newQuota) {m_impl->SetMaxQuota(newQuota);}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1667,9 +1580,6 @@ void QueryRequest::FromJs(BeJsConst const& val) {
     if (val.isNumericMember(JDelay)) {
         m_delay = std::chrono::milliseconds(val[JDelay].asInt());
     }
-    if (val.isObjectMember(JTestingArgs)) {
-        SetTestArgs(val[JTestingArgs]);
-    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -1733,19 +1643,7 @@ void ECSqlRequest::FromJs(BeJsConst const& val) {
         m_doNotConvertClassIdsToClassNamesWhenAliased = val[JsReadOptions::JDoNotConvertClassIdsToClassNamesWhenAliased].asBool();
     }
 }
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-QueryRequest& QueryRequest::SetTestArgs(BeJsConst const& val) noexcept {
-    if (!val.isObject()) {
-        m_testingArgs.reset();
-        return *this;
-    }
 
-    m_testingArgs = std::make_unique<BeJsDocument>();
-    m_testingArgs->From(val);
-    return *this;
-}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -2106,10 +2004,10 @@ ConcurrentQueryMgr::Config::Config():
     m_ignorePriority(DEFAULT_IGNORE_PRIORITY),
     m_ignoreDelay(DEFAULT_IGNORE_DELAY),
     m_doNotUsePrimaryConnToPrepare(DEFAULT_DONOT_USE_PRIMARY_CONN_TO_PREPARE),
-    m_autoShutdowWhenIdlelForSeconds(DEFAULT_SHUTDOWN_WHEN_IDLE_FOR_SECONDS),
+    m_autoShutdownWhenIdleForSeconds(DEFAULT_SHUTDOWN_WHEN_IDLE_FOR_SECONDS),
     m_monitorPollInterval(std::chrono::milliseconds(DEFAULT_MONITOR_POLL_INTERVAL)),
-    m_statementCacheSizePerWorker(DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER), m_memoryMapFileSize(0),
-    m_allowTestingArgs(false) {
+    m_progressOpCount(DEFAULT_PROGRESS_OP_COUNT),
+    m_statementCacheSizePerWorker(DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER), m_memoryMapFileSize(0){
 }
 
 //---------------------------------------------------------------------------------------
@@ -2130,15 +2028,13 @@ bool ConcurrentQueryMgr::Config::Equals(Config const& rhs) const {
         return false;
     if (m_doNotUsePrimaryConnToPrepare != rhs.GetDoNotUsePrimaryConnToPrepare())
         return false;
-    if (m_autoShutdowWhenIdlelForSeconds != rhs.GetAutoShutdowWhenIdlelForSeconds())
+    if (m_autoShutdownWhenIdleForSeconds != rhs.GetAutoShutdownWhenIdleForSeconds())
         return false;
     if (m_statementCacheSizePerWorker != rhs.GetStatementCacheSizePerWorker())
         return false;
     if (m_monitorPollInterval != rhs.GetMonitorPollInterval())
         return false;
     if (m_memoryMapFileSize != rhs.GetMemoryMapFileSize())
-        return false;
-    if (m_allowTestingArgs != rhs.GetAllowTestingArgs())
         return false;
     return true;
 }
@@ -2179,11 +2075,11 @@ void ConcurrentQueryMgr::Config::To(BeJsValue val) const {
     val[Config::JIgnorePriority] = GetIgnorePriority();
     val[Config::JIgnoreDelay] = GetIgnoreDelay();
     val[Config::JDoNotUsePrimaryConnToPrepare] = GetDoNotUsePrimaryConnToPrepare();
-    val[Config::JAutoShutdowWhenIdlelForSeconds] =static_cast<uint32_t>(GetAutoShutdowWhenIdlelForSeconds().count());
+    val[Config::JAutoShutdownWhenIdleForSeconds] =static_cast<uint32_t>(GetAutoShutdownWhenIdleForSeconds().count());
     val[Config::JStatementCacheSizePerWorker] = GetStatementCacheSizePerWorker();
     val[Config::JMonitorPollInterval] = static_cast<uint32_t>(GetMonitorPollInterval().count());
     val[Config::JMemoryMapFileSize] = GetMemoryMapFileSize();
-    val[Config::JAllowTestingArgs] = GetAllowTestingArgs();
+    val[Config::JProgressOpCount] = GetProgressOpCount();
     auto quota = val[Config::JQuota];
     m_quota.ToJs(quota);
 }
@@ -2203,6 +2099,13 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
             threads = Config::GetDefault().GetWorkerThreadCount();
         }
         config.SetWorkerThreadCount(threads);
+    }
+    if(val.isNumericMember(Config::JProgressOpCount)){
+        auto progressOpCount = val[Config::JProgressOpCount].asUInt(defaultConfig.GetProgressOpCount());
+        if (progressOpCount < MIN_PROGRESS_OP_COUNT || progressOpCount > MAX_PROGRESS_OP_COUNT) {
+            progressOpCount = Config::GetDefault().GetProgressOpCount();
+        }
+        config.SetProgressOpCount(progressOpCount);
     }
     if (val.isNumericMember(Config::JQueueSize)) {
         auto queueSize = val[Config::JQueueSize].asUInt(defaultConfig.GetRequestQueueSize());
@@ -2228,9 +2131,9 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
         const auto doNotUsePrimaryConnToPrepare = val[Config::JDoNotUsePrimaryConnToPrepare].asBool(defaultConfig.GetDoNotUsePrimaryConnToPrepare());
         config.SetDoNotUsePrimaryConnToPrepare(doNotUsePrimaryConnToPrepare);
     }
-    if (val.isNumericMember(Config::JAutoShutdowWhenIdlelForSeconds)) {
-        const auto autoShutdowWhenIdlelForSeconds = val[Config::JAutoShutdowWhenIdlelForSeconds].asUInt64(defaultConfig.GetAutoShutdowWhenIdlelForSeconds().count());
-        config.SetAutoShutdowWhenIdlelForSeconds(std::chrono::seconds(autoShutdowWhenIdlelForSeconds));
+    if (val.isNumericMember(Config::JAutoShutdownWhenIdleForSeconds)) {
+        const auto autoShutdownWhenIdleForSeconds = val[Config::JAutoShutdownWhenIdleForSeconds].asUInt64(defaultConfig.GetAutoShutdownWhenIdleForSeconds().count());
+        config.SetAutoShutdownWhenIdleForSeconds(std::chrono::seconds(autoShutdownWhenIdleForSeconds));
     }
     if (val.isNumericMember(Config::JStatementCacheSizePerWorker)) {
         auto statementCacheSizePerWorker = val[Config::JStatementCacheSizePerWorker].asUInt(defaultConfig.GetStatementCacheSizePerWorker());
@@ -2252,10 +2155,6 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
     if (val.isNumericMember(Config::JMemoryMapFileSize)) {
         uint32_t memoryMapFileSize = (uint32_t)val[Config::JMemoryMapFileSize].asUInt(defaultConfig.GetMemoryMapFileSize());
         config.SetMemoryMapFileSize(memoryMapFileSize);
-    }
-    if (val.isBoolMember(Config::JAllowTestingArgs)) {
-        const auto allowTestingArgs = val[Config::JAllowTestingArgs].asBool(defaultConfig.GetAllowTestingArgs());
-        config.SetAllowTestingArgs(allowTestingArgs);
     }
     return config;
 }
