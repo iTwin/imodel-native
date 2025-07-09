@@ -20,13 +20,10 @@ static const int DEFAULT_HTTP_TIMEOUT = 60;
 
 /**
  * Initializer for CloudSqlite that happens at load time:
- * * Enables the native CA store for HTTPS requests made via curl.
  * * Enables best effort mode for certificate revocation on Windows.
  */
 struct CloudSqliteInit {
     CloudSqliteInit() {
-        // Enable the native CA store for HTTPS requests made via curl.
-        sqlite3_bcv_global_config(SQLITE_BCVGLOBALCONFIG_NATIVECA, 1);
         // Enable best effort mode for certificate revocation on Windows.
         sqlite3_bcv_global_config(SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT, 1);
     }
