@@ -64,12 +64,10 @@ typedef void(*bcv_log_cb)(void*, const char *);
 
 /* BEGIN BENTLEY CHANGES */
 struct BcvGlobalConfig {
-  int bNativeCA;                  /* SQLITE_BCVGLOBALCONFIG_NATIVECA option */
   int bRevokeBestEffort;          /* SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT option */
 };
 
 static struct BcvGlobalConfig bcvGlobalConfig = {
-  BCV_DEFAULT_NATIVECA,           /* Default to not using native CA */
   BCV_DEFAULT_REVOKEBESTEFFORT    /* Default to not revoking best effort */
 };
 /* END BENTLEY CHANGES */
@@ -1201,9 +1199,6 @@ int sqlite3_bcv_global_config(int eOp, ...){
   va_start(ap, eOp);
 
   switch( eOp ){
-    case SQLITE_BCVGLOBALCONFIG_NATIVECA:
-      bcvGlobalConfig.bNativeCA = va_arg(ap, int);
-      break;
     case SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT:
       bcvGlobalConfig.bRevokeBestEffort = va_arg(ap, int);
       break;
@@ -2333,9 +2328,6 @@ int sqlite3_bcv_create(sqlite3_bcv *p, int szName, int szBlock){
 /* BEGIN BENTLEY CHANGES */
 static void configure_curl_ssl_options(CURL *pCurl){
   int sslOptions = 0;
-  if ( bcvGlobalConfig.bNativeCA ){
-    sslOptions = sslOptions | CURLSSLOPT_NATIVE_CA;
-  }
   if ( bcvGlobalConfig.bRevokeBestEffort ){
     sslOptions = sslOptions | CURLSSLOPT_REVOKE_BEST_EFFORT;
   }

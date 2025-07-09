@@ -57,12 +57,6 @@ typedef struct sqlite3_bcv sqlite3_bcv;
 */
 int sqlite3_bcv_global_config(int eOp, ...);
 /*
-** SQLITE_BCVGLOBALCONFIG_NATIVECA:
-**   This option requires a single argument of type int, interpreted
-**   as a Boolean. If set to true, then the native certificate authority store
-**   is used to verify HTTPS requests. If set to false (the default), then the
-**   default CA store is used instead.
-**
 ** SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT:
 **   This option requires a single argument of type int, interpreted
 **   as a Boolean. If set to true, then the library will ignore certificate
@@ -70,8 +64,7 @@ int sqlite3_bcv_global_config(int eOp, ...);
 **   If set to false (the default), then this won't happen. This is only
 **   supported for Schannel-based builds of CURL.
 */
-#define SQLITE_BCVGLOBALCONFIG_NATIVECA            1      /* (int) */
-#define SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT    2      /* (int) */
+#define SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT    1      /* (int) */
 
 /* END BENTLEY CHANGES */
 
