@@ -219,7 +219,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         return ChangeSet::ConflictResolution::Abort;
     }
 
-const auto jsIModelDb = m_dgndb->GetJsIModelDb();
+    const auto jsIModelDb = m_dgndb->GetJsIModelDb();
     if (nullptr != jsIModelDb) {
         const auto jsDgnDb = jsIModelDb->Value();
         const auto env = jsDgnDb.Env();
@@ -235,6 +235,15 @@ const auto jsIModelDb = m_dgndb->GetJsIModelDb();
             arg.Set("changesetFile", Napi::String::New(env, GetFiles().front().GetNameUtf8()));
             arg.Set("getForeignKeyConflicts", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
                 return Napi::Number::New(env, iter.GetForeignKeyConflicts());
+            }));
+            arg.Set("getColumnNames", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
+                auto array = Napi::Array::New(env);
+                bvector<Utf8String> columns;
+                if (m_dgndb->GetColumns(columns, iter.GetTableName().c_str())) {
+                    for(int i = 0; i < static_cast<int>(columns.size()); ++i)
+                        array.Set(i, Napi::String::New(env, columns[i].c_str()));
+                }
+                return array;
             }));
             arg.Set("getPrimaryKeyColumns", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
                 auto array = Napi::Array::New(env);
