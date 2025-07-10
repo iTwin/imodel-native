@@ -34,10 +34,6 @@ protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
     ECPRESENTATION_EXPORT void _SetIndex(int& index) override;
 
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
-    ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP xmlNode) const override;
-
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
@@ -85,17 +81,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : ConditionalPresentationRule
     DEFINE_T_SUPER(ConditionalPresentationRule)
 
 private:
-    RuleTargetTree             m_targetTree;
     bool                       m_stopFurtherProcessing;
     SubConditionList           m_subConditions;
     ChildNodeSpecificationList m_specifications;
     ChildNodeCustomizationRuleList m_customizationRules;
 
 protected:
-    ECPRESENTATION_EXPORT virtual Utf8CP _GetXmlElementName() const override;
-    ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
-
     ECPRESENTATION_EXPORT virtual Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue json) const override;
@@ -109,16 +100,13 @@ public:
     ECPRESENTATION_EXPORT ChildNodeRule ();
 
     //! Constructor.
-    ECPRESENTATION_EXPORT ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree = TargetTree_Both);
+    ECPRESENTATION_EXPORT ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled);
 
     //! Copy constructor.
     ECPRESENTATION_EXPORT ChildNodeRule(ChildNodeRuleCR);
 
     //! Destructor.
     ECPRESENTATION_EXPORT virtual ~ChildNodeRule (void);
-
-    //! Returns target tree for which rule should be applied.
-    ECPRESENTATION_EXPORT RuleTargetTree                 GetTargetTree (void) const;
 
     //! Collection of sub-conditions that can be used to separate specifications.
     ECPRESENTATION_EXPORT SubConditionList const&        GetSubConditions (void) const;
@@ -160,10 +148,6 @@ private:
     bool m_autoExpand;
 
 protected:
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-    ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -176,8 +160,7 @@ public:
     ECPRESENTATION_EXPORT RootNodeRule ();
 
     //! Constructor.
-    ECPRESENTATION_EXPORT RootNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled,
-        RuleTargetTree targetTree = TargetTree_Both, bool autoExpand = false);
+    ECPRESENTATION_EXPORT RootNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, bool autoExpand = false);
 
     //! Returns flag which determines if nodes have to be automatically expanded.
     ECPRESENTATION_EXPORT bool                           GetAutoExpand (void) const;

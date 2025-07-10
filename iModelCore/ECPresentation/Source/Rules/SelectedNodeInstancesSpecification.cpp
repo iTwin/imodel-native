@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 #include <ECPresentation/Rules/SpecificationVisitor.h>
 
@@ -40,46 +39,6 @@ m_acceptablePolymorphically (acceptablePolymorphically)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SelectedNodeInstancesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP SelectedNodeInstancesSpecification::_GetXmlElementName () const
-    {
-    return SELECTED_NODE_INSTANCES_SPECIFICATION_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SelectedNodeInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (!ContentSpecification::_ReadXml(xmlNode))
-        return false;
-
-    // optional:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_acceptableSchemaName, SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLESCHEMANAME))
-        m_acceptableSchemaName = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_acceptableClassNames, SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLECLASSNAMES))
-        m_acceptableClassNames = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_acceptablePolymorphically, SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLEPOLYMORPHICALLY))
-        m_acceptablePolymorphically = false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SelectedNodeInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    ContentSpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue (SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLESCHEMANAME, m_acceptableSchemaName.c_str ());
-    xmlNode->AddAttributeStringValue (SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLECLASSNAMES, m_acceptableClassNames.c_str ());
-    xmlNode->AddAttributeBooleanValue (SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLEPOLYMORPHICALLY, m_acceptablePolymorphically);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

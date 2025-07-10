@@ -24,10 +24,6 @@ private:
     UserSettingsItemList  m_settingsItems;
 
 protected:
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-    ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
@@ -82,10 +78,6 @@ private:
 
 protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
-    ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP xmlNode) const override;
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
