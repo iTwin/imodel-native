@@ -676,8 +676,10 @@ void ChangesetProps::ValidateContent(DgnDbR dgndb) const {
     if (!m_fileName.DoesPathExist())
         dgndb.ThrowException("changeset file does not exist", (int) ChangesetStatus::FileNotFound);
 
+    const auto startMs = BeTimeUtilities::QueryMillisecondsCounterUInt32();
     if (m_id != ChangesetIdGenerator::GenerateId(m_parentId, m_fileName, dgndb))
       dgndb.ThrowException("incorrect id for changeset", (int) ChangesetStatus::CorruptedChangeStream);
+    SetSha1ValidationTime(BeTimeUtilities::QueryMillisecondsCounterUInt32() - startMs);
 }
 
 /**
@@ -1040,6 +1042,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
 
     DdlChanges ddlChangeGroup;
     ChangeGroup dataChangeGroup(m_dgndb);
+    size_t uncompressedSize = 0;
     for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
         auto txnType = GetTxnType(currTxnId);
         if (txnType == TxnType::EcSchema) // if we have EcSchema changes, set the flag on the change group
@@ -1053,6 +1056,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
             for(auto& ddl : ddlChange.GetDDLs())
                 ddlChangeGroup.AddDDL(ddl.c_str());
 
+            uncompressedSize = ddlChange.m_data.m_size;
         } else {
             ChangeSet sqlChangeSet;
             if (BE_SQLITE_OK != ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None))
@@ -1061,6 +1065,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
             DbResult result = sqlChangeSet.AddToChangeGroup(dataChangeGroup);
             if (BE_SQLITE_OK != result)
                 m_dgndb.ThrowException("add to changes failed", (int) result);
+            uncompressedSize = sqlChangeSet.m_data.m_size;
         }
     }
 
@@ -1078,6 +1083,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
 
     m_changesetInProgress = new ChangesetProps(revId, -1, parentRevId, dbGuid, changesetFileName, changesetType);
     m_changesetInProgress->m_endTxnId = endTxnId;
+    m_changesetInProgress->SetUncompressedSize(uncompressedSize);
 
     // clean this cruft up from older versions.
     m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
