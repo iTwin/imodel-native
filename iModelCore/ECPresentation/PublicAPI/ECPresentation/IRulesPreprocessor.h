@@ -145,26 +145,10 @@ typedef VectorSet<ContentRuleInstanceKeys> ContentRuleInstanceKeysContainer;
 struct IRulesPreprocessor
 {
     //===================================================================================
-    //! Parameters for finding root node rules.
-    // @bsiclass
-    //===================================================================================
-    struct RootNodeRuleParameters
-    {
-    private:
-        RuleTargetTree m_tree;
-    public:
-        //! Constructor.
-        //! @param[in] tree The target tree to find the rules for.
-        RootNodeRuleParameters(RuleTargetTree tree) : m_tree(tree) {}
-        //! Get the target tree.
-        RuleTargetTree GetTargetTree() const {return m_tree;}
-    };
-
-    //===================================================================================
     //! Parameters for finding the child node rules.
     // @bsiclass
     //===================================================================================
-    struct ChildNodeRuleParameters : RootNodeRuleParameters
+    struct ChildNodeRuleParameters
     {
     private:
         NavNodeCR m_parentNode;
@@ -172,7 +156,7 @@ struct IRulesPreprocessor
         //! Constructor.
         //! @param[in] parentNode The parent node to find the children rules for.
         //! @param[in] tree The target tree to find the rules for.
-        ChildNodeRuleParameters(NavNodeCR parentNode, RuleTargetTree tree) : RootNodeRuleParameters(tree), m_parentNode(parentNode) {}
+        ChildNodeRuleParameters(NavNodeCR parentNode) : m_parentNode(parentNode) {}
         //! Get the parent node.
         NavNodeCR GetParentNode() const {return m_parentNode;}
     };
@@ -284,7 +268,6 @@ struct IRulesPreprocessor
         INodeInstanceKeysProvider const* GetInstanceKeyProvider() const { return m_instanceKeysProvider; }
     };
 
-    typedef RootNodeRuleParameters const&               RootNodeRuleParametersCR;
     typedef ChildNodeRuleParameters const&              ChildNodeRuleParametersCR;
     typedef CustomizationRuleByNodeParameters const&    CustomizationRuleByNodeParametersCR;
     typedef CustomizationRuleBySpecParameters const&    CustomizationRuleBySpecParametersCR;
@@ -294,7 +277,7 @@ struct IRulesPreprocessor
 protected:
 /** @name Navigation rules */
 /** @{ */
-    virtual RootNodeRuleSpecificationsList _GetRootNodeSpecifications(RootNodeRuleParametersCR params) = 0;
+    virtual RootNodeRuleSpecificationsList _GetRootNodeSpecifications() = 0;
     virtual ChildNodeRuleSpecificationsList _GetChildNodeSpecifications(ChildNodeRuleParametersCR params) = 0;
     virtual ChildNodeSpecificationCP _FindChildNodeSpecification(Utf8StringCR specificationHash) = 0;
 /** @} */
@@ -350,7 +333,7 @@ public:
 /** @{ */
     //! Get matching root node specifications.
     //! @param[in] params The request parameters.
-    RootNodeRuleSpecificationsList GetRootNodeSpecifications(RootNodeRuleParametersCR params) {return _GetRootNodeSpecifications(params);}
+    RootNodeRuleSpecificationsList GetRootNodeSpecifications() {return _GetRootNodeSpecifications();}
 
     //! Get matching child node specifications.
     //! @param[in] params The request parameters.

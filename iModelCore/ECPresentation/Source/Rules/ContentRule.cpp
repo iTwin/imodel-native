@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
@@ -20,7 +19,7 @@ ContentRule::ContentRule() {}
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentRule::ContentRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled)
-    : ConditionalPresentationRule (condition, priority, onlyIfNotHandled), m_customControl ("")
+    : ConditionalPresentationRule (condition, priority, onlyIfNotHandled)
     {
     }
 
@@ -28,7 +27,7 @@ ContentRule::ContentRule (Utf8StringCR condition, int priority, bool onlyIfNotHa
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentRule::ContentRule(ContentRuleCR other)
-    : ConditionalPresentationRule(other), m_customControl(other.m_customControl)
+    : ConditionalPresentationRule(other)
     {
     CommonToolsInternal::CloneRules(m_specifications, other.m_specifications, this);
     }
@@ -39,45 +38,6 @@ ContentRule::ContentRule(ContentRuleCR other)
 ContentRule::~ContentRule ()
     {
     CommonToolsInternal::FreePresentationRules(m_specifications);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ContentRule::_GetXmlElementName () const
-    {
-    return CONTENT_RULE_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentRule::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_customControl, CONTENT_RULE_XML_ATTRIBUTE_CUSTOMCONTROL))
-        m_customControl = "";
-
-    for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
-        {
-        if (0 == BeStringUtilities::Stricmp(child->GetName(), CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<ContentInstancesOfSpecificClassesSpecification, ContentSpecificationList>(child, m_specifications, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), CONTENT_RELATED_INSTANCES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<ContentRelatedInstancesSpecification, ContentSpecificationList>(child, m_specifications, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), SELECTED_NODE_INSTANCES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<SelectedNodeInstancesSpecification, ContentSpecificationList>(child, m_specifications, this);
-        }
-
-    return ConditionalPresentationRule::_ReadXml (xmlNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentRule::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    ConditionalPresentationRule::_WriteXml (xmlNode);
-    xmlNode->AddAttributeStringValue (CONTENT_RULE_XML_ATTRIBUTE_CUSTOMCONTROL, m_customControl.c_str ());
-    CommonToolsInternal::WriteRulesToXmlNode<ContentSpecification, ContentSpecificationList> (xmlNode, m_specifications);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -129,21 +89,9 @@ void ContentRule::AddSpecification(ContentSpecificationR specification)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ContentRule::GetCustomControl (void)                  { return m_customControl;  }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentRule::SetCustomControl (Utf8StringCR customControl)    { m_customControl = customControl; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 MD5 ContentRule::_ComputeHash() const
     {
     MD5 md5 = T_Super::_ComputeHash();
-    if (!m_customControl.empty())
-        ADD_STR_VALUE_TO_HASH(md5, CONTENT_RULE_XML_ATTRIBUTE_CUSTOMCONTROL, m_customControl);
     ADD_RULES_TO_HASH(md5, CONTENT_RULE_JSON_ATTRIBUTE_SPECIFICATIONS, m_specifications);
     return md5;
     }

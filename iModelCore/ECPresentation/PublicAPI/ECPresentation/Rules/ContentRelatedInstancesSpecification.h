@@ -32,10 +32,6 @@ protected:
     //! Allows the visitor to visit this specification.
     ECPRESENTATION_EXPORT void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
 
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-    ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
