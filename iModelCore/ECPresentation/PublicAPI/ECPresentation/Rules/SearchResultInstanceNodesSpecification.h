@@ -43,9 +43,6 @@ protected:
 
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
 
-    ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementTypeAttributeName() const override;
     ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue) const override;
@@ -88,9 +85,6 @@ private:
 
 protected:
     virtual void _Accept(QuerySpecificationVisitor& visitor) const override {visitor._Visit(*this);}
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
-    ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP xmlNode) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -125,9 +119,6 @@ private:
 
 protected:
     virtual void _Accept(QuerySpecificationVisitor& visitor) const override {visitor._Visit(*this);}
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
-    ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP xmlNode) const override;
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -167,10 +158,6 @@ private:
 protected:
     //! Allows the visitor to visit this specification.
     ECPRESENTATION_EXPORT void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
-
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-    ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;

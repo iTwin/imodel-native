@@ -311,7 +311,7 @@ TEST_F(NavigationQueryResultsReaderTests, PropertyGroupingByBooleanProperty)
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("BoolProperty", ECValue(false)); });
     IECInstancePtr widget3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("BoolProperty", ECValue(false)); });
 
-    PropertyGroup propertyGroup("", "TestImageId", false, "BoolProperty", "");
+    PropertyGroup propertyGroup("TestImageId", false, "BoolProperty", "");
     SelectClass<ECClass> selectClass(*m_widgetClass, "alias", false);
 
     ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
@@ -359,7 +359,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByIntProperty)
     IECInstancePtr widget4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(-1));});
     IECInstancePtr widget5 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(10));});
 
-    PropertyGroup propertyGroup("", "TestImageId", false, "IntProperty", "");
+    PropertyGroup propertyGroup("TestImageId", false, "IntProperty", "");
     SelectClass<ECClass> selectClass(*m_widgetClass, "alias", false);
 
     ComplexQueryBuilderPtr groupedInstanceKeysQuery = &ComplexQueryBuilder::Create()
@@ -412,7 +412,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyRangeGrouping)
     IECInstancePtr widget6 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(21));});
     IECInstancePtr widget7 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(100));});
 
-    PropertyGroup propertyGroup("", "", false, "IntProperty", "");
+    PropertyGroup propertyGroup("", false, "IntProperty", "");
     propertyGroup.AddRange(*new PropertyRangeGroupSpecification("", "", "0", "5"));
     propertyGroup.AddRange(*new PropertyRangeGroupSpecification("", "", "6", "10"));
     propertyGroup.AddRange(*new PropertyRangeGroupSpecification("", "", "11", "20"));
@@ -471,7 +471,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyRangeGroupingWithCustomLabels
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(21));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(100));});
 
-    PropertyGroup propertyGroup("", "", false, "IntProperty", "");
+    PropertyGroup propertyGroup("", false, "IntProperty", "");
     propertyGroup.AddRange(*new PropertyRangeGroupSpecification("CustomLabel2", "", "0", "5"));
     propertyGroup.AddRange(*new PropertyRangeGroupSpecification("CustomLabel1", "CustomImage1", "6", "10"));
     propertyGroup.AddRange(*new PropertyRangeGroupSpecification("Custom3", "CustomImage3", "11", "20"));
@@ -539,7 +539,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithoutDi
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *gadgetHasSprockets, *gadget2, *sprocket3);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *gadgetHasSprockets, *gadget2, *sprocket4);
 
-    PropertyGroup propertyGroup("", "", false, "Gadget", "");
+    PropertyGroup propertyGroup("", false, "Gadget", "");
     ECPropertyCR groupingProperty = *m_sprocketClass->GetPropertyP("Gadget");
     SelectClass<ECClass> selectClass(*m_sprocketClass, "alias", false);
     SelectClass<ECClass> navPropSelectClass(*m_gadgetClass, "parentInstance", true);
@@ -600,7 +600,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithDispl
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
-    PropertyGroup propertyGroup("", "", false, "Widget", "");
+    PropertyGroup propertyGroup("", false, "Widget", "");
     ECPropertyCR groupingProperty = *m_gadgetClass->GetPropertyP("Widget");
     SelectClass<ECClass> selectClass(*m_gadgetClass, "alias", false);
     SelectClass<ECClass> navPropSelectClass(*m_widgetClass, "parentInstance", true);
@@ -664,7 +664,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithDispl
 
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
-    PropertyGroup propertyGroup("", "", false, "Widget", "");
+    PropertyGroup propertyGroup("", false, "Widget", "");
     ECPropertyCR groupingProperty = *m_gadgetClass->GetPropertyP("Widget");
     SelectClass<ECClass> selectClass(*m_gadgetClass, "alias", false);
     SelectClass<ECClass> navPropSelectClass(*m_widgetClass, "parentInstance", true);
@@ -722,7 +722,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithDispl
 
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:ClassD", "StringProperty"));
 
-    PropertyGroup propertyGroup("", "", false, "ClassD", "");
+    PropertyGroup propertyGroup("", false, "ClassD", "");
     ECPropertyCR groupingProperty = *classE->GetPropertyP("ClassD");
     SelectClass<ECClass> selectClass(*classE, "alias", false);
     SelectClass<ECClass> navPropSelectClass(*classD, "parentInstance", true);
@@ -780,7 +780,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithLabel
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsInstanceNode ANDALSO ThisNode.ClassName=\"ClassD\"", 1, "\"MyLabel\"", ""));
 
-    PropertyGroup propertyGroup("", "", false, "ClassD", "");
+    PropertyGroup propertyGroup("", false, "ClassD", "");
     ECPropertyCR groupingProperty = *classE->GetPropertyP("ClassD");
     SelectClass<ECClass> selectClass(*classE, "alias", false);
     SelectClass<ECClass> navPropSelectClass(*classD, "parentInstance", true);
@@ -838,7 +838,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithInsta
 
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:ClassD", "StringProperty"));
 
-    PropertyGroup propertyGroup("", "", false, "ClassD", "");
+    PropertyGroup propertyGroup("", false, "ClassD", "");
     ECPropertyCR groupingProperty = *classE->GetPropertyP("ClassD");
     SelectClass<ECClass> selectClass(*classE, "alias", false);
     SelectClass<ECClass> navPropSelectClass(*classD, "parentInstance", true);
@@ -902,7 +902,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithDispl
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
-    PropertyGroup propertyGroup("", "", false, "Widget", "");
+    PropertyGroup propertyGroup("", false, "Widget", "");
     ECPropertyCR groupingProperty = *m_gadgetClass->GetPropertyP("Widget");
     SelectClass<ECClass> selectClass(*m_gadgetClass, "alias", false);
     SelectClass<ECClass> navPropSelectClass(*m_widgetClass, "parentInstance", true);
@@ -963,7 +963,7 @@ TEST_F (NavigationQueryResultsReaderTests, PropertyGroupingByForeignKeyWithDispl
 
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
-    PropertyGroup propertyGroup("", "", false, "Widget", "");
+    PropertyGroup propertyGroup("", false, "Widget", "");
     ECPropertyCR groupingProperty = *m_gadgetClass->GetPropertyP("Widget");
     SelectClass<ECClass> selectClass(*m_gadgetClass, "alias", false);
     SelectClass<ECClass> navPropSelectClass(*m_widgetClass, "parentInstance", true);

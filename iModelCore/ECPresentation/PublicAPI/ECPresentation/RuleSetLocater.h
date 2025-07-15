@@ -145,41 +145,6 @@ public:
 };
 
 //=======================================================================================
-//! Ruleset locater that finds rulesets in the specified file.
-//! @ingroup GROUP_RulesDrivenPresentation
-// @bsiclass
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE FileRuleSetLocater : RefCounted<RuleSetLocater>
-{
-private:
-    BeFileName m_path;
-    mutable time_t m_cachedLastModifiedTime;
-    mutable PresentationRuleSetPtr m_cached;
-
-private:
-    FileRuleSetLocater() {}
-    FileRuleSetLocater(BeFileNameCR path) : m_path(path) {}
-
-protected:
-    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
-    ECPRESENTATION_EXPORT bvector<Utf8String> _GetRuleSetIds() const override;
-    ECPRESENTATION_EXPORT void _InvalidateCache(Utf8CP rulesetId) override;
-    int _GetPriority() const override {return 100;}
-
-public:
-    //! Create a new locater.
-    //! @param[in] path Path to an XML file that contains ruleset definition.
-    static RefCountedPtr<FileRuleSetLocater> Create(BeFileNameCR path) {return new FileRuleSetLocater(path);}
-
-    //! Create a new locater.
-    static RefCountedPtr<FileRuleSetLocater> Create() {return new FileRuleSetLocater();}
-
-    //! Change the path of the file to look for ruleset definition in.
-    //! @param[in] path Path to an XML file that contains ruleset definition.
-    ECPRESENTATION_EXPORT void SetPath(BeFileNameCR path);
-};
-
-//=======================================================================================
 //! Ruleset locater that wraps another locater and changes all its located supplemental
 //! ruleset IDs to the lookup ruleset ID.
 // @bsiclass

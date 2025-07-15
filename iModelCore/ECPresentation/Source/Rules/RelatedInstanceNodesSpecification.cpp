@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 #include <ECPresentation/Rules/SpecificationVisitor.h>
@@ -17,16 +16,16 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification()
-    : ChildNodeSpecification(), m_groupByClass(true), m_groupByRelationship(false), m_groupByLabel(true),
-    m_showEmptyGroups(false), m_skipRelatedLevel(0), m_requiredDirection(RequiredRelationDirection_Both)
+    : ChildNodeSpecification(), m_groupByClass(true), m_groupByLabel(true),
+    m_skipRelatedLevel(0), m_requiredDirection(RequiredRelationDirection_Both)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(RelatedInstanceNodesSpecification const& other)
-    : ChildNodeSpecification(other), m_groupByClass(other.m_groupByClass), m_showEmptyGroups(other.m_showEmptyGroups),
-    m_groupByRelationship(other.m_groupByRelationship), m_groupByLabel(other.m_groupByLabel), m_skipRelatedLevel(other.m_skipRelatedLevel),
+    : ChildNodeSpecification(other), m_groupByClass(other.m_groupByClass),
+    m_groupByLabel(other.m_groupByLabel), m_skipRelatedLevel(other.m_skipRelatedLevel),
     m_instanceFilter(other.m_instanceFilter), m_supportedSchemas(other.m_supportedSchemas), m_requiredDirection(other.m_requiredDirection),
     m_relationshipClassNames(other.m_relationshipClassNames), m_relatedClassNames(other.m_relatedClassNames)
     {
@@ -37,8 +36,8 @@ RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(RelatedInst
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(RelatedInstanceNodesSpecification&& other)
-    : ChildNodeSpecification(std::move(other)), m_groupByClass(other.m_groupByClass), m_showEmptyGroups(other.m_showEmptyGroups),
-    m_groupByRelationship(other.m_groupByRelationship), m_groupByLabel(other.m_groupByLabel), m_skipRelatedLevel(other.m_skipRelatedLevel),
+    : ChildNodeSpecification(std::move(other)), m_groupByClass(other.m_groupByClass),
+    m_groupByLabel(other.m_groupByLabel), m_skipRelatedLevel(other.m_skipRelatedLevel),
     m_instanceFilter(std::move(other.m_instanceFilter)), m_supportedSchemas(std::move(other.m_supportedSchemas)), m_requiredDirection(other.m_requiredDirection),
     m_relationshipClassNames(std::move(other.m_relationshipClassNames)), m_relatedClassNames(std::move(other.m_relatedClassNames))
     {
@@ -55,7 +54,6 @@ RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(int priorit
     : RelatedInstanceNodesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown, hideNodesInHierarchy, hideIfNoChildren,
     groupByClass, groupByLabel, skipRelatedLevel, instanceFilter, requiredDirection, supportedSchemas, relationshipClassNames, relatedClassNames)
     {
-    m_groupByRelationship = groupByRelationship;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -64,8 +62,8 @@ RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(int priorit
 RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy,
     bool hideIfNoChildren, bool groupByClass, bool groupByLabel, int skipRelatedLevel, Utf8String instanceFilter,
     RequiredRelationDirection requiredDirection, Utf8String supportedSchemas, Utf8String relationshipClassNames, Utf8String relatedClassNames)
-    : ChildNodeSpecification(priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), m_groupByClass(groupByClass), m_showEmptyGroups(false),
-    m_groupByRelationship(false), m_groupByLabel(groupByLabel), m_skipRelatedLevel(skipRelatedLevel), m_instanceFilter(instanceFilter),
+    : ChildNodeSpecification(priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), m_groupByClass(groupByClass),
+    m_groupByLabel(groupByLabel), m_skipRelatedLevel(skipRelatedLevel), m_instanceFilter(instanceFilter),
     m_supportedSchemas(supportedSchemas), m_requiredDirection(requiredDirection), m_relationshipClassNames(relationshipClassNames), m_relatedClassNames(relatedClassNames)
     {
     }
@@ -92,77 +90,6 @@ void RelatedInstanceNodesSpecification::SetRelationshipPaths(bvector<RepeatableR
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RelatedInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP RelatedInstanceNodesSpecification::_GetXmlElementName () const
-    {
-    return RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (!ChildNodeSpecification::_ReadXml(xmlNode))
-        return false;
-
-    // optional:
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByClass, COMMON_XML_ATTRIBUTE_GROUPBYCLASS))
-        m_groupByClass = true;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByRelationship, COMMON_XML_ATTRIBUTE_GROUPBYRELATIONSHIP))
-        m_groupByRelationship = false;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByLabel, COMMON_XML_ATTRIBUTE_GROUPBYLABEL))
-        m_groupByLabel = true;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_showEmptyGroups, COMMON_XML_ATTRIBUTE_SHOWEMPTYGROUPS))
-        m_showEmptyGroups = false;
-
-    if (BEXML_Success != xmlNode->GetAttributeInt32Value (m_skipRelatedLevel, COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL))
-        m_skipRelatedLevel = 0;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_instanceFilter, COMMON_XML_ATTRIBUTE_INSTANCEFILTER))
-        m_instanceFilter = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_supportedSchemas, COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS))
-        m_supportedSchemas = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relationshipClassNames, COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES))
-        m_relationshipClassNames = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relatedClassNames, COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES))
-        m_relatedClassNames = "";
-
-    Utf8String requiredDirectionString = "";
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION))
-        requiredDirectionString = "";
-    else
-        m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString (requiredDirectionString.c_str (), _GetXmlElementName());
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    ChildNodeSpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYRELATIONSHIP, m_groupByRelationship);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_SHOWEMPTYGROUPS, m_showEmptyGroups);
-    xmlNode->AddAttributeInt32Value   (COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL, m_skipRelatedLevel);
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS, m_supportedSchemas.c_str ());
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES, m_relationshipClassNames.c_str ());
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES, m_relatedClassNames.c_str ());
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonToolsInternal::FormatRequiredDirectionString (m_requiredDirection));
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -255,12 +182,8 @@ MD5 RelatedInstanceNodesSpecification::_ComputeHash() const
     MD5 md5 = T_Super::_ComputeHash();
     if (!m_groupByClass)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, COMMON_JSON_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
-    if (m_groupByRelationship)
-        ADD_PRIMITIVE_VALUE_TO_HASH(md5, COMMON_XML_ATTRIBUTE_GROUPBYRELATIONSHIP, m_groupByRelationship);
     if (!m_groupByLabel)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, COMMON_JSON_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
-    if (m_showEmptyGroups)
-        ADD_PRIMITIVE_VALUE_TO_HASH(md5, COMMON_XML_ATTRIBUTE_SHOWEMPTYGROUPS, m_showEmptyGroups);
     if (m_skipRelatedLevel != 0)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, COMMON_JSON_ATTRIBUTE_SKIPRELATEDLEVEL, m_skipRelatedLevel);
     if (!m_instanceFilter.empty())
