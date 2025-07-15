@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include "PresentationRuleCommonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "PresentationRuleJsonConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/CommonTools.h>
@@ -50,37 +49,6 @@ BentleyStatus Version::FromString(Version& version, Utf8CP str)
 Utf8String Version::ToString() const
     {
     return Utf8PrintfString("%" PRIu32 ".%" PRIu32 ".%" PRIu32, m_major, m_minor, m_patch);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-RuleTargetTree CommonToolsInternal::ParseTargetTreeString(Utf8CP targetTreeString, Utf8CP attributeIdentifier)
-    {
-    if (0 == strcmp(targetTreeString, COMMON_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE))
-        return TargetTree_MainTree;
-    if (0 == strcmp(targetTreeString, COMMON_ATTRIBUTE_VALUE_TARGET_TREE_SELECTIONTREE))
-        return TargetTree_SelectionTree;
-    if (0 == strcmp(targetTreeString, COMMON_ATTRIBUTE_VALUE_TARGET_TREE_BOTH))
-        return TargetTree_Both;
-
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Invalid `%s` attribute value: `%s`. Expected \"" COMMON_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE "\", "
-        "\"" COMMON_ATTRIBUTE_VALUE_TARGET_TREE_SELECTIONTREE "\" or \"" COMMON_ATTRIBUTE_VALUE_TARGET_TREE_BOTH "\".", attributeIdentifier, targetTreeString));
-    return TargetTree_MainTree;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP CommonToolsInternal::FormatTargetTreeString(RuleTargetTree targetTree)
-    {
-    if (TargetTree_MainTree == targetTree)
-        return COMMON_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE;
-    if (TargetTree_SelectionTree == targetTree)
-        return COMMON_ATTRIBUTE_VALUE_TARGET_TREE_SELECTIONTREE;
-    if (TargetTree_Both == targetTree)
-        return COMMON_ATTRIBUTE_VALUE_TARGET_TREE_BOTH;
-    return COMMON_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -162,7 +162,6 @@ protected:
             specification.GetHideNodesInHierarchy(), specification.GetHideIfNoChildren(), specification.GetGroupByClass(),
             specification.GetGroupByLabel(), specification.GetSkipRelatedLevel(), "", specification.GetRequiredRelationDirection(),
             GetSupportedSchemas(specification, m_queryBuilder.GetParameters().GetRuleset()), "", "");
-        relatedInstanceNodesSpecification.SetGroupByRelationship(specification.GetGroupByRelationship());
         m_queries = m_queryBuilder.GetQueries(m_parentNode, relatedInstanceNodesSpecification, specification.GetHash(), m_rule);
         for (auto const& query : m_queries)
             query->GetNavigationResultParameters().SetSpecification(&specification);
@@ -2820,7 +2819,7 @@ static void ApplyClassFilter(bvector<SelectClassWithExcludes<>>& selectClasses, 
         for (size_t j = 0; j < i && !shouldErase; ++j)
             shouldErase |= (selectClasses[j] == selectClass);
         if (shouldErase)
-            toErase.push_back(&selectClass);        
+            toErase.push_back(&selectClass);
         }
     ContainerHelpers::RemoveIf(selectClasses, [&toErase](auto const& item)
         {

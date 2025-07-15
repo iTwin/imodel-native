@@ -18,7 +18,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_RuleClassFilterIsPolymorphic)
     ECClassCP classA = GetECClass("A");
     ECClassCP classB = GetECClass("B");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
     groupingRule->AddGroup(*new SameLabelInstanceGroup());
     m_ruleset->AddPresentationRule(*groupingRule);
 
@@ -51,7 +51,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_IgnoresGroupingRulesWithInvalidSch
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, "InvalidSchemaName", "InvalidClassName", "", "", "");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, "InvalidSchemaName", "InvalidClassName", "");
     groupingRule->AddGroup(*new SameLabelInstanceGroup());
     m_ruleset->AddPresentationRule(*groupingRule);
 
@@ -80,7 +80,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_IgnoresGroupingRulesWithInvalidCla
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), "InvalidClassName", "", "", "");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), "InvalidClassName", "");
     groupingRule->AddGroup(*new SameLabelInstanceGroup());
     m_ruleset->AddPresentationRule(*groupingRule);
 
@@ -111,11 +111,11 @@ TEST_F (NavigationQueryBuilderTests, Grouping_SameLabelInstanceGroup_WhenAllInst
     ECClassCP classA = GetECClass("A");
     ECClassCP classB = GetECClass("B");
 
-    GroupingRuleP groupingRuleA = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
+    GroupingRuleP groupingRuleA = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
     groupingRuleA->AddGroup(*new SameLabelInstanceGroup());
     m_ruleset->AddPresentationRule(*groupingRuleA);
 
-    GroupingRuleP groupingRuleB = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
+    GroupingRuleP groupingRuleB = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "");
     groupingRuleB->AddGroup(*new SameLabelInstanceGroup());
     m_ruleset->AddPresentationRule(*groupingRuleB);
 
@@ -163,11 +163,11 @@ TEST_F (NavigationQueryBuilderTests, Grouping_SameLabelInstanceGroup_WhenSomeIns
     ECClassCP classB = GetECClass("B");
     ECClassCP classC = GetECClass("C");
 
-    GroupingRuleP groupingRuleA = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
+    GroupingRuleP groupingRuleA = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
     groupingRuleA->AddGroup(*new SameLabelInstanceGroup());
     m_ruleset->AddPresentationRule(*groupingRuleA);
 
-    GroupingRuleP groupingRuleB = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
+    GroupingRuleP groupingRuleB = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "");
     groupingRuleB->AddGroup(*new SameLabelInstanceGroup());
     m_ruleset->AddPresentationRule(*groupingRuleB);
 
@@ -215,8 +215,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsByDirectClass)
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    groupingRule->AddGroup(*new ClassGroup("", true, classA->GetSchema().GetName(), classA->GetName()));
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    groupingRule->AddGroup(*new ClassGroup(true, classA->GetSchema().GetName(), classA->GetName()));
     m_ruleset->AddPresentationRule(*groupingRule);
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, GetECSchema()->GetName());
@@ -264,12 +264,12 @@ TEST_F(NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsByBaseClassWhenSel
     ECClassCP classC = GetECClass("C");
     ECClassCP classD = GetECClass("D");
 
-    GroupingRuleP groupingRuleB = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
-    groupingRuleB->AddGroup(*new ClassGroup("", true, classA->GetSchema().GetName(), classA->GetName()));
+    GroupingRuleP groupingRuleB = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "");
+    groupingRuleB->AddGroup(*new ClassGroup(true, classA->GetSchema().GetName(), classA->GetName()));
     m_ruleset->AddPresentationRule(*groupingRuleB);
 
-    GroupingRuleP groupingRuleC = new GroupingRule("", 1, false, classC->GetSchema().GetName(), classC->GetName(), "", "", "");
-    groupingRuleC->AddGroup(*new ClassGroup("", true, classA->GetSchema().GetName(), classA->GetName()));
+    GroupingRuleP groupingRuleC = new GroupingRule("", 1, false, classC->GetSchema().GetName(), classC->GetName(), "");
+    groupingRuleC->AddGroup(*new ClassGroup(true, classA->GetSchema().GetName(), classA->GetName()));
     m_ruleset->AddPresentationRule(*groupingRuleC);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "",
@@ -337,12 +337,12 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsDerivedClassInsta
     ECClassCP classB = GetECClass("B");
     ECClassCP classC = GetECClass("C");
 
-    GroupingRuleP groupingRuleB = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
-    groupingRuleB->AddGroup(*new ClassGroup("", true, classA->GetSchema().GetName(), classA->GetName()));
+    GroupingRuleP groupingRuleB = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "");
+    groupingRuleB->AddGroup(*new ClassGroup(true, classA->GetSchema().GetName(), classA->GetName()));
     m_ruleset->AddPresentationRule(*groupingRuleB);
 
-    GroupingRuleP groupingRuleC = new GroupingRule("", 1, false, classC->GetSchema().GetName(), classC->GetName(), "", "", "");
-    groupingRuleC->AddGroup(*new ClassGroup("", true, classA->GetSchema().GetName(), classA->GetName()));
+    GroupingRuleP groupingRuleC = new GroupingRule("", 1, false, classC->GetSchema().GetName(), classC->GetName(), "");
+    groupingRuleC->AddGroup(*new ClassGroup(true, classA->GetSchema().GetName(), classA->GetName()));
     m_ruleset->AddPresentationRule(*groupingRuleC);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "",
@@ -413,12 +413,12 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_GroupsByBaseAndDirectCl
     ECClassCP classB = GetECClass("B");
     ECClassCP classC = GetECClass("C");
 
-    GroupingRuleP groupingRuleB = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
-    groupingRuleB->AddGroup(*new ClassGroup("", true, classA->GetSchema().GetName(), classA->GetName()));
+    GroupingRuleP groupingRuleB = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "");
+    groupingRuleB->AddGroup(*new ClassGroup(true, classA->GetSchema().GetName(), classA->GetName()));
     m_ruleset->AddPresentationRule(*groupingRuleB);
 
-    GroupingRuleP groupingRuleC = new GroupingRule("", 1, false, classC->GetSchema().GetName(), classC->GetName(), "", "", "");
-    groupingRuleC->AddGroup(*new ClassGroup("", true, classA->GetSchema().GetName(), classA->GetName()));
+    GroupingRuleP groupingRuleC = new GroupingRule("", 1, false, classC->GetSchema().GetName(), classC->GetName(), "");
+    groupingRuleC->AddGroup(*new ClassGroup(true, classA->GetSchema().GetName(), classA->GetName()));
     m_ruleset->AddPresentationRule(*groupingRuleC);
 
     AllInstanceNodesSpecification spec(1, false, false, false, true, false, GetECSchema()->GetName());
@@ -473,8 +473,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_ReturnsChildrenOfClassG
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    groupingRule->AddGroup(*new ClassGroup("", true, classA->GetSchema().GetName(), classA->GetName()));
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    groupingRule->AddGroup(*new ClassGroup(true, classA->GetSchema().GetName(), classA->GetName()));
     m_ruleset->AddPresentationRule(*groupingRule);
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, GetECSchema()->GetName());
@@ -509,8 +509,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByDirectProperty_Whe
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    auto groupingSpec = new PropertyGroup("", "", true, "Prop");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    auto groupingSpec = new PropertyGroup("", true, "Prop");
     groupingRule->AddGroup(*groupingSpec);
     m_ruleset->AddPresentationRule(*groupingRule);
 
@@ -553,13 +553,13 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByDirectProperty_Whe
     ECClassCP classA = GetECClass("A");
     ECClassCP classB = GetECClass("B");
 
-    GroupingRuleP groupingRuleA = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    auto groupingSpecA = new PropertyGroup("", "", true, "Prop");
+    GroupingRuleP groupingRuleA = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    auto groupingSpecA = new PropertyGroup("", true, "Prop");
     groupingRuleA->AddGroup(*groupingSpecA);
     m_ruleset->AddPresentationRule(*groupingRuleA);
 
-    GroupingRuleP groupingRuleB = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
-    auto groupingSpecB = new PropertyGroup("", "", true, "Prop");
+    GroupingRuleP groupingRuleB = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "");
+    auto groupingSpecB = new PropertyGroup("", true, "Prop");
     groupingRuleB->AddGroup(*groupingSpecB);
     m_ruleset->AddPresentationRule(*groupingRuleB);
 
@@ -612,8 +612,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByDirectPropertyRang
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    PropertyGroupP groupingSpec = new PropertyGroup("", "", true, "Prop");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    PropertyGroupP groupingSpec = new PropertyGroup("", true, "Prop");
     groupingSpec->AddRange(*new PropertyRangeGroupSpecification("", "", "0", "5"));
     groupingSpec->AddRange(*new PropertyRangeGroupSpecification("", "", "6", "10"));
     groupingSpec->AddRange(*new PropertyRangeGroupSpecification("", "", "11", "20"));
@@ -656,8 +656,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_OverridesImageId)
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    auto groupingSpec = new PropertyGroup("", "TestImageId", true, "Prop");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    auto groupingSpec = new PropertyGroup("TestImageId", true, "Prop");
     groupingRule->AddGroup(*groupingSpec);
     m_ruleset->AddPresentationRule(*groupingRule);
 
@@ -697,8 +697,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithOn
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    groupingRule->AddGroup(*new PropertyGroup("", "", true, "Prop"));
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    groupingRule->AddGroup(*new PropertyGroup("", true, "Prop"));
     m_ruleset->AddPresentationRule(*groupingRule);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classA->GetFullName(), false);
@@ -741,8 +741,8 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithMul
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    groupingRule->AddGroup(*new PropertyGroup("", "", true, "Prop"));
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    groupingRule->AddGroup(*new PropertyGroup("", true, "Prop"));
     m_ruleset->AddPresentationRule(*groupingRule);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", classA->GetFullName(), false);
@@ -786,10 +786,10 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithOn
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
     m_ruleset->AddPresentationRule(*groupingRule);
 
-    PropertyGroup* groupingSpecification = new PropertyGroup("", "", true, "Prop");
+    PropertyGroup* groupingSpecification = new PropertyGroup("", true, "Prop");
     groupingSpecification->AddRange(*new PropertyRangeGroupSpecification("", "", "1", "5"));
     groupingRule->AddGroup(*groupingSpecification);
 
@@ -830,10 +830,10 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithOt
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
     m_ruleset->AddPresentationRule(*groupingRule);
 
-    PropertyGroup* groupingSpecification = new PropertyGroup("", "", true, "Prop");
+    PropertyGroup* groupingSpecification = new PropertyGroup("", true, "Prop");
     groupingSpecification->AddRange(*new PropertyRangeGroupSpecification("", "", "1", "5"));
     groupingSpecification->AddRange(*new PropertyRangeGroupSpecification("", "", "7", "9"));
     groupingSpecification->AddRange(*new PropertyRangeGroupSpecification("", "", "10", "15"));
@@ -879,10 +879,10 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFilteringWithMul
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
     m_ruleset->AddPresentationRule(*groupingRule);
 
-    PropertyGroup* groupingSpecification = new PropertyGroup("", "", true, "Prop");
+    PropertyGroup* groupingSpecification = new PropertyGroup("", true, "Prop");
     groupingSpecification->AddRange(*new PropertyRangeGroupSpecification("", "", "1", "5"));
     groupingSpecification->AddRange(*new PropertyRangeGroupSpecification("", "", "7", "9"));
     groupingSpecification->AddRange(*new PropertyRangeGroupSpecification("", "", "10", "15"));
@@ -945,8 +945,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByDirectProperty_Whe
     ECClassCP classB = GetECClass("B");
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    auto groupingSpec = new PropertyGroup("", "", true, "NavigationProp");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    auto groupingSpec = new PropertyGroup("", true, "NavigationProp");
     groupingRule->AddGroup(*groupingSpec);
     m_ruleset->AddPresentationRule(*groupingRule);
 
@@ -996,8 +996,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByDirectProperty_Whe
     ECClassCP classA = GetECClass("A");
     ECClassCP classB = GetECClass("B");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
-    auto groupingSpec = new PropertyGroup("", "", true, "Prop");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "");
+    auto groupingSpec = new PropertyGroup("", true, "Prop");
     groupingRule->AddGroup(*groupingSpec);
     m_ruleset->AddPresentationRule(*groupingRule);
 
@@ -1058,8 +1058,8 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ByDirectProperty_When
     ECClassCP classB = GetECClass("B");
     ECClassCP classC = GetECClass("C");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    auto groupingSpec = new PropertyGroup("", "", true, "Prop");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    auto groupingSpec = new PropertyGroup("", true, "Prop");
     groupingRule->AddGroup(*groupingSpec);
     m_ruleset->AddPresentationRule(*groupingRule);
 
@@ -1122,8 +1122,8 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ByRelatedInstanceProp
     ECClassCP classB = GetECClass("B");
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
-    auto groupingSpec = new PropertyGroup("", "", true, "Prop");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "");
+    auto groupingSpec = new PropertyGroup("", true, "Prop");
     groupingRule->AddGroup(*groupingSpec);
     m_ruleset->AddPresentationRule(*groupingRule);
 
@@ -1186,8 +1186,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByRelatedInstancePro
     ECClassCP classC = GetECClass("C");
     ECRelationshipClassCP relAB = GetECClass("A_B")->GetRelationshipClassCP();
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classC->GetSchema().GetName(), classC->GetName(), "", "", "");
-    auto groupingSpec = new PropertyGroup("", "", true, "Prop");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classC->GetSchema().GetName(), classC->GetName(), "");
+    auto groupingSpec = new PropertyGroup("", true, "Prop");
     groupingRule->AddGroup(*groupingSpec);
     m_ruleset->AddPresentationRule(*groupingRule);
 
@@ -1263,8 +1263,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ByRelationshipProper
     auto rootInstanceNode = TestNodesHelper::CreateInstanceNode(GetConnection(), *classA);
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *rootInstanceNode);
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, relAB->GetSchema().GetName(), relAB->GetName(), "", "", "");
-    auto groupingSpec = new PropertyGroup("", "", true, "Prop");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, relAB->GetSchema().GetName(), relAB->GetName(), "");
+    auto groupingSpec = new PropertyGroup("", true, "Prop");
     groupingRule->AddGroup(*groupingSpec);
     m_ruleset->AddPresentationRule(*groupingRule);
 
@@ -1336,8 +1336,8 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PropertyGroup_ByRelationshipPropert
     RulesEngineTestHelpers::CacheNode(m_nodesCache, m_connection->GetId(), m_ruleset->GetRuleSetId(), *rootInstanceNode);
 
     // create the rules
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, relAB->GetSchema().GetName(), relAB->GetName(), "", "", "");
-    auto groupingSpec = new PropertyGroup("", "", true, "Prop", "");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, relAB->GetSchema().GetName(), relAB->GetName(), "");
+    auto groupingSpec = new PropertyGroup("", true, "Prop", "");
     groupingRule->AddGroup(*groupingSpec);
     m_ruleset->AddPresentationRule(*groupingRule);
 
@@ -1389,8 +1389,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsByRawPropertyV
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    PropertyGroupP groupingSpec = new PropertyGroup("", "", true, "Prop");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    PropertyGroupP groupingSpec = new PropertyGroup("", true, "Prop");
     groupingSpec->SetPropertyGroupingValue(PropertyGroupingValue::PropertyValue);
     groupingRule->AddGroup(*groupingSpec);
     m_ruleset->AddPresentationRule(*groupingRule);
@@ -1433,8 +1433,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_SortsByRawPropertyVa
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    PropertyGroupP groupingSpec = new PropertyGroup("", "", true, "Prop");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    PropertyGroupP groupingSpec = new PropertyGroup("", true, "Prop");
     groupingSpec->SetPropertyGroupingValue(PropertyGroupingValue::DisplayLabel);
     groupingSpec->SetSortingValue(PropertyGroupingValue::PropertyValue);
     groupingRule->AddGroup(*groupingSpec);
@@ -1476,8 +1476,8 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_GroupsAndSortsByRawP
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-    PropertyGroupP groupingSpec = new PropertyGroup("", "", true, "Prop");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+    PropertyGroupP groupingSpec = new PropertyGroup("", true, "Prop");
     groupingSpec->SetPropertyGroupingValue(PropertyGroupingValue::PropertyValue);
     groupingSpec->SetSortingValue(PropertyGroupingValue::PropertyValue);
     groupingRule->AddGroup(*groupingSpec);
@@ -1518,10 +1518,10 @@ TEST_F(NavigationQueryBuilderTests, Grouping_PicksActiveGroupingSpecificationFro
     {
     ECClassCP classA = GetECClass("A");
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "TestSettingsId");
-    auto classGroupingSpec = new ClassGroup("", true, classA->GetSchema().GetName(), classA->GetName());
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "TestSettingsId");
+    auto classGroupingSpec = new ClassGroup(true, classA->GetSchema().GetName(), classA->GetName());
     groupingRule->AddGroup(*classGroupingSpec);
-    auto propertyGroupingSpec = new PropertyGroup("", "", true, "Prop");
+    auto propertyGroupingSpec = new PropertyGroup("", true, "Prop");
     groupingRule->AddGroup(*propertyGroupingSpec);
     m_ruleset->AddPresentationRule(*groupingRule);
 
@@ -1587,24 +1587,24 @@ struct NavigationQueryBuilderMultiLevelGroupingTests : NavigationQueryBuilderTes
         ECClassCP classC = GetECClass("C");
         ECRelationshipClassCP relAC = GetECClass("A_C")->GetRelationshipClassCP();
 
-        GroupingRuleP baseClassGroupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-        baseClassGroupingRule->AddGroup(*new ClassGroup("", true, classA->GetSchema().GetName(), classA->GetName()));
+        GroupingRuleP baseClassGroupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+        baseClassGroupingRule->AddGroup(*new ClassGroup(true, classA->GetSchema().GetName(), classA->GetName()));
         m_ruleset->AddPresentationRule(*baseClassGroupingRule);
 
-        GroupingRuleP propertyGroupingRule1 = new GroupingRule("", 2, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-        propertyGroupingRule1->AddGroup(*(m_propertyGroupingSpecPropA = new PropertyGroup("", "", true, "PropA")));
+        GroupingRuleP propertyGroupingRule1 = new GroupingRule("", 2, false, classA->GetSchema().GetName(), classA->GetName(), "");
+        propertyGroupingRule1->AddGroup(*(m_propertyGroupingSpecPropA = new PropertyGroup("", true, "PropA")));
         m_ruleset->AddPresentationRule(*propertyGroupingRule1);
 
-        GroupingRuleP propertyGroupingRule2 = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
-        propertyGroupingRule2->AddGroup(*(m_propertyGroupingSpecPropB = new PropertyGroup("", "", true, "PropB")));
+        GroupingRuleP propertyGroupingRule2 = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "");
+        propertyGroupingRule2->AddGroup(*(m_propertyGroupingSpecPropB = new PropertyGroup("", true, "PropB")));
         m_ruleset->AddPresentationRule(*propertyGroupingRule2);
 
-        GroupingRuleP propertyGroupingRule3 = new GroupingRule("", 1, false, classC->GetSchema().GetName(), classC->GetName(), "", "", "");
-        propertyGroupingRule3->AddGroup(*(m_propertyGroupingSpecPropC = new PropertyGroup("", "", true, "PropC")));
+        GroupingRuleP propertyGroupingRule3 = new GroupingRule("", 1, false, classC->GetSchema().GetName(), classC->GetName(), "");
+        propertyGroupingRule3->AddGroup(*(m_propertyGroupingSpecPropC = new PropertyGroup("", true, "PropC")));
         m_ruleset->AddPresentationRule(*propertyGroupingRule3);
 
-        GroupingRuleP sameLabelInstanceGroupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "", "", "");
-        sameLabelInstanceGroupingRule->AddGroup(*new SameLabelInstanceGroup(""));
+        GroupingRuleP sameLabelInstanceGroupingRule = new GroupingRule("", 1, false, classA->GetSchema().GetName(), classA->GetName(), "");
+        sameLabelInstanceGroupingRule->AddGroup(*new SameLabelInstanceGroup());
         m_ruleset->AddPresentationRule(*sameLabelInstanceGroupingRule);
 
         m_specification = std::make_unique<InstanceNodesOfSpecificClassesSpecification>(1, false, false, false, true, true, true, "", classA->GetFullName(), true);
