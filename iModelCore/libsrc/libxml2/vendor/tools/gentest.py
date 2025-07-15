@@ -20,7 +20,7 @@ else:
 # Modules we want to skip in API test
 #
 skipped_modules = [ "SAX", "xlink", "threads", "globals",
-  "xmlmemory", "xmlversion", "xmlexports",
+  "xmlmemory", "xmlversion", "xmlexports", "xmlunicode", "nanoftp",
 ]
 
 #
@@ -30,7 +30,7 @@ modules_defines = {
     "HTMLparser": "LIBXML_HTML_ENABLED",
     "catalog": "LIBXML_CATALOG_ENABLED",
     "xmlreader": "LIBXML_READER_ENABLED",
-    "relaxng": "LIBXML_SCHEMAS_ENABLED",
+    "relaxng": "LIBXML_RELAXNG_ENABLED",
     "schemasInternals": "LIBXML_SCHEMAS_ENABLED",
     "xmlschemas": "LIBXML_SCHEMAS_ENABLED",
     "xmlschemastypes": "LIBXML_SCHEMAS_ENABLED",
@@ -79,15 +79,6 @@ function_defines = {
     "xmlAttrSerializeTxtContent": "LIBXML_OUTPUT_ENABLED",
     "xmlSAXParseFile": "LIBXML_SAX1_ENABLED",
     "xmlSAXParseEntity": "LIBXML_SAX1_ENABLED",
-    "xmlNewTextChild": "LIBXML_TREE_ENABLED",
-    "xmlNewDocRawNode": "LIBXML_TREE_ENABLED",
-    "xmlNewProp": "LIBXML_TREE_ENABLED",
-    "xmlReconciliateNs": "LIBXML_TREE_ENABLED",
-    "xmlValidateNCName": "LIBXML_TREE_ENABLED",
-    "xmlValidateNMToken": "LIBXML_TREE_ENABLED",
-    "xmlValidateName": "LIBXML_TREE_ENABLED",
-    "xmlNewChild": "LIBXML_TREE_ENABLED",
-    "xmlValidateQName": "LIBXML_TREE_ENABLED",
     "xmlSprintfElementContent": "LIBXML_OUTPUT_ENABLED",
     "xmlValidGetPotentialChildren" : "LIBXML_VALID_ENABLED",
     "xmlValidGetValidElements" : "LIBXML_VALID_ENABLED",
@@ -104,8 +95,8 @@ skipped_functions = [
 "xmlReaderNewFd", "xmlReaderForFd",
 "xmlIORead", "xmlReadIO", "xmlCtxtReadIO",
 "htmlIORead", "htmlReadIO", "htmlCtxtReadIO",
-"xmlReaderNewIO", "xmlBufferDump", "xmlNanoFTPConnect",
-"xmlNanoFTPConnectTo", "xmlNanoHTTPMethod", "xmlNanoHTTPMethodRedir",
+"xmlReaderNewIO", "xmlBufferDump",
+"xmlNanoHTTPMethod", "xmlNanoHTTPMethodRedir",
 # Complex I/O APIs
 "xmlCreateIOParserCtxt", "xmlParserInputBufferCreateIO",
 "xmlRegisterInputCallbacks", "xmlReaderForIO",
@@ -122,7 +113,7 @@ skipped_functions = [
 "xmlTextReaderReadInnerXml", "xmlTextReaderReadOuterXml",
 "xmlTextReaderReadString",
 # destructor
-"xmlListDelete", "xmlOutputBufferClose", "xmlNanoFTPClose", "xmlNanoHTTPClose",
+"xmlListDelete", "xmlOutputBufferClose", "xmlNanoHTTPClose",
 # deprecated
 "xmlCatalogGetPublic", "xmlCatalogGetSystem", "xmlEncodeEntities",
 "xmlNewGlobalNs", "xmlHandleEntity", "xmlNamespaceParseNCName",
@@ -152,16 +143,8 @@ skipped_functions = [
 "xmlParseXMLDecl", "xmlParseTextDecl", "xmlParseMisc",
 "xmlParseExternalSubset", "xmlParserHandlePEReference",
 "xmlSkipBlankChars",
-# Legacy
-"xmlCleanupPredefinedEntities", "xmlInitializePredefinedEntities",
-"xmlSetFeature", "xmlGetFeature", "xmlGetFeaturesList",
-# location sets
-"xmlXPtrLocationSetAdd",
-"xmlXPtrLocationSetCreate",
-"xmlXPtrLocationSetDel",
-"xmlXPtrLocationSetMerge",
-"xmlXPtrLocationSetRemove",
-"xmlXPtrWrapLocationSet",
+# Shouldn't free result
+"xmlCtxtGetDict",
 ]
 
 #
@@ -169,7 +152,7 @@ skipped_functions = [
 # and hence generate errors on memory allocation tests
 #
 skipped_memcheck = [ "xmlLoadCatalog", "xmlAddEncodingAlias",
-   "xmlSchemaInitTypes", "xmlNanoFTPProxy", "xmlNanoFTPScanProxy",
+   "xmlSchemaInitTypes",
    "xmlNanoHTTPScanProxy", "xmlResetLastError", "xmlCatalogConvert",
    "xmlCatalogRemove", "xmlLoadCatalogs", "xmlCleanupCharEncodingHandlers",
    "xmlInitCharEncodingHandlers", "xmlCatalogCleanup",
@@ -346,12 +329,6 @@ def type_convert(str, name, info, module, function, pos):
                 return('fileoutput')
             return('filepath')
     if res == 'void_ptr':
-        if module == 'nanoftp' and name == 'ctx':
-            return('xmlNanoFTPCtxtPtr')
-        if function == 'xmlNanoFTPNewCtxt' or \
-           function == 'xmlNanoFTPConnectTo' or \
-           function == 'xmlNanoFTPOpen':
-            return('xmlNanoFTPCtxtPtr')
         if module == 'nanohttp' and name == 'ctx':
             return('xmlNanoHTTPCtxtPtr')
         if function == 'xmlNanoHTTPMethod' or \
@@ -546,6 +523,8 @@ for enum in enums:
     #
     if (name == None) or ((name not in argtypes) and (name not in rettypes)):
         continue;
+    if name == 'xmlCharEncFlags':
+        continue
     define = 0
 
     if (name in argtypes) and is_known_param_type(name) == 0:
