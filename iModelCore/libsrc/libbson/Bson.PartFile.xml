@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+              >
+
+    <Part Name="Beson">
+        <SubPart PartName="Library" />
+    </Part>
+
+    <!-- Bind my own VendorAPI into BuildContext/VendorAPI. Note that this part does not cause any sub-part VendorAPI to be bound. I also delivery my license notice. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="Bson.prewire.mke">
+        <Bindings>
+            <VendorAPI Domain="Bson" />
+            <VendorNotices>Delivery/bson-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
+    <Part Name="Library" BentleyBuildMakeFile="Bson.mke">
+        <SubPart PartName="PublicAPI" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)iTwinBson$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)iTwinBson$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="BsonStatic">
+        <SubPart PartName="Bson" LibType="Static"/>
+    </Part>
+
+    <NuGetProduct Name="BsonNuget" LicenseFile="BsonNugetLicense.json">
+        <Directories DirectoryListName="ForSdkSource" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <Directories DirectoryListName="NugetSdkSourceOverride" PartFile="CommonProductDirs" Repository="bsicommon"/>
+        <SubPart PartName="BsonStatic"/>
+    </NuGetProduct>
+
+</BuildContext>

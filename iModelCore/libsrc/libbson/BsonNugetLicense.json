@@ -1,0 +1,22 @@
+{
+    "authors": "Bentley Systems, Incorporated",
+    "copyright": "",
+    "description": "BsonNuget",
+    "homepage": "https://www.bentley.com/",
+    "licenseUrl": "https://connect.bentley.com/Assets/Eula/eula_en.pdf",
+    "name": "BsonNuget",
+    "SPDX-ID": "",
+    
+    "sublicenses" : [
+        {
+        "authors": "",
+        "copyright": "Unicode, Inc.",
+        "description": "libbson is a BSON (Binary JSON) library that provides a binary representation of JSON-like documents. It is used for efficient data storage and transmission.",
+        "homepage": "https://github.com/mongodb/mongo-c-driver/tree/master",
+        "licenseUrl": "https://github.com/mongodb/mongo-c-driver/blob/master/COPYING",
+        "name": "libbson",
+        "SPDX-ID": "Apache-2.0",
+        "version": "2.0"
+        }
+    ]
+}

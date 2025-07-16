@@ -1,0 +1,112 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+
+%ifdef __unix
+    # Node also uses cares which can conflict with the version of cares we use in curl if we do not set visibility to hidden.
+    # If symbol visibility is set to default then our symbols can get overriden by Node's cares symbols which can cause 
+    # a segmentation fault.
+
+    GCC_DEFAULT_VISIBILITY = hidden
+%else
+    GCC_DEFAULT_VISIBILITY = default
+%endif
+
+#----------------------------------------------------------
+# Set up all the standard stuff.
+#----------------------------------------------------------
+%include  mdl.mki
+
+nameToDefine        = BUILDING_LIBCURL=1
+%include cdefapnd.mki
+
+%if defined (CREATE_STATIC_LIBRARIES)
+    nameToDefine    = CURL_STATICLIB=1
+    %include cdefapnd.mki
+%endif
+
+SourceDir           = $(_MakeFilePath)vendor/
+
+AresDir = $(_MakeFilePath)ares/
+AresLibDir = $(AresDir)src/lib/
+
+BsonLibDir        = $(SourceDir)lib/
+BeCurlDepends       = $(_MakeFileSpec) $(_MakeFilePath)BeCurlConfig.h
+MultiCompileDepends = $(_MakeFileSpec) $(BeCurlDepends)
+
+%if defined(iTwinNativeThirdParty)
+  appName = Bson
+%else
+  appName = iTwinBson
+%endif
+
+o = $(OutBuildDir)$(appName)/
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------------------------
+#   Include search path
+#----------------------------------------------------------------------------------------
+dirToSearch = $(BsonLibDir)
+%include cincapnd.mki
+
+#----------------------------------------------------------
+# MultiCompile sources
+#----------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)bcon$(oext) :                   $(BsonLibDir)bcon.c ${MultiCompileDepends}
+$(o)bson-clock$(oext) :             $(BsonLibDir)bson-clock.c ${MultiCompileDepends}
+$(o)bson-context$(oext) :           $(BsonLibDir)bson-context.c ${MultiCompileDepends}
+$(o)bson-decimal128$(oext) :        $(BsonLibDir)bson-decimal128.c ${MultiCompileDepends}
+$(o)bson-error$(oext) :             $(BsonLibDir)bson-error.c ${MultiCompileDepends}
+$(o)bson-iso8601$(oext) :           $(BsonLibDir)bson-iso8601.c ${MultiCompileDepends}
+$(o)bson-iter$(oext) :              $(BsonLibDir)bson-iter.c ${MultiCompileDepends}
+$(o)bson-json$(oext) :              $(BsonLibDir)bson-json.c ${MultiCompileDepends}
+$(o)bson-keys$(oext) :              $(BsonLibDir)bson-keys.c ${MultiCompileDepends}
+$(o)bson-memory.$(oext) :           $(BsonLibDir)bson-memory..c ${MultiCompileDepends}
+$(o)bson-oid$(oext) :               $(BsonLibDir)bson-oid.c ${MultiCompileDepends}
+$(o)bson-reader$(oext) :            $(BsonLibDir)bson-reader.c ${MultiCompileDepends}
+$(o)bson-string$(oext) :            $(BsonLibDir)bson-string.c ${MultiCompileDepends}
+$(o)bson-timegm$(oext) :            $(BsonLibDir)bson-timegm.c ${MultiCompileDepends}
+$(o)bson-utf8$(oext) :              $(BsonLibDir)bson-utf8.c ${MultiCompileDepends}
+$(o)bson-value$(oext) :             $(BsonLibDir)bson-value.c ${MultiCompileDepends}
+$(o)bson-vector$(oext) :            $(BsonLibDir)bson-vector.c ${MultiCompileDepends}
+$(o)bson-version-functions$(oext) : $(BsonLibDir)bson-version-functions.c ${MultiCompileDepends}
+$(o)bson-writer$(oext) :            $(BsonLibDir)bson-writer.c ${MultiCompileDepends}
+$(o)validate$(oext) :               $(BsonLibDir)validate.c ${MultiCompileDepends}
+$(o)bcon$(oext) :                   $(BsonLibDir)bcon.c ${MultiCompileDepends}
+$(o)bcon$(oext) :                   $(BsonLibDir)bcon.c ${MultiCompileDepends}
+$(o)bcon$(oext) :                   $(BsonLibDir)bcon.c ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+objs =% $(MultiCompileObjectList)
+
+#---------------------------------------------------------------------------------------+
+#   Create the library
+#---------------------------------------------------------------------------------------+
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(objs)
+DLM_EXPORT_OBJS             = $(DLM_OBJECT_FILES)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_BENTLEY_LIB          = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%if defined(iTwinNativeThirdParty)
+  LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)Bson$(libext)
+%else
+  LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)iTwinBson$(libext) 
+%endif
+
+%include $(sharedMki)linkLibrary.mki
