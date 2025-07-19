@@ -666,7 +666,7 @@ DgnDbStatus DgnElements::Delete(DgnElementCR elementIn, std::optional<EditOption
 
     DgnElementCR element = *el;
 
-    DgnDbStatus stat = element._OnDelete();
+    DgnDbStatus stat = element._OnDelete(options);
     if (DgnDbStatus::Success != stat)
         return stat;
 
