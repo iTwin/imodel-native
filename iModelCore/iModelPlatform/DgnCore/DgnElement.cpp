@@ -20,12 +20,26 @@ static bool hasHandler(ECN::ECClassCR cls)
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::CallJsPostHandler(Utf8CP methodName) const {
+    CallJsPostHandler(methodName, std::nullopt);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::CallJsPostHandler(Utf8CP methodName, std::optional<EditOptions> options) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb) {
         BeJsNapiObject arg(jsDb->Env());
         arg[json_id()] = m_elementId;
         arg[json_model()] = m_modelId;
         arg[json_federationGuid()] = m_federationGuid.ToString();
+        
+        if (options.has_value()) {
+            BeJsNapiObject optionsObj(jsDb->Env());
+            optionsObj["indirect"] = options.value().IsIndirectChange;
+            arg["options"].From(optionsObj);
+        }
+        
         m_dgndb.CallJsHandlerMethod(m_classId, methodName, arg);
     }
 }
@@ -999,6 +1013,14 @@ void DgnElement::_OnUpdated(DgnElementCR original) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnDelete() const
     {
+    return _OnDelete(std::nullopt);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod  
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_OnDelete(std::optional<EditOptions> options) const
+    {
     ElementHandlerR elementHandler = GetElementHandler();
     if (elementHandler.GetDomain().IsReadonly())
         return DgnDbStatus::ReadOnlyDomain;
@@ -1013,7 +1035,7 @@ DgnDbStatus DgnElement::_OnDelete() const
         }
     }
 
-    CallJsPostHandler("onDelete");
+    CallJsPostHandler("onDelete", options);
     return GetModel()->_OnDeleteElement(*this);
     }
 

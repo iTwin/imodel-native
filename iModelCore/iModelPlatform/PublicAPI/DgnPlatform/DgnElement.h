@@ -1244,6 +1244,7 @@ protected:
     virtual Utf8CP _GetHandlerECClassName() const {return MyHandlerECClassName();} //!< @private
     virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;} //!< @private
     void CallJsPostHandler(Utf8CP methodName) const;
+    void CallJsPostHandler(Utf8CP methodName, std::optional<EditOptions> options) const;
     void CallJsChildPreHandler(DgnElementCR child, Utf8CP methodName) const;
     DGNPLATFORM_EXPORT void CallJsSubModelHandler(DgnModelCR model, Utf8CP methodName) const;
     DGNPLATFORM_EXPORT void CallJsChildPostHandler(DgnElementCR child, Utf8CP methodName) const;
@@ -1360,6 +1361,9 @@ protected:
     //! @return DgnDbStatus::Success to allow the delete, otherwise the delete will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnDelete, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const;
+    
+    //! Non-virtual overload that accepts EditOptions and calls the virtual _OnDelete method
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options) const;
 
     //! Called to delete a DgnElement from the DgnDb. Override to do any additional processing on delete.
     //! @note If you override this method, you @em must call T_Super::_DeleteInDb, forwarding its status.
@@ -1697,8 +1701,8 @@ public:
     //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnElementCPtr Insert(DgnDbStatus* stat=nullptr, std::optional<EditOptions> options = std::nullopt);
 
-    //TODO: Seems unused?!
-    //template<class T> RefCountedCPtr<T> InsertT(DgnDbStatus* stat=nullptr, std::optional<EditOptions> options = std::nullopt) {return dynamic_cast<T const*>(Insert(stat, options).get());}
+    //TODO-Rob/Rohit : Seems unused?! Only present in ExternalSourceTest.cpp
+    template<class T> RefCountedCPtr<T> InsertT(DgnDbStatus* stat=nullptr, std::optional<EditOptions> options = std::nullopt) {return dynamic_cast<T const*>(Insert(stat, options).get());}
 
     //! Delete this DgnElement from the DgnDb,
     //! This is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
