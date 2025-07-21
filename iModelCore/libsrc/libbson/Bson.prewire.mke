@@ -4,10 +4,10 @@
 #---------------------------------------------------------------------------------------------
 %include mdl.mki
 
-SourceDir = $(_MakeFilePath)vendor/
+SourceDir = $(_MakeFilePath)
 
-$(BuildContext)VendorAPI/bson : $(SourceDir)src/bson
+$(BuildContext)VendorAPI/bson : $(SourceDir)/src/bson
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(BuildContext)Delivery/bson-license.txt : $(SourceDir)THIRD_PARTY_NOTICES
+$(BuildContext)Delivery/bson-license.txt : $(SourceDir)/THIRD_PARTY_NOTICES
     $(LinkFirstDepToFirstTarget)

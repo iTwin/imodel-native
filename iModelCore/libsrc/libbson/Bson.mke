@@ -29,14 +29,11 @@ nameToDefine        = BUILDING_LIBCURL=1
     %include cdefapnd.mki
 %endif
 
-SourceDir           = $(_MakeFilePath)vendor/
+SourceDir           = $(_MakeFilePath)
 
-AresDir = $(_MakeFilePath)ares/
-AresLibDir = $(AresDir)src/lib/
-
-BsonLibDir        = $(SourceDir)lib/
-BeCurlDepends       = $(_MakeFileSpec) $(_MakeFilePath)BeCurlConfig.h
-MultiCompileDepends = $(_MakeFileSpec) $(BeCurlDepends)
+BsonLibDir          = $(SourceDir)src/bson/
+BsonDepends         = $(_MakeFileSpec) $(_MakeFilePath)/src/bson/bson-config.h
+MultiCompileDepends = $(_MakeFileSpec) $(BsonDepends)
 
 %if defined(iTwinNativeThirdParty)
   appName = Bson
@@ -55,35 +52,52 @@ always:
 dirToSearch = $(BsonLibDir)
 %include cincapnd.mki
 
+cDefs + -DBSON_COMPILATION 
+cDefs + -DBSON_OS_UNIX
 #----------------------------------------------------------
 # MultiCompile sources
 #----------------------------------------------------------
 %include MultiCppCompileRule.mki
 
 $(o)bcon$(oext) :                   $(BsonLibDir)bcon.c ${MultiCompileDepends}
-$(o)bson-clock$(oext) :             $(BsonLibDir)bson-clock.c ${MultiCompileDepends}
-$(o)bson-context$(oext) :           $(BsonLibDir)bson-context.c ${MultiCompileDepends}
-$(o)bson-decimal128$(oext) :        $(BsonLibDir)bson-decimal128.c ${MultiCompileDepends}
-$(o)bson-error$(oext) :             $(BsonLibDir)bson-error.c ${MultiCompileDepends}
-$(o)bson-iso8601$(oext) :           $(BsonLibDir)bson-iso8601.c ${MultiCompileDepends}
-$(o)bson-iter$(oext) :              $(BsonLibDir)bson-iter.c ${MultiCompileDepends}
-$(o)bson-json$(oext) :              $(BsonLibDir)bson-json.c ${MultiCompileDepends}
-$(o)bson-keys$(oext) :              $(BsonLibDir)bson-keys.c ${MultiCompileDepends}
-$(o)bson-memory.$(oext) :           $(BsonLibDir)bson-memory..c ${MultiCompileDepends}
-$(o)bson-oid$(oext) :               $(BsonLibDir)bson-oid.c ${MultiCompileDepends}
-$(o)bson-reader$(oext) :            $(BsonLibDir)bson-reader.c ${MultiCompileDepends}
-$(o)bson-string$(oext) :            $(BsonLibDir)bson-string.c ${MultiCompileDepends}
-$(o)bson-timegm$(oext) :            $(BsonLibDir)bson-timegm.c ${MultiCompileDepends}
-$(o)bson-utf8$(oext) :              $(BsonLibDir)bson-utf8.c ${MultiCompileDepends}
-$(o)bson-value$(oext) :             $(BsonLibDir)bson-value.c ${MultiCompileDepends}
-$(o)bson-vector$(oext) :            $(BsonLibDir)bson-vector.c ${MultiCompileDepends}
-$(o)bson-version-functions$(oext) : $(BsonLibDir)bson-version-functions.c ${MultiCompileDepends}
-$(o)bson-writer$(oext) :            $(BsonLibDir)bson-writer.c ${MultiCompileDepends}
-$(o)validate$(oext) :               $(BsonLibDir)validate.c ${MultiCompileDepends}
-$(o)bcon$(oext) :                   $(BsonLibDir)bcon.c ${MultiCompileDepends}
-$(o)bcon$(oext) :                   $(BsonLibDir)bcon.c ${MultiCompileDepends}
-$(o)bcon$(oext) :                   $(BsonLibDir)bcon.c ${MultiCompileDepends}
 
+$(o)bson-clock$(oext) :             $(BsonLibDir)bson-clock.c ${MultiCompileDepends}
+
+$(o)bson-context$(oext) :           $(BsonLibDir)bson-context.c ${MultiCompileDepends}
+
+$(o)bson-decimal128$(oext) :        $(BsonLibDir)bson-decimal128.c ${MultiCompileDepends}
+
+$(o)bson-error$(oext) :             $(BsonLibDir)bson-error.c ${MultiCompileDepends}
+
+$(o)bson-iso8601$(oext) :           $(BsonLibDir)bson-iso8601.c ${MultiCompileDepends}
+
+$(o)bson-iter$(oext) :              $(BsonLibDir)bson-iter.c ${MultiCompileDepends}
+
+$(o)bson-json$(oext) :              $(BsonLibDir)bson-json.c ${MultiCompileDepends}
+
+$(o)bson-keys$(oext) :              $(BsonLibDir)bson-keys.c ${MultiCompileDepends}
+
+$(o)bson-memory.$(oext) :           $(BsonLibDir)bson-memory.c ${MultiCompileDepends}
+
+$(o)bson-oid$(oext) :               $(BsonLibDir)bson-oid.c ${MultiCompileDepends}
+
+$(o)bson-reader$(oext) :            $(BsonLibDir)bson-reader.c ${MultiCompileDepends}
+
+$(o)bson-string$(oext) :            $(BsonLibDir)bson-string.c ${MultiCompileDepends}
+
+$(o)bson-timegm$(oext) :            $(BsonLibDir)bson-timegm.c ${MultiCompileDepends}
+
+$(o)bson-utf8$(oext) :              $(BsonLibDir)bson-utf8.c ${MultiCompileDepends}
+
+$(o)bson-value$(oext) :             $(BsonLibDir)bson-value.c ${MultiCompileDepends}
+
+$(o)bson-vector$(oext) :            $(BsonLibDir)bson-vector.c ${MultiCompileDepends}
+
+$(o)bson-version-functions$(oext) : $(BsonLibDir)bson-version-functions.c ${MultiCompileDepends}
+
+$(o)bson-writer$(oext) :            $(BsonLibDir)bson-writer.c ${MultiCompileDepends}
+
+$(o)validate$(oext) :               $(BsonLibDir)validate.c ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList)

@@ -4,7 +4,7 @@
               xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
               >
 
-    <Part Name="Beson">
+    <Part Name="Bson">
         <SubPart PartName="Library" />
     </Part>
 

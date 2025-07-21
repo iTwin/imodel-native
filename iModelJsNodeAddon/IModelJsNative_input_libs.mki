@@ -31,6 +31,7 @@ THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinUnits.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinOpenSSL.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwin_google_re2.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinPugixml.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinBson.a
 
 %if defined (BENTLEYCONFIG_PARASOLID)
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinPSBRepGeometry.a

@@ -521,7 +521,9 @@ LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinLibxml2$(libext) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext) \
-                              $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)
+                              $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext) \
+                              $(ContextSubPartsLibs)$(stlibprefix)iTwinBson$(stlibext)
+
 
 
 # We support shared or static linking.

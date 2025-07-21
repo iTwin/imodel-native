@@ -24,14 +24,14 @@
 /*
  * Define to 1234 for Little Endian, 4321 for Big Endian.
  */
-#define BSON_BYTE_ORDER @BSON_BYTE_ORDER@
+#define BSON_BYTE_ORDER BSON_LITTLE_ENDIAN
 
 
 /*
  * Define to 1 if you have stdbool.h
  */
-#define BSON_HAVE_STDBOOL_H @BSON_HAVE_STDBOOL_H@
-#if BSON_HAVE_STDBOOL_H != 1
+#define BSON_HAVE_STDBOOL_H 2
+#if BSON_HAVE_STDBOOL_H != 2
 # undef BSON_HAVE_STDBOOL_H
 #endif
 
@@ -39,13 +39,13 @@
 /*
  * Define to 1 for POSIX-like systems, 2 for Windows.
  */
-#define BSON_OS @BSON_OS@
+#define BSON_OS 1
 
 
 /*
  * Define to 1 if you have clock_gettime() available.
  */
-#define BSON_HAVE_CLOCK_GETTIME @BSON_HAVE_CLOCK_GETTIME@
+#define BSON_HAVE_CLOCK_GETTIME 1
 #if BSON_HAVE_CLOCK_GETTIME != 1
 # undef BSON_HAVE_CLOCK_GETTIME
 #endif
@@ -54,7 +54,7 @@
 /*
  * Define to 1 if you have strings.h available on your platform.
  */
-#define BSON_HAVE_STRINGS_H @BSON_HAVE_STRINGS_H@
+#define BSON_HAVE_STRINGS_H 1
 #if BSON_HAVE_STRINGS_H != 1
 # undef BSON_HAVE_STRINGS_H
 #endif
@@ -63,7 +63,7 @@
 /*
  * Define to 1 if you have strnlen available on your platform.
  */
-#define BSON_HAVE_STRNLEN @BSON_HAVE_STRNLEN@
+#define BSON_HAVE_STRNLEN 2
 #if BSON_HAVE_STRNLEN != 1
 # undef BSON_HAVE_STRNLEN
 #endif
@@ -72,7 +72,7 @@
 /*
  * Define to 1 if you have snprintf available on your platform.
  */
-#define BSON_HAVE_SNPRINTF @BSON_HAVE_SNPRINTF@
+#define BSON_HAVE_SNPRINTF 2
 #if BSON_HAVE_SNPRINTF != 1
 # undef BSON_HAVE_SNPRINTF
 #endif
@@ -81,7 +81,7 @@
 /*
  * Define to 1 if you have gmtime_r available on your platform.
  */
-#define BSON_HAVE_GMTIME_R @BSON_HAVE_GMTIME_R@
+#define BSON_HAVE_GMTIME_R 1
 #if BSON_HAVE_GMTIME_R != 1
 # undef BSON_HAVE_GMTIME_R
 #endif
@@ -90,7 +90,7 @@
 /*
  * Define to 1 if you have struct timespec available on your platform.
  */
-#define BSON_HAVE_TIMESPEC @BSON_HAVE_TIMESPEC@
+#define BSON_HAVE_TIMESPEC 2
 #if BSON_HAVE_TIMESPEC != 1
 # undef BSON_HAVE_TIMESPEC
 #endif
@@ -100,7 +100,7 @@
 /*
  * Define to 1 if you have rand_r available on your platform.
  */
-#define BSON_HAVE_RAND_R @BSON_HAVE_RAND_R@
+#define BSON_HAVE_RAND_R 2
 #if BSON_HAVE_RAND_R != 1
 # undef BSON_HAVE_RAND_R
 #endif
@@ -109,7 +109,7 @@
 /*
  * Define to 1 if you have strlcpy available on your platform.
  */
-#define BSON_HAVE_STRLCPY @BSON_HAVE_STRLCPY@
+#define BSON_HAVE_STRLCPY 2
 #if BSON_HAVE_STRLCPY != 1
 # undef BSON_HAVE_STRLCPY
 #endif
@@ -118,7 +118,7 @@
 /*
  * Define to 1 if you have aligned_alloc available on your platform.
  */
-#define BSON_HAVE_ALIGNED_ALLOC @BSON_HAVE_ALIGNED_ALLOC@
+#define BSON_HAVE_ALIGNED_ALLOC 2
 #if BSON_HAVE_ALIGNED_ALLOC != 1
 # undef BSON_HAVE_ALIGNED_ALLOC
 #endif
