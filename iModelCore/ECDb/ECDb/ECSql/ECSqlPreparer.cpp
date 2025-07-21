@@ -393,7 +393,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
     // Count snippets excluding [Element].[ParentRelECClassId] and NULL to avoid adding parentheses when all snippets are skipped.
     for (size_t i = 0; i < nativeSqlSnippetCount; i++) 
         {
-        if (!(lhsNativeSqlSnippets[i].GetSql().Equals("[Element].[ParentRelECClassId]") && rhsNativeSqlSnippets[i].GetSql().Equals("NULL")))
+        if (nativeSqlSnippetCount == 2 && i == 1 && rhsNativeSqlSnippets[i].GetSql().Equals("NULL"))
             validSnippetCount++;
         }
     const bool wrapInParens = exp.HasParentheses() || validSnippetCount > 1;
@@ -423,8 +423,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
         bool isFirstSnippet = true;
         for (size_t i = 0; i < nativeSqlSnippetCount; i++)
             {
-            // Checks if the current SQL snippet is not [Element].[ParentRelECClassId] with NULL as the right-hand side.
-            if (!(lhsNativeSqlSnippets[i].GetSql().Equals("[Element].[ParentRelECClassId]") && rhsNativeSqlSnippets[i].GetSql().Equals("NULL")))
+        // Skip second snippet if it's a NULL comparison to avoid unnecessary SQL condition.
+            if (!(nativeSqlSnippetCount == 2 && i == 1 && rhsNativeSqlSnippets[i].GetSql().Equals("NULL")))
                 {
                 if (!isFirstSnippet)
                     sqlBuilder.AppendSpace().Append(ExpHelper::ToSql(logicalCompoundOp)).AppendSpace();
