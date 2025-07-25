@@ -673,6 +673,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! Called after any schema changes are applied or if apply process failed
         ECDB_EXPORT SchemaChangeEvent& OnAfterSchemaChanges() const;
 
+        ECDB_EXPORT BentleyStatus ClearCacheTables() const;
         Utf8String GetDescription() const override {
             return Utf8PrintfString("ECDb");
         }
