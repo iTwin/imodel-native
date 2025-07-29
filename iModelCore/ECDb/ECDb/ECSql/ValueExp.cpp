@@ -303,7 +303,7 @@ void SearchCaseValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
         when->ToJson(list.appendValue(), fmt);
 
     if (auto el = Else()) {
-        Else()->ToJson(val["elseExp"], fmt);
+        el->ToJson(val["elseExp"], fmt);
     }
 }
 //-----------------------------------------------------------------------------------------

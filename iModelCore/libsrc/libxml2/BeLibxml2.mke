@@ -75,7 +75,7 @@ $(BuildContext)Delivery/libxml2-license.txt : $(baseDir)Copyright
 %endif
 
 # Prefer to disable warnings in third-party code vs. editing it.
-%if ("APPLE_CLANG" == $(BUILD_TOOLSET))
+%if "APPLE_CLANG" == $(BUILD_TOOLSET) || "LINUX_CLANG" == $(BUILD_TOOLSET)
     OldLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
     LLVMCommonCompOpts + -Wno-error=implicit-function-declaration
 %endif
