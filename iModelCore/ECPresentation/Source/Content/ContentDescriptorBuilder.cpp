@@ -176,7 +176,7 @@ private:
 
             if (auto concreteCategoryRef = categoryRef->AsConcreteCategoryRef())
                 {
-                auto const& category = categoryRef->AsConcreteCategoryRef()->GetCategory();
+                auto const& category = concreteCategoryRef->GetCategory();
                 parentCategory = ShareOrCreateCategory(category, parentCategory);
                 continue;
                 }
