@@ -6,6 +6,7 @@
 
 #include <json/value.h>
 #include "Render.h"
+#include <optional>
 
 #define RENDER_MATERIAL_Type                                        "Type"
 #define RENDER_MATERIAL_PatternFlags                                "PatternFlags"
@@ -276,6 +277,9 @@ public:
     TextureMap GetNormalMap() const { return GetTextureMap(TextureMap::Type::Normal, RENDER_MATERIAL_MAP_Normal); }
     double GetNormalScale() const { return GetDouble(RENDER_MATERIAL_NormalScale, 1.0); }
 
+    // The transparency from 0 (fully opaque) to 1 (fully transparent), or nullptr if transparency is not overridden.
+    DGNPLATFORM_EXPORT std::optional<double> GetTransparency() const;
+    
     //=======================================================================================
     //! Helper class for constructing a Render::TextureMapping::Trans2x3 from scratch or
     //! from a RenderingAsset::TextureMap.
