@@ -1386,11 +1386,11 @@ void Claude_DoCubicParabolaSpiralCheck(int type, int ctorSelect, double startBea
     double bearingChangeAB = bearingB - bearingA;
 
     if (s_noisySpirals)
+        {
         printf ("   Long and Short Tangents with angle from CurvePrimitive (arctan of actual bearing) %s\n", stringAB1.c_str());
-    if (s_noisySpirals)
         PrintTangents (chordAB, bearingChangeAB, startCurvature, endCurvature);
-    if (s_noisySpirals)
         printf ("    chord length    %.6lg\n", chordAB.Magnitude ());
+        }
     double radiusA1, radiusB1, curvatureA1, torsionA1, curvatureB1, torsionB1;
     Transform frameA1, frameB1;
     spiral->FractionToFrenetFrame (0.0, frameA1, curvatureA1, torsionA1);
@@ -1431,13 +1431,12 @@ void Claude_DoCubicParabolaSpiralCheck(int type, int ctorSelect, double startBea
         RadiansToDMSString (formulaFinalRadians, formulaFinalRadiansDMS);
         RadiansToDMSString (finalRadiansFromDerivative, formulaFinalRadiansFromDerivativesDMS);
         if (s_noisySpirals)
+            {
             printf ("   final point radian approximation formula   %s\n", formulaFinalRadiansDMS.c_str());
-        if (s_noisySpirals)
             printf ("   final point radian by arctan from perp, tangent derivatives %s\n", formulaFinalRadiansFromDerivativesDMS.c_str());
-        if (s_noisySpirals)
             printf ("   Long and Short Tangents with angle approximation bearignChange %s\n", formulaFinalRadiansDMS.c_str());
-        if (s_noisySpirals)
             PrintTangents (chordAB, formulaFinalRadians, startCurvature, endCurvature);
+            }
         }
 
     if (startRadius == 0.0
@@ -1457,11 +1456,11 @@ void Claude_DoCubicParabolaSpiralCheck(int type, int ctorSelect, double startBea
         if (type == DSpiral2dBase::TransitionType_AustralianRailCorp)
             {
             if (s_noisySpirals)
+                {
                 printf (" RailCorp explicit PHI %s\n", phiDMS.c_str());
-            if (s_noisySpirals)
                 printf (" ?? Tangents with clothoid angle (L/(2R)) (clothoid) and RailCorp final XY\n");
-            if (s_noisySpirals)
                 PrintTangents (chordAB, clothoidRadians, startCurvature, endCurvature);
+                }
             }
         else
             {
@@ -1593,15 +1592,15 @@ TEST(Spiral,PartialCubics)
     spiral->FractionToPoint (1.0, xyz1, tangent1);
     double radians01 = tangent0.AngleToXY (tangent1);
     if (s_noisySpirals)
+        {
         printf (" partial cubic (nominal length %.8g) (actual %.8g) (SS4 angle %.8g) (actual angle %.8g) (angleDelta %.8g)\n",
                         length,
                         actualLength,
                         angleSS4,
                         radians01, radians01 - angleSS4
                         );
-
-    if (s_noisySpirals)
         printf ("        angle at nominal length %.8g (delta %.8g)\n", angleAtNominalLength, angleAtNominalLength - angleSS4);
+        }
 //    ASSERT_TRUE((angle >= angleSS4 - tolerance && angle <= angleSS4 + tolerance)) << "Angle is not correct";
 
     Check::ClearGeometry ("Spiral.PartialCubics");
