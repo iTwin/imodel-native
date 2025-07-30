@@ -1998,12 +1998,27 @@ Utf8String TxnManager::GetRedoString() {
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::ClearAllTxns() {
+    if (PullMergeConf::Load(m_dgndb).InProgress()) {
+        m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
+    }
+
+    m_dgndb.SaveChanges(); // in case there are outstanding changes that will create a new Txn
+    m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Txns);
+    m_dgndb.SaveChanges();
+    Initialize();
+}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::DeleteAllTxns() {
     if (PullMergeConf::Load(m_dgndb).InProgress()) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
 
     m_dgndb.SaveChanges(); // in case there are outstanding changes that will create a new Txn
+    ReverseAll();
     m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Txns);
     m_dgndb.SaveChanges();
     Initialize();

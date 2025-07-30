@@ -2579,7 +2579,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             JsInterop::throwSqlResult("error deleting local value", name.c_str(), stat);
     }
 
-    // delete all local Txns. THIS IS VERY DANGEROUS! Don't use it unless you know what you're doing!
+    // only deletes all local Txns from the Db table without actually reverting the changes.
+    // THIS IS VERY DANGEROUS! Don't use it unless you know what you're doing!
+    void ClearAllTxns(NapiInfoCR info) {
+        GetOpenedDb(info).Txns().ClearAllTxns();
+    }
+
+    // reverts and then deletes all local Txns.
+    // THIS IS VERY DANGEROUS!
+    // Don't use it unless you know what you're doing!
     void DeleteAllTxns(NapiInfoCR info) {
         GetOpenedDb(info).Txns().DeleteAllTxns();
     }
@@ -2890,6 +2898,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("createClassViewsInDb", &NativeDgnDb::CreateClassViewsInDb),
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
             InstanceMethod("deleteAllTxns", &NativeDgnDb::DeleteAllTxns),
+            InstanceMethod("clearAllTxns", &NativeDgnDb::ClearAllTxns),
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
