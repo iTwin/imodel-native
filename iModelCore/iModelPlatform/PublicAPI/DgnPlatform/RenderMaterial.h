@@ -142,11 +142,11 @@ struct ElevationDrapeParams
 //! The specular exponent can be specified as a floating point value > 0.0 by setting:
 //!     RENDER_MATERIAL_FlagHasFinish=true; and
 //!     RENDER_MATERIAL_Finish=exponent
-//! A material *always* overrides element transparency as a value from 0 (fully opaque) to 1 (fully transparent).
-//!     If RENDER_MATERIAL_FlagHasTransmit=true, then RENDER_MATERIAL_Transmit holds that transparency value.
-//!     Otherwise, the transparency value is 0.0.
+//! A material can override element transparency as a value from 0 (fully opaque) to 1 (fully transparent).
+//!     If RENDER_MATERIAL_FlagHasTransmit=true, then RENDER_MATERIAL_Transmit holds the transparency override.
+//!     If RENDER_MATERIAL_FlagHasTransmit=false, then the transparency override is 0.0.
+//      If RENDER_MATERIAL_FlagHasTransmit is not defined, then the material does not override element transparency.
 //!     If the material has a pattern map, the alpha of the sampled texture will be multiplied by the material's alpha (inverse of its transparency).
-//!     ###TODO Revit wants to be able to *not* override element transparency. This should be doable.
 //! The diffuse lighting weight can be specified as a value in [0..1] by setting:
 //!     RENDER_MATERIAL_FlagHasDiffuse=true; and
 //!     RENDER_MATERIAL_Diffuse=weight
