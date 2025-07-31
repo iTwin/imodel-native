@@ -352,7 +352,6 @@ double bearingRadians
     }
 
 
-#define MAX_SPIRAL_BUFFER_POINTS 2000
 /// <summary>
 /// Create a bspline curve for specified transition spiral type and
 /// start/end bearings, clipped as a fractional range of an (extensible) parent spiral.
@@ -376,7 +375,7 @@ double maxStrokeLength
     bvector<DPoint3d> xyzPoints;
 
     double errorEstimate;
-    if (NULL != pSpiral)
+    if (NULL != pSpiral && NULL != pCurve)
         {
         DVec2d uvA;
         // Stroke from 000 ...
@@ -397,30 +396,25 @@ double maxStrokeLength
             for (auto &uv : uvPoints)
                 xyzPoints.push_back (DPoint3d::From (uvA.x + uv.x, uvA.y + uv.y, 0.0));
             size_t numXYZ = xyzPoints.size ();
-            distanceA = pSpiral->FractionToDistance (fractionA);
-            distanceB = pSpiral->FractionToDistance (fractionB);
-            double localBearingA = pSpiral->DistanceToGlobalAngle (distanceA);
-            double localBearingB = pSpiral->DistanceToGlobalAngle (distanceB);
-            double curvatureA    = pSpiral->DistanceToCurvature (distanceA);
-            double curvatureB    = pSpiral->DistanceToCurvature (distanceB);
-            double bearingA = CorrectBearing (xyzPoints[0], xyzPoints[1], localBearingA);
-            double bearingB = CorrectBearing (xyzPoints[numXYZ - 2], xyzPoints[numXYZ - 1], localBearingB);
-            status = bspcurv_interpolateXYWithBearingAndRadiusExt
-                        (
-                        pCurve,
-                        &xyzPoints[0], (int)numXYZ,
-                        true,
-                        bearingA,
-                        bApplyRadius,
-                        RadiusFromCurvature (curvatureA),
-                        true,
-                        bearingB,
-                        bApplyRadius,
-                        RadiusFromCurvature (curvatureB)
-                        );
-            Transform placement;
-            placement.InitFrom (*pFrame, *pOrigin);
-            bspcurv_transformCurve (pCurve, pCurve, &placement);
+            if (numXYZ > 1)
+                {
+                distanceA = pSpiral->FractionToDistance (fractionA);
+                distanceB = pSpiral->FractionToDistance (fractionB);
+                double localBearingA = pSpiral->DistanceToGlobalAngle (distanceA);
+                double localBearingB = pSpiral->DistanceToGlobalAngle (distanceB);
+                double curvatureA    = pSpiral->DistanceToCurvature (distanceA);
+                double curvatureB    = pSpiral->DistanceToCurvature (distanceB);
+                double bearingA = CorrectBearing (xyzPoints[0], xyzPoints[1], localBearingA);
+                double bearingB = CorrectBearing (xyzPoints[numXYZ - 2], xyzPoints[numXYZ - 1], localBearingB);
+                if (SUCCESS == (status = bspcurv_interpolateXYWithBearingAndRadiusExt(pCurve, xyzPoints.data(), (int)numXYZ,
+                    true, bearingA, bApplyRadius, RadiusFromCurvature (curvatureA),
+                    true, bearingB, bApplyRadius, RadiusFromCurvature (curvatureB))))
+                    {
+                    Transform placement;
+                    placement.InitFrom (*pFrame, *pOrigin);
+                    bspcurv_transformCurve (pCurve, pCurve, &placement);
+                    }
+                }
             }
         }
 
