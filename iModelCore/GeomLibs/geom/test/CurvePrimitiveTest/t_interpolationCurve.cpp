@@ -7,9 +7,7 @@
 #include "testHarness.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
-bool ReadDgnjsGeometry(bvector<IGeometryPtr> &geometry, size_t minGeometry, WCharCP nameA, WCharCP nameB, WCharCP nameC);
 void DoRoundTrip(IGeometryPtr g0, bool emitGeometry, int serializerSelect);
-
 
 TEST(InterpolationCurve, HelloWorld)
     {
@@ -36,7 +34,6 @@ TEST(InterpolationCurve, HelloWorld)
     Check::SaveTransformed(arcPoints);
     Check::Shift(delta, -delta);
 
-
     bvector<ICurvePrimitivePtr> allCurves;
     MSInterpolationCurve newCurve;
     if (SUCCESS == newCurve.Populate (4, false, 0, 0, 0, 0, arcPoints.data (), (int)arcPoints.size (),
@@ -51,6 +48,7 @@ TEST(InterpolationCurve, HelloWorld)
     if (SUCCESS == newCurve.Populate(4, false, 0, 1, 0, 0, arcPoints.data(), (int)arcPoints.size(),
         nullptr, 0, nullptr, nullptr))
         allCurves.push_back(ICurvePrimitive::CreateInterpolationCurveSwapFromSource(newCurve));
+
     allCurves.push_back(nullptr);
 
     if (SUCCESS == newCurve.Populate(4, false, 0, 0, 0, 0, arcPoints.data(), (int)arcPoints.size(),
@@ -77,8 +75,8 @@ TEST(InterpolationCurve, HelloWorld)
     if (SUCCESS == newCurve.Populate(4, false, 0, 1, 1, 1, arcPoints.data(), (int)arcPoints.size(),
         nullptr, 0, &startTangent, nullptr))
         allCurves.push_back(ICurvePrimitive::CreateInterpolationCurveSwapFromSource(newCurve));
-    allCurves.push_back(nullptr);
 
+    allCurves.push_back(nullptr);
 
     if (SUCCESS == newCurve.Populate(4, false, 0, 0, 0, 0, arcPoints.data(), (int)arcPoints.size(),
         nullptr, 0, nullptr, &endTangent))
@@ -104,12 +102,8 @@ TEST(InterpolationCurve, HelloWorld)
     if (SUCCESS == newCurve.Populate(4, false, 0, 1, 1, 1, arcPoints.data(), (int)arcPoints.size(),
         nullptr, 0, nullptr, &endTangent))
         allCurves.push_back(ICurvePrimitive::CreateInterpolationCurveSwapFromSource(newCurve));
-    allCurves.push_back(nullptr);
 
-/*
-InterpolationCurve3dOptions.create({ fitPoints: arcPoints, startTangent : startTan, endTangent : endTan, isChordLenTangents : 0 }),
-InterpolationCurve3dOptions.create({ fitPoints: arcPoints, startTangent : startTan, endTangent : endTan, isChordLenTangents : 1 }),
-*/
+    allCurves.push_back(nullptr);
 
     if (SUCCESS == newCurve.Populate(4, false, 0, 0, 0, 0, arcPoints.data(), (int)arcPoints.size(),
         nullptr, 0, &startTangent, &endTangent))
@@ -117,44 +111,18 @@ InterpolationCurve3dOptions.create({ fitPoints: arcPoints, startTangent : startT
     if (SUCCESS == newCurve.Populate(4, false, 0, 0, 1, 0, arcPoints.data(), (int)arcPoints.size(),
         nullptr, 0, &startTangent, &endTangent))
         allCurves.push_back(ICurvePrimitive::CreateInterpolationCurveSwapFromSource(newCurve));
+
     allCurves.push_back (nullptr);
-/*
-InterpolationCurve3dOptions.create({ fitPoints: circlePoints, closed : true, isChordLenKnots : 0 }),
-InterpolationCurve3dOptions.create({ fitPoints: circlePoints, closed : true, isChordLenKnots : 1 }),
-*/
+
     if (SUCCESS == newCurve.Populate(4, true, 0, 0, 0, 0, circlePoints.data(), (int)circlePoints.size(),
         nullptr, 0, nullptr, nullptr))
         allCurves.push_back(ICurvePrimitive::CreateInterpolationCurveSwapFromSource(newCurve));
     if (SUCCESS == newCurve.Populate(4, true, 1, 0, 0, 0, circlePoints.data(), (int)circlePoints.size(),
         nullptr, 0, nullptr, nullptr))
         allCurves.push_back(ICurvePrimitive::CreateInterpolationCurveSwapFromSource(newCurve));
+
     allCurves.push_back(nullptr);
 
-    /*
-InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, isColinearTangents : 0, isNaturalTangents : 0 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, isColinearTangents : 0, isNaturalTangents : 1 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, isColinearTangents : 1, isNaturalTangents : 0 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, isColinearTangents : 1, isNaturalTangents : 1 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, startTangent : startTan, isColinearTangents : 0, isChordLenTangents : 0, isNaturalTangents : 0 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, startTangent : startTan, isColinearTangents : 0, isChordLenTangents : 0, isNaturalTangents : 1 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, startTangent : startTan, isColinearTangents : 0, isChordLenTangents : 1, isNaturalTangents : 0 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, startTangent : startTan, isColinearTangents : 0, isChordLenTangents : 1, isNaturalTangents : 1 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, startTangent : startTan, isColinearTangents : 1, isChordLenTangents : 0, isNaturalTangents : 0 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, startTangent : startTan, isColinearTangents : 1, isChordLenTangents : 0, isNaturalTangents : 1 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, startTangent : startTan, isColinearTangents : 1, isChordLenTangents : 1, isNaturalTangents : 0 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, startTangent : startTan, isColinearTangents : 1, isChordLenTangents : 1, isNaturalTangents : 1 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, endTangent : endTan, isColinearTangents : 0, isChordLenTangents : 0, isNaturalTangents : 0 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, endTangent : endTan, isColinearTangents : 0, isChordLenTangents : 0, isNaturalTangents : 1 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, endTangent : endTan, isColinearTangents : 0, isChordLenTangents : 1, isNaturalTangents : 0 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, endTangent : endTan, isColinearTangents : 0, isChordLenTangents : 1, isNaturalTangents : 1 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, endTangent : endTan, isColinearTangents : 1, isChordLenTangents : 0, isNaturalTangents : 0 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, endTangent : endTan, isColinearTangents : 1, isChordLenTangents : 0, isNaturalTangents : 1 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, endTangent : endTan, isColinearTangents : 1, isChordLenTangents : 1, isNaturalTangents : 0 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, endTangent : endTan, isColinearTangents : 1, isChordLenTangents : 1, isNaturalTangents : 1 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, startTangent : startTan, endTangent : endTan, isChordLenTangents : 0 }),
-        InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, startTangent : startTan, endTangent : endTan, isChordLenTangents : 1 }),
-        InterpolationCurve3dOptions.create({ fitPoints: circlePoints, knots : fitParams, closed : true }),
-        */
     for (auto &cp : allCurves) {
         SaveAndRestoreCheckTransform shifter (delta, 0, 0);
         if (cp.IsValid ())
