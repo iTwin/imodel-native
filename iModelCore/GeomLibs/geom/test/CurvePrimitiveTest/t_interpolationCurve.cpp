@@ -170,6 +170,33 @@ InterpolationCurve3dOptions.create({ fitPoints: arcPoints, knots : fitParams, is
     Check::ClearGeometry("InterpolationCurve.HelloWorld");
     }
 
-
-
-
+TEST(InterpolationCurve, PointFormat)
+    {
+    // Test alternative tagged json point format (not 2D number array)
+    // Unescaped raw_json_text is in between the following multicharacter delimiters: foo( raw_json_text )foo
+    static Utf8Chars s_input(u8R"foo({"interpolationCurve":{"fitPoints":[{"x":0,"y":0},{"x":2,"y":1,"z":1},{"x":3,"y":2,"z":2},{"x":4,"y":3,"z":1},{"x":5,"y":4}],"startTangent":{"x":1,"y":0},"endTangent":{"x":-1,"y":0}}})foo");
+    bvector<IGeometryPtr> inputs;
+    if (Check::True(IModelJson::TryIModelJsonStringToGeometry(&s_input, inputs), "Parse input") &&
+        Check::Size(inputs.size(), 1, "Have one input"))
+        {
+        auto prim = inputs[0]->GetAsICurvePrimitive();
+        if (Check::True(prim.IsValid(), "Input is valid"))
+            {
+            auto interpCurve = prim->GetInterpolationCurveCP();
+            if (Check::True(interpCurve != 0, "Input is an interpolation curve"))
+                {
+                Check::Int(4, interpCurve->params.order, "Order");
+                Check::Int(5, interpCurve->params.numPoints, "Fit points count");
+                Check::Int(0, interpCurve->params.isPeriodic, "Not periodic");
+                Check::Int(0, interpCurve->params.isChordLenTangents, "Bessel tangent length");
+                Check::Exact(DPoint3d::From(0,0), interpCurve->fitPoints[0], "First point");
+                Check::Exact(DPoint3d::From(2,1,1), interpCurve->fitPoints[1], "Second point");
+                Check::Exact(DPoint3d::From(3,2,2), interpCurve->fitPoints[2], "Third point");
+                Check::Exact(DPoint3d::From(4,3,1), interpCurve->fitPoints[3], "Fourth point");
+                Check::Exact(DPoint3d::From(5,4), interpCurve->fitPoints[4], "Fifth point");
+                Check::Exact(DVec3d::From(1,0), interpCurve->startTangent, "Start tangent");
+                Check::Exact(DVec3d::From(-1,0), interpCurve->endTangent, "End tangent");
+                }
+            }
+        }
+    }
