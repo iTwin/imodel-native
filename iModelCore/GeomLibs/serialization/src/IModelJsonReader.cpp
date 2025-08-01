@@ -288,7 +288,7 @@ private: bool tryValueToBVectorFaceData(BeJsConst value, bvector<FacetFaceData> 
     weights.clear ();
     if (value.isArray())
         {
-        DPoint4d xyzw;
+        DPoint4d xyzw = DPoint4d::From(0, 0, 0 ,0);
         for (uint32_t i = 0, n = value.size(); i < n; i++)
             {
             if (!tryValueToXYZW (value[i], xyzw))
@@ -345,7 +345,7 @@ bool tryValueGridToBVectorDPoint3d (BeJsConst value, bvector<DPoint3d> &data, bv
     if (value.isArray())
         {
         DPoint3d xyz;
-        DPoint4d xyzw;
+        DPoint4d xyzw = DPoint4d::From(0, 0, 0, 0);
         for (uint32_t i = 0, n = value.size(); i < n; i++)
             {
             if (value[i].isArray ())
