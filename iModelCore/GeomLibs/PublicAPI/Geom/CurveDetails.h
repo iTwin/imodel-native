@@ -771,7 +771,7 @@ struct CurvePrimitivePtrPair
     {
     ICurvePrimitivePtr curveA;
     ICurvePrimitivePtr curveB;
-    CurvePrimitivePtrPair (ICurvePrimitivePtr curveA, ICurvePrimitivePtr curveB);
+    GEOMDLLIMPEXP CurvePrimitivePtrPair (ICurvePrimitivePtr curveA, ICurvePrimitivePtr curveB);
     };
 typedef bvector<CurvePrimitivePtrPair> CurvePrimitivePtrPairVector;
 
