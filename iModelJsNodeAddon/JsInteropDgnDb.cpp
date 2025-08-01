@@ -457,10 +457,21 @@ struct SetNapiObjOnElement {
 /*---------------------------------------------------------------------------------**/ /**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void callJsPreHandler(DgnDbR db, DgnClassId classId, Utf8CP methodName, Napi::Object obj)  {
+static void callJsPreHandler(DgnDbR db, DgnClassId classId, Utf8CP methodName, Napi::Object obj, std::optional<Napi::Value> options = std::nullopt) {
     auto arg = Napi::Object::New(obj.Env());
     arg.Set("props", obj);
+    if (options.has_value() && !options.value().IsUndefined()) {
+        arg.Set("options", options.value());
+    }
     db.CallJsHandlerMethod(classId, methodName, arg);
+}
+
+static std::optional<EditOptions> GetEditOptionsFromJson(BeJsConst const& inJson) {
+    if (!inJson.isObject())
+        return std::nullopt;
+
+    auto indirectVal = inJson.getMemberBoolean(JsInterop::json_indirect(), false);
+    return EditOptions{indirectVal};
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -471,7 +482,7 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
     BeJsConst inOptionsJson(optionsObj);
 
     auto classId = ECJsonUtilities::GetClassIdFromClassNameJson(inJson[DgnElement::json_classFullName()], dgndb.GetClassLocater());
-    callJsPreHandler(dgndb, classId, "onInsert", obj);
+    callJsPreHandler(dgndb, classId, "onInsert", obj, optionsObj);
 
     try {
         DgnElement::CreateParams params(dgndb, inJson);
@@ -501,9 +512,11 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
             el->CopyIdentityFrom(eid, el->GetFederationGuid());
         }
 
+        std::optional<EditOptions> options = GetEditOptionsFromJson(inOptionsJson);
+
         SetNapiObjOnElement _v(*el, &obj);
         DgnDbStatus status;
-        auto newEl = el->Insert(&status);
+        auto newEl = el->Insert(&status, options);
         if (!newEl.IsValid())
             throwDgnDbStatus(status);
         return Napi::String::New(Env(), newEl->GetElementId().ToHexStr());
@@ -515,8 +528,9 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj) {
+void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj, Napi::Value optionsObj) {
     BeJsValue elProps(obj);
+    BeJsConst optionsJson(optionsObj);
     DgnElementId eid = elProps[DgnElement::json_id()].GetId64<DgnElementId>();
     if (!eid.IsValid())
         throwInvalidId();
@@ -533,11 +547,12 @@ void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj) {
         elProps[DgnElement::json_classFullName()] = el->GetElementClass()->GetFullName();
         elProps[DgnElement::json_model()] = el->GetModelId();
 
-        callJsPreHandler(dgndb, el->GetElementClassId(), "onUpdate", obj);
+        callJsPreHandler(dgndb, el->GetElementClassId(), "onUpdate", obj, optionsObj);
         el->FromJson(elProps);
+        std::optional<EditOptions> options = GetEditOptionsFromJson(optionsJson);
 
         SetNapiObjOnElement _v(*el, &obj);
-        DgnDbStatus status = el->Update();
+        DgnDbStatus status = el->Update(options);
         if (DgnDbStatus::Success != status)
             THROW_JS_DGN_DB_EXCEPTION(Env(), "error updating", status);
     } catch (std::logic_error const& err) {
@@ -669,7 +684,7 @@ void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr) {
+void JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr, Napi::Value optionsObj) {
     DgnElementId eid(BeInt64Id::FromString(eidStr.c_str()).GetValue());
     if (!eid.IsValid())
         throwInvalidId();
@@ -678,7 +693,10 @@ void JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr) {
     if (!elPersist.IsValid())
         throwMissingId();
 
-    auto stat =  elPersist->Delete();
+    BeJsConst optionsJson(optionsObj);
+    std::optional<EditOptions> options = GetEditOptionsFromJson(optionsJson);
+
+    auto stat =  elPersist->Delete(options);
     if (stat != DgnDbStatus::Success)
         THROW_JS_DGN_DB_EXCEPTION(Env(), "error deleting element", stat);
 }

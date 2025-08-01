@@ -1476,6 +1476,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     Napi::Value HasUnsavedChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().HasChanges());}
     Napi::Value HasPendingTxns(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().HasPendingTxns());}
     Napi::Value IsIndirectChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsIndirectChanges());}
+    Napi::Value IsPropagatingChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsPropagatingChanges());}
     Napi::Value IsRedoPossible(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsRedoPossible());}
     Napi::Value IsUndoPossible(NapiInfoCR info) {
         return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsUndoPossible());
@@ -1709,25 +1710,37 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     Napi::Value InsertElement(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, elemProps);
-        Napi::Value insertOptions;
+        Napi::Value options;
         if (ARGUMENT_IS_PRESENT(1)) {\
-            insertOptions = info[1].As<Napi::Object>();
+            options = info[1].As<Napi::Object>();
         } else {
-            insertOptions = Env().Undefined();
+            options = Env().Undefined();
         }
-        return JsInterop::InsertElement(db, elemProps, insertOptions);
+        return JsInterop::InsertElement(db, elemProps, options);
     }
 
     void UpdateElement(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, elemProps);
-        JsInterop::UpdateElement(db, elemProps);
+        Napi::Value options;
+        if (ARGUMENT_IS_PRESENT(1)) {\
+            options = info[1].As<Napi::Object>();
+        } else {
+            options = Env().Undefined();
+        }
+        JsInterop::UpdateElement(db, elemProps, options);
     }
 
     void DeleteElement(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
-        JsInterop::DeleteElement(db, elemIdStr);
+        Napi::Value options;
+        if (ARGUMENT_IS_PRESENT(1)) {\
+            options = info[1].As<Napi::Object>();
+        } else {
+            options = Env().Undefined();
+        }
+        JsInterop::DeleteElement(db, elemIdStr, options);
     }
 
     Napi::Value QueryDefinitionElementUsage(NapiInfoCR info)
@@ -2972,6 +2985,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("isGeometricModelTrackingSupported", &NativeDgnDb::IsGeometricModelTrackingSupported),
             InstanceMethod("isIndirectChanges", &NativeDgnDb::IsIndirectChanges),
+            InstanceMethod("isPropagatingChanges", &NativeDgnDb::IsPropagatingChanges),
             InstanceMethod("isLinkTableRelationship", &NativeDgnDb::IsLinkTableRelationship),
             InstanceMethod("isOpen", &NativeDgnDb::IsDgnDbOpen),
             InstanceMethod("isProfilerPaused", &NativeDgnDb::IsProfilerPaused),
