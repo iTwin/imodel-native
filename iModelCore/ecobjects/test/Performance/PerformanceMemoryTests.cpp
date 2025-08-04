@@ -62,7 +62,7 @@ TEST_F(ECSchemaMemoryTests, SizeOfObjects)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECSchemaMemoryTests, BisSchemasUnits) { TestSchema(GetStandardsPath(L"Units.01.00.08.ecschema.xml")); }
+TEST_F(ECSchemaMemoryTests, BisSchemasUnits) { TestSchema(GetStandardsPath(L"Units.01.00.09.ecschema.xml")); }
 TEST_F(ECSchemaMemoryTests, BisSchemasFormats) { TestSchema(GetStandardsPath(L"Formats.01.00.00.ecschema.xml")); }
 
 TEST_F(ECSchemaMemoryTests, BisSchemasBisCore) { TestSchema(GetAssetsGSchemaPath(L"Dgn", L"BisCore.ecschema.xml")); }

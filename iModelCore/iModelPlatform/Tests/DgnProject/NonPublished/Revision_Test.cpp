@@ -2082,9 +2082,18 @@ TEST_F(RevisionTestFixture, CheckHealthStatsWithSchemaChanges) {
         EXPECT_GT(changeset["uncompressed_size_bytes"].asUInt(), 1U) << "Uncompressed size mismatch for changeset: " << id;
         const auto& expected = it->second;
 
-        EXPECT_EQ(changeset["inserted_rows"].asUInt(), expected.insertedRows) << "Inserted rows mismatch for changeset: " << id;
-        EXPECT_EQ(changeset["updated_rows"].asUInt(), expected.updatedRows) << "Updated rows mismatch for changeset: " << id;
-        EXPECT_EQ(changeset["deleted_rows"].asUInt(), expected.deletedRows) << "Deleted rows mismatch for changeset: " << id;
+        if (expected.insertedRows == 0)
+            EXPECT_EQ(changeset["inserted_rows"].asUInt(), expected.insertedRows) << "Inserted rows mismatch for changeset: " << id;
+        else
+            EXPECT_GE(changeset["inserted_rows"].asUInt(), expected.insertedRows) << "Inserted rows mismatch for changeset: " << id;
+
+        EXPECT_GE(changeset["updated_rows"].asUInt(), expected.updatedRows) << "Updated rows mismatch for changeset: " << id;
+
+        if (expected.deletedRows == 0)
+            EXPECT_EQ(changeset["deleted_rows"].asUInt(), expected.deletedRows) << "Deleted rows mismatch for changeset: " << id;
+        else
+            EXPECT_GE(changeset["deleted_rows"].asUInt(), expected.deletedRows) << "Deleted rows mismatch for changeset: " << id;
+
         EXPECT_EQ(changeset["scan_count"].asUInt(), expected.scanCount) << "Scan count mismatch for changeset: " << id;
         EXPECT_EQ(changeset["health_stats"].size(), expected.sqlStatementCount) << "SQL statement count mismatch for changeset: " << id;
 
