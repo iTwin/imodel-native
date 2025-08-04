@@ -324,12 +324,12 @@ TEST_F(ECDbTestFixture, TestDropSchemasWithInstances)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(instanceKey));
 
     // Schema drop should fail
-    IssueListener listener;
+    TestIssueListener listener;
     m_ecdb.AddIssueListener(listener);
     auto status = m_ecdb.Schemas().DropSchemas({ "TestSchema1", "TestSchema2" });
     EXPECT_TRUE(status.IsError());
     EXPECT_TRUE(status.HasInstances());
-    EXPECT_STREQ(listener.GetLastError().c_str(), "Drop ECSchema failed. One or more schemas have instances present. Make sure to delete them before dropping the schemas.");
+    EXPECT_STREQ(listener.GetLastMessage().c_str(), "Drop ECSchema failed. One or more schemas have instances present. Make sure to delete them before dropping the schemas.");
 
     // Delete the instances
     stmt.Finalize();
@@ -338,8 +338,9 @@ TEST_F(ECDbTestFixture, TestDropSchemasWithInstances)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     // Schema drop should now pass
-    listener.ClearMessages();
+    listener.ClearIssues();
     EXPECT_TRUE(m_ecdb.Schemas().DropSchemas({ "TestSchema1", "TestSchema2" }).IsSuccess());
+    EXPECT_TRUE(listener.IsEmpty());
     }
 
 TEST_F(ECDbTestFixture, TestDropSchemasBeingReferenced)
@@ -381,7 +382,7 @@ TEST_F(ECDbTestFixture, TestDropSchemasBeingReferenced)
 
     m_ecdb.SaveChanges();
     
-    IssueListener listener;
+    TestIssueListener listener;
     m_ecdb.AddIssueListener(listener);
 
     /* The schema references have been set up as:
@@ -413,7 +414,7 @@ TEST_F(ECDbTestFixture, TestDropSchemasBeingReferenced)
             { __LINE__, { "TestSchema7","TestSchema2","TestSchema4" }, false, DropSchemaResult::ErrorDeletedSchemaIsReferencedByAnotherSchema, "Drop ECSchemas failed. Schema(s) TestSchema2 are being referenced by other schemas." },
         })
         {
-        listener.ClearMessages();
+        listener.ClearIssues();
         StopWatch timer(true);
         auto status = m_ecdb.Schemas().DropSchemas(schemasToDrop);
         timer.Stop();
@@ -429,7 +430,7 @@ TEST_F(ECDbTestFixture, TestDropSchemasBeingReferenced)
             }
         else
             {
-            EXPECT_STREQ(listener.GetLastError().c_str(), expectedErrorMessage) << "Failed test case " << testCaseNumber;
+            EXPECT_STREQ(listener.GetLastMessage().c_str(), expectedErrorMessage) << "Failed test case " << testCaseNumber;
             }
 
         m_ecdb.AbandonChanges();
@@ -688,7 +689,7 @@ TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CurrentECSqlVersion)
     {
-    BeVersion expectedVersion (1, 2, 11, 0);
+    BeVersion expectedVersion (2, 0, 2, 0);
     ASSERT_EQ(ECDb::GetECSqlVersion(), expectedVersion);
     }
 
@@ -713,7 +714,7 @@ TEST_F(ECDbTestFixture, NewFileECDbProfileVersion)
 
 TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
     {
-    IssueListener listener;
+    TestIssueListener listener;
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("newFile.ecdb"));
     m_ecdb.AddIssueListener(listener);
 
@@ -807,7 +808,7 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
         { __LINE__, "SELECT MIN(MIN(3, 4))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MIN(3, 4))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
         })
         {
-        listener.ClearMessages();
+        listener.ClearIssues();
         ECSqlStatement statement;
         EXPECT_EQ(expectedStatus, statement.Prepare(m_ecdb, sqlStatement.c_str())) << "Test case at line " << lineNumber << " failed.\n";
         if (expectedStatus == ECSqlStatus::Success)
@@ -818,7 +819,7 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
             }
         else
             {
-            EXPECT_STREQ(listener.GetLastError().c_str(), errorMsg.c_str()) << "Test case at line " << lineNumber << " failed.\n";
+            EXPECT_STREQ(listener.GetLastMessage().c_str(), errorMsg.c_str()) << "Test case at line " << lineNumber << " failed.\n";
             }
         statement.Finalize();
         }
@@ -836,7 +837,7 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
         "    </ECEntityClass>"
         "</ECSchema>")));
 
-    IssueListener listener;
+    TestIssueListener listener;
     m_ecdb.AddIssueListener(listener);
 
     for (const auto& [lineNumber, isSelect, sqlStatement, expectedStatus, expectedResult, errorMsg]
@@ -909,7 +910,7 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
         })
         {
         // Reset listener queue for current test case
-        listener.ClearMessages();
+        listener.ClearIssues();
 
         ECSqlStatement testCaseSQL;
         // Prepare the SQL statement
@@ -955,7 +956,7 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
         else
             {
             // Test if the parsing for MIN/MAX has failed with appropriate error message
-            EXPECT_STREQ(listener.GetLastError().c_str(), errorMsg.c_str()) << "Test case at line " << lineNumber << " failed.\n";
+            EXPECT_STREQ(listener.GetLastMessage().c_str(), errorMsg.c_str()) << "Test case at line " << lineNumber << " failed.\n";
             }
         }
     }

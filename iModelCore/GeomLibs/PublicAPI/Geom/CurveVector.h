@@ -393,12 +393,12 @@ GEOMDLLIMPEXP bool ComputeSecondMomentDifferentialWireRotationProducts
 //! @param [out] products integrated [xx xy xz x; xy yy yz y; xz yz zz z; x y z 1] dA
 GEOMDLLIMPEXP bool ComputeSecondMomentWireProducts (DMatrix4dR products) const;
 
-//! Return the centroid and area of the curve vector as viewed in the xy plane.
-//! return false if the CurveVector is not one of the area types (union region, parity region, or closed loop)
+//! Return the centroid and signed area of the curve vector as viewed in the xy plane.
 //! @remark Union region moments are the simple sum of constituents (i.e overlap is not determined)
 //! @remark Parity region moments are signed sum per area, assuming largest is outer and all others are inner (subtractive)
-//! @param [out] centroid curve centroid
-//! @param [out] area     area of region.
+//! @param [out] centroid centroid of the xy-region. The z-coordinate is not relevant.
+//! @param [out] area     signed area of the xy-region. This is negative if and only if the projection of the input region to the xy-plane is clockwise.
+//! @return false if and only if the CurveVector is not one of the area types (union region, parity region, closed loop) or the computed area is zero.
 GEOMDLLIMPEXP bool  CentroidAreaXY (DPoint3dR centroid, double &area) const;
 
 //! Return the range of ray parameters when contents of the CurveVector are projected to a ray.
@@ -644,28 +644,24 @@ bvector <DPoint3dDoubleUVCurveArrays>& points, //!< [out] Collection of collecti
 IFacetOptionsP strokeOptions = nullptr              //!< [out] Optional stroke controls.
 ) const;
 
-
-//! @description Add all strokes from the  structure.  The output point structure retains structure as complex as "union of multi-loop parity regions"
-//!<ul>
-//!<li>The regionsPoints[i] is an array of loops.
-//!<li>The outer curve vector may be a single loop, parity region, or union region.
-//!<li>If the strokeOptions pointer is null, all curved primitives are SKIPPED
-//!<li>In a BOUNDARY_TYPE_None, each member is added recursively.
-//!</ul>
+//! Add strokes from the instance curves.
+//! * The output retains structure as complex as "union of multi-loop parity regions".
+//! * For a BOUNDARY_TYPE_None, each child is added recursively.
+//! @param regionsPoints [out] collection of collections of loops; regionsPoints[i] is an array of loops, regionPoints[i][j] is a loop, regionPoints[i][j][k] is a point of a loop.
+//! @param strokeOptions [in] optional stroke options. If null (default) all curved geometry is skipped.
+//! @return true if and only if no geometry was skipped and no unexpected was structure encountered.
 GEOMDLLIMPEXP bool CollectLinearGeometry
 (
-bvector <bvector<bvector<DPoint3d>>> &regionsPoint, //!< [out] Collection of collections of loops.
-IFacetOptionsP strokeOptions = nullptr              //!< [out] Optional stroke controls.
+bvector<bvector<bvector<DPoint3d>>> &regionsPoints,
+IFacetOptionsP strokeOptions = nullptr
 ) const;
 
-
-
-
-//! Collect strokes from the structure.
-//! Each path or loop (at any level) is converted to points.
-//! Loops and paths appear at top level in the two-level bvector.
-//! regionsPoints[i][j] is point j of regionsPoints[i].
-//! @return false if unexpected structure was -- e.g. UnionRegion which needs more levels of structure.
+//! Add strokes from the instance curves.
+//! * The output retains structure as complex as "union of multi-loop parity regions".
+//! * For a BOUNDARY_TYPE_None, each child is added recursively.
+//! @param regionsPoints [out] collection of loops; regionPoints[i] is a loop, regionPoints[i][j] is a point of a loop.
+//! @param strokeOptions [in] optional stroke options. If null (default) all curved geometry is skipped.
+//! @return true if and only if no geometry was skipped and no unexpected structure was encountered.
 GEOMDLLIMPEXP bool CollectLinearGeometry (bvector<bvector<DPoint3d>> &regionsPoints, IFacetOptionsP strokeOptions = nullptr) const;
 
 //! Compute points at (many) specified distances along the (many) curves in the CurveVector.

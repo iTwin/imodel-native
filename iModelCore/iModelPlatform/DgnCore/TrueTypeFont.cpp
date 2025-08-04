@@ -837,7 +837,31 @@ static bool hasEmbeddingRights(FT_Face face) {
     if (NULL == os2Table)
         return false;
 
-    return (0 == (0x1 & os2Table->fsType));
+    // https://learn.microsoft.com/en-us/typography/opentype/spec/os2#fstype
+    // Bits 0-3 describe usage permissions. Valid fonts must set at most one of bits 1, 2 or 3; bit 0 is permanently reserved and must be zero. Valid values for this sub-field are 0, 2, 4 or 8. The meaning of these values is as follows: 
+    enum {
+      // 0: Installable embedding: the font may be embedded, and may be permanently installed for use on a remote systems, or for use by other users. The user of the remote system acquires the identical rights, obligations and licenses for that font as the original purchaser of the font, and is subject to the same end-user license agreement, copyright, design patent, and/or trademark as was the original purchaser.
+      kInstallable = 0,
+      // 2: Restricted License embedding: the font must not be modified, embedded or exchanged in any manner without first obtaining explicit permission of the legal owner. 
+      kRestricted = 2,
+      // 4: Preview & Print embedding: the font may be embedded, and may be temporarily loaded on other systems for purposes of viewing or printing the document. Documents containing Preview & Print fonts must be opened “read-only”; no edits may be applied to the document. 
+      kPreviewAndPrint = 4,
+      // 8: Editable embedding: the font may be embedded, and may be temporarily loaded on other systems. As with Preview & Print embedding, documents containing Editable fonts may be opened for reading. In addition, editing is permitted, including ability to format new text using the embedded font, and changes may be saved. 
+      kEditable = 8,
+      
+      // Embedding restricted fonts is obviously prohibited.
+      // Embedding preview+print fonts would make the document uneditable in many contexts.
+      // Don't embed either.
+      kNoEmbed = kPreviewAndPrint | kRestricted,
+    };
+    
+    // Only one bit in bits 0 through 3 is supposed to be set.
+    // If more than one bit is set, we're allowed to assume the least restrictive one applies.
+    if (kEditable == (os2Table->fsType & kEditable)) {
+      return true;
+    }
+    
+    return 0 == (os2Table->fsType & kNoEmbed);
 }
 
 /** Determine whether this font face may be embedded. */
@@ -997,6 +1021,46 @@ bool TrueTypeFile::Embed(FontDbR fontDb) {
         return false; // probably wasn't a valid truetype file
 
     return SUCCESS == fontDb.EmbedFont(faces, data, m_compress);
+}
+
+void TrueTypeFile::ExtractMetadata(BeJsValue& output) {
+    auto faces = output["faces"];
+    faces.toArray();
+    
+    // We have to read the first face to get the number of faces in the file.
+    int numFaces = 1;
+    bool embeddable = true;
+    for (int iFace = 0; iFace < numFaces; iFace++) {
+        TrueTypeFont::TrueTypeFace face;
+        face.Initialize(m_fileName.c_str(), iFace);
+        if (!face.m_ftFaceStream->m_ftFace) {
+            continue;
+        }
+
+        if (0 == iFace) {
+            numFaces = face.m_ftFaceStream->m_ftFace->num_faces;
+        }
+        
+        embeddable = embeddable && face.HasEmbeddingRights();
+        auto familyName = face.GetFamilyName();
+        if (!familyName.empty()) {
+            auto faceProps = faces.appendValue();
+            faceProps["familyName"] = familyName;
+            faceProps["type"] = static_cast<int>(FontType::TrueType);
+            faceProps["subId"] = iFace;
+            
+            auto faceName = "regular";
+            switch (face.GetFaceStyle()) {
+                case FaceStyle::Bold: faceName = "bold"; break;
+                case FaceStyle::Italic: faceName = "italic"; break;
+                case FaceStyle::BoldItalic: faceName = "bolditalic"; break;
+            }
+
+            faceProps["faceName"] = faceName;
+        }
+    }
+
+    output["embeddable"] = embeddable;
 }
 
 /**

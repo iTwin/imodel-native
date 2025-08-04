@@ -383,7 +383,6 @@ TEST(Polyface, TriangulateDegenerate)
 void CheckPartition (char const* descr, size_t componentTarget, size_t faceTarget, PolyfaceHeaderPtr mesh, bvector<ptrdiff_t> indices)
     {
     size_t totalFaces = mesh->GetNumFacet ();
-    //varunused size_t numThisBlock = 0;
     size_t blockStart = 0;
     BlockedVectorInt blockSize;
     for (size_t i = 0; i < indices.size (); i++)
@@ -461,16 +460,9 @@ TEST (Polyface, Compress)
     int nx = 3;
     int ny = 8;
     PolyfaceHeaderPtr mesh = CreateGridMesh (nx, ny);
-    //varunused size_t numPointA  = mesh.get()->GetPointCount ();
-    //varunused size_t numNormalA = mesh.get()->GetNormalCount ();
-    //varunused size_t numParamA  = mesh.get()->GetParamCount ();
     mesh.get()->Compress ();
-    //varunused size_t numPointB  = mesh.get()->GetPointCount ();
-    //varunused size_t numNormalB = mesh.get()->GetNormalCount ();
-    //varunused size_t numParamB  = mesh.get()->GetParamCount ();
     CHECK_EQ (Size, mesh.get()->GetPointCount (), (nx + 1) * (ny + 1));
     CHECK_EQ (Size, mesh.get()->GetNormalCount (), 1);
-    //CHECK_EQ (Size, mesh.get()->GetParamCount (), (nx + 1) * (ny + 1));
     }
 
 void PrintGraph (MTGGraph *pGraph, int vertexLabelOffset)
@@ -584,7 +576,6 @@ void VerifyFaceData (PolyfaceHeader  &mesh, char const*  name)
     if (mesh.FaceIndex ().Active ()
         && Check::Size (mesh.PointIndex ().size (), mesh.FaceIndex ().size (), "FaceIndex present and same size as PointIndex"))
         {
-        //varunused bvector<FacetFaceData> &faceDataVector = mesh.FaceData ();
         BlockedVectorIntR paramIndexVector = mesh.ParamIndex ();
         BlockedVectorIntR normalIndexVector = mesh.NormalIndex ();
         BlockedVectorIntR pointIndexVector = mesh.PointIndex ();
@@ -593,7 +584,6 @@ void VerifyFaceData (PolyfaceHeader  &mesh, char const*  name)
             Check::Size (paramIndexVector.size (), pointIndexVector.size (), "point, param index counts match");
         if (normalIndexVector.size () > 0)
             Check::Size (normalIndexVector.size (), pointIndexVector.size (), "point, normal index counts match");
-        //varunused int currFaceIndex1 = 0;
         FacetFaceData faceData;
         size_t errors = 0;
         // Verify face data is present at all non-zero indices..
@@ -647,10 +637,7 @@ void VerifyPolyface (PolyfaceHeader  &meshVectors, PolyfaceQueryR meshQuery, cha
     int outerFaceCount = 0;
     DPoint3d zero;
     zero.Zero ();
-    //varunused double tolerance = meshVectors.GetMediumTolerance ();
     double s_relTol = 0.01;
-    //varunused int failures = 0;
-    int numEdges = 0;
     bvector<int>failureIndices;
     bvector<int>edgeFailureIndices;
     size_t numFacet = meshVectors.GetNumFacet ();
@@ -688,11 +675,11 @@ void VerifyPolyface (PolyfaceHeader  &meshVectors, PolyfaceQueryR meshQuery, cha
                 }
             if (innerCount == 1)
                 {
-                // expected interior case.
+                // strictly inside a face (expected)
                 }
             else if (innerCount == 2)
                 {
-                numEdges++;
+                // hit an interior edge (unexpected)
                 }
             else
                 failureIndices.push_back (outerFaceCount);
@@ -705,13 +692,11 @@ void VerifyPolyface (PolyfaceHeader  &meshVectors, PolyfaceQueryR meshQuery, cha
                 edgeTestPoint.Interpolate (point0, f0, point1);
                 ptrdiff_t edgeIndex;
                 double edgeFraction;
-                int numFacetHit = 0;
                 int numEdgeHit = 0;
                 double edgeFractionTol = 1.0e-10;
                 bool foundPrimaryTarget = false;
                 for (pointVisitor->Reset (); pointVisitor->AdvanceToFacetBySearchPoint (edgeTestPoint, tolerance1, edgePoint, edgeIndex, edgeFraction);)
                     {
-                    numFacetHit++;
                     if (edgeIndex >= 0)
                         numEdgeHit++;
                     if (vectorVisitor->IndexPosition()[0] == pointVisitor->IndexPosition()[0]
@@ -758,8 +743,6 @@ double MaxNormalDeviation (PolyfaceHeaderR meshWithNormals)
 
     visitor->Reset ();
     visitor->SetNumWrap (2);
-    //varunused bvector <int> &pointIndex = visitor->PointIndex ();
-    //varunused bvector <size_t> &readIndex = visitor->IndexPosition ();
     bvector <DPoint3d> &points = visitor->Point ();
 
     double thetaMax = 0.0;
@@ -877,7 +860,9 @@ void ExaminePolyface (PolyfaceHeaderR mesh, char const* title)
         VerifyMTG(mesh, title);
         PolyfaceHeaderPtr compactee = PolyfaceHeader::CreateFixedBlockIndexed (4);
         mesh.CopyTo (*compactee);
-        compactee->CompactIndexArrays ();
+        size_t savings = compactee->CompactArrays(true);
+        if (s_print && savings > 0)
+            printf ("Mesh compacted by %zu bytes\n", savings);
         VerifyPolyface (*compactee, *compactee, "compacted");
 
         PolyfaceHeaderPtr meshWithNormals = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -1032,14 +1017,10 @@ TEST(Polyface, StitchCube)
 TEST (Polyface, ClipCube_TwoPlanesCut)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
-    //static int s_printGraph = 0;
 
     IFacetOptionsPtr options = CreateFacetOptions ();
     options->SetMaxPerFace (4);
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
-    //varunused double mySize = SetTransformToNewGridSpot (*builder, true);
-
-
 
     builder->AddSweptNGon (4, 2.0, 0.0, 1.0, true, true);
 
@@ -1076,16 +1057,12 @@ TEST (Polyface, ClipCube_TwoPlanesCut)
 TEST(Polyface, ClipSphere)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
-    //static int s_printGraph = 0;
 
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
     double mySize = SetTransformToNewGridSpot (*builder, true);
 
-    //varunused size_t numPerQuadrant = 1;
     PolyfaceHeader &header0 = builder->GetClientMeshR ();
-    //varunused double radius = mySize;
-    //varunused double zStep = 3.0 * mySize;
 
     for (size_t numPerQuadrant = 1; numPerQuadrant < 10; numPerQuadrant *= 4 )
         {
@@ -1110,8 +1087,6 @@ TEST(Polyface, ClipSphere)
     Check::Shift (10,0, 0);
     Check::SaveTransformed (*outsideClip);
     Check::ClearGeometry ("Polyface.ClipSphere");
-
-
 
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
@@ -1265,7 +1240,6 @@ TEST(PolyfaceConstruction, BsplineSurface1)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
-    //varunused double mySize = SetTransformToNewGridSpot (*builder);
 
     bvector<DPoint3d> points;
 
@@ -1338,7 +1312,6 @@ TEST(PolyfaceConstruction, BsplineSurface2)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
-    //varunused double mySize = SetTransformToNewGridSpot (*builder);
 
     bvector<DPoint3d> points;
 
@@ -1382,8 +1355,6 @@ TEST(PolyfaceConstruction, BsplineSurface2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, BsplineSurface3)
     {
-    //varunused double mySize = SetTransformToNewGridSpot (*builder);
-
     bvector<DPoint3d> points;
 
     double ax = 6.0;
@@ -1564,7 +1535,6 @@ void testSweptLinestrings (size_t numContour, double z0, double zStep, bool capp
     options->SetMaxPerFace (numPerFace);
 
     IPolyfaceConstructionPtr builder =  IPolyfaceConstruction::Create (*options);
-    //varunused double mySize = SetTransformToNewGridSpot (*builder);
 
     bvector<DPoint3d> points;
     double a0 = 0;
@@ -1773,13 +1743,11 @@ TEST (PolyfaceConstruction, Stack)
                 a,0,0,0,
                 0,a,0,0,
                 0,0,a,0);
-    //varunused double b = 5.0;
-    //varunused Transform skew = Transform::FromRowValues (
-    //varunused             a,a,0,0,
-    //varunused             0,a,0,0,
-    //varunused             0,0,b,0);
-
-
+    // double b = 5.0;
+    // Transform skew = Transform::FromRowValues (
+    //            a,a,0,0,
+    //            0,a,0,0,
+    //            0,0,b,0);
 
     IFacetOptionsPtr options = IFacetOptions::Create ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
@@ -2031,8 +1999,6 @@ TEST(PolyfaceConstruction, DimpleNormals)
     PolyfaceHeaderPtr mesh = PolyfaceHeader::CreateVariableSizeIndexed ();
     bvector<DPoint3d> &points = mesh->Point ();
     bvector<int> &indices = mesh->PointIndex ();
-    //varunused bvector<DVec3d> &normals = mesh->Normal ();
-    //varunused bvector<int> &normalIndices = mesh->NormalIndex ();
 
     double dz = 0.01;
     points.push_back (DPoint3d::From (1,1,dz)); // raised off plane, but smooth enough for normal averaging.
@@ -2241,12 +2207,9 @@ TEST (PolyfaceVisitor, ParamToDetail)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Polyface, NGonFaces)
     {
-    //varunused Int64 allocationCounter = BSIBaseGeom::GetAllocationDifference ();
-    //static int s_printGraph = 0;
     IFacetOptionsPtr options = CreateFacetOptions ();
     options->SetMaxPerFace (4);
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
-    //varunused double mySize = SetTransformToNewGridSpot (*builder, true);
 
     builder->AddSweptNGon (4, 2.0, 0.0, 1.0, true, true);
     ExaminePolyface (builder->GetClientMeshR (), "DiamondFrustum");
@@ -4611,11 +4574,26 @@ static bool lexicalXYZLessThanTol(double x0, double y0, double z0, double x1, do
     if (DoubleOps::WithinTolerance(x0, x1, tol) && DoubleOps::WithinTolerance(y0, y1, tol) && DoubleOps::WithinTolerance(z0, z1, tol))
         return false;
     if (!DoubleOps::WithinTolerance(x0, x1, tol))
-        return x0 < x1;
+        {
+        if (x0 < x1)
+            return true;
+        if (x0 > x1)
+            return false;
+        }
     if (!DoubleOps::WithinTolerance(y0, y1, tol))
-       return y0 < y1;
+        {
+        if (y0 < y1)
+            return true;
+        if (y0 > y1)
+            return false;
+        }
     if (!DoubleOps::WithinTolerance(z0, z1, tol))
-        return z0 < z1;
+        {
+        if (z0 < z1)
+            return true;
+        if (z0 > z1)
+            return false;
+        }
     return false;
     }
 

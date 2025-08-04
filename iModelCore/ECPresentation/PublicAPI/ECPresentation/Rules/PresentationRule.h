@@ -83,17 +83,6 @@ public:
         rule->SetIndex(indexR); \
     }
 
-//! This enumerator contains trees for which the rule can be applied.
-enum RuleTargetTree
-    {
-    //! Apply rule for main tree. (default)
-    TargetTree_MainTree,
-    //! Apply rule for selection tree.
-    TargetTree_SelectionTree,
-    //! Apply rule for both trees.
-    TargetTree_Both
-    };
-
 /*---------------------------------------------------------------------------------**//**
 Base class for all custom PresentationKeys. It represents any presentation configuration.
 * @bsiclass
@@ -109,10 +98,6 @@ protected:
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
     virtual void _SetIndex(int& index) { m_index = index++; InvalidateHash(); }
 
-    virtual Utf8CP _GetXmlElementName () const = 0;
-    virtual bool _ReadXml(BeXmlNodeP xmlNode) {return true;}
-    virtual void _WriteXml(BeXmlNodeP xmlNode) const {}
-
     virtual Utf8CP _GetJsonElementTypeAttributeName() const = 0;
     virtual Utf8CP _GetJsonElementType() const = 0;
     virtual bool _ReadJson(BeJsConst json) {return true;}
@@ -120,12 +105,6 @@ protected:
 
 public:
     void SetIndex(int& index) { _SetIndex(index); }
-
-    //! Reads PresentationRule from xml node.
-    ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
-
-    //! Writes PresentationRule to xml node.
-    ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
 
     //! Get JSON element type
     Utf8CP GetJsonElementType() const {return _GetJsonElementType();}
@@ -142,18 +121,6 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename TPresentationKey>
-struct NoXmlSupport : TPresentationKey
-{
-protected:
-    Utf8CP _GetXmlElementName() const override {return nullptr;}
-    bool _ReadXml(BeXmlNodeP xmlNode) override {return true;}
-    void _WriteXml(BeXmlNodeP xmlNode) const override {}
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE PrioritizedPresentationKey : PresentationKey
 {
     DEFINE_T_SUPER(PresentationKey)
@@ -166,9 +133,6 @@ protected:
     PrioritizedPresentationKey(int priority) : m_priority(priority) {}
 
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
-
-    ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue) const override;
@@ -197,9 +161,6 @@ protected:
     ECPRESENTATION_EXPORT PresentationRule(PresentationRule&&);
 
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
-
-    ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementTypeAttributeName() const override;
     ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
@@ -235,9 +196,6 @@ protected:
     ConditionalPresentationRule(Utf8String condition, int priority, bool onlyIfNotHandled)
         : PresentationRule(priority, onlyIfNotHandled), m_condition(condition)
         {}
-
-    ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue) const override;

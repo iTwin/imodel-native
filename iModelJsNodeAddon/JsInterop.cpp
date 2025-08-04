@@ -388,6 +388,7 @@ private:
 
 public:
     JsDgnHost() { BeAssertFunctions::SetBeAssertHandler(&JsInterop::HandleAssertion);}
+
 };
 
 
@@ -420,9 +421,10 @@ POP_DISABLE_DEPRECATION_WARNINGS
 #endif
 
     static std::once_flag s_initFlag;
+    static std::unique_ptr<PlatformLib::Host> s_jsHost;
     std::call_once(s_initFlag, []() {
-        auto jsHost = new JsDgnHost();
-        PlatformLib::Initialize(*jsHost);
+        s_jsHost = std::make_unique<JsDgnHost>();
+        PlatformLib::Initialize(*s_jsHost);
         RegisterOptionalDomains();
         InitLogging();
         InitializeSolidKernel();
@@ -465,95 +467,96 @@ NativeLogging::CategoryLogger JsInterop::GetNativeLogger() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Napi::Object JsInterop::ConcurrentQueryResetConfig(Napi::Env env, ECDbCR ecdb) {
+Napi::Object JsInterop::ConcurrentQueryResetConfig(Napi::Env env) {
     auto outConf = Napi::Object::New(env);
-    ConcurrentQueryMgr::ResetConfig(ecdb).To(outConf);
+    ConcurrentQueryMgr::Config::Reset(std::nullopt).To(outConf);
     return outConf;
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Napi::Object JsInterop::ConcurrentQueryResetConfig(Napi::Env env, ECDbCR ecdb, Napi::Object configObj) {
+Napi::Object JsInterop::ConcurrentQueryResetConfig(Napi::Env env, Napi::Object configObj) {
     if (configObj.IsObject()) {
         auto outConf = Napi::Object::New(env);
         BeJsValue inJsConf(configObj);
         auto inConf = ConcurrentQueryMgr::Config::From(inJsConf);
-        ConcurrentQueryMgr::ResetConfig(ecdb, inConf).To(outConf);
+        ConcurrentQueryMgr::Config::Reset(inConf).To(outConf);
         return outConf;
     }
-    return ConcurrentQueryResetConfig(env, ecdb);
+    return ConcurrentQueryResetConfig(env);
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Napi::Function callback) {
-    auto& mgr = ConcurrentQueryMgr::GetInstance(ecdb);
-    BeJsValue beJsReq(requestObj);
-    auto request = QueryRequest::Deserialize(beJsReq);
-    if (request->UsePrimaryConnection()) {
-        mgr.Enqueue(std::move(request), [&](QueryResponse::Ptr value) {
-            auto jsResp = Napi::Object::New(Env());
-            auto beJsResp = BeJsValue(jsResp);
-            if (value->GetKind() == QueryResponse::Kind::NoResult) {
-                value->ToJs(beJsResp, false);
-            }
-            else if (value->GetKind() == QueryResponse::Kind::ECSql) {
-                auto& resp = value->GetAsConst<ECSqlResponse>();
-                resp.ToJs(beJsResp, false);
-                if (!resp.asJsonString().empty()) {
-                    auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
-                    auto rows = Napi::String::New(Env(), resp.asJsonString());
-                    jsResp[ECSqlResponse::JData] = parse({ rows });
-                }
-            }
-            else if (value->GetKind() == QueryResponse::Kind::BlobIO) {
-                auto& resp = value->GetAsConst<BlobIOResponse>();
-                if (resp.GetLength() > 0) {
-                    resp.ToJs(beJsResp, false);
-                    auto blob = Napi::Uint8Array::New(Env(), resp.GetLength());
-                    memcpy(blob.Data(), resp.GetData(), resp.GetLength());
-                    jsResp[BlobIOResponse::JData] = blob;
-                }
-            }
-            else {
-                BeNapi::ThrowJsException(Env(), "concurrent query: unsupported response type");
-            }
-            callback.Call({ jsResp });
-        });
-        return;
-    }
-    auto threadSafeFunc = Napi::ThreadSafeFunction::New(requestObj.Env(), callback, "concurrent_query", 0, 1);
-    mgr.Enqueue(std::move(request), [=](QueryResponse::Ptr value) {
-        if(threadSafeFunc.BlockingCall (
-            [=]( Napi::Env env, Napi::Function jsCallback) {
-                auto jsResp = Napi::Object::New(env);
+    ConcurrentQueryMgr::WithInstance(ecdb, [&](ConcurrentQueryMgr& mgr) -> void {
+        BeJsValue beJsReq(requestObj);
+        auto request = QueryRequest::Deserialize(beJsReq);
+        if (request->UsePrimaryConnection()) {
+            mgr.Enqueue(std::move(request), [&](QueryResponse::Ptr value) {
+                auto jsResp = Napi::Object::New(Env());
                 auto beJsResp = BeJsValue(jsResp);
-                if (value->GetKind() ==  QueryResponse::Kind::NoResult) {
+                if (value->GetKind() == QueryResponse::Kind::NoResult) {
                     value->ToJs(beJsResp, false);
-                } else if (value->GetKind() ==  QueryResponse::Kind::ECSql) {
+                }
+                else if (value->GetKind() == QueryResponse::Kind::ECSql) {
                     auto& resp = value->GetAsConst<ECSqlResponse>();
                     resp.ToJs(beJsResp, false);
                     if (!resp.asJsonString().empty()) {
-                        auto parse = env.Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
-                        auto rows = Napi::String::New(env, resp.asJsonString());
-                        jsResp[ECSqlResponse::JData] = parse({rows});
+                        auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
+                        auto rows = Napi::String::New(Env(), resp.asJsonString());
+                        jsResp[ECSqlResponse::JData] = parse({ rows });
                     }
-                } else if (value->GetKind() ==  QueryResponse::Kind::BlobIO) {
+                }
+                else if (value->GetKind() == QueryResponse::Kind::BlobIO) {
                     auto& resp = value->GetAsConst<BlobIOResponse>();
                     if (resp.GetLength() > 0) {
                         resp.ToJs(beJsResp, false);
-                        auto blob = Napi::Uint8Array::New(env, resp.GetLength());
+                        auto blob = Napi::Uint8Array::New(Env(), resp.GetLength());
                         memcpy(blob.Data(), resp.GetData(), resp.GetLength());
                         jsResp[BlobIOResponse::JData] = blob;
                     }
-                } else {
-                    BeNapi::ThrowJsException(env, "concurrent query: unsupported response type");
                 }
-                jsCallback.Call({jsResp});
-        }) != napi_ok) {
-            // do nothing
+                else {
+                    THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
+                }
+                callback.Call({ jsResp });
+            });
+            return;
         }
-        const_cast<Napi::ThreadSafeFunction&>(threadSafeFunc).Release();
+        auto threadSafeFunc = Napi::ThreadSafeFunction::New(requestObj.Env(), callback, "concurrent_query", 0, 1);
+        mgr.Enqueue(std::move(request), [=](QueryResponse::Ptr value) {
+            if(threadSafeFunc.BlockingCall (
+                [=]( Napi::Env env, Napi::Function jsCallback) {
+                    auto jsResp = Napi::Object::New(env);
+                    auto beJsResp = BeJsValue(jsResp);
+                    if (value->GetKind() ==  QueryResponse::Kind::NoResult) {
+                        value->ToJs(beJsResp, false);
+                    } else if (value->GetKind() ==  QueryResponse::Kind::ECSql) {
+                        auto& resp = value->GetAsConst<ECSqlResponse>();
+                        resp.ToJs(beJsResp, false);
+                        if (!resp.asJsonString().empty()) {
+                            auto parse = env.Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
+                            auto rows = Napi::String::New(env, resp.asJsonString());
+                            jsResp[ECSqlResponse::JData] = parse({rows});
+                        }
+                    } else if (value->GetKind() ==  QueryResponse::Kind::BlobIO) {
+                        auto& resp = value->GetAsConst<BlobIOResponse>();
+                        if (resp.GetLength() > 0) {
+                            resp.ToJs(beJsResp, false);
+                            auto blob = Napi::Uint8Array::New(env, resp.GetLength());
+                            memcpy(blob.Data(), resp.GetData(), resp.GetLength());
+                            jsResp[BlobIOResponse::JData] = blob;
+                        }
+                    } else {
+                        THROW_JS_IMODEL_NATIVE_EXCEPTION(env, "concurrent query: unsupported response type", IModelJsNativeErrorKey::BadArg);
+                    }
+                    jsCallback.Call({jsResp});
+            }) != napi_ok) {
+                // do nothing
+            }
+            const_cast<Napi::ThreadSafeFunction&>(threadSafeFunc).Release();
+        });
     });
 }
 
@@ -563,13 +566,13 @@ void JsInterop::ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object requestObj, Nap
 DgnDbPtr JsInterop::CreateIModel(Utf8StringCR filenameIn, BeJsConst props) {
     auto rootSubject = props[json_rootSubject()];
     if (!rootSubject.isStringMember(json_name()))
-        BeNapi::ThrowJsException(Env(), "Root subject name is missing");
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), "Root subject name is missing", IModelJsNativeErrorKey::BadArg);
 
     BeFileName filename(filenameIn);
     BeFileName path = filename.GetDirectoryName();
     if (!path.DoesPathExist()) {
         Utf8String err = Utf8String("Path [") + path.GetNameUtf8() + "] does not exist";
-        BeNapi::ThrowJsException(Env(), err.c_str());
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(Env(), err.c_str(), IModelJsNativeErrorKey::NotFound);
     }
 
     CreateDgnDbParams params(rootSubject[json_name()].asCString());
@@ -715,6 +718,9 @@ ChangesetPropsPtr JsInterop::GetChangesetProps(Utf8StringCR dbGuid, BeJsConst ar
     if (arg.isStringMember("pushDate"))
         changeset->SetDateTime(DateTime::FromString(arg["pushDate"].asString().c_str()));
 
+    if (arg.hasMember("uncompressedSize"))
+        changeset->SetUncompressedSize(arg["uncompressedSize"].asInt64());
+
     return changeset;
 }
 
@@ -822,7 +828,7 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
         return BE_SQLITE_NOTFOUND;
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-    JsInterop::AddFallbackSchemaLocaters(ecdb, schemaContext);
+    JsInterop::AddFallbackSchemaLocaters(ecdb.GetSchemaLocater(), schemaContext);
 
     ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile(schema, pathname.GetName(), *schemaContext);
@@ -841,10 +847,10 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void JsInterop::AddFallbackSchemaLocaters(ECDbR db, ECSchemaReadContextPtr schemaContext)
+void JsInterop::AddFallbackSchemaLocaters(IECSchemaLocaterR ecdbLocater, ECSchemaReadContextPtr schemaContext)
     {
     // Add the db then the standard schema paths as fallback locations to load referenced schemas.
-    schemaContext->SetFinalSchemaLocater(db.GetSchemaLocater());
+    schemaContext->AddFirstSchemaLocater(ecdbLocater);
     AddFallbackSchemaLocaters(schemaContext);
     }
 
@@ -858,15 +864,13 @@ void JsInterop::AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext)
     rootDir.AppendToPath(L"ECSchemas");
     BeFileName dgnPath = rootDir;
     dgnPath.AppendToPath(L"Dgn").AppendSeparator();
+
     BeFileName domainPath = rootDir;
     domainPath.AppendToPath(L"Domain").AppendSeparator();
     BeFileName ecdbPath = rootDir;
     ecdbPath.AppendToPath(L"ECDb").AppendSeparator();
-    bvector<WString> searchPaths;
-    searchPaths.push_back(dgnPath);
-    searchPaths.push_back(domainPath);
-    searchPaths.push_back(ecdbPath);
-    schemaContext->AddFinalSchemaPaths(searchPaths);
+    bvector<WString> paths {dgnPath, domainPath, ecdbPath};
+    schemaContext->AddFinalSchemaPaths(paths);
     }
 
 //---------------------------------------------------------------------------------------
@@ -877,11 +881,14 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
     if (0 == schemaSources.size())
         return BE_SQLITE_ERROR;
 
+    NativeLogging::CategoryLogger logger("JsInterop");
+
     ECSchemaReadContextPtr schemaContext = opts.m_customSchemaContext;
     if (schemaContext.IsNull())
         schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
 
-    JsInterop::AddFallbackSchemaLocaters(dgndb, schemaContext);
+    SanitizingSchemaLocater finalLocater(dgndb.GetSchemaLocater());
+    JsInterop::AddFallbackSchemaLocaters(finalLocater, schemaContext);
     bvector<ECSchemaCP> schemas;
 
     for (Utf8String schemaSource : schemaSources)
@@ -893,7 +900,7 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
             BeFileName schemaFile(schemaSource.c_str(), BentleyCharEncoding::Utf8);
             if (!schemaFile.DoesPathExist())
                 return BE_SQLITE_ERROR_FileNotFound;
-
+            // This method, first attempts to pull the schema from the context, if it loads the schema, it adds its directory to search paths
             schema = ECSchema::LocateSchema(schemaSource.c_str(), *schemaContext, SchemaMatchType::Exact, &schemaStatus);
             }
         else
@@ -903,7 +910,11 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
             continue;
 
         if (SchemaReadStatus::Success != schemaStatus)
+            {
+            Utf8String contextDesc = schemaContext->GetDescription();
+            logger.errorv("Failed to read schema from %s. Context setup: %s", schemaSource.c_str(), contextDesc.c_str());
             return BE_SQLITE_ERROR;
+            }
 
         schemas.push_back(schema.get());
         }
@@ -913,7 +924,11 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 
     SchemaStatus status = dgndb.ImportSchemas(schemas, opts.m_schemaLockHeld, DgnDb::SyncDbUri(opts.m_schemaSyncDbUri.c_str())); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
     if (status != SchemaStatus::Success)
+        {
+        Utf8String contextDesc = schemaContext->GetDescription();
+        logger.errorv("ImportSchemas returned non-success code. Context setup: %s", contextDesc.c_str());
         return DgnDb::SchemaStatusToDbResult(status, true);
+        }
 
     return dgndb.SaveChanges();
     }
@@ -921,114 +936,181 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-Napi::Value JsInterop::GetInstance(ECDbR db, NapiInfoCR info) {
-    constexpr auto kUseJsName = "useJsNames";
-    constexpr auto kClassId = "classId";
-    constexpr auto kClassIdsToClassNames = "classIdsToClassNames";
-    constexpr auto kAbbreviateBlobs = "abbreviateBlobs";
-    constexpr auto kId = "id";
-    constexpr auto kSerializationMethod = "serializationMethod";
-    enum SerializationMethod {
-        JsonParse = 0,
-        BeJsNapi = 1
-    };
+Napi::Value JsInterop::InsertInstance(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, instanceObj);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+    // it hold write token
+    auto& repo = db.GetInstanceRepository();
+    auto inst = BeJsValue(instanceObj);
+    auto args = BeJsValue(argsObj);
 
-    REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
-    ECInstanceId instanceId;
-    ECClassId classId;
-    SerializationMethod serializationMethod = SerializationMethod::JsonParse;
-    auto abbreviateBlobs = true;
-    auto classIdsToClassNames = false;
-    auto useJsNames = false;
-
-    auto jsId = argsObj.Get(kId);
-    if (!jsId.IsString()) {
-        THROW_JS_EXCEPTION("'id' property is not optional and must be of type Id64String");
-    } else {
-        ECInstanceId::FromString(instanceId, jsId.ToString().Utf8Value().c_str());
+    auto fmt = JsFormat::Standard;
+    if (args.isBoolMember("useJsNames") && args.asBool(false)){
+        fmt = JsFormat::JsName;
     }
 
-    auto jsClassId = argsObj.Get(kClassId);
-    if (!jsClassId.IsString()) {
-        THROW_JS_EXCEPTION("'classId' property is not optional and must be of type Id64String");
-    } else{
-        ECClassId::FromString(classId, jsClassId.ToString().Utf8Value().c_str());
-    }
-
-    auto jsSerializationMethod = argsObj.Get(kSerializationMethod);
-    if (jsSerializationMethod.IsNumber()) {
-        int method = jsSerializationMethod.ToNumber().Int32Value();
-        if (method == SerializationMethod::JsonParse || method == SerializationMethod::BeJsNapi) {
-            serializationMethod = static_cast<SerializationMethod>(method);
-        } else {
-            THROW_JS_EXCEPTION("'serializationMethod' property must be either 0 or 1");
+    ECInstanceKey newKey;
+    auto rc = repo.Insert(inst, args, fmt, newKey);
+    if (rc != BE_SQLITE_DONE) {
+        if (repo.GetLastError().empty()) {
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to insert instance", rc);
         }
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
     }
 
-    auto jsAbbreviateBlobs = argsObj.Get(kAbbreviateBlobs);
-    if (jsAbbreviateBlobs.IsBoolean()) {
-        abbreviateBlobs = jsAbbreviateBlobs.ToBoolean().Value();
+    return Napi::Value::From(info.Env(), newKey.GetInstanceId().ToHexStr());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, instanceObj);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+
+    auto& repo = db.GetInstanceRepository();
+    auto inst = BeJsValue(instanceObj);
+    auto args = BeJsValue(argsObj);
+
+    auto fmt = JsFormat::Standard;
+    if (args.isBoolMember("useJsNames") && args.asBool(false)){
+        fmt = JsFormat::JsName;
     }
 
-    auto jsClassIdsToClassNames = argsObj.Get(kClassIdsToClassNames);
-    if (jsClassIdsToClassNames.IsBoolean()) {
-        classIdsToClassNames = jsClassIdsToClassNames.ToBoolean().Value();
-    }
-
-    auto jsUseJsNames = argsObj.Get(kUseJsName);
-    if (jsUseJsNames.IsBoolean()) {
-        useJsNames = jsUseJsNames.ToBoolean().Value();
-    }
-
-    if (!instanceId.IsValid()){
-        THROW_JS_EXCEPTION("Invalid instanceId");
-    }
-
-    if (!classId.IsValid()) {
-        THROW_JS_EXCEPTION("Invalid classId");
-    }
-
-    auto& instanceReader = db.GetInstanceReader();
-    InstanceReader::Options options;
-    options.SetForceSeek(true);
-    auto position = InstanceReader::Position{instanceId, classId, nullptr};
-    if (serializationMethod == SerializationMethod::JsonParse) {
-        Napi::Value val;
-        if (!instanceReader.Seek(position,
-            [&](InstanceReader::IRowContext const& row) {
-                InstanceReader::JsonParams params;
-                params.SetUseJsName(useJsNames);
-                params.SetAbbreviateBlobs(abbreviateBlobs);
-                params.SetClassIdToClassNames(classIdsToClassNames);
-                auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
-                auto obj = Napi::String::New(Env(), row.GetJson(params).Stringify());
-                val = parse({ obj });
-            },
-            options
-        )) {
-            THROW_JS_EXCEPTION("instance not found");
+    auto rc = repo.Update(inst, args, fmt);
+    if (rc != BE_SQLITE_DONE) {
+        if (repo.GetLastError().empty()) {
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to insert instance", rc);
         }
-        return val;
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
     }
-    if (serializationMethod == SerializationMethod::BeJsNapi) {
-        BeJsNapiObject val(info.Env());
-        if (!instanceReader.Seek(position,
-            [&](InstanceReader::IRowContext const& row) {
-                ECSqlRowAdaptor adaptor(db);
-                adaptor.SetAbbreviateBlobs(abbreviateBlobs);
-                adaptor.SetConvertClassIdsToClassNames(classIdsToClassNames);
-                adaptor.UseJsNames(useJsNames);
-                if (ERROR == adaptor.RenderRow(val, row, false)) {
-                    THROW_JS_EXCEPTION("Failed to render instance");
+    return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::DeleteInstance(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, keyObj);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+
+    auto& repo = db.GetInstanceRepository();
+    auto key = BeJsValue(keyObj);
+    auto args = BeJsValue(argsObj);
+
+    auto fmt = JsFormat::Standard;
+    if (args.isBoolMember("useJsNames") && args.asBool(false)){
+        fmt = JsFormat::JsName;
+    }
+
+    auto rc = repo.Delete(key, args, fmt);
+    if (rc != BE_SQLITE_DONE) {
+        if (repo.GetLastError().empty()) {
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to insert instance", rc);
+        }
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
+    }
+    return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::ReadInstance(ECDbR db, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, keyObj);
+    REQUIRE_ARGUMENT_ANY_OBJ(1, argsObj);
+
+    auto& repo = db.GetInstanceRepository();
+    auto key = BeJsValue(keyObj);
+    auto args = BeJsValue(argsObj);
+
+    auto fmt = JsFormat::Standard;
+    if (args.isBoolMember("useJsNames") && args.asBool(false)){
+        fmt = JsFormat::JsName;
+    }
+
+    auto outInstance = BeJsNapiObject(info.Env());
+    auto rc = repo.Read(key, outInstance, args, fmt);
+    if (rc != BE_SQLITE_ROW) {
+        if (repo.GetLastError().empty()) {
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to read instance", rc);
+        }
+        THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), repo.GetLastError().c_str(), rc);
+    }
+    return outInstance;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::PatchJsonProperties(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, jsonProps);
+
+    // Remove Null values from jsonProps
+    BeJsDocument doc;
+    doc.Parse(jsonProps.c_str());
+    if (doc.hasParseError())
+        return Napi::Value::From(info.Env(), jsonProps);
+    doc.PurgeNulls();
+
+    // Handle relClassNames
+    auto relClassNames = BeJsPath::Extract(BeJsValue(doc), "$");
+    if (relClassNames.has_value()) {
+        relClassNames.value().ForEachProperty([&](auto memberName, auto memberJson) {
+            if (memberJson.isStringMember("relClassName")) {
+                // Fix Class Names that were not converted to the TS format
+                auto relClassName = memberJson["relClassName"];
+                auto relClassNameJson = relClassNames->Get(memberName)["relClassName"];
+                Utf8String correctedRelClassName = relClassName.Stringify();
+                correctedRelClassName.DropQuotes();
+                correctedRelClassName.ReplaceAll(".", ":");
+                (BeJsValue&)relClassNameJson = correctedRelClassName;
+            }
+            return false;
+        });
+    }
+    // Handle renderMaterial TextureIds
+    auto map = BeJsPath::Extract(BeJsValue(doc), "$.materialAssets.renderMaterial.Map");
+    if (map.has_value()) {
+        map.value().ForEachProperty([&](auto memberName, auto memberJson) {
+            if (memberJson.isNumericMember("TextureId")) {
+                // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
+                auto textureIdAsStringForLogging = memberJson["TextureId"].Stringify();
+                auto textureId = memberJson["TextureId"].template GetId64<DgnTextureId>();
+                auto textureIdJson = map->Get(memberName)["TextureId"];
+                (BeJsValue&)textureIdJson = textureId.ToHexStr();
+                if (!textureId.IsValid()) {
+                    Utf8PrintfString msg("RenderMaterial had a textureId %s that was invalid.", textureIdAsStringForLogging.c_str());
                 }
-            },
-            options
-        )) {
-            THROW_JS_EXCEPTION("instance not found");
-        }
-        return val;
+            }
+            return false;
+        });
     }
-    THROW_JS_EXCEPTION("unknown serialization method");
+    // Handle DisplayStyle subcategory overrides
+    auto subCategoryOvr = BeJsPath::Extract(BeJsValue(doc), "$.styles.subCategoryOvr");
+    if (subCategoryOvr.has_value()) {
+        subCategoryOvr.value().ForEachArrayMember([&](auto index, auto memberJson) {
+            if (memberJson.isNumericMember("subCategory")) {
+                // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
+                auto subcategoryAsStringForLogging = memberJson["subCategory"].Stringify();
+                auto subcategoryId = memberJson["subCategory"].template GetId64<DgnTextureId>();
+                auto subcategoryJson = subCategoryOvr->Get(index)["subCategory"];
+                (BeJsValue&)subcategoryJson = subcategoryId.ToHexStr();
+                if (!subcategoryId.IsValid()) {
+                    Utf8PrintfString msg("Style had a subCategory Override %s that was invalid.", subcategoryAsStringForLogging.c_str());
+                }
+            }
+            return false;
+        });
+    }
+    return Napi::Value::From(info.Env(), doc.Stringify());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void JsInterop::ClearECDbCache(ECDbR db, NapiInfoCR info) {
+    db.ClearECDbCache();
 }
 
 //---------------------------------------------------------------------------------------
@@ -1271,10 +1353,10 @@ void NativeChangeset::OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool i
     input.AppendUtf8(changesetFile.c_str());
 
     if (!input.DoesPathExist()) {
-        BeNapi::ThrowJsException(env, "open(): changeset file specified does not exists", (int)BE_SQLITE_CANTOPEN);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "open(): changeset file specified does not exists", BE_SQLITE_CANTOPEN);
     }
 
-    auto reader = std::make_unique<ChangesetFileReaderBase>(bvector<BeFileName>{input}, m_unusedDb);
+    auto reader = std::make_unique<ChangesetFileReaderBase>(bvector<BeFileName>{input});
     DdlChanges ddlChanges;
     bool hasSchemaChanges;
     reader->MakeReader()->GetSchemaChanges(hasSchemaChanges, ddlChanges);
@@ -1288,15 +1370,91 @@ void NativeChangeset::OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool i
 //+---------------+---------------+---------------+---------------+---------------+------
 void NativeChangeset::OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream> changeStream, bool invert) {
     if (m_changeStream != nullptr) {
-        BeNapi::ThrowJsException(env, "openChangeStream(): reader is already in open state.", (int)BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "openChangeStream(): reader is already in open state.", BE_SQLITE_ERROR);
     }
 
     if (changeStream == nullptr) {
-        BeNapi::ThrowJsException(env, "openChangeStream(): could not open a empty changeStream", (int)BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "openChangeStream(): could not open a empty changeStream", BE_SQLITE_ERROR);
     }
 
     m_invert = invert;
     m_changeStream = std::move(changeStream);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void NativeChangeset::OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert) {
+    m_changeGroup = std::make_unique<ChangeGroup>(db);
+    DdlChanges ddlGroup;
+    for(auto& changesetFile : changesetFiles) {
+        BeFileName inputFile(changesetFile);
+        if (!inputFile.DoesPathExist()) {
+            THROW_JS_BE_SQLITE_EXCEPTION(env, SqlPrintfString("openGroup(): changeset file specified does not exists (%s)", inputFile.GetNameUtf8().c_str()), BE_SQLITE_CANTOPEN);
+        }
+
+        ChangesetFileReader reader(inputFile);
+        bool containsSchemaChanges;
+        DdlChanges ddlChanges;
+        if (BE_SQLITE_OK != reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges)){
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "openGroup(): unable to read schema changes", BE_SQLITE_ERROR);
+        }
+        for(auto& ddl : ddlChanges.GetDDLs()) {
+            ddlGroup.AddDDL(ddl.c_str());
+        }
+        if (BE_SQLITE_OK != reader.AddToChangeGroup(*m_changeGroup)){
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "openGroup(): unable to add changeset to group", BE_SQLITE_ERROR);
+        }
+    }
+
+    m_changeStream = std::make_unique<ChangeSet>();
+    if (BE_SQLITE_OK != m_changeStream->FromChangeGroup(*m_changeGroup)){
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "openGroup(): unable to create change stream", BE_SQLITE_ERROR);
+    }
+    m_ddl = ddlGroup.ToString();
+    m_invert = invert;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void NativeChangeset::WriteToFile(Napi::Env env, Utf8String const& fileName, bool containChanges, bool override) {
+    const auto kStmtDelimiter = ";";
+    BeFileName outputFile(fileName);
+    DdlChanges ddlChanges;
+    bvector<Utf8String> individualDDLs;
+    BeStringUtilities::Split(m_ddl.c_str(), kStmtDelimiter, individualDDLs);
+
+    for(auto const& ddl : individualDDLs) {
+        ddlChanges.AddDDL(ddl.c_str());
+    }
+
+    if (outputFile.DoesPathExist() && !override) {
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): changeset file already exists", BE_SQLITE_ERROR);
+    }
+
+    if(outputFile.DoesPathExist() && override) {
+        if (outputFile.BeDeleteFile() != BeFileNameStatus::Success) {
+            THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to delete existing changeset file", BE_SQLITE_ERROR);
+        }
+    }
+
+    ChangesetFileWriter writer(outputFile, containChanges, ddlChanges, nullptr);
+    if (BE_SQLITE_OK !=  writer.Initialize()){
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to initialize changeset writer", BE_SQLITE_ERROR);
+    }
+
+    if(m_changeGroup){
+        writer.FromChangeGroup(*m_changeGroup);
+    } else if (m_changeStream) {
+        ChangeGroup changeGroup;
+        m_changeStream->AddToChangeGroup(changeGroup);
+        writer.FromChangeGroup(changeGroup);
+    } else {
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): no changeset to write", BE_SQLITE_ERROR);
+    }
+    if (!outputFile.DoesPathExist()) {
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "writeToFile(): unable to write changeset file", BE_SQLITE_ERROR);
+    }
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1305,6 +1463,8 @@ void NativeChangeset::Close(Napi::Env env) {
     m_currentChange = Changes::Change(nullptr, false);
     m_changes = nullptr;
     m_changeStream = nullptr;
+    m_changeGroup = nullptr;
+    m_invert = false;
     m_ddl.clear();
 }
 
@@ -1321,7 +1481,7 @@ void NativeChangeset::Reset(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::Step(Napi::Env env) {
     if (!IsOpen()) {
-        BeNapi::ThrowJsException(env, "step(): no changeset opened.", (int)BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "step(): no changeset opened.", BE_SQLITE_ERROR);
     }
 
     if (m_changes == nullptr) {
@@ -1337,12 +1497,12 @@ Napi::Value NativeChangeset::Step(Napi::Env env) {
 
     auto rc = m_currentChange.GetOperation(&m_tableName, &m_columnCount, &m_opcode, &m_indirect);
     if (rc != BE_SQLITE_OK) {
-        BeNapi::ThrowJsException(env, "step(): unable to read changeset", (int)rc);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "step(): unable to read changeset", rc);
     }
 
     rc = m_currentChange.GetPrimaryKeyColumns(&m_primaryKeyColumns, &m_primaryKeyColumnCount);
     if (rc != BE_SQLITE_OK) {
-        BeNapi::ThrowJsException(env, "step(): unable to read changeset", (int)rc);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "step(): unable to read changeset", rc);
     }
 
     m_primaryKeyCount = 0;
@@ -1359,7 +1519,7 @@ Napi::Value NativeChangeset::Step(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetTableName(Napi::Env env) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "getTableName(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getTableName(): there is no current row.", BE_SQLITE_ERROR);
     }
 
     return Napi::String::New(env, m_tableName);
@@ -1370,7 +1530,7 @@ Napi::Value NativeChangeset::GetTableName(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetOpCode(Napi::Env env) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "getOpCode(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getOpCode(): there is no current row.", BE_SQLITE_ERROR);
     }
 
     return Napi::Number::New(env, (int)m_opcode);
@@ -1381,7 +1541,7 @@ Napi::Value NativeChangeset::GetOpCode(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::IsIndirectChange(Napi::Env env) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "isIndirectChange(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "isIndirectChange(): there is no current row.", BE_SQLITE_ERROR);
     }
 
     return Napi::Boolean::New(env, (int)m_indirect);
@@ -1392,7 +1552,7 @@ Napi::Value NativeChangeset::IsIndirectChange(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetColumnCount(Napi::Env env) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "getColumnCount(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getColumnCount(): there is no current row.", BE_SQLITE_ERROR);
     }
 
     return Napi::Number::New(env, m_columnCount);
@@ -1592,7 +1752,7 @@ Napi::Value NativeChangeset::GetColumnValueType(Napi::Env env, int col, int targ
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetDdlChanges(Napi::Env env) {
     if (!IsOpen()) {
-        BeNapi::ThrowJsException(env, "getDdlChanges(): no changeset opened.", (int)BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getDdlChanges(): no changeset opened.", BE_SQLITE_ERROR);
     }
 
     if (!m_ddl.empty())
@@ -1629,7 +1789,7 @@ Napi::Value NativeChangeset::GetColumnValue(Napi::Env env, int col, int target) 
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetPrimaryKeyColumnIndexes(Napi::Env env) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "getPrimaryKeyColumnIndexes(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getPrimaryKeyColumnIndexes(): there is no current row.",  BE_SQLITE_ERROR);
     }
 
     auto row = Napi::Array::New(env, m_primaryKeyCount);
@@ -1647,7 +1807,7 @@ Napi::Value NativeChangeset::GetPrimaryKeyColumnIndexes(Napi::Env env) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetRow(Napi::Env env, int target) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "getRow(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getRow(): there is no current row.",  BE_SQLITE_ERROR);
     }
     // old value can be called by updated and deleted row.
     if (target == 0 && m_opcode == DbOpcode::Insert)
@@ -1669,7 +1829,7 @@ Napi::Value NativeChangeset::GetRow(Napi::Env env, int target) {
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetPrimaryKeys(Napi::Env env) {
     if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "getPrimaryKeys(): there is no current row.", (int) BE_SQLITE_ERROR);
+        THROW_JS_BE_SQLITE_EXCEPTION(env, "getPrimaryKeys(): there is no current row.",  BE_SQLITE_ERROR);
     }
 
     auto row = Napi::Array::New(env, m_primaryKeyCount);

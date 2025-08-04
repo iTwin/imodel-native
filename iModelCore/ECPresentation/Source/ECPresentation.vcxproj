@@ -37,18 +37,20 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py b</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py re ECPresentation-Library ECPresentation-PublicAPI</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py re ECPresentation-Library ECPresentation-PublicAPI</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py re -c ECPresentation-Library ECPresentation-PublicAPI</NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(SrcRoot)imodel-native\iModelCore\Bentley\BeXml\PublicApi;$(SrcRoot)imodel-native\iModelCore\Bentley\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\Bentley\BeRapidJson\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\BeHttp\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\BeSecurity\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\BeSQLite\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\DgnPlatform\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\ECPresentation\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\ECPresentation\Source\;$(SrcRoot)imodel-native\iModelCore\ECPresentation\Tests;$(SrcRoot)imodel-native\iModelCore\ECDb\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\ECObjects\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\GeomLibs\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\libsrc\facebook\VendorAPI\;$(SrcRoot)imodel-native\iModelCore\libsrc\jsoncpp\include\;$(SrcRoot)imodel-native\iModelCore\Units\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\WSClient\PublicAPI\;$(SrcRoot)imodel-native\iModelJsNodeAddon\;$(SrcRoot)imodel-native\node-addon-api\;$(OutRoot)Winx64\BuildContexts\ECPresentation\VendorAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(SrcRoot)imodel-native\iModelCore\Bentley\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\Bentley\BeRapidJson\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\BeHttp\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\BeSecurity\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\BeSQLite\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\DgnPlatform\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\ECPresentation\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\ECPresentation\Source\;$(SrcRoot)imodel-native\iModelCore\ECPresentation\Tests;$(SrcRoot)imodel-native\iModelCore\ECDb\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\ECObjects\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\GeomLibs\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\libsrc\facebook\VendorAPI\;$(SrcRoot)imodel-native\iModelCore\libsrc\jsoncpp\include\;$(SrcRoot)imodel-native\iModelCore\Units\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\WSClient\PublicAPI\;$(SrcRoot)imodel-native\iModelJsNodeAddon\;$(SrcRoot)imodel-native\node-addon-api\;$(OutRoot)Winx64\BuildContexts\ECPresentation\VendorAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <AdditionalOptions>/std:c++20</AdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py b</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py re ECPresentation-Library ECPresentation-PublicAPI</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py re ECPresentation-Library ECPresentation-PublicAPI</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>py.exe $(SrcRoot)bentleybuild\bentleybuild.py re -c ECPresentation-Library ECPresentation-PublicAPI</NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(SrcRoot)imodel-native\iModelCore\ECPresentation\PublicAPI;$(SrcRoot)imodel-native\iModelCore\ECPresentation\Source;$(SrcRoot)imodel-native\iModelCore\ecobjects\PublicApi;$(SrcRoot)imodel-native\iModelCore\ECDb\PublicAPI;$(SrcRoot)imodel-native\iModelCore\BeSQLite\PublicAPI;$(SrcRoot)imodel-native\iModelCore\GeomLibs\PublicAPI;$(SrcRoot)imodel-native\iModelCore\Units\PublicAPI;$(SrcRoot)imodel-native\iModelCore\Bentley\PublicAPI;$(SrcRoot)imodel-native\iModelCore\Bentley\BeRapidJson\PublicAPI;$(SrcRoot)imodel-native\iModelCore\Bentley\BeXml\PublicApi;$(SrcRoot)imodel-native\iModelCore\libsrc\jsoncpp\include;$(OutRoot)Winx64\BuildContexts\ECPresentation\VendorAPI;$(IncludePath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(SrcRoot)imodel-native\iModelCore\Bentley\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\Bentley\BeRapidJson\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\BeHttp\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\BeSecurity\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\BeSQLite\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\DgnPlatform\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\ECPresentation\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\ECPresentation\Source\;$(SrcRoot)imodel-native\iModelCore\ECPresentation\Tests;$(SrcRoot)imodel-native\iModelCore\ECDb\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\ECObjects\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\GeomLibs\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\libsrc\facebook\VendorAPI\;$(SrcRoot)imodel-native\iModelCore\libsrc\jsoncpp\include\;$(SrcRoot)imodel-native\iModelCore\Units\PublicAPI\;$(SrcRoot)imodel-native\iModelCore\WSClient\PublicAPI\;$(SrcRoot)imodel-native\iModelJsNodeAddon\;$(SrcRoot)imodel-native\node-addon-api\;$(OutRoot)Winx64\BuildContexts\ECPresentation\VendorAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <AdditionalOptions>/std:c++20</AdditionalOptions>
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="..\PublicAPI\ECPresentation\Connection.h" />
@@ -123,7 +125,6 @@
     <ClInclude Include="Content\ContentHelpers.h" />
     <ClInclude Include="Content\ContentItemBuilder.h" />
     <ClInclude Include="Content\ContentProviders.h" />
-    <ClInclude Include="Content\ContentQuery.h" />
     <ClInclude Include="Content\ContentQueryBuilder.h" />
     <ClInclude Include="Content\ContentQueryContracts.h" />
     <ClInclude Include="Content\ContentQueryResultsReader.h" />
@@ -149,7 +150,6 @@
     <ClInclude Include="Rules\CommonToolsInternal.h" />
     <ClInclude Include="Rules\PresentationRuleCommonConstants.h" />
     <ClInclude Include="Rules\PresentationRuleJsonConstants.h" />
-    <ClInclude Include="Rules\PresentationRuleXmlConstants.h" />
     <ClInclude Include="Shared\NodeLabelCalculator.h" />
     <ClInclude Include="Shared\CustomizationHelper.h" />
     <ClInclude Include="Shared\ECExpressions\ECExpressionContextsProvider.h" />
@@ -182,7 +182,6 @@
     <ClCompile Include="Content\ContentHelpers.cpp" />
     <ClCompile Include="Content\ContentItemBuilder.cpp" />
     <ClCompile Include="Content\ContentProviders.cpp" />
-    <ClCompile Include="Content\ContentQuery.cpp" />
     <ClCompile Include="Content\ContentQueryBuilder.cpp" />
     <ClCompile Include="Content\ContentQueryContracts.cpp" />
     <ClCompile Include="Content\ContentQueryResultsReader.cpp" />

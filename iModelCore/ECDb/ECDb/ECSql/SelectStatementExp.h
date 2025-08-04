@@ -312,6 +312,7 @@ struct SingleSelectStatementExp final : QueryExp
         bool IsRowConstructor() const { return m_fromClauseIndex == UNSET_CHILDINDEX;}
 
         SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
+        PropertyMatchResult FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const {return _FindProperty(ctx, propertyPath, options);}
         FromExp const* GetFrom() const
             {
             if (m_fromClauseIndex < 0)
@@ -380,10 +381,12 @@ struct SingleSelectStatementExp final : QueryExp
         bool IsCoreSelect() const { return m_limitOffsetClauseIndex == UNSET_CHILDINDEX && m_optionsClauseIndex == UNSET_CHILDINDEX; }
     };
 
+
 //********* QueryExp subclasses ***************************
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct CommonTableExp; // Forward Declared for SubqueryExp constructor
 struct SelectStatementExp;
 struct SubqueryExp final : QueryExp
     {
@@ -397,7 +400,9 @@ struct SubqueryExp final : QueryExp
         SelectClauseExp const* _GetSelection() const override;
     public:
         explicit SubqueryExp(std::unique_ptr<SelectStatementExp>);
-        SelectStatementExp const* GetQuery() const;
+        explicit SubqueryExp(std::unique_ptr<CommonTableExp>);
+        template<typename T>
+        T const* GetQuery() const;
     };
 
 
@@ -461,11 +466,7 @@ struct SubqueryRefExp final : RangeClassRefExp
     friend struct ECSqlParser;
     private:
         Utf8StringCR _GetId() const override { return GetAlias(); }
-	    PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override {
-            PropertyMatchOptions overrideOptions = options;
-            overrideOptions.SetAlias(GetAlias().c_str());
-            return GetSubquery()->GetQuery()->FindProperty(ctx, propertyPath, overrideOptions);
-            }
+	    PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override;
         void _OnAliasChanged() override {
             if( auto view = GetViewClassP()) {
                 view->SetAlias(GetAlias());

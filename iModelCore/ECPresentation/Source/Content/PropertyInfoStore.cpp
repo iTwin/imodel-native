@@ -65,13 +65,18 @@ void ClassPropertyOverridesInfo::Merge(ClassPropertyOverridesInfo const& source)
 template<typename TValue>
 Nullable<ClassPropertyOverridesInfo::PrioritizedValue<TValue>> const& ClassPropertyOverridesInfo::GetOverrides(ECClassCR propertyClass, Utf8StringCR propertyName, Nullable<PrioritizedValue<TValue>> const& (*valuePicker)(Overrides const&)) const
     {
-    // first, look for overrides specified specifically for some property
+    Nullable<PrioritizedValue<TValue>> const* matchingOverride = nullptr;
+
+    // first, look for overrides specified specifically for the property
     auto iter = m_propertyOverrides.find(propertyName);
     if (m_propertyOverrides.end() != iter)
-        return valuePicker(iter->second);
+        {
+        Nullable<PrioritizedValue<TValue>> const& prioritizedValue = valuePicker(iter->second);
+        if (prioritizedValue.IsValid())
+            matchingOverride = &prioritizedValue;
+        }
 
-    // then, attempt to find a default class override with the highest priority
-    Nullable<PrioritizedValue<TValue>> const* matchingOverride = nullptr;
+    // then, attempt to find a default class override with a higher priority
     for (auto const& entry : m_defaultClassPropertyOverrides)
         {
         if (nullptr != entry.first && !entry.first->Is(&propertyClass))
@@ -84,6 +89,7 @@ Nullable<ClassPropertyOverridesInfo::PrioritizedValue<TValue>> const& ClassPrope
         if (nullptr == matchingOverride || prioritizedValue.Value().priority > matchingOverride->Value().priority)
             matchingOverride = &prioritizedValue;
         }
+
     if (nullptr != matchingOverride)
         return *matchingOverride;
 
@@ -220,6 +226,12 @@ static BentleyStatus CreatePropertyCategoryFromSpec(bvector<std::shared_ptr<Prop
     if (identifier.GetType() == PropertyCategoryIdentifierType::DefaultParent)
         {
         stack.push_back(VirtualPropertyCategoryRef::CreateDefaultParentCategoryRef());
+        return SUCCESS;
+        }
+
+    if (identifier.GetType() == PropertyCategoryIdentifierType::SchemaCategory)
+        {
+        stack.push_back(std::make_unique<SchemaPropertyCategoryRef>(identifier.AsSchemaCategoryIdentifier()->GetCategoryName()));
         return SUCCESS;
         }
 
@@ -381,9 +393,11 @@ ClassPropertyOverridesInfo const& PropertyInfoStore::GetOverrides(ECClassCR ecCl
             // if there's at least one spec requiring property display and requesting to hide other properties,
             // it means we should insert hiding display infos with low priority so they don't override any
             // explicitly specified infos
-            info.SetClassOverrides(&ecClass, CreateDefaultHiddenPropertiesOverride());
+            ClassPropertyOverridesInfo hiddenPropertyOverrides;
+            hiddenPropertyOverrides.SetClassOverrides(&ecClass, CreateDefaultHiddenPropertiesOverride());
             for (ECClassCP baseClass : ecClass.GetBaseClasses())
-                info.SetClassOverrides(baseClass, CreateDefaultHiddenPropertiesOverride());
+                hiddenPropertyOverrides.SetClassOverrides(baseClass, CreateDefaultHiddenPropertiesOverride());
+            info.Merge(hiddenPropertyOverrides);
             }
 
         // merge in overrides of base class properties

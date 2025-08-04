@@ -23,11 +23,7 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-#include "strcase.h"
-
-#define ENABLE_CURLX_PRINTF
-/* use our own printf() functions */
-#include "curlx.h"
+#include <curlx.h>
 
 #include "tool_cfgable.h"
 #include "tool_msgs.h"
@@ -36,7 +32,7 @@
 #include "tool_paramhlp.h"
 #include "tool_formparse.h"
 
-#include "memdebug.h" /* keep this as LAST include */
+#include <memdebug.h> /* keep this as LAST include */
 
 /* tool_mime functions. */
 static struct tool_mime *tool_mime_new(struct tool_mime *parent,
@@ -77,6 +73,31 @@ static struct tool_mime *tool_mime_new_data(struct tool_mime *parent,
   return m;
 }
 
+/*
+** unsigned size_t to signed curl_off_t
+*/
+
+#define CURL_MASK_UCOFFT  ((unsigned CURL_TYPEOF_CURL_OFF_T)~0)
+#define CURL_MASK_SCOFFT  (CURL_MASK_UCOFFT >> 1)
+
+static curl_off_t uztoso(size_t uznum)
+{
+#ifdef __INTEL_COMPILER
+#  pragma warning(push)
+#  pragma warning(disable:810) /* conversion may lose significant bits */
+#elif defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable:4310) /* cast truncates constant value */
+#endif
+
+  DEBUGASSERT(uznum <= (size_t) CURL_MASK_SCOFFT);
+  return (curl_off_t)(uznum & (size_t) CURL_MASK_SCOFFT);
+
+#if defined(__INTEL_COMPILER) || defined(_MSC_VER)
+#  pragma warning(pop)
+#endif
+}
+
 static struct tool_mime *tool_mime_new_filedata(struct tool_mime *parent,
                                                 const char *filename,
                                                 bool isremotefile,
@@ -102,13 +123,17 @@ static struct tool_mime *tool_mime_new_filedata(struct tool_mime *parent,
     }
   }
   else {        /* Standard input. */
+#ifdef UNDER_CE
+    int fd = STDIN_FILENO;
+#else
     int fd = fileno(stdin);
+#endif
     char *data = NULL;
     curl_off_t size;
     curl_off_t origin;
     struct_stat sbuf;
 
-    set_binmode(stdin);
+    CURL_SET_BINMODE(stdin);
     origin = ftell(stdin);
     /* If stdin is a regular file, do not buffer data but read it
        when needed. */
@@ -139,12 +164,12 @@ static struct tool_mime *tool_mime_new_filedata(struct tool_mime *parent,
         }
         break;
       }
-      size = curlx_uztoso(stdinsize);
+      size = uztoso(stdinsize);
       origin = 0;
     }
     m = tool_mime_new(parent, TOOLMIME_STDIN);
     if(!m)
-      Curl_safefree(data);
+      tool_safefree(data);
     else {
       m->data = data;
       m->origin = origin;
@@ -165,11 +190,11 @@ void tool_mime_free(struct tool_mime *mime)
       tool_mime_free(mime->subparts);
     if(mime->prev)
       tool_mime_free(mime->prev);
-    Curl_safefree(mime->name);
-    Curl_safefree(mime->filename);
-    Curl_safefree(mime->type);
-    Curl_safefree(mime->encoder);
-    Curl_safefree(mime->data);
+    tool_safefree(mime->name);
+    tool_safefree(mime->filename);
+    tool_safefree(mime->type);
+    tool_safefree(mime->encoder);
+    tool_safefree(mime->data);
     curl_slist_free_all(mime->headers);
     free(mime);
   }
@@ -188,7 +213,7 @@ size_t tool_mime_stdin_read(char *buffer,
     if(sip->curpos >= sip->size)
       return 0;  /* At eof. */
     bytesleft = sip->size - sip->curpos;
-    if(curlx_uztoso(nitems) > bytesleft)
+    if(uztoso(nitems) > bytesleft)
       nitems = curlx_sotouz(bytesleft);
   }
   if(nitems) {
@@ -208,7 +233,7 @@ size_t tool_mime_stdin_read(char *buffer,
         return CURL_READFUNC_ABORT;
       }
     }
-    sip->curpos += curlx_uztoso(nitems);
+    sip->curpos += uztoso(nitems);
   }
   return nitems;
 }
@@ -278,7 +303,7 @@ static CURLcode tool2curlparts(CURL *curl, struct tool_mime *m,
       case TOOLMIME_STDIN:
         if(!filename)
           filename = "-";
-        /* FALLTHROUGH */
+        FALLTHROUGH();
       case TOOLMIME_STDINDATA:
         ret = curl_mime_data_cb(part, m->size,
                                 (curl_read_callback) tool_mime_stdin_read,
@@ -471,8 +496,6 @@ static int get_param_part(struct OperationConfig *config, char endchar,
   char *endpos;
   char *tp;
   char sep;
-  char type_major[128] = "";
-  char type_minor[128] = "";
   char *endct = NULL;
   struct curl_slist *headers = NULL;
 
@@ -484,38 +507,31 @@ static int get_param_part(struct OperationConfig *config, char endchar,
     *pheaders = NULL;
   if(pencoder)
     *pencoder = NULL;
-  while(ISSPACE(*p))
+  while(ISBLANK(*p))
     p++;
   tp = p;
   *pdata = get_param_word(config, &p, &endpos, endchar);
   /* If not quoted, strip trailing spaces. */
   if(*pdata == tp)
-    while(endpos > *pdata && ISSPACE(endpos[-1]))
+    while(endpos > *pdata && ISBLANK(endpos[-1]))
       endpos--;
   sep = *p;
   *endpos = '\0';
   while(sep == ';') {
-    while(p++ && ISSPACE(*p))
+    while(p++ && ISBLANK(*p))
       ;
 
     if(!endct && checkprefix("type=", p)) {
-      for(p += 5; ISSPACE(*p); p++)
+      size_t tlen;
+      for(p += 5; ISBLANK(*p); p++)
         ;
       /* set type pointer */
       type = p;
 
-      /* verify that this is a fine type specifier */
-      if(2 != sscanf(type, "%127[^/ ]/%127[^;, \n]", type_major, type_minor)) {
-        warnf(config->global, "Illegally formatted content-type field");
-        curl_slist_free_all(headers);
-        return -1; /* illegal content-type syntax! */
-      }
-
-      /* now point beyond the content-type specifier */
-      p = type + strlen(type_major) + strlen(type_minor) + 1;
-      for(endct = p; *p && *p != ';' && *p != endchar; p++)
-        if(!ISSPACE(*p))
-          endct = p + 1;
+      /* find end of content-type */
+      tlen = strcspn(p, "()<>@,;:\\\"[]?=\r\n ");
+      p += tlen;
+      endct = p;
       sep = *p;
     }
     else if(checkprefix("filename=", p)) {
@@ -523,13 +539,13 @@ static int get_param_part(struct OperationConfig *config, char endchar,
         *endct = '\0';
         endct = NULL;
       }
-      for(p += 9; ISSPACE(*p); p++)
+      for(p += 9; ISBLANK(*p); p++)
         ;
       tp = p;
       filename = get_param_word(config, &p, &endpos, endchar);
       /* If not quoted, strip trailing spaces. */
       if(filename == tp)
-        while(endpos > filename && ISSPACE(endpos[-1]))
+        while(endpos > filename && ISBLANK(endpos[-1]))
           endpos--;
       sep = *p;
       *endpos = '\0';
@@ -544,15 +560,14 @@ static int get_param_part(struct OperationConfig *config, char endchar,
         char *hdrfile;
         FILE *fp;
         /* Read headers from a file. */
-
         do {
           p++;
-        } while(ISSPACE(*p));
+        } while(ISBLANK(*p));
         tp = p;
         hdrfile = get_param_word(config, &p, &endpos, endchar);
         /* If not quoted, strip trailing spaces. */
         if(hdrfile == tp)
-          while(endpos > hdrfile && ISSPACE(endpos[-1]))
+          while(endpos > hdrfile && ISBLANK(endpos[-1]))
             endpos--;
         sep = *p;
         *endpos = '\0';
@@ -573,13 +588,13 @@ static int get_param_part(struct OperationConfig *config, char endchar,
       else {
         char *hdr;
 
-        while(ISSPACE(*p))
+        while(ISBLANK(*p))
           p++;
         tp = p;
         hdr = get_param_word(config, &p, &endpos, endchar);
         /* If not quoted, strip trailing spaces. */
         if(hdr == tp)
-          while(endpos > hdr && ISSPACE(endpos[-1]))
+          while(endpos > hdr && ISBLANK(endpos[-1]))
             endpos--;
         sep = *p;
         *endpos = '\0';
@@ -595,7 +610,7 @@ static int get_param_part(struct OperationConfig *config, char endchar,
         *endct = '\0';
         endct = NULL;
       }
-      for(p += 8; ISSPACE(*p); p++)
+      for(p += 8; ISBLANK(*p); p++)
         ;
       tp = p;
       encoder = get_param_word(config, &p, &endpos, endchar);
@@ -609,7 +624,7 @@ static int get_param_part(struct OperationConfig *config, char endchar,
     else if(endct) {
       /* This is part of content type. */
       for(endct = p; *p && *p != ';' && *p != endchar; p++)
-        if(!ISSPACE(*p))
+        if(!ISBLANK(*p))
           endct = p + 1;
       sep = *p;
     }
@@ -637,7 +652,7 @@ static int get_param_part(struct OperationConfig *config, char endchar,
     *pfilename = filename;
   else if(filename)
     warnf(config->global,
-          "Field file name not allowed here: %s", filename);
+          "Field filename not allowed here: %s", filename);
 
   if(pencoder)
     *pencoder = encoder;
@@ -693,7 +708,7 @@ static int get_param_part(struct OperationConfig *config, char endchar,
  * 'name=foo;headers=@headerfile' or why not
  * 'name=@filemame;headers=@headerfile'
  *
- * To upload a file, but to fake the file name that will be included in the
+ * To upload a file, but to fake the filename that will be included in the
  * formpost, do like this:
  *
  * 'name=@filename;filename=/dev/null' or quote the faked filename like:
@@ -720,7 +735,7 @@ int formparse(struct OperationConfig *config,
               struct tool_mime **mimecurrent,
               bool literal_value)
 {
-  /* input MUST be a string in the format 'name=contents' and we'll
+  /* input MUST be a string in the format 'name=contents' and we will
      build a linked list with the info */
   char *name = NULL;
   char *contents = NULL;
@@ -779,7 +794,7 @@ int formparse(struct OperationConfig *config,
     }
     else if('@' == contp[0] && !literal_value) {
 
-      /* we use the @-letter to indicate file name(s) */
+      /* we use the @-letter to indicate filename(s) */
 
       struct tool_mime *subparts = NULL;
 
@@ -821,8 +836,7 @@ int formparse(struct OperationConfig *config,
                   "error while reading standard input");
             goto fail;
           }
-          Curl_safefree(part->data);
-          part->data = NULL;
+          tool_safefree(part->data);
           part->size = -1;
           res = CURLE_OK;
         }
@@ -831,7 +845,7 @@ int formparse(struct OperationConfig *config,
         SET_TOOL_MIME_PTR(part, encoder);
 
         /* *contp could be '\0', so we just check with the delimiter */
-      } while(sep); /* loop if there's another file name */
+      } while(sep); /* loop if there is another filename */
       part = (*mimecurrent)->subparts;  /* Set name on group. */
     }
     else {
@@ -858,8 +872,7 @@ int formparse(struct OperationConfig *config,
                   "error while reading standard input");
             goto fail;
           }
-          Curl_safefree(part->data);
-          part->data = NULL;
+          tool_safefree(part->data);
           part->size = -1;
           res = CURLE_OK;
         }
@@ -901,7 +914,7 @@ int formparse(struct OperationConfig *config,
   }
   err = 0;
 fail:
-  Curl_safefree(contents);
+  tool_safefree(contents);
   curl_slist_free_all(headers);
   return err;
 }

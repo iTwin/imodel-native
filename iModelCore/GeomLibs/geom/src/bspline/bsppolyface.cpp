@@ -1136,6 +1136,8 @@ BuilderParams          *mpP                /* => mesh parameters */
     //   But whey didn't this show up in SS3 hline?  Dunno.
     static int s_diagonalFactorForLoHi = 0;   // 0 suppresses transfer of diagonal to edges.
     int numPositive, numNegative;
+    UNUSED_VARIABLE(numPositive);
+
     double polygonLength, polygonLength0, polygonLength1, polygonLength2;
     double          angleTolerance = mpP->options.GetAngleTolerance ();
     static double s_minAngleTolerance = 0.1;

@@ -75,6 +75,11 @@ bool ECSqlStatement::IsPrepared() const { return m_pimpl->IsPrepared(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+bool ECSqlStatement::IsWriteStatement() const { return m_pimpl->IsWriteStatement(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 IECSqlBinder& ECSqlStatement::GetBinder(int parameterIndex) { return m_pimpl->GetBinder(parameterIndex); }
 
 //---------------------------------------------------------------------------------------

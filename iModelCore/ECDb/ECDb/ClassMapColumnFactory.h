@@ -108,7 +108,7 @@ struct ClassMapColumnFactory final
                 ClassMap const& GetClassMap() const { return m_classMap; }
                 ColumnMaps& GetColumnMaps();
             };
-        
+
     private:
         ClassMap const& m_classMap;
         mutable DbTable* m_primaryOrJoinedTable = nullptr;
@@ -147,15 +147,16 @@ struct ClassMapColumnFactory final
             GetColumnMaps()->Insert(map.GetRelECClassIdPropertyMap());
             return true;
             }
-        DbColumn const* FindColumn(Utf8CP accessString) const 
+        DbColumn const* FindColumn(Utf8CP accessString) const
             {
             return GetColumnMaps()->FindP(accessString);
             }
-        void EvaluateIfPropertyGoesToOverflow(Utf8StringCR propertyName, SchemaImportContext& ctx) const;
-        void EvaluateIfPropertyGoesToOverflow(uint32_t columnsRequired, SchemaImportContext& ctx) const;
-        void ResetCurrentPropertyOverflowFlag() const { m_putCurrentPropertyToOverflow = false; }
-        void Debug() const { GetColumnMaps()->Debug(); }
-        DbColumn* Allocate(SchemaImportContext&, ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum = false) const;
+            void EnsurePropertyGoesToOverflow(Utf8StringCR propertyName, SchemaImportContext& ctx) const;
+            void EvaluateIfPropertyGoesToOverflow(Utf8StringCR propertyName, SchemaImportContext& ctx) const;
+            void EvaluateIfPropertyGoesToOverflow(uint32_t columnsRequired, SchemaImportContext& ctx) const;
+            void ResetCurrentPropertyOverflowFlag() const { m_putCurrentPropertyToOverflow = false; }
+            void Debug() const { GetColumnMaps()->Debug(); }
+            DbColumn* Allocate(SchemaImportContext&, ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum = false) const;
     };
 
 //======================================================================================

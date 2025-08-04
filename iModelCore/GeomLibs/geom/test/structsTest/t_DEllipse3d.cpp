@@ -3347,3 +3347,117 @@ TEST(DEllipse3d,BezierApproximation)
         }
     Check::ClearGeometry ("DEllipse3d.BezierApproximation");
     }
+
+TEST(DEllipse3d,IFCArcs)
+    {
+    struct IFCTrimmedArc
+        {
+        DPoint3d center;
+        DVec3d normal;
+        DVec3d nominalXAxis;
+        double radius;
+        double startDegrees;
+        double endDegrees;
+        bool sense; // whether arc parameterization agrees with circle orientation
+        IFCTrimmedArc(DPoint3d c, DVec3d n, DVec3d x, double r, double d0, double d1, bool s): center(c), normal(n), nominalXAxis(x), radius(r), startDegrees(d0), endDegrees(d1), sense(s) {}
+        };
+    bvector<IFCTrimmedArc> ifcTrimmedArcs;
+    ifcTrimmedArcs.push_back(IFCTrimmedArc(
+        DPoint3d::From(-1.0306933572642147, -243.49159763314779, -34.24953010348964),
+        DVec3d::From(-0.72994434113251017, 0.68348764753769409, 0.0050886650523053727),
+        DVec3d::From(-0.68349645813881044, -0.72995382840455392, 1.0451625993459343E-05),
+        0.035999999999999997, 269.99999999999983, 89.999999999999631, true));
+    ifcTrimmedArcs.push_back(IFCTrimmedArc(
+        DPoint3d::From(-0.98996844092628988, -243.44810463733435, -34.249530726231114),
+        DVec3d::From(-0.72994434113251017, 0.68348764753769409, 0.0050886650523053727),
+        DVec3d::From(0.68349645813881044, 0.72995382840455392, -1.0451625990228295E-05),
+        0.035999999999999997, 269.99999999999989, 44.999999999999538, true));
+    ifcTrimmedArcs.push_back(IFCTrimmedArc(
+        DPoint3d::From(-1.4706414881212051, -241.23524890520918, -33.839044659569367),
+        DVec3d::From(-0.68352858773996961, -0.72992374234110957, 1.0438013116663821E-05),
+        DVec3d::From(0.72992374241398161, -0.6835285876998396, 7.5782592932803895E-06),
+        0.035999999999999997, 269.99999999999983, 89.999999999999631, true));
+    ifcTrimmedArcs.push_back(IFCTrimmedArc(
+        DPoint3d::From(-1.4964025633377809, -241.19468517280956, -33.839045137442625),
+        DVec3d::From(-0.68352858773996961, -0.72992374234110957, 1.0438013116663821E-05),
+        DVec3d::From(1.6031289874332177E-06, 1.2798910463011636E-05, 1.),
+        0.036000000000000004, 0., 134.99999999999997, true));
+
+    DVec3d xAxis;
+    for (auto const& ifcData : ifcTrimmedArcs)
+        {
+        // Geomlibs: negative sweep iff retrograde
+        // IFC: sweep direction is specified separately from angles
+        auto startRadians = Angle::FromDegrees(ifcData.startDegrees).Radians();
+        auto endRadians = Angle::FromDegrees(ifcData.endDegrees).Radians();
+        if (ifcData.sense && endRadians < startRadians)
+            endRadians += msGeomConst_2pi;
+        else if (!ifcData.sense && startRadians < endRadians)
+            startRadians += msGeomConst_2pi;
+        auto sweep = endRadians - startRadians;
+
+        Check::False(Angle::IsNearZeroAllowPeriodShift(sweep), "IFC trimmed arcs cannot have full sweep.");
+        Check::True((ifcData.sense && sweep > 0.0) || (!ifcData.sense && sweep < 0.0), "Reconcile IFC and Geomlibs notions of arc direction");
+
+        auto yAxis = DVec3d::FromCrossProduct(ifcData.normal, ifcData.nominalXAxis);
+        auto matrix = RotMatrix::FromColumnVectors(ifcData.nominalXAxis, yAxis, ifcData.normal);
+        matrix.SquareAndNormalizeColumns(matrix, 2, 0);     // IFC: col 2 (normal) is exact, col 0 (xAxis) is adjusted in plane
+        auto arc = DEllipse3d::FromScaledRotMatrix(ifcData.center, matrix, ifcData.radius, ifcData.radius, startRadians, sweep);
+
+        matrix.GetColumn(xAxis, 2); // the adjusted xAxis
+        Check::SaveTransformed(DSegment3d::From(ifcData.center, DPoint3d::FromSumOf(ifcData.center, ifcData.normal, ifcData.radius / ifcData.normal.Magnitude())));
+        Check::SaveTransformed(DSegment3d::From(ifcData.center, DPoint3d::FromSumOf(ifcData.center, ifcData.nominalXAxis, ifcData.radius / ifcData.nominalXAxis.Magnitude())));
+        Check::SaveTransformed(DSegment3d::From(ifcData.center, DPoint3d::FromSumOf(ifcData.center, xAxis, ifcData.radius / xAxis.Magnitude())));
+        Check::SaveTransformed(arc);
+        }
+
+    struct IFCVerticalAlignmentArc  // a 2D arc in xz-plane
+        {
+        DPoint2d start;             // (startDistAlong, startHeight) in local coords; start.x < end.x
+        double horizLength;         // positive length along local x-axis
+        double startGradient;       // signed slope at arc start point
+        double endGradient;         // signed slope at arc end point
+        double radiusOfCurvature;   // arc radius; positive is CCW, negative is CW
+        DPoint2d end;               // start of next vertical alignment segment; end.x := startDistAlong + horizLength; end.y computed
+        IFCVerticalAlignmentArc(DPoint2dCR s, double hl, double sg, double eg, double r, DPoint2dCR e):
+            start(s), horizLength(hl), startGradient(sg), endGradient(eg), radiusOfCurvature(r), end(e) {}
+        };
+    bvector<IFCVerticalAlignmentArc> ifcVerticalAlignmentArcs;
+    ifcVerticalAlignmentArcs.push_back(IFCVerticalAlignmentArc(DPoint2d::From(57.7942922040522, 36.4666475796104), 38.2412058156652, -5.08185859172111E-3, -5.2854110852249E-4, 8398.658, DPoint2d::From(96.035498019717394, 36.359373910801601)));
+
+    for (auto const& ifcArc : ifcVerticalAlignmentArcs)
+        {
+        DPoint3d start = DPoint3d::From(ifcArc.start.x, ifcArc.start.y, 0); // in xy-plane!
+
+        DVec3d tangent0 = DVec3d::UnitX();
+        tangent0.RotateXY(atan(ifcArc.startGradient));
+        DVec3d tangent0CCW90 = DVec3d::FromCCWPerpendicularXY(tangent0);
+        DPoint3d center = DPoint3d::FromSumOf(start, tangent0CCW90, ifcArc.radiusOfCurvature);
+
+        DVec3d tangent1 = DVec3d::UnitX();
+        tangent1.RotateXY(atan(ifcArc.endGradient));
+        DVec3d tangent1CCW90 = DVec3d::FromCCWPerpendicularXY(tangent1);
+        DPoint3d nominalEnd = DPoint3d::FromSumOf(center, tangent1CCW90, -ifcArc.radiusOfCurvature);
+
+        DEllipse3d circularArc = DEllipse3d::FromCenter_StartPoint_EndTarget_StartTangentBias_CircularXY(center, start, nominalEnd, tangent0);
+
+        DPoint3d arcStart, arcEnd;
+        circularArc.EvaluateEndPoints(arcStart, arcEnd);
+        Check::Near(arcStart, start, "arc has expected start point");
+        Check::Near(arcEnd, ifcArc.end.x, ifcArc.end.y, 0, "arc has expected end point");
+        Transform localToWorld, worldToLocal;
+        Check::True(circularArc.GetLocalFrame(localToWorld, worldToLocal), "arc has a local frame");
+        Check::Near(DVec3d::UnitZ(), localToWorld.ColumnZ().ValidatedNormalize().Value(), "arc has expected normal");
+
+        // Converter displays the vertical alignment arc in the xz-plane
+        RotMatrix rotate90AroundX = RotMatrix::FromRotate90(DVec3d::UnitX());
+        Transform rotate90AroundXAtOrigin = Transform::From(rotate90AroundX);
+        rotate90AroundXAtOrigin.Multiply(circularArc);
+        Check::True(circularArc.GetLocalFrame(localToWorld, worldToLocal), "rotated arc has a local frame");
+        Check::Near(DVec3d::FromScale(DVec3d::UnitY(), -1.0), localToWorld.ColumnZ().ValidatedNormalize().Value(), "rotated arc has expected normal");
+
+        Check::SaveTransformed(circularArc);
+        }
+
+    Check::ClearGeometry("DEllipse3d.IFCArcs");
+    }

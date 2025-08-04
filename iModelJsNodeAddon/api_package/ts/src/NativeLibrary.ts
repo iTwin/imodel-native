@@ -3,8 +3,8 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-import * as os from "os";
-import * as path from "path";
+import * as os from "node:os";
+import * as path from "node:path";
 
 import type { NativeCloudSqlite } from "./NativeCloudSqlite";
 
@@ -14,24 +14,23 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
  */
 
 import type {
-  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode,
-  StatusCodeWithMessage,
+  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode
 } from "@itwin/core-bentley";
 import type {
-  ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
+  ChangesetIndexAndId, CodeProps, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
+  ElementGeometryBuilderParams,
+  ElementGeometryBuilderParamsForPart,
+  ElementGraphicsRequestProps, ElementLoadOptions, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
-  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
+  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, GeometryStreamProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
+  ModelProps, PlacementProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions
 } from "@itwin/core-common";
-import type { Range2dProps, Range3dProps } from "@itwin/core-geometry";
+import type { LowAndHighXYZProps, Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable @itwin/prefer-get */
-
-// ###TODO import from core-common after merge with master
-export type ElementMeshRequestProps = any;
 
 // cspell:ignore  blocksize cachesize polltime bentleyjs imodeljs ecsql pollable polyface txns lzma uncompress changesets ruleset ulas oidc keychain libsecret rulesets struct
 
@@ -89,9 +88,9 @@ export class NativeLibrary {
   // This returns true if you used `linkNativePlatform.bat` to install your local addon build.
   public static get isDevBuild(): boolean {
     try {
-      require("./devbuild.json");
+      require.resolve("./devbuild.json");
       return true;
-    } catch (_e) {
+    } catch {
       return false;
     }
   }
@@ -106,7 +105,8 @@ export class NativeLibrary {
         if (platform === "ios" || platform === "android") {
           this._nativeLib = (process as any)._linkedBinding("iModelJsNative") as typeof IModelJsNative;
         } else {
-          this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+          this._nativeLib =
+            require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-require-imports
         }
       } catch (err: any) {
         err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
@@ -120,13 +120,6 @@ export class NativeLibrary {
     }
     return this._nativeLib;
   }
-}
-/** Use GetInstance() method
- * @internal
- */
-export const enum InstanceSerializationMethod {
-  JsonParse = 0,
-  BeJsNapi = 1
 }
 
 /** WAL checkpoint mode
@@ -195,7 +188,6 @@ export declare namespace IModelJsNative {
     params?: NameValuePair[];
   }
 
-  const version: string;
   let logger: NativeLogger;
   function setMaxTileCacheSize(maxBytes: number): void;
   function getTileVersionInfo(): TileVersionInfo;
@@ -208,6 +200,31 @@ export declare namespace IModelJsNative {
   function enableLocalGcsFiles(yesNo: boolean): void;
   function queryConcurrency(pool: "io" | "cpu"): number;
 
+  interface TrueTypeFontMetadata {
+    faces: FontFaceProps[];
+    embeddable: boolean;
+  }
+
+  function getTrueTypeFontMetadata(fileName: LocalFileName): TrueTypeFontMetadata;
+  function isRscFontData(blob: Uint8Array): boolean;
+
+  function imageBufferFromImageSource(
+    sourceFormat: ImageSourceFormat.Png | ImageSourceFormat.Jpeg,
+    sourceData: Uint8Array,
+    targetFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba | 255,
+    flipVertically: boolean
+  ): Pick<ImageBuffer, "data" | "format" | "width"> | undefined;
+
+  function imageSourceFromImageBuffer(
+    imageFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba,
+    imageData: Uint8Array,
+    imageWidth: number,
+    imageHeight: number,
+    targetFormat: ImageSourceFormat.Png | ImageSourceFormat.Jpeg | 255,
+    flipVertically: boolean,
+    jpegQuality: number
+  ): { format: ImageSourceFormat.Jpeg | ImageSourceFormat.Png, data: Uint8Array } | undefined;
+
   /** Get the SHA1 hash of a Schema XML file, possibly including its referenced Schemas */
   function computeSchemaChecksum(arg: {
     /** the full path to the root schema XML file */
@@ -217,6 +234,12 @@ export declare namespace IModelJsNative {
     /** If true, the returned SHA1 includes the hash of all referenced schemas */
     exactMatch?: boolean;
   }): string;
+
+  /** When you want to associate an explanatory message with an error status value. */
+  interface StatusCodeWithMessage<ErrorCodeType> {
+    status: ErrorCodeType;
+    message: string;
+  }
 
   /** The return type of synchronous functions that may return an error or a successful result. */
   type ErrorStatusOrResult<ErrorCodeType, ResultType> = {
@@ -352,6 +375,31 @@ export declare namespace IModelJsNative {
     pathname: string;
   }
 
+  interface PerStatementHealthStats {
+    sqlStatement: string;
+    dbOperation: string;
+    rowCount: number;
+    elapsedMs: number;
+    fullTableScans: number;
+  }
+  interface ChangesetHealthStats {
+    changesetId: string;
+    uncompressedSizeBytes: number;
+    sha1ValidationTimeMs: number;
+    insertedRows: number;
+    updatedRows: number;
+    deletedRows: number;
+    totalElapsedMs: number;
+    totalFullTableScans: number;
+    perStatementStats: [PerStatementHealthStats];
+  }
+  interface ECSqlRowAdaptorOptions {
+    abbreviateBlobs?: boolean;
+    classIdsToClassNames?: boolean;
+    useJsName?: boolean;
+    doNotConvertClassIdsToClassNamesWhenAliased?: boolean; // backward compatibility
+  }
+
   interface EmbeddedFileProps {
     name: string;
     localFileName: string;
@@ -376,16 +424,15 @@ export declare namespace IModelJsNative {
     diameter?: number;
   }
 
-  /**
-   * Represents the arguments for reading an instance.
-   */
-  interface InstanceArgs {
+  interface ResolveInstanceKeyArgs {
+    partialKey?: { id: Id64String, baseClassName: string };
+    federationGuid?: GuidString;
+    code?: CodeProps;
+  }
+
+  interface ResolveInstanceKeyResult {
     id: Id64String;
-    classId: Id64String;
-    serializationMethod: InstanceSerializationMethod;
-    abbreviateBlobs?: boolean;
-    classIdsToClassNames?: boolean;
-    useJsNames?: boolean;
+    classFullName: string;
   }
 
   enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }
@@ -398,24 +445,9 @@ export declare namespace IModelJsNative {
     encoding?: FontEncodingProps;
   }
 
-  interface EmbedFontDataProps {
-    face: FontFaceProps;
-    data: Uint8Array;
-  }
-
-  interface EmbedFontFileProps {
-    fileName: LocalFileName;
-  }
-
-  interface EmbedSystemFontProps {
-    systemFont: string;
-  }
-
-  type EmbedFontArg = EmbedFontDataProps | EmbedFontFileProps | EmbedSystemFontProps & { compress?: true };
-
   interface SQLiteOps {
     embedFile(arg: EmbedFileArg): void;
-    embedFont(arg: EmbedFontArg): void;
+    embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     extractEmbeddedFile(arg: EmbeddedFileProps): void;
     getFilePath(): string;
     getLastInsertRowId(): number;
@@ -499,6 +531,26 @@ export declare namespace IModelJsNative {
     readonly parentChangesetIndex?: string;
   }
 
+  type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
+  interface IGeometrySource {
+    geom?: Uint8Array | GeometryStreamProps;
+    builder?: ElementGeometryBuilderParams;
+    placement?: PlacementProps;
+    categoryId?: Id64String;
+    is2d: boolean;
+  }
+
+
+  interface IGeometryPart {
+    geom?: Uint8Array | GeometryStreamProps;
+    builder?: ElementGeometryBuilderParamsForPart;
+    is2d: boolean;
+    bbox?: LowAndHighXYZProps;
+  }
+
+
+
+
   // ###TODO import from core-common
   interface ModelExtentsResponseProps {
     id: Id64String;
@@ -519,6 +571,8 @@ export declare namespace IModelJsNative {
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
+    public attachDb(filename: string, alias: string): void;
+    public detachDb(alias: string): void;
     public getNoCaseCollation(): NoCaseCollation;
     public setNoCaseCollation(collation: NoCaseCollation): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
@@ -532,8 +586,9 @@ export declare namespace IModelJsNative {
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
-    public addNewFont(arg: { type: FontType, name: string }): number;
-    public applyChangeset(changeSet: ChangesetFileProps): void;
+    public invalidateFontMap(): void;
+    public applyChangeset(changeSet: ChangesetFileProps, fastForward: boolean): void;
+    public revertTimelineChanges(changeSet: ChangesetFileProps[], skipSchemaChanges: boolean): void;
     public attachChangeCache(changeCachePath: string): DbResult;
     public beginMultiTxnOperation(): DbResult;
     public beginPurgeOperation(): IModelStatus;
@@ -564,7 +619,7 @@ export declare namespace IModelJsNative {
     public dumpChangeset(changeSet: ChangesetFileProps): void;
     public elementGeometryCacheOperation(requestProps: any/* ElementGeometryCacheOperationRequestProps */): BentleyStatus;
     public embedFile(arg: EmbedFileArg): void;
-    public embedFont(arg: EmbedFontArg): void;
+    public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     public enableChangesetSizeStats(enabled: boolean): DbResult;
     public enableTxnTesting(): void;
     public endMultiTxnOperation(): DbResult;
@@ -594,8 +649,21 @@ export declare namespace IModelJsNative {
     public getGeometryContainment(props: object): Promise<GeometryContainmentResponseProps>;
     public getIModelCoordinatesFromGeoCoordinates(points: IModelCoordinatesRequestProps): IModelCoordinatesResponseProps;
     public getIModelId(): GuidString;
-    public getIModelProps(): IModelProps;
-    public getInstance(args: InstanceArgs): { [key: string]: any };
+    public getIModelProps(when?: "pullMerge"): IModelProps;
+    public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
+    public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
+    public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
+    public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    public patchJsonProperties(jsonProps: string):  string;
+    public newBeGuid(): GuidString;
+
+    public clearECDbCache(): void;
+
+    public convertOrUpdateGeometrySource(arg: IGeometrySource, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometrySource;
+    public convertOrUpdateGeometryPart(arg: IGeometryPart, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometryPart;
+    
+    // when lets getIModelProps know that the extents may have been updated as the result of a pullChanges and should be read directly from the iModel as opposed to the cached extents.
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
@@ -621,7 +689,7 @@ export declare namespace IModelJsNative {
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
-    public insertElement(elemProps: ElementProps, options?: { forceUseId: boolean }): Id64String;
+    public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean }): Id64String;
     public insertElementAspect(aspectProps: ElementAspectProps): Id64String;
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
     public insertModel(modelProps: ModelProps): Id64String;
@@ -634,6 +702,7 @@ export declare namespace IModelJsNative {
     public isProfilerRunning(): boolean;
     public isReadonly(): boolean;
     public isRedoPossible(): boolean;
+    public isSubClassOf(childClassFullName: string, parentClassFullName: string): boolean;
     public isTxnIdValid(txnId: TxnIdString): boolean;
     public isUndoPossible(): boolean;
     public logTxnError(fatal: boolean): void;
@@ -675,10 +744,14 @@ export declare namespace IModelJsNative {
     public setITwinId(guid: GuidString): DbResult;
     public setBusyTimeout(ms: number): void;
     public setCodeValueBehavior(newBehavior: "exact" | "trim-unicode-whitespace"): void;
-    public simplifyElementGeometry(simplifyArgs: any): DbResult;
+    public simplifyElementGeometry(simplifyArgs: any): IModelStatus;
     public startCreateChangeset(): ChangesetFileProps;
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
     public stopProfiler(): { rc: DbResult, elapsedTime?: number, scopeId?: number, fileName?: string };
+    public enableChangesetStatsTracking(): void;
+    public disableChangesetStatsTracking(): void;
+    public getChangesetHealthData(changesetId: string): ChangesetHealthStats;
+    public getAllChangesetHealthData(): ChangesetHealthStats[];
     public updateElement(elemProps: Partial<ElementProps>): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;
@@ -693,17 +766,23 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
+    public pullMergeInProgress(): boolean;
+    public pullMergeBegin(): void;
+    public pullMergeEnd(): void;
+    public pullMergeResume(): void;
+
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
     public static zlibCompress(data: Uint8Array): Uint8Array;
     public static zlibDecompress(data: Uint8Array, actualSize: number): Uint8Array;
+    public static computeChangesetId(args: Partial<ChangesetFileProps> & Required<Pick<ChangesetFileProps, "parentId" | "pathname">> ): string;
   }
 
   /** The native object for GeoServices. */
   class GeoServices {
     constructor();
     public static getGeographicCRSInterpretation(props: GeographicCRSInterpretRequestProps): GeographicCRSInterpretResponseProps;
-    public static getListOfCRS(extent?: Range2dProps): Array<{ name: string, description: string, deprecated: boolean, crsExtent: Range2dProps }>;
+    public static getListOfCRS(extent?: Range2dProps, includeWorld?: boolean): Array<{ name: string, description: string, deprecated: boolean, crsExtent: Range2dProps }>;
   }
 
   /**
@@ -748,7 +827,11 @@ export declare namespace IModelJsNative {
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
-    public getInstance(args: InstanceArgs): { [key: string]: any };
+    public resolveInstanceKey(args: ResolveInstanceKeyArgs): ResolveInstanceKeyResult;
+    public readInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): NodeJS.Dict<any>;
+    public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
+    public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
+    public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
     public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
@@ -760,6 +843,9 @@ export declare namespace IModelJsNative {
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
+    public attachDb(filename: string, alias: string): void;
+    public detachDb(alias: string): void;
+
   }
 
   class ChangedElementsECDb implements IDisposable {
@@ -790,6 +876,8 @@ export declare namespace IModelJsNative {
     public stepForInsert(): { status: DbResult, id: string };
     public stepForInsertAsync(callback: (result: { status: DbResult, id: string }) => void): void;
     public getNativeSql(): string;
+    public toRow(arg: ECSqlRowAdaptorOptions): any;
+    public getMetadata(): any;
   }
 
   class ECSqlBinder {
@@ -908,7 +996,7 @@ export declare namespace IModelJsNative {
     public createDb(dbName: string, container?: CloudContainer, params?: SQLiteDbCreateParams): void;
     public dispose(): void;
     public embedFile(arg: EmbedFileArg): void;
-    public embedFont(arg: EmbedFontArg): void;
+    public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
     public getFilePath(): string;
     public getLastError(): string;
@@ -1351,7 +1439,7 @@ export declare namespace IModelJsNative {
 
   class ECSchemaXmlContext {
     constructor();
-    public addSchemaPath(path: string): void;
+    public addSchemaPath(schemaPath: string): void;
     public setSchemaLocater(locater: ECSchemaXmlContext.SchemaLocaterCallback): void;
     public setFirstSchemaLocater(locater: ECSchemaXmlContext.SchemaLocaterCallback): void;
     public readSchemaFromXmlFile(filePath: string): ErrorStatusOrResult<BentleyStatus, string>;
@@ -1397,9 +1485,12 @@ export declare namespace IModelJsNative {
     public isIndirectChange(): boolean;
     public getPrimaryKeyColumnIndexes(): number[];
     public openFile(fileName: string, invert: boolean): void;
+    public openGroup(fileName: string[], db: AnyECDb, invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
+    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean): void;
     public reset(): void;
     public step(): boolean;
+    public writeToFile(fileName: string, containsSchemaChanges: boolean, overrideFile: boolean): void;
   }
 
   class DisableNativeAssertions implements IDisposable {

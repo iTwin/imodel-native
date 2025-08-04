@@ -28,15 +28,9 @@
 /*               Hand crafted config file for RISC OS               */
 /* ================================================================ */
 
-/* Name of this package! */
-#undef PACKAGE
-
-/* Version number of this archive. */
-#undef VERSION
-
 /* Define cpu-machine-OS */
-#ifndef OS
-#define OS "ARM-RISC OS"
+#ifndef CURL_OS
+#define CURL_OS "ARM-RISC OS"
 #endif
 
 /* Define if you want the built-in manual */
@@ -55,19 +49,13 @@
 #undef NEED_REENTRANT
 
 /* Define if you want to enable IPv6 support */
-#undef ENABLE_IPV6
+#undef USE_IPV6
 
 /* Define if struct sockaddr_in6 has the sin6_scope_id member */
 #define HAVE_SOCKADDR_IN6_SIN6_SCOPE_ID 1
 
 /* Define this to 'int' if ssize_t is not an available typedefed type */
 #undef ssize_t
-
-/* Define this as a suitable file to read random data from */
-#undef RANDOM_FILE
-
-/* Define if you want to enable IPv6 support */
-#undef ENABLE_IPV6
 
 /* Define if you have the alarm function. */
 #define HAVE_ALARM
@@ -108,17 +96,8 @@
 /* Define if you have the `timeval' struct. */
 #define HAVE_STRUCT_TIMEVAL
 
-/* Define if you have the <inttypes.h> header file. */
-#define HAVE_INTTYPES_H
-
 /* Define if you have the <io.h> header file. */
 #undef HAVE_IO_H
-
-/* Define if you have the `socket' library (-lsocket). */
-#undef HAVE_LIBSOCKET
-
-/* Define if you need the malloc.h header file even with stdlib.h  */
-/* #define NEED_MALLOC_H 1 */
 
 /* Define if you have the <netdb.h> header file. */
 #define HAVE_NETDB_H
@@ -144,9 +123,6 @@
 /* Define if you have the `socket' function. */
 #define HAVE_SOCKET
 
-/* Define if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
-
 /* Define if you have the `strcasecmp' function. */
 #undef HAVE_STRCASECMP
 
@@ -161,12 +137,6 @@
 
 /* Define if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
-
-/* Define if you have the `strtok_r' function. */
-#undef HAVE_STRTOK_R
-
-/* Define if you have the `strtoll' function. */
-#undef HAVE_STRTOLL
 
 /* Define if you have the <sys/param.h> header file. */
 #undef HAVE_SYS_PARAM_H
@@ -198,9 +168,6 @@
 /* Define if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H
 
-/* Name of package */
-#undef PACKAGE
-
 /* The size of `int', as computed by sizeof. */
 #define SIZEOF_INT 4
 
@@ -215,13 +182,6 @@
 
 /* Version number of package */
 #undef VERSION
-
-/* Define if on AIX 3.
-   System headers sometimes define this.
-   We just want to avoid a redefinition error message.  */
-#ifndef _ALL_SOURCE
-# undef _ALL_SOURCE
-#endif
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS

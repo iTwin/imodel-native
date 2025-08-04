@@ -175,11 +175,12 @@ public:
     static void ApplyPagingOptions(RefCountedPtr<PresentationQueryBuilder>& query, PageOptionsCR opts);
     static void Aggregate(ContentDescriptorPtr& aggregateDescriptor, ContentDescriptorR inputDescriptor);
 
-    // static bmap<ECClassCP, bvector<InstanceLabelOverride const*>> GetLabelOverrideValuesMap(ECSchemaHelper const& helper, bvector<InstanceLabelOverrideCP>);
     static bvector<InstanceLabelOverrideValueSpecification const*> GetInstanceLabelOverrideSpecsForClass(ECSchemaHelper const& helper, bvector<InstanceLabelOverrideCP> const& instanceLabelOverrides, ECClassCR ecClass);
     ECPRESENTATION_EXPORT static PresentationQueryContractFieldPtr CreateDisplayLabelField(Utf8CP name, ECSchemaHelper const&, SelectClass<ECClass> const&,
         PresentationQueryContractFieldCPtr classIdField, PresentationQueryContractFieldCPtr instanceIdField, bvector<RelatedClassPath> const& relatedInstancePaths,
         bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs, bvector<ECInstanceKey> const& labelRequestsStack = {});
+    ECPRESENTATION_EXPORT static PresentationQueryContractFieldPtr CreateRelatedInstanceDisplayLabelField(Utf8CP name, ECSchemaHelper const& schemaHelper, SelectClass<ECClass> const& relatedInstanceSelectClass,
+        bvector<RelatedClassPath> const& relatedInstancePaths, bvector<InstanceLabelOverrideCP> const& instanceLabelOverrides);
     ECPRESENTATION_EXPORT static Utf8String CreateDisplayLabelValueClause(Utf8StringCR fieldName);
 
     static IdSet<BeInt64Id> CreateIdSetFromJsonArray(RapidJsonValueCR);

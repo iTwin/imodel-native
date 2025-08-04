@@ -10,7 +10,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC;
 const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_ECDB_SCHEMA = "44c5d675cdab562b732a90b8c0128149daaa7a2beefbcbddb576f7bf059cec33";
 const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_ECDB_MAP = "9c7834d13177336f0fa57105b9c1175b912b2e12e62ca2224482c0ffd9dfd337";
 const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_SQLITE_SCHEMA = "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443";
-const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_CHANNEL_SQLITE_SCHEMA = "114aebfc89d430c79bfd1bbbb5796837a91d02d8cb409dcdd83ba5d1dc074eb4";
+const char* SchemaSyncTestFixture::DEFAULT_SHA3_256_CHANNEL_SQLITE_SCHEMA = "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -259,19 +259,19 @@ void SchemaSyncTestFixture::PrintHash(ECDbR ecdb, Utf8CP desc) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SchemaSyncTestFixture::CheckHashes(ECDbR ecdb, Utf8CP schemaHash, Utf8CP mapHash, Utf8CP dbSchemaHash, bool strictCheck)
+void SchemaSyncTestFixture::CheckHashes(ECDbR ecdb, Utf8CP schemaHash, Utf8CP mapHash, Utf8CP dbSchemaHash, bool strictCheck, int lineNo)
     {
     if (strictCheck)
         {
-        ASSERT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str())       << "File: " << ecdb.GetDbFileName();
-        ASSERT_STREQ(mapHash, GetMapHash(ecdb).c_str())             << "File: " << ecdb.GetDbFileName();
-        ASSERT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str())   << "File: " << ecdb.GetDbFileName();
+        ASSERT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str())       << "File: " << ecdb.GetDbFileName() << " Line: " << lineNo;
+        ASSERT_STREQ(mapHash, GetMapHash(ecdb).c_str())             << "File: " << ecdb.GetDbFileName() << " Line: " << lineNo;;
+        ASSERT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str())   << "File: " << ecdb.GetDbFileName() << " Line: " << lineNo;;
         }
     else
         {
-        EXPECT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str())       << "File: " << ecdb.GetDbFileName();
-        EXPECT_STREQ(mapHash, GetMapHash(ecdb).c_str())             << "File: " << ecdb.GetDbFileName();
-        EXPECT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str())   << "File: " << ecdb.GetDbFileName();
+        EXPECT_STREQ(schemaHash, GetSchemaHash(ecdb).c_str())       << "File: " << ecdb.GetDbFileName() << " Line: " << lineNo;;
+        EXPECT_STREQ(mapHash, GetMapHash(ecdb).c_str())             << "File: " << ecdb.GetDbFileName() << " Line: " << lineNo;;
+        EXPECT_STREQ(dbSchemaHash, GetDbSchemaHash(ecdb).c_str())   << "File: " << ecdb.GetDbFileName() << " Line: " << lineNo;;
         }
     }
 
@@ -460,7 +460,6 @@ SchemaImportResult InMemoryECDb::ImportSchema(SchemaItem const& si) {
     bvector<ECN::ECSchemaP> schemas;
     ctx->GetCache().GetSchemas(schemas);
     bvector<ECN::ECSchemaCP> schemasIn(schemas.begin(), schemas.end());
-   // if (m_tracker != nullptr) m_tracker->SetHasEcSchemaChanges(true);
     return Schemas().ImportSchemas(schemasIn, nullptr);
 }
 
@@ -780,12 +779,20 @@ ECDbChangeSet::Ptr ECDbChangeSet::From(ECDbChangeTracker& tracker, Utf8CP commen
     if (!tracker.HasChanges() && !tracker.HasDdlChanges()) {
         return nullptr;
     }
-    auto changeset = std::make_unique<ECDbChangeSet>( (int)(tracker.GetLocalChangesets().size() + 1), comment, tracker.GetDDL().c_str(), tracker.HasEcSchemaChanges());
+    auto changeset = std::make_unique<ECDbChangeSet>( (int)(tracker.GetLocalChangesets().size() + 1), comment, tracker.GetDDL().c_str(), false);
     if (tracker.HasChanges()) {
         auto rc = changeset->FromChangeTrack(tracker);
         if (rc != BE_SQLITE_OK) {
             return nullptr;
         }
+        bool hasECChanges = false;
+        for (auto& change : changeset->GetChanges()) {
+            if (change.GetTableName().StartsWithIAscii("ec_")) {
+                hasECChanges = true;
+                break;
+            }
+        }
+        changeset->m_hasSchemaChanges = hasECChanges;
     }
     return std::move(changeset);
 }

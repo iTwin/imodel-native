@@ -32,7 +32,6 @@ ECSqlSystemPropertyInfo const& ECDbSystemSchemaHelper::GetSystemPropertyInfo(ECN
     {
     if (!ecProperty.HasId() || SUCCESS != InitializeCache())
         {
-        BeAssert(false);
         return ECSqlSystemPropertyInfo::NoSystemProperty();
         }
 
@@ -187,7 +186,7 @@ BentleyStatus ECDbSystemSchemaHelper::InitializeCache() const
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-//static 
+//static
 int ECSqlSystemPropertyInfo::Compare(ECSqlSystemPropertyInfo const& lhs, ECSqlSystemPropertyInfo const& rhs)
     {
     if (lhs.m_type != rhs.m_type)
@@ -222,6 +221,9 @@ ExtendedTypeHelper::ExtendedType ExtendedTypeHelper::GetExtendedType(Utf8StringC
         { EXTENDEDTYPENAME_TargetClassId, ExtendedType::TargetClassId },
         { EXTENDEDTYPENAME_NavId, ExtendedType::NavId },
         { EXTENDEDTYPENAME_NavRelClassId, ExtendedType::NavRelClassId },
+        { EXTENDEDTYPENAME_BeGuid, ExtendedType::BeGuid },
+        { EXTENDEDTYPENAME_Json, ExtendedType::Json },
+        { EXTENDEDTYPENAME_GeometryStream, ExtendedType::GeometryStream },
     };
     auto it  = map.find(extendedType);
     if (it == map.end())
@@ -234,29 +236,29 @@ ExtendedTypeHelper::ExtendedType ExtendedTypeHelper::GetExtendedType(Utf8StringC
 //+---------------+---------------+---------------+---------------+---------------+-
 bool ExtendedTypeHelper::TryGetSystemExtendedType(Utf8StringR extenedType, Utf8StringCR className, Utf8StringCR propertyName) {
     static std::map<Utf8String, std::map<Utf8String, Utf8String>> map {
-        { 
+        {
             ECDBSYS_CLASS_ClassECSqlSystemProperties, {
-                { ECDBSYS_PROP_ECInstanceId, EXTENDEDTYPENAME_Id}, 
+                { ECDBSYS_PROP_ECInstanceId, EXTENDEDTYPENAME_Id},
                 { ECDBSYS_PROP_ECClassId, EXTENDEDTYPENAME_ClassId}
-            } 
-        }, { 
+            }
+        }, {
             ECDBSYS_CLASS_RelationshipECSqlSystemProperties, {
-                { ECDBSYS_PROP_SourceECInstanceId, EXTENDEDTYPENAME_SourceId}, 
+                { ECDBSYS_PROP_SourceECInstanceId, EXTENDEDTYPENAME_SourceId},
                 { ECDBSYS_PROP_SourceECClassId, EXTENDEDTYPENAME_SourceClassId},
-                { ECDBSYS_PROP_TargetECInstanceId, EXTENDEDTYPENAME_TargetId}, 
+                { ECDBSYS_PROP_TargetECInstanceId, EXTENDEDTYPENAME_TargetId},
                 { ECDBSYS_PROP_TargetECClassId, EXTENDEDTYPENAME_TargetClassId}
-            } 
-        }, { 
+            }
+        }, {
             ECDBSYS_CLASS_NavigationECSqlSystemProperties, {
                 { ECDBSYS_PROP_NavPropId, EXTENDEDTYPENAME_NavId},
                 { ECDBSYS_PROP_NavPropRelECClassId, EXTENDEDTYPENAME_NavRelClassId}
             }
-        }, 
+        },
     };
     auto classIt  = map.find(className);
     if (classIt == map.end())
         return false;
-    
+
     auto& props = classIt->second;
     auto propIt = props.find(propertyName);
     if (propIt == props.end())
@@ -265,4 +267,16 @@ bool ExtendedTypeHelper::TryGetSystemExtendedType(Utf8StringR extenedType, Utf8S
     extenedType = propIt->second;
     return true;
     }
+//----------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+-
+ExtendedTypeHelper::ExtendedType ExtendedTypeHelper::FromProperty(ECN::ECPropertyCR prop) {
+    if (prop.GetIsPrimitive()) {
+        const auto prim = prop.GetAsPrimitiveProperty();
+        if (prim && !prim->GetExtendedTypeName().empty())
+            return GetExtendedType(prim->GetExtendedTypeName());
+    }
+    return ExtendedType::Unknown;
+
+}
 END_BENTLEY_SQLITE_EC_NAMESPACE

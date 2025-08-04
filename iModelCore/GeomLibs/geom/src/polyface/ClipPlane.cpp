@@ -321,24 +321,29 @@ void    ClipPlane::ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPo
     {
     return ConvexPolygonClipInPlace (xyz, work, 0);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    ClipPlane::ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPoint3d> &work, int onPlaneHandling) const
     {
+    // NOTE: convexity is NOT required, but YMMV if self-intersecting
     work.clear ();
     size_t numNegative = 0;
     DRange1d range;
     static double s_fractionTol = 1.0e-8;
     if (xyz.size () > 2)
         {
-        DPoint3d xyz0 = xyz.back ();
+        bool needClosureEdge = !xyz.front().AlmostEqual(xyz.back()); // account for input with closure point
+        size_t i0 = needClosureEdge ? xyz.size() - 1 : 0;
+        DPoint3d xyz0 = xyz[i0];
         double a0 = EvaluatePoint (xyz0);
         range.Extend (a0);
-//        if (a0 >= 0.0)
-//            work.push_back (xyz0);
-        for (auto &xyz1 : xyz)
+        if (!needClosureEdge && a0 >= 0.0)
+            work.push_back(xyz0);
+        for (size_t i1 = needClosureEdge ? 0 : 1; i1 < xyz.size(); ++i1)
             {
+            DPoint3d xyz1 = xyz[i1];
             double a1 = EvaluatePoint (xyz1);
             range.Extend (a1);
             if (a1 < 0)
@@ -362,7 +367,7 @@ void    ClipPlane::ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPo
         }
     if (onPlaneHandling != 0)
         {
-        double tol = Angle::SmallAngle () * (1.0 + fabs (m_distance));
+        double tol = Angle::SmallAngle () * (1.0 + fabs (m_distance)); // PPBase loosened to 1.0e-10 on 8/22
         if (range.High () < tol && range.Low () >= -tol)
             {
             // all "ON" -- last arg determines in or out ...
@@ -421,7 +426,7 @@ DRange1d &altitudeRange                 //!< [out] min and max altitude values.
     {
     xyzOut.clear ();
     xyzIn.clear ();
-    size_t numSplit = 0;
+
     static double s_fractionTol = 1.0e-8;
     if (xyz.size () > 2)
         {
@@ -452,7 +457,6 @@ DRange1d &altitudeRange                 //!< [out] min and max altitude values.
                     xyzIn.push_back (xyzA);
                     xyzOut.push_back (xyzA);
                     }
-                    numSplit++;
                 }
             if (a1 >= 0.0 || nearZero)
                 xyzIn.push_back (xyz1);

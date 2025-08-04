@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
+import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode, using } from "@itwin/core-bentley";
 import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions, RelationshipProps } from "@itwin/core-common";
 import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
@@ -10,7 +10,7 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import { openDgnDb } from ".";
-import { IModelJsNative, InstanceSerializationMethod, SchemaWriteStatus } from "../NativeLibrary";
+import { IModelJsNative, SchemaWriteStatus } from "../NativeLibrary";
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 
 // Crash reporting on linux is gated by the presence of this env variable.
@@ -30,326 +30,29 @@ describe("basic tests", () => {
     dgndb.closeFile();
     done();
   });
-  describe("getInstance()", () => {
-    const args = { id: "0x38", classId: "0xe7" };
-    /* eslint-disable @typescript-eslint/naming-convention */
-    const expected0 = {
-      ECInstanceId: "0x38",
-      ECClassId: "0xe7",
-      Model: {
-        Id: "0x1f",
-        RelECClassId: "0x40",
-      },
-      LastMod: "2017-07-25T20:44:59.926Z",
-      CodeSpec: {
-        Id: "0x1",
-        RelECClassId: "0x47",
-      },
-      CodeScope: {
-        Id: "0x1",
-        RelECClassId: "0x49",
-      },
-      Category: {
-        Id: "0x17",
-        RelECClassId: "0x8c",
-      },
-      InSpatialIndex: true,
-      Origin: {
-        X: 6.494445575423782,
-        Y: 19.89784647571006,
-        Z: 8.020100502512559,
-      },
-      Yaw: 25.949359512071446,
-      Pitch: 4.770832022195274e-15,
-      Roll: 114.7782627769506,
-      BBoxLow: {
-        X: -9.735928156263862,
-        Y: -9.735928156263864,
-        Z: -9.735928156263858,
-      },
-      BBoxHigh: {
-        X: 9.735928156263858,
-        Y: 9.73592815626386,
-        Z: 9.735928156263855,
-      },
-      GeometryStream: "{\"bytes\":203}",
-    };
-    const expected01 = {
-      ECInstanceId: "0x38",
-      ECClassId: "0xe7",
-      Model: {
-        Id: "0x1f",
-        RelECClassId: "0x40",
-      },
-      LastMod: "2017-07-25T20:44:59.926Z",
-      CodeSpec: {
-        Id: "0x1",
-        RelECClassId: "0x47",
-      },
-      CodeScope: {
-        Id: "0x1",
-        RelECClassId: "0x49",
-      },
-      Category: {
-        Id: "0x17",
-        RelECClassId: "0x8c",
-      },
-      InSpatialIndex: true,
-      Origin: {
-        X: 6.494445575423782,
-        Y: 19.89784647571006,
-        Z: 8.020100502512559,
-      },
-      Yaw: 25.949359512071446,
-      Pitch: 4.770832022195274e-15,
-      Roll: 114.7782627769506,
-      BBoxLow: {
-        X: -9.735928156263862,
-        Y: -9.735928156263864,
-        Z: -9.735928156263858,
-      },
-      BBoxHigh: {
-        X: 9.735928156263858,
-        Y: 9.73592815626386,
-        Z: 9.735928156263855,
-      },
-      GeometryStream: "encoding=base64;ywCAAjAABgAA+AAAAAEAAAAIDQgBAUAEAAAAMAAAABwAAAAYABQADAUeEQEIBgAHBRgBAQwBAQDwASQJAUALAAAAqAAAAGJnMDAwMWZiEAUXEAoADgAHBUIACgUQCAAHDAUIyAYAfAAEAAYAAAC8t0aTy3gjQNTy0dk2l6Q8BOGMD2d0zbxZPdLR+8bSvLS6W8O77KW8vQ0oBT8IANg8CQgg0LyQPKeSAhKeERAEPLoyKAAk4LwYLURU+yH5vwkIJAlAAQAAAAAAAAA=",
-    };
-    const expected02 = {
-      ECInstanceId: "0x38",
-      ECClassId: "0xe7",
-      Model: {
-        Id: "0x1f",
-        RelECClassId: "0x40",
-      },
-      LastMod: "2017-07-25T20:44:59.926Z",
-      CodeSpec: {
-        Id: "0x1",
-        RelECClassId: "0x47",
-      },
-      CodeScope: {
-        Id: "0x1",
-        RelECClassId: "0x49",
-      },
-      Category: {
-        Id: "0x17",
-        RelECClassId: "0x8c",
-      },
-      InSpatialIndex: true,
-      Origin: {
-        X: 6.494445575423782,
-        Y: 19.89784647571006,
-        Z: 8.020100502512559,
-      },
-      Yaw: 25.949359512071446,
-      Pitch: 4.770832022195274e-15,
-      Roll: 114.7782627769506,
-      BBoxLow: {
-        X: -9.735928156263862,
-        Y: -9.735928156263864,
-        Z: -9.735928156263858,
-      },
-      BBoxHigh: {
-        X: 9.735928156263858,
-        Y: 9.73592815626386,
-        Z: 9.735928156263855,
-      },
-      GeometryStream: new Uint8Array([203, 0, 128, 2, 48, 0, 6, 0, 0, 248, 0, 0, 0, 1, 0, 0, 0, 8, 13, 8, 1, 1, 64, 4, 0, 0, 0, 48, 0, 0, 0, 28, 0, 0, 0, 24, 0, 20, 0, 12, 5, 30, 17, 1, 8, 6, 0, 7, 5, 24, 1, 1, 12, 1, 1, 0, 240, 1, 36, 9, 1, 64, 11, 0, 0, 0, 168, 0, 0, 0, 98, 103, 48, 48, 48, 49, 102, 98, 16, 5, 23, 16, 10, 0, 14, 0, 7, 5, 66, 0, 10, 5, 16, 8, 0, 7, 12, 5, 8, 200, 6, 0, 124, 0, 4, 0, 6, 0, 0, 0, 188, 183, 70, 147, 203, 120, 35, 64, 212, 242, 209, 217, 54, 151, 164, 60, 4, 225, 140, 15, 103, 116, 205, 188, 89, 61, 210, 209, 251, 198, 210, 188, 180, 186, 91, 195, 187, 236, 165, 188, 189, 13, 40, 5, 63, 8, 0, 216, 60, 9, 8, 32, 208, 188, 144, 60, 167, 146, 2, 18, 158, 17, 16, 4, 60, 186, 50, 40, 0, 36, 224, 188, 24, 45, 68, 84, 251, 33, 249, 191, 9, 8, 36, 9, 64, 1, 0, 0, 0, 0, 0, 0, 0]),
-    };
-    /* eslint-enable @typescript-eslint/naming-convention */
+  it("subclassof", () => {
+    const seedUri = path.join(getAssetsDir(), "test.bim");
+    const iModelDb = new iModelJsNative.DgnDb();
+    iModelDb.openIModel(seedUri, OpenMode.Readonly);
+    assert.isTrue(iModelDb.isSubClassOf("BisCore:GeometricElement3d", "BisCore:GeometricElement"));
+    assert.isTrue(iModelDb.isSubClassOf("BisCore:GeometricElement2d", "BisCore:GeometricElement"));
+    assert.isTrue(iModelDb.isSubClassOf("BisCore:GeometricModel2d", "BisCore:GeometricModel"));
+    assert.isTrue(iModelDb.isSubClassOf("BisCore:GeometricModel3d", "BisCore:GeometricModel"));
 
-    const expected1 = {
-      id: "0x38",
-      className: "Generic.PhysicalObject",
-      model: {
-        id: "0x1f",
-        relClassName: "BisCore.ModelContainsElements",
-      },
-      lastMod: "2017-07-25T20:44:59.926Z",
-      codeSpec: {
-        id: "0x1",
-        relClassName: "BisCore.CodeSpecSpecifiesCode",
-      },
-      codeScope: {
-        id: "0x1",
-        relClassName: "BisCore.ElementScopesCode",
-      },
-      category: {
-        id: "0x17",
-        relClassName: "BisCore.GeometricElement3dIsInCategory",
-      },
-      inSpatialIndex: true,
-      origin: {
-        x: 6.494445575423782,
-        y: 19.89784647571006,
-        z: 8.020100502512559,
-      },
-      yaw: 25.949359512071446,
-      pitch: 4.770832022195274e-15,
-      roll: 114.7782627769506,
-      bBoxLow: {
-        x: -9.735928156263862,
-        y: -9.735928156263864,
-        z: -9.735928156263858,
-      },
-      bBoxHigh: {
-        x: 9.735928156263858,
-        y: 9.73592815626386,
-        z: 9.735928156263855,
-      },
-      geometryStream: "{\"bytes\":203}",
-    };
-
-    const expected11 = {
-      id: "0x38",
-      className: "Generic.PhysicalObject",
-      model: {
-        id: "0x1f",
-        relClassName: "BisCore.ModelContainsElements",
-      },
-      lastMod: "2017-07-25T20:44:59.926Z",
-      codeSpec: {
-        id: "0x1",
-        relClassName: "BisCore.CodeSpecSpecifiesCode",
-      },
-      codeScope: {
-        id: "0x1",
-        relClassName: "BisCore.ElementScopesCode",
-      },
-      category: {
-        id: "0x17",
-        relClassName: "BisCore.GeometricElement3dIsInCategory",
-      },
-      inSpatialIndex: true,
-      origin: {
-        x: 6.494445575423782,
-        y: 19.89784647571006,
-        z: 8.020100502512559,
-      },
-      yaw: 25.949359512071446,
-      pitch: 4.770832022195274e-15,
-      roll: 114.7782627769506,
-      bBoxLow: {
-        x: -9.735928156263862,
-        y: -9.735928156263864,
-        z: -9.735928156263858,
-      },
-      bBoxHigh: {
-        x: 9.735928156263858,
-        y: 9.73592815626386,
-        z: 9.735928156263855,
-      },
-      geometryStream: new Uint8Array([203, 0, 128, 2, 48, 0, 6, 0, 0, 248, 0, 0, 0, 1, 0, 0, 0, 8, 13, 8, 1, 1, 64, 4, 0, 0, 0, 48, 0, 0, 0, 28, 0, 0, 0, 24, 0, 20, 0, 12, 5, 30, 17, 1, 8, 6, 0, 7, 5, 24, 1, 1, 12, 1, 1, 0, 240, 1, 36, 9, 1, 64, 11, 0, 0, 0, 168, 0, 0, 0, 98, 103, 48, 48, 48, 49, 102, 98, 16, 5, 23, 16, 10, 0, 14, 0, 7, 5, 66, 0, 10, 5, 16, 8, 0, 7, 12, 5, 8, 200, 6, 0, 124, 0, 4, 0, 6, 0, 0, 0, 188, 183, 70, 147, 203, 120, 35, 64, 212, 242, 209, 217, 54, 151, 164, 60, 4, 225, 140, 15, 103, 116, 205, 188, 89, 61, 210, 209, 251, 198, 210, 188, 180, 186, 91, 195, 187, 236, 165, 188, 189, 13, 40, 5, 63, 8, 0, 216, 60, 9, 8, 32, 208, 188, 144, 60, 167, 146, 2, 18, 158, 17, 16, 4, 60, 186, 50, 40, 0, 36, 224, 188, 24, 45, 68, 84, 251, 33, 249, 191, 9, 8, 36, 9, 64, 1, 0, 0, 0, 0, 0, 0, 0]),
-    };
-    const expected12 = {
-      id: "0x38",
-      className: "Generic.PhysicalObject",
-      model: {
-        id: "0x1f",
-        relClassName: "BisCore.ModelContainsElements",
-      },
-      lastMod: "2017-07-25T20:44:59.926Z",
-      codeSpec: {
-        id: "0x1",
-        relClassName: "BisCore.CodeSpecSpecifiesCode",
-      },
-      codeScope: {
-        id: "0x1",
-        relClassName: "BisCore.ElementScopesCode",
-      },
-      category: {
-        id: "0x17",
-        relClassName: "BisCore.GeometricElement3dIsInCategory",
-      },
-      inSpatialIndex: true,
-      origin: {
-        x: 6.494445575423782,
-        y: 19.89784647571006,
-        z: 8.020100502512559,
-      },
-      yaw: 25.949359512071446,
-      pitch: 4.770832022195274e-15,
-      roll: 114.7782627769506,
-      bBoxLow: {
-        x: -9.735928156263862,
-        y: -9.735928156263864,
-        z: -9.735928156263858,
-      },
-      bBoxHigh: {
-        x: 9.735928156263858,
-        y: 9.73592815626386,
-        z: 9.735928156263855,
-      },
-      geometryStream: "encoding=base64;ywCAAjAABgAA+AAAAAEAAAAIDQgBAUAEAAAAMAAAABwAAAAYABQADAUeEQEIBgAHBRgBAQwBAQDwASQJAUALAAAAqAAAAGJnMDAwMWZiEAUXEAoADgAHBUIACgUQCAAHDAUIyAYAfAAEAAYAAAC8t0aTy3gjQNTy0dk2l6Q8BOGMD2d0zbxZPdLR+8bSvLS6W8O77KW8vQ0oBT8IANg8CQgg0LyQPKeSAhKeERAEPLoyKAAk4LwYLURU+yH5vwkIJAlAAQAAAAAAAAA=",
-    };
-    it("default format with JsonParse", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.JsonParse,
-      });
-      assert.deepEqual(actual, expected0);
+    assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricElement", "BisCore:GeometricElement3d"));
+    assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricElement", "BisCore:GeometricElement2d"));
+    assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel2d"));
+    assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel3d"));
+  });
+  it("resolveInstanceKey", () => {
+    const r0 = dgndb.resolveInstanceKey({
+      partialKey: {
+        id: "0x1b",
+        baseClassName: "BisCore:Element",
+      }
     });
-    it("default format with BeJsNapi", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.BeJsNapi,
-      });
-      assert.deepEqual(actual, expected0);
-    });
-    it("return blob with JsonParse", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.JsonParse,
-        abbreviateBlobs: false,
-      });
-      assert.deepEqual(actual, expected01);
-    });
-    it("return blob with BeJsNapi", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.BeJsNapi,
-        abbreviateBlobs: false,
-      });
-      assert.deepEqual(actual, expected02);
-    });
-    it("with useJsName using JsonParse ", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.JsonParse,
-        useJsNames: true,
-        classIdsToClassNames: true,
-      });
-      assert.deepEqual(actual, expected1);
-    });
-    it("with useJsName using BeJsNapi ", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.BeJsNapi,
-        useJsNames: true,
-        classIdsToClassNames: true,
-      });
-      assert.deepEqual(actual, expected1);
-    });
-    it("with useJsName & blob using JsonParse ", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.JsonParse,
-        useJsNames: true,
-        classIdsToClassNames: true,
-        abbreviateBlobs: false,
-      });
-      assert.deepEqual(actual, expected12);
-    });
-    it("with useJsName & blob using BeJsNapi ", () => {
-      const actual = dgndb.getInstance({
-        ...args,
-        serializationMethod: InstanceSerializationMethod.BeJsNapi,
-        useJsNames: true,
-        classIdsToClassNames: true,
-        abbreviateBlobs: false,
-      });
-      assert.deepEqual(actual, expected11);
-    });
+    assert.equal(r0.id, "0x1b", "id should be 0x1b");
+    assert.equal(r0.classFullName, "BisCore:Subject", "className should be BisCore:Subject");
   });
   it("compress/decompress", () => {
     const assertCompressAndThenDecompress = (sourceData: Uint8Array) => {
@@ -387,6 +90,17 @@ describe("basic tests", () => {
     assert.deepEqual(propData, propDecompressData);
     iModelDb.saveChanges();
     iModelDb.closeFile();
+  });
+
+  it("sqlite_stmt vtab", () => {
+    const seedUri = path.join(getAssetsDir(), "test.bim");
+    const iModelDb = new iModelJsNative.DgnDb();
+    iModelDb.openIModel(seedUri, OpenMode.Readonly);
+    
+    const stmt = new iModelJsNative.SqliteStatement();
+    stmt.prepare(iModelDb, "SELECT [sql] FROM [sqlite_stmt]");
+    assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
+    stmt.dispose();
   });
 
   it("schema synchronization", () => {
@@ -529,18 +243,76 @@ describe("basic tests", () => {
     b2.closeFile();
   });
 
+  it("PatchJsonProperties textureId", () => {
+    const jsonProps = "{\"materialAssets\":{\"renderMaterial\":{\"HasBaseColor\":false,\"color\":null,\"HasSpecularColor\":false,\"specular_color\":null,\"HasFinish\":false,\"finish\":null,\"HasTransmit\":false,\"transmit\":null,\"HasDiffuse\":false,\"diffuse\":null,\"HasSpecular\":false,\"specular\":null,\"HasReflect\":false,\"reflect\":null,\"HasReflectColor\":false,\"reflect_color\":null,\"Map\":{\"Diffuse\":{\"TextureId\":9223372036854775807},\"Bump\":{\"TextureId\":18446744073709551615},\"Finish\":{\"TextureId\":13835058055282163712}},\"pbr_normal\":null}}}"
+    const expectedProps = "{\"materialAssets\":{\"renderMaterial\":{\"HasBaseColor\":false,\"HasSpecularColor\":false,\"HasFinish\":false,\"HasTransmit\":false,\"HasDiffuse\":false,\"HasSpecular\":false,\"HasReflect\":false,\"HasReflectColor\":false,\"Map\":{\"Diffuse\":{\"TextureId\":\"0x7fffffffffffffff\"},\"Bump\":{\"TextureId\":\"0xffffffffffffffff\"},\"Finish\":{\"TextureId\":\"0xc000000000000000\"}}}}}";
+    const deserializedProps = dgndb.patchJsonProperties(jsonProps);
+    expect(deserializedProps).to.not.be.undefined;
+    expect(deserializedProps).to.equal(expectedProps);
+  });
+
+  it("PatchJsonProperties subCategory", () => {
+    const jsonProps = `{
+    "styles": {
+        "subCategoryOvr": [
+          {
+            "invisible": true,
+            "subCategory": 51
+          }
+        ]
+      }
+    }`;
+    const expectedProps = `{
+      "styles": {
+        "subCategoryOvr": [
+          {
+            "invisible": true,
+            "subCategory": "0x33"
+          }
+        ]
+      }
+    }`;
+    const deserializedProps = dgndb.patchJsonProperties(jsonProps);
+    expect(deserializedProps).to.not.be.undefined;
+    expect(deserializedProps).to.equal(JSON.stringify(JSON.parse(expectedProps)));
+  });
+
+  it("PatchJsonProperties relClassName", () => {
+    const jsonProps = `{
+    "styles": {
+        "relClassName": "BisCore.ElementRefersToElements"
+      }
+    }`;
+    const expectedProps = `{
+    "styles": {
+        "relClassName": "BisCore:ElementRefersToElements"
+      }
+    }`;
+    const deserializedProps = dgndb.patchJsonProperties(jsonProps);
+    expect(deserializedProps).to.not.be.undefined;
+    expect(deserializedProps).to.equal(JSON.stringify(JSON.parse(expectedProps)));
+  });
+
   // verify that throwing javascript exceptions from C++ works
   it("testExceptions", () => {
     // first try a function
     expect(() => (iModelJsNative as any).addFontWorkspace()).to.throw("Argument 0");
 
+    try {
+      (iModelJsNative as any).addFontWorkspace();
+    } catch (error: any) {
+      expect(error.message).to.equal("Argument 0 must be a string");
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: "TypeError" });
+    }
+
     // now try methods
     const db = new iModelJsNative.DgnDb() as any;
-    expect(() => db.openIModel()).to.throw("Argument 0");
-    expect(() => db.saveFileProperty()).to.throw("requires 2");
+    expect(() => db.openIModel()).to.throw("Argument 0").property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: "TypeError" });
+    expect(() => db.saveFileProperty()).to.throw("requires 2").property("iTwinErrorId").deep.equal({ scope: "imodel-native", key: "BadArg" });  
 
     // from Node
     expect(() => db.nonsense()).to.throw("not a function");
+
   });
 
   it("testTileVersionInfo", () => {
@@ -582,11 +354,11 @@ describe("basic tests", () => {
     // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
     const db = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
     assert.isTrue(db !== undefined);
-    expect(() => db.getSchemaProps("PresentationRules")).to.throw("schema not found"); // presentationrules alias is 'pr'.
+    expect(() => db.getSchemaProps("PresentationRules")).to.throw("schema not found").to.have.property("iTwinErrorId"); // presentationrules alias is 'pr'.
     let bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version === "01.00.00");
     const schemaPath = path.join(iModelJsNative.DgnDb.getAssetsDir(), "ECSchemas/Domain/PresentationRules.ecschema.xml");
-    db.importSchemas([schemaPath], { schemaLockHeld: false });
+    db.importSchemas([schemaPath], { schemaLockHeld: true }); // Schema references BisCore.01.00.17+ which contains a data transform, so importing it will need the schema lock.
 
     db.getSchemaProps("PresentationRules");
     bisProps = db.getSchemaProps("BisCore");
@@ -615,8 +387,8 @@ describe("basic tests", () => {
       .property("errorNumber").equal(BE_SQLITE_ERROR_SchemaUpgradeFailed);
   });
 
-  it("testSchemaImportPrefersExistingAndLocalOverStandard", () => {
-    const testFileName = copyFile("testSchemaImportPrefersExistingOverStandard.bim", dbFileName);
+  it("testSchemaImport PrefersExistingAndLocalOverStandard", () => {
+    const testFileName = copyFile("prefersExistingOverStandard.bim", dbFileName);
     const db = openDgnDb(testFileName);
     const assetsDir = path.join(getAssetsDir(), "ImportSchemaTests");
     const test100Path = path.join(assetsDir, "Test.01.00.00.ecschema.xml");
@@ -636,6 +408,47 @@ describe("basic tests", () => {
     const test101Path = path.join(subAssetsDir, "Test.01.00.01.ecschema.xml");
     db.importSchemas([test101Path], { schemaLockHeld: false });
     assert.equal(db.getSchemaProps("TestRef").version, "01.00.01", "TestRef after Test 1.0.1 import");
+  });
+
+  it("testSchemaImport ErrorWhenAnyXmlIsIllFormed", async () => {
+    await using(new iModelJsNative.DisableNativeAssertions(), async (_r) => {
+      const writeDbFileName = copyFile("errorWhenAnyXmlIsIllFormed.bim", dbFileName);
+      // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+      const db = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: false });
+      assert.isTrue(db !== undefined);
+      const bisProps = db.getSchemaProps("BisCore");
+      assert.isTrue(bisProps.version === "01.00.00");
+
+      const validSchema = `<?xml version="1.0" encoding="utf-8" ?>
+      <ECSchema schemaName="ValidSchema" alias="vs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="BisCore" version="01.00.10" alias="bis" />
+        <ECEntityClass typeName="Pipe">
+          <BaseClass>bis:GeometricElement2d</BaseClass>
+          <ECProperty propertyName="p1" typeName="int" />
+        </ECEntityClass>
+      </ECSchema>`;
+
+      const invalidSchema = `<?xml version="1.0" encoding="utf-8" ?>
+      <ECSchema schemaName="InvalidSchema" alias="is" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="BisCore" version="01.00.10" alias="bis" />
+        <ECEntityClass typeName="Manhole" displayLabel="Manhole">
+          <BaseClass>bis:GeometricElement3d</BaseClass>
+        <ECEntityClass>
+      </ECSchema>`;
+
+      expect(() => db.importXmlSchemas([invalidSchema], { schemaLockHeld: true })) // Schema references BisCore.01.00.17+ which contains a data transform, so importing it will need the schema lock.
+        .to.throw("Failed to import schemas")
+        .property("errorNumber").equal(DbResult.BE_SQLITE_ERROR);
+
+      expect(() => db.importXmlSchemas([validSchema, invalidSchema], { schemaLockHeld: true })) // Schema references BisCore.01.00.17+ which contains a data transform, so importing it will need the schema lock.
+        .to.throw("Failed to import schemas")
+        .property("errorNumber").equal(DbResult.BE_SQLITE_ERROR);
+
+      db.importXmlSchemas([validSchema], { schemaLockHeld: true }); // Schema references BisCore.01.00.17+ which contains a data transform, so importing it will need the schema lock.
+      const validSchemaProps = db.getSchemaProps("ValidSchema");
+      assert.isTrue(validSchemaProps.name === "ValidSchema");
+      assert.isTrue(validSchemaProps.version === "01.00.00");
+    });
   });
 
   it("testSchemaExport", () => {
@@ -668,8 +481,8 @@ describe("basic tests", () => {
     const abstractRelationshipClass = "BisCore:ElementRefersToElements";
     const insertRel: RelationshipProps = { classFullName: abstractRelationshipClass, sourceId: "0x37", targetId: "0x31" };
     const updateRel: RelationshipProps = { classFullName: abstractRelationshipClass, id: "0xe", sourceId: "0x37", targetId: "0x31" };
-    expect(() => db.insertLinkTableRelationship(insertRel)).to.throw("Failed to insert relationship. Relationship class 'BisCore:ElementRefersToElements' is abstract");
-    expect(() => db.updateLinkTableRelationship(updateRel)).to.throw("Failed to update relationship. Relationship class 'BisCore:ElementRefersToElements' is abstract");
+    expect(() => db.insertLinkTableRelationship(insertRel)).to.throw("Failed to insert relationship. Relationship class 'BisCore:ElementRefersToElements' is abstract").to.have.property("iTwinErrorId");
+    expect(() => db.updateLinkTableRelationship(updateRel)).to.throw("Failed to update relationship. Relationship class 'BisCore:ElementRefersToElements' is abstract").to.have.property("iTwinErrorId");
   });
   it("testCrashReportingConfig", () => {
     if (os.platform() === "darwin" || process.env.AddressSanitizer === "yes") {
@@ -709,7 +522,7 @@ describe("basic tests", () => {
 
     const db = new iModelJsNative.SQLiteDb();
     // rawSQLite being false causes us to look for the presence of be_prop table, which gives us SQLITE_NOTADB
-    expect(() => db.openDb(pathToDb, { openMode: OpenMode.ReadWrite })).to.throw("file is not a database");
+    expect(() => db.openDb(pathToDb, { openMode: OpenMode.ReadWrite })).to.throw("file is not a database").to.have.property("iTwinErrorId");;
     // rawSQLite being true skips be_prop check so we can open the database, but will fail later on if we step and prepare on the db.
     expect(() => db.openDb(pathToDb, { openMode: OpenMode.ReadWrite, rawSQLite: true })).to.not.throw();
     db.closeDb();
@@ -766,10 +579,37 @@ describe("basic tests", () => {
   }
 
   it("queryModelExtents", () => {
-    expect(() => dgndb.queryModelExtents({ id: "NotAnId" })).to.throw("Invalid id").property("errorNumber").equal(IModelStatus.InvalidId);
-    expect(() => dgndb.queryModelExtents({ id: "0xabcdef" })).to.throw("not found").property("errorNumber").equal(IModelStatus.NotFound);
-    expect(() => dgndb.queryModelExtents({ id: "0x1" })).to.throw("error=10040").property("errorNumber").equal(IModelStatus.WrongModel);
-    expect(() => dgndb.queryModelExtents({ id: "0x1c" })).to.throw("error=10022").property("errorNumber").equal(IModelStatus.NoGeometry);
+    try {
+      dgndb.queryModelExtents({ id: "NotAnId" })
+    } catch (error: any) {
+      expect(error.message).to.equal("Invalid id");
+      expect(error).to.have.property("errorNumber").equal(IModelStatus.InvalidId);
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "dgn-db", key: "InvalidId" });
+    }
+
+    try {
+      dgndb.queryModelExtents({ id: "0xabcdef" });
+    } catch (error: any) {
+      expect(error.message).to.equal("not found");
+      expect(error).to.have.property("errorNumber").equal(IModelStatus.NotFound);
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "dgn-db", key: "NotFound" });
+    }
+
+    try {
+      dgndb.queryModelExtents({ id: "0x1" });
+    } catch (error: any) {
+      expect(error.message).to.equal("error=10040");
+      expect(error).to.have.property("errorNumber").equal(IModelStatus.WrongModel);
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "dgn-db", key: "WrongModel" });
+    }
+
+    try {
+      dgndb.queryModelExtents({ id: "0x1c" });
+    } catch (error: any) {
+      expect(error.message).to.equal("error=10022");
+      expect(error).to.have.property("errorNumber").equal(IModelStatus.NoGeometry);
+      expect(error).to.have.property("iTwinErrorId").deep.equal({ scope: "dgn-db", key: "NoGeometry" });
+    }
 
     expectExtents(dgndb.queryModelExtents({ id: "0x23" }).modelExtents, { low: [-10, -16, -10], high: [14, 6, 10] });
   });
@@ -830,7 +670,7 @@ describe("basic tests", () => {
     it("throws if source is not a geometric element", async () => {
       const msg = "Geometric element required";
       await expect(dgndb.generateElementMeshes({ source: "NotAnId" })).rejectedWith(msg);
-      await expect(dgndb.generateElementMeshes({})).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({} as any)).rejectedWith(msg);
       await expect(dgndb.generateElementMeshes({ source: "0" })).rejectedWith(msg);
       await expect(dgndb.generateElementMeshes({ source: "0x1" })).rejectedWith(msg);
       await expect(dgndb.generateElementMeshes({ source: "0x123456789" })).rejectedWith(msg);

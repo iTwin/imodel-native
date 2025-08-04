@@ -24,15 +24,16 @@
  *
  ***************************************************************************/
 
-#include "curl_setup.h"
+#include "../curl_setup.h"
 
-#ifdef ENABLE_QUIC
+#ifdef USE_HTTP3
 struct Curl_cfilter;
 struct Curl_easy;
 struct connectdata;
 struct Curl_addrinfo;
 
 void Curl_quic_ver(char *p, size_t len);
+int Curl_vquic_init(void);
 
 CURLcode Curl_qlogdir(struct Curl_easy *data,
                       unsigned char *scid,
@@ -46,17 +47,11 @@ CURLcode Curl_cf_quic_create(struct Curl_cfilter **pcf,
                              const struct Curl_addrinfo *ai,
                              int transport);
 
-bool Curl_conn_is_http3(const struct Curl_easy *data,
-                        const struct connectdata *conn,
-                        int sockindex);
-
 extern struct Curl_cftype Curl_cft_http3;
 
-#else /* ENABLE_QUIC */
-
-#define Curl_conn_is_http3(a,b,c)   FALSE
-
-#endif /* !ENABLE_QUIC */
+#else
+#define Curl_vquic_init() 1
+#endif /* !USE_HTTP3 */
 
 CURLcode Curl_conn_may_http3(struct Curl_easy *data,
                              const struct connectdata *conn);

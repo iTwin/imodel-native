@@ -213,6 +213,7 @@ public:
     ECPRESENTATION_EXPORT ECClassCP GetECClass(Utf8CP fullClassName) const;
     ECPRESENTATION_EXPORT ECClassCP GetECClass(ECClassId) const;
     ECPRESENTATION_EXPORT bvector<ECClassCP> GetECClassesByName(Utf8CP name) const;
+    ECPRESENTATION_EXPORT PropertyCategoryCP GetECPropertyCategory(Utf8CP fullName) const;
     ECPRESENTATION_EXPORT bool AreSchemasSupported(Utf8StringCR schemaListStr) const;
     ECPRESENTATION_EXPORT ECClassSet GetECClassesFromSchemaList(Utf8StringCR schemaListStr) const;
     ECPRESENTATION_EXPORT bvector<ECClassCP> GetDerivedECClassesRecursively(ECClassCP baseClass) const;

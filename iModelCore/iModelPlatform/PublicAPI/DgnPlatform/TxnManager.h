@@ -64,6 +64,8 @@ enum class TxnType : int32_t {
 //=======================================================================================
 struct TxnMonitor {
     virtual ~TxnMonitor() { }
+    virtual void _OnPullMergeEnd(TxnManager&) {}
+    virtual void _OnPullMergeBegin(TxnManager&) {}
     virtual void _OnCommit(TxnManager&) {}
     virtual void _OnCommitted(TxnManager&) {}
     virtual void _OnAppliedChanges(TxnManager&) {}
@@ -428,9 +430,10 @@ private:
     bool m_initTableHandlers;
     bool m_inProfileUpgrade = false;
     bool m_indirectChanges = false;
-    bool m_enableRebasers;
+    bool m_trackChangesetHealthStats = false;
     bvector<ECN::ECClassId> m_childPropagatesChangesToParentRels;
     ChangesetPropsPtr m_changesetInProgress;
+    std::map<Utf8String, BeJsDocument> m_changesetHealthStatistics;
 
 public:
     ModelChanges m_modelChanges;
@@ -450,13 +453,12 @@ private:
 
     void OnValidateChanges(BeSQLite::ChangeStreamCR);
     BeSQLite::DbResult SaveTxn(BeSQLite::ChangeSetCR changeset, Utf8CP operation, TxnType);
-    BeSQLite::DbResult SaveRebase(int64_t& id, BeSQLite::Rebase const& rebase);
 
     BeSQLite::ZipErrors ReadChanges(BeSQLite::ChangeSet& changeset, TxnId rowId);
     BeSQLite::DbResult ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
     void ApplyTxnChanges(TxnId, TxnAction);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
 
     void OnBeginApplyChanges();
@@ -472,9 +474,9 @@ private:
     DgnDbStatus ReinstateActions(TxnRange const& revTxn);
 
     void ClearSavedChangesetValues();
-    void WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DdlChangesCR ddlChanges, BeSQLite::ChangeGroupCR dataChangeGroup, BeSQLite::Rebaser*);
+    void WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DdlChangesCR ddlChanges, BeSQLite::ChangeGroupCR dataChangeGroup);
     ChangesetStatus MergeDdlChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader);
-    ChangesetStatus MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader, bool containsSchemaChanges);
+    ChangesetStatus MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& revisionReader, bool containsSchemaChanges, bool fastForward);
     ChangesetStatus ProcessRevisions(bvector<ChangesetPropsCP> const &revisions, RevisionProcessOption processOptions);
 
     TxnTable* FindTxnTable(Utf8CP tableName) const;
@@ -484,7 +486,7 @@ private:
     BentleyStatus PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8StringCR compoundSQL);
     void NotifyOnCommit();
     void ThrowIfChangesetInProgress();
-
+    BeSQLite::DbResult UpdateTxn(BeSQLite::ChangeSetCR changeSet, TxnId id);
 public:
     void StartNewSession();
     void CallJsTxnManager(Utf8CP methodName) { DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
@@ -495,19 +497,37 @@ public:
     DGNPLATFORM_EXPORT ChangesetPropsPtr StartCreateChangeset(Utf8CP extension = nullptr);
     DGNPLATFORM_EXPORT void FinishCreateChangeset(int32_t changesetIndex, bool keepFile = false);
     DGNPLATFORM_EXPORT void StopCreateChangeset(bool keepFile);
-    DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision);
+    DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision, bool fastforward);
+    DGNPLATFORM_EXPORT void RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesets, bool skipSchemaChanges);
     DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision);
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> CreateChangesetFromLocalChanges(bool includeInMemoryChanges);
     DGNPLATFORM_EXPORT void ForEachLocalChange(std::function<void(BeSQLite::EC::ECInstanceKey const&, BeSQLite::DbOpcode)>, bvector<Utf8String> const&, bool includeInMemoryChanges = false);
     void SaveParentChangeset(Utf8StringCR revisionId, int32_t changesetIndex);
     ChangesetPropsPtr CreateChangesetProps(BeFileNameCR pathName);
 
+    // Changeset Health Statistics
+    bool TrackChangesetHealthStats() const { return m_trackChangesetHealthStats; }
+    DGNPLATFORM_EXPORT void EnableChangesetHealthStatsTracking() { m_trackChangesetHealthStats = true; }
+    DGNPLATFORM_EXPORT void DisableChangesetHealthStatsTracking() { m_trackChangesetHealthStats = false; }
+
+    DGNPLATFORM_EXPORT BeJsDocument GetAllChangesetHealthStatistics() const;
+    DGNPLATFORM_EXPORT BeJsDocument GetChangesetHealthStatistics(Utf8StringCR changesetId) const;
+    void SetChangesetHealthStatistics(ChangesetPropsCR revision);
+
+    //! PullMerge
+    DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> OpenLocalTxn(TxnManager::TxnId id);
+    DGNPLATFORM_EXPORT bool PullMergeInProgress() const;
+    DGNPLATFORM_EXPORT void PullMergeEraseConf();
+    DGNPLATFORM_EXPORT void PullMergeBegin();
+    DGNPLATFORM_EXPORT void PullMergeEnd();
+    DGNPLATFORM_EXPORT void PullMergeResume();
+
+    DGNPLATFORM_EXPORT ChangesetStatus PullMergeApply(ChangesetPropsCR revision);     // for testing
     //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);
     DGNPLATFORM_EXPORT static void DropTxnMonitor(TxnMonitor& monitor);
     DGNPLATFORM_EXPORT void DeleteAllTxns();
     void DeleteFromStartTo(TxnId lastId);
-    void DeleteRebases(int64_t lastRebaseId);
     void DeleteReversedTxns();
     void OnBeginValidate();
     void OnEndValidate();
@@ -583,12 +603,6 @@ public:
     //! @return the current TxnId. This value can be saved and later used to reverse changes that happen after this time.
     //! @see   ReverseTo CancelTo
     TxnId GetCurrentTxnId() const {return m_curr;}
-
-    //! @private - query the ID of the last rebase blob stored by MergeChangeset. Called by unit tests.
-    int64_t QueryLastRebaseId();
-
-    //! @private - adds to `rebaser` all stored rebases up to and including `thruId`.
-    BeSQLite::DbResult LoadRebases(BeSQLite::Rebaser& rebaser, int64_t thruId);
 
     //! Get the current SessionId.
     SessionId GetCurrentSessionId() const {return m_curr.GetSession();}
@@ -977,8 +991,12 @@ struct ChangesetProps : RefCountedBase {
         SchemaSync = Schema | 64,
     };
 
+private:
+    size_t uncompressedSize;
+    mutable unsigned int m_sha1ValidationTime;
+
+public:
     TxnManager::TxnId m_endTxnId;
-    int64_t m_lastRebaseId = 0;
     Utf8String m_id;
     int32_t m_index;
     Utf8String m_parentId;
@@ -989,7 +1007,7 @@ struct ChangesetProps : RefCountedBase {
     Utf8String m_summary;
     ChangesetType m_changesetType;
     ChangesetProps(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid, BeFileNameCR fileName, ChangesetType changesetType) :
-        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName), m_changesetType(changesetType) {}
+        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName), m_changesetType(changesetType), uncompressedSize(0), m_sha1ValidationTime(0) {}
 
     Utf8StringCR GetChangesetId() const { return m_id; }
     int32_t GetChangesetIndex() const { return m_index; }
@@ -998,6 +1016,10 @@ struct ChangesetProps : RefCountedBase {
     Utf8StringCR GetDbGuid() const { return m_dbGuid; }
     ChangesetType GetChangesetType() const { return m_changesetType; };
     BeFileNameCR GetFileName() const { return m_fileName; }
+    void SetUncompressedSize(size_t size) { uncompressedSize = size; }
+    size_t GetUncompressedSize() const { return uncompressedSize; }
+    unsigned int GetSha1ValidationTime() const { return m_sha1ValidationTime; }
+    void SetSha1ValidationTime(unsigned int time) const { m_sha1ValidationTime = time; }
 
     //! Get or set the user name
     Utf8StringCR GetUserName() const { return m_userName; }
@@ -1017,6 +1039,7 @@ struct ChangesetProps : RefCountedBase {
     DGNPLATFORM_EXPORT bool ContainsDdlChanges(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void ValidateContent(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void Dump(DgnDbR dgndb) const;
+    DGNPLATFORM_EXPORT static Utf8String ComputeChangesetId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env);
 };
 
 //=======================================================================================
@@ -1025,14 +1048,32 @@ struct ChangesetProps : RefCountedBase {
 struct EXPORT_VTABLE_ATTRIBUTE ChangesetFileReader : BeSQLite::ChangesetFileReaderBase {
 private:
     DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
-    DgnDbR m_dgndb;
+    DgnDb* m_dgndb;
     Utf8String m_lastErrorMessage;
 
 public:
-    ChangesetFileReader(BeFileNameCR pathname, DgnDbR dgndb) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb), m_dgndb(dgndb) {}
+    ChangesetFileReader(BeFileNameCR pathname, DgnDb* dgndb = nullptr) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb), m_dgndb(dgndb) {}
     Utf8StringCR GetLastErrorMessage() const { return m_lastErrorMessage; }
     void ClearLastErrorMessage() { m_lastErrorMessage.clear(); }
 };
 
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct LocalChangeSet : BeSQLite::ChangeSet {
+private:
+    BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
+    Utf8String m_lastErrorMessage;
+    DgnDbR m_dgndb;
+    TxnManager::TxnId m_id;
+    TxnType m_type;
+    Utf8String m_descr;
+
+public:
+       LocalChangeSet(DgnDbR db, TxnManager::TxnId id, TxnType type, Utf8StringCR description)
+            :m_dgndb(db), m_id(id), m_type(type), m_descr(description){}
+        Utf8StringCR GetLastErrorMessage() const { return m_lastErrorMessage; }
+    void ClearLastErrorMessage() { m_lastErrorMessage.clear(); }
+};
 
 END_BENTLEY_DGN_NAMESPACE

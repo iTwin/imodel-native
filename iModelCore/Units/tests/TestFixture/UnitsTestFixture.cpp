@@ -26,6 +26,7 @@ static Utf8CP const FORCE = "FORCE";
 static Utf8CP const WORK = "WORK";
 static Utf8CP const LENGTH_RATIO = "LENGTH_RATIO";
 static Utf8CP const METRIC_PREFIX = "METRIC_PREFIX";
+static Utf8CP const SLOPE = "SLOPE";
 
 static double const PI = 3.1415926535897932384626433832795;
 
@@ -51,6 +52,7 @@ void UnitsTestFixture::FillRegistry(UnitRegistry* registry)
     registry->AddPhenomenon(ACCELERATION, "LENGTH*TIME(-2)");
     registry->AddPhenomenon(FORCE, "MASS*ACCELERATION");
     registry->AddPhenomenon(WORK, "FORCE*LENGTH");
+    registry->AddPhenomenon(SLOPE, "LENGTH*LENGTH(-1)");
 
     registry->AddUnit(LENGTH, SI, "M", "M", 1, 1, 0);
     registry->AddUnit(MASS, SI, "KG", "KG", 1, 1, 0);
@@ -64,6 +66,7 @@ void UnitsTestFixture::FillRegistry(UnitRegistry* registry)
     registry->AddConstant(METRIC_PREFIX, CONSTANT, "MEGA", "ONE", 1.0e6); //, "MEGA-prefix");
 
     registry->AddConstant(LENGTH_RATIO, CONSTANT, "PI", "ONE", PI); //, "Ratio of Circumference to its Diameter");
+    registry->AddConstant(LENGTH_RATIO, CONSTANT, "TWO_PI", "PI", 2);
 
     registry->AddUnit(LENGTH, METRIC, "MM", "[MILLI]*M");
     registry->AddUnit(LENGTH, METRIC, "CM", "[CENTI]*M");
@@ -73,6 +76,7 @@ void UnitsTestFixture::FillRegistry(UnitRegistry* registry)
     registry->AddUnit(LENGTH, USCUSTOM, "YRD", "FT", 3.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
     registry->AddUnit(LENGTH, USCUSTOM, "MILE", "YRD", 1760.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
 
+    registry->AddUnit(ANGLE, METRIC, "REVOLUTION", "[TWO_PI]*RAD");
     registry->AddUnit(ANGLE, METRIC, "ARC_DEG", "[PI]*RAD", 1.0, 180.0 ); // 1/180
     registry->AddUnit(ANGLE, METRIC, "ARC_MINUTE", "ARC_DEG", 1.0, 60.0); // 1/60
     registry->AddUnit(ANGLE, METRIC, "ARC_SECOND", "ARC_DEG", 1.0, 3600.0); // 1/3600 
@@ -86,6 +90,9 @@ void UnitsTestFixture::FillRegistry(UnitRegistry* registry)
     registry->AddUnit(FORCE, SI, "N", "KG*M*S(-2)");
 
     registry->AddUnit(WORK, SI, "J", "N*M");
+
+    registry->AddUnit(SLOPE, INTERNATIONAL, "VERTICAL_PER_HORIZONTAL", "M_PER_M");
+    registry->AddInvertedUnit("VERTICAL_PER_HORIZONTAL", "HORIZONTAL_PER_VERTICAL", INTERNATIONAL);
     }
 
 //----------------------------------------------------------------------------------------

@@ -43,7 +43,7 @@ struct ContentDescriptorTests : ::testing::Test
 
     ContentDescriptor::CalculatedPropertyField* CreateCalculatedField(Utf8CP name) const
         {
-        auto field = new ContentDescriptor::CalculatedPropertyField(m_category, name, name, "", nullptr);
+        auto field = new ContentDescriptor::CalculatedPropertyField(m_category, name, name, "", PRIMITIVETYPE_String, nullptr);
         field->SetUniqueName(field->CreateName());
         return field;
         }

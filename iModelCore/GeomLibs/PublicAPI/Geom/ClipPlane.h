@@ -136,29 +136,26 @@ public:
     //!  Transform plane.
     GEOMDLLIMPEXP void TransformInPlace (TransformCR transform);
 
-        //! multiply plane coefficients times a DMatrix4d (such as the worldToNPC matrix)
-        //! multiply [ax,ay,az,aw] * matrix
+    //! multiply plane coefficients times a DMatrix4d (such as the worldToNPC matrix)
+    //! multiply [ax,ay,az,aw] * matrix
     GEOMDLLIMPEXP void MultiplyPlaneTimesMatrix(DMatrix4dCR matrix);
 
-    //! GetRange.
-    GEOMDLLIMPEXP bool      GetRange (DRange3dR range, TransformCP transform) const;
-
     //! Flip the normal direction.
-    GEOMDLLIMPEXP void      Negate ();
+    GEOMDLLIMPEXP void Negate ();
 
     //! Clip a convex polygon.
-    //! caller supplies work and altitude arrays as works space.
-    //! result is written inplace to xyz.
+    //! Caller supplies work array.
+    //! Result is written in place to xyz.
     //! <ul>
-    //! <li>onPlaneHandling=0 means no special handling for all-oin.
+    //! <li>onPlaneHandling=0 means no special handling for all-on.
     //! <li>onPlaneHandling=1 means treat all-on as IN
     //! <li>onPlaneHandling= -1 means treat all-on as OUT
     //! </ul>
     GEOMDLLIMPEXP void ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPoint3d> &work, int onPlaneHandling) const;
 
     //! Clip a convex polygon.
-    //! caller supplies work and altitude arrays as works space.
-    //! result is written inplace to xyz.
+    //! Caller supplies work array.
+    //! Result is written in place to xyz.
     GEOMDLLIMPEXP void ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPoint3d> &work) const;
 
     //! Return crossings of all edges of a polygon (including final closure)

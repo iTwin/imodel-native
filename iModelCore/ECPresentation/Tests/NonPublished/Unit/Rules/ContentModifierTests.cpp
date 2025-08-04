@@ -140,8 +140,7 @@ TEST_F(ContentModifierTests, WriteToJson)
         "class": {"schemaName": "schema", "className": "class"},
         "requiredSchemas": [{"name": "TestSchema"}],
         "calculatedProperties": [{
-            "label": "",
-            "value": ""
+            "label": ""
         }],
         "relatedProperties": [{
             "properties": "_none_"
@@ -156,77 +155,6 @@ TEST_F(ContentModifierTests, WriteToJson)
         "applyOnNestedContent": true
     })");
     EXPECT_TRUE(expected.isExactEqual(json));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentModifierTests, LoadsFromXml)
-    {
-    static Utf8CP xmlString = R"(
-        <ContentModifier SchemaName="TestSchema" ClassName="TestClassName">
-            <RelatedProperties RelationshipClassNames="Schema:OnSameElement" RequiredDirection="Forward" RelationshipMeaning="RelatedInstance"/>
-            <CalculatedProperties>
-                <Property Label="Label1" Priority="1000">Value1</Property>
-            </CalculatedProperties>
-        </ContentModifier>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    ContentModifier modifier;
-    EXPECT_TRUE(modifier.ReadXml(xml->GetRootElement()));
-
-    EXPECT_STREQ("TestSchema", modifier.GetSchemaName().c_str());
-    EXPECT_STREQ("TestClassName", modifier.GetClassName().c_str());
-    EXPECT_EQ(1, modifier.GetCalculatedProperties().size());
-    EXPECT_EQ(1, modifier.GetRelatedProperties().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentModifierTests, LoadsFromXmlWithDefaultValues)
-    {
-    static Utf8CP xmlString = "<ContentModifier/>";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    ContentModifier modifier;
-    EXPECT_TRUE(modifier.ReadXml(xml->GetRootElement()));
-
-    EXPECT_STREQ("", modifier.GetSchemaName().c_str());
-    EXPECT_STREQ("", modifier.GetClassName().c_str());
-    EXPECT_EQ(0, modifier.GetCalculatedProperties().size());
-    EXPECT_EQ(0, modifier.GetRelatedProperties().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentModifierTests, WriteToXml)
-    {
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
-    xml->AddNewElement("Root", nullptr, nullptr);
-
-    ContentModifier modifier("SchemaName", "ClassName");
-    modifier.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", "RelatedClassNames", "Properties", RelationshipMeaning::RelatedInstance));
-    modifier.AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 0, "Value"));
-    modifier.WriteXml(xml->GetRootElement());
-
-    static Utf8CP expected = ""
-        "<Root>"
-            R"(<ContentModifier Priority="1000" ClassName="ClassName" SchemaName="SchemaName">)"
-                R"(<RelatedProperties RelationshipClassNames="RelationshipClassName" RelatedClassNames="RelatedClassNames" PropertyNames="Properties" RequiredDirection="Forward" RelationshipMeaning="RelatedInstance" IsPolymorphic="false" AutoExpand="false"/>)"
-                R"(<CalculatedProperties>)"
-                    R"(<Property Priority="0" Label="label">Value</Property>)"
-                R"(</CalculatedProperties>)"
-            R"(</ContentModifier>)"
-        "</Root>";
-    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

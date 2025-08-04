@@ -1064,6 +1064,8 @@ double tolerance
     int xyrIndex0, xyrIndex1, elementIndex0, elementIndex1;
     int numMatch = 0;
     int numTotalMatch = 0;
+    UNUSED_VARIABLE(numTotalMatch);
+
     EmbeddedIntArray *pXYRToElementIndexArray = jmdlEmbeddedIntArray_grab ();
     EmbeddedDPoint3dArray *pXYRArray = jmdlEmbeddedDPoint3dArray_grab ();
     EmbeddedIntArray *pBlockedXYRIndexArray = jmdlEmbeddedIntArray_grab ();

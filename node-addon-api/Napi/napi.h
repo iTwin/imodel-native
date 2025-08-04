@@ -16,20 +16,8 @@
 
 BEGIN_BENTLEY_NAMESPACE
 
-struct BeNapi {
-public:
-    [[noreturn]] static void ThrowJsException(Napi::Env env, Utf8CP str, int errorNumber) {
-        auto err = Napi::Error::New(env, str);
-        err.Value()["errorNumber"] = errorNumber;
-        throw err;
-    }
-    [[noreturn]] static void ThrowJsException(Napi::Env env, Utf8CP str) {
-        throw Napi::Error::New(env, str);
-    }
-    [[noreturn]] static void ThrowJsTypeException(Napi::Env env, Utf8CP str) {
-        throw Napi::TypeError::New(env, str);
-    }
-};
+constexpr double JS_MAX_SAFE_INTEGER = 9007199254740991.0;
+constexpr double JS_MIN_SAFE_INTEGER = -9007199254740991.0;
 
 struct NapiRootRef;
 struct NapiMemberRef;
@@ -131,6 +119,27 @@ protected:
     virtual bool GetBoolean(bool defVal) const override { return isNull() ? defVal : m_napiVal.ToBoolean(); }
     virtual int32_t GetInt(int32_t defVal) const override { return isNumeric() ? m_napiVal.ToNumber() : defVal; }
     virtual uint32_t GetUInt(uint32_t defVal) const override { return isNumeric() ? m_napiVal.ToNumber() : defVal; }
+    virtual int64_t GetInt64(int64_t defVal) const override {
+        if (isNumeric()) {
+            double number = m_napiVal.ToNumber();
+            if (number >= JS_MIN_SAFE_INTEGER && number <= JS_MAX_SAFE_INTEGER) 
+                return static_cast<int64_t>(number);
+        }
+        return defVal;
+    }
+    virtual uint64_t GetUInt64(uint64_t defVal) const override { 
+        if (isNumeric()) {
+            double number = m_napiVal.ToNumber();
+            if (number >= 0 && number <= JS_MAX_SAFE_INTEGER) {
+                // Casting a double to a uint produces undefined results while casting a double to int is well defined.
+                // Similarly, casting int to uint is well defined.
+                // On ARM casting a negative double to uint results in 0.
+                // On Intel, casting a negative double to uint produces the same result as below.
+                return uint64_t(int64_t(number));
+            }
+        }
+        return defVal;
+    }
     virtual BentleyStatus GetBinary(std::vector<Byte>& dest) const override {
         dest.clear();
         if (m_napiVal.IsTypedArray()) {
@@ -301,6 +310,47 @@ struct BeJsNapiObject : BeJsValue {
     BeJsNapiObject(Napi::Env env, std::string const& jsonString) : BeJsNapiObject(env, jsonString.c_str()) {}
     operator napi_value() const { return ((NapiRootRef&)*m_val).m_napiVal; }
     operator Napi::Object() const { return ((NapiRootRef&)*m_val).m_napiVal.As<Napi::Object>(); }
+};
+
+struct iTwinErrorId {
+    void setITwinErrorId(Napi::Error err) const {
+        BeJsNapiObject errObj(err.Env());
+        errObj["scope"] = scope.c_str();
+        errObj["key"] = key;
+        err.Value()["iTwinErrorId"] = errObj;
+    }
+    Utf8String scope;
+    Utf8String key;
+};
+
+struct BeNapi {
+public:
+    [[noreturn]] static void ThrowJsException(Napi::Env env, Utf8CP str, iTwinErrorId id ) {
+        auto err = Napi::Error::New(env, str);
+        id.setITwinErrorId(err);
+        throw err;
+    }
+    [[noreturn]] static void ThrowJsException(Napi::Env env, Utf8CP str, int errorNumber) {
+        auto err = Napi::Error::New(env, str);
+        err.Value()["errorNumber"] = errorNumber;
+        Utf8String errNum;
+        errNum.Sprintf("%d", errorNumber);
+        iTwinErrorId id = { "imodel-native", errNum };
+        id.setITwinErrorId(err);
+        throw err;
+    }
+    [[noreturn]] static void ThrowJsException(Napi::Env env, Utf8CP str, int errorNumber, iTwinErrorId id ) {
+        auto err = Napi::Error::New(env, str);
+        err.Value()["errorNumber"] = errorNumber;
+        id.setITwinErrorId(err);
+        throw err;
+    }
+    [[noreturn]] static void ThrowJsTypeException(Napi::Env env, Utf8CP str) {
+        auto err = Napi::TypeError::New(env, str);
+        iTwinErrorId id = { "imodel-native", "TypeError" };
+        id.setITwinErrorId(err);
+        throw err;
+    }
 };
 
 inline NapiValueRef& NapiValueRef::GetObjectMember(Utf8CP member, bool constVal) const {

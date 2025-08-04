@@ -989,16 +989,16 @@ DbResult IntegrityChecker::CheckClassIds(std::function<bool(Utf8CP, ECInstanceId
 			LOG.infov("integrity_check(check_entity_and_rel_class_Ids) analyzing joined table for [class: %s]", classCP->GetFullName());
 			std::string query = SqlPrintfString("SELECT R.ECInstanceId, R.ECClassId FROM %s R LEFT JOIN meta.ECClassDef O ON O.ECInstanceId = R.ECClassId WHERE O.ECInstanceId IS NULL",
 											classCP->GetECSqlName().c_str()).GetUtf8CP();
-			ECSqlStatement stmt;
-			if (ECSqlStatus::Success != stmt.Prepare(m_conn, query.c_str())){
+			ECSqlStatement ecSqlStmt;
+			if (ECSqlStatus::Success != ecSqlStmt.Prepare(m_conn, query.c_str())){
 				m_lastError = "failed to prepared ecsql for nav prop integrity check";
 				return BE_SQLITE_ERROR;
 			}
-			while((rc = stmt.Step()) == BE_SQLITE_ROW) {
+			while((rc = ecSqlStmt.Step()) == BE_SQLITE_ROW) {
 				if (!callback(
 					classCP->GetFullName(),
-					stmt.GetValueId<ECInstanceId>(0),
-					stmt.GetValueId<ECClassId>(1), "joined")) {
+					ecSqlStmt.GetValueId<ECInstanceId>(0),
+					ecSqlStmt.GetValueId<ECClassId>(1), "joined")) {
 					return BE_SQLITE_OK;
 				}
 			}
@@ -1053,6 +1053,74 @@ DbResult IntegrityChecker::CheckClassIds(std::function<bool(Utf8CP, ECInstanceId
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DbResult IntegrityChecker::CheckMissingChildRows(std::function<bool(Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)> callback)
+	{
+	if ("Check missing child rows from BisCore:Element")
+		{
+		Statement getChildClassesStmt;
+		auto rc = getChildClassesStmt.Prepare(m_conn, R"sql(
+			SELECT 
+			       [Tables], 
+			       GROUP_CONCAT ([Id])
+			FROM   (SELECT 
+			               [CL].[Id] [Id], 
+			               GROUP_CONCAT ([Tb].[Name]) [Tables]
+			        FROM   (SELECT DISTINCT [ECClassId] [Id]
+			                FROM   [bis_Element]) CL
+			               JOIN [ec_cache_ClassHasTables] [CT] ON [CT].[ClassId] = [CL].[Id]
+			               JOIN [ec_Table] [TB] ON [TB].[Id] = [CT].[TableId]
+			        GROUP  BY [CL].[Id])
+			GROUP  BY [Tables];
+		)sql");
+		if (BE_SQLITE_OK != rc)
+			{
+			m_lastError = m_conn.GetLastError();
+			return rc;
+			}
+
+		Utf8String getMissingRowsQueryTemplate = R"sql(select a.Id, a.ECClassId, '%s' as MissingRowInTables from bis_Element a %s where a.ECClassId in (%s) and (%s))sql";
+		Utf8String finalQuery;
+
+		while(getChildClassesStmt.Step() == BE_SQLITE_ROW)
+			{
+			bvector<Utf8String> childClasses;
+			BeStringUtilities::Split(getChildClassesStmt.GetValueText(0), ",", childClasses);
+			Utf8String joins;
+			Utf8String whereClause;
+			int alias = 1;
+			for (auto i = 1; i < childClasses.size(); ++i, ++alias)
+				{
+				const auto childClass = childClasses[i];
+				joins += Utf8PrintfString("left join %s b%d on b%d.ElementId = a.Id ", childClass.c_str(), alias, alias);
+				if (!Utf8String::IsNullOrEmpty(whereClause.c_str()))
+					whereClause += " or ";
+				whereClause += Utf8PrintfString("b%d.ElementId is null", alias);
+				}
+			if (!Utf8String::IsNullOrEmpty(finalQuery.c_str()))
+				finalQuery += " union ";
+
+			finalQuery += Utf8PrintfString(getMissingRowsQueryTemplate.c_str(), BeStringUtilities::Join(bvector<Utf8String>(childClasses.begin()+1, childClasses.end()), ",").c_str(), joins.c_str(), getChildClassesStmt.GetValueText(1), whereClause.c_str());
+			}
+
+		Statement getMissingRowsStmt;
+		rc = getMissingRowsStmt.Prepare(m_conn, finalQuery.c_str());
+		if (BE_SQLITE_OK != rc)
+			{
+			m_lastError = m_conn.GetLastError();
+			return rc;
+			}
+		while(getMissingRowsStmt.Step() == BE_SQLITE_ROW)
+			{
+			if (!callback("BisCore:Element", getMissingRowsStmt.GetValueId<ECInstanceId>(0), getMissingRowsStmt.GetValueId<ECClassId>(1), getMissingRowsStmt.GetValueText(2)))
+				return BE_SQLITE_OK;
+			}
+		}
+		return BE_SQLITE_OK;
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 DbResult IntegrityChecker::CheckDataSchema(std::function<bool(std::string, std::string)> callback) {
     auto rc = CheckDataTableExists([&](std::string table) {
         return callback(table, "table");
@@ -1080,6 +1148,7 @@ Utf8CP IntegrityChecker::GetCheckName(Checks check) {
 		{Checks::CheckLinkTableFkIds, check_linktable_fk_ids},
 		{Checks::CheckClassIds, check_class_ids},
 		{Checks::CheckSchemaLoad, check_schema_load},
+		{Checks::CheckMissingChildRows, check_missing_child_rows},
     };
     const auto it = s_map.find(check);
 	if (it != s_map.end())  {
@@ -1103,6 +1172,7 @@ IntegrityChecker::Checks IntegrityChecker::GetCheckId(Utf8CP checkName) {
 		{check_linktable_fk_ids, Checks::CheckLinkTableFkIds},
 		{check_class_ids, Checks::CheckClassIds},
 		{check_schema_load, Checks::CheckSchemaLoad},
+		{check_missing_child_rows, Checks::CheckMissingChildRows},
     };
     const auto it = s_map.find(checkName);
 	if (it != s_map.end())  {
@@ -1143,103 +1213,107 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
     DbResult rc;
     if (Enum::Contains<Checks>(checks, Checks::CheckDataColumns)) {
         StopWatch stopWatch(true);
-        auto passed = true;
-        rc = CheckDataColumns([&passed](std::string, std::string) {
-            return (passed = false);
+        rc = CheckDataColumns([](std::string, std::string) {
+			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-        callback(GetCheckName(Checks::CheckDataColumns), passed, stopWatch.GetCurrent());
+        callback(GetCheckName(Checks::CheckDataColumns), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckEcProfile)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
-        rc = CheckEcProfile([&passed](std::string, std::string, std::string) {
-            return (passed = false);
+        rc = CheckEcProfile([](std::string, std::string, std::string) {
+			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckEcProfile), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckEcProfile), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckNavClassIds)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
-        rc = CheckNavClassIds([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
-            return (passed = false);
+        rc = CheckNavClassIds([](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
+			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckNavClassIds), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckNavClassIds), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckNavIds)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
-        rc = CheckNavIds([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
-            return (passed = false);
+        rc = CheckNavIds([](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
+			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckNavIds), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckNavIds), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckLinkTableFkClassIds)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
-        rc = CheckLinkTableFkClassIds([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
-            return (passed = false);
+        rc = CheckLinkTableFkClassIds([](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
+			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckLinkTableFkClassIds), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckLinkTableFkClassIds), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckLinkTableFkIds)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
-        rc = CheckLinkTableFkIds([&passed](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
-            return (passed = false);
+        rc = CheckLinkTableFkIds([](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
+			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckLinkTableFkIds), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckLinkTableFkIds), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckClassIds)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
-        rc = CheckClassIds([&passed](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP) {
-            return (passed = false);
+        rc = CheckClassIds([](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP) {
+			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckClassIds), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckClassIds), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckDataSchema)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
-        rc = CheckDataSchema([&passed](std::string, std::string) {
-            return (passed = false);
+        rc = CheckDataSchema([](std::string, std::string) {
+			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckDataSchema), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckDataSchema), true, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckSchemaLoad)) {
 		StopWatch stopWatch(true);
-        auto passed = true;
-        rc = CheckSchemaLoad([&passed](Utf8CP) {
-            return (passed = false);
+        rc = CheckSchemaLoad([](Utf8CP) {
+			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckSchemaLoad), passed, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckSchemaLoad), true, stopWatch.GetCurrent());
     }
+	if (Enum::Contains<Checks>(checks, Checks::CheckMissingChildRows))
+		{
+		StopWatch stopWatch(true);
+        rc = CheckMissingChildRows([](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)
+			{
+			return false;
+        	});
+		if (rc != BE_SQLITE_OK)
+			{
+            return rc;
+        	}
+		callback(GetCheckName(Checks::CheckSchemaLoad), true, stopWatch.GetCurrent());
+    	}
     return BE_SQLITE_OK;
 }
 

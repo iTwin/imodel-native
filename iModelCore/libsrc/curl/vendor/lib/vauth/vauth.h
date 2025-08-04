@@ -26,7 +26,7 @@
 
 #include <curl/curl.h>
 
-#include "bufref.h"
+#include "../bufref.h"
 
 struct Curl_easy;
 
@@ -79,12 +79,10 @@ CURLcode Curl_auth_create_plain_message(const char *authzid,
                                         struct bufref *out);
 
 /* This is used to generate a LOGIN cleartext message */
-CURLcode Curl_auth_create_login_message(const char *value,
-                                        struct bufref *out);
+void Curl_auth_create_login_message(const char *value, struct bufref *out);
 
 /* This is used to generate an EXTERNAL cleartext message */
-CURLcode Curl_auth_create_external_message(const char *user,
-                                           struct bufref *out);
+void Curl_auth_create_external_message(const char *user, struct bufref *out);
 
 #ifndef CURL_DISABLE_DIGEST_AUTH
 /* This is used to generate a CRAM-MD5 response message */
@@ -169,6 +167,8 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
 
 /* This is used to clean up the NTLM specific data */
 void Curl_auth_cleanup_ntlm(struct ntlmdata *ntlm);
+#else
+#define Curl_auth_is_ntlm_supported()     FALSE
 #endif /* USE_NTLM */
 
 /* This is used to generate a base64 encoded OAuth 2.0 message */
@@ -209,6 +209,8 @@ CURLcode Curl_auth_create_gssapi_security_message(struct Curl_easy *data,
 
 /* This is used to clean up the GSSAPI specific data */
 void Curl_auth_cleanup_gssapi(struct kerberos5data *krb5);
+#else
+#define Curl_auth_is_gssapi_supported()       FALSE
 #endif /* USE_KERBEROS5 */
 
 #if defined(USE_SPNEGO)

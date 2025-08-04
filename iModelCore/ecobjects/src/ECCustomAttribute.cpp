@@ -463,7 +463,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (pug
                     if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(caSchemaKey, ns.c_str()))
                         return CustomAttributeReadStatus::InvalidCustomAttributes;
                     // In EC3, skip the custom attribute if it belongs to a pruned schema
-                    if (schemaContext.GetSchemasToPrune().end() != std::find(schemaContext.GetSchemasToPrune().begin(), schemaContext.GetSchemasToPrune().end(), caSchemaKey.GetName().c_str()))
+                    if (InstanceReadStatus::ECSchemaPruned == thisStatus)
                         status = CustomAttributeReadStatus::SkippedCustomAttributes;
                     else
                         status = CustomAttributeReadStatus::InvalidCustomAttributes;
@@ -627,7 +627,7 @@ bool copyReferences
                     }
                 }
             }
-        else if (!ECSchema::IsSchemaReferenced(*destContainer.GetContainerSchema(), sourceCustomAttributeSchema))
+        else if (!ECSchema::IsSchemaReferenced(*destContainer.GetContainerSchema(), sourceCustomAttributeSchema, SchemaMatchType::Latest)) // latest, or we would add multiple references to the same schema
             {
             status = destContainer.GetContainerSchema()->AddReferencedSchema(const_cast<ECSchemaR>(sourceCustomAttributeSchema));
             if (ECObjectsStatus::Success != status)

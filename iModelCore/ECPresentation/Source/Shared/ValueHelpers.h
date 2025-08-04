@@ -9,6 +9,17 @@
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 #define EXTENDED_TYPENAME_BeGuid "BeGuid"
+#define EC_PRIMITIVE_TYPENAME_BINARY      "binary"
+#define EC_PRIMITIVE_TYPENAME_BOOLEAN     "boolean"
+#define EC_PRIMITIVE_TYPENAME_BOOL        "bool"
+#define EC_PRIMITIVE_TYPENAME_DATETIME    "dateTime"
+#define EC_PRIMITIVE_TYPENAME_DOUBLE      "double"
+#define EC_PRIMITIVE_TYPENAME_INTEGER     "int"
+#define EC_PRIMITIVE_TYPENAME_LONG        "long"
+#define EC_PRIMITIVE_TYPENAME_POINT2D     "point2d"
+#define EC_PRIMITIVE_TYPENAME_POINT3D     "point3d"
+#define EC_PRIMITIVE_TYPENAME_STRING      "string"
+#define EC_PRIMITIVE_TYPENAME_IGEOMETRY   "IGeometry"
 
 /*=================================================================================**//**
 * @bsiclass
@@ -26,6 +37,8 @@ public:
     static BentleyStatus GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECN::ECPropertyCR prop, ECN::ECValueCR ecValue);
     static BentleyStatus GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECN::ECPropertyCR prop, RapidJsonValueCR jsonValue);
     static BentleyStatus GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECN::ECEnumerationCR enumeration, BeSQLite::DbValue const& dbValue);
+
+    static BentleyStatus ParsePrimitiveType(PrimitiveType&, Utf8StringCR);
 
     static DPoint2d GetPoint2dFromSqlValue(BeSQLite::EC::IECSqlValue const&);
     static DPoint2d GetPoint2dFromJson(RapidJsonValueCR);

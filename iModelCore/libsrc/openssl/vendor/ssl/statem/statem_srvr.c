@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2025 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  * Copyright 2005 Nokia. All rights reserved.
  *
@@ -2338,9 +2338,8 @@ int tls_construct_server_hello(SSL *s, WPACKET *pkt)
      * so the following won't overwrite an ID that we're supposed
      * to send back.
      */
-    if (s->session->not_resumable ||
-        (!(s->ctx->session_cache_mode & SSL_SESS_CACHE_SERVER)
-         && !s->hit))
+    if (!(s->ctx->session_cache_mode & SSL_SESS_CACHE_SERVER)
+            && !s->hit)
         s->session->session_id_length = 0;
 
     if (usetls13) {
@@ -2986,7 +2985,7 @@ static int tls_process_cke_dhe(SSL *s, PACKET *pkt)
     }
 
     if (!EVP_PKEY_set1_encoded_public_key(ckey, data, i)) {
-        SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_BAD_KEY_SHARE);
         goto err;
     }
 
@@ -3040,7 +3039,7 @@ static int tls_process_cke_ecdhe(SSL *s, PACKET *pkt)
         }
 
         if (EVP_PKEY_set1_encoded_public_key(ckey, data, i) <= 0) {
-            SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_EC_LIB);
+            SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_R_BAD_KEY_SHARE);
             goto err;
         }
     }
@@ -3135,7 +3134,7 @@ static int tls_process_cke_gost(SSL *s, PACKET *pkt)
     }
     if (EVP_PKEY_decrypt_init(pkey_ctx) <= 0) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-        return 0;
+        goto err;
     }
     /*
      * If client certificate is present and is of the same type, maybe

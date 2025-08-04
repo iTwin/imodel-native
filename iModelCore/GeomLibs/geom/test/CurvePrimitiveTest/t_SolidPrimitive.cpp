@@ -1456,8 +1456,8 @@ void CheckRotationDerivative (DVec3dCR axis, double angle)
         DVec3d AX, DX;
         AX.Multiply (matrix0, vector[i]);
         DX.Multiply (derivative0, vector[i]);
-        Check::NearPeriodic (angle, vector[i].SignedAngleTo (AX, axis), "rotation by angle");
-        Check::NearPeriodic (angle + Angle::PiOver2 (),
+        Check::NearPeriodicRadians (angle, vector[i].SignedAngleTo (AX, axis), "rotation by angle");
+        Check::NearPeriodicRadians (angle + Angle::PiOver2 (),
                 vector[i].SignedAngleTo (DX, axis), "rotation by angle derivative");
         }
 

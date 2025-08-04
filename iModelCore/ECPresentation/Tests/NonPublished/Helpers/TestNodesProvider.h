@@ -54,13 +54,12 @@ private:
         NavNodeCPtr parent = context.GetVirtualParentNode();
         if (parent.IsNull())
             {
-            IRulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
-            RootNodeRuleSpecificationsList specs = context.GetRulesPreprocessor().GetRootNodeSpecifications(params);
+            RootNodeRuleSpecificationsList specs = context.GetRulesPreprocessor().GetRootNodeSpecifications();
             provider = MultiSpecificationNodesProvider::Create(context, specs);
             }
         else
             {
-            IRulesPreprocessor::ChildNodeRuleParameters params(*parent, TargetTree_MainTree);
+            IRulesPreprocessor::ChildNodeRuleParameters params(*parent);
             ChildNodeRuleSpecificationsList specs = context.GetRulesPreprocessor().GetChildNodeSpecifications(params);
             provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
             }
@@ -104,7 +103,7 @@ protected:
         PresentationRuleSetCPtr ruleset = m_ruleset;
         if (ruleset.IsNull())
             ruleset = PresentationRuleSet::CreateInstance(rulesetId);
-        NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, TargetTree_MainTree, parentNode,
+        NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, parentNode,
             std::make_unique<RulesetVariables>(variables), m_ecexpressionsCache, m_relatedPathsCache, m_nodesFactory,
             nullptr == m_nodesCache ? cache : m_nodesCache, m_providerFactory, nullptr);
         context->SetQueryContext(m_connections, connection, m_usedClassesListener);

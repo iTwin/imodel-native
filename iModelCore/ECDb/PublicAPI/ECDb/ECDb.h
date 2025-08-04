@@ -13,9 +13,15 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct SchemaManager;
 struct InstanceReader;
+struct InstanceWriter;
 struct ECCrudWriteToken;
 struct SchemaImportToken;
+struct InstanceRepository;
 
+enum class PropertyHandlerResult {
+    Continue,
+    Handled,
+};
 //=======================================================================================
 //! Enum which mirrors the ECEnumeration OpCode in the ECDbChange ECSchema.
 //! The enum can be used when programmatically binding values to the OpCode in an ECSQL
@@ -118,10 +124,11 @@ struct ECSqlConfig {
     private:
         DisableSqlFunctions m_disabledFunctions;
         bool m_experimentalFeaturesEnabled;
+        bool m_validateWriteValues;
         mutable std::unordered_map<OptimizationOptions, bool> m_optimisationOptionsMap;
 
     public:
-        ECSqlConfig(): m_experimentalFeaturesEnabled(false) {
+        ECSqlConfig(): m_experimentalFeaturesEnabled(false), m_validateWriteValues(false) {
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForClassIds] = true;
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForNestedSelectQuery] = true;
         }
@@ -132,8 +139,18 @@ struct ECSqlConfig {
         void SetOptimizationOption(OptimizationOptions option, bool flag) {m_optimisationOptionsMap[option] = flag;}
         bool GetExperimentalFeaturesEnabled() const { return m_experimentalFeaturesEnabled; }
         void SetExperimentalFeaturesEnabled(bool v)  { m_experimentalFeaturesEnabled = v; }
+
+        bool IsWriteValueValidationEnabled() const { return m_validateWriteValues; }
+        void SetWriteValueValidation(const bool v) { m_validateWriteValues = v; }
 };
 
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct AsciiCaseInsensitiveCompare {
+    ECDB_EXPORT bool operator()(Utf8StringCR lhs, Utf8StringCR rhs) const;
+    ECDB_EXPORT bool operator()(Utf8CP lhs, Utf8CP rhs) const;
+};
 
 //=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".
@@ -303,7 +320,7 @@ public:
     //         e.g. Remove a sql function or change required argument or format of its return value.
     //  Sub1:  Backward compatible change to 'Syntax'. For example adding new syntax/functions but not breaking any existing.
     //  Sub2:  Backward compatible change to 'Runtime'. For example adding a new sql function.
-    static BeVersion GetECSqlVersion() { return BeVersion(1, 2, 11, 0); }
+    static BeVersion GetECSqlVersion() { return BeVersion(2, 0, 2, 0); }
 
     //! Gets the current version of the ECDb profile
     static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 5); }
@@ -510,6 +527,11 @@ public:
 
     //! Instance reader is bare metal to access full instance without requiring to prepare ECSqlStatement
     ECDB_EXPORT InstanceReader& GetInstanceReader() const;
+
+    //! Allow insert, update & delete a instance in ECDb
+    ECDB_EXPORT InstanceWriter& GetInstanceWriter() const;
+
+    ECDB_EXPORT InstanceRepository& GetInstanceRepository() const;
 
     //! When ECDb::ClearECDbCache is called, these listeners get notified before the actual caches are cleared.
     //! This gives users of ECDb the opportunity to free anything that relies on its caches, e.g.

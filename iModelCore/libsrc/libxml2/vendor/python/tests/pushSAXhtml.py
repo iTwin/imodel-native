@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import setup_test
 import libxml2
 
 # Memory debug specific
@@ -49,8 +50,7 @@ chunk = "ar</foo>"
 ctxt.htmlParseChunk(chunk, len(chunk), 1)
 ctxt=None
 
-reference = """startDocument:startElement html None:startElement body None:startElement foo {'url': 'tst'}:error: Tag foo invalid
-:characters: bar:endElement foo:endElement body:endElement html:endDocument:"""
+reference = """startDocument:startElement html None:startElement body None:startElement foo {'url': 'tst'}:characters: bar:endElement foo:endElement body:endElement html:endDocument:"""
 if log != reference:
     print("Error got: %s" % log)
     print("Exprected: %s" % reference)
@@ -62,4 +62,3 @@ if libxml2.debugMemory(1) == 0:
     print("OK")
 else:
     print("Memory leak %d bytes" % (libxml2.debugMemory(1)))
-    libxml2.dumpMemory()

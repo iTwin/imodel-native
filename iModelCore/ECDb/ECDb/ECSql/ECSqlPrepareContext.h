@@ -133,6 +133,7 @@ struct ECSqlPrepareContext final
         SqlAnchors m_anchors;
         bool m_isInstanceQuery = false;
         DbPrepareOptions m_prepareOpts;
+        bool m_createField = true;
         //not copyable
         ECSqlPrepareContext(ECSqlPrepareContext const&) = delete;
         ECSqlPrepareContext& operator=(ECSqlPrepareContext const&) = delete;
@@ -171,6 +172,8 @@ struct ECSqlPrepareContext final
         void SetIsInstanceQuery(const bool isInstanceQuery) { m_isInstanceQuery = isInstanceQuery; }
         bool IsInstanceQuery() const { return m_isInstanceQuery; }
         DbPrepareOptions GetPrepareOptions() const { return m_prepareOpts; }
+        void SetCreateField(bool flag) { m_createField = flag; }
+        bool GetCreateField() const { return m_createField; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

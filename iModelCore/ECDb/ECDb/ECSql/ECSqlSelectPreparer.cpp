@@ -35,15 +35,17 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, CommonTableEx
         // render block
         auto blockExp = blocks[i];
         builder.Append(blockExp->GetName());
-        builder.AppendParenLeft();
         auto &cols = blockExp->GetColumns();
+        if(cols.size() != 0)
+            builder.AppendParenLeft();
         for(size_t j =0; j < cols.size(); ++j){
             if (j>0) {
                 builder.AppendComma();
             }
             builder.Append(cols[j]);
         }
-        builder.AppendParenRight();
+        if(cols.size()!=0)
+            builder.AppendParenRight();
         builder.Append(" AS ");
         builder.AppendParenLeft();
         auto rc = Prepare(ctx, *blockExp->GetQuery(), nullptr);
@@ -366,7 +368,7 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
             resultSet.push_back(snippet.GetSql());
             }
         }
-    if (ctx.GetCurrentScope().IsRootScope())
+    if (ctx.GetCurrentScope().IsRootScope() && ctx.GetCreateField())
         {
         ctx.GetCurrentScopeR().IncrementNativeSqlSelectClauseColumnCount(nativeSqlSnippets.size() - snippetCountBefore);
         if (exp.GetExpression()->GetType() == Exp::Type::NavValueCreationFunc ||

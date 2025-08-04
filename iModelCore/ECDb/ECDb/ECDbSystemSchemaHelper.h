@@ -112,7 +112,7 @@ private:
 public:
     bool operator==(ECSqlSystemPropertyInfo const& rhs) const { return Compare(*this, rhs) == 0; }
     bool operator!=(ECSqlSystemPropertyInfo const& rhs) const { return !(*this == rhs); }
-    
+
     bool IsSystemProperty() const { return m_type != Type::None; }
     Type GetType() const { return m_type; }
 
@@ -178,6 +178,9 @@ struct ExtendedTypeHelper final {
         TargetClassId = 0x20,
         NavId =0x40,
         NavRelClassId=0x80,
+        BeGuid = 0x100,
+        GeometryStream= 0x200,
+        Json = 0x400,
         // group for filtering
         ClassIds = ClassId | SourceClassId | TargetClassId | NavRelClassId,
         Ids = Id | SourceId | TargetId | NavId,
@@ -186,5 +189,6 @@ struct ExtendedTypeHelper final {
 
     static ExtendedType GetExtendedType(Utf8StringCR extendedType);
     static bool TryGetSystemExtendedType(Utf8StringR extendedTypeName, Utf8StringCR className, Utf8StringCR propertyName);
+    static ExtendedType FromProperty(ECN::ECPropertyCR prop);
 };
 END_BENTLEY_SQLITE_EC_NAMESPACE

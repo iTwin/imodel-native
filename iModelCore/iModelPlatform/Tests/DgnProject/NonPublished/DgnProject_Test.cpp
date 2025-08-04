@@ -51,7 +51,7 @@ TEST_F(DgnDbTest, CheckStandardProperties)
     SetupSeedProject();
 
     DgnDbP project = m_db.get();
-    ASSERT_TRUE(project != NULL);
+    ASSERT_TRUE(project != nullptr);
     Utf8String val;
 
     // Check that std properties are in the be_Props table. We can only check the value of a few using this API.
@@ -81,7 +81,7 @@ TEST_F(DgnDbTest, ProjectProfileVersions)
 {
     SetupSeedProject();
     DgnDbP project = m_db.get();
-    ASSERT_TRUE(project != NULL);
+    ASSERT_TRUE(project != nullptr);
 
     // Get Schema version details
     DgnDbProfileVersion profileVer = project->GetProfileVersion();
@@ -119,7 +119,7 @@ TEST_F(DgnDbTest, ProjectWithDuplicateName)
 
     //Create and Verify that project was created
     project = DgnDb::CreateIModel(&status, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
-    ASSERT_TRUE(project != NULL);
+    ASSERT_TRUE(project != nullptr);
     ASSERT_EQ(BE_SQLITE_OK, status) << "Status returned is:" << status;
 
     // Close the original project (otherwise, we'll get a sharing violation, rather than a dup name error).
@@ -147,13 +147,13 @@ TEST_F(DgnDbTest, MultipleReadWrite)
     DgnDbPtr dgnProj1;
     dgnProj1 = DgnDb::OpenIModelDb(&status1, testFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
     EXPECT_EQ(BE_SQLITE_OK, status1) << status1;
-    ASSERT_TRUE(dgnProj1 != NULL);
+    ASSERT_TRUE(dgnProj1 != nullptr);
 
     DbResult status2;
     DgnDbPtr dgnProj2;
     dgnProj2 = DgnDb::OpenIModelDb(&status2, testFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
     EXPECT_NE(BE_SQLITE_OK, status2) << status2;
-    ASSERT_TRUE(dgnProj2 == NULL);
+    ASSERT_TRUE(dgnProj2 == nullptr);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -169,7 +169,7 @@ TEST_F(DgnDbTest, InvalidFileFormat)
     DbResult status;
     dgnProj = DgnDb::OpenIModelDb(&status, path, DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ(BE_SQLITE_NOTADB, status) << status;
-    ASSERT_TRUE(dgnProj == NULL);
+    ASSERT_TRUE(dgnProj == nullptr);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -189,7 +189,7 @@ TEST_F(DgnDbTest, CreateIModel)
     CreateDgnDbParams params(TEST_NAME);
     dgnProj = DgnDb::CreateIModel(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
     EXPECT_EQ(BE_SQLITE_OK, status) << status;
-    ASSERT_TRUE(dgnProj != NULL);
+    ASSERT_TRUE(dgnProj != nullptr);
 }
 
 
@@ -343,7 +343,7 @@ TEST_F(DgnDbTest, CreateWithInvalidName)
     CreateDgnDbParams params(TEST_NAME);
     dgnProj = DgnDb::CreateIModel(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
     EXPECT_EQ(BE_SQLITE_OK, status) << status;
-    ASSERT_TRUE(dgnProj != NULL);
+    ASSERT_TRUE(dgnProj != nullptr);
     /////////It creates a DgnDbfile with .txt extension having success status needs to figure out is this right behavior
 }
 
@@ -362,7 +362,7 @@ TEST_F(DgnDbTest, FileNotFoundToOpen)
 
     dgnProj = DgnDb::OpenIModelDb(&status, BeFileName(dgndbFileNotExist.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ(BE_SQLITE_ERROR_FileNotFound, status) << status;
-    ASSERT_TRUE(dgnProj == NULL);
+    ASSERT_TRUE(dgnProj == nullptr);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -376,12 +376,12 @@ TEST_F(DgnDbTest, OpenAlreadyOpen)
     DbResult status;
     DgnDbPtr dgnProj = DgnDb::OpenIModelDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
     EXPECT_EQ(BE_SQLITE_OK, status) << status;
-    ASSERT_TRUE(dgnProj != NULL);
+    ASSERT_TRUE(dgnProj != nullptr);
 
     // once a Db is opened for ReadWrite with exclusive access, it can't be opened, even for read.
     DgnDbPtr dgnProj1 = DgnDb::OpenIModelDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ(BE_SQLITE_BUSY, status) << status;
-    ASSERT_TRUE(dgnProj1 == NULL);
+    ASSERT_TRUE(dgnProj1 == nullptr);
 }
 
 //---------------------------------------------------------------------------------------
@@ -417,6 +417,30 @@ TEST_F(DgnDbTest, IsPurgeOperationActive)
     }
     ASSERT_FALSE(db->IsPurgeOperationActive());
     }
+    
+TEST_F(DgnDbTest, CreateImodel_ShouldLogLessWarnings)
+    {
+    // Log to console
+    // NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    // NativeLogging::ConsoleLogger::GetLogger().SetSeverity("SQLite", BentleyApi::NativeLogging::LOG_TRACE);
+    
+    TestLogger testLogger;
+    LogCatcher logCatcher(testLogger);
+
+    CreateDgnDbParams params("EmptyModelTest");
+    DgnDbPtr db = DgnDb::CreateIModel(nullptr, DgnDbTestDgnManager::GetOutputFilePath(L"EmptyModelTest.bim"), params);
+    ASSERT_TRUE(db.IsValid());
+
+    int warningCount = 0;
+    for (const auto& message : testLogger.m_messages) {
+        if (message.first == NativeLogging::SEVERITY::LOG_WARNING) {
+            ++warningCount;
+        }
+    }
+    ASSERT_LT(warningCount, 50);
+    }
+
+
 
 //----------------------------------------------------------------------------------------
 // @bsiclass

@@ -41,16 +41,14 @@
 
 #include "tool_sleep.h"
 
-#include "memdebug.h" /* keep this as LAST include */
+#include <memdebug.h> /* keep this as LAST include */
 
 void tool_go_sleep(long ms)
 {
 #if defined(MSDOS)
   delay(ms);
-#elif defined(WIN32)
-  Sleep(ms);
-#elif defined(HAVE_POLL_FINE)
-  (void)poll((void *)0, 0, (int)ms);
+#elif defined(_WIN32)
+  Sleep((DWORD)ms);
 #else
   struct timeval timeout;
   timeout.tv_sec = ms / 1000L;

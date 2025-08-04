@@ -9,7 +9,9 @@ SUBDIRS = . tests
 EXTRA_DIST = 			\
 	generator.py		\
 	libxml.py		\
-	libxml2-python-api.xml
+	libxml2-python-api.xml  \
+	pyproject.toml		\
+	meson.build
 
 if WITH_PYTHON
 AM_CPPFLAGS = \
@@ -36,7 +38,7 @@ CLEANFILES = libxml2.py $(GENERATED)
 all-local: libxml2.py
 
 $(GENERATED): $(srcdir)/generator.py $(API_DESC)
-	$(PYTHON) $(srcdir)/generator.py $(srcdir)
+	$(PYTHON) $(srcdir)/generator.py $(builddir)
 
 # libxml.c #includes libxml2-export.c
 libxml.$(OBJEXT): libxml2-export.c

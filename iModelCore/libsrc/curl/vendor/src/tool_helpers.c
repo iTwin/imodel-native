@@ -23,26 +23,20 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-#include "strcase.h"
-
-#define ENABLE_CURLX_PRINTF
-/* use our own printf() functions */
-#include "curlx.h"
+#include <curlx.h>
 
 #include "tool_cfgable.h"
 #include "tool_msgs.h"
 #include "tool_getparam.h"
 #include "tool_helpers.h"
-
-#include "memdebug.h" /* keep this as LAST include */
+#include <memdebug.h> /* keep this as LAST include */
 
 /*
 ** Helper functions that are used from more than one source file.
 */
 
-const char *param2text(int res)
+const char *param2text(ParameterError error)
 {
-  ParameterError error = (ParameterError)res;
   switch(error) {
   case PARAM_GOT_EXTRA_PARAMETER:
     return "had unsupported trailing garbage";
@@ -59,25 +53,27 @@ const char *param2text(int res)
   case PARAM_NEGATIVE_NUMERIC:
     return "expected a positive numerical parameter";
   case PARAM_LIBCURL_DOESNT_SUPPORT:
-    return "the installed libcurl version doesn't support this";
+    return "the installed libcurl version does not support this";
   case PARAM_LIBCURL_UNSUPPORTED_PROTOCOL:
     return "a specified protocol is unsupported by libcurl";
   case PARAM_NO_MEM:
     return "out of memory";
   case PARAM_NO_PREFIX:
-    return "the given option can't be reversed with a --no- prefix";
+    return "the given option cannot be reversed with a --no- prefix";
   case PARAM_NUMBER_TOO_LARGE:
     return "too large number";
   case PARAM_NO_NOT_BOOLEAN:
-    return "used '--no-' for option that isn't a boolean";
-  case PARAM_CONTDISP_SHOW_HEADER:
-    return "showing headers and --remote-header-name cannot be combined";
+    return "used '--no-' for option that is not a boolean";
   case PARAM_CONTDISP_RESUME_FROM:
     return "--continue-at and --remote-header-name cannot be combined";
   case PARAM_READ_ERROR:
     return "error encountered when reading a file";
   case PARAM_EXPAND_ERROR:
     return "variable expansion failure";
+  case PARAM_BLANK_STRING:
+    return "blank argument where content is expected";
+  case PARAM_VAR_SYNTAX:
+    return "syntax error in --variable argument";
   default:
     return "unknown error";
   }
@@ -95,7 +91,7 @@ int SetHTTPrequest(struct OperationConfig *config, HttpReq req, HttpReq *store)
     "PUT (-T, --upload-file)"
   };
 
-  if((*store == HTTPREQ_UNSPEC) ||
+  if((*store == TOOL_HTTPREQ_UNSPEC) ||
      (*store == req)) {
     *store = req;
     return 0;

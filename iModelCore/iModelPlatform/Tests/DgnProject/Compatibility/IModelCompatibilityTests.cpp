@@ -475,7 +475,8 @@ TEST_F(IModelCompatibilityTestFixture, ECSqlColumnInfoForAliases)
         Utf8StringCR selectClauseItem = colInfo.GetProperty()->GetDisplayLabel();
 
         EXPECT_EQ(hasAlias, colInfo.IsGeneratedProperty()) << selectClauseItem << " | " << testDb.GetDescription();
-        EXPECT_EQ(!hasAlias, colInfo.IsSystemProperty()) << selectClauseItem << " | " << testDb.GetDescription();
+        // Either alias is true or false, IsSystem will return true for all system properties
+        ASSERT_TRUE(colInfo.IsSystemProperty()) << selectClauseItem << " | " << testDb.GetDescription();
         EXPECT_EQ(PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType()) << selectClauseItem << " | " << testDb.GetDescription();
 
         ASSERT_TRUE(colInfo.GetProperty()->GetIsPrimitive()) << selectClauseItem << " | " << testDb.GetDescription();
@@ -2177,7 +2178,7 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
     IModelEvolutionTestsDomain::GetDomain().SetRequired(DgnDomain::Required::No);
     }
 
-TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteClassPropertyAndEnums)
+TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteClassPropertyAndEnumsDynamicSchema)
     {
     for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
@@ -2279,9 +2280,9 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteClassPropertyAndE
             EXPECT_NE(schema->GetClassCP("TestClassToDelete"), nullptr);
             EXPECT_NE(schema->GetClassCP("SubClassToDelete"), nullptr);
 
-            // Perform major schema change by deleting property and class
+            // Perform major change by deleting property and class without changing the schema major version
             auto deserializationCtxUpdate = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                                 <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
@@ -2348,7 +2349,7 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteClassPropertyAndE
         }
     }
 
-TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteKoQs)
+TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteKoQsDynamicSchema)
     {
     for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
@@ -2425,9 +2426,9 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteKoQs)
             EXPECT_NE(schema->GetClassCP("TestClassToDelete"), nullptr);
             EXPECT_NE(schema->GetClassCP("SubClassToDelete"), nullptr);
 
-            // Perform major schema change by deleting property and class
+            // Perform major change by deleting property and class without changing the schema major version
             auto deserializationCtxUpdate = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                                 <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
@@ -2541,9 +2542,9 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradePropertyTypeChange)
             ASSERT_NE(deserializationCtx, nullptr) << testDbPtr->GetDescription();
             ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(deserializationCtx->GetCache().GetSchemas())) << testDbPtr->GetDescription();
 
-            // Perform major schema change by deleting property and class
+            // Perform major change by deleting property and class without changing the schema major version
             auto deserializationCtxUpdate = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
                                 <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
                                 

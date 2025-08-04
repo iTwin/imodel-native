@@ -23,13 +23,11 @@ private:
     CustomRendererSpecificationCP m_renderer;
     PropertyEditorSpecificationCP m_editor;
     std::unique_ptr<PropertyCategoryIdentifier> m_categoryId;
+    Utf8String m_type;
+    bmap<Utf8String, Utf8String> m_extendedData;
 
 protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
-
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName() const override;
-    ECPRESENTATION_EXPORT bool _ReadXml(BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml(BeXmlNodeP xmlNode) const override;
 
     Utf8CP _GetJsonElementTypeAttributeName() const override {return nullptr;}
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
@@ -42,6 +40,10 @@ public:
         PropertyEditorSpecificationP editorOverride = nullptr, std::unique_ptr<PropertyCategoryIdentifier> categoryId = nullptr)
         : PrioritizedPresentationKey(priority), m_label(label), m_value(value), m_renderer(rendererOverride),
         m_editor(editorOverride), m_categoryId(std::move(categoryId))
+        {}
+    CalculatedPropertiesSpecification(Utf8String label, int priority, Utf8String value, Utf8String type)
+        : PrioritizedPresentationKey(priority), m_label(label), m_value(value), m_renderer(nullptr),
+        m_editor(nullptr), m_categoryId(std::move(nullptr)), m_type(type)
         {}
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification const& other);
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification&& other);
@@ -63,6 +65,19 @@ public:
 
     PropertyCategoryIdentifier const* GetCategoryId() const { return m_categoryId.get(); }
     void SetCategoryId(std::unique_ptr<PropertyCategoryIdentifier> categoryId) { m_categoryId = std::move(categoryId); InvalidateHash(); }
+
+    Utf8StringCR GetType() const { return m_type; }
+    void SetType(Utf8String type) { m_type = type; InvalidateHash(); }
+
+    //! Get key-value pairs for extended data value definitions in this rule
+    bmap<Utf8String, Utf8String> const& GetExtendedDataMap() const { return m_extendedData; }
+
+    //! Set key-value pairs for extended data value definitions in this rule
+    ECPRESENTATION_EXPORT void SetExtendedDataMap(bmap<Utf8String, Utf8String> map);
+
+    //! Set a single extended data value definition. The `key` property must be
+    //! unique. The `value` property is an ECExpression.
+    ECPRESENTATION_EXPORT void AddExtendedData(Utf8String key, Utf8String value);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

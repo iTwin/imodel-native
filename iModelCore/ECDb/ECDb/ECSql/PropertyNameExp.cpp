@@ -402,7 +402,16 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
 
     const auto local = countLocalRefs(matchProps);
     const auto inherited = matchProps.size() - local;
+
     if (!(local == 1 || inherited == 1)) {
+        auto parent = this->GetParent();
+        if (parent != nullptr && parent->GetType() == Exp::Type::ExtractProperty){
+            Utf8String targetPath = parent->GetAs<ExtractPropertyValueExp>().GetTargetPath().ToString();
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
+                "In expression '$->%s', $ is ambiguous", targetPath.c_str());
+            return ERROR;
+        }
+
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0566,
             "Expression '%s' in ECSQL statement is ambiguous.", m_resolvedPropertyPath.ToString().c_str());
         return ERROR;
@@ -421,7 +430,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         m_resolvedPropertyPath = match.ResolvedPath();
         if (!GetPropertyRef()->IsComputedExp() && GetPropertyRef()->TryGetVirtualProperty() == nullptr) {
             if ( !GetPropertyRef()->TryResolvePath(m_resolvedPropertyPath)) {
-                BeAssert(false && "Programmer Error: Unable to resolve path");
+                return ERROR;
             }
         }
     } else {
@@ -497,7 +506,7 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
             }
 
         case Exp::Type::SubqueryRef:
-            {
+            {  
             PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
             BeAssert(propertyRef != nullptr);
             propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
@@ -506,9 +515,44 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
             }
             break;
             }
+        case Exp::Type::CommonTableBlock:
+            { 
+            /*// This block is added because if the cte block has no columns we treat the select statement inside cte block just as a subquery of 
+            outer cte select statement and we pass the classref as CommonTableBlockExp,
+             the classref stays as CommonTableBlockExp if we "select *" in outer select statement
+             Ex- with cte as (select * from meta.ECClassDef) select * from cte*/
+            CommonTableBlockExp const& cteBlockExp = classRefExp->GetAs<CommonTableBlockExp>();  
+            if(cteBlockExp.GetColumns().size() == 0)
+                {
+                PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
+                BeAssert(propertyRef != nullptr);
+                propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
+                if (propertyMap == nullptr) 
+                    {
+                    BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a common table block is expected to always be a prop name exp");
+                    }
+                }
+            break;
+            }
         case Exp::Type::CommonTableBlockName :
             {
-            return nullptr;
+            /*// This block is added because if the cte block has no columns we treat the select statement inside cte block just as a subquery of 
+            outer cte select statement and we pass the classref as CommonTableBlockExp,
+             the classref becomes as CommonTableBlockNameExp if we "select <column>" in outer select statement
+             Ex- with cte as (select * from meta.ECClassDef) select ECInstanceId from cte*/ 
+            CommonTableBlockNameExp const& cteBlockNameExp = classRefExp->GetAs<CommonTableBlockNameExp>();
+            CommonTableBlockExp const* cteBlock = cteBlockNameExp.GetBlock();
+            if(cteBlock != nullptr && cteBlock->GetColumns().size() == 0)
+                {
+                PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
+                BeAssert(propertyRef != nullptr);
+                propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
+                if (propertyMap == nullptr) {
+                    BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a common table block name is expected to always be a prop name exp");
+                }
+                break;
+                }
+            return nullptr; // This block returns nullptr for proper alias referencing if the cte block has columns
             }
         default:
                 BeAssert(false && "Unhandled ClassRefExp subtype. This code needs to be adjusted.");
@@ -597,8 +641,11 @@ bool PropertyNameExp::PropertyRef::TryResolvePath(PropertyPath &path) const
     PropertyMap const *propertyMap = TryGetPropertyMap(path);
     if (propertyMap == nullptr)
         return false;
-
     PropertyMap::Path resolvePath = propertyMap->GetPath();
+    if (resolvePath.size() < path.Size())
+        {
+        return false;
+        }
     int n = static_cast<int>(std::min(resolvePath.size(), path.Size()));
     if (n == 0)
         {

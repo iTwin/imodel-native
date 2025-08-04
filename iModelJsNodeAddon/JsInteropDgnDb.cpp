@@ -46,9 +46,9 @@ BE_JSON_NAME(geographicCoordinateSystem)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-[[noreturn]] void JsInterop::throwDgnDbStatus(DgnDbStatus stat) {
+[[noreturn]] void JsInterop::throwDgnDbStatus(DgnDbStatus status) {
     Utf8String msg;
-    switch (stat) {
+    switch (status) {
         case DgnDbStatus::BadArg:         msg = "invalid arguments"; break;
         case DgnDbStatus::BadRequest:     msg = "bad request"; break;
         case DgnDbStatus::BadSchema:      msg = "bad schema"; break;
@@ -66,9 +66,9 @@ BE_JSON_NAME(geographicCoordinateSystem)
         case DgnDbStatus::WrongClass:     msg = "wrong class"; break;
         case DgnDbStatus::WrongDgnDb:     msg = "wrong iModel"; break;
         default:
-            msg = Utf8PrintfString("error=%x", (int) stat); break;
+            msg = Utf8PrintfString("error=%x", (int)status); break;
     }
-    BeNapi::ThrowJsException(Env(), msg.c_str(), (int) stat);
+    THROW_JS_DGN_DB_EXCEPTION(Env(), msg.c_str(), status);
 }
 
 //---------------------------------------------------------------------------------------
@@ -304,7 +304,120 @@ DgnDbStatus JsInterop::GetSchemaItem(BeJsValue mjson, DgnDbR dgndb, Utf8CP schem
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
+//------------------------------------`---------------------------------------------------
+Napi::Value JsInterop::ResolveInstanceKey(DgnDbR dgndb, NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, args);
+    BeJsConst inJson(args);
+    if (inJson.isNull()) {
+        THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid input", DgnDbStatus::BadArg);
+    }
+
+    auto composeResponse = [&](ECInstanceKeyCR resolvedKey) -> Napi::Value {
+        auto outObj = Napi::Object::New(info.Env());
+        auto outVal = BeJsValue(outObj);
+        outVal["id"] = resolvedKey.GetInstanceId();
+        outVal["classId"] = resolvedKey.GetClassId().ToHexStr();
+        auto classFullName = outVal["classFullName"];
+        auto classCP = dgndb.Schemas().GetClass(resolvedKey.GetClassId());
+        if (classCP == nullptr) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"failed to resolve class", DgnDbStatus::NotFound);
+        }
+        ECN::ECJsonUtilities::ClassNameToJson(classFullName, *classCP, true);
+        return outObj;
+    };
+
+    if (inJson.isObjectMember("partialKey")) {
+        auto partialKeyJson = inJson["partialKey"];
+        if (!partialKeyJson.isStringMember("id")) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"missing id", DgnDbStatus::BadArg);
+        }
+
+        auto id = partialKeyJson["id"].GetId64<ECInstanceId>();
+        if (!id.IsValid()) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"invalid id", DgnDbStatus::BadArg);
+        }
+
+        if (!partialKeyJson.isStringMember("baseClassName")) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"missing baseClassName", DgnDbStatus::BadArg);
+        }
+
+        Utf8String baseClassName = partialKeyJson["baseClassName"].asCString();
+        if (baseClassName.empty()) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"invalid baseClassName", DgnDbStatus::BadArg);
+        }
+
+        ECInstanceKey resolvedKey;
+        auto pos = InstanceReader::Position(id, baseClassName.c_str());
+        if (!dgndb.GetInstanceReader().Seek(pos,
+            [&](InstanceReader::IRowContext const& row, auto _) {
+                resolvedKey = ECInstanceKey(row.GetValue(1).GetId<ECClassId>(), id);
+            })) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"failed to resolve instance key", DgnDbStatus::NotFound);
+        }
+        return composeResponse(resolvedKey);
+    }
+
+    if (inJson.isStringMember("federationGuid")){
+        auto stmt = dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [FederationGuid]=?");
+        if (!stmt.IsValid()) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"failed to prepare statement", DgnDbStatus::BadArg);
+        }
+        BeGuid federationGuid;
+        federationGuid.FromString(inJson["federationGuid"].asCString());
+        stmt->BindGuid(1, federationGuid);
+        if (stmt->Step() != BE_SQLITE_ROW) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"failed to resolve element from federationGuid", DgnDbStatus::NotFound);
+        }
+
+        ECInstanceKey resolvedKey(stmt->GetValueId<ECClassId>(1), stmt->GetValueId<ECInstanceId>(0));
+        return composeResponse(resolvedKey);
+    }
+
+    if (inJson.isObjectMember("code")) {
+        auto codeJson = inJson["code"];
+        if (!codeJson.isStringMember("spec")) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"missing spec", DgnDbStatus::BadArg);
+        }
+
+        auto specId= codeJson["spec"].GetId64<ECInstanceId>();
+
+        if (!codeJson.isStringMember("scope")) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"missing type", DgnDbStatus::BadArg);
+        }
+
+        auto scopeId = codeJson["scope"].GetId64<ECInstanceId>();
+
+        if (!codeJson.isStringMember("value")) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"missing value", DgnDbStatus::BadArg);
+        }
+
+        auto codeValue = codeJson["value"].asString();
+        auto stmt = codeValue.empty() ?
+            dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [CodeSpec].[Id]=? AND [CodeScope].[Id]=? AND ([CodeValue] IS NULL OR  [CodeValue] = '')") :
+            dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [CodeSpec].[Id]=? AND [CodeScope].[Id]=? AND [CodeValue]=?");
+
+        if (!stmt.IsValid()) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"failed to prepare statement", DgnDbStatus::BadArg);
+        }
+
+        stmt->BindId(1, specId);
+        stmt->BindId(2, scopeId);
+        if (!codeValue.empty()) {
+            stmt->BindText(3, codeValue.c_str(), IECSqlBinder::MakeCopy::No);
+        }
+
+        if (stmt->Step() != BE_SQLITE_ROW) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"failed to resolve element from code", DgnDbStatus::NotFound);
+        }
+
+        ECInstanceKey resolvedKey(stmt->GetValueId<ECClassId>(1), stmt->GetValueId<ECInstanceId>(0));
+        return composeResponse(resolvedKey);
+    }
+    THROW_JS_DGN_DB_EXCEPTION(info.Env(),"must provide partialKey, federationGuid or ", DgnDbStatus::BadArg);
+}
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//------------------------------------`---------------------------------------------------
 DgnDbStatus JsInterop::GetElement(BeJsValue elementJson, DgnDbR dgndb, Napi::Object obj) {
     BeJsConst inOpts(obj);
     DgnElementCPtr elem;
@@ -382,7 +495,7 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
         // if the option "forceUseId" is set, attempt to insert the element preserving that id - used by transformer.
         if (inOptionsJson.isObject() && inOptionsJson.Get(json_forceUseId()).asBool()) {
             if (!inJson.isStringMember(json_id())) {
-                BeNapi::ThrowJsException(Env(), "invalid argument, the id is required if forcing its usage", (int)DgnDbStatus::BadArg);
+                THROW_JS_DGN_DB_EXCEPTION(Env(), "invalid argument, the id is required if forcing its usage", DgnDbStatus::BadArg)
             }
             auto eid = inJson[json_id()].GetId64<DgnElementId>();
             el->CopyIdentityFrom(eid, el->GetFederationGuid());
@@ -395,7 +508,7 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
             throwDgnDbStatus(status);
         return Napi::String::New(Env(), newEl->GetElementId().ToHexStr());
     } catch (std::logic_error const& err) {
-        BeNapi::ThrowJsException(Env(), err.what(), (int)DgnDbStatus::BadArg);
+        THROW_JS_DGN_DB_EXCEPTION(Env(), err.what(), DgnDbStatus::BadArg);
     }
 }
 
@@ -426,9 +539,9 @@ void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj) {
         SetNapiObjOnElement _v(*el, &obj);
         DgnDbStatus status = el->Update();
         if (DgnDbStatus::Success != status)
-            BeNapi::ThrowJsException(Env(), "error updating", (int)status);
+            THROW_JS_DGN_DB_EXCEPTION(Env(), "error updating", status);
     } catch (std::logic_error const& err) {
-        BeNapi::ThrowJsException(Env(), err.what(), (int)DgnDbStatus::BadArg);
+        THROW_JS_DGN_DB_EXCEPTION(Env(), err.what(), DgnDbStatus::BadArg);
     }
 }
 
@@ -567,7 +680,7 @@ void JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr) {
 
     auto stat =  elPersist->Delete();
     if (stat != DgnDbStatus::Success)
-        BeNapi::ThrowJsException(Env(), "error deleting element", (int)stat);
+        THROW_JS_DGN_DB_EXCEPTION(Env(), "error deleting element", stat);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -859,7 +972,7 @@ Napi::String JsInterop::InsertLinkTableRelationship(DgnDbR dgndb, Napi::Object o
         throwSqlError();
 
     if (ECClassModifier::Abstract == relClass->GetClassModifier()) {
-        ThrowJsException(SqlPrintfString("Failed to insert relationship. Relationship class '%s' is abstract.", relClass->GetFullName()));
+        THROW_JS_DGN_DB_EXCEPTION(Env(), SqlPrintfString("Failed to insert relationship. Relationship class '%s' is abstract.", relClass->GetFullName()), DgnDbStatus::BadArg);
     }
 
     DgnElementId sourceId, targetId;
@@ -871,7 +984,7 @@ Napi::String JsInterop::InsertLinkTableRelationship(DgnDbR dgndb, Napi::Object o
     BeSQLite::EC::ECInstanceKey relKey;
     auto rc = dgndb.InsertLinkTableRelationship(relKey, *relClass, sourceId, targetId, props.get()); // nullptr is okay if there are no props
     if (BE_SQLITE_OK != rc)
-        throwSqlError();
+        JsInterop::throwSqlResult("Failed to insert relationship", dgndb.GetDbFileName(), rc);
 
     return Napi::String::New(Env(), relKey.GetInstanceId().ToHexStr());
     }
@@ -889,7 +1002,7 @@ void JsInterop::UpdateLinkTableRelationship(DgnDbR dgndb, Napi::Object obj)
         throwNotFound();
 
     if (ECClassModifier::Abstract == relClass->GetClassModifier()) {
-        ThrowJsException(SqlPrintfString("Failed to update relationship. Relationship class '%s' is abstract.", relClass->GetFullName()));
+        THROW_JS_DGN_DB_EXCEPTION(Env(), SqlPrintfString("Failed to update relationship. Relationship class '%s' is abstract.", relClass->GetFullName()), DgnDbStatus::BadArg);
     }
 
     ECN::StandaloneECRelationshipInstancePtr props = getRelationshipProperties(relClass, inJson, dgndb);
@@ -898,7 +1011,7 @@ void JsInterop::UpdateLinkTableRelationship(DgnDbR dgndb, Napi::Object obj)
 
     auto stat = dgndb.UpdateLinkTableRelationshipProperties(relKey, *props);
     if (stat != BE_SQLITE_OK)
-        ThrowJsException("error updating relationship");
+        THROW_JS_BE_SQLITE_EXCEPTION(Env(), "error updating relationship", stat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -909,7 +1022,7 @@ void JsInterop::DeleteLinkTableRelationship(DgnDbR dgndb, Napi::Object inJson)
     BeSQLite::EC::ECInstanceKey relKey = parseECRelationshipInstanceKey(dgndb, inJson);
     auto stat = dgndb.DeleteLinkTableRelationship(relKey);
     if (stat != BE_SQLITE_DONE)
-        ThrowJsException("error deleting relationship");
+        THROW_JS_BE_SQLITE_EXCEPTION(Env(), "error deleting relationship", stat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1024,7 +1137,7 @@ void JsInterop::UpdateModel(DgnDbR dgndb, Napi::Object napiObj) {
     model->FromJson(inJson);
     auto stat = model->Update();
     if (stat != DgnDbStatus::Success)
-        BeNapi::ThrowJsException(Env(), "error updating model", (int)stat);
+        THROW_JS_DGN_DB_EXCEPTION(Env(), "error updating model", stat);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -1041,7 +1154,7 @@ void JsInterop::DeleteModel(DgnDbR dgndb, Utf8StringCR midStr) {
 
     auto stat = model->Delete();
     if (stat != DgnDbStatus::Success)
-        BeNapi::ThrowJsException(Env(), "error deleting model", (int) stat);
+        THROW_JS_DGN_DB_EXCEPTION(Env(), "error deleting model", stat);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -1097,10 +1210,10 @@ void JsInterop::ComputeRangeForText(BeJsValue result, DgnDbR db, Utf8StringCR te
         auto& font = db.Fonts().FindFont(fontId);
         GlyphLayoutContext layoutContext;
         layoutContext.m_string = text;
-        layoutContext.m_drawSize = DPoint2d::From(height, height * widthFactor);
+        layoutContext.m_drawSize = DPoint2d::From(height * widthFactor, height);
         layoutContext.m_isBold = TextEmphasis::None != (emphasis & TextEmphasis::Bold);
         layoutContext.m_isItalic = TextEmphasis::None != (emphasis & TextEmphasis::Italic);
-        
+
         GlyphLayoutResult layoutResult;
         if (SUCCESS == font.LayoutGlyphs(layoutResult, layoutContext)) {
             layoutRange = layoutResult.m_range;
@@ -1144,7 +1257,7 @@ GeoCoordinates::VertDatumCode GetEffectiveVerticalDatumCode(DgnGCSCR gcs)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb) {
+void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb, Utf8StringCR when) {
     // add the root subject, if available.
     auto rootSubject = dgndb.Elements().GetRootSubject();
     if (rootSubject.IsValid()) {
@@ -1158,7 +1271,7 @@ void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb) {
     auto& geolocation = dgndb.GeoLocation();
 
     // add project extents
-     geolocation.GetProjectExtents().ToJson(val[json_projectExtents()]);
+    geolocation.GetProjectExtents(when).ToJson(val[json_projectExtents()]);
 
     // add global origin
     BeJsGeomUtils::DPoint3dToJson(val[json_globalOrigin()], geolocation.GetGlobalOrigin());
@@ -1432,3 +1545,343 @@ void JsInterop::WriteAffectedElementDependencyGraphToFile(DgnDbR db, Utf8StringC
     ElementDependency::Graph graph(db.Txns());
     graph.WriteAffectedGraphToFile(BeFileName(dotFileName.c_str(), true), changedIds, {});
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsistruct
+//---------------------------------------------------------------------------------------
+struct NativeGeometrySource2d final : public GeometrySource2d {
+private:
+    DgnDbR m_db;
+    Placement2d m_placement;
+    DgnCategoryId m_categoryId;
+    GeometryStream m_geometry;
+
+protected:
+    DgnDbR _GetSourceDgnDb() const { return m_db; }
+    DgnElementCP _ToElement() const { return nullptr; }
+    GeometrySource2dCP _GetAsGeometrySource2d() const { return this; }
+    DgnCategoryId _GetCategoryId() const { return m_categoryId; }
+    GeometryStreamCR _GetGeometryStream() const { return m_geometry; }
+    Placement2dCR _GetPlacement() const { return m_placement; }
+    DgnDbStatus _SetPlacement(Placement2dCR placement) {
+        m_placement = placement;
+        return DgnDbStatus::Success;
+    }
+    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {
+        m_categoryId = categoryId;
+        return DgnDbStatus::Success;
+    }
+
+public:
+    NativeGeometrySource2d(DgnDbR dgnDb, DgnCategoryId categoryId, Placement2d&& placement, GeometryStream&& geomStream)
+        : m_db(dgnDb), m_placement(std::move(placement)), m_categoryId(categoryId), m_geometry(std::move(geomStream)) {}
+};
+
+//---------------------------------------------------------------------------------------
+// @bsistruct
+//---------------------------------------------------------------------------------------
+struct NativeGeometrySource3d final : public GeometrySource3d {
+private:
+    DgnDbR m_db;
+    Placement3d m_placement;
+    DgnCategoryId m_categoryId;
+    GeometryStream m_geometry;
+
+protected:
+    DgnDbR _GetSourceDgnDb() const { return m_db; }
+    DgnElementCP _ToElement() const { return nullptr; }
+    GeometrySource3dCP _GetAsGeometrySource3d() const { return this; }
+    DgnCategoryId _GetCategoryId() const { return m_categoryId; }
+    GeometryStreamCR _GetGeometryStream() const { return m_geometry; }
+    Placement3dCR _GetPlacement() const { return m_placement; }
+    DgnDbStatus _SetPlacement(Placement3dCR placement) {
+        m_placement = placement;
+        return DgnDbStatus::Success;
+    }
+    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {
+        m_categoryId = categoryId;
+        return DgnDbStatus::Success;
+    }
+
+public:
+    NativeGeometrySource3d(DgnDbR dgnDb, DgnCategoryId categoryId, Placement3d&& placement, GeometryStream&& geomStream)
+        : m_db(dgnDb), m_placement(std::move(placement)), m_categoryId(categoryId), m_geometry(std::move(geomStream)) {}
+};
+
+//---------------------------------------------------------------------------------------
+// @bsistruct
+//---------------------------------------------------------------------------------------
+struct NativeGeometryPart final : public GeometryPartSource {
+private:
+    DgnDbR m_db;                //!< Database containing part
+    GeometryStream m_geometry;  //!< Geometry of part
+    ElementAlignedBox3d m_bbox; //!< Bounding box of part geometry
+
+protected:
+    virtual ElementAlignedBox3dCR _GetPlacement() const { return m_bbox; }
+    virtual void _SetPlacement(ElementAlignedBox3dCR bbox) { m_bbox = bbox; }
+    virtual GeometryStreamCR _GetGeometryStream() const { return m_geometry; }
+    virtual GeometryStreamR _GetGeometryStreamR() { return m_geometry; }
+    virtual DgnDbR _GetSourceDgnDb() const { return m_db; }
+
+public:
+    NativeGeometryPart(DgnDbR db, GeometryStream&& geom, ElementAlignedBox3d&& bbox) : m_geometry(std::move(geom)), m_bbox(std::move(bbox)), m_db(db) {}
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info) {
+    const auto kBinaryStream = "BinaryStream";
+    const auto kIs2d = "is2d";
+    const auto kPlacement = "placement";
+    const auto kCategoryId = "categoryId";
+    const auto undefined = info.Env().Undefined();
+
+    REQUIRE_ARGUMENT_ANY_OBJ(0, args);
+    REQUIRE_ARGUMENT_STRING(1, fmt);
+    REQUIRE_ARGUMENT_ANY_OBJ(2, opts);
+
+    DgnCategoryId categoryId;
+    Placement2d placement2d;
+    Placement3d placement3d;
+
+    const auto isBinaryStream = fmt == kBinaryStream;
+    const auto jsIs2d = args.HasOwnProperty(kIs2d)?  args.Get(kIs2d).As<Napi::Boolean>().Value() : false;
+    const auto jsCategoryId = args.HasOwnProperty(kCategoryId) ? args.Get(kCategoryId) : undefined;
+    const auto jsPlacement = args.HasOwnProperty(kPlacement) ? args.Get(kPlacement) : undefined;
+    const auto hasPlacement = jsPlacement.IsObject();
+    if (hasPlacement) {
+        if (jsIs2d) {
+            placement2d.FromJson(jsPlacement);
+            if (!placement2d.IsValid()) {
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid placement", IModelJsNativeErrorKey::BadArg);
+            }
+        } else {
+
+            placement3d.FromJson(jsPlacement);
+            if (!placement3d.IsValid()) {
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid placement", IModelJsNativeErrorKey::BadArg);
+            }
+        }
+    }
+
+    if (jsCategoryId.IsString()) {
+        BeInt64Id::FromString(categoryId, jsCategoryId.As<Napi::String>().Utf8Value().c_str());
+        if (!categoryId.IsValid()) {
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid category id", IModelJsNativeErrorKey::BadArg);
+        }
+    }
+
+    std::unique_ptr<GeometrySource> geomSource;
+    if (args.Has("geom")) {
+        auto geom = args.Get("geom");
+        if (geom.IsTypedArray()) {
+            auto geomBin = geom.As<Napi::TypedArrayOf<uint8_t>>();
+            if (geomBin.TypedArrayType() != napi_uint8_array) {
+                THROW_JS_TYPE_EXCEPTION("Invalid geometry stream properties. Expecting uint8array");
+            }
+            uint8_t* data = geomBin.Data();
+            size_t size = geomBin.ElementLength();
+            auto geomStream = GeometryStream();
+            geomStream.Append(data, static_cast<uint32_t>(size));
+            if (jsIs2d)
+                geomSource = std::make_unique<NativeGeometrySource2d>(db, categoryId, std::move(placement2d), std::move(geomStream));
+            else
+                geomSource = std::make_unique<NativeGeometrySource3d>(db, categoryId, std::move(placement3d), std::move(geomStream));
+        } else {
+            auto geomProps = geom.As<Napi::Object>();
+            if (!geomProps.IsObject()) {
+                THROW_JS_TYPE_EXCEPTION("Invalid geometry stream properties. Expecting object");
+            }
+
+            if (jsIs2d)
+                geomSource = std::make_unique<NativeGeometrySource2d>(db, categoryId, std::move(placement2d), GeometryStream());
+            else
+                geomSource = std::make_unique<NativeGeometrySource3d>(db, categoryId, std::move(placement3d), GeometryStream());
+            if (!GeometryBuilder::UpdateFromJson(*geomSource, geomProps)){
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid geometry stream properties", IModelJsNativeErrorKey::BadArg);
+            }
+        }
+    } else {
+        if (jsIs2d)
+            geomSource = std::make_unique<NativeGeometrySource2d>(db, categoryId, std::move(placement2d), GeometryStream());
+        else
+            geomSource = std::make_unique<NativeGeometrySource3d>(db, categoryId, std::move(placement3d), GeometryStream());
+    }
+
+    if (args.HasOwnProperty("builder")) {
+        auto geomBuilder = args.Get("builder").As<Napi::Object>();
+        if (!geomBuilder.IsObject()) {
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid geometry builder", IModelJsNativeErrorKey::BadArg);
+        }
+
+        if (geomBuilder.Has("is2dPart")) {
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "BuildGeometryStream failed - invalid builder parameter", IModelJsNativeErrorKey::BadArg);
+        }
+
+        auto viewIndependentVal = geomBuilder.Get("viewIndependent");
+        auto entryArrayObj = geomBuilder.Get("entryArray").As<Napi::Array>();
+        BeAssert(viewIndependentVal.IsUndefined() || viewIndependentVal.IsBoolean());
+        BeAssert(entryArrayObj.IsArray());
+
+        GeometryBuilderParams bparams;
+        bparams.viewIndependent = viewIndependentVal.IsBoolean() && viewIndependentVal.As<Napi::Boolean>().Value();
+        auto status = GeometryStreamIO::BuildFromGeometrySource(*geomSource, bparams, entryArrayObj.As<Napi::Array>());
+        if (DgnDbStatus::Success != status) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "BuildGeometryStream failed", status);
+        }
+    }
+
+
+    auto outResult = Napi::Object::New(info.Env());
+
+    outResult["is2d"] = jsIs2d;
+    if (jsIs2d) {
+        auto source = geomSource->GetAsGeometrySource2d();
+        if (source->GetPlacement().IsValid()) {
+            auto placement = Napi::Object::New(info.Env());
+            source->GetPlacement().ToJson(BeJsValue(placement));
+            outResult["placement"] = placement;
+        }
+
+        if (source->GetCategoryId().IsValid()) {
+            outResult["categoryId"] = Napi::String::New(info.Env(),  source->GetCategoryId().ToHexStr().c_str());
+        }
+
+        if (isBinaryStream) {
+            auto geom = BeJsValue(outResult["geom"]);
+            geom["geom"].SetBinary(source->GetGeometryStream().data(), source->GetGeometryStream().size());
+        } else {
+            GeometryCollection collection(geomSource->GetGeometryStream(), db);
+            auto outGeom = Napi::Array::New(info.Env());
+            collection.ToJson(outGeom);
+            outResult["geom"] = outGeom;
+        }
+
+    } else {
+        auto source = geomSource->GetAsGeometrySource3d();
+        if (source->GetPlacement().IsValid()) {
+            auto placement = Napi::Object::New(info.Env());
+            source->GetPlacement().ToJson(BeJsValue(placement));
+            outResult["placement"] = placement;
+        }
+
+        if (source->GetCategoryId().IsValid()) {
+            outResult["categoryId"] = Napi::String::New(info.Env(),  source->GetCategoryId().ToHexStr().c_str());
+        }
+
+        if (isBinaryStream) {
+            auto geom = BeJsValue(outResult["geom"]);
+            geom["geom"].SetBinary(source->GetGeometryStream().data(), source->GetGeometryStream().size());
+        } else {
+            GeometryCollection collection(geomSource->GetGeometryStream(), db);
+            auto outGeom = Napi::Array::New(info.Env());
+            collection.ToJson(outGeom, opts);
+            outResult["geom"] = outGeom;
+        }
+    }
+
+    return outResult;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info) {
+  const auto kBinaryStream = "BinaryStream";
+    const auto kIs2d = "is2d";
+    const auto kBBox = "bbox";
+    const auto undefined = info.Env().Undefined();
+
+    REQUIRE_ARGUMENT_ANY_OBJ(0, args);
+    REQUIRE_ARGUMENT_STRING(1, fmt);
+    REQUIRE_ARGUMENT_ANY_OBJ(2, opts);
+
+    DgnCategoryId categoryId;
+    ElementAlignedBox3d bbox3d;
+
+    const auto isBinaryStream = fmt == kBinaryStream;
+    const auto jsIs2d = args.HasOwnProperty(kIs2d)?  args.Get(kIs2d).As<Napi::Boolean>().Value() : false;
+    const auto jsBBox = args.HasOwnProperty(kBBox) ? args.Get(kBBox) : undefined;
+    const auto hasBBox = jsBBox.IsObject();
+    if (hasBBox) {
+        bbox3d.FromJson(jsBBox);
+        if (!bbox3d.IsValid()) {
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid placement", IModelJsNativeErrorKey::BadArg);
+        }
+    }
+
+    std::unique_ptr<GeometryPartSource> geomSource;
+    if (args.Has("geom")) {
+        auto geom = args.Get("geom");
+        if (geom.IsTypedArray()) {
+            auto geomBin = geom.As<Napi::TypedArrayOf<uint8_t>>();
+            if (geomBin.TypedArrayType() != napi_uint8_array) {
+                THROW_JS_TYPE_EXCEPTION("Invalid geometry stream properties. Expecting uint8array");
+            }
+            uint8_t* data = geomBin.Data();
+            size_t size = geomBin.ElementLength();
+            auto geomStream = GeometryStream();
+            geomStream.Append(data, static_cast<uint32_t>(size));
+            geomSource = std::make_unique<NativeGeometryPart>(db, std::move(geomStream), std::move(bbox3d));
+        } else {
+            auto geomProps = geom.As<Napi::Object>();
+            if (!geomProps.IsObject()) {
+                THROW_JS_TYPE_EXCEPTION("Invalid geometry stream properties. Expecting object");
+            }
+
+            geomSource = std::make_unique<NativeGeometryPart>(db, GeometryStream(), std::move(bbox3d));
+            if (!GeometryBuilder::UpdateFromJson(*geomSource, geomProps, !jsIs2d)){
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid geometry stream properties", IModelJsNativeErrorKey::BadArg);
+            }
+        }
+    } else {
+        geomSource = std::make_unique<NativeGeometryPart>(db, GeometryStream(), std::move(bbox3d));
+    }
+
+    if (args.HasOwnProperty("builder")) {
+        auto geomBuilder = args.Get("builder").As<Napi::Object>();
+        if (!geomBuilder.IsObject()) {
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid geometry builder", IModelJsNativeErrorKey::BadArg);
+        }
+
+        if (geomBuilder.Has("is2dPart")) {
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "BuildGeometryStream failed - invalid builder parameter", IModelJsNativeErrorKey::BadArg);
+        }
+
+        auto viewIndependentVal = geomBuilder.Get("viewIndependent");
+        auto entryArrayObj = geomBuilder.Get("entryArray").As<Napi::Array>();
+        BeAssert(viewIndependentVal.IsUndefined() || viewIndependentVal.IsBoolean());
+        BeAssert(entryArrayObj.IsArray());
+
+        GeometryBuilderParams bparams;
+        bparams.viewIndependent = viewIndependentVal.IsBoolean() && viewIndependentVal.As<Napi::Boolean>().Value();
+        auto status = GeometryStreamIO::BuildFromGeometryPart(*geomSource, bparams, entryArrayObj.As<Napi::Array>());
+        if (DgnDbStatus::Success != status) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "BuildGeometryStream failed", status);
+        }
+    }
+
+
+    auto outResult = Napi::Object::New(info.Env());
+    outResult["is2d"] = jsIs2d;
+    if (geomSource->GetBoundingBox().IsValid()) {
+        auto placement = Napi::Object::New(info.Env());
+        geomSource->GetBoundingBox().ToJson(BeJsValue(placement));
+        outResult["bbox"] = placement;
+    }
+
+    if (isBinaryStream) {
+        auto geom = BeJsValue(outResult["geom"]);
+        geom["geom"].SetBinary(geomSource->GetGeometryStream().data(), geomSource->GetGeometryStream().size());
+    } else {
+        GeometryCollection collection(geomSource->GetGeometryStream(), db);
+        auto outGeom = Napi::Array::New(info.Env());
+        collection.ToJson(outGeom, opts);
+        outResult["geom"] = outGeom;
+    }
+
+    return outResult;
+}

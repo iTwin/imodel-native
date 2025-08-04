@@ -365,3 +365,24 @@ TEST(CurveVector, SingleStepMinimumRadiusCurve)
         }
     Check::ClearGeometry("CurveVector.SingleStepMinimumRadiusCurve");
     }
+
+TEST(CurveCurve, ClosestApproach)
+    {
+    // test case from ADO#1229059 in feet
+    Angle startAngle = Angle::FromDegrees(-310.02784398485130);
+    Angle endAngle = Angle::FromDegrees(-322.67387688089713);
+    double sweepRadians = endAngle.Radians() - startAngle.Radians();
+    DEllipse3d arc = DEllipse3d::From(560253.93107453862, 1466886.4461504454, 0.0, 2032.3995666666142, 0.0, 0.0, 0.0, 2032.3995666666142, 0.0, startAngle.Radians(), sweepRadians);
+    DSegment3d seg = DSegment3d::From(561560.71924648178, 1468440.2282257553, 0.0, 561665.13621346571, 1468347.0685072201, 0.0);
+    double feetToMeters = 0.3048;
+    Transform scaleTransform = Transform::FromFixedPointAndScaleFactors(DPoint3d::FromZero(), feetToMeters, feetToMeters, feetToMeters);
+    scaleTransform.Multiply(arc);
+    scaleTransform.Multiply(seg);
+    // previously the arc got stroked into a 3-pt linestring that intersects the seg at a seed that sends Newton into a local minimum interior to the segment
+    CurveVectorPtr arcCV = CurveVector::Create(ICurvePrimitive::CreateArc(arc));
+    CurveVectorPtr segCV = CurveVector::Create(ICurvePrimitive::CreateLine(seg));
+    CurveLocationDetail arcDetail, segDetail;
+    if (Check::True(CurveCurve::ClosestApproach(arcDetail, segDetail, *arcCV, *segCV)))
+        Check::ExactDouble(segDetail.fraction, 1.0, "closest approach is at segment endpoint");
+    Check::ClearGeometry("CurveCurve.ClosestApproach");
+    }

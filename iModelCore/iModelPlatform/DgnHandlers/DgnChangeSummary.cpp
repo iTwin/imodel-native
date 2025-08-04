@@ -492,7 +492,7 @@ StatusInt    DgnChangeSummary::GetChangedElements(DgnDbR currentDb, DgnDbPtr tar
         for (auto changeset : changesetList)
             {
             BeFileNameCR changesetChangesFile = changeset->GetFileName();
-            ChangesetFileReader changeStream(changesetChangesFile, currentDb);
+            ChangesetFileReader changeStream(changesetChangesFile, &currentDb);
             changeStream.AddToChangeGroup(group);
             }
 

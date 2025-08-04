@@ -1827,7 +1827,7 @@ TEST_F(DiskNodesCacheTests, ClearSharedCacheIfRulesetWasModified)
     {
     // create ruleset
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("TestRuleset");
-    ruleset->AddPresentationRule(*new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false));
+    ruleset->AddPresentationRule(*new RootNodeRule("", 1, false, false));
     m_cache->OnRulesetUsed(*ruleset);
 
     // cache root data source
@@ -1840,7 +1840,7 @@ TEST_F(DiskNodesCacheTests, ClearSharedCacheIfRulesetWasModified)
     EXPECT_TRUE(IsHierarchyLevelCached(*m_cache, nodes[1]->GetNodeId()));
 
     // mock new session: app is turned on with modified ruleset and OnRulesetCreated is called
-    ruleset->AddPresentationRule(*new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree));
+    ruleset->AddPresentationRule(*new ChildNodeRule("", 1, false));
     m_cache->OnRulesetUsed(*ruleset);
 
     // verify cache is cleared

@@ -29,7 +29,7 @@ struct UpdateStatementExp final : Exp
         Utf8String _ToString() const override { return "Update"; }
 
     public:
-        UpdateStatementExp(std::unique_ptr<ClassRefExp>, std::unique_ptr<AssignmentListExp>, std::unique_ptr<WhereExp>, std::unique_ptr<OptionsExp>);
+        UpdateStatementExp(std::unique_ptr<ClassNameExp>, std::unique_ptr<AssignmentListExp>, std::unique_ptr<WhereExp>, std::unique_ptr<OptionsExp>);
 
         ClassNameExp const* GetClassNameExp() const { return GetChild<ClassNameExp>(m_classNameExpIndex); }
         AssignmentListExp const* GetAssignmentListExp() const { return GetChild<AssignmentListExp>(m_assignmentListExpIndex); }

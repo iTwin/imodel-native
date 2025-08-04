@@ -4,26 +4,10 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ExtendedDataRule::_GetXmlElementName() const { return ""; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ExtendedDataRule::_ReadXml(BeXmlNodeP) { return false; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ExtendedDataRule::_WriteXml(BeXmlNodeP) const {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

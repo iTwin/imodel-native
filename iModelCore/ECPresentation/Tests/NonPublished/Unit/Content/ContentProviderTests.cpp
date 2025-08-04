@@ -40,7 +40,7 @@ void ContentProviderTests::SetUp()
     m_customFunctions = new CustomFunctionsInjector(m_connections, *m_connection);
     m_ruleset = PresentationRuleSet::CreateInstance("ContentProviderTests");
 
-    m_nodesLocater = std::shared_ptr<TestNodeLocater>();
+    m_nodesLocater = std::make_shared<TestNodeLocater>();
     m_context = ContentProviderContext::Create(*m_ruleset, ContentDisplayType::Undefined, 0,
         *NavNodeKeyListContainer::Create(), m_nodesLocater, m_categorySupplier,
         std::make_unique<RulesetVariables>(), m_expressionsCache, m_relatedPathsCache, m_nodesFactory, nullptr, nullptr);
@@ -351,7 +351,7 @@ TEST_F (ContentProviderTests, CreatesLabelWhenSpecified)
 
     ContentSetItemPtr item;
     ASSERT_TRUE(provider->GetContentSetItem(item, 0));
-    RulesEngineTestHelpers::ValidateContentSetItem(*instance, *item, *descriptor, "Test MyID");
+    RulesEngineTestHelpers::ValidateContentSetItem(*instance, *item, *descriptor, [](const auto&) { return "Test MyID"; });
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -7,6 +7,7 @@
 #include <ECPresentation/Rules/SpecificationVisitor.h>
 #include "ContentQueryBuilder.h"
 #include "PropertyInfoStore.h"
+#include "../Shared/ValueHelpers.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -125,6 +126,20 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
+    std::shared_ptr<ContentDescriptor::Category> ShareOrCreateCategory(ContentDescriptor::Category const& category, std::shared_ptr<ContentDescriptor::Category> parentCategory)
+        {
+        if (auto shared = GetSharedCategory(category.GetName().c_str(), parentCategory.get()))
+            return shared;
+
+        auto newCategory = std::make_shared<ContentDescriptor::Category>(category);
+        newCategory->SetParentCategory(parentCategory);
+        m_context.GetAllCategories().Insert(std::make_pair(newCategory->GetName(), newCategory->GetParentCategory()), newCategory);
+        return newCategory;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
     std::shared_ptr<ContentDescriptor::Category> PrepareCategoryForReturn(CategoryOverrideInfo const& overrideInfo)
         {
         std::shared_ptr<ContentDescriptor::Category> parentCategory = nullptr;
@@ -137,6 +152,7 @@ private:
                 parentCategory = GetRootCategory();
                 continue;
                 }
+
             if (categoryRef->IsDefaultParentCategoryRef())
                 {
                 DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Content, !parentCategory, Utf8PrintfString("Detected default parent category reference in categories "
@@ -145,17 +161,27 @@ private:
                 continue;
                 }
 
-            auto const& category = categoryRef->AsConcreteCategoryRef()->GetCategory();
-            if (auto shared = GetSharedCategory(category.GetName().c_str(), parentCategory.get()))
+            if (auto schemaCategoryRef = categoryRef->AsSchemaCategoryRef())
                 {
-                parentCategory = shared;
+                auto propertyCategory = m_context.GetDescriptorBuilderContext().GetSchemaHelper().GetECPropertyCategory(schemaCategoryRef->GetCategoryName().c_str());
+                if (!propertyCategory)
+                    {
+                    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Schema-based property category \"%s\" is referenced in presentation rules, but is not found in schema.", schemaCategoryRef->GetCategoryName().c_str()));
+                    continue;
+                    }
+                auto category = m_context.GetPropertyCategories().CreatePropertyCategory(*propertyCategory);
+                parentCategory = ShareOrCreateCategory(*category, parentCategory ? parentCategory : GetParentCategory(true));
                 continue;
                 }
 
-            auto newCategory = std::make_shared<ContentDescriptor::Category>(category);
-            newCategory->SetParentCategory(parentCategory);
-            m_context.GetAllCategories().Insert(std::make_pair(newCategory->GetName(), newCategory->GetParentCategory()), newCategory);
-            parentCategory = newCategory;
+            if (auto concreteCategoryRef = categoryRef->AsConcreteCategoryRef())
+                {
+                auto const& category = concreteCategoryRef->GetCategory();
+                parentCategory = ShareOrCreateCategory(category, parentCategory);
+                continue;
+                }
+
+            DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Content, false, "Unhandled category ref");
             }
         return parentCategory;
         }
@@ -345,13 +371,38 @@ protected:
     ContentDescriptor::CalculatedPropertyField* CreateCalculatedPropertyField(ECClassCP ecClass, Utf8StringCR name, CalculatedPropertiesSpecificationCR spec,
         RelatedClassPathCR pathFromSelectToPropertyClass, RelationshipMeaning relationshipMeaning)
         {
+        PrimitiveType primitiveType;
+        if (!spec.GetType().empty())
+            {
+            if (BentleyStatus::SUCCESS != ValueHelpers::ParsePrimitiveType(primitiveType, spec.GetType()))
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Provided type is not valid primitive type for calculated fields.");
+            }
+        else
+            primitiveType = PRIMITIVETYPE_String;
+
         ContentDescriptor::CalculatedPropertyField* field = new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(ecClass, spec, pathFromSelectToPropertyClass, relationshipMeaning),
-            spec.GetLabel(), name, spec.GetValue(), ecClass, spec.GetPriority());
+            spec.GetLabel(), name, spec.GetValue(), primitiveType, ecClass, spec.GetPriority());
 
         if (nullptr != spec.GetRenderer())
             field->SetRenderer(ContentFieldRenderer::FromSpec(*spec.GetRenderer()));
         if (nullptr != spec.GetEditor())
             field->SetEditor(ContentFieldEditor::FromSpec(*spec.GetEditor()));
+
+        if (spec.GetExtendedDataMap().size() == 0)
+            return field;
+
+        ECExpressionContextsProvider::ContextParametersBase params(m_context.GetConnection(), m_context.GetRulesetVariables(), m_context.GetUsedVariablesListener());
+        ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetRulesEngineRootContext(params);
+
+        ECExpressionsCache noCache;
+        for (auto const& entry : spec.GetExtendedDataMap())
+            {
+            Utf8StringCR key = entry.first;
+            Utf8StringCR expression = entry.second;
+            ECValue value;
+            if (ECExpressionEvaluationStatus::Success == ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext))
+                field->AddExtendedData(key.c_str(), value);
+            }
         return field;
         }
 
@@ -783,13 +834,11 @@ private:
         if (fieldPath.back().IsForwardRelationship() != path.back().IsForwardRelationship())
             return false;
 
-        if (fieldPath.back().IsForwardRelationship()
-            && &fieldPath.back().GetTargetClass().GetClass() == &path.back().GetTargetClass().GetClass()
+        if (&fieldPath.back().GetTargetClass().GetClass() == &path.back().GetTargetClass().GetClass()
             && fieldPath.back().GetTargetClass().IsSelectPolymorphic() == path.back().GetTargetClass().IsSelectPolymorphic())
+            {
             return true;
-
-        if (!fieldPath.back().IsForwardRelationship() && fieldPath.back().GetSourceClass() == path.back().GetSourceClass())
-            return true;
+            }
 
         return false;
         }

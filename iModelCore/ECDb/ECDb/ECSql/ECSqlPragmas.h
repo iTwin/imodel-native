@@ -26,6 +26,17 @@ struct PragmaExplainQuery : PragmaManager::GlobalHandler {
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct PragmaDbList : PragmaManager::GlobalHandler {
+    PragmaDbList():GlobalHandler("db_list","List all attach dbs"){}
+    ~PragmaDbList(){}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&,  PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaDbList>(); }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct DisqualifyTypeIndex : PragmaManager::ClassHandler {
     std::set<ECClassId> m_disqualifiedClassSet;
     DisqualifyTypeIndex():ClassHandler("disqualify_type_index","set/get disqualify_type_index flag for a given ECClass"){}
@@ -95,6 +106,7 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
     DbResult CheckLinkTableFkClassIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
     DbResult CheckLinkTableFkIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
     DbResult CheckClassIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
+    DbResult CheckMissingChildRows(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaIntegrityCheck>(); }
 
@@ -109,6 +121,17 @@ struct PragmaPurgeOrphanRelationships : PragmaManager::GlobalHandler {
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaPurgeOrphanRelationships>(); }
+};
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct PragmaCheckECSqlWriteValues : PragmaManager::GlobalHandler {
+    PragmaCheckECSqlWriteValues():GlobalHandler("validate_ecsql_writes", "validate values in ECSql insert statements."){}
+    ~PragmaCheckECSqlWriteValues(){}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
+    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaCheckECSqlWriteValues>(); }
 };
 
 //=======================================================================================

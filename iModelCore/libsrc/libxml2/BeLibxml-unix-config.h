@@ -61,7 +61,7 @@
 #undef HAVE_ERRNO_H
 
 /* Define to 1 if you have the <fcntl.h> header file. */
-#undef HAVE_FCNTL_H
+#define HAVE_FCNTL_H
 
 /* Define to 1 if you have the `finite' function. */
 #undef HAVE_FINITE
@@ -337,3 +337,8 @@
 
 /* Include multi-threading support like win32 already does. This triggers more in xmlversion.h. */
 #define __MT__
+
+/* Include XML_SYSCONFDIR for unix. As of 2.14.4 this Macro is no longer defined in libxml.h */
+#ifndef XML_SYSCONFDIR
+  #define XML_SYSCONFDIR "/etc"
+#endif

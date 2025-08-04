@@ -98,7 +98,7 @@ int AnalyticRoots::SolveLinear(double c[2], double s[1])
     }
 
 
-int AnalyticRoots::SolveQuadric(double c[3], double s[2])
+int AnalyticRoots::SolveQuadratic(double c[3], double s[2])
 {
     double p, q, D;
 
@@ -161,7 +161,7 @@ int AnalyticRoots::SolveCubic(double c[4], double s[3], double &farSolution)
 #ifdef DIVIDE_ONCE
     double coffScale;
     if (!AnalyticRoots::SafeDivide (coffScale, 1.0, c[3], 0.0))
-        return AnalyticRoots::SolveQuadric (c, s);
+        return AnalyticRoots::SolveQuadratic (c, s);
     A = c[2] * coffScale;
     B = c[1] * coffScale;
     C = c[0] * coffScale;
@@ -169,7 +169,7 @@ int AnalyticRoots::SolveCubic(double c[4], double s[3], double &farSolution)
     if (   !AnalyticRoots::SafeDivide (A, c[2], c[3], 0.0)
         || !AnalyticRoots::SafeDivide (B, c[1], c[3], 0.0)
         || !AnalyticRoots::SafeDivide (C, c[0], c[3], 0.0))
-        return AnalyticRoots::SolveQuadric (c, s);
+        return AnalyticRoots::SolveQuadratic (c, s);
 #endif
 
     /*  substitute x = y - A/3 to eliminate quadric term:
@@ -331,13 +331,13 @@ int AnalyticRoots::SolveQuartic(double c[5], double s[4])
             coeffs[ 1 ] = q < 0 ? -v : v;
             coeffs[ 2 ] = 1;
 
-            num = SolveQuadric(coeffs, s);
+            num = SolveQuadratic(coeffs, s);
 
             coeffs[ 0 ]= z + u;
             coeffs[ 1 ] = q < 0 ? v : -v;
             coeffs[ 2 ] = 1;
 
-            num += SolveQuadric(coeffs, s + num);
+            num += SolveQuadratic(coeffs, s + num);
     }
 
     /* resubstitute */

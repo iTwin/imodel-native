@@ -123,7 +123,6 @@ struct NavNodesProviderContext : RulesDrivenProviderContext
 private:
     // common
     NavNodesProviderContextCP m_ancestorContext;
-    RuleTargetTree m_targetTree;
     std::shared_ptr<INavNodesCache> m_nodesCache;
     INodesProviderFactoryCR m_providerFactory;
     NavNodeCPtr m_physicalParentNode;
@@ -159,16 +158,16 @@ private:
 
 private:
     void Init();
-    ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, RuleTargetTree, NavNodeCP, std::unique_ptr<RulesetVariables>, ECExpressionsCache&,
+    ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, NavNodeCP, std::unique_ptr<RulesetVariables>, ECExpressionsCache&,
         RelatedPathsCache&, NavNodesFactory const&, std::shared_ptr<INavNodesCache>, INodesProviderFactoryCR, IJsonLocalState const*);
     ECPRESENTATION_EXPORT NavNodesProviderContext(NavNodesProviderContextCR other);
 
 public:
-    static NavNodesProviderContextPtr Create(PresentationRuleSetCR ruleset, RuleTargetTree targetTree, NavNodeCP physicalParent,
+    static NavNodesProviderContextPtr Create(PresentationRuleSetCR ruleset, NavNodeCP physicalParent,
         std::unique_ptr<RulesetVariables> rulesetVariables, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache,
         NavNodesFactory const& nodesFactory, std::shared_ptr<INavNodesCache> nodesCache, INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState)
         {
-        return new NavNodesProviderContext(ruleset, targetTree, physicalParent, std::move(rulesetVariables), ecexpressionsCache,
+        return new NavNodesProviderContext(ruleset, physicalParent, std::move(rulesetVariables), ecexpressionsCache,
             relatedPathsCache, nodesFactory, nodesCache, providerFactory, localState);
         }
     static NavNodesProviderContextPtr Create(NavNodesProviderContextCR other) {return new NavNodesProviderContext(other);}
@@ -177,7 +176,6 @@ public:
     // common
     void SetAncestorContext(NavNodesProviderContextCP context) {m_ancestorContext = context;}
     NavNodesProviderContextCP GetAncestorContext() const {return m_ancestorContext;}
-    RuleTargetTree GetTargetTree() const {return m_targetTree;}
     ECPRESENTATION_EXPORT INavNodesCacheR GetNodesCache() const;
     NavNodeCPtr GetPhysicalParentNode() const {return m_physicalParentNode;}
     void SetPhysicalParentNode(NavNodeCP node) {m_physicalParentNode = node;}

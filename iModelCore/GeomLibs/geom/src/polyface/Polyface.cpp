@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
+#include <numeric>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
@@ -650,10 +651,10 @@ bool PolyfaceHeader::CompactIndexArrays ()
         BlockedVectorIntR paramIndex  = ParamIndex ();
         BlockedVectorIntR colorIndex  = ColorIndex ();
         BlockedVectorIntR faceIndex   = FaceIndex ();
-        bool normalActive = normalIndex.Active ();
-        bool paramActive = paramIndex.Active ();
-        bool colorActive = colorIndex.Active ();
-        bool faceIndexActive = faceIndex.Active ();
+        bool normalActive = normalIndex.Active () && !normalIndex.empty(); // a mesh array may be active but empty!
+        bool paramActive = paramIndex.Active () && !paramIndex.empty();
+        bool colorActive = colorIndex.Active () && !colorIndex.empty();
+        bool faceIndexActive = faceIndex.Active () && !faceIndex.empty();
         size_t numOut = 0;
         for (visitor->Reset (); visitor->AdvanceToNextFace (); )
             {
@@ -686,6 +687,44 @@ bool PolyfaceHeader::CompactIndexArrays ()
     return changed;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+size_t PolyfaceHeader::CompactArrays(bool compactIndices)
+    {
+    auto GetCapacity = [&]() -> size_t
+        {
+        return m_point.capacity() * sizeof(decltype(m_point)::value_type)
+             + m_param.capacity() * sizeof(decltype(m_param)::value_type)
+             + m_normal.capacity() * sizeof(decltype(m_normal)::value_type)
+             + m_intColor.capacity() * sizeof(decltype(m_intColor)::value_type)
+             + m_faceData.capacity() * sizeof(decltype(m_faceData)::value_type)
+             + m_edgeChain.capacity() * sizeof(decltype(m_edgeChain)::value_type)
+             + m_pointIndex.capacity() * sizeof(decltype(m_pointIndex)::value_type)
+             + m_paramIndex.capacity() * sizeof(decltype(m_paramIndex)::value_type)
+             + m_normalIndex.capacity() * sizeof(decltype(m_normalIndex)::value_type)
+             + m_colorIndex.capacity() * sizeof(decltype(m_colorIndex)::value_type)
+             + m_faceIndex.capacity() * sizeof(decltype(m_faceIndex)::value_type);
+        };
+    size_t cap0 = GetCapacity();
+    if (compactIndices)
+        CompactIndexArrays();
+    // squeeze out excess capacity using Meyers' swap trick.
+    decltype(m_point)(m_point).swap(m_point);
+    decltype(m_param)(m_param).swap(m_param);
+    decltype(m_normal)(m_normal).swap(m_normal);
+    decltype(m_intColor)(m_intColor).swap(m_intColor);
+    decltype(m_faceData)(m_faceData).swap(m_faceData);
+    decltype(m_edgeChain)(m_edgeChain).swap(m_edgeChain);
+    decltype(m_pointIndex)(m_pointIndex).swap(m_pointIndex);
+    decltype(m_paramIndex)(m_paramIndex).swap(m_paramIndex);
+    decltype(m_normalIndex)(m_normalIndex).swap(m_normalIndex);
+    decltype(m_colorIndex)(m_colorIndex).swap(m_colorIndex);
+    decltype(m_faceIndex)(m_faceIndex).swap(m_faceIndex);
+    size_t cap1 = GetCapacity();
+    BeAssert(cap0 >= cap1 && "CompactArrays doesn't increase mesh size");
+    return cap0 - cap1; // savings
+    }
 
 //! Apply a transform to all coordinates of an array of meshes. Optionally reverse index order (to maintain cross product relationships)
 void PolyfaceHeader::Transform
@@ -1198,30 +1237,58 @@ bool PolyfaceHeader::AddPolygon (DPoint3dCP xyz, size_t n, DVec3dCP normal, DPoi
 
     return true;
     }
-//! Add a polygon with linear mapping to parameter space
-//! If compressNormal is true, the normal is compared to the most recent normal
-//!     and that index is reused when identical.
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 bool PolyfaceHeader::AddPolygon
 (
-bvector<DPoint3d> const &xyz,
+bvector<DPoint3d> const& xyz,
+bvector<int> const& signedOneBasedIndices,
 TransformCR worldToParameterSpace,
 DVec3dCR normal,
 bool compressNormal,
-bool reverseXYZ
+bool reverse
 )
     {
-    size_t n = xyz.size();
-    // Strip off trailing duplicates
-    while (n > 1 && xyz[n - 1].IsEqual(xyz[0]))
-        n--;
-    size_t basePointIndex = m_point.size();
-    size_t numIndex = 0, numPad = 0;
-    if (!GetIndexCounts(n, GetMeshStyle(), GetNumPerFace(), numIndex, numPad))
+    size_t n = signedOneBasedIndices.size();
+    while (n > 1 && signedOneBasedIndices[n - 1] == 0)
+        --n; // strip off trailing pad/terminator
+    while (n > 1 && abs(signedOneBasedIndices[n - 1]) == abs(signedOneBasedIndices[0]))
+        --n; // strip off trailing duplicate
+    if (n < 3)
         return false;
-    size_t pointIndex0 = m_point.size ();
-    m_pointIndex.AddSteppedBlock((int)basePointIndex + 1, 1, n, 0, numPad);
-    // produce reversal by flipping the points (indices go forward into the reversed points)
-    VectorOps<DPoint3d>::AppendPrefix (m_point, xyz, n, reverseXYZ);
+
+    size_t _ = 0, numPad = 0;
+    if (!GetIndexCounts(n, GetMeshStyle(), GetNumPerFace(), _, numPad))
+        return false;
+
+    int nInt = (int) n;
+    auto addIndexedVertex = [&](int iIndex) -> void {
+        int iMeshVertex0 = (int) m_point.size();
+        int iPolygonVertex0 = abs(signedOneBasedIndices[iIndex]) - 1;
+        int iSign = reverse ? (nInt - 1 + iIndex) % nInt : iIndex;
+        bool hideEdge = signedOneBasedIndices[iSign] < 0;
+        m_pointIndex.push_back(hideEdge ? -(1 + iMeshVertex0) : 1 + iMeshVertex0);
+        m_point.push_back(xyz[iPolygonVertex0]); // pushed at index iMeshVertex0
+    };
+
+    size_t basePointIndex = m_point.size();
+    if (m_pointIndex.Active())
+        {
+        if (reverse)
+            {
+            for (int i = nInt - 1; i >= 0; --i)
+                addIndexedVertex(i);
+            }
+        else
+            {
+            for (int i = 0; i < nInt; ++i)
+                addIndexedVertex(i);
+            }
+        for (size_t i = 0; i < numPad; i++)
+            m_pointIndex.push_back(0);
+        }
 
     if (m_normal.Active())
         {
@@ -1247,15 +1314,39 @@ bool reverseXYZ
         {
         size_t baseParamIndex = m_param.size();
         m_paramIndex.AddSequentialBlock((int)baseParamIndex + 1, n, 0, numPad);
-        // access points from m_point (rather than xyz) to get the reverse effects buried in AppendPrefix.
+        // access points from m_point (rather than xyz) to as they may have been reversed.
         for (size_t i = 0; i < n; i++)
             {
-            DPoint3d uvw = worldToParameterSpace * m_point[pointIndex0 + i];
+            DPoint3d uvw = worldToParameterSpace * m_point[basePointIndex + i];
             m_param.push_back(DPoint2d::From (uvw.x, uvw.y));
             }
         }
     return true;
     }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+bool PolyfaceHeader::AddPolygon
+(
+bvector<DPoint3d> const &xyz,
+TransformCR worldToParameterSpace,
+DVec3dCR normal,
+bool compressNormal,
+bool reverseXYZ
+)
+    {
+    size_t n = xyz.size();
+    // Strip off trailing duplicates
+    while (n > 1 && xyz[n - 1].IsEqual(xyz[0]))
+        n--;
+
+    bvector<int> oneBasedIndices(n);
+    std::iota(oneBasedIndices.begin(), oneBasedIndices.end(), 1);
+
+    return AddPolygon(xyz, oneBasedIndices, worldToParameterSpace, normal, compressNormal, reverseXYZ);
+    }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -1349,6 +1440,7 @@ bvector<T> &newData
     for (size_t i = 0; i < numData; i++)
         oldDataToNewData.push_back (SIZE_MAX);
     size_t errors = 0;
+    UNUSED_VARIABLE(errors);
     for (int &index1 : indices)  // ONE BASED
         {
         if (index1 != 0)
@@ -1543,7 +1635,7 @@ PolyfaceAuxDataPtr&                 PolyfaceHeader::AuxData()           { return
 void PolyfaceHeader::ClearTags (uint32_t numPerFace, uint32_t meshStyle)
     {
     SetNumPerFace (numPerFace);
-    SetTwoSided (true); // This was a mistake, but we are stuck with it.
+    SetTwoSided (true); // default value is true!
     SetMeshStyle (meshStyle);
     bool activePointIndex = meshStyle == MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
     uint32_t b = numPerFace > 1 ? numPerFace : 1;
