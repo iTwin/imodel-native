@@ -393,12 +393,12 @@ GEOMDLLIMPEXP bool ComputeSecondMomentDifferentialWireRotationProducts
 //! @param [out] products integrated [xx xy xz x; xy yy yz y; xz yz zz z; x y z 1] dA
 GEOMDLLIMPEXP bool ComputeSecondMomentWireProducts (DMatrix4dR products) const;
 
-//! Return the centroid and area of the curve vector as viewed in the xy plane.
-//! return false if the CurveVector is not one of the area types (union region, parity region, or closed loop)
+//! Return the centroid and signed area of the curve vector as viewed in the xy plane.
 //! @remark Union region moments are the simple sum of constituents (i.e overlap is not determined)
 //! @remark Parity region moments are signed sum per area, assuming largest is outer and all others are inner (subtractive)
-//! @param [out] centroid curve centroid
-//! @param [out] area     area of region.
+//! @param [out] centroid centroid of the xy-region. The z-coordinate is not relevant.
+//! @param [out] area     signed area of the xy-region. This is negative if and only if the projection of the input region to the xy-plane is clockwise.
+//! @return false if and only if the CurveVector is not one of the area types (union region, parity region, closed loop) or the computed area is zero.
 GEOMDLLIMPEXP bool  CentroidAreaXY (DPoint3dR centroid, double &area) const;
 
 //! Return the range of ray parameters when contents of the CurveVector are projected to a ray.

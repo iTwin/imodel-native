@@ -21,7 +21,7 @@ struct PresentationRulesHashingTests : ECPresentationTest
 TEST_F(PresentationRulesHashingTests, AddingNewSpecificationToRuleDoesntChangeOldSpecificationHash)
     {
     // create rule
-    ChildNodeRule rule("TestCondition", 100, true, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule rule("TestCondition", 100, true);
 
     // add specification
     InstanceNodesOfSpecificClassesSpecificationP spec = new InstanceNodesOfSpecificClassesSpecification(1, true, true, true, true, true, true, "", "TestSchema:TestClass", true);
@@ -56,9 +56,9 @@ TEST_F(PresentationRulesHashingTests, RulesetsWithSameRulesAndSpecificationsHasS
     PresentationRuleSetPtr ruleset2 = PresentationRuleSet::CreateInstance("TestRuleset");
 
     // create rules
-    ChildNodeRuleP rule1 = new ChildNodeRule("TestCondition", 100, true, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP rule1 = new ChildNodeRule("TestCondition", 100, true);
     ruleset1->AddPresentationRule(*rule1);
-    ChildNodeRuleP rule2 = new ChildNodeRule("TestCondition", 100, true, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP rule2 = new ChildNodeRule("TestCondition", 100, true);
     ruleset2->AddPresentationRule(*rule2);
 
     // add specifications
@@ -78,7 +78,7 @@ TEST_F(PresentationRulesHashingTests, RulesetHasDifferentHashAfterSpecificationI
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("TestRuleset");
 
     // create rule
-    ChildNodeRuleP rule = new ChildNodeRule("TestCondition", 100, true, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP rule = new ChildNodeRule("TestCondition", 100, true);
     ruleset->AddPresentationRule(*rule);
 
     Utf8String rulesetHash = ruleset->GetHash();
@@ -99,7 +99,7 @@ TEST_F(PresentationRulesHashingTests, RulesetHasDifferentHashAfterRuleIsAdded)
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("TestRuleset");
 
     // create rule
-    ChildNodeRuleP rule = new ChildNodeRule("TestCondition", 100, true, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP rule = new ChildNodeRule("TestCondition", 100, true);
     ruleset->AddPresentationRule(*rule);
 
     Utf8String rulesetHash = ruleset->GetHash();

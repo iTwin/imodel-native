@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 #include <ECPresentation/Rules/SpecificationVisitor.h>
@@ -79,26 +78,6 @@ static PropertySpecificationsList CreatePropertySpecsFromPropertyNames(Utf8Strin
             list.push_back(spec);
         }
     return list;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String GetPropertyNamesStr(PropertySpecificationsList const& properties)
-    {
-    if (NoPropertiesIncluded(properties))
-        return INCLUDE_NO_PROPERTIES_SPEC;
-    else if (AllPropertiesWithNoOverridesIncluded(properties))
-        return "";
-
-    Utf8String names;
-    for (PropertySpecificationCP spec : properties)
-        {
-        if (!names.empty())
-            names.append(",");
-        names.append(spec->GetPropertyName());
-        }
-    return names;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -219,68 +198,6 @@ bool RelatedPropertiesSpecification::AllRelationshipPropertiesIncluded() const
 bool RelatedPropertiesSpecification::AllPropertiesIncluded() const
     {
     return AllPropertiesWithNoOverridesIncluded(m_properties);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP RelatedPropertiesSpecification::_GetXmlElementName() const {return RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelatedPropertiesSpecification::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!PresentationKey::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relationshipClassNames, COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES))
-        m_relationshipClassNames = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relatedClassNames, COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES))
-        m_relatedClassNames = "";
-
-    Utf8String propertyNames = "";
-    xmlNode->GetAttributeStringValue(propertyNames, COMMON_XML_ATTRIBUTE_PROPERTYNAMES);
-    m_properties = CreatePropertySpecsFromPropertyNames(propertyNames, this);
-
-    Utf8String requiredDirectionString = "";
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION))
-        requiredDirectionString = "";
-    else
-        m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString (requiredDirectionString.c_str (), _GetXmlElementName());
-
-    Utf8String relationshipMeaningString = "";
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(relationshipMeaningString, COMMON_XML_ATTRIBUTE_RELATIONSHIPMEANING))
-        relationshipMeaningString = "";
-    else
-        m_relationshipMeaning = CommonToolsInternal::ParseRelationshipMeaningString(relationshipMeaningString.c_str(), _GetXmlElementName());
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_polymorphic, COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC))
-        m_polymorphic = false;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_autoExpand, COMMON_XML_ATTRIBUTE_AUTOEXPAND))
-        m_autoExpand = false;
-
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_nestedRelatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME, this);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedPropertiesSpecification::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    PresentationKey::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES, m_relationshipClassNames.c_str ());
-    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES, m_relatedClassNames.c_str ());
-    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_PROPERTYNAMES, GetPropertyNamesStr(m_properties).c_str());
-    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonToolsInternal::FormatRequiredDirectionString (m_requiredDirection));
-    xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPMEANING, CommonToolsInternal::FormatRelationshipMeaningString(m_relationshipMeaning));
-    xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC, m_polymorphic);
-    xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_AUTOEXPAND, m_autoExpand);
-    CommonToolsInternal::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_nestedRelatedPropertiesSpecification);
     }
 
 /*---------------------------------------------------------------------------------**//**

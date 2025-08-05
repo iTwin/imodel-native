@@ -21,7 +21,6 @@ struct EXPORT_VTABLE_ATTRIBUTE InstanceNodesOfSpecificClassesSpecification : Chi
 private:
     bool     m_groupByClass;
     bool     m_groupByLabel;
-    bool     m_showEmptyGroups;
     Utf8String  m_instanceFilter;
     bvector<MultiSchemaClass*> m_classes;
     bvector<MultiSchemaClass*> m_excludedClasses;
@@ -29,10 +28,6 @@ private:
 protected:
     //! Allows the visitor to visit this specification.
     ECPRESENTATION_EXPORT void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
-
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-    ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
@@ -84,15 +79,6 @@ public:
 
     //! Set GroupByLabel value. Can be boolean.
     ECPRESENTATION_EXPORT void                         SetGroupByLabel (bool value);
-
-    //! Returns true if class grouping nodes should be shown even if there are no
-    //! ECInstances of those classes. Grouping nodes will be generated for all listed classes.
-    //! @deprecated
-    ECPRESENTATION_EXPORT bool                         GetShowEmptyGroups (void) const;
-
-    //! Set ShowEmptyGroups value. Can be boolean.
-    //! @deprecated
-    ECPRESENTATION_EXPORT void                         SetShowEmptyGroups (bool value);
 
     //! Returns a vector of instance classes which should be included.
     bvector<MultiSchemaClass*> const&                  GetClasses(void) const {return m_classes;}

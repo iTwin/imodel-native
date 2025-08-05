@@ -18,6 +18,21 @@ static const int DEFAULT_MAX_HTTP_CONNECTIONS = 6;
 // default for "httpTimeout" to SQLite apis (time in seconds to wait without a response before considering an http request as timed out).
 static const int DEFAULT_HTTP_TIMEOUT = 60;
 
+/**
+ * Initializer for CloudSqlite that happens at load time:
+ * * Enables best effort mode for certificate revocation on Windows.
+ */
+struct CloudSqliteInit {
+    CloudSqliteInit() {
+        // Enable best effort mode for certificate revocation on Windows.
+        sqlite3_bcv_global_config(SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT, 1);
+    }
+};
+
+// This is a static object that ensures the CloudSqliteInit constructor is called before any other CloudSqlite code runs.
+// Right now, ensure sqlite3_bcv_global_config is called before any other sqlite3_bcv_* calls
+static CloudSqliteInit s_cloudSqliteInit;
+
 Utf8String Db::OpenParams::SetFromContainer(Utf8CP dbName, CloudContainerP container) {
     if (nullptr == container)
         return dbName;
@@ -256,7 +271,7 @@ CloudResult CloudContainer::Connect(CloudCache& cache) {
 
     cache.m_containers.push_back(this); // needed for authorization from attach.
     auto attachFlags = SQLITE_BCV_ATTACH_IFNOT;
-    if (m_secure) 
+    if (m_secure)
         attachFlags |= SQLITE_BCV_ATTACH_SECURE;
     if (!cache.IsAttached(*this)) {
         auto result = cache.CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_attach(cache.m_vfs, GetOpenParams().c_str(), m_baseUri.c_str(), m_containerId.c_str(), m_alias.c_str(), attachFlags, msg); }, "attach");
@@ -283,7 +298,13 @@ CloudResult CloudContainer::Disconnect(bool isDetach, bool fromCacheDtor) {
     if (nullptr == m_cache)
         return CloudResult();
 
+#ifdef __APPLE__
+    // On macOS (and probably iOS), OnDisconnect() crashes when called from the cache destructor.
+    if (!fromCacheDtor)
+        OnDisconnect(isDetach);
+#else // __APPLE__
     OnDisconnect(isDetach);
+#endif // __APPLE__
     m_onDisconnect.RaiseEvent(this);
 
     CloseDbIfOpen();
@@ -297,7 +318,13 @@ CloudResult CloudContainer::Disconnect(bool isDetach, bool fromCacheDtor) {
         if (entry != containers.end())
             containers.erase(entry);
     }
+#ifdef __APPLE__
+    // On macOS (and probably iOS), OnDisconnected() crashes when called from the cache destructor.
+    if (!fromCacheDtor)
+        OnDisconnected(isDetach);
+#else // __APPLE__
     OnDisconnected(isDetach);
+#endif // __APPLE__
 
     return isDetach ? thisCache->CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_detach(thisCache->m_vfs, m_alias.c_str(), msg); }, "detach") :  CloudResult();
 }

@@ -139,10 +139,6 @@ int FieldEditorSliderParams::_CompareTo(Params const& other) const
         return -1;
     if (m_spec.GetIntervalsCount() > sliderParams->m_spec.GetIntervalsCount())
         return 1;
-    if (m_spec.GetValueFactor() < sliderParams->m_spec.GetValueFactor())
-        return -1;
-    if (m_spec.GetValueFactor() > sliderParams->m_spec.GetValueFactor())
-        return 1;
     if (m_spec.IsVertical() < sliderParams->m_spec.IsVertical())
         return -1;
     if (m_spec.IsVertical() > sliderParams->m_spec.IsVertical())

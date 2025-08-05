@@ -207,7 +207,7 @@ void XMLCDECL beXmlErrorFunction (void* userArg, const xmlError *xmlParseError)
         {
         xmlParserCtxtPtr parserContext;
         if (NULL != (parserContext = (xmlParserCtxtPtr) xmlParseError->ctxt))
-            parserContext->recovery = 1;
+          xmlCtxtSetOptions(parserContext, XML_PARSE_RECOVER);
         }
 
     if (XML_ERR_WARNING == xmlParseError->level)
@@ -755,8 +755,8 @@ void BeXmlDom::ToString (Utf16BufferR buffer, ToStringOption options) const
 
     xmlSaveClose (saveContext);
 
-    xmlChar const*  effectiveContent    = xmlBuffer->content;
-    size_t          effectiveBufferSize = xmlBuffer->use;
+    xmlChar const*  effectiveContent    = xmlBufferContent(xmlBuffer);
+    size_t          effectiveBufferSize = xmlBufferLength(xmlBuffer);
 
     // the last character in an XML string produced by libxml is always the 0x0a character, which we don't want.
     BeAssert (0x0a == effectiveContent[effectiveBufferSize-2]);
@@ -794,9 +794,9 @@ void BeXmlDom::ToString (WStringR buffer, ToStringOption options) const
 
     xmlSaveClose (saveContext);
 
-    xmlChar const*  effectiveContent    = xmlBuffer->content;
+    xmlChar const*  effectiveContent    = xmlBufferContent(xmlBuffer);
 #if defined (_WIN32)
-    size_t          effectiveBufferSize = xmlBuffer->use;
+    size_t          effectiveBufferSize = xmlBufferLength(xmlBuffer);
 
     // WString resize adds 1 for NULL terminator; account for that.
     buffer.resize (effectiveBufferSize / sizeof (WChar));
@@ -834,8 +834,8 @@ void BeXmlDom::ToString (Utf8StringR buffer, ToStringOption options) const
 
     xmlSaveClose (saveContext);
 
-    xmlChar const*  effectiveContent    = xmlBuffer->content;
-    size_t          effectiveBufferSize = xmlBuffer->use;
+    xmlChar const*  effectiveContent    = xmlBufferContent(xmlBuffer);
+    size_t          effectiveBufferSize = xmlBufferLength(xmlBuffer);
 
     // the last character in an XML string produced by libxml is always the 0x0a character, which we don't want.
     BeAssert (0x0a == effectiveContent[effectiveBufferSize-1]);
@@ -3355,8 +3355,8 @@ void BeXmlWriter::ToString (Utf8StringR buffer)
     xmlTextWriterEndDocument (m_writer);
     xmlTextWriterFlush(m_writer);
 
-    xmlChar const*  effectiveContent    = m_buffer->content;
-    size_t          effectiveBufferSize = m_buffer->use;
+    xmlChar const*  effectiveContent    = xmlBufferContent(m_buffer);
+    size_t          effectiveBufferSize = xmlBufferLength(m_buffer);
 
     buffer.resize(effectiveBufferSize / sizeof (char));
     memcpy(&buffer[0], effectiveContent, effectiveBufferSize);
