@@ -715,6 +715,34 @@ TEST_F(InstanceReaderFixture, check_link_table_serialization) {
     stmt.Finalize();
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, AmbiguousInstanceQuery) {
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+    TestIssueListener  listener;
+    m_ecdb.AddIssueListener(listener);
+    // This query is expected to throw an ambiguous instance query error
+    Utf8CP ecsql = R"sql(
+        select $->COBIE? as cobie
+        from bis.PhysicalElement pe
+        join (
+            select el.ecinstanceid as id
+            from bis.element as el
+        ) as aa on pe.TypeDefinition.id = aa.id
+        join bis.physicalPartition pp on pp.ecinstanceid = pe.model.id
+        group by cobie
+    )sql";
+
+    ECSqlStatement stmt;
+    auto status = stmt.Prepare(m_ecdb, ecsql);
+
+    // The error message should indicate ambiguous $ (instance query)
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, status);
+    ASSERT_TRUE(listener.GetLastMessage() == "In expression '$->COBIE', $ is ambiguous");
+}
+
+
 TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate)
     {
     // Setup test db

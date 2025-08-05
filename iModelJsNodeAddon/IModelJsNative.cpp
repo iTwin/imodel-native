@@ -82,9 +82,9 @@ template<typename T_Db> struct SQLiteOps {
         REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
         BeJsValue opts(optObj);
         if (!opts.isStringMember(JsInterop::json_name()))
-            BeNapi::ThrowJsException(info.Env(), "name argument missing");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "name argument missing", IModelJsNativeErrorKey::BadArg);
         if (!opts.isStringMember(JsInterop::json_localFileName()))
-            BeNapi::ThrowJsException(info.Env(), "localFileName argument missing");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "localFileName argument missing", IModelJsNativeErrorKey::BadArg);
 
         Utf8String fileExt;
         if (opts.isStringMember(JsInterop::json_fileExt()))
@@ -99,7 +99,7 @@ template<typename T_Db> struct SQLiteOps {
         BeJsValue opts(info[0]); // getEmbedFileProps would have thrown if this isn't an object
         props.m_date = DateTime::FromUnixMilliseconds(opts[JsInterop::json_date()].asInt64());
         if (!props.m_date.IsValid())
-            BeNapi::ThrowJsException(info.Env(), "invalid date");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "invalid date", IModelJsNativeErrorKey::BadArg);
 
         props.m_compress = opts[JsInterop::json_compress()].asBool(true);
         return props;
@@ -108,7 +108,7 @@ template<typename T_Db> struct SQLiteOps {
     T_Db& GetOpenedDb(NapiInfoCR info) {
         auto* db = _GetMyDb();
         if (db == nullptr || !db->IsDbOpen())
-            BeNapi::ThrowJsException(info.Env(), "db is not open");
+           THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open", DgnDbStatus::NotOpen);
 
         return *db;
     }
@@ -116,7 +116,7 @@ template<typename T_Db> struct SQLiteOps {
     T_Db& GetWritableDb(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         if (db.IsReadonly())
-            BeNapi::ThrowJsException(info.Env(), "db is not open for write");
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open for write", DgnDbStatus::NotOpenForWrite);
 
         return db;
     }
@@ -186,7 +186,7 @@ template<typename T_Db> struct SQLiteOps {
         REQUIRE_ARGUMENT_BOOL(1, wantString); // boolean indicating whether the desired property is a string or blob.
         BeJsConst propsJson(fileProps);
         if (!propsJson.isStringMember(JsInterop::json_namespace()) || !propsJson.isStringMember(JsInterop::json_name()))
-            THROW_JS_EXCEPTION("Invalid FilePropertyProps");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid FilePropertyProps", IModelJsNativeErrorKey::BadArg);
 
         Utf8String nameProp = propsJson[JsInterop::json_name()].asString();
         Utf8String nsProp = propsJson[JsInterop::json_namespace()].asString();
@@ -214,12 +214,12 @@ template<typename T_Db> struct SQLiteOps {
     // save a property to the be_prop table
     void SaveFileProperty(NapiInfoCR info) {
         if (info.Length() < 2)
-            THROW_JS_EXCEPTION("saveFileProperty requires 2 arguments");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "saveFileProperty requires 2 arguments", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_ANY_OBJ(0, fileProps);
         BeJsConst propsJson(fileProps);
         if (!propsJson.isMember(JsInterop::json_namespace()) || !propsJson.isMember(JsInterop::json_name()))
-            THROW_JS_EXCEPTION("Invalid FilePropertyProps");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid FilePropertyProps", IModelJsNativeErrorKey::BadArg);
 
         Utf8String nameProp = propsJson[JsInterop::json_name()].asString();
         Utf8String nsProp = propsJson[JsInterop::json_namespace()].asString();
@@ -257,7 +257,7 @@ template<typename T_Db> struct SQLiteOps {
         REQUIRE_ARGUMENT_ANY_OBJ(0, fileProps);
         BeJsConst propsJson(fileProps);
         if (!propsJson.isStringMember(JsInterop::json_namespace()) || !propsJson.isStringMember(JsInterop::json_name()))
-            THROW_JS_EXCEPTION("Invalid FilePropertyProps");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid FilePropertyProps", IModelJsNativeErrorKey::BadArg);
 
         auto& db = GetOpenedDb(info);
         Statement stmt(db, "SELECT count(Id),max(Id) FROM " BEDB_TABLE_Property " WHERE Namespace=? AND Name=?");
@@ -277,7 +277,7 @@ template<typename T_Db> struct SQLiteOps {
         REQUIRE_ARGUMENT_BOOL(3, compress);
 
         if (!dataObj.IsTypedArray() || !facesObj.IsArray()) {
-            BeNapi::ThrowJsException(info.Env(), "font data not valid");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "font data not valid", IModelJsNativeErrorKey::BadArg);
         }
 
         bvector<FontFace> faces;
@@ -285,7 +285,7 @@ template<typename T_Db> struct SQLiteOps {
         for (uint32_t i = 0; i < arr.Length(); i++) {
             Napi::Value v = arr[i];
             if (!v.IsObject()) {
-                BeNapi::ThrowJsException(info.Env(), "font data not valid");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "font data not valid", IModelJsNativeErrorKey::BadArg);
             }
 
             FontFace face(v);
@@ -293,10 +293,15 @@ template<typename T_Db> struct SQLiteOps {
         }
 
         if (faces.empty()) {
-            BeNapi::ThrowJsException(info.Env(), "font data not valid");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "font data not valid", IModelJsNativeErrorKey::BadArg);
         }
 
         auto db = &GetOpenedDb(info);
+        if (db == nullptr)
+            {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "db is not open", DgnDbStatus::NotOpen);
+            return;
+            }
         auto dgnDb = dynamic_cast<DgnDbP>(db);
         std::unique_ptr<FontDb> fontDbHolder;
 
@@ -309,7 +314,7 @@ template<typename T_Db> struct SQLiteOps {
 
         auto arrayBuf = dataObj.As<Napi::Uint8Array>();
         if (SUCCESS != fontDb->EmbedFont(id, faces, ByteStream(arrayBuf.Data(), arrayBuf.ByteLength()), compress)) {
-            BeNapi::ThrowJsException(info.Env(), "unable to embed font");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "unable to embed font", IModelJsNativeErrorKey::FontError);
         }
     }
 
@@ -433,14 +438,14 @@ public:
         REQUIRE_ARGUMENT_STRING(1, alias);
         auto rc = GetOpenedDb(info).AttachDb(fileName.c_str(), alias.c_str());
         if (rc != BE_SQLITE_OK) {
-            BeNapi::ThrowJsException(info.Env(), "Failed to attach file", (int)rc);
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to attach file", rc);
         }
     }
     void DetachDb(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, alias);
         auto rc = GetOpenedDb(info).DetachDb(alias.c_str());
         if (rc != BE_SQLITE_OK) {
-            BeNapi::ThrowJsException(info.Env(), "Failed to detach file", (int)rc);
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to detach file", rc);
         }
     }
     void ConcurrentQueryExecute(NapiInfoCR info) {
@@ -515,11 +520,11 @@ public:
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         auto schema = m_ecdb.Schemas().GetSchema(schemaName, true);
         if (nullptr == schema)
-            BeNapi::ThrowJsException(info.Env(), "schema not found", (int) DgnDbStatus::NotFound);
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "schema not found", DgnDbStatus::NotFound);
 
         BeJsNapiObject props(info.Env());
         if (!schema->WriteToJsonValue(props))
-            BeNapi::ThrowJsException(info.Env(), "unable to serialize schema");
+           THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "unable to serialize schema", IModelJsNativeErrorKey::SchemaError);
         return props;
     }
 
@@ -530,9 +535,9 @@ public:
     }
     void DropSchema(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaName);
-        auto rc = m_ecdb.Schemas().DropSchema(schemaName);
+        DropSchemaResult rc = m_ecdb.Schemas().DropSchema(schemaName);
         if (rc.GetStatus() != DropSchemaResult::Success) {
-            THROW_JS_EXCEPTION(rc.GetStatusAsString());
+            BeNapi::ThrowJsException(info.Env(), rc.GetStatusAsString(), (int)rc.GetStatus(), {"schema-sync", rc.GetStatusAsString()});
         }
     }
     void SchemaSyncSetDefaultUri(NapiInfoCR info) {
@@ -541,9 +546,9 @@ public:
         auto rc = m_ecdb.Schemas().GetSchemaSync().SetDefaultSyncDbUri(schemaSyncDbUriStr.c_str());
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_EXCEPTION(Utf8PrintfString("fail to set default shared schema channel uri: %s", schemaSyncDbUriStr.c_str()).c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to set default shared schema channel uri: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -553,7 +558,7 @@ public:
             return Env().Undefined();
 
         return Napi::String::New(Env(), syncDbUri.GetUri().c_str());
-        }
+    }
     void SchemaSyncInit(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         REQUIRE_ARGUMENT_STRING(1, containerId);
@@ -563,9 +568,9 @@ public:
         auto rc = m_ecdb.Schemas().GetSchemaSync().Init(syncDbUri, containerId, overrideContainer);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_EXCEPTION(Utf8PrintfString("fail to initialize shared schema channel: %s", schemaSyncDbUriStr.c_str()).c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to initialize shared schema channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -604,12 +609,13 @@ public:
         auto rc = m_ecdb.Schemas().GetSchemaSync().Pull(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_EXCEPTION(Utf8PrintfString("fail to pull changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to pull changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
+
     void SchemaSyncPush(NapiInfoCR info) {
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
@@ -617,9 +623,9 @@ public:
         auto rc = m_ecdb.Schemas().GetSchemaSync().Push(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_EXCEPTION(Utf8PrintfString("fail to push changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to push changes from channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -682,10 +688,10 @@ static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenPara
 
     auto container = getCloudContainer(jsContainer);
     if (!params.IsReadonly() && !container->m_writeLockHeld)
-        BeNapi::ThrowJsException(arg.Env(), "cannot open for database for write - container write lock not held");
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(arg.Env(), "cannot open for database for write - container write lock not held", IModelJsNativeErrorKey::LockNotHeld);
 
     dbName = params.SetFromContainer(dbName.c_str(), container);
-}
+};
 
 //=======================================================================================
 // Projects the BeSQLite::Db class into JS
@@ -1144,7 +1150,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     void SetBusyTimeout(NapiInfoCR info) {
         REQUIRE_ARGUMENT_INTEGER(0, ms);
         if (!m_dgndb.IsValid() || BE_SQLITE_OK != m_dgndb->SetBusyTimeout(ms))
-            JsInterop::ThrowJsException("unable to set busyTimeout");
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "unable to set busyTimeout", DgnDbStatus::TimeoutFailed);
     }
 
     void OpenIModel(NapiInfoCR info) {
@@ -1269,11 +1275,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         auto schema = db.Schemas().GetSchema(schemaName, true);
         if (nullptr == schema)
-            BeNapi::ThrowJsException(info.Env(), "schema not found", (int) DgnDbStatus::NotFound);
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "schema not found", DgnDbStatus::NotFound);
 
         BeJsNapiObject props(info.Env());
         if (!schema->WriteToJsonValue(props))
-            BeNapi::ThrowJsException(info.Env(), "unable to serialize schema");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "unable to serialize schema", IModelJsNativeErrorKey::SchemaError);
 
         return props;
     }
@@ -1290,7 +1296,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         BeJsNapiObject jsValue(Env());
         auto status = JsInterop::GetElement(jsValue, GetOpenedDb(info), opts);
         if (DgnDbStatus::Success != status)
-            BeNapi::ThrowJsException(Env(), "error reading element", (int)status);
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "error reading element", status);
         return jsValue;
     }
 
@@ -1299,7 +1305,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         BeJsNapiObject modelJson(Env());
         DgnDbStatus status = JsInterop::GetModel(modelJson, GetOpenedDb(info), opts);
         if (DgnDbStatus::Success != status)
-            BeNapi::ThrowJsException(Env(), "error reading model", (int)status);
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "error reading model", status);
         return modelJson;
     }
 
@@ -1507,7 +1513,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         txns.StopCreateChangeset(false); // if there's one in progress, just abandon it.
         ChangesetPropsPtr changeset = txns.StartCreateChangeset();
         if (!changeset.IsValid())
-            BeNapi::ThrowJsException(Env(), "Error creating changeset");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Error creating changeset", IModelJsNativeErrorKey::ChangesetError);
 
         BeJsNapiObject changesetInfo(Env());
         changesetInfo[JsInterop::json_id()] = changeset->GetChangesetId().c_str();
@@ -1515,7 +1521,64 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         changesetInfo[JsInterop::json_parentId()] = changeset->GetParentId().c_str();
         changesetInfo[JsInterop::json_pathname()] = Utf8String(changeset->GetFileName()).c_str();
         changesetInfo[JsInterop::json_changesType()] = (int)changeset->GetChangesetType();
+        changesetInfo[JsInterop::json_uncompressedSize()] = static_cast<int64_t>(changeset->GetUncompressedSize());
         return changesetInfo;
+    }
+
+    void EnableChangesetStatsTracking(NapiInfoCR info) {
+        GetWritableDb(info).Txns().EnableChangesetHealthStatsTracking();
+    }
+
+    void DisableChangesetStatsTracking(NapiInfoCR info) {
+        GetWritableDb(info).Txns().DisableChangesetHealthStatsTracking();
+    }
+
+    Napi::Value GetChangesetHealthData(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(1, changesetId);
+        return BeJsNapiObject(Env(), GetWritableDb(info).Txns().GetChangesetHealthStatistics(changesetId).Stringify());
+    }
+
+    Napi::Value GetAllChangesetHealthData(NapiInfoCR info) {
+        auto statsDoc = GetWritableDb(info).Txns().GetAllChangesetHealthStatistics();
+        auto changesets = statsDoc["changesets"];
+        auto env = info.Env();
+
+        if (!changesets.isArray())
+            return Napi::Array::New(env);
+
+        auto jsArray = Napi::Array::New(env, changesets.size());
+        changesets.ForEachArrayMember([&](BeJsValue::ArrayIndex changesetIdx, BeJsConst changeset) {
+            auto jsObj = Napi::Object::New(env);
+
+            // Map top-level fields
+            jsObj.Set("changesetId", Napi::String::New(env, changeset["changeset_id"].asString().c_str()));
+            jsObj.Set("uncompressedSizeBytes", Napi::Number::New(env, changeset["uncompressed_size_bytes"].asUInt()));
+            jsObj.Set("sha1ValidationTimeMs", Napi::Number::New(env, changeset["sha1_validation_time_ms"].asUInt()));
+            jsObj.Set("insertedRows", Napi::Number::New(env, changeset["inserted_rows"].asUInt()));
+            jsObj.Set("updatedRows", Napi::Number::New(env, changeset["updated_rows"].asUInt()));
+            jsObj.Set("deletedRows", Napi::Number::New(env, changeset["deleted_rows"].asUInt()));
+            jsObj.Set("totalElapsedMs", Napi::Number::New(env, changeset["total_elapsed_ms"].asUInt()));
+            jsObj.Set("totalFullTableScans", Napi::Number::New(env, changeset["scan_count"].asUInt()));
+
+            // Map health_stats array to perStatementStats
+            auto perStmtArr = Napi::Array::New(env);
+            if (const auto healthStats = changeset["health_stats"]; healthStats.isArray()) {
+                healthStats.ForEachArrayMember([&](BeJsValue::ArrayIndex stmtIdx, BeJsConst stmt) {
+                    auto stmtObj = Napi::Object::New(env);
+                    stmtObj.Set("sqlStatement", Napi::String::New(env, stmt["statement"].asString().c_str()));
+                    stmtObj.Set("dbOperation", Napi::String::New(env, stmt["op"].asString().c_str()));
+                    stmtObj.Set("rowCount", Napi::Number::New(env, stmt["row_count"].asUInt()));
+                    stmtObj.Set("elapsedMs", Napi::Number::New(env, stmt["elapsed_ms"].asUInt()));
+                    stmtObj.Set("fullTableScans", Napi::Number::New(env, stmt["scan_count"].asUInt()));
+                    perStmtArr.Set(stmtIdx, stmtObj);
+                    return false;
+                });
+            }
+            jsObj.Set("perStatementStats", perStmtArr);
+            jsArray.Set(changesetIdx, jsObj);
+            return false;
+        });
+        return jsArray;
     }
 
     void CompleteCreateChangeset(NapiInfoCR info) {
@@ -1523,7 +1586,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
         BeJsConst opts(optObj);
         if (!opts.isNumericMember(JsInterop::json_index()))
-            BeNapi::ThrowJsException(Env(), "changeset index must be supplied");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "changeset index must be supplied", IModelJsNativeErrorKey::BadArg);
         int32_t index = opts[JsInterop::json_index()].GetInt();
 
         db.Txns().FinishCreateChangeset(index);
@@ -1593,7 +1656,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             }
         catch (std::exception const& e)
             {
-            THROW_JS_EXCEPTION(e.what());
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), e.what(), IModelJsNativeErrorKey::ElementGeometryCacheError);
             }
         }
 
@@ -1784,7 +1847,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             }
         catch (std::exception const& e)
             {
-            THROW_JS_EXCEPTION(e.what());
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), e.what(), IModelJsNativeErrorKey::GeometryStreamError);
             }
         }
 
@@ -1795,11 +1858,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         Napi::Number operationVal = createProps.Get("operation").As<Napi::Number>();
         if (!operationVal.IsNumber())
-            THROW_JS_EXCEPTION("operation must be a specified");
+            THROW_JS_TYPE_EXCEPTION("operation must be a specified");
 
         Napi::Value onResultVal = createProps.Get("onResult");
         if (!onResultVal.IsFunction())
-            THROW_JS_EXCEPTION("onResult must be a function");
+            THROW_JS_TYPE_EXCEPTION("onResult must be a function");
 
         Napi::Array entryArrayVal = createProps.Get("entryArray").As<Napi::Array>();
         if (!entryArrayVal.IsArray())
@@ -1811,7 +1874,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             }
         catch (std::exception const& e)
             {
-            THROW_JS_EXCEPTION(e.what());
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), e.what(), IModelJsNativeErrorKey::GeometryStreamError);
             }
         }
 
@@ -2012,7 +2075,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         auto rc = GetOpenedDb(info).DropSchema(schemaName);
         if (rc.GetStatus() != DropSchemaResult::Success) {
-            THROW_JS_EXCEPTION(rc.GetStatusAsString());
+            BeNapi::ThrowJsException(info.Env(), rc.GetStatusAsString(), (int)rc.GetStatus(), {"schema-sync", "DropSchemaError"});
         }
     }
     void SchemaSyncSetDefaultUri(NapiInfoCR info) {
@@ -2022,9 +2085,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto rc = db.Schemas().GetSchemaSync().SetDefaultSyncDbUri(schemaSyncDbUriStr.c_str());
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_EXCEPTION(Utf8PrintfString("fail to set default shared schema channel uri: %s", schemaSyncDbUriStr.c_str()).c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to set default shared schema channel uri: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -2044,9 +2107,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto rc = GetOpenedDb(info).Schemas().GetSchemaSync().Init(syncDbUri, containerId, overrideContainer);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_EXCEPTION(Utf8PrintfString("fail to initialize shared schema channel: %s", schemaSyncDbUriStr.c_str()).c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to initialize shared schema channel: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -2088,9 +2151,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto rc = db.PullSchemaChanges(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_EXCEPTION(Utf8PrintfString("fail to pull changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to pull changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -2103,9 +2166,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto rc = db.Schemas().GetSchemaSync().Push(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
-                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
             } else {
-                THROW_JS_EXCEPTION(Utf8PrintfString("fail to push changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str());
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to push changes to schema sync db: %s", schemaSyncDbUriStr.c_str()).c_str(), rc);
             }
         }
     }
@@ -2133,10 +2196,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
         if (DbResult::BE_SQLITE_OK != result)
             {
-            if (lastError.HasError())
-                BeNapi::ThrowJsException(info.Env(), lastError.GetLastError().c_str(), (int) result);
-            else
-                BeNapi::ThrowJsException(info.Env(), "Failed to import schemas", (int) result);
+                if (lastError.HasError()) {
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), result);
+                } else {
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to import schemas", result);
+                }
             }
         }
 
@@ -2155,10 +2219,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::XmlString, options);
         if (DbResult::BE_SQLITE_OK != result)
             {
-            if (lastError.HasError())
-                BeNapi::ThrowJsException(info.Env(), lastError.GetLastError().c_str(), (int) result);
-            else
-                BeNapi::ThrowJsException(info.Env(), "Failed to import schemas", (int) result);
+                if (lastError.HasError()) {
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), result);
+                } else {
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to import schemas", result);
+                }
             }
         }
 
@@ -2185,7 +2250,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         ECSchemaCP schema = GetOpenedDb(info).Schemas().GetSchema(schemaName);
         if (nullptr == schema)
-            BeNapi::ThrowJsException(info.Env(), "specified schema was not found");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "specified schema was not found", IModelJsNativeErrorKey::SchemaError);
 
         BeFileName schemaFileName(exportDirectory);
         schemaFileName.AppendSeparator();
@@ -2395,7 +2460,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         try {
             stat = db.ResetBriefcaseId(BeSQLite::BeBriefcaseId(newId));
         } catch(std::runtime_error e) {
-            THROW_JS_EXCEPTION(e.what());
+            BeNapi::ThrowJsException(info.Env(), e.what(), {"be-sqlite", "RuntimeError"});
         }
         if (stat != BE_SQLITE_OK)
             JsInterop::throwSqlResult("Cannot reset briefcaseId for", db.GetDbFileName(), stat);
@@ -2424,7 +2489,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         switch (GetOpenedDb(info).m_codeValueBehavior) {
             case DgnCodeValue::Behavior::Exact: return Napi::String::New(info.Env(), "exact");
             case DgnCodeValue::Behavior::TrimUnicodeWhitespace: return Napi::String::New(info.Env(), "trim-unicode-whitespace");
-            default: THROW_JS_EXCEPTION("Behavior was invalid. This is a bug.");
+            default: THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Behavior was invalid. This is a bug.", IModelJsNativeErrorKey::BadArg);
         }
     }
 
@@ -2436,7 +2501,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         else if (codeValueBehaviorStr == "trim-unicode-whitespace")
             newBehavior = DgnCodeValue::Behavior::TrimUnicodeWhitespace;
         else
-            THROW_JS_EXCEPTION("Unsupported argument, should be one of the strings 'exact' or 'trim-unicode-whitespace'");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Unsupported argument, should be one of the strings 'exact' or 'trim-unicode-whitespace'", IModelJsNativeErrorKey::BadArg);
         GetOpenedDb(info).m_codeValueBehavior = newBehavior;
     }
 
@@ -2648,7 +2713,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         else if (revision->GetChangesetId() == currentId) //reverse
             db.Txns().ReverseChangeset(*revision);
         if (ChangesetStatus::Success != stat)
-            BeNapi::ThrowJsException(Env(), "error applying changeset", (int)stat);
+            BeNapi::ThrowJsException(info.Env(), "error applying changeset", (int)stat, IModelJsNativeErrorKeyHelper::GetITwinError(IModelJsNativeErrorKey::ChangesetError));
     }
     void RevertTimelineChanges(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
@@ -2675,14 +2740,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_STRING(1, alias);
         auto rc = GetOpenedDb(info).AttachDb(fileName.c_str(), alias.c_str());
         if (rc != BE_SQLITE_OK) {
-            BeNapi::ThrowJsException(info.Env(), "Failed to attach file", (int)rc);
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to attach file", rc);
         }
     }
     void DetachDb(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, alias);
         auto rc = GetOpenedDb(info).DetachDb(alias.c_str());
         if (rc != BE_SQLITE_OK) {
-            BeNapi::ThrowJsException(info.Env(), "Failed to detach file", (int)rc);
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to detach file", rc);
         }
     }
     void ConcurrentQueryExecute(NapiInfoCR info) {
@@ -2704,17 +2769,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
     static Napi::Value ZlibCompress(NapiInfoCR info) {
         if (info.Length() < 1 || !info[0].IsTypedArray()){
-            BeNapi::ThrowJsException(info.Env(), "expect UInt8Array argument");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "expect UInt8Array argument", IModelJsNativeErrorKey::BadArg);
         }
         Napi::TypedArray typedArray = info[0].As<Napi::TypedArray>();
         if (typedArray.TypedArrayType() != napi_uint8_array) {
-            BeNapi::ThrowJsException(info.Env(), "expect UInt8Array argument");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "expect UInt8Array argument", IModelJsNativeErrorKey::BadArg);
         }
         Napi::Uint8Array uint8Array = typedArray.As<Napi::Uint8Array>();
         bvector<Byte> bytes(uint8Array.Data(), uint8Array.Data() + uint8Array.ElementLength());
         bvector<Byte> compressed;
         if (!BeSQLiteLib::ZlibCompress(compressed, bytes)){
-            BeNapi::ThrowJsException(info.Env(), "failed to compress buffer");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "failed to compress buffer", IModelJsNativeErrorKey::CompressionError);
         }
 
         auto blob = Napi::Uint8Array::New(info.Env(), compressed.size());
@@ -2724,14 +2789,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     static Napi::Value ZlibDecompress(NapiInfoCR info) {
         if (info.Length() < 1 || !info[0].IsTypedArray()){
-            BeNapi::ThrowJsException(info.Env(), "expect UInt8Array as first argument");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "expect UInt8Array as first argument", IModelJsNativeErrorKey::BadArg);
         }
         if (info.Length() < 2 || !info[1].IsNumber()){
-            BeNapi::ThrowJsException(info.Env(), "expect int as second argument argument");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "expect int as second argument argument", IModelJsNativeErrorKey::BadArg);
         }
         Napi::TypedArray typedArray = info[0].As<Napi::TypedArray>();
         if (typedArray.TypedArrayType() != napi_uint8_array) {
-            BeNapi::ThrowJsException(info.Env(), "expect UInt8Array argument");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "expect UInt8Array argument", IModelJsNativeErrorKey::BadArg);
         }
 
         Napi::Number uncompressSize = info[1].As<Napi::Number>();
@@ -2739,7 +2804,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         bvector<Byte> bytes(uint8Array.Data(), uint8Array.Data() + uint8Array.ElementLength());
         bvector<Byte> uncompressed;
         if (!BeSQLiteLib::ZlibDecompress(uncompressed, bytes, uncompressSize.Uint32Value())){
-            BeNapi::ThrowJsException(info.Env(), "failed to decompress buffer");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "failed to decompress buffer", IModelJsNativeErrorKey::CompressionError);
         }
 
         auto blob = Napi::Uint8Array::New(info.Env(), uncompressed.size());
@@ -2767,6 +2832,21 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return Napi::Boolean::New(Env(), db.Txns().PullMergeInProgress());
     }
 
+    static Napi::Value ComputeChangesetId(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, args);
+        auto parentId = args.Get("parentId").As<Napi::String>();
+        auto pathname = args.Get("pathname").As<Napi::String>();
+        if (!parentId.IsString() || !pathname.IsString())
+            BeNapi::ThrowJsException(info.Env(), "parentId and pathname are required attribute of ChangesetFileProps", (int)ChangesetStatus::BadVersionId);
+
+        auto id = ChangesetProps::ComputeChangesetId(
+            parentId.Utf8Value().c_str(),
+            BeFileName(pathname.Utf8Value()),
+            info.Env()
+        );
+
+        return Napi::String::New(info.Env(), id.c_str());
+    }
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2963,6 +3043,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("vacuum", &NativeDgnDb::Vacuum),
             InstanceMethod("enableWalMode", &NativeDgnDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
+            InstanceMethod("enableChangesetStatsTracking", &NativeDgnDb::EnableChangesetStatsTracking),
+            InstanceMethod("disableChangesetStatsTracking", &NativeDgnDb::DisableChangesetStatsTracking),
+            InstanceMethod("getChangesetHealthData", &NativeDgnDb::GetChangesetHealthData),
+            InstanceMethod("getAllChangesetHealthData", &NativeDgnDb::GetAllChangesetHealthData),
             InstanceMethod("setAutoCheckpointThreshold", &NativeDgnDb::SetAutoCheckpointThreshold),
             InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
             InstanceMethod("getNoCaseCollation", &NativeDgnDb::GetNoCaseCollation),
@@ -2975,6 +3059,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
             StaticMethod("zlibDecompress", &NativeDgnDb::ZlibDecompress),
+            StaticMethod("computeChangesetId", &NativeDgnDb::ComputeChangesetId),
         });
 
         exports.Set("DgnDb", t);
@@ -3020,7 +3105,9 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         bool extentIsValid = ARGUMENT_IS_ANY_OBJ(0);
         if (extentIsValid)
             BeJsGeomUtils::DRange2dFromJson(extentRange, info[0].As<Napi::Object>());
-        bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr );
+
+        bool includeWorld = ARGUMENT_IS_BOOL(1) ? info[1].As<Napi::Boolean>().Value() : false;
+        bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr, includeWorld );
 
         uint32_t index = 0;
         auto ret = Napi::Array::New(info.Env(), listOfCRS.size());
@@ -3135,7 +3222,7 @@ struct NativeRevisionUtility : BeObjectWrap<NativeRevisionUtility>
         REQUIRE_ARGUMENT_BOOL(1, addPrefix);
         BeJsDocument out;
         if (SUCCESS != RevisionUtility::ComputeStatistics(changesetFile.c_str(), addPrefix, out))
-            THROW_JS_EXCEPTION("Failed to compute statistics");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to compute statistics", IModelJsNativeErrorKey::BadArg);
 
         return Napi::String::New(info.Env(), out.Stringify().c_str());
         }
@@ -3144,7 +3231,7 @@ struct NativeRevisionUtility : BeObjectWrap<NativeRevisionUtility>
         REQUIRE_ARGUMENT_STRING(0, changesetFile);
         uint32_t compressSize, uncompressSize, prefixSize;
         if (SUCCESS != RevisionUtility::GetUncompressSize(changesetFile.c_str(), compressSize, uncompressSize, prefixSize))
-            THROW_JS_EXCEPTION("Failed to get uncompress size");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to get uncompress size", IModelJsNativeErrorKey::CompressionError);
 
         BeJsDocument out;
         out["compressSize"] = compressSize;
@@ -3223,7 +3310,7 @@ struct NativeSchemaUtility : BeObjectWrap<NativeSchemaUtility>
         if (result != BentleyStatus::SUCCESS)
             {
             Utf8String error = convertCA ? "Failed to convert custom attributes of given schemas" : "Failed to convert EC2 Xml schemas";
-            THROW_JS_EXCEPTION(error.c_str());
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), error.c_str(), IModelJsNativeErrorKey::SchemaError);
             }
 
         uint32_t index = 0;
@@ -3457,6 +3544,7 @@ private:
     DEFINE_CONSTRUCTOR;
     IECSqlBinder* m_binder = nullptr;
     ECDb const* m_ecdb = nullptr;
+    ECSqlStatement* m_ecSqlStatement = nullptr;
 
     static DbResult ToDbResult(ECSqlStatus status)
         {
@@ -3472,8 +3560,8 @@ private:
 public:
     NativeECSqlBinder(NapiInfoCR info) : BeObjectWrap<NativeECSqlBinder>(info)
         {
-        if (info.Length() != 2)
-            THROW_JS_EXCEPTION("ECSqlBinder constructor expects two arguments.");
+        if (info.Length() < 2 || info.Length() > 3)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder constructor expects either two or three arguments.", IModelJsNativeErrorKey::BadArg);
 
         m_binder = info[0].As<Napi::External<IECSqlBinder>>().Data();
         if (m_binder == nullptr)
@@ -3482,6 +3570,8 @@ public:
         m_ecdb = info[1].As<Napi::External<ECDb>>().Data();
         if (m_ecdb == nullptr)
             THROW_JS_TYPE_EXCEPTION("Invalid second arg for NativeECSqlBinder constructor. ECDb must not be nullptr");
+
+        m_ecSqlStatement = info[2].As<Napi::External<ECSqlStatement>>().Data();
         }
 
     ~NativeECSqlBinder() {SetInDestructor();}
@@ -3522,15 +3612,15 @@ public:
         SET_CONSTRUCTOR(t);
         }
 
-    static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb)
+    static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb, const ECSqlStatement* ecSqlStatement = nullptr)
         {
-        return Constructor().New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
+        return Constructor().New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb)), Napi::External<ECSqlStatement>::New(env, const_cast<ECSqlStatement*>(ecSqlStatement))});
         }
 
     Napi::Value BindNull(NapiInfoCR info)
         {
         if (m_binder == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         ECSqlStatus stat = m_binder->BindNull();
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
@@ -3539,10 +3629,10 @@ public:
     Napi::Value BindBlob(NapiInfoCR info)
         {
         if (m_binder == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         if (info.Length() == 0)
-            THROW_JS_EXCEPTION("BindBlob requires an argument");
+            THROW_JS_TYPE_EXCEPTION("BindBlob requires an argument");
 
         Napi::Value blobVal = info[0];
         if (blobVal.IsTypedArray())
@@ -3579,7 +3669,7 @@ public:
     Napi::Value BindBoolean(NapiInfoCR info)
         {
         if (m_binder == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         Napi::Value boolVal;
         if (info.Length() == 0 || !(boolVal = info[0]).IsBoolean())
@@ -3592,7 +3682,7 @@ public:
     Napi::Value BindDateTime(NapiInfoCR info)
         {
         if (m_binder == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, isoString);
 
@@ -3607,7 +3697,7 @@ public:
     Napi::Value BindDouble(NapiInfoCR info)
         {
         if (m_binder == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_NUMBER(0, val);
         ECSqlStatus stat = m_binder->BindDouble(val.DoubleValue());
@@ -3617,7 +3707,7 @@ public:
     Napi::Value BindGuid(NapiInfoCR info)
         {
         if (m_binder == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, guidString);
         BeGuid guid;
@@ -3631,7 +3721,7 @@ public:
     Napi::Value BindId(NapiInfoCR info)
         {
         if (m_binder == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, hexString);
         BeInt64Id id;
@@ -3645,7 +3735,7 @@ public:
     Napi::Value BindIdSet(NapiInfoCR info)
         {
         if (m_binder == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
         if (info.Length() == 0)
             THROW_JS_TYPE_EXCEPTION("BindVirtualSet requires an argument");
 
@@ -3692,7 +3782,7 @@ public:
     Napi::Value BindInteger(NapiInfoCR info)
         {
         if (m_binder == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         if (info.Length() == 0)
             THROW_JS_TYPE_EXCEPTION("BindInteger expects a string or number");
@@ -3739,7 +3829,7 @@ public:
     Napi::Value BindPoint2d(NapiInfoCR info)
         {
         if (m_binder == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_NUMBER(0, x);
         REQUIRE_ARGUMENT_NUMBER(1, y);
@@ -3750,7 +3840,7 @@ public:
     Napi::Value BindPoint3d(NapiInfoCR info)
         {
         if (m_binder == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_NUMBER(0, x);
         REQUIRE_ARGUMENT_NUMBER(1, y);
@@ -3762,7 +3852,7 @@ public:
     Napi::Value BindString(NapiInfoCR info)
         {
         if (m_binder == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, val);
         ECSqlStatus stat = m_binder->BindText(val.c_str(), IECSqlBinder::MakeCopy::Yes);
@@ -3772,7 +3862,7 @@ public:
     Napi::Value BindNavigation(NapiInfoCR info)
         {
         if (m_binder == nullptr || m_ecdb == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, navIdHexStr);
         OPTIONAL_ARGUMENT_STRING(1, relClassName);
@@ -3782,25 +3872,40 @@ public:
         if (SUCCESS != BeInt64Id::FromString(navId, navIdHexStr.c_str()))
             return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
 
+        const auto validateRelECClassId = m_ecSqlStatement && m_ecSqlStatement->IsWriteStatement() && m_ecdb->GetECSqlConfig().IsWriteValueValidationEnabled();
+
         ECClassId relClassId;
         if (!relClassName.empty())
             {
             bvector<Utf8String> tokens;
             BeStringUtilities::Split(relClassName.c_str(), ".:", tokens);
-            if (tokens.size() != 2)
+            if (tokens.size() < 2 || tokens.size() > 3)
                 return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
 
             relClassId = m_ecdb->Schemas().GetClassId(tokens[0], tokens[1], SchemaLookupMode::AutoDetect, relClassTableSpaceName.c_str());
+
+            if (validateRelECClassId)
+                {
+                auto relClass = m_ecdb->Schemas().GetClass(relClassId);
+                if (!relClass)
+                    THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not correspond to any EC class.", relClassName.c_str()).c_str(), IModelJsNativeErrorKey::ECClassError);
+        
+                if (!relClass->IsRelationshipClass())
+                    THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not correspond to a valid ECRelationship class.", relClassName.c_str()).c_str(), IModelJsNativeErrorKey::ECClassError);
+                }
             }
 
         ECSqlStatus stat = m_binder->BindNavigation(navId, relClassId);
+        if (validateRelECClassId && stat == ECSqlStatus(BE_SQLITE_ERROR))
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), Utf8PrintfString("The ECSql statement contains a relationship class '%s' which does not match the relationship class in the navigation property.", relClassName.c_str()).c_str(), IModelJsNativeErrorKey::ECClassError);
+
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
     Napi::Value BindMember(NapiInfoCR info)
         {
         if (m_binder == nullptr || m_ecdb == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         REQUIRE_ARGUMENT_STRING(0, memberName);
         IECSqlBinder& memberBinder = m_binder->operator[](memberName.c_str());
@@ -3810,7 +3915,7 @@ public:
     Napi::Value AddArrayElement(NapiInfoCR info)
         {
         if (m_binder == nullptr || m_ecdb == nullptr)
-            THROW_JS_EXCEPTION("ECSqlBinder is not initialized.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlBinder is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         IECSqlBinder& elementBinder = m_binder->AddArrayElement();
         return New(info.Env(), elementBinder, *m_ecdb);
@@ -3901,7 +4006,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
         Napi::Value GetType(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
             ECTypeDescriptor const& dataType = m_colInfo->GetDataType();
             Type type = Type::Id;
@@ -3982,7 +4087,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
                             type = Type::String;
                             break;
                         default:
-                            THROW_JS_EXCEPTION("Unsupported ECSqlValue primitive type.");
+                            THROW_JS_TYPE_EXCEPTION("Unsupported ECSqlValue primitive type.");
                             break;
                     }
                 }
@@ -3993,25 +4098,25 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
         Napi::Value GetPropertyName(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
             ECPropertyCP prop = m_colInfo->GetProperty();
             if (prop == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo does not represent a property.");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo does not represent a property.", IModelJsNativeErrorKey::NotFound);
 
             return toJsString(Env(), prop->GetName());
             }
         Napi::Value IsDynamicProp(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
             return Napi::Boolean::New(Env(), m_colInfo->IsDynamic());
             }
         Napi::Value GetOriginPropertyName(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
             ECPropertyCP prop = m_colInfo->GetOriginProperty();
             if (prop == nullptr)
@@ -4023,7 +4128,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
         Napi::Value GetAccessString(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
             //if property is generated, the display label contains the select clause item as is.
             //The property name in contrast would have encoded special characters of the select clause item.
@@ -4033,7 +4138,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
                 BeAssert(m_colInfo->GetPropertyPath().Size() == 1);
                 ECPropertyCP prop = m_colInfo->GetProperty();
                 if (prop == nullptr)
-                    THROW_JS_EXCEPTION("ECSqlColumnInfo's Property must not be null for a generated property.");
+                    THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo's Property must not be null for a generated property.", IModelJsNativeErrorKey::NotFound);
 
                 return toJsString(Env(), prop->GetDisplayLabel());
                 }
@@ -4044,7 +4149,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
         Napi::Value IsEnum(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
             return Napi::Boolean::New(Env(), m_colInfo->GetEnumType() != nullptr);
             }
@@ -4052,7 +4157,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
         Napi::Value IsSystemProperty(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
             return Napi::Boolean::New(Env(), m_colInfo->IsSystemProperty());
             }
@@ -4060,7 +4165,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
         Napi::Value IsGeneratedProperty(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
             return Napi::Boolean::New(Env(), m_colInfo->IsGeneratedProperty());
             }
@@ -4068,7 +4173,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
         Napi::Value GetRootClassTableSpace(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
             return toJsString(Env(), m_colInfo->GetRootClass().GetTableSpace());
             }
@@ -4076,7 +4181,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
         Napi::Value GetRootClassName(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
             return toJsString(Env(), ECJsonUtilities::FormatClassName(m_colInfo->GetRootClass().GetClass()));
             }
@@ -4084,7 +4189,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
         Napi::Value GetRootClassAlias(NapiInfoCR info)
             {
             if (m_colInfo == nullptr)
-                THROW_JS_EXCEPTION("ECSqlColumnInfo is not initialized.");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlColumnInfo is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
             return toJsString(Env(), m_colInfo->GetRootClass().GetAlias());
             }
@@ -4166,7 +4271,7 @@ public:
     Napi::Value GetColumnInfo(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         return NativeECSqlColumnInfo::New(Env(), m_ecsqlValue->GetColumnInfo());
         }
@@ -4174,7 +4279,7 @@ public:
     Napi::Value IsNull(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         return Napi::Boolean::New(Env(), m_ecsqlValue->IsNull());
         }
@@ -4182,7 +4287,7 @@ public:
     Napi::Value GetBlob(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         int blobSize;
         void const* data = m_ecsqlValue->GetBlob(&blobSize);
@@ -4194,7 +4299,7 @@ public:
     Napi::Value GetBoolean(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         return Napi::Boolean::New(Env(), m_ecsqlValue->GetBoolean());
         }
@@ -4202,7 +4307,7 @@ public:
     Napi::Value GetDateTime(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         DateTime dt = m_ecsqlValue->GetDateTime();
         return toJsString(Env(), dt.ToString());
@@ -4211,7 +4316,7 @@ public:
     Napi::Value GetDouble(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         return Napi::Number::New(Env(), m_ecsqlValue->GetDouble());
         }
@@ -4219,12 +4324,12 @@ public:
     Napi::Value GetGeometry(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         IGeometryPtr geom = m_ecsqlValue->GetGeometry();
         BeJsDocument json;
         if (geom == nullptr || SUCCESS != ECJsonUtilities::IGeometryToIModelJson(json, *geom))
-            THROW_JS_EXCEPTION("Could not convert IGeometry to JSON.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Could not convert IGeometry to JSON.", IModelJsNativeErrorKey::GeometryStreamError);
 
         return toJsString(Env(), json.Stringify());
         }
@@ -4232,7 +4337,7 @@ public:
     Napi::Value GetGuid(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         BeGuid guid = m_ecsqlValue->GetGuid();
         if (!guid.IsValid())
@@ -4244,7 +4349,7 @@ public:
     Napi::Value GetId(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         BeInt64Id id = m_ecsqlValue->GetId<BeInt64Id>();
         if (!id.IsValid())
@@ -4256,11 +4361,11 @@ public:
     Napi::Value GetClassNameForClassId(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr || m_ecdb == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         ECClassId classId = m_ecsqlValue->GetId<ECClassId>();
         if (!classId.IsValid())
-            THROW_JS_EXCEPTION("Failed to get class name from ECSqlValue: The ECSqlValue does not refer to a valid class id.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to get class name from ECSqlValue: The ECSqlValue does not refer to a valid class id.", IModelJsNativeErrorKey::NotFound);
 
         Utf8StringCR tableSpace = m_ecsqlValue->GetColumnInfo().GetRootClass().GetTableSpace();
         ECClassCP ecClass = m_ecdb->Schemas().GetClass(classId, tableSpace.c_str());
@@ -4268,7 +4373,7 @@ public:
             {
             Utf8String err;
             err.Sprintf("Failed to get class name from ECSqlValue: Class not found for ECClassId %s.", classId.ToHexStr().c_str());
-            THROW_JS_EXCEPTION(err.c_str());
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), err.c_str(), IModelJsNativeErrorKey::ECClassError);
             }
 
         return toJsString(Env(), ECJsonUtilities::FormatClassName(*ecClass));
@@ -4277,7 +4382,7 @@ public:
     Napi::Value GetInt(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         return Napi::Number::New(Env(), m_ecsqlValue->GetInt());
         }
@@ -4285,7 +4390,7 @@ public:
     Napi::Value GetInt64(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         return Napi::Number::New(Env(), m_ecsqlValue->GetInt64());
         }
@@ -4293,7 +4398,7 @@ public:
     Napi::Value GetPoint2d(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         DPoint2d pt = m_ecsqlValue->GetPoint2d();
         Napi::Object jsPt = Napi::Object::New(Env());
@@ -4305,7 +4410,7 @@ public:
     Napi::Value GetPoint3d(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         DPoint3d pt = m_ecsqlValue->GetPoint3d();
         Napi::Object jsPt = Napi::Object::New(Env());
@@ -4318,7 +4423,7 @@ public:
     Napi::Value GetString(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         return toJsString(Env(), m_ecsqlValue->IsNull() ? "" : m_ecsqlValue->GetText());
         }
@@ -4326,11 +4431,11 @@ public:
     Napi::Value GetEnum(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         ECEnumerationCP enumType = m_ecsqlValue->GetColumnInfo().GetEnumType();
         if (enumType == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not an ECEnumeration.");
+            THROW_JS_TYPE_EXCEPTION("ECSqlValue is not an ECEnumeration.");
 
         bvector<ECEnumeratorCP> enumerators;
         if (SUCCESS != m_ecsqlValue->TryGetContainedEnumerators(enumerators) || enumerators.empty())
@@ -4356,7 +4461,7 @@ public:
     Napi::Value GetNavigation(NapiInfoCR info)
         {
         if (m_ecsqlValue == nullptr || m_ecdb == nullptr)
-            THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
         ECClassId relClassId;
         BeInt64Id navId = m_ecsqlValue->GetNavigation(&relClassId);
@@ -4368,7 +4473,7 @@ public:
             Utf8StringCR relClassTableSpace = m_ecsqlValue->GetColumnInfo().GetRootClass().GetTableSpace();
             ECClassCP relClass = m_ecdb->Schemas().GetClass(relClassId, relClassTableSpace.c_str());
             if (relClass == nullptr)
-                THROW_JS_EXCEPTION("Failed to find ECRelationhipClass for the Navigation Value's RelECClassId.");
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Failed to find ECRelationhipClass for the Navigation Value's RelECClassId.", IModelJsNativeErrorKey::ECClassError);
 
             Utf8String relClassName = ECJsonUtilities::FormatClassName(*relClass);
             jsNavValue.Set(ECN::ECJsonSystemNames::Navigation::RelClassName(), Napi::String::New(Env(), relClassName.c_str()));
@@ -4400,17 +4505,17 @@ struct NativeECSqlValueIterator : BeObjectWrap<NativeECSqlValueIterator>
         NativeECSqlValueIterator(NapiInfoCR info) : BeObjectWrap<NativeECSqlValueIterator>(info)
             {
             if (info.Length() < 2)
-                THROW_JS_EXCEPTION("ECSqlValueIterator constructor expects two argument.");
+                THROW_JS_TYPE_EXCEPTION("ECSqlValueIterator constructor expects two argument.");
 
             m_iterable = info[0].As<Napi::External<IECSqlValueIterable>>().Data();
             if (m_iterable == nullptr)
-                THROW_JS_EXCEPTION("Invalid first arg for NativeECSqlValueIterator constructor. IECSqlValueIterable must not be nullptr");
+                THROW_JS_TYPE_EXCEPTION("Invalid first arg for NativeECSqlValueIterator constructor. IECSqlValueIterable must not be nullptr");
 
             m_endIt = m_iterable->end();
 
             m_ecdb = info[1].As<Napi::External<ECDb>>().Data();
             if (m_ecdb == nullptr)
-                THROW_JS_EXCEPTION("Invalid second arg for NativeECSqlValueIterator constructor. ECDb must not be nullptr");
+                THROW_JS_TYPE_EXCEPTION("Invalid second arg for NativeECSqlValueIterator constructor. ECDb must not be nullptr");
             }
 
         ~NativeECSqlValueIterator() {SetInDestructor();}
@@ -4472,7 +4577,7 @@ struct NativeECSqlValueIterator : BeObjectWrap<NativeECSqlValueIterator>
 Napi::Value NativeECSqlValue::GetStructIterator(NapiInfoCR info)
     {
     if (m_ecsqlValue == nullptr || m_ecdb == nullptr)
-        THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
     return NativeECSqlValueIterator::New(info.Env(), m_ecsqlValue->GetStructIterable(), *m_ecdb);
     }
@@ -4483,7 +4588,7 @@ Napi::Value NativeECSqlValue::GetStructIterator(NapiInfoCR info)
 Napi::Value NativeECSqlValue::GetArrayIterator(NapiInfoCR info)
     {
     if (m_ecsqlValue == nullptr || m_ecdb == nullptr)
-        THROW_JS_EXCEPTION("ECSqlValue is not initialized");
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlValue is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
     return NativeECSqlValueIterator::New(info.Env(), m_ecsqlValue->GetArrayIterable(), *m_ecdb);
     }
@@ -4640,7 +4745,7 @@ public:
         }
 
         if (!ecdb || !ecdb->IsDbOpen())
-            BeNapi::ThrowJsException(Env(), "Provided db is not open");
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
 
         m_changeset.OpenGroup(Env(), fileNames, *ecdb, invert);
         }
@@ -4658,11 +4763,11 @@ public:
         REQUIRE_ARGUMENT_BOOL(2, invert);
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
         if (!nativeDgnDb->IsOpen())
-            BeNapi::ThrowJsException(Env(), "provided db is not open");
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
 
         auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromLocalChanges(includeInMemoryChanges);
         if (changeset == nullptr)
-            BeNapi::ThrowJsException(Env(), "no local changes");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no local changes", IModelJsNativeErrorKey::ChangesetError);
 
         m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
         }
@@ -4673,16 +4778,16 @@ public:
         REQUIRE_ARGUMENT_BOOL(2, invert);
         NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
         if (!nativeDgnDb->IsOpen())
-            BeNapi::ThrowJsException(Env(), "provided db is not open");
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
 
         BeInt64Id id;
         if (SUCCESS != BeInt64Id::FromString(id, idStr.c_str())) {
-            BeNapi::ThrowJsException(Env(), "expect txnId to be a hex string");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "expect txnId to be a hex string", IModelJsNativeErrorKey::BadArg);
         }
 
         auto changeset = nativeDgnDb->GetDgnDb().Txns().OpenLocalTxn(TxnManager::TxnId(id.GetValueUnchecked()));
         if (changeset == nullptr)
-            BeNapi::ThrowJsException(Env(), SqlPrintfString("no local change with id: %s", idStr.c_str()).GetUtf8CP());
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), SqlPrintfString("no local change with id: %s", idStr.c_str()).GetUtf8CP(), IModelJsNativeErrorKey::ChangesetError);
 
         m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
 
@@ -4792,7 +4897,7 @@ public:
 
     Napi::Value Reset(NapiInfoCR info) {
         if (!m_stmt.IsPrepared())
-            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
         ECSqlStatus status = m_stmt.Reset();
         return Napi::Number::New(Env(), (int)ToDbResult(status));
@@ -4804,7 +4909,7 @@ public:
 
     Napi::Value ClearBindings(NapiInfoCR info) {
         if (!m_stmt.IsPrepared())
-            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
         auto status = m_stmt.ClearBindings();
         return Napi::Number::New(Env(), (int)ToDbResult(status));
@@ -4812,14 +4917,14 @@ public:
 
     Napi::Value GetBinder(NapiInfoCR info) {
         if (!m_stmt.IsPrepared())
-            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
         if (info.Length() != 1)
-            THROW_JS_EXCEPTION("GetBinder requires a parameter index or name as argument");
+            THROW_JS_TYPE_EXCEPTION("GetBinder requires a parameter index or name as argument");
 
         Napi::Value paramArg = info[0];
         if (!paramArg.IsNumber() && !paramArg.IsString())
-            THROW_JS_EXCEPTION("GetBinder requires a parameter index or name as argument");
+            THROW_JS_TYPE_EXCEPTION("GetBinder requires a parameter index or name as argument");
 
         int paramIndex = -1;
         if (paramArg.IsNumber())
@@ -4828,12 +4933,12 @@ public:
             paramIndex = m_stmt.GetParameterIndex(paramArg.ToString().Utf8Value().c_str());
 
         IECSqlBinder& binder = m_stmt.GetBinder(paramIndex);
-        return NativeECSqlBinder::New(info.Env(), binder, *m_stmt.GetECDb());
+        return NativeECSqlBinder::New(info.Env(), binder, *m_stmt.GetECDb(), &m_stmt);
     }
 
     Napi::Value Step(NapiInfoCR info) {
         if (!m_stmt.IsPrepared())
-            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
         DbResult status = m_stmt.Step();
         return Napi::Number::New(Env(), (int)status);
@@ -4841,7 +4946,7 @@ public:
 
     Napi::Value StepForInsert(NapiInfoCR info) {
         if (!m_stmt.IsPrepared())
-            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
         ECInstanceKey key;
         DbResult status = m_stmt.Step(key);
@@ -4866,7 +4971,7 @@ public:
 
     Napi::Value GetColumnCount(NapiInfoCR info) {
         if (!m_stmt.IsPrepared())
-            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
         int colCount = m_stmt.GetColumnCount();
         return Napi::Number::New(info.Env(), colCount);
@@ -4874,7 +4979,7 @@ public:
 
     Napi::Value GetValue(NapiInfoCR info) {
         if (!m_stmt.IsPrepared())
-            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_INTEGER(0, colIndex);
 
@@ -4884,14 +4989,14 @@ public:
 
     Napi::Value GetNativeSql(NapiInfoCR info) {
         if (!m_stmt.IsPrepared())
-            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
         return Napi::String::New(Env(), m_stmt.GetNativeSql());
     }
 
     Napi::Value ToRow(NapiInfoCR info) {
         if (!m_stmt.IsPrepared())
-            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
         BeJsValue opts(optObj);
@@ -4901,14 +5006,14 @@ public:
         BeJsNapiObject out(info.Env());
         BeJsValue rowJson = out["data"];
         if (adaptor.RenderRowAsArray(rowJson, ECSqlStatementRow(m_stmt)) != SUCCESS)
-            BeNapi::ThrowJsException(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
 
         return out;
     }
 
     Napi::Value GetMetadata(NapiInfoCR info) {
         if (!m_stmt.IsPrepared())
-            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "ECSqlStatement is not prepared.", IModelJsNativeErrorKey::BadArg);
 
         BeJsNapiObject out(info.Env());
         BeJsValue metaJson = out["meta"];
@@ -4968,18 +5073,18 @@ public:
         } else if (SQLiteDb::InstanceOf(dbObj)) {
             db = &SQLiteDb::Unwrap(dbObj)->GetDb();
         } else {
-            THROW_JS_EXCEPTION("requires an open database");
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "requires an open database", DgnDbStatus::NotOpen);
         }
         REQUIRE_ARGUMENT_ANY_OBJ(1, args);
         auto tableName = stringMember(args, JsInterop::json_tableName());
         if (tableName == "")
-            BeNapi::ThrowJsException(info.Env(), "tableName missing");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "tableName missing", IModelJsNativeErrorKey::BadArg);
         auto columnName = stringMember(args, JsInterop::json_columnName());
         if (columnName == "")
-            BeNapi::ThrowJsException(info.Env(), "columnName missing");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "columnName missing", IModelJsNativeErrorKey::BadArg);
         auto row = intMember(args, JsInterop::json_row(), 0);
         if (row == 0)
-            BeNapi::ThrowJsException(info.Env(), "invalid row");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "invalid row", IModelJsNativeErrorKey::BadArg);
         auto writeable = boolMember(args, JsInterop::json_writeable(), false);
         auto stat = m_blobIO.Open(*db, tableName.c_str(), columnName.c_str(), row, writeable);
         if (BE_SQLITE_OK != stat)
@@ -5008,7 +5113,7 @@ public:
         auto offset = intMember(args, JsInterop::json_offset(), 0);
         auto blobObj = args.Get(JsInterop::json_blob());
         if (!blobObj.IsTypedArray() || blobObj.As<Napi::Uint8Array>().ByteLength() < numBytes)
-            BeNapi::ThrowJsException(info.Env(), "blob invalid or too small");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "blob invalid or too small", IModelJsNativeErrorKey::BadArg);
         auto stat = m_blobIO.Write(Napi::Uint8Array(blobObj.Env(), blobObj).Data(), numBytes, offset);
         if (stat != BE_SQLITE_OK)
             JsInterop::throwSqlResult("cannot write to blob", "", stat);
@@ -5094,10 +5199,10 @@ public:
         } else if (NativeECDb::InstanceOf(dbObj)) {
             db = &NativeECDb::Unwrap(dbObj)->GetECDb();
         } else {
-            THROW_JS_EXCEPTION("invalid database object");
+            THROW_JS_TYPE_EXCEPTION("invalid database object");
         }
         if (!db->IsDbOpen())
-            THROW_JS_EXCEPTION("Prepare requires an open database");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Prepare requires an open database", IModelJsNativeErrorKey::NotOpen);
 
         REQUIRE_ARGUMENT_STRING(1, sql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
@@ -5110,26 +5215,26 @@ public:
             status = m_stmt.TryPrepare(*db, sql.c_str());
 
         if (status != BE_SQLITE_OK)
-            BeNapi::ThrowJsException(Env(), db->GetLastError().c_str(), status);
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), db->GetLastError().c_str(), status);
     }
 
     Napi::Value IsReadonly(NapiInfoCR info) {
         if (!m_stmt.IsPrepared())
-            THROW_JS_EXCEPTION("Cannot call IsReadonly on unprepared statement.");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot call IsReadonly on unprepared statement.", IModelJsNativeErrorKey::BadArg);
         return Napi::Boolean::New(Env(), m_stmt.IsReadonly());
     }
 
     Napi::Value BindNull(NapiInfoCR info) {
         int paramIndex = GetParameterIndex(info, 1);
         if (paramIndex < 1)
-            THROW_JS_EXCEPTION("Invalid parameters");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid parameters", IModelJsNativeErrorKey::BadArg);
         return Napi::Number::New(Env(), (int)m_stmt.BindNull(paramIndex));
     }
 
     Napi::Value BindBlob(NapiInfoCR info) {
         int paramIndex = GetParameterIndex(info, 2);
         if (paramIndex < 1)
-            THROW_JS_EXCEPTION("Invalid parameters");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid parameters", IModelJsNativeErrorKey::BadArg);
 
         Napi::Value const& blobVal = info[1];
         if (blobVal.IsTypedArray()) {
@@ -5149,13 +5254,13 @@ public:
             return Napi::Number::New(Env(), (int)stat);
         }
 
-        THROW_JS_EXCEPTION("BindBlob requires a Uint8Array or ArrayBuffer arg");
+        THROW_JS_TYPE_EXCEPTION("BindBlob requires a Uint8Array or ArrayBuffer arg");
     }
 
     Napi::Value BindDouble(NapiInfoCR info) {
         int paramIndex = GetParameterIndex(info, 2);
         if (paramIndex < 1)
-            THROW_JS_EXCEPTION("Invalid parameters");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid parameters", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_NUMBER(1, val);
         const DbResult stat = m_stmt.BindDouble(paramIndex, val.DoubleValue());
@@ -5165,11 +5270,11 @@ public:
     Napi::Value BindInteger(NapiInfoCR info) {
         int paramIndex = GetParameterIndex(info, 2);
         if (paramIndex < 1)
-            THROW_JS_EXCEPTION("Invalid parameters");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid parameters", IModelJsNativeErrorKey::BadArg);
 
         Napi::Value const& val = info[1];
         if (!val.IsNumber() && !val.IsString())
-            THROW_JS_EXCEPTION("BindInteger expects a string or number value.");
+            THROW_JS_TYPE_EXCEPTION("BindInteger expects a string or number value.");
 
         int64_t int64Val;
         if (val.IsNumber())
@@ -5177,7 +5282,7 @@ public:
         else {
             Utf8String strVal(val.ToString().Utf8Value().c_str());
             if (strVal.empty())
-                THROW_JS_EXCEPTION("Integral string passed to BindInteger must not be empty.");
+                THROW_JS_TYPE_EXCEPTION("Integral string passed to BindInteger must not be empty.");
 
             bool const isNegativeNumber = strVal[0] == '-';
             Utf8CP positiveNumberStr = isNegativeNumber ? strVal.c_str() + 1 : strVal.c_str();
@@ -5186,13 +5291,13 @@ public:
             {
                 Utf8String error;
                 error.Sprintf("BindInteger failed. Could not parse string %s to a valid integer.", strVal.c_str());
-                THROW_JS_EXCEPTION(error.c_str());
+                THROW_JS_TYPE_EXCEPTION(error.c_str());
             }
 
             if (isNegativeNumber && uVal > (uint64_t)std::numeric_limits<int64_t>::max()) {
                 Utf8String error;
                 error.Sprintf("BindInteger failed. Number in string %s is too large to fit into a signed 64 bit integer value.", strVal.c_str());
-                THROW_JS_EXCEPTION(error.c_str());
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), error.c_str(), IModelJsNativeErrorKey::BadArg);
             }
 
             int64Val = uVal;
@@ -5207,7 +5312,7 @@ public:
     Napi::Value BindString(NapiInfoCR info) {
         int paramIndex = GetParameterIndex(info, 2);
         if (paramIndex < 1)
-            THROW_JS_EXCEPTION("Invalid parameters");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid parameters", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING(1, val);
         const DbResult stat = m_stmt.BindText(paramIndex, val.c_str(), Statement::MakeCopy::Yes);
@@ -5217,7 +5322,7 @@ public:
     Napi::Value BindGuid(NapiInfoCR info) {
         int paramIndex = GetParameterIndex(info, 2);
         if (paramIndex < 1)
-            THROW_JS_EXCEPTION("Invalid parameters");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid parameters", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING(1, guidString);
         BeGuid guid;
@@ -5231,7 +5336,7 @@ public:
     Napi::Value BindId(NapiInfoCR info) {
         int paramIndex = GetParameterIndex(info, 2);
         if (paramIndex < 1)
-            THROW_JS_EXCEPTION("Invalid parameters");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid parameters", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING(1, idString);
         BeInt64Id id;
@@ -5876,11 +5981,11 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
         catch (std::exception const& e)
             {
-            THROW_JS_EXCEPTION(e.what());
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), e.what(), IModelJsNativeErrorKey::RuntimeError);
             }
         catch (...)
             {
-            THROW_JS_EXCEPTION("Unknown initialization error");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Unknown initialization error", IModelJsNativeErrorKey::RuntimeError);
             }
         }
 
@@ -6026,7 +6131,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         {
         REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db);
         if (!db->IsOpen())
-            THROW_JS_EXCEPTION("NativeECPresentationManager::ForceLoadSchemas: iModel not open");
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "NativeECPresentationManager::ForceLoadSchemas: iModel not open", DgnDbStatus::NotOpen);
 
         DgnDbWorkerPtr worker = new SchemasLoader(info.Env(), db->GetDgnDb());
         return worker->Queue();
@@ -6131,7 +6236,7 @@ void JsInterop::HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAsse
         return;
         }
 
-    BeNapi::ThrowJsException(JsInterop::Env(), Utf8PrintfString("Native Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str());
+    THROW_JS_IMODEL_NATIVE_EXCEPTION(JsInterop::Env(), Utf8PrintfString("Native Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str(), IModelJsNativeErrorKey::NativeAssertion);
     }
 
 //=======================================================================================
@@ -6244,7 +6349,7 @@ public:
     Napi::Value Dump(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING(0, outputFileName);
         BentleyStatus status = m_importContext->Dump(outputFileName);
@@ -6254,7 +6359,7 @@ public:
     Napi::Value AddClass(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING(0, sourceClassFullName);
         REQUIRE_ARGUMENT_STRING(1, targetClassFullName);
@@ -6277,7 +6382,7 @@ public:
     Napi::Value AddCodeSpecId(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, CodeSpecId, sourceId);
         REQUIRE_ARGUMENT_STRING_ID(1, targetIdStr, CodeSpecId, targetId);
@@ -6288,7 +6393,7 @@ public:
     Napi::Value AddElementId(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, DgnElementId, sourceId);
         REQUIRE_ARGUMENT_STRING_ID(1, targetIdStr, DgnElementId, targetId);
@@ -6299,7 +6404,7 @@ public:
     Napi::Value RemoveElementId(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, DgnElementId, sourceId);
         m_importContext->AddElementId(sourceId, DgnElementId());
@@ -6309,7 +6414,7 @@ public:
     Napi::Value FindCodeSpecId(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, CodeSpecId, sourceId);
         CodeSpecId targetId = m_importContext->FindCodeSpecId(sourceId);
@@ -6319,7 +6424,7 @@ public:
     Napi::Value FindElementId(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, DgnElementId, sourceId);
         DgnElementId targetId = m_importContext->FindElementId(sourceId);
@@ -6329,7 +6434,7 @@ public:
     Napi::Value CloneElement(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, DgnElementId, sourceElementId);
         bool binaryGeometry = false;
@@ -6341,7 +6446,7 @@ public:
 
         DgnElementCPtr sourceElement = m_importContext->GetSourceDb().Elements().GetElement(sourceElementId);
         if (!sourceElement.IsValid())
-            THROW_JS_EXCEPTION("Invalid source ElementId");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid source ElementId", IModelJsNativeErrorKey::BadArg);
 
         // NOTE: Elements and Models share the same mapping table. However, the root Subject can be remapped but not the RepositoryModel
         DgnModelId targetModelId;
@@ -6352,14 +6457,14 @@ public:
 
         DgnModelPtr targetModel = m_importContext->GetDestinationDb().Models().GetModel(targetModelId);
         if (!targetModel.IsValid())
-            THROW_JS_EXCEPTION("Invalid target model");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid target model", IModelJsNativeErrorKey::BadArg);
 
         DgnDbStatus cloneStatus;
         DgnElementPtr targetElement = sourceElement->CloneForImport(&cloneStatus, *targetModel, *m_importContext);
         if (cloneStatus == DgnDbStatus::WrongClass)
-            THROW_JS_EXCEPTION("Unable to clone an element because of an invalid class. Were schemas imported?");
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Unable to clone an element because of an invalid class. Were schemas imported?", cloneStatus);
         if (cloneStatus != DgnDbStatus::Success || !targetElement.IsValid())
-            THROW_JS_EXCEPTION("Unable to clone element");
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Unable to clone element", cloneStatus);
 
         GeometryStreamCP geometryStream = nullptr;
         GeometrySourceCP geometrySource = targetElement->ToGeometrySource();
@@ -6399,7 +6504,7 @@ public:
     Napi::Value ImportCodeSpec(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, CodeSpecId, sourceId);
         CodeSpecId targetId = m_importContext->RemapCodeSpecId(sourceId);
@@ -6409,7 +6514,7 @@ public:
     Napi::Value ImportFont(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_NUMBER(0, sourceFontNumber);
         FontId sourceFontId(static_cast<uint64_t>(sourceFontNumber.Uint32Value())); // BESERVER_ISSUED_ID_CLASS can be represented as a number in TypeScript
@@ -6420,7 +6525,7 @@ public:
     Napi::Value HasSubCategoryFilter(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         return Napi::Boolean::New(Env(), m_importContext->HasSubCategoryFilter());
         }
@@ -6428,7 +6533,7 @@ public:
     Napi::Value IsSubCategoryFiltered(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING_ID(0, subCategoryIdStr, DgnSubCategoryId, subCategoryId);
         return Napi::Boolean::New(Env(), m_importContext->IsSubCategoryFiltered(subCategoryId));
@@ -6437,7 +6542,7 @@ public:
     Napi::Value FilterSubCategoryId(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_STRING_ID(0, subCategoryIdStr, DgnSubCategoryId, subCategoryId);
         m_importContext->FilterSubCategoryId(subCategoryId);
@@ -6447,26 +6552,28 @@ public:
     Napi::Value SaveStateToDb(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_OBJ(0, SQLiteDb, db);
         if (nullptr == db)
-            THROW_JS_EXCEPTION("Invalid SQLiteDb");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
         DbResult result = m_importContext->SaveStateToDb(db->GetDb());
-        if (result != DbResult::BE_SQLITE_OK) THROW_JS_EXCEPTION("Failed to serialize the state");
+        if (result != DbResult::BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to serialize the state", result);
         return Env().Undefined();
         }
 
     Napi::Value LoadStateFromDb(NapiInfoCR info)
         {
         if (nullptr == m_importContext)
-            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
 
         REQUIRE_ARGUMENT_OBJ(0, SQLiteDb, db);
         if (nullptr == db)
-            THROW_JS_EXCEPTION("Invalid SQLiteDb");
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid NativeImportContext", IModelJsNativeErrorKey::BadArg);
         DbResult result = m_importContext->LoadStateFromDb(db->GetDb());
-        if (result != DbResult::BE_SQLITE_OK) THROW_JS_EXCEPTION("Failed to load the state");
+        if (result != DbResult::BE_SQLITE_OK)
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to load the state", result);
         return Env().Undefined();
         }
 };
@@ -6497,11 +6604,11 @@ static Napi::Value Signal(NapiInfoCR info)
 static void EmitLogs(NapiInfoCR info)
     {
     if (info.Length() != 5)
-        THROW_JS_EXCEPTION("Must supply 5 arguments");
+        THROW_JS_TYPE_EXCEPTION("Must supply 5 arguments");
     REQUIRE_ARGUMENT_UINTEGER(0, count);
     REQUIRE_ARGUMENT_STRING(1, category);
     if (!info[2].IsNumber())
-        THROW_JS_EXCEPTION("Argument 2 should be a number");
+        THROW_JS_TYPE_EXCEPTION("Argument 2 should be a number");
     auto severity = JsLogger::JsLevelToSeverity(info[2].As<Napi::Number>());
     REQUIRE_ARGUMENT_STRING(3, thread);
     REQUIRE_ARGUMENT_FUNCTION(4, onDone);
@@ -6543,7 +6650,7 @@ static void EmitLogs(NapiInfoCR info)
         }
     else
         {
-        THROW_JS_EXCEPTION("Unexpected value for `thread` argument. Expecting either \"main\" or \"worker\".");
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Unexpected value for `thread` argument. Expecting either \"main\" or \"worker\".", IModelJsNativeErrorKey::RuntimeError);
         }
     }
 
@@ -6615,7 +6722,7 @@ static Napi::Value computeSchemaChecksum(NapiInfoCR info) {
     Utf8String message;
     auto sha1 = exactMatch ? SchemaUtil::ComputeChecksumWithExactRefMatch(message, schemaPath, paths) : SchemaUtil::ComputeChecksum(message, schemaPath, paths);
     if ("" == sha1)
-        THROW_JS_EXCEPTION(message.c_str());
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), message.c_str(), IModelJsNativeErrorKey::SchemaError);
 
     return Napi::String::New(info.Env(), sha1);
 }
@@ -6732,7 +6839,7 @@ static void setCrashReporting(NapiInfoCR info)
 static void setCrashReportProperty(NapiInfoCR info)
     {
     if (!s_crashReportingInitialized)
-        THROW_JS_EXCEPTION("Crash reporting is not initialized.");
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Crash reporting is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
     REQUIRE_ARGUMENT_STRING(0, key);
 
@@ -6755,7 +6862,7 @@ static void setCrashReportProperty(NapiInfoCR info)
 static Napi::Value getCrashReportProperties(NapiInfoCR info)
     {
     if (!s_crashReportingInitialized)
-        THROW_JS_EXCEPTION("Crash reporting is not initialized.");
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Crash reporting is not initialized.", IModelJsNativeErrorKey::NotInitialized);
 
     auto env = info.Env();
 
@@ -6830,12 +6937,12 @@ static Napi::Value isRscFontData(NapiInfoCR info) {
 static Napi::Value imageBufferFromImageSource(NapiInfoCR info) {
     REQUIRE_ARGUMENT_UINTEGER(0, iSrcFmt);
     if (static_cast<uint32_t>(ImageSource::Format::Png) != iSrcFmt && static_cast<uint32_t>(ImageSource::Format::Jpeg) != iSrcFmt) {
-        THROW_JS_EXCEPTION("ImageSource format must be Png or Jpeg");
+        THROW_JS_TYPE_EXCEPTION("ImageSource format must be Png or Jpeg");
     }
 
     REQUIRE_ARGUMENT_ANY_OBJ(1, oSrcData);
     if (!oSrcData.IsTypedArray()) {
-        THROW_JS_EXCEPTION("ImageSource data must be Uint8Array");
+        THROW_JS_TYPE_EXCEPTION("ImageSource data must be Uint8Array");
     }
 
     auto srcData = oSrcData.As<Napi::Uint8Array>();
@@ -6848,7 +6955,7 @@ static Napi::Value imageBufferFromImageSource(NapiInfoCR info) {
         imgFmt = src.SupportsTransparency() ? Image::Format::Rgba : Image::Format::Rgb;
     } else {
         if (static_cast<uint32_t>(Image::Format::Rgb) != iImgFmt && static_cast<uint32_t>(Image::Format::Rgba) != iImgFmt) {
-            THROW_JS_EXCEPTION("ImageBuffer format must be Rgb or Rgba");
+            THROW_JS_TYPE_EXCEPTION("ImageBuffer format must be Rgb or Rgba");
         }
 
         imgFmt = static_cast<Image::Format>(iImgFmt);
@@ -6878,12 +6985,12 @@ static Napi::Value imageBufferFromImageSource(NapiInfoCR info) {
 static Napi::Value imageSourceFromImageBuffer(NapiInfoCR info) {
     REQUIRE_ARGUMENT_UINTEGER(0, iImgFmt);
     if (static_cast<uint32_t>(Image::Format::Rgb) != iImgFmt && static_cast<uint32_t>(Image::Format::Rgba) != iImgFmt) {
-        THROW_JS_EXCEPTION("ImageBuffer format must be Rgb or Rgba");
+        THROW_JS_TYPE_EXCEPTION("ImageBuffer format must be Rgb or Rgba");
     }
 
     REQUIRE_ARGUMENT_ANY_OBJ(1, oImgData);
     if (!oImgData.IsTypedArray()) {
-        THROW_JS_EXCEPTION("ImageBuffer data must be Uint8Array");
+        THROW_JS_TYPE_EXCEPTION("ImageBuffer data must be Uint8Array");
     }
 
     REQUIRE_ARGUMENT_UINTEGER(2, imgWidth);
@@ -6902,7 +7009,7 @@ static Napi::Value imageSourceFromImageBuffer(NapiInfoCR info) {
         srcFmt = Image::Format::Rgba == img.GetFormat() ? ImageSource::Format::Png : ImageSource::Format::Jpeg;
     } else {
         if (static_cast<uint32_t>(ImageSource::Format::Png) != iSrcFmt && static_cast<uint32_t>(ImageSource::Format::Jpeg) != iSrcFmt) {
-            THROW_JS_EXCEPTION("ImageSource format must be Png or Jpeg");
+            THROW_JS_TYPE_EXCEPTION("ImageSource format must be Png or Jpeg");
         }
 
         srcFmt = static_cast<ImageSource::Format>(iSrcFmt);

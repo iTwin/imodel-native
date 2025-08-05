@@ -374,6 +374,25 @@ export declare namespace IModelJsNative {
     size?: number;
     pathname: string;
   }
+
+  interface PerStatementHealthStats {
+    sqlStatement: string;
+    dbOperation: string;
+    rowCount: number;
+    elapsedMs: number;
+    fullTableScans: number;
+  }
+  interface ChangesetHealthStats {
+    changesetId: string;
+    uncompressedSizeBytes: number;
+    sha1ValidationTimeMs: number;
+    insertedRows: number;
+    updatedRows: number;
+    deletedRows: number;
+    totalElapsedMs: number;
+    totalFullTableScans: number;
+    perStatementStats: [PerStatementHealthStats];
+  }
   interface ECSqlRowAdaptorOptions {
     abbreviateBlobs?: boolean;
     classIdsToClassNames?: boolean;
@@ -643,7 +662,7 @@ export declare namespace IModelJsNative {
 
     public convertOrUpdateGeometrySource(arg: IGeometrySource, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometrySource;
     public convertOrUpdateGeometryPart(arg: IGeometryPart, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometryPart;
-
+    
     // when lets getIModelProps know that the extents may have been updated as the result of a pullChanges and should be read directly from the iModel as opposed to the cached extents.
     public getITwinId(): GuidString;
     public getLastError(): string;
@@ -729,6 +748,10 @@ export declare namespace IModelJsNative {
     public startCreateChangeset(): ChangesetFileProps;
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
     public stopProfiler(): { rc: DbResult, elapsedTime?: number, scopeId?: number, fileName?: string };
+    public enableChangesetStatsTracking(): void;
+    public disableChangesetStatsTracking(): void;
+    public getChangesetHealthData(changesetId: string): ChangesetHealthStats;
+    public getAllChangesetHealthData(): ChangesetHealthStats[];
     public updateElement(elemProps: Partial<ElementProps>): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;
@@ -752,13 +775,14 @@ export declare namespace IModelJsNative {
     public static getAssetsDir(): string;
     public static zlibCompress(data: Uint8Array): Uint8Array;
     public static zlibDecompress(data: Uint8Array, actualSize: number): Uint8Array;
+    public static computeChangesetId(args: Partial<ChangesetFileProps> & Required<Pick<ChangesetFileProps, "parentId" | "pathname">> ): string;
   }
 
   /** The native object for GeoServices. */
   class GeoServices {
     constructor();
     public static getGeographicCRSInterpretation(props: GeographicCRSInterpretRequestProps): GeographicCRSInterpretResponseProps;
-    public static getListOfCRS(extent?: Range2dProps): Array<{ name: string, description: string, deprecated: boolean, crsExtent: Range2dProps }>;
+    public static getListOfCRS(extent?: Range2dProps, includeWorld?: boolean): Array<{ name: string, description: string, deprecated: boolean, crsExtent: Range2dProps }>;
   }
 
   /**

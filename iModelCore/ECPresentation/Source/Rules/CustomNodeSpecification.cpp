@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 #include <ECPresentation/Rules/SpecificationVisitor.h>
@@ -31,51 +30,6 @@ CustomNodeSpecification::CustomNodeSpecification (int priority, bool hideIfNoChi
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CustomNodeSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP CustomNodeSpecification::_GetXmlElementName () const
-    {
-    return CUSTOM_NODE_SPECIFICATION_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CustomNodeSpecification::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (!ChildNodeSpecification::_ReadXml(xmlNode))
-        return false;
-
-    // required:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_type, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_TYPE))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_label, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_LABEL))
-        return false;
-
-    // optional:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_description, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_DESCRIPTION))
-        m_description = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_imageId, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_IMAGEID))
-        m_imageId = "";
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CustomNodeSpecification::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    ChildNodeSpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue (CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_TYPE, m_type.c_str ());
-    xmlNode->AddAttributeStringValue (CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_LABEL, m_label.c_str ());
-    xmlNode->AddAttributeStringValue (CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_DESCRIPTION, m_description.c_str ());
-    xmlNode->AddAttributeStringValue (CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_IMAGEID, m_imageId.c_str ());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

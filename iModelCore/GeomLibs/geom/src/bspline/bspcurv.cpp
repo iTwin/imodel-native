@@ -1004,7 +1004,7 @@ MSBsplineCurve  *inCurve
             {
             a = (U[p]-U[k])/(U[p+j+1]-U[k]);
 
-            if (1.0 == a)
+            if (fabs(1.0 - a) < fc_nearZero)
                 {
                 // too many start knots
                 bspcurv_freeCurve (&curve);
@@ -1031,7 +1031,7 @@ MSBsplineCurve  *inCurve
             {
             a = (U[n+1]-U[n-j])/(U[n-j+i+2]-U[n-j]);
 
-            if (0.0 == a)
+            if (fabs(a) < fc_nearZero)
                 {
                 // too many end knots
                 bspcurv_freeCurve (&curve);
@@ -1376,11 +1376,14 @@ int             closed
             }
         if (weight)
             *weight = h;
-        if (h == 0.0)
+        if (fabs(h) < fc_nearZero)
             h = 1.0;
-        point->x /= h;
-        point->y /= h;
-        point->z /= h;
+        else
+            {
+            point->x /= h;
+            point->y /= h;
+            point->z /= h;
+            }
         }
     else
         {

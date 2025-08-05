@@ -64,6 +64,8 @@ enum class TxnType : int32_t {
 //=======================================================================================
 struct TxnMonitor {
     virtual ~TxnMonitor() { }
+    virtual void _OnPullMergeEnd(TxnManager&) {}
+    virtual void _OnPullMergeBegin(TxnManager&) {}
     virtual void _OnCommit(TxnManager&) {}
     virtual void _OnCommitted(TxnManager&) {}
     virtual void _OnAppliedChanges(TxnManager&) {}
@@ -428,8 +430,10 @@ private:
     bool m_initTableHandlers;
     bool m_inProfileUpgrade = false;
     bool m_indirectChanges = false;
+    bool m_trackChangesetHealthStats = false;
     bvector<ECN::ECClassId> m_childPropagatesChangesToParentRels;
     ChangesetPropsPtr m_changesetInProgress;
+    std::map<Utf8String, BeJsDocument> m_changesetHealthStatistics;
 
 public:
     ModelChanges m_modelChanges;
@@ -500,6 +504,15 @@ public:
     DGNPLATFORM_EXPORT void ForEachLocalChange(std::function<void(BeSQLite::EC::ECInstanceKey const&, BeSQLite::DbOpcode)>, bvector<Utf8String> const&, bool includeInMemoryChanges = false);
     void SaveParentChangeset(Utf8StringCR revisionId, int32_t changesetIndex);
     ChangesetPropsPtr CreateChangesetProps(BeFileNameCR pathName);
+
+    // Changeset Health Statistics
+    bool TrackChangesetHealthStats() const { return m_trackChangesetHealthStats; }
+    DGNPLATFORM_EXPORT void EnableChangesetHealthStatsTracking() { m_trackChangesetHealthStats = true; }
+    DGNPLATFORM_EXPORT void DisableChangesetHealthStatsTracking() { m_trackChangesetHealthStats = false; }
+
+    DGNPLATFORM_EXPORT BeJsDocument GetAllChangesetHealthStatistics() const;
+    DGNPLATFORM_EXPORT BeJsDocument GetChangesetHealthStatistics(Utf8StringCR changesetId) const;
+    void SetChangesetHealthStatistics(ChangesetPropsCR revision);
 
     //! PullMerge
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> OpenLocalTxn(TxnManager::TxnId id);
@@ -978,6 +991,11 @@ struct ChangesetProps : RefCountedBase {
         SchemaSync = Schema | 64,
     };
 
+private:
+    size_t uncompressedSize;
+    mutable unsigned int m_sha1ValidationTime;
+
+public:
     TxnManager::TxnId m_endTxnId;
     Utf8String m_id;
     int32_t m_index;
@@ -989,7 +1007,7 @@ struct ChangesetProps : RefCountedBase {
     Utf8String m_summary;
     ChangesetType m_changesetType;
     ChangesetProps(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid, BeFileNameCR fileName, ChangesetType changesetType) :
-        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName), m_changesetType(changesetType) {}
+        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName), m_changesetType(changesetType), uncompressedSize(0), m_sha1ValidationTime(0) {}
 
     Utf8StringCR GetChangesetId() const { return m_id; }
     int32_t GetChangesetIndex() const { return m_index; }
@@ -998,6 +1016,10 @@ struct ChangesetProps : RefCountedBase {
     Utf8StringCR GetDbGuid() const { return m_dbGuid; }
     ChangesetType GetChangesetType() const { return m_changesetType; };
     BeFileNameCR GetFileName() const { return m_fileName; }
+    void SetUncompressedSize(size_t size) { uncompressedSize = size; }
+    size_t GetUncompressedSize() const { return uncompressedSize; }
+    unsigned int GetSha1ValidationTime() const { return m_sha1ValidationTime; }
+    void SetSha1ValidationTime(unsigned int time) const { m_sha1ValidationTime = time; }
 
     //! Get or set the user name
     Utf8StringCR GetUserName() const { return m_userName; }
@@ -1017,6 +1039,7 @@ struct ChangesetProps : RefCountedBase {
     DGNPLATFORM_EXPORT bool ContainsDdlChanges(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void ValidateContent(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void Dump(DgnDbR dgndb) const;
+    DGNPLATFORM_EXPORT static Utf8String ComputeChangesetId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env);
 };
 
 //=======================================================================================

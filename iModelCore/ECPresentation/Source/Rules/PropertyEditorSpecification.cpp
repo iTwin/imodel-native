@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
@@ -63,50 +62,6 @@ PropertyEditorParametersSpecification* PropertyEditorParametersSpecification::Cr
     if (!spec || !spec->ReadJson(json))
         DELETE_AND_CLEAR(spec);
     return spec;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP PropertyEditorSpecification::_GetXmlElementName() const {return PROPERTY_EDITORS_SPECIFICATION_XML_CHILD_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorSpecification::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!PresentationKey::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_name, PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_EDITORNAME))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, PROPERTY_EDITORS_SPECIFICATION_XML_NODE_NAME, PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_EDITORNAME));
-        return false;
-        }
-
-    for (BeXmlNodeP child = xmlNode->GetFirstChild(BEXMLNODE_Element); nullptr != child; child = child->GetNextSibling(BEXMLNODE_Element))
-        {
-        if (0 == BeStringUtilities::Stricmp(child->GetName(), PROPERTY_EDITOR_JSON_PARAMETERS_XML_NODE_NAME))
-            CommonToolsInternal::LoadSpecificationFromXmlNode<PropertyEditorJsonParameters, PropertyEditorParametersList>(child, m_parameters, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), PROPERTY_EDITOR_MULTILINE_PARAMETERS_XML_NODE_NAME))
-            CommonToolsInternal::LoadSpecificationFromXmlNode<PropertyEditorMultilineParameters, PropertyEditorParametersList>(child, m_parameters, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), PROPERTY_EDITOR_RANGE_PARAMETERS_XML_NODE_NAME))
-            CommonToolsInternal::LoadSpecificationFromXmlNode<PropertyEditorRangeParameters, PropertyEditorParametersList>(child, m_parameters, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_NODE_NAME))
-            CommonToolsInternal::LoadSpecificationFromXmlNode<PropertyEditorSliderParameters, PropertyEditorParametersList>(child, m_parameters, this);
-        }
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorSpecification::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    PresentationKey::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_EDITORNAME, m_name.c_str());
-    CommonToolsInternal::WriteRulesToXmlNode<PropertyEditorParametersSpecification, PropertyEditorParametersList>(xmlNode, m_parameters);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -188,35 +143,6 @@ Utf8CP PropertyEditorParametersSpecification::_GetJsonElementTypeAttributeName()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP PropertyEditorJsonParameters::_GetXmlElementName() const {return PROPERTY_EDITOR_JSON_PARAMETERS_XML_NODE_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorJsonParameters::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    Utf8String content;
-    xmlNode->GetContent(content);
-    m_json.Parse(content);
-    if (m_json.hasParseError())
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to parse property editor JSON parameters: %s", content.c_str()));
-        return false;
-        }
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorJsonParameters::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    xmlNode->SetContent(WString(m_json.Stringify().c_str(), BentleyCharEncoding::Utf8).c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP PropertyEditorJsonParameters::_GetJsonElementType() const
     {
     return PROPERTY_EDITOR_JSON_PARAMETERS_JSON_TYPE;
@@ -253,29 +179,6 @@ MD5 PropertyEditorJsonParameters::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP PropertyEditorMultilineParameters::_GetXmlElementName() const {return PROPERTY_EDITOR_MULTILINE_PARAMETERS_XML_NODE_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorMultilineParameters::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (BEXML_Success != xmlNode->GetAttributeUInt32Value(m_height, PROPERTY_EDITOR_MULTILINE_PARAMETERS_ATTRIBUTE_HEIGHT))
-        m_height = 1;
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorMultilineParameters::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    xmlNode->AddAttributeUInt32Value(PROPERTY_EDITOR_MULTILINE_PARAMETERS_ATTRIBUTE_HEIGHT, m_height);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP PropertyEditorMultilineParameters::_GetJsonElementType() const
     {
     return PROPERTY_EDITOR_MULTILINE_PARAMETERS_JSON_TYPE;
@@ -307,35 +210,6 @@ MD5 PropertyEditorMultilineParameters::_ComputeHash() const
     if (m_height != 1)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, PROPERTY_EDITOR_MULTILINE_PARAMETERS_JSON_ATTRIBUTE_HEIGHT, m_height);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP PropertyEditorRangeParameters::_GetXmlElementName() const {return PROPERTY_EDITOR_RANGE_PARAMETERS_XML_NODE_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorRangeParameters::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    double value;
-    if (BEXML_Success == xmlNode->GetAttributeDoubleValue(value, PROPERTY_EDITOR_RANGE_PARAMETERS_XML_ATTRIBUTE_MINIMUM))
-        m_min = value;
-    if (BEXML_Success == xmlNode->GetAttributeDoubleValue(value, PROPERTY_EDITOR_RANGE_PARAMETERS_XML_ATTRIBUTE_MAXIMUM))
-        m_max = value;
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorRangeParameters::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    if (m_min.IsValid())
-        xmlNode->AddAttributeDoubleValue(PROPERTY_EDITOR_RANGE_PARAMETERS_XML_ATTRIBUTE_MINIMUM, m_min.Value());
-    if (m_max.IsValid())
-        xmlNode->AddAttributeDoubleValue(PROPERTY_EDITOR_RANGE_PARAMETERS_XML_ATTRIBUTE_MAXIMUM, m_max.Value());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -384,47 +258,6 @@ MD5 PropertyEditorRangeParameters::_ComputeHash() const
     if (!m_max.IsNull())
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM, m_max);
     return md5;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP PropertyEditorSliderParameters::_GetXmlElementName() const {return PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_NODE_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorSliderParameters::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (BEXML_Success != xmlNode->GetAttributeDoubleValue(m_min, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_MINIMUM))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_NODE_NAME, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_MINIMUM));
-        return false;
-        }
-    if (BEXML_Success != xmlNode->GetAttributeDoubleValue(m_max, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_MAXIMUM))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_NODE_NAME, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_MAXIMUM));
-        return false;
-        }
-    if (BEXML_Success != xmlNode->GetAttributeUInt32Value(m_intervalsCount, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_INTERVALS))
-        m_intervalsCount = 1;
-    if (BEXML_Success != xmlNode->GetAttributeUInt32Value(m_valueFactor, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_VALUEFACTOR))
-        m_valueFactor = 1;
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_isVertical, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_VERTICAL))
-        m_isVertical = false;
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorSliderParameters::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    xmlNode->AddAttributeDoubleValue(PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_MINIMUM, m_min);
-    xmlNode->AddAttributeDoubleValue(PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_MAXIMUM, m_max);
-    xmlNode->AddAttributeUInt32Value(PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_INTERVALS, m_intervalsCount);
-    xmlNode->AddAttributeUInt32Value(PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_VALUEFACTOR, m_valueFactor);
-    xmlNode->AddAttributeBooleanValue(PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_VERTICAL, m_isVertical);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -482,8 +315,6 @@ MD5 PropertyEditorSliderParameters::_ComputeHash() const
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM, m_max);
     if (m_intervalsCount != 1)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_INTERVALS, m_intervalsCount);
-    if (m_valueFactor != 1)
-        ADD_PRIMITIVE_VALUE_TO_HASH(md5, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_VALUEFACTOR, m_valueFactor);
     if (m_isVertical)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_VERTICAL, m_isVertical);
     return md5;

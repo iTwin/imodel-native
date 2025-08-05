@@ -640,6 +640,16 @@
             ]
         },
         {
+            "name": "MacOS Attach",
+            "presentation": {
+                "group": "2_MacOS",
+            },
+            "type": "lldb",
+            "request": "attach",
+            "program": "/Users/affan.khan/.nvm/versions/node/v22.15.1/bin/node",
+            "pid": "${command:pickProcess}",
+        },    
+        {
             "name": "ECDb Performance Test",
             "presentation": {
                 "group": "3_PerformanceWin",
