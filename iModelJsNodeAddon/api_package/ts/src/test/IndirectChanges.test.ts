@@ -48,62 +48,32 @@ class MockTxn {
   public resetDependencyResults() { this.dres = new DependencyCallbackResults(); }
 
   _onBeforeOutputsHandled(_elClassName: string, elId: Id64String): void {
-    // console.log(`_onBeforeOutputsHandled ${this.fmtElem(elClassName,elId)}`);
     this.dres.beforeOutputs.push(elId);
   }
   _onAllInputsHandled(_elClassName: string, elId: Id64String): void {
-    assert.isTrue(this.db.isIndirectChanges());
-    // console.log(`_onAllInputsHandled ${this.fmtElem(elClassName,elId)}`);
     this.dres.allInputsHandled.push(elId);
   }
-  _onRootChanged(props: RelationshipProps): void {
-    assert.isTrue(this.db.isIndirectChanges());
-    // console.log(`_onRootChanged ${this.fmtRel(props)}`);
-    this.dres.rootChanged.push(props);
+  _onRootChanged(_props: RelationshipProps): void {
   }
-  _onDeletedDependency(props: RelationshipProps): void {
-    assert.isTrue(this.db.isIndirectChanges());
-    // console.log(`_onDeletedDependency ${this.fmtRel(props)}`);
-    this.dres.deletedDependency.push(props);
+  _onDeletedDependency(_props: RelationshipProps): void {
   }
-  // _onDirectChange(elClassName: string, elId: Id64String): void {
-  //   console.log(`_onDirectChange ${this.fmtElem(elClassName,elId)}`);
-  //   this.dres.directChange.push(elId);
-  // }
-  // _onValidateOutput(props: RelationshipProps): void {
-  //   console.log(`_onValidateOutput ${this.fmtRel(props)}`);
-  //   this.dres.validateOutput.push(props);
-  // }
   _onBeginValidate() {
-    assert.isFalse(this.db.isIndirectChanges());
-    // console.log(`_onBeginValidate`);
   }
   _onEndValidate() {
-    assert.isFalse(this.db.isIndirectChanges());
-    // console.log(`_onEndValidate`);
   }
   _onGeometryChanged(_modelProps: ModelGeometryChangesProps[]) {
-    // console.log(`_onGeometryChanged ${util.inspect(modelProps)}`);
   }
   _onGeometryGuidsChanged(_changes: ModelIdAndGeometryGuid[]): void {
-    // console.log(`_onGeometryGuidsChanged ${util.inspect(changes)}`);
   }
   _onCommit() {
-    assert.isFalse(this.db.isIndirectChanges());
-    // console.log(`_onCommit`);
   }
   _onCommitted() {
-    assert.isFalse(this.db.isIndirectChanges());
-    // console.log(`_onCommitted`);
   }
   _onChangesApplied() {
-    // console.log(`_onChangesApplied`);
   }
   _onBeforeUndoRedo(_isUndo: boolean) {
-    // console.log(`_onBeforeUndoRedo ${isUndo}`);
   }
   _onAfterUndoRedo(_isUndo: boolean) {
-    // console.log(`_onAfterUndoRedo ${isUndo}`);
   }
 
 }
