@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "../RulesEngineTypes.h"
 #include "PresentationRuleJsonConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
@@ -23,19 +24,22 @@ static void SortPropertiesByOverridePriority(PropertySpecificationsList& propert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool NoPropertiesIncluded(PropertySpecificationsList const& properties)
+static bool AllPropertiesIncluded(PropertySpecificationsList const& properties)
     {
-    return properties.empty();
-    }
+    return ContainerHelpers::Contains(properties, [](auto const& propertySpec)
+        {
+        if (!propertySpec->GetPropertyName().Equals(INCLUDE_ALL_PROPERTIES_SPEC))
+            return false;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool AllPropertiesWithNoOverridesIncluded(PropertySpecificationsList const& properties)
-    {
-    static auto defaultHash = PropertySpecification(INCLUDE_ALL_PROPERTIES_SPEC).GetHash();
-    return properties.size() == 1
-        && properties[0]->GetHash() == defaultHash;
+        if (propertySpec->IsDisplayed() == false)
+            return false;
+
+        if (propertySpec->IsDisplayed() == nullptr)
+            return true;
+
+        // if we get here, `IsDisplayed` is either `true` or a string
+        return propertySpec->DoNotHideOtherPropertiesOnDisplayOverride();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -189,7 +193,7 @@ RelatedPropertiesSpecification::~RelatedPropertiesSpecification()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RelatedPropertiesSpecification::AllRelationshipPropertiesIncluded() const
     {
-    return AllPropertiesWithNoOverridesIncluded(m_relationshipProperties);
+    return ::AllPropertiesIncluded(m_relationshipProperties);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -197,7 +201,7 @@ bool RelatedPropertiesSpecification::AllRelationshipPropertiesIncluded() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RelatedPropertiesSpecification::AllPropertiesIncluded() const
     {
-    return AllPropertiesWithNoOverridesIncluded(m_properties);
+    return ::AllPropertiesIncluded(m_properties);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -350,17 +354,19 @@ void RelatedPropertiesSpecification::_WriteJson(BeJsValue json) const
     if (m_propertiesSourceSpecification)
         m_propertiesSourceSpecification->WriteJson(json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIESSOURCE]);
 
-    if (NoPropertiesIncluded(m_properties))
+    static auto allPropertiesIncludedSpecificationHash = PropertySpecification(INCLUDE_ALL_PROPERTIES_SPEC).GetHash();
+
+    if (m_properties.size() == 0)
         json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES] = INCLUDE_NO_PROPERTIES_SPEC;
-    else if (!AllPropertiesIncluded())
+    else if (m_properties.size() > 1 || m_properties[0]->GetHash() != allPropertiesIncludedSpecificationHash)
         {
         CommonToolsInternal::WriteRulesToJson<PropertySpecification, PropertySpecificationsList>
             (json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES], m_properties);
         }
 
-    if (AllRelationshipPropertiesIncluded())
+    if (m_relationshipProperties.size() == 1 && m_relationshipProperties[0]->GetHash() == allPropertiesIncludedSpecificationHash)
         json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPPROPERTIES] = INCLUDE_ALL_PROPERTIES_SPEC;
-    else if (!NoPropertiesIncluded(m_relationshipProperties))
+    else if (m_relationshipProperties.size() > 0)
         {
         CommonToolsInternal::WriteRulesToJson<PropertySpecification, PropertySpecificationsList>
             (json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_RELATIONSHIPPROPERTIES], m_relationshipProperties);
