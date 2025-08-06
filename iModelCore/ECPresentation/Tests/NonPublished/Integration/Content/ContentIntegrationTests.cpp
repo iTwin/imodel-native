@@ -6088,6 +6088,70 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_ContentModifierShouldAddCalculatedPropertiesOnNestedContentWhenPropertiesIncludedWithStar, R"*(
+    <ECEntityClass typeName="A">
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="PropertyB1" typeName="string" />
+        <ECProperty propertyName="PropertyB2" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_B" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="references" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierShouldAddCalculatedPropertiesOnNestedContentWhenPropertiesIncludedWithStar)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+
+    ECRelationshipClassCP relationshipAHasB = GetClass("A_Has_B")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {});
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("PropertyB", ECValue("InstanceB")); });
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAHasB, *instanceA, *instanceB);
+
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+
+    RelatedPropertiesSpecification* instanceRelatedPropSpec = new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relationshipAHasB->GetFullName(), RequiredRelationDirection_Forward)
+        }), { new PropertySpecification("PropertyB1", 1000, "", nullptr, false), new PropertySpecification("*", 1000, "", nullptr, nullptr) }, RelationshipMeaning::RelatedInstance);
+    spec->AddRelatedProperty(*instanceRelatedPropSpec);
+
+    ContentModifierP calculatedPropertiesOnB = new ContentModifier(GetSchema()->GetName(), classB->GetName());
+    calculatedPropertiesOnB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProperty", 1000, "10*10"));
+    calculatedPropertiesOnB->SetApplyOnNestedContent(true);
+
+    rules->AddPresentationRule(*contentRule);
+    rules->AddPresentationRule(*calculatedPropertiesOnB);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_EQ(classB->GetName(), descriptor->GetVisibleFields()[0]->GetLabel());
+    auto fieldsB = descriptor->GetVisibleFields()[0]->AsNestedContentField();
+    EXPECT_EQ(2, fieldsB->GetFields().size()); // PropertyB2 & CalculatedProperty
+    EXPECT_STREQ("PropertyB2", fieldsB->GetFields()[0]->GetLabel().c_str());
+    EXPECT_STREQ("CalculatedProperty", fieldsB->GetFields()[1]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(ContentRelatedInstancesSpecification_ContentModifierAppliesCalculatedPropertiesSpecification, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="SharedProperty" typeName="string" />
