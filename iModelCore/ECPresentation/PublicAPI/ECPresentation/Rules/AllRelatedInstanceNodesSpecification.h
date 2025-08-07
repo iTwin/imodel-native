@@ -21,7 +21,6 @@ struct EXPORT_VTABLE_ATTRIBUTE AllRelatedInstanceNodesSpecification : ChildNodeS
 
 private:
     bool                       m_groupByClass;
-    bool                       m_groupByRelationship;
     bool                       m_groupByLabel;
     int                        m_skipRelatedLevel;
     Utf8String                 m_supportedSchemas;
@@ -30,10 +29,6 @@ private:
 protected:
     //! Allows the visitor to visit this specification.
     ECPRESENTATION_EXPORT void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
-
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-    ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
 
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
@@ -50,11 +45,6 @@ public:
     ECPRESENTATION_EXPORT AllRelatedInstanceNodesSpecification ();
 
     //! Constructor.
-    //! @deprecated Use AllRelatedInstanceNodesSpecification(int, ChildrenHint, bool, bool, bool, bool, int, Utf8StringCR)
-    ECPRESENTATION_EXPORT AllRelatedInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
-        bool groupByClass, bool groupByRelationship, bool groupByLabel, int skipRelatedLevel, Utf8StringCR supportedSchemas);
-
-    //! Constructor.
     ECPRESENTATION_EXPORT AllRelatedInstanceNodesSpecification (int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
         bool groupByClass, bool groupByLabel, int skipRelatedLevel, Utf8StringCR supportedSchemas);
 
@@ -63,14 +53,6 @@ public:
 
     //! Sets the GroupByClass value. Can be boolean.
     ECPRESENTATION_EXPORT void                         SetGroupByClass (bool value);
-
-    //! Returns true if grouping by relationship should be applied.
-    //! @deprecated
-    ECPRESENTATION_EXPORT bool                         GetGroupByRelationship (void) const;
-
-    //! Sets the GroupByRelationship value. Can be boolean.
-    //! @deprecated
-    ECPRESENTATION_EXPORT void                         SetGroupByRelationship (bool value);
 
     //! Returns true if grouping by label should be applied.
     ECPRESENTATION_EXPORT bool                         GetGroupByLabel (void) const;

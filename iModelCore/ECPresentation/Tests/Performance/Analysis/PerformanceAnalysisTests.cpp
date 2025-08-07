@@ -227,9 +227,7 @@ void SingleManagerRulesEnginePerformanceAnalysisTests::ForEachDatasetAndRuleset(
             // load ruleset
             NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov(L"  Ruleset: %s", rulesetPath.GetFileNameAndExtension().c_str());
             PresentationRuleSetPtr ruleset;
-            if (rulesetPath.GetExtension().EqualsI(L"xml"))
-                ruleset = PresentationRuleSet::ReadFromXmlFile(rulesetPath);
-            else if (rulesetPath.GetExtension().EqualsI(L"json"))
+            if (rulesetPath.GetExtension().EqualsI(L"json"))
                 ruleset = PresentationRuleSet::ReadFromJsonFile(rulesetPath);
             if (ruleset.IsNull())
                 {

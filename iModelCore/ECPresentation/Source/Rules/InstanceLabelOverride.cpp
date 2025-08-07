@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRule.h>
 
@@ -65,47 +64,6 @@ InstanceLabelOverride::InstanceLabelOverride(InstanceLabelOverride&& other)
 InstanceLabelOverride::~InstanceLabelOverride()
     {
     CommonToolsInternal::FreePresentationRules(m_valueSpecifications);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP InstanceLabelOverride::_GetXmlElementName() const { return INSTANCE_LABEL_OVERRIDE_XML_NODE_NAME; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceLabelOverride::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!CustomizationRule::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_className, INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_CLASSNAME))
-        return false;
-
-    Utf8String propertyNamesStr;
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(propertyNamesStr, INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_PROPERTYNAMES))
-        return false;
-
-    bvector<Utf8String> propertyNames = CommonToolsInternal::ParsePropertiesNames(propertyNamesStr);
-    for (Utf8StringCR propertyName : propertyNames)
-        AddValueSpecification(*new InstanceLabelOverridePropertyValueSpecification(propertyName));
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceLabelOverride::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    CustomizationRule::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_CLASSNAME, m_className.c_str());
-
-    InstanceLabelOverridePropertyNamesJoiner joiner;
-    for (InstanceLabelOverrideValueSpecification const* spec : m_valueSpecifications)
-        spec->Accept(joiner);
-    xmlNode->AddAttributeStringValue(INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_PROPERTYNAMES, joiner.GetResult().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

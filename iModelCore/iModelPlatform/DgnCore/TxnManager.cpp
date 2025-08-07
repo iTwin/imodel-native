@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <BeSQLite/Profiler.h>
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -878,6 +879,9 @@ ChangesetStatus TxnManager::MergeDdlChanges(ChangesetPropsCR revision, Changeset
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges, bool fastForward) {
+    if (TrackChangesetHealthStats())
+        Profiler::InitScope(*changeStream.GetDb(), "Apply Changeset", revision.GetChangesetId().c_str(), Profiler::Params(false, true));
+
     DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, false, fastForward);
     if (result != BE_SQLITE_OK) {
         if (changeStream.GetLastErrorMessage().empty())
@@ -921,7 +925,40 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
         result = ApplyChanges(allChanges, TxnAction::Reverse, containsSchemaChanges, true);
         BeAssert(result == BE_SQLITE_OK);
     }
+
+    if (TrackChangesetHealthStats())
+        SetChangesetHealthStatistics(revision);
     return status;
+}
+
+void TxnManager::SetChangesetHealthStatistics(ChangesetPropsCR revision) {
+    const auto scope = Profiler::GetScope(m_dgndb);
+    if (scope == nullptr) {
+        BeAssert(false && "Profiler scope has not been defined");
+        return;
+    }
+
+    auto stats = scope->GetDetailedSqlStats();
+    stats["changeset_id"] = revision.GetChangesetId();
+    stats["uncompressed_size_bytes"] = static_cast<int64_t>(revision.GetUncompressedSize());
+    stats["sha1_validation_time_ms"] = static_cast<int64_t>(revision.GetSha1ValidationTime());
+    m_changesetHealthStatistics[revision.GetChangesetId()] = stats.Stringify();
+}
+
+BeJsDocument TxnManager::GetAllChangesetHealthStatistics() const {
+    BeJsDocument stats;
+    auto changesets = stats["changesets"];
+    for (const auto& [changesetId, stat] : m_changesetHealthStatistics)
+        changesets.appendObject().From(stat);
+    return stats;
+}
+
+BeJsDocument TxnManager::GetChangesetHealthStatistics(Utf8StringCR changesetId) const {
+    if (const auto it = m_changesetHealthStatistics.find(changesetId); it != m_changesetHealthStatistics.end())
+        return BeJsDocument(it->second.Stringify());
+    
+    LOG.infov("No changeset health statistics found for changeset id: %s", changesetId.c_str());
+    return BeJsDocument();
 }
 
 /** throw an exception we are currently waiting for a changeset to be uploaded. */
@@ -963,6 +1000,21 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
         m_dgndb.ThrowException("unable to save changes", (int) ChangesetStatus::SQLiteError);
 }
 
+namespace
+    {
+    bool IsCacheTableNameInChangeset(const Changes& changes)
+        {
+        for (const auto& change: changes)
+            {
+            if (change.GetOpcode() == DbOpcode::Insert)  // we only care about update/delete operations
+                continue;
+            
+            if (const auto tableName = change.GetTableName(); !tableName.empty() && 0 == strncmp(tableName.c_str(), "ec_cache_", 9))
+                return true;
+            }
+        return false;
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
@@ -1021,7 +1073,7 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
             auto schemaApplyArgs = ApplyChangesArgs::Default()
                 .SetInvert(invert)
                 .SetIgnoreNoop(true)
-                .SetFkNoAction(true)
+                .SetFkNoAction(IsCacheTableNameInChangeset(changeStream.GetChanges()))
                 .ApplyOnlySchemaChanges();
 
             m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
@@ -1310,6 +1362,21 @@ struct DisableTracking {
     ~DisableTracking() { m_txns.EnableTracking(m_wasTracking); }
 };
 
+class ProfilerScope {
+    const Profiler::Scope* m_scope = nullptr;
+    bool m_isTrackingEnabled;
+public:
+    ProfilerScope(TxnManagerR txn) {
+        m_scope = Profiler::GetScope(txn.GetDgnDb());
+        m_isTrackingEnabled = m_scope != nullptr && txn.TrackChangesetHealthStats();
+    }
+
+    void Start() const { if (m_isTrackingEnabled) m_scope->Start(); }
+    void Resume() const { if (m_isTrackingEnabled && m_scope->IsPaused()) m_scope->Resume(); }
+    void Pause() const { if (m_isTrackingEnabled) m_scope->Pause(); }
+    void Stop() const { if (m_isTrackingEnabled) m_scope->Stop(); }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * Apply a changeset to the database. Notify all TxnTables about what was in the Changeset afterwards.
 * @bsimethod
@@ -1340,7 +1407,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     }
 
     // we want cascade delete to work during rebase.
-    const bool fkNoAction = !pmConf.IsRebasingLocalChanges();
+    bool fkNoAction = !pmConf.IsRebasingLocalChanges();
     const bool ignoreNoop = pmConf.IsRebasingLocalChanges();
     bool fastForwardEncounteredMergeConflict = false;
     auto fastForwardConflictHandler = [&fastForwardEncounteredMergeConflict](ChangeStream::ConflictCause _, Changes::Change change) {
@@ -1351,8 +1418,16 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
         return ChangeStream::ConflictResolution::Abort;
     };
 
+    const auto scope = ProfilerScope(*this);
+    scope.Start();
     // apply schema part of changeset before data changes if schema changes are present
-    if (containsSchemaChanges) {
+    if (containsSchemaChanges)
+        {
+        // If the SQLITE_CHANGESETAPPLY_FKNOACTION flag is set, we need to check if the cache tables have been tracked in the changeset.
+        // If the cache tables are not tracked, we should set the flag to false to allow cascades and avoid any possible FK constraint violations.
+        if (fkNoAction)
+            fkNoAction = IsCacheTableNameInChangeset(Changes(changeset, false));
+
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
         auto schemaApplyArgs = ApplyChangesArgs::Default()
             .SetInvert(invert)
@@ -1378,10 +1453,12 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
 
                 m_dgndb.AbandonChanges();
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
+                scope.Stop();
                 return result;
             }
         }
 
+        scope.Pause();
         m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
             if (action == TxnAction::Merge) {
                 const auto result = m_dgndb.AfterSchemaChangeSetApplied();
@@ -1389,6 +1466,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
                     LOG.errorv("ApplyChanges failed schema changes: %s", BeSQLiteLib::GetErrorName(result));
                     BeAssert(false);
                     m_dgndb.AbandonChanges();
+                    scope.Stop();
                     return result;
                 }
             }
@@ -1408,6 +1486,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
         dataApplyArgs.ApplyOnlyDataChanges();
     }
 
+    scope.Resume();
     if (!m_dgndb.IsReadonly()) {
         const auto result = [&]() {
             auto _v = pmConf.IsRebasingLocalChanges() ? nullptr : std::make_unique<DisableTracking>(*this);
@@ -1425,9 +1504,11 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
             if (containsSchemaChanges) {
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
             }
+            scope.Stop();
             return result;
         }
     }
+    scope.Stop();
 
     if (action == TxnAction::Merge) {
         auto result = m_dgndb.AfterDataChangeSetApplied(containsSchemaChanges);

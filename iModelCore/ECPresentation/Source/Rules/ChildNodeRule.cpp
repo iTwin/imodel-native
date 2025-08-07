@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
@@ -39,53 +38,6 @@ SubCondition::~SubCondition()
     CommonToolsInternal::FreePresentationRules(m_requiredSchemas);
     CommonToolsInternal::FreePresentationRules(m_subConditions);
     CommonToolsInternal::FreePresentationRules(m_specifications);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP SubCondition::_GetXmlElementName() const {return SUB_CONDITION_XML_NODE_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SubCondition::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!PresentationKey::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_condition, PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION))
-        m_condition = "";
-
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<SubCondition, SubConditionList>(xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME, this);
-
-    for (BeXmlNodeP child = xmlNode->GetFirstChild(BEXMLNODE_Element); NULL != child; child = child->GetNextSibling(BEXMLNODE_Element))
-        {
-        if (0 == BeStringUtilities::Stricmp(child->GetName(), ALL_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<AllInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), ALL_RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<AllRelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), CUSTOM_NODE_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<CustomNodeSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<InstanceNodesOfSpecificClassesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<RelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<SearchResultInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
-        }
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SubCondition::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    xmlNode->AddAttributeStringValue(PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION, m_condition.c_str());
-    CommonToolsInternal::WriteRulesToXmlNode<SubCondition, SubConditionList>(xmlNode, m_subConditions);
-    CommonToolsInternal::WriteRulesToXmlNode<ChildNodeSpecification, ChildNodeSpecificationList>(xmlNode, m_specifications);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -198,21 +150,22 @@ void SubCondition::_SetIndex(int& index)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeRule::ChildNodeRule() : m_targetTree(TargetTree_MainTree), m_stopFurtherProcessing(false)
+ChildNodeRule::ChildNodeRule()
+    : m_stopFurtherProcessing(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeRule::ChildNodeRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
-    : ConditionalPresentationRule(condition, priority, onlyIfNotHandled), m_targetTree(targetTree), m_stopFurtherProcessing(false)
+ChildNodeRule::ChildNodeRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled)
+    : ConditionalPresentationRule(condition, priority, onlyIfNotHandled), m_stopFurtherProcessing(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeRule::ChildNodeRule(ChildNodeRuleCR other)
-    : ConditionalPresentationRule(other), m_targetTree(other.m_targetTree), m_stopFurtherProcessing(other.m_stopFurtherProcessing)
+    : ConditionalPresentationRule(other), m_stopFurtherProcessing(other.m_stopFurtherProcessing)
     {
     CommonToolsInternal::CopyRules(m_subConditions, other.m_subConditions, this);
     CommonToolsInternal::CloneRules(m_specifications, other.m_specifications, this);
@@ -227,79 +180,6 @@ ChildNodeRule::~ChildNodeRule()
     CommonToolsInternal::FreePresentationRules(m_subConditions);
     CommonToolsInternal::FreePresentationRules(m_specifications);
     CommonToolsInternal::FreePresentationRules(m_customizationRules);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ChildNodeRule::_GetXmlElementName() const
-    {
-    return CHILD_NODE_RULE_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeRule::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!ConditionalPresentationRule::_ReadXml(xmlNode))
-        return false;
-
-    m_targetTree = TargetTree_MainTree;
-    Utf8String ruleTargetTreeString = "";
-    if (BEXML_Success == xmlNode->GetAttributeStringValue(ruleTargetTreeString, CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE))
-        m_targetTree = CommonToolsInternal::ParseTargetTreeString(ruleTargetTreeString.c_str(), _GetXmlElementName());
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_stopFurtherProcessing, COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING))
-        m_stopFurtherProcessing = false;
-
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<SubCondition, SubConditionList>(xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME, this);
-
-    for (BeXmlNodeP child = xmlNode->GetFirstChild(BEXMLNODE_Element); NULL != child; child = child->GetNextSibling(BEXMLNODE_Element))
-        {
-        if (0 == BeStringUtilities::Stricmp(child->GetName(), ALL_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<AllInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), ALL_RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<AllRelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), CUSTOM_NODE_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<CustomNodeSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<InstanceNodesOfSpecificClassesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<RelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<SearchResultInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), GROUPING_RULE_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<GroupingRule, ChildNodeCustomizationRuleList>(child, m_customizationRules, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), CHECKBOX_RULE_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<CheckBoxRule, ChildNodeCustomizationRuleList>(child, m_customizationRules, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), STYLE_OVERRIDE_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<StyleOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), LABEL_OVERRIDE_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<LabelOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), SORTING_RULE_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<SortingRule, ChildNodeCustomizationRuleList>(child, m_customizationRules, this);
-        else if (0 == BeStringUtilities::Stricmp(child->GetName(), IMAGE_ID_OVERRIDE_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<ImageIdOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules, this);
-        }
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ChildNodeRule::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    ConditionalPresentationRule::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE, CommonToolsInternal::FormatTargetTreeString(m_targetTree));
-    xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING, m_stopFurtherProcessing);
-    if (!m_subConditions.empty())
-        CommonToolsInternal::WriteRulesToXmlNode<SubCondition, SubConditionList>(xmlNode, m_subConditions);
-    if (!m_specifications.empty())
-        CommonToolsInternal::WriteRulesToXmlNode<ChildNodeSpecification, ChildNodeSpecificationList>(xmlNode, m_specifications);
-    if (!m_customizationRules.empty())
-        CommonToolsInternal::WriteRulesToXmlNode<CustomizationRule, ChildNodeCustomizationRuleList>(xmlNode, m_customizationRules);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -343,11 +223,6 @@ void ChildNodeRule::_WriteJson(BeJsValue json) const
     if (!m_customizationRules.empty())
         CommonToolsInternal::WriteRulesToJson<CustomizationRule, ChildNodeCustomizationRuleList>(json[CHILD_NODE_RULE_JSON_ATTRIBUTE_CUSTOMIZATIONRULES], m_customizationRules);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-RuleTargetTree ChildNodeRule::GetTargetTree(void) const { return m_targetTree; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -404,8 +279,6 @@ bool ChildNodeRule::GetStopFurtherProcessing(void) const { return m_stopFurtherP
 MD5 ChildNodeRule::_ComputeHash() const
     {
     MD5 md5 = T_Super::_ComputeHash();
-    if (m_targetTree != TargetTree_MainTree)
-        ADD_PRIMITIVE_VALUE_TO_HASH(md5, CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE, m_targetTree);
     if (m_stopFurtherProcessing)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, COMMON_JSON_ATTRIBUTE_STOPFURTHERPROCESSING, m_stopFurtherProcessing);
     ADD_RULES_TO_HASH(md5, CHILD_NODE_RULE_JSON_ATTRIBUTE_SUBCONDITIONS, m_subConditions);
@@ -434,40 +307,9 @@ RootNodeRule::RootNodeRule()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-RootNodeRule::RootNodeRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand)
-    : ChildNodeRule(condition, priority, onlyIfNotHandled, targetTree), m_autoExpand(autoExpand)
+RootNodeRule::RootNodeRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled, bool autoExpand)
+    : ChildNodeRule(condition, priority, onlyIfNotHandled), m_autoExpand(autoExpand)
     {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP RootNodeRule::_GetXmlElementName() const
-    {
-    return ROOT_NODE_RULE_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RootNodeRule::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!ChildNodeRule::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_autoExpand, COMMON_XML_ATTRIBUTE_AUTOEXPAND))
-        m_autoExpand = false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RootNodeRule::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    ChildNodeRule::_WriteXml(xmlNode);
-    xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_AUTOEXPAND, m_autoExpand);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
