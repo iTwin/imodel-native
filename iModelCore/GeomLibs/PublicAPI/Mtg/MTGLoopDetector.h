@@ -195,17 +195,14 @@ public: bool AddEdgeAndTestForCycle (int vertexIndexA, int vertexIndexB, bvector
       closed = FindNodeInFaceLoop (existingNodeAtVertexA, existingNodeAtVertexB);
       }
 
-  int numPrior = 0;
   if (m_graph.IsValidNodeId(existingNodeAtVertexA))
       {
       m_graph.VertexTwist (newNodeAtVertexA, existingNodeAtVertexA);
-      numPrior++;
       }
 
   if (m_graph.IsValidNodeId(existingNodeAtVertexB))
       {
       m_graph.VertexTwist (newNodeAtVertexB, existingNodeAtVertexB);
-      numPrior++;
       }
 
   if (closed)
@@ -226,19 +223,16 @@ public: void AddEdge(int vertexIndexA, int vertexIndexB)
     SetVertexIndex(newNodeAtVertexA, vertexIndexA);
     SetVertexIndex(newNodeAtVertexB, vertexIndexB);
 
-    int numPrior = 0;
     if (existingNodeAtVertexA != MTG_NULL_NODEID)
         {
         m_graph.VertexTwist(newNodeAtVertexA, existingNodeAtVertexA);
         m_graph.ExciseSliverFace(newNodeAtVertexA);
-        numPrior++;
         }
 
     if (existingNodeAtVertexB != MTG_NULL_NODEID)
         {
         m_graph.VertexTwist(newNodeAtVertexB, existingNodeAtVertexB);
         m_graph.ExciseSliverFace(newNodeAtVertexB);
-        numPrior++;
         }
 
     }
