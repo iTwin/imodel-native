@@ -197,11 +197,11 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderContext::NavNodesProviderContext(PresentationRuleSetCR ruleset, RuleTargetTree targetTree, NavNodeCP physicalParent,
+NavNodesProviderContext::NavNodesProviderContext(PresentationRuleSetCR ruleset, NavNodeCP physicalParent,
     std::unique_ptr<RulesetVariables> rulesetVariables, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache,
     NavNodesFactory const& nodesFactory, std::shared_ptr<INavNodesCache> nodesCache, INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState)
     : RulesDrivenProviderContext(ruleset, std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, nodesFactory, localState),
-    m_targetTree(targetTree), m_nodesCache(nodesCache), m_providerFactory(providerFactory), m_physicalParentNode(physicalParent), m_requestingAllNodes(false)
+    m_nodesCache(nodesCache), m_providerFactory(providerFactory), m_physicalParentNode(physicalParent), m_requestingAllNodes(false)
     {
     Init();
     }
@@ -210,7 +210,7 @@ NavNodesProviderContext::NavNodesProviderContext(PresentationRuleSetCR ruleset, 
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodesProviderContext::NavNodesProviderContext(NavNodesProviderContextCR other)
-    : RulesDrivenProviderContext(other), m_nodesCache(other.m_nodesCache), m_targetTree(other.m_targetTree),
+    : RulesDrivenProviderContext(other), m_nodesCache(other.m_nodesCache),
     m_physicalParentNode(other.m_physicalParentNode), m_providerFactory(other.m_providerFactory), m_onHierarchyLevelLoaded(other.m_onHierarchyLevelLoaded),
     m_requestingAllNodes(other.m_requestingAllNodes), m_hierarchyLevelLocker(other.m_hierarchyLevelLocker), m_instanceFilter(other.m_instanceFilter),
     m_resultSetSizeLimit(other.m_resultSetSizeLimit)

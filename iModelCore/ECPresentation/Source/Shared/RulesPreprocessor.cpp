@@ -238,9 +238,6 @@ bool RulesPreprocessor::AddMatchingSpecifications(SpecificationsLookupContext co
         if (!MeetsSchemaRequirements(context.GetECDb(), rule->GetRequiredSchemaSpecifications(), *rule))
             continue;
 
-        if (rule->GetTargetTree() != context.GetRuleTargetTree() && rule->GetTargetTree() != TargetTree_Both)
-            continue;
-
         if (rule->GetOnlyIfNotHandled() && (handled || specs.size() > 0))
             continue;
 
@@ -409,7 +406,7 @@ static bool FindCustomizationRules(ECDbCR ecdb, bset<CustomizationRuleOrder<Cust
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-RootNodeRuleSpecificationsList RulesPreprocessor::_GetRootNodeSpecifications(RootNodeRuleParametersCR params)
+RootNodeRuleSpecificationsList RulesPreprocessor::_GetRootNodeSpecifications()
     {
     bool handled = false;
     RootNodeRuleSpecificationsList specs;
@@ -419,7 +416,7 @@ RootNodeRuleSpecificationsList RulesPreprocessor::_GetRootNodeSpecifications(Roo
             m_rulesetVariables, m_usedVariablesListener);
         return ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
         };
-    SpecificationsLookupContext context(m_connection.GetECDb(), params.GetTargetTree(), m_ecexpressionsCache, nullptr, false, nullptr, contextPreparer);
+    SpecificationsLookupContext context(m_connection.GetECDb(), m_ecexpressionsCache, nullptr, false, nullptr, contextPreparer);
     AddMatchingSpecifications(context, m_ruleset.GetRootNodesRules(), specs, handled);
     return specs;
     }
@@ -441,13 +438,13 @@ ChildNodeRuleSpecificationsList RulesPreprocessor::_GetChildNodeSpecifications(C
     OptimizedExpressionsParameters optParams(m_connections, m_connection, params.GetParentNode().GetKey(), "");
 
     NavNodeExtendedData parentNodeExtendedData(params.GetParentNode());
-    SpecificationsLookupContext specificationContext(m_connection.GetECDb(), params.GetTargetTree(), m_ecexpressionsCache, params.GetParentNode().GetKey()->GetSpecificationIdentifier().c_str(),
+    SpecificationsLookupContext specificationContext(m_connection.GetECDb(), m_ecexpressionsCache, params.GetParentNode().GetKey()->GetSpecificationIdentifier().c_str(),
         parentNodeExtendedData.GetRequestedSpecification(), &optParams, contextPreparer);
     AddSpecificationsByHierarchy(specificationContext, GetAllHierarchyRulesAtRootLevel(m_ruleset), specs, handled, stopProcessing, 0);
 
     if (!stopProcessing)
         {
-        SpecificationsLookupContext context(m_connection.GetECDb(), params.GetTargetTree(), m_ecexpressionsCache, nullptr, false, &optParams, contextPreparer);
+        SpecificationsLookupContext context(m_connection.GetECDb(), m_ecexpressionsCache, nullptr, false, &optParams, contextPreparer);
         AddMatchingSpecifications(context, m_ruleset.GetChildNodesRules(), specs, handled);
         }
 

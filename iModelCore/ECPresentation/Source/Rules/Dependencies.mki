@@ -53,8 +53,7 @@ PresentationRulesPublicHeaders    = $(PresentationRulesPublicApiDirectory)Presen
                                     $(PresentationRulesPublicApiDirectory)RequiredSchemaSpecification.h \
                                     $(PresentationRulesPublicApiDirectory)MultiSchemaClass.h
 
-PresentationRulesInternalHeaders  = $(PresentationRulesSourceDirectory)PresentationRuleXmlConstants.h \
-                                    $(PresentationRulesSourceDirectory)PresentationRuleJsonConstants.h \
+PresentationRulesInternalHeaders  = $(PresentationRulesSourceDirectory)PresentationRuleJsonConstants.h \
                                     $(PresentationRulesSourceDirectory)CommonToolsInternal.h
 
 PresentationRulesHeaders          = $(PresentationRulesPublicHeaders) $(PresentationRulesInternalHeaders) $(RulesDrivenECPresentationHeaders)

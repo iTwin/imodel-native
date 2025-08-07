@@ -5,6 +5,7 @@
 #include <bsibasegeomPCH.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
 double SetBCurveOffsetSign (double offsetDistance)
     {
 #ifdef BCurveNeedsReversedOffsetSign
@@ -13,6 +14,7 @@ double SetBCurveOffsetSign (double offsetDistance)
     return offsetDistance;
 #endif
     }
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -535,25 +537,27 @@ void _AppendCurvePlaneIntersections(DPlane3dCR plane, bvector<CurveLocationDetai
     {AppendTolerancedPlaneIntersections (plane, this, *m_curve, intersections, tol);}
 
 }; // CurvePrimitiveBsplineCurve
-//#define CREATE_SPIRAL_CURVE CurvePrimitiveSpiralCurve::Create
-//#define CREATE_SPIRAL_CURVE CurvePrimitiveSpiralCurve1::Create
-#include "cp_directSpiral.h"
-#include "cp_spiral.h"
-#include "cp_catenary.h"
-static int s_spiralSelector = 0;
-int ICurvePrimitive::SelectSpiralImplementation(int selector)
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+ICurvePrimitivePtr ICurvePrimitive::CreateBsplineCurve (MSBsplineCurveCR curve)
+    {return CurvePrimitiveBsplineCurve::Create (curve);}
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+ICurvePrimitivePtr ICurvePrimitive::CreateBsplineCurveSwapFromSource (MSBsplineCurveR curve)
     {
-    auto oldSelector = s_spiralSelector;
-    s_spiralSelector = selector;
-    return oldSelector;
+    return CurvePrimitiveBsplineCurve::Create (curve.CreateCapture ());
     }
-static ICurvePrimitivePtr CreateSpiralFromPlacement (
-    DSpiral2dBaseCR spiral,
-    TransformCR frame,
-    double fractionA,
-    double fractionB,
-    double maxStrokeLength = DEFAULT_SPIRAL_MAX_STROKE_LENGTH
-    );
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+ICurvePrimitivePtr ICurvePrimitive::CreateBsplineCurve (MSBsplineCurvePtr curve)
+    {return CurvePrimitiveBsplineCurve::Create (curve);}
+
 
 #ifndef CurvePrimitive_NO_INTERPOLATINGCURVE
 /*=================================================================================**//**
@@ -669,7 +673,13 @@ public:
 
 static ICurvePrimitive* Create (MSInterpolationCurveCR fitCurve)
     {
-    return new CurvePrimitiveInterpolationCurve (fitCurve);
+    auto primitive = new CurvePrimitiveInterpolationCurve (fitCurve);
+    // Alas, a constructor call cannot return failure.
+    // If fitCurve points are collapsed to a point, it is observable as null poles and knots ..
+    auto ptr = primitive->GetProxyBsplineCurvePtr();
+    if (ptr.IsValid () && ptr->poles != nullptr && ptr->knots != nullptr)
+        return primitive;
+    return nullptr;
     }
 
 static ICurvePrimitive* CreateSwapFromSource (MSInterpolationCurveR fitCurve)
@@ -679,6 +689,7 @@ static ICurvePrimitive* CreateSwapFromSource (MSInterpolationCurveR fitCurve)
 
 
 }; // CurvePrimitiveInterpolationCurve
+
 ICurvePrimitivePtr  ICurvePrimitive::CreateInterpolationCurve (MSInterpolationCurveCR fitCurve)
     {return CurvePrimitiveInterpolationCurve::Create (fitCurve);}
 
@@ -791,10 +802,28 @@ static ICurvePrimitivePtr Create (DPoint3dCP points, size_t nPoints)
     return nullptr;
     }
 }; // CurvePrimitiveAkimaCurve
+
 ICurvePrimitivePtr  ICurvePrimitive::CreateAkimaCurve (DPoint3dCP points, size_t nPoints)
     {return CurvePrimitiveAkimaCurve::Create (points, nPoints);}
 
 #endif
+
+#include "cp_directSpiral.h"
+#include "cp_spiral.h"
+static int s_spiralSelector = 0;
+int ICurvePrimitive::SelectSpiralImplementation(int selector)
+    {
+    auto oldSelector = s_spiralSelector;
+    s_spiralSelector = selector;
+    return oldSelector;
+    }
+static ICurvePrimitivePtr CreateSpiralFromPlacement (
+    DSpiral2dBaseCR spiral,
+    TransformCR frame,
+    double fractionA,
+    double fractionB,
+    double maxStrokeLength = DEFAULT_SPIRAL_MAX_STROKE_LENGTH
+    );
 
 /*=================================================================================**//**
 * @bsiclass
@@ -926,8 +955,7 @@ static ICurvePrimitive* Create
 DSpiral2dBaseCR spiral,
 TransformCR frame,
 double fractionA,
-double fractionB,
-double maxEdgeLength = 0
+double fractionB
 )
     {
     DSpiral2dDirectEvaluation const *nominalLengthSpiral = dynamic_cast <DSpiral2dDirectEvaluation const *> (&spiral);
@@ -948,29 +976,6 @@ bool _IsSameStructureAndGeometry (ICurvePrimitiveCR other, double tolerance) con
     }
 
 }; // CurvePrimitiveSpiralCurve
-
-
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-ICurvePrimitivePtr ICurvePrimitive::CreateBsplineCurve (MSBsplineCurveCR curve)
-    {return CurvePrimitiveBsplineCurve::Create (curve);}
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-ICurvePrimitivePtr ICurvePrimitive::CreateBsplineCurveSwapFromSource (MSBsplineCurveR curve)
-    {
-    return CurvePrimitiveBsplineCurve::Create (curve.CreateCapture ());
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-ICurvePrimitivePtr ICurvePrimitive::CreateBsplineCurve (MSBsplineCurvePtr curve)
-    {return CurvePrimitiveBsplineCurve::Create (curve);}
 
 
 // Carry out spiral construction (see main method) with confirmed good curvatures
@@ -1105,7 +1110,7 @@ DSpiral2dBaseCR spiral,
 TransformCR frame,
 double fractionA,
 double fractionB,
-double maxEdgeLength
+double maxStrokeLength
 )
     {
     int type = spiral.GetTransitionTypeCode ();
@@ -1168,9 +1173,10 @@ double maxEdgeLength
         return nullptr;
         }
 
-    return CreateSpiralFromPlacement (spiral, frame, fractionA, fractionB);
+    return CreateSpiralFromPlacement (spiral, frame, fractionA, fractionB, maxStrokeLength);
     }
 
+#include "cp_catenary.h"
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -1235,8 +1241,8 @@ bvector<double> const &extraData
     if (xySpiral == NULL)
         return NULL;
     auto cp = CreateSpiralFromPlacement(*xySpiral, frame, fractionA, fractionB);
-	delete xySpiral;
-	return cp;
+    delete xySpiral;
+    return cp;
     }
 
 
@@ -1311,40 +1317,41 @@ double fractionB
     {
     return CreateSpiralBearingRadiusLengthRadius (transitionType, startRadians, startRadius, length, endRadius, frame, fractionA, fractionB, bvector<double> ());
     }
+
 //! Same as CreateSpiralBearingCurvatureLengthCurvature, but no extraData.
 ICurvePrimitivePtr ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature
 (int transitionType, double startRadians, double startCurvature, double length, double endCurvature, TransformCR frame, double fractionA, double fractionB)
     {
     return CreateSpiralBearingCurvatureLengthCurvature(transitionType, startRadians, startCurvature, length, endCurvature, frame, fractionA, fractionB, bvector<double>());
     }
+
 //! DEPRECATED: Calls CreateSpiralBearingRadiusBearingRadius with empty extraData
 ICurvePrimitivePtr ICurvePrimitive::CreateSpiralBearingRadiusBearingRadius
 (
-    int transitionType,
-    double startRadians,
-    double startRadius,
-    double endRadians,
-    double endRadius,
-    TransformCR frame,
-    double fractionA,
-    double fractionB
+int transitionType,
+double startRadians,
+double startRadius,
+double endRadians,
+double endRadius,
+TransformCR frame,
+double fractionA,
+double fractionB
 )
     {
-    return CreateSpiralBearingRadiusBearingRadius (transitionType, startRadians, startRadius, endRadians, endRadius, frame, fractionA, fractionB,
-        bvector<double> ());
+    return CreateSpiralBearingRadiusBearingRadius (transitionType, startRadians, startRadius, endRadians, endRadius, frame, fractionA, fractionB, bvector<double> ());
     }
 
 static ICurvePrimitivePtr CreateSpiralFromPlacement
 (
-    DSpiral2dBaseCR spiral,
-    TransformCR frame,
-    double fractionA,
-    double fractionB,
-    double maxStrokeLength
+DSpiral2dBaseCR spiral,
+TransformCR frame,
+double fractionA,
+double fractionB,
+double maxStrokeLength
 )
     {
     if (s_spiralSelector == 1)
-        return CurvePrimitiveSpiralCurve::Create(spiral, frame, fractionA, fractionB, maxStrokeLength);
+        return CurvePrimitiveSpiralCurve::Create(spiral, frame, fractionA, fractionB); // old implementation
     else
         return CurvePrimitiveSpiralCurve1::Create(spiral, frame, fractionA, fractionB, maxStrokeLength);
     }

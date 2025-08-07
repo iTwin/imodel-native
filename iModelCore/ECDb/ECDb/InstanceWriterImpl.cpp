@@ -543,16 +543,16 @@ ECSqlStatus Impl::BindDataProperty(BindContext& ctx, ECPropertyCR propMap, IECSq
         return binder.BindNull();
     }
 
-    if (auto prop = propMap.GetAsPrimitiveProperty()) {
-        return BindPrimitiveProperty(ctx, *prop, binder, val);
-    } else if (auto prop = propMap.GetAsStructProperty()) {
-        return BindStructProperty(ctx, *prop, binder, val);
-    } else if (auto prop = propMap.GetAsStructArrayProperty()) {
-        return BindStructArrayProperty(ctx, *prop, binder, val);
-    } else if (auto prop = propMap.GetAsPrimitiveArrayProperty()) {
-        return BindPrimitiveArrayProperty(ctx, *prop, binder, val);
-    } else if (auto prop = propMap.GetAsNavigationProperty()) {
-        return BindNavigationProperty(ctx, *prop, binder, val);
+    if (const auto primProp = propMap.GetAsPrimitiveProperty()) {
+        return BindPrimitiveProperty(ctx, *primProp, binder, val);
+    } else if (const auto structProp = propMap.GetAsStructProperty()) {
+        return BindStructProperty(ctx, *structProp, binder, val);
+    } else if (const auto structArrProp = propMap.GetAsStructArrayProperty()) {
+        return BindStructArrayProperty(ctx, *structArrProp, binder, val);
+    } else if (const auto primArrProp = propMap.GetAsPrimitiveArrayProperty()) {
+        return BindPrimitiveArrayProperty(ctx, *primArrProp, binder, val);
+    } else if (const auto navProp = propMap.GetAsNavigationProperty()) {
+        return BindNavigationProperty(ctx, *navProp, binder, val);
     }
     BeAssert(false && "Unknown property type");
     return ECSqlStatus(BE_SQLITE_ERROR);
