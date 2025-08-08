@@ -770,6 +770,7 @@ export declare namespace IModelJsNative {
     public pullMergeBegin(): void;
     public pullMergeEnd(): void;
     public pullMergeResume(): void;
+    public removeUnusedSchemaReferences(): number;
 
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
