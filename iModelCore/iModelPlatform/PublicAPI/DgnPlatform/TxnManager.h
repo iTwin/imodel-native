@@ -527,6 +527,7 @@ public:
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);
     DGNPLATFORM_EXPORT static void DropTxnMonitor(TxnMonitor& monitor);
     DGNPLATFORM_EXPORT void DeleteAllTxns();
+    DGNPLATFORM_EXPORT void ClearAllTxns();
     void DeleteFromStartTo(TxnId lastId);
     void DeleteReversedTxns();
     void OnBeginValidate();
