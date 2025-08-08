@@ -20,13 +20,11 @@
         <SubPart PartName="ECPresentation-PublicAPI" />
         <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" />
-        <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="ECDb" PartFile="iModelCore/ECDb/ECDb" />
         <SubPart PartName="ECObjectsNative" PartFile="iModelCore/ecobjects/ECObjects" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iTwinECPresentation$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)iTwinECPresentation$(shlibext)</Assemblies>
-            <Files ProductDirectoryName="PresentationRulesXsds" Required="false">Delivery/PresentationRuleSetSchema.xsd</Files>
         </Bindings>
     </Part>
 

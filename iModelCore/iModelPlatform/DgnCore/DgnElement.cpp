@@ -1610,7 +1610,8 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* inStat, DgnModelR destMod
         BeNapi::ThrowJsException(
             m_dgndb.GetJsIModelDb()->Env(),
             params.m_classId.IsValid() ? "invalid create params" : "attempt to clone with unknown class",
-            (int) (params.m_classId.IsValid() ? DgnDbStatus::BadRequest : DgnDbStatus::WrongClass)
+            (int) (params.m_classId.IsValid() ? DgnDbStatus::BadRequest : DgnDbStatus::WrongClass),
+            params.m_classId.IsValid() ? DgnDbStatusHelper::GetITwinError(DgnDbStatus::BadRequest) : DgnDbStatusHelper::GetITwinError(DgnDbStatus::WrongClass)
         );
         }
 
@@ -3688,7 +3689,7 @@ void GeometricElement::_FromJson(BeJsConst props)
         auto napiObj = napiValue->m_napiVal.As<Napi::Object>();
 
         if (napiObj.Has("is2dPart")) { // make sure the caller is not confused about what kind of element this is for
-            BeNapi::ThrowJsException(m_dgndb.GetJsIModelDb()->Env(), "BuildGeometryStream failed - invalid builder parameter", (int)DgnDbStatus::BadArg);
+            BeNapi::ThrowJsException(m_dgndb.GetJsIModelDb()->Env(), "BuildGeometryStream failed - invalid builder parameter", (int)DgnDbStatus::BadArg, DgnDbStatusHelper::GetITwinError(DgnDbStatus::BadArg));
             return;
         }
 
@@ -3703,7 +3704,7 @@ void GeometricElement::_FromJson(BeJsConst props)
         auto status = GeometryStreamIO::BuildGeometryStream(*this, bparams, entryArrayObj.As<Napi::Array>());
         if (DgnDbStatus::Success != status) {
             // throw std::runtime_error("BuildGeometryStream failed");
-            BeNapi::ThrowJsException(m_dgndb.GetJsIModelDb()->Env(), "BuildGeometryStream failed", (int)status);
+            BeNapi::ThrowJsException(m_dgndb.GetJsIModelDb()->Env(), "BuildGeometryStream failed", (int)status, DgnDbStatusHelper::GetITwinError(status));
         }
         return;
     }

@@ -72,7 +72,7 @@ TEST_F(PerformanceTestsECXml, ReadingAndWritingGeneratedSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceTestsECXml, ReadingAndWritingBisSchemas)
     {
-    TimeBisSchema(GetStandardsPath(L"Units.01.00.08.ecschema.xml"));
+    TimeBisSchema(GetStandardsPath(L"Units.01.00.09.ecschema.xml"));
     TimeBisSchema(GetStandardsPath(L"Formats.01.00.00.ecschema.xml"));
 
     TimeBisSchema(GetAssetsGSchemaPath(L"Dgn", L"BisCore.ecschema.xml"));

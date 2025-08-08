@@ -36,8 +36,11 @@ USING_NAMESPACE_BENTLEY_EC
 #define SET_CONSTRUCTOR(t) Constructor() = Napi::Persistent(t); Constructor().SuppressDestruct();
 #define DEFINE_CONSTRUCTOR static Napi::FunctionReference& Constructor() { static Napi::FunctionReference s_ctor; return s_ctor; }
 
-#define THROW_JS_EXCEPTION(str) BeNapi::ThrowJsException(info.Env(), str);
 #define THROW_JS_TYPE_EXCEPTION(str) BeNapi::ThrowJsTypeException(info.Env(), str);
+#define THROW_JS_IMODEL_NATIVE_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, IModelJsNativeErrorKeyHelper::GetITwinError(status));
+#define THROW_JS_SCHEMA_SYNC_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, {"schema-sync", SchemaSync::GetStatusAsString(status)});
+#define THROW_JS_BE_SQLITE_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, {"be-sqlite", BeSQLiteLib::GetErrorName(status)});
+#define THROW_JS_DGN_DB_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, DgnDbStatusHelper::GetITwinError(status));
 
 #define ARGUMENT_IS_PRESENT(i) (info.Length() > (i))
 #define ARGUMENT_IS_NOT_PRESENT(i) !ARGUMENT_IS_PRESENT(i)
@@ -325,25 +328,25 @@ inline static bool boolMember(Napi::Object const& obj, Utf8CP name, bool default
 inline static Utf8String requireString(Napi::Object const& obj, Utf8CP name) {
     auto strVal = stringMember(obj, name);
     if (strVal.empty())
-        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(obj.Env(), Utf8PrintfString("must supply %s", name).c_str(), IModelJsNativeErrorKey::BadArg);
     return strVal;
 }
 inline static int requireInt(Napi::Object const& obj, Utf8CP name) {
     auto member = obj.Get(name);
     if (!member.IsNumber())
-        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(obj.Env(), Utf8PrintfString("must supply %s", name).c_str(), IModelJsNativeErrorKey::BadArg);
     return  member.ToNumber().Int32Value();
 }
 inline static bool requireBool(Napi::Object const& obj, Utf8CP name) {
     auto member = obj.Get(name);
     if (!member.IsBoolean())
-        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply %s", name).c_str());
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(obj.Env(), Utf8PrintfString("must supply %s", name).c_str(), IModelJsNativeErrorKey::BadArg);
     return  member.ToBoolean().Value();
 }
 inline static Napi::Array requireArray(Napi::Object const& obj, Utf8CP name) {
     auto member = obj.Get(name);
     if (!member.IsArray())
-        BeNapi::ThrowJsException(obj.Env(), Utf8PrintfString("must supply array %s", name).c_str());
+        THROW_JS_IMODEL_NATIVE_EXCEPTION(obj.Env(), Utf8PrintfString("must supply array %s", name).c_str(), IModelJsNativeErrorKey::BadArg);
     return member.As<Napi::Array>();
 }
 
@@ -363,7 +366,7 @@ ENUM_IS_FLAGS(TextEmphasis);
 
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
-        BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: rc=%d, %s", msg, fileName, (int)result, BeSQLiteLib::GetLogError(result).c_str()).c_str(), result);
+        THROW_JS_BE_SQLITE_EXCEPTION(Env(), Utf8PrintfString("%s [%s]: rc=%d, %s", msg, fileName, (int)result, BeSQLiteLib::GetLogError(result).c_str()).c_str(), result);
     }
     [[noreturn]] static void throwDgnDbStatus(DgnDbStatus);
     [[noreturn]] static void throwWrongClass() { throwDgnDbStatus(DgnDbStatus::WrongClass); }
@@ -483,6 +486,7 @@ struct JsInterop {
     BE_JSON_NAME(value)
     BE_JSON_NAME(writeable)
     BE_JSON_NAME(yesNo)
+    BE_JSON_NAME(uncompressedSize)
 
 #define JSON_NAME(__val__) JsInterop::json_##__val__()
 
@@ -633,7 +637,7 @@ struct CRSListResponseProps
 struct GeoServicesInterop
 {
     static BentleyStatus GetGeographicCRSInterpretation(BeJsValue, BeJsConst);
-    static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent);
+    static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent, bool includeWorld);
 };
 
 //=======================================================================================

@@ -257,6 +257,26 @@ SchemaImportResult SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemas
     return SchemaImportResult::OK;
     }
 
+bool HasChangesExceptInReferences(ECN::SchemaChange& change)
+    {
+    if (change.Alias().IsChanged() || change.Name().IsChanged() || change.DisplayLabel().IsChanged() || change.Description().IsChanged())
+        return true;
+
+    if (change.Classes().IsChanged() ||
+        change.Enumerations().IsChanged() ||
+        change.Units().IsChanged() ||
+        change.Phenomena().IsChanged() ||
+        change.Formats().IsChanged() ||
+        change.KindOfQuantities().IsChanged() ||
+        change.PropertyCategories().IsChanged() ||
+        change.UnitSystems().IsChanged())
+        return true;
+    if (change.CustomAttributes().IsChanged())
+        return true;
+
+    return false;
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -288,7 +308,10 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
                     {
                     if (!schema->IsDynamicSchema() && !schemaChange->VersionWrite().IsChanged() && !schemaChange->VersionRead().IsChanged() && !schemaChange->VersionMinor().IsChanged())
                         {
-                        LOG.errorv("ECSchema import has failed. Schema %s has new changes, but the schema version is not incremented.", schema->GetName().c_str());
+                        if(HasChangesExceptInReferences(*schemaChange)) // changes to references are not considered a schema change that should log a warning
+                            {
+                            LOG.warningv("Schema '%s' has changes but its version was not incremented. Proceeding with import, but this may lead to unexpected behavior.", schema->GetName().c_str());
+                            }
                         }
 
                     existingSchema = schema;
@@ -2085,7 +2108,7 @@ BentleyStatus SchemaWriter::ReplaceCAEntry(Context& ctx, IECInstanceR customAttr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange& typeChange, ECPropertyCR oldProperty, ECPropertyCR newProperty, bool isPrimitiveTypeChangeAllowed)
+bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange& typeChange, ECPropertyCR oldProperty, ECPropertyCR newProperty, bool isSchemaVersionValid)
     {
     //changing from primitive to enum and enum to primitive is supported with same type and enum is unstrict
     if (oldProperty.GetIsPrimitive() && newProperty.GetIsPrimitive())
@@ -2096,7 +2119,7 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
         ECEnumerationCP bEnum = b->GetEnumeration();
         if (!aEnum && !bEnum)
             {
-            if (isPrimitiveTypeChangeAllowed && a->GetType() != PRIMITIVETYPE_Point2d && a->GetType() != PRIMITIVETYPE_Point3d && b->GetType() != PRIMITIVETYPE_Point2d && b->GetType() != PRIMITIVETYPE_Point3d)
+            if (isSchemaVersionValid && a->GetType() != PRIMITIVETYPE_Point2d && a->GetType() != PRIMITIVETYPE_Point3d && b->GetType() != PRIMITIVETYPE_Point2d && b->GetType() != PRIMITIVETYPE_Point3d)
                 return true;
 
             error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Changing the type of a Primitive ECProperty is not supported. Cannot convert from '%s' to '%s'",
@@ -2108,7 +2131,7 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (aEnum->GetType() != b->GetType())
                 {
-                if (isPrimitiveTypeChangeAllowed && aEnum->GetType() != PRIMITIVETYPE_Point2d && aEnum->GetType() != PRIMITIVETYPE_Point3d && b->GetType() != PRIMITIVETYPE_Point2d && b->GetType() != PRIMITIVETYPE_Point3d)
+                if (isSchemaVersionValid && aEnum->GetType() != PRIMITIVETYPE_Point2d && aEnum->GetType() != PRIMITIVETYPE_Point3d && b->GetType() != PRIMITIVETYPE_Point2d && b->GetType() != PRIMITIVETYPE_Point3d)
                     return true;
 
                 error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: ECEnumeration specified for property must have same primitive type as new primitive property type",
@@ -2123,7 +2146,7 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (a->GetType() != bEnum->GetType())
                 {
-                if (isPrimitiveTypeChangeAllowed && !bEnum->GetIsStrict() && a->GetType() != PRIMITIVETYPE_Point2d && a->GetType() != PRIMITIVETYPE_Point3d && bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d)
+                if (isSchemaVersionValid && !bEnum->GetIsStrict() && a->GetType() != PRIMITIVETYPE_Point2d && a->GetType() != PRIMITIVETYPE_Point3d && bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d)
                     return true;
 
                 error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Primitive type change to ECEnumeration which as different type then existing primitive property",
@@ -2147,7 +2170,7 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
             {
             if (aEnum->GetType() != bEnum->GetType())
                 {
-                if (isPrimitiveTypeChangeAllowed && !bEnum->GetIsStrict() && aEnum->GetType() != PRIMITIVETYPE_Point2d && aEnum->GetType() != PRIMITIVETYPE_Point3d && bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d)
+                if (isSchemaVersionValid && !bEnum->GetIsStrict() && aEnum->GetType() != PRIMITIVETYPE_Point2d && aEnum->GetType() != PRIMITIVETYPE_Point3d && bEnum->GetType() != PRIMITIVETYPE_Point2d && bEnum->GetType() != PRIMITIVETYPE_Point3d)
                     return true;
 
                 error.Sprintf("ECSchema Upgrade failed. ECProperty %s.%s: Existing ECEnumeration has different primitive type from the new ECEnumeration specified",
@@ -2219,6 +2242,33 @@ bool SchemaWriter::UnitChangeAllowed (Context& ctx, ECPropertyCR oldProperty, EC
     return persistenceUnitMatches(newKoq, to.ToString());
     }
 
+namespace
+    {
+    bool IsMajorVersionChangeAllowed(const EC::SchemaWriter::Context& ctx, const ECN::ECSchemaId schemaId, const bool isDynamicSchema, Utf8StringR errorMessage)
+        {
+        // For dynamic schemas, if major version changes are allowed, always permit without further checks.
+        if (isDynamicSchema && ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas())
+            return true;
+
+        // For non-dynamic schemas, check if the "Read" version has been incremented.
+        if (!ctx.IsMajorSchemaVersionChange(schemaId))
+            {
+            errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
+            return false;
+            }
+
+        // Check if major version changes are globally allowed.
+        if (!ctx.AreMajorSchemaVersionChangesAllowed())
+            {
+            errorMessage = "major schema version changes are disabled for all schemas.";
+            return false;
+            }
+
+        // All checks passed, major version change is allowed.
+        return true;
+        }
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2250,18 +2300,20 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
 
     if (propertyChange.TypeName().IsChanged())
         {
-        Utf8String error;
         // Allow Major schema upgrade for dynamic schemas if AllowMajorSchemaUpgradeForDynamicSchemas import option is set irrespective of the DisallowMajorSchemaUpgrade import option
         // For more information about major schema upgrade rules and examples, see https://dev.azure.com/bentleycs/iModelTechnologies/_wiki/wikis/iModelTechnologies.wiki/36117/Major-Schema-Upgrades
-        const auto isPrimitiveTypeChangeAllowed = ctx.IsMajorSchemaVersionChange(oldProperty.GetClass().GetSchema().GetId()) && (ctx.AreMajorSchemaVersionChangesAllowed() || (ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas() && newProperty.GetClass().GetSchema().IsDynamicSchema()));
-        if (!IsPropertyTypeChangeSupported(error, propertyChange.TypeName(), oldProperty, newProperty, isPrimitiveTypeChangeAllowed))
+        Utf8String error;
+        const auto isSchemaVersionValid = IsMajorVersionChangeAllowed(ctx, oldProperty.GetClass().GetSchema().GetId(), newProperty.GetClass().GetSchema().IsDynamicSchema(), error);
+
+        Utf8String errorMessage;
+        if (!IsPropertyTypeChangeSupported(errorMessage, propertyChange.TypeName(), oldProperty, newProperty, isSchemaVersionValid))
             {
             if (ctx.IgnoreIllegalDeletionsAndModifications())
                 {
-                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0633, "Ignoring upgrade error: %s. Error suppressed, type will not be changed.", error.c_str());
+                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0633, "Ignoring upgrade error: %s. Error suppressed, type will not be changed.", errorMessage.c_str());
                 return SUCCESS;
                 }
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0336, error.c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0336, errorMessage.c_str());
             return ERROR;
             }
         }
@@ -2741,17 +2793,22 @@ BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContain
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, ECContainerId containerId, CustomAttributeChanges& caChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
     {
-    int customAttributeIndex = 0;
-    ECCustomAttributeInstanceIterable customAttributes = oldContainer.GetCustomAttributes(false);
-    auto itor = customAttributes.begin();
-    while (itor != customAttributes.end())
-        {
-        customAttributeIndex++;
-        ++itor;
-        }
-
     if (caChanges.IsEmpty() || caChanges.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
+
+    int customAttributeIndex = 0;
+    CachedStatementPtr stmt = ctx.GetCachedStatement("SELECT MAX(Ordinal) from main. " TABLE_CustomAttribute " WHERE ContainerId = ? AND ContainerType = ?");
+    if (stmt == nullptr)
+        return ERROR;
+
+    stmt->BindId(1, containerId);
+    stmt->BindInt(2, Enum::ToInt(containerType));
+
+    if (stmt->Step() != BE_SQLITE_ROW)
+        {
+        return ERROR;
+        }
+    customAttributeIndex = stmt->GetValueInt(0);
 
     BeAssert(caChanges.GetParent() != nullptr);
     const bool caContainerIsNew = caChanges.GetParent()->GetOpCode() == ECChange::OpCode::New;
@@ -3486,31 +3543,6 @@ BentleyStatus SchemaWriter::DeleteCustomAttributeClass(Context& ctx, ECCustomAtt
     return SUCCESS;
     }
 
-namespace
-    {
-    Utf8String IsMajorVersionChangeAllowed(const EC::SchemaWriter::Context& ctx, const ECN::ECSchemaId schemaId, const bool isDynamicSchema)
-        {
-        auto errorMessage = "";
-        if (!ctx.IsMajorSchemaVersionChange(schemaId)) // Check if the schema "Read" version has been updated to allow the major change
-            errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
-
-        else if (!ctx.AreMajorSchemaVersionChangesAllowed()) // Check if the major version changes are disabled for all schemas with SchemaImportOptions::DisallowMajorSchemaUpgrade (default behavior)
-            {
-            // Major version changes are disabled. Check if schema is dynamic to decide if major version changes can still be done.
-            if (isDynamicSchema)
-                {
-                if (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()) // Schema is dynamic, check if major schema changed enabled for dynamic schemas with SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
-                    errorMessage = "major schema version changes have not been enabled for dynamic schemas.";
-                }
-            else
-                {
-                errorMessage = "major schema version changes are disabled for all schemas.";
-                }
-            }
-        return errorMessage;
-        }
-    };
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -3518,7 +3550,8 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
     {
     // Allow Major schema upgrade for dynamic schemas if AllowMajorSchemaUpgradeForDynamicSchemas import option is set irrespective of the DisallowMajorSchemaUpgrade import option
     // For more information about major schema upgrade rules and examples, see https://dev.azure.com/bentleycs/iModelTechnologies/_wiki/wikis/iModelTechnologies.wiki/36117/Major-Schema-Upgrades
-    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedClass.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+    Utf8String errorMessage;
+    if (!IsMajorVersionChangeAllowed(ctx, deletedClass.GetSchema().GetId(), isDynamicSchema, errorMessage))
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
             {
@@ -3692,7 +3725,8 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
     if (!isOverriddenProperty)
         {
         // Property is not overriden, hence major schema change rules will be applied
-        if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedProperty.GetClass().GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+        Utf8String errorMessage;
+        if (!IsMajorVersionChangeAllowed(ctx, deletedProperty.GetClass().GetSchema().GetId(), isDynamicSchema, errorMessage))
             {
             if (ctx.IgnoreIllegalDeletionsAndModifications())
                 {
@@ -3938,7 +3972,8 @@ BentleyStatus SchemaWriter::UpdateClasses(Context& ctx, ClassChanges& classChang
 BentleyStatus SchemaWriter::DeleteKindOfQuantity(Context& ctx, ECN::KindOfQuantityCR deletedKoQ, const bool isDynamicSchema)
     {
     // Check if major version change is allowed for given schema
-    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedKoQ.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+    Utf8String errorMessage;
+    if (!IsMajorVersionChangeAllowed(ctx, deletedKoQ.GetSchema().GetId(), isDynamicSchema, errorMessage))
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
             {
@@ -4582,7 +4617,8 @@ BentleyStatus SchemaWriter::VerifyEnumeratorChanges(Context& ctx, ECSchemaCR old
 BentleyStatus SchemaWriter::DeleteEnumeration(Context& ctx, ECN::ECEnumerationCR deletedEnum, bool isDynamicSchema)
     {
     // Check if major version change is allowed for given schema
-    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedEnum.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+    Utf8String errorMessage;
+    if (!IsMajorVersionChangeAllowed(ctx, deletedEnum.GetSchema().GetId(), isDynamicSchema, errorMessage))
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
             {

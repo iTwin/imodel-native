@@ -420,8 +420,10 @@ Material::CreateParams::CreateParams(MaterialKeyCR key, RenderingAssetCR asset, 
     if (asset.GetBool(RENDER_MATERIAL_FlagHasFinish, false))
         m_specularExponent = asset.GetDouble(RENDER_MATERIAL_Finish, Defaults::SpecularExponent());
 
-    auto transparency = asset.GetBool(RENDER_MATERIAL_FlagHasTransmit, false) ? asset.GetDouble(RENDER_MATERIAL_Transmit, 0.0) : 0.0;
-    m_transparency.SetValue(transparency);
+    auto transparency = asset.GetTransparency();
+    if (transparency.has_value()) {
+        m_transparency.SetValue(*transparency);
+    }
 
     if (asset.GetBool(RENDER_MATERIAL_FlagHasDiffuse, false))
         m_diffuse = asset.GetDouble(RENDER_MATERIAL_Diffuse, Defaults::Diffuse());

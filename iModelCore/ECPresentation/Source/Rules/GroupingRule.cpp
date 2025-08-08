@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
@@ -19,17 +18,16 @@ GroupingRule::GroupingRule() {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GroupingRule::GroupingRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR contextMenuCondition, Utf8StringCR contextMenuLabel, Utf8StringCR settingsId)
+GroupingRule::GroupingRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR settingsId)
     : ConditionalCustomizationRule(condition, priority, onlyIfNotHandled),
-      m_schemaName (schemaName), m_className (className), m_contextMenuCondition (contextMenuCondition), m_contextMenuLabel (contextMenuLabel), m_settingsId (settingsId)
+      m_schemaName (schemaName), m_className (className), m_settingsId (settingsId)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 GroupingRule::GroupingRule(GroupingRuleCR other)
-    : ConditionalCustomizationRule(other), m_schemaName(other.m_schemaName), m_className(other.m_className), m_contextMenuCondition(other.m_contextMenuCondition),
-    m_contextMenuLabel(other.m_contextMenuLabel), m_settingsId(other.m_settingsId)
+    : ConditionalCustomizationRule(other), m_schemaName(other.m_schemaName), m_className(other.m_className), m_settingsId(other.m_settingsId)
     {
     CommonToolsInternal::CloneRules(m_groups, other.m_groups, this);
     }
@@ -40,73 +38,6 @@ GroupingRule::GroupingRule(GroupingRuleCR other)
 GroupingRule::~GroupingRule (void)
     {
     CommonToolsInternal::FreePresentationRules(m_groups);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP GroupingRule::_GetXmlElementName () const
-    {
-    return GROUPING_RULE_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GroupingRule::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (!ConditionalCustomizationRule::_ReadXml(xmlNode))
-        return false;
-
-    // required:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_schemaName, GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME));
-        return false;
-        }
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_className, GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME));
-        return false;
-        }
-
-    // optional:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_contextMenuCondition, GROUPING_RULE_XML_ATTRIBUTE_MENUCONDITION))
-        m_contextMenuCondition = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_contextMenuLabel, GROUPING_RULE_XML_ATTRIBUTE_MENULABEL))
-        m_contextMenuLabel = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_settingsId, GROUPING_RULE_XML_ATTRIBUTE_SETTINGSID))
-        m_settingsId = "";
-
-    // load Class and Property Groups
-    for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
-        {
-        if (0 == BeStringUtilities::Stricmp (child->GetName (), CLASS_GROUP_XML_NODE_NAME))
-            CommonToolsInternal::LoadSpecificationFromXmlNode<ClassGroup, GroupList> (child, m_groups, this);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), PROPERTY_GROUP_XML_NODE_NAME))
-            CommonToolsInternal::LoadSpecificationFromXmlNode<PropertyGroup, GroupList> (child, m_groups, this);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), SAME_LABEL_INSTANCE_GROUP_XML_NODE_NAME))
-            CommonToolsInternal::LoadSpecificationFromXmlNode<SameLabelInstanceGroup, GroupList> (child, m_groups, this);
-        }
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GroupingRule::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    ConditionalCustomizationRule::_WriteXml (xmlNode);
-    xmlNode->AddAttributeStringValue (GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME, m_schemaName.c_str ());
-    xmlNode->AddAttributeStringValue (GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME, m_className.c_str ());
-    xmlNode->AddAttributeStringValue (GROUPING_RULE_XML_ATTRIBUTE_MENUCONDITION, m_contextMenuCondition.c_str ());
-    xmlNode->AddAttributeStringValue (GROUPING_RULE_XML_ATTRIBUTE_MENULABEL, m_contextMenuLabel.c_str ());
-    xmlNode->AddAttributeStringValue (GROUPING_RULE_XML_ATTRIBUTE_SETTINGSID, m_settingsId.c_str ());
-    CommonToolsInternal::WriteRulesToXmlNode<GroupSpecification, GroupList> (xmlNode, m_groups);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -162,21 +93,6 @@ Utf8StringCR GroupingRule::GetClassName (void) const               { return m_cl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR GroupingRule::GetContextMenuCondition (void) const    { return m_contextMenuCondition; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GroupingRule::SetContextMenuCondition (Utf8String value)      { m_contextMenuCondition = value; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR GroupingRule::GetContextMenuLabel (void) const        { return m_contextMenuLabel; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR GroupingRule::GetSettingsId (void) const              { return m_settingsId; }
 
 /*---------------------------------------------------------------------------------**//**
@@ -204,15 +120,11 @@ MD5 GroupingRule::_ComputeHash() const
     {
     MD5 md5 = T_Super::_ComputeHash();
     if (!m_schemaName.empty())
-        ADD_STR_VALUE_TO_HASH(md5, GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME, m_schemaName);
+        ADD_STR_VALUE_TO_HASH(md5, SCHEMA_CLASS_SPECIFICATION_SCHEMANAME, m_schemaName);
     if (!m_className.empty())
-        ADD_STR_VALUE_TO_HASH(md5, GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME, m_className);
-    if (!m_contextMenuCondition.empty())
-        ADD_STR_VALUE_TO_HASH(md5, GROUPING_RULE_XML_ATTRIBUTE_MENUCONDITION, m_contextMenuCondition);
-    if (!m_contextMenuLabel.empty())
-        ADD_STR_VALUE_TO_HASH(md5, GROUPING_RULE_XML_ATTRIBUTE_MENULABEL, m_contextMenuLabel);
+        ADD_STR_VALUE_TO_HASH(md5, SINGLE_SCHEMA_CLASS_SPECIFICATION_CLASSNAME, m_className);
     if (!m_settingsId.empty())
-        ADD_STR_VALUE_TO_HASH(md5, GROUPING_RULE_XML_ATTRIBUTE_SETTINGSID, m_settingsId);
+        ADD_STR_VALUE_TO_HASH(md5, "settingsId", m_settingsId);
     ADD_RULES_TO_HASH(md5, GROUPING_RULE_JSON_ATTRIBUTE_GROUPS, m_groups);
     return md5;
     }
@@ -245,46 +157,14 @@ GroupSpecification* GroupSpecification::Create(BeJsConst json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GroupSpecification::GroupSpecification () {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-GroupSpecification::GroupSpecification (Utf8StringCR contextMenuLabel, Utf8CP defaultLabel)
-    : m_contextMenuLabel (contextMenuLabel), m_defaultLabel (defaultLabel)
+GroupSpecification::GroupSpecification(Utf8CP defaultLabel)
+    : m_defaultLabel (defaultLabel)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GroupSpecification::Accept(GroupingRuleSpecificationVisitor& visitor) const {_Accept(visitor);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GroupSpecification::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (!PresentationKey::_ReadXml(xmlNode))
-        return false;
-
-    // optional:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_contextMenuLabel, GROUP_XML_ATTRIBUTE_MENULABEL))
-        m_contextMenuLabel = "";
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_defaultLabel, GROUP_XML_ATTRIBUTE_DEFAULTLABEL))
-        m_defaultLabel.clear();
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GroupSpecification::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    PresentationKey::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(GROUP_XML_ATTRIBUTE_MENULABEL, m_contextMenuLabel.c_str());
-    xmlNode->AddAttributeStringValue(GROUP_XML_ATTRIBUTE_DEFAULTLABEL, m_defaultLabel.c_str());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -316,7 +196,6 @@ void GroupSpecification::_WriteJson(BeJsValue json) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR GroupSpecification::GetContextMenuLabel (void) const  { return m_contextMenuLabel; }
 Utf8StringCR GroupSpecification::GetDefaultLabel (void) const      { return m_defaultLabel; }
 
 /*---------------------------------------------------------------------------------**//**
@@ -324,12 +203,7 @@ Utf8StringCR GroupSpecification::GetDefaultLabel (void) const      { return m_de
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 GroupSpecification::_ComputeHash() const
     {
-    MD5 md5 = T_Super::_ComputeHash();
-    if (!m_contextMenuLabel.empty())
-        ADD_STR_VALUE_TO_HASH(md5, GROUP_XML_ATTRIBUTE_MENULABEL, m_contextMenuLabel);
-    if (!m_defaultLabel.empty())
-        ADD_STR_VALUE_TO_HASH(md5, GROUP_XML_ATTRIBUTE_DEFAULTLABEL, m_defaultLabel);
-    return md5;
+    return T_Super::_ComputeHash();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -363,14 +237,6 @@ static Utf8CP GetSameLabelInstanceGroupApplicationStageAsString(SameLabelInstanc
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SameLabelInstanceGroup::_Accept(GroupingRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP SameLabelInstanceGroup::_GetXmlElementName () const
-    {
-    return SAME_LABEL_INSTANCE_GROUP_XML_NODE_NAME;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -424,8 +290,8 @@ ClassGroup::ClassGroup ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassGroup::ClassGroup (Utf8StringCR contextMenuLabel, bool createGroupForSingleItem, Utf8StringCR schemaName, Utf8StringCR baseClassName)
-    : GroupSpecification (contextMenuLabel), m_createGroupForSingleItem (createGroupForSingleItem), m_schemaName (schemaName), m_baseClassName (baseClassName)
+ClassGroup::ClassGroup (bool createGroupForSingleItem, Utf8StringCR schemaName, Utf8StringCR baseClassName)
+    : GroupSpecification(), m_createGroupForSingleItem (createGroupForSingleItem), m_schemaName (schemaName), m_baseClassName (baseClassName)
     {
     }
 
@@ -433,46 +299,6 @@ ClassGroup::ClassGroup (Utf8StringCR contextMenuLabel, bool createGroupForSingle
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClassGroup::_Accept(GroupingRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ClassGroup::_GetXmlElementName () const
-    {
-    return CLASS_GROUP_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ClassGroup::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (!GroupSpecification::_ReadXml(xmlNode))
-        return false;
-
-    // optional:
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_createGroupForSingleItem, GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM))
-        m_createGroupForSingleItem = false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_schemaName, CLASS_GROUP_XML_ATTRIBUTE_SCHEMANAME))
-        m_schemaName = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_baseClassName, CLASS_GROUP_XML_ATTRIBUTE_BASECLASSNAME))
-        m_baseClassName = "";
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ClassGroup::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    GroupSpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeBooleanValue (GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM, m_createGroupForSingleItem);
-    xmlNode->AddAttributeStringValue  (CLASS_GROUP_XML_ATTRIBUTE_SCHEMANAME,         m_schemaName.c_str ());
-    xmlNode->AddAttributeStringValue  (CLASS_GROUP_XML_ATTRIBUTE_BASECLASSNAME,      m_baseClassName.c_str ());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -533,16 +359,16 @@ MD5 ClassGroup::_ComputeHash() const
     if (m_createGroupForSingleItem)
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, GROUP_JSON_ATTRIBUTE_CREATEGROUPFORSINGLEITEM, m_createGroupForSingleItem);
     if (!m_schemaName.empty())
-        ADD_STR_VALUE_TO_HASH(md5, CLASS_GROUP_XML_ATTRIBUTE_SCHEMANAME, m_schemaName);
+        ADD_STR_VALUE_TO_HASH(md5, SCHEMA_CLASS_SPECIFICATION_SCHEMANAME, m_schemaName);
     if (!m_baseClassName.empty())
-        ADD_STR_VALUE_TO_HASH(md5, CLASS_GROUP_XML_ATTRIBUTE_BASECLASSNAME, m_baseClassName);
+        ADD_STR_VALUE_TO_HASH(md5, SINGLE_SCHEMA_CLASS_SPECIFICATION_CLASSNAME, m_baseClassName);
     return md5;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyGroup::PropertyGroup ()
+PropertyGroup::PropertyGroup()
     : GroupSpecification(), m_createGroupForSingleItem(false), m_createGroupForUnspecifiedValues(true),
     m_groupingValue(PropertyGroupingValue::DisplayLabel), m_sortingValue(PropertyGroupingValue::DisplayLabel)
     {
@@ -551,8 +377,8 @@ PropertyGroup::PropertyGroup ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyGroup::PropertyGroup (Utf8StringCR contextMenuLabel, Utf8StringCR imageId, bool createGroupForSingleItem, Utf8StringCR propertyName, Utf8CP defaultLabel)
-    : GroupSpecification (contextMenuLabel, defaultLabel), m_imageId (imageId),
+PropertyGroup::PropertyGroup(Utf8StringCR imageId, bool createGroupForSingleItem, Utf8StringCR propertyName, Utf8CP defaultLabel)
+    : GroupSpecification (defaultLabel), m_imageId (imageId),
     m_createGroupForSingleItem (createGroupForSingleItem), m_createGroupForUnspecifiedValues(true),
     m_propertyName (propertyName), m_groupingValue(PropertyGroupingValue::DisplayLabel), m_sortingValue(PropertyGroupingValue::DisplayLabel)
     {
@@ -585,19 +411,11 @@ void PropertyGroup::_Accept(GroupingRuleSpecificationVisitor& visitor) const {vi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP PropertyGroup::_GetXmlElementName () const
-    {
-    return PROPERTY_GROUP_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 static PropertyGroupingValue GetPropertyGroupingValueFromString(Utf8StringCR str)
     {
-    if (str.Equals(PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL))
+    if (str.Equals(PROPERTY_GROUP_JSON_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL))
         return PropertyGroupingValue::DisplayLabel;
-    if (str.Equals(PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE))
+    if (str.Equals(PROPERTY_GROUP_JSON_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE))
         return PropertyGroupingValue::PropertyValue;
 
     DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to parse property grouping value: '%s'. Defaulting to 'DisplayLabel'.", str.c_str()));
@@ -611,64 +429,10 @@ static Utf8CP GetPropertyGroupingValueAsString(PropertyGroupingValue value)
     {
     switch (value)
         {
-        case PropertyGroupingValue::PropertyValue:  return PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE;
-        case PropertyGroupingValue::DisplayLabel:   return PROPERTY_GROUP_XML_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL;
+        case PropertyGroupingValue::PropertyValue:  return PROPERTY_GROUP_JSON_ATTRIBUTE_VALUE_GROUPINGVALUE_PROPERTYVALUE;
+        case PropertyGroupingValue::DisplayLabel:   return PROPERTY_GROUP_JSON_ATTRIBUTE_VALUE_GROUPINGVALUE_DISPLAYLABEL;
         }
     DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Rules, Utf8PrintfString("Failed to serialize property grouping value: %d.", (int)value));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyGroup::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (!GroupSpecification::_ReadXml(xmlNode))
-        return false;
-
-    // required:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_propertyName, COMMON_XML_ATTRIBUTE_PROPERTYNAME))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, PROPERTY_GROUP_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_PROPERTYNAME));
-        return false;
-        }
-
-    // optional:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_imageId, GROUP_XML_ATTRIBUTE_IMAGEID))
-        m_imageId = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_createGroupForSingleItem, GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM))
-        m_createGroupForSingleItem = false;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_createGroupForUnspecifiedValues, GROUP_XML_ATTRIBUTE_CREATEGROUPFORUNSPECIFIEDVALUES))
-        m_createGroupForUnspecifiedValues = true;
-
-    Utf8String groupingValueStr;
-    if (BEXML_Success == xmlNode->GetAttributeStringValue(groupingValueStr, PROPERTY_GROUP_XML_ATTRIBUTE_GROUPINGVALUE))
-        m_groupingValue = GetPropertyGroupingValueFromString(groupingValueStr);
-
-    Utf8String sortingValueStr;
-    if (BEXML_Success == xmlNode->GetAttributeStringValue(sortingValueStr, PROPERTY_GROUP_XML_ATTRIBUTE_SORTINGVALUE))
-        m_sortingValue = GetPropertyGroupingValueFromString(sortingValueStr);
-
-    // load Ranges
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges, PROPERTY_RANGE_GROUP_XML_NODE_NAME, this);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyGroup::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    GroupSpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue  (GROUP_XML_ATTRIBUTE_IMAGEID,                         m_imageId.c_str ());
-    xmlNode->AddAttributeBooleanValue (GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM,        m_createGroupForSingleItem);
-    xmlNode->AddAttributeBooleanValue (GROUP_XML_ATTRIBUTE_CREATEGROUPFORUNSPECIFIEDVALUES, m_createGroupForUnspecifiedValues);
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_PROPERTYNAME,                   m_propertyName.c_str ());
-    xmlNode->AddAttributeStringValue(PROPERTY_GROUP_XML_ATTRIBUTE_GROUPINGVALUE,            GetPropertyGroupingValueAsString(m_groupingValue));
-    xmlNode->AddAttributeStringValue(PROPERTY_GROUP_XML_ATTRIBUTE_SORTINGVALUE,             GetPropertyGroupingValueAsString(m_sortingValue));
-    CommonToolsInternal::WriteRulesToXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -808,53 +572,6 @@ PropertyRangeGroupSpecification::PropertyRangeGroupSpecification (Utf8StringCR l
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP PropertyRangeGroupSpecification::_GetXmlElementName() const {return PROPERTY_RANGE_GROUP_XML_NODE_NAME;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyRangeGroupSpecification::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (!PresentationKey::_ReadXml(xmlNode))
-        return false;
-
-    // required:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_fromValue, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_FROMVALUE))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_FROMVALUE));
-        return false;
-        }
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_toValue, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE));
-        return false;
-        }
-
-    // optional:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_label, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_LABEL))
-        m_label = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_imageId, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_IMAGEID))
-        m_imageId = "";
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyRangeGroupSpecification::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    xmlNode->AddAttributeStringValue (PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_FROMVALUE, m_fromValue.c_str ());
-    xmlNode->AddAttributeStringValue (PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE, m_toValue.c_str ());
-    xmlNode->AddAttributeStringValue (PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_LABEL, m_label.c_str ());
-    xmlNode->AddAttributeStringValue (PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_IMAGEID, m_imageId.c_str ());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP PropertyRangeGroupSpecification::_GetJsonElementType() const { return "PropertyRangeGroupSpecification"; }
 
 /*---------------------------------------------------------------------------------**//**
@@ -867,11 +584,11 @@ bool PropertyRangeGroupSpecification::_ReadJson(BeJsConst json)
 
     // required:
     m_fromValue = json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_FROMVALUE].asCString("");
-    if (CommonToolsInternal::CheckRuleIssue(m_fromValue.empty(), _GetXmlElementName(), PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_FROMVALUE, json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_FROMVALUE], "non-empty string"))
+    if (CommonToolsInternal::CheckRuleIssue(m_fromValue.empty(), _GetJsonElementType(), PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_FROMVALUE, json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_FROMVALUE], "non-empty string"))
         return false;
 
     m_toValue = json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_TOVALUE].asCString("");
-    if (CommonToolsInternal::CheckRuleIssue(m_toValue.empty(), _GetXmlElementName(), PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_TOVALUE, json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_TOVALUE], "non-empty string"))
+    if (CommonToolsInternal::CheckRuleIssue(m_toValue.empty(), _GetJsonElementType(), PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_TOVALUE, json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_TOVALUE], "non-empty string"))
         return false;
 
     // optional:

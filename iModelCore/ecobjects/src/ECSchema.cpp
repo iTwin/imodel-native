@@ -2963,7 +2963,7 @@ static ECSchemaPtr ParseHeaderAndLocateSchema(WCharCP schemaXmlFile, ECSchemaRea
     SchemaKey searchKey;
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     pugi::xml_node schemaNode;
-    const auto status = SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
+    auto status = SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
     if (SchemaReadStatus::Success != status)
         {
         if (outStatus != nullptr)
@@ -2974,9 +2974,9 @@ static ECSchemaPtr ParseHeaderAndLocateSchema(WCharCP schemaXmlFile, ECSchemaRea
     ECSchemaPtr schema = schemaContext.LocateSchema(searchKey, matchType);
     if (!schema.IsValid())
         {
-        const auto status = ECSchema::ReadFromXmlFile(schema, schemaXmlFile, schemaContext);
+        const auto stat = ECSchema::ReadFromXmlFile(schema, schemaXmlFile, schemaContext);
         if (outStatus != nullptr)
-            *outStatus = status;
+            *outStatus = stat;
         }
     else {
         if (outStatus != nullptr)
@@ -3079,7 +3079,7 @@ void SearchPathSchemaFileLocater::AddCandidateSchemas(bvector<CandidateSchema>& 
         SchemaKey key;
         if (SchemaKey::ParseSchemaFullName(key, fileName.c_str()) != ECObjectsStatus::Success)
             {
-            LOG.warningv(L"Failed to parse schema file name %s. Skipping that file.", fileName.c_str());
+            LOG.warningv("Failed to parse schema file name %s. Skipping that file.", fileName.c_str());
             continue;
             }
 
@@ -3119,7 +3119,7 @@ void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<Candidat
     if(!result)
     {
         BeAssert(s_noAssert);
-        LOG.warningv(L"Failed to read schema from %ls: %s", schemaPathname.c_str(), result.description());
+        LOG.warningv("Failed to read schema from %ls: %s", schemaPathname.c_str(), result.description());
         return;
     }
 
@@ -3128,7 +3128,7 @@ void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<Candidat
     pugi::xml_node schemaNode;
     if (SchemaReadStatus::Success != SchemaXmlReader::ReadSchemaStub(key, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc))
         {
-        LOG.warningv(L"Failed to read schema version from %ls", schemaPathname.c_str());
+        LOG.warningv("Failed to read schema version from %ls", schemaPathname.c_str());
         return;
         }
 
@@ -3281,6 +3281,7 @@ ECSchemaPtr SanitizingSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchTy
         return nullptr;
 
     ECSchemaPtr sanitizedSchema;
+    LOG.infov("Creating copy of returned schema %s to clean schema graph", innerSchema->GetName().c_str());
     auto status = innerSchema->CopySchema(sanitizedSchema, &schemaContext, false);
     if(status != ECObjectsStatus::Success || !sanitizedSchema.IsValid() || schemaContext.AddSchema(*sanitizedSchema) == ECObjectsStatus::DuplicateSchema)
         return nullptr;
@@ -3953,7 +3954,7 @@ ECObjectsStatus ECSchemaCache::AddSchema(ECSchemaR ecSchema)
             ECSchemaP existingSchema = result.first->second.get();
             if(existingSchema != referencedSchema)
                 {
-                LOG.warningv(L"ECSchemaCache: Adding schema '%s' which references schema '%s'. However, a different in-memory instance of this referenced schema already exists in the cache. This may indicate an issue with the schema graph.",
+                LOG.warningv("ECSchemaCache: Adding schema '%s' which references schema '%s'. However, a different in-memory instance of this referenced schema already exists in the cache. This may indicate an issue with the schema graph.",
                      ecSchema.GetSchemaKey().GetFullSchemaName().c_str(), existingSchema->GetSchemaKey().GetFullSchemaName().c_str());
                 }
             }
@@ -3978,7 +3979,7 @@ void ECSchemaCache::CheckCleanSchemaGraph(ECSchemaP schema) const
         {
         if(kvPair.first.CompareByName(name) == 0 && !schema->GetSchemaKey().Matches(kvPair.first, SchemaMatchType::Exact))
             {
-            LOG.warningv(L"ECSchemaCache: Adding schema '%s' to the cache while schema '%s' already exists. Typically, only one version of a schema with the same name is expected. This may indicate an issue with the schema graph.",
+            LOG.warningv("ECSchemaCache: Adding schema '%s' to the cache while schema '%s' already exists. Typically, only one version of a schema with the same name is expected. This may indicate an issue with the schema graph.",
                     schema->GetSchemaKey().GetFullSchemaName().c_str(), kvPair.first.GetFullSchemaName().c_str());
             }
         }

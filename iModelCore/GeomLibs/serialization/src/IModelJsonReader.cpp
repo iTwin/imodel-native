@@ -53,6 +53,7 @@ bool derefNumericArray (BeJsConst value, size_t minNeeded, size_t maxNeeded, dou
         values[i] = 0;
     return numOut >= minNeeded;
     }
+
 // look for a named property to pass to derefNumericArray
 bool derefNumericArray(BeJsConst source, char const *name, size_t minNeeded, size_t maxNeeded, double values[])
     {
@@ -169,13 +170,53 @@ bool tryValueToXYZ (BeJsConst value, DPoint3dR xyz)
         xyz.Init (xyzArray[0], xyzArray[1], xyzArray[2]);
         stat = true;
         }
-    else
+    else if (!value.isArray())
         {
         bool haveX = derefNumeric(value, "x", xyzArray[0], 0.0);
         bool haveY = derefNumeric(value, "y", xyzArray[1], 0.0);
         derefNumeric(value, "z", xyzArray[2], 0.0);
         xyz.Init (xyzArray[0], xyzArray[1], xyzArray[2]);
         stat = haveX && haveY;  // allow optional z
+        }
+    return stat;
+    }
+
+bool tryValueToXY (BeJsConst value, DPoint2dR xy)
+    {
+    double xyArray[2];
+    bool stat = false;
+    if (derefNumericArray (value, 2, 2, xyArray))
+        {
+        xy.Init (xyArray[0], xyArray[1]);
+        stat = true;
+        }
+    else if (!value.isArray())
+        {
+        bool haveX = derefNumeric(value, "x", xyArray[0], 0.0);
+        bool haveY = derefNumeric(value, "y", xyArray[1], 0.0);
+        xy.Init (xyArray[0], xyArray[1]);
+        stat = haveX && haveY;
+        }
+    return stat;
+    }
+
+bool tryValueToXYZW (BeJsConst value, DPoint4dR xyzw)
+    {
+    double xyzwArray[4];
+    bool stat = false;
+    if (derefNumericArray (value, 4, 4, xyzwArray))
+        {
+        xyzw.Init (xyzwArray[0], xyzwArray[1], xyzwArray[2], xyzwArray[3]);
+        stat = true;
+        }
+    else if (!value.isArray())
+        {
+        bool haveX = derefNumeric(value, "x", xyzwArray[0], 0.0);
+        bool haveY = derefNumeric(value, "y", xyzwArray[1], 0.0);
+        bool haveZ = derefNumeric(value, "z", xyzwArray[2], 0.0);
+        bool haveW = derefNumeric(value, "w", xyzwArray[3], 0.0);
+        xyzw.Init (xyzwArray[0], xyzwArray[1], xyzwArray[2], xyzwArray[3]);
+        stat = haveX && haveY && haveZ && haveW;
         }
     return stat;
     }
@@ -198,14 +239,14 @@ public: bool tryValueToTaggedNumericData(BeJsConst value, TaggedNumericData &dat
 private: bool tryValueToBVectorDPoint3d (BeJsConst value, bvector<DPoint3d> &data)
     {
     data.clear ();
-    double xyzArray[3];
     if (value.isArray())
         {
+        DPoint3d pt;
         for (uint32_t i = 0, n = value.size(); i < n; i++)
             {
-            if (!derefNumericArray (value[i], 2, 3, xyzArray))
+            if (!tryValueToXYZ (value[i], pt))
                 return false;
-            data.push_back (DPoint3d::FromArray (xyzArray));
+            data.push_back (pt);
             }
         return true;
         }
@@ -244,15 +285,16 @@ private: bool tryValueToBVectorFaceData(BeJsConst value, bvector<FacetFaceData> 
  bool tryValueToBVectorDPoint3dAndWeight (BeJsConst value, bvector<DPoint3d> &data, bvector<double> &weights)
     {
     data.clear ();
-    double xyzArray[4];
+    weights.clear ();
     if (value.isArray())
         {
+        DPoint4d xyzw = DPoint4d::From(0, 0, 0 ,0);
         for (uint32_t i = 0, n = value.size(); i < n; i++)
             {
-            if (!derefNumericArray (value[i], 4, 4, xyzArray))
+            if (!tryValueToXYZW (value[i], xyzw))
                 return false;
-            data.push_back (DPoint3d::FromArray (xyzArray));
-            weights.push_back (xyzArray[3]);
+            data.push_back (DPoint3d::FromXYZ(xyzw.x, xyzw.y, xyzw.z));
+            weights.push_back (xyzw.w);
             }
         return true;
         }
@@ -262,14 +304,14 @@ private: bool tryValueToBVectorFaceData(BeJsConst value, bvector<FacetFaceData> 
 bool tryValueToBVectorDVec3d (BeJsConst value, bvector<DVec3d> &data)
     {
     data.clear ();
-    double xyzArray[3];
     if (value.isArray())
         {
+        DVec3d vec;
         for (uint32_t i = 0, n = value.size(); i < n; i++)
             {
-            if (!derefNumericArray (value[i], 2, 3, xyzArray))
+            if (!tryValueToXYZ(value[i], vec))
                 return false;
-            data.push_back (DVec3d::FromArray (xyzArray));
+            data.push_back (vec);
             }
         return true;
         }
@@ -280,14 +322,14 @@ bool tryValueToBVectorDVec3d (BeJsConst value, bvector<DVec3d> &data)
 bool tryValueToBVectorDPoint2d (BeJsConst value, bvector<DPoint2d> &data)
     {
     data.clear ();
-    double xyzArray[2];
     if (value.isArray())
         {
+        DPoint2d xy;
         for (uint32_t i = 0, n = value.size(); i < n; i++)
             {
-            if (!derefNumericArray (value[i], 2, 2, xyzArray))
+            if (!tryValueToXY(value[i], xy))
                 return false;
-            data.push_back (DPoint2d::FromArray (xyzArray));
+            data.push_back (xy);
             }
         return true;
         }
@@ -300,29 +342,30 @@ bool tryValueGridToBVectorDPoint3d (BeJsConst value, bvector<DPoint3d> &data, bv
     {
     data.clear ();
     weight.clear ();
-    double xyzArray[4];
     if (value.isArray())
         {
+        DPoint3d xyz;
+        DPoint4d xyzw = DPoint4d::From(0, 0, 0, 0);
         for (uint32_t i = 0, n = value.size(); i < n; i++)
             {
             if (value[i].isArray ())
                 {
                 auto row = value[i];
-                rowCounts.push_back (value[i].size ());
+                rowCounts.push_back (row.size ());
                 for (uint32_t j = 0, nRow = row.size(); j < nRow; j++)
                     {
                     if (row[j].size() == 2 || row[j].size() == 3)   // used to expect all three xyz!
                         {
-                        if (!derefNumericArray (row[j], 2, 3, xyzArray))
+                        if (!tryValueToXYZ(row[j], xyz))
                             return false;
-                        data.push_back (DPoint3d::FromArray (xyzArray));
+                        data.push_back (xyz);
                         }
                     else if (row[j].size () == 4)
                         {
-                        if (!derefNumericArray (row[j], 4, 4, xyzArray))
+                        if (!tryValueToXYZW(row[j], xyzw))
                             return false;
-                        data.push_back (DPoint3d::FromArray (xyzArray));
-                        weight.push_back (xyzArray[3]);
+                        data.push_back (DPoint3d::FromXYZ(xyzw.x, xyzw.y, xyzw.z));
+                        weight.push_back (xyzw.w);
                         }
                     else
                         return false;

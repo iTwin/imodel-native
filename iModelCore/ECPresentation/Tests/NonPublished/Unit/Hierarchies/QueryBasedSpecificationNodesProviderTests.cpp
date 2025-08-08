@@ -80,7 +80,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesLabel)
     m_ruleset->AddPresentationRule(*widgetLabelOverride);
     m_ruleset->AddPresentationRule(*gadgetLabelOverride);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -113,7 +113,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, UsesRelatedInstanceProperties
     LabelOverrideP labelOverride = new LabelOverride("ThisNode.IsInstanceNode AND widget.BoolProperty", 1, "widget.MyID", "");
     m_ruleset->AddPresentationRule(*labelOverride);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -141,7 +141,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesStyle)
         "IIf(True, \"FontStyle1\", \"FontStyle2\")");
     m_ruleset->AddPresentationRule(*styleOverride);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -175,14 +175,14 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, OverridesStyle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildrenIfHideNodesInHierarchyFlagIsSpecified)
     {
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget,Gadget", false);
     rule->AddSpecification(*spec);
 
-    ChildNodeRule* childRule = new ChildNodeRule("", 1, false, TargetTree_Both);
+    ChildNodeRule* childRule = new ChildNodeRule("", 1, false);
     spec->AddNestedRule(*childRule);
 
     CustomNodeSpecification* customNodeSpec = new CustomNodeSpecification(1, false, "Custom", "Custom", "", "Custom");
@@ -207,7 +207,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfDisplayLabelGro
     RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -236,14 +236,14 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfGroupingRuleDoe
     RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
-    GroupingRule* groupingRule = new GroupingRule("", 1000, false, "RulesEngineTest", "Widget", "", "", "");
-    groupingRule->AddGroup(*new ClassGroup("", false, "", ""));
+    GroupingRule* groupingRule = new GroupingRule("", 1000, false, "RulesEngineTest", "Widget", "");
+    groupingRule->AddGroup(*new ClassGroup(false, "", ""));
     m_ruleset->AddPresentationRule(*groupingRule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
@@ -265,7 +265,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfGroupingRuleDoe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryBasedSpecificationNodesProviderTests, HasNodesReturnsFalseWhenQueryReturnsNoResults)
     {
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -283,7 +283,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, HasNodesReturnsFalseWhenQueryR
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryBasedSpecificationNodesProviderTests, HasNodesReturnsTrueWhenQueryReturnsResults)
     {
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -301,7 +301,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, HasNodesReturnsTrueWhenQueryRe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryBasedSpecificationNodesProviderTests, NodesCount_SimpleCase)
     {
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -333,14 +333,14 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, NodesCount_SimpleCase)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithHideNodesInHierarchyFlag)
     {
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
 
-    ChildNodeRule* childRule = new ChildNodeRule("", 1, false, TargetTree_Both);
+    ChildNodeRule* childRule = new ChildNodeRule("", 1, false);
     spec->AddNestedRule(*childRule);
 
     CustomNodeSpecification* customNodeSpec = new CustomNodeSpecification(1, false, "Custom", "Custom", "", "Custom");
@@ -362,7 +362,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithHideNodesInHie
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelGroupingNodeHavingOnlyOneChild)
     {
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -396,7 +396,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelGr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelAndSameLabelInstanceGrouping)
     {
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -405,8 +405,8 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelAn
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
 
-    GroupingRule* groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
-    groupingRule->AddGroup(*new SameLabelInstanceGroup(""));
+    GroupingRule* groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "");
+    groupingRule->AddGroup(*new SameLabelInstanceGroup());
     m_ruleset->AddPresentationRule(*groupingRule);
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
@@ -433,12 +433,12 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelAn
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithGroupingRuleNotHavingCreateGroupForSingleItemFlag)
     {
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
-    GroupingRule* groupingRule = new GroupingRule("", 1000, false, "RulesEngineTest", "Widget", "", "", "");
-    groupingRule->AddGroup(*new ClassGroup("", false, "", ""));
+    GroupingRule* groupingRule = new GroupingRule("", 1000, false, "RulesEngineTest", "Widget", "");
+    groupingRule->AddGroup(*new ClassGroup(false, "", ""));
     m_ruleset->AddPresentationRule(*groupingRule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
@@ -471,7 +471,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, CustomizesNodes)
     LabelOverrideP labelOverride = new LabelOverride("ThisNode.IsInstanceNode AND ThisNode.ClassName=\"Widget\"", 1, "\"QueryBasedSpecificationNodesProviderTests.CustomizesNodes\"", "");
     m_ruleset->AddPresentationRule(*labelOverride);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -501,14 +501,14 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildNodesWhenHideNode
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
 
-    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.IsInstanceNode", 1000, false, TargetTree_Both);
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.IsInstanceNode", 1000, false);
     childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     m_ruleset->AddPresentationRule(*childRule);
 
@@ -537,7 +537,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildNodesWhenTheresOn
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -578,17 +578,17 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_GroupsSubcla
     ECInstanceInserter inserterG(s_project->GetECDb(), *classG, nullptr);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterG, *classG, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true);
     rule->AddSpecification(*spec);
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassF", "", "", "");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassF", "");
     m_ruleset->AddPresentationRule(*groupingRule);
 
-    PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "IntProperty", "");
+    PropertyGroupP propertyGroup = new PropertyGroup("", true, "IntProperty", "");
     groupingRule->AddGroup(*propertyGroup);
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
@@ -628,7 +628,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_DoesntGroupN
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -637,10 +637,10 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_DoesntGroupN
     InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
     rule->AddSpecification(*spec);
 
-    GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
+    GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "");
     m_ruleset->AddPresentationRule(*groupingRule);
 
-    PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "IntProperty", "");
+    PropertyGroupP propertyGroup = new PropertyGroup("", true, "IntProperty", "");
     propertyGroup->SetCreateGroupForUnspecifiedValues(false);
     groupingRule->AddGroup(*propertyGroup);
 
@@ -675,7 +675,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_DoesntGroupN
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryBasedSpecificationNodesProviderTests, NotifiesAboutUsedRelatedClassesInCustomizationRuleValue)
     {
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -719,11 +719,11 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     IECInstancePtr e = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classDHasE, *d, *e);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", classD->GetFullName(), false));
     m_ruleset->AddPresentationRule(*rule);
-    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false);
     childRule->AddSpecification(*new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
         RequiredRelationDirection::RequiredRelationDirection_Forward, "", classDHasE->GetFullName(), ""));
     m_ruleset->AddPresentationRule(*childRule);
@@ -751,11 +751,11 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     IECInstancePtr e = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classDHasE, *d, *e);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", classE->GetFullName(), false));
     m_ruleset->AddPresentationRule(*rule);
-    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false);
     childRule->AddSpecification(*new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
         RequiredRelationDirection::RequiredRelationDirection_Backward, "", classDHasE->GetFullName(), ""));
     m_ruleset->AddPresentationRule(*childRule);
@@ -783,11 +783,11 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     IECInstancePtr e = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classDHasE, *d, *e);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", classD->GetFullName(), false));
     m_ruleset->AddPresentationRule(*rule);
-    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false);
     childRule->AddSpecification(*new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
         RequiredRelationDirection::RequiredRelationDirection_Both, "", classDHasE->GetFullName(), ""));
     m_ruleset->AddPresentationRule(*childRule);
@@ -815,11 +815,11 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     IECInstancePtr e = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classDHasE, *d1, *e);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", classD->GetFullName(), false));
     m_ruleset->AddPresentationRule(*rule);
-    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false);
     childRule->AddSpecification(*new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 1, "",
         RequiredRelationDirection::RequiredRelationDirection_Both, "", classDHasE->GetFullName(), ""));
     m_ruleset->AddPresentationRule(*childRule);
@@ -847,11 +847,11 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB2);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classA2BaseHasB2, *a2Base, *b2);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", classA2Base->GetFullName(), false));
     m_ruleset->AddPresentationRule(*rule);
-    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false);
     childRule->AddSpecification(*new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
         RequiredRelationDirection::RequiredRelationDirection_Forward, "", classA2BaseHasB2->GetFullName(), ""));
     m_ruleset->AddPresentationRule(*childRule);
@@ -879,12 +879,12 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB2);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classA2BaseHasB2, *a2Base, *b2);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", classB2->GetFullName(), false));
     m_ruleset->AddPresentationRule(*rule);
 
-    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false);
     childRule->AddSpecification(*new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
         RequiredRelationDirection::RequiredRelationDirection_Backward, "", classA2BaseHasB2->GetFullName(), ""));
     m_ruleset->AddPresentationRule(*childRule);
@@ -912,11 +912,11 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB2);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classA2BaseHasB2, *a2Base, *b2);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", classA2Base->GetFullName(), false));
     m_ruleset->AddPresentationRule(*rule);
-    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false);
     childRule->AddSpecification(*new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
         RequiredRelationDirection::RequiredRelationDirection_Both, "", classA2BaseHasB2->GetFullName(), ""));
     m_ruleset->AddPresentationRule(*childRule);
@@ -944,11 +944,11 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classGHasD, *d, *g);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", classG->GetFullName(), false));
     m_ruleset->AddPresentationRule(*rule);
-    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false);
     childRule->AddSpecification(*new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
         RequiredRelationDirection::RequiredRelationDirection_Forward, "", classGHasD->GetFullName(), ""));
     m_ruleset->AddPresentationRule(*childRule);
@@ -976,11 +976,11 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classGHasD, *d, *g);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", classD->GetFullName(), false));
     m_ruleset->AddPresentationRule(*rule);
-    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false);
     childRule->AddSpecification(*new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
         RequiredRelationDirection::RequiredRelationDirection_Backward, "", classGHasD->GetFullName(), ""));
     m_ruleset->AddPresentationRule(*childRule);
@@ -1008,11 +1008,11 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classGHasD, *d, *g);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", classG->GetFullName(), false));
     m_ruleset->AddPresentationRule(*rule);
-    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false);
     childRule->AddSpecification(*new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "",
         RequiredRelationDirection::RequiredRelationDirection_Both, "", classGHasD->GetFullName(), ""));
     m_ruleset->AddPresentationRule(*childRule);
@@ -1040,11 +1040,11 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB2);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classA2BaseHasB2, *a2Base, *b2);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", classA2Base->GetFullName(), false));
     m_ruleset->AddPresentationRule(*rule);
-    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false);
     childRule->AddSpecification(*new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "TRUE",
         RequiredRelationDirection::RequiredRelationDirection_Both, "", classA2BaseHasB2->GetFullName(), ""));
     m_ruleset->AddPresentationRule(*childRule);
@@ -1067,7 +1067,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_DoesntRequestArti
     auto captureArtifacts = ArtifactsCapturer::Create();
     m_context->AddArtifactsCapturer(captureArtifacts.get());
 
-    RootNodeRule* rule1 = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule1 = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule1);
     m_context->SetRootNodeContext(rule1);
 
@@ -1075,7 +1075,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_DoesntRequestArti
         "ECInstanceId = 1", "RulesEngineTest:Widget", false);
     rule1->AddSpecification(*spec);
 
-    RootNodeRule* rule2 = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule2 = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule2);
     rule2->AddCustomizationRule(*new NodeArtifactsRule());
 
@@ -1096,7 +1096,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_RequestsArtifacts
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 
@@ -1125,7 +1125,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_RequestsArtifacts
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass);
 
-    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     m_ruleset->AddPresentationRule(*rule);
     m_context->SetRootNodeContext(rule);
 

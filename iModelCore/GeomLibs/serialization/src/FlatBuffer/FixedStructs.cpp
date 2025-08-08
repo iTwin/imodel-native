@@ -220,22 +220,26 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
     if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
         {
         DSegment3d segment;
-        parent.TryGetLine (segment);
-        BGFB::DSegment3d fbSegment = FBDSegment3d (segment);
-        //return CreateLineSegment (m_fbb, &dataA, &dataB);
-        auto dataC = BGFB::CreateLineSegment (m_fbb, &fbSegment);
-        return CreateVariantGeometry (m_fbb,
-                BGFB::VariantGeometryUnion_LineSegment, dataC.Union (), WriteVariantGeometryTag (parent.GetId ()));
+        if (parent.TryGetLine (segment))
+            {
+            BGFB::DSegment3d fbSegment = FBDSegment3d (segment);
+            //return CreateLineSegment (m_fbb, &dataA, &dataB);
+            auto dataC = BGFB::CreateLineSegment (m_fbb, &fbSegment);
+            return CreateVariantGeometry (m_fbb,
+                    BGFB::VariantGeometryUnion_LineSegment, dataC.Union (), WriteVariantGeometryTag (parent.GetId ()));
+            }
         }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc)
         {
         DEllipse3d arc;
-        parent.TryGetArc (arc);
-        BGFB::DEllipse3d fbArc = FBDEllipse3d (arc);
-        //return CreateLineEllipse (m_fbb, &dataA, &dataB);
-        auto dataC = BGFB::CreateEllipticArc (m_fbb, &fbArc);
-        return CreateVariantGeometry (m_fbb,
-                BGFB::VariantGeometryUnion_EllipticArc, dataC.Union (), WriteVariantGeometryTag (parent.GetId ()));
+        if (parent.TryGetArc (arc))
+            {
+            BGFB::DEllipse3d fbArc = FBDEllipse3d (arc);
+            //return CreateLineEllipse (m_fbb, &dataA, &dataB);
+            auto dataC = BGFB::CreateEllipticArc (m_fbb, &fbArc);
+            return CreateVariantGeometry (m_fbb,
+                    BGFB::VariantGeometryUnion_EllipticArc, dataC.Union (), WriteVariantGeometryTag (parent.GetId ()));
+            }
         }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve)
         {
@@ -432,28 +436,30 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Catenary)
         {
         DCatenary3dPlacement placement;
-        parent.TryGetCatenary (placement);
-        double a;
-        DPoint3dDVec3dDVec3d basis;
-        DSegment1d xLimits;
-        placement.Get (a, basis, xLimits);
-        auto fbOrigin = FBDPoint3d (basis.origin);
-        auto fbVectorU = FBDVector3d (basis.vectorU);
-        auto fbVectorV = FBDVector3d (basis.vectorV);
-        auto fbCurve = BGFB::CreateCatenaryCurve
-            (
-            m_fbb,
-            a,
-            &fbOrigin,
-            &fbVectorU,
-            &fbVectorV,
-            xLimits.GetStart (),
-            xLimits.GetEnd ()
-            );
+        if (parent.TryGetCatenary (placement))
+            {
+            double a;
+            DPoint3dDVec3dDVec3d basis;
+            DSegment1d xLimits;
+            placement.Get (a, basis, xLimits);
+            auto fbOrigin = FBDPoint3d (basis.origin);
+            auto fbVectorU = FBDVector3d (basis.vectorU);
+            auto fbVectorV = FBDVector3d (basis.vectorV);
+            auto fbCurve = BGFB::CreateCatenaryCurve
+                (
+                m_fbb,
+                a,
+                &fbOrigin,
+                &fbVectorU,
+                &fbVectorV,
+                xLimits.GetStart (),
+                xLimits.GetEnd ()
+                );
 
-        return CreateVariantGeometry (m_fbb,
-                BGFB::VariantGeometryUnion_CatenaryCurve,
-                fbCurve.Union (), WriteVariantGeometryTag (parent.GetId ()));
+            return CreateVariantGeometry (m_fbb,
+                    BGFB::VariantGeometryUnion_CatenaryCurve,
+                    fbCurve.Union (), WriteVariantGeometryTag (parent.GetId ()));
+            }
        }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PartialCurve)
         {
@@ -515,102 +521,116 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
         case SolidPrimitiveType_DgnBox:
             {
             DgnBoxDetail detail;
-            parent.TryGetDgnBoxDetail (detail);
-            auto fbData = BGFB::CreateDgnBox (m_fbb, (BGFB::DgnBoxDetail*)&detail); // YES -- hard case of compatible structure layouts
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnBox,
-                fbData.Union ()
-                );
+            if (parent.TryGetDgnBoxDetail (detail))
+                {
+                auto fbData = BGFB::CreateDgnBox (m_fbb, (BGFB::DgnBoxDetail*)&detail); // YES -- hard case of compatible structure layouts
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnBox,
+                    fbData.Union ()
+                    );
+                }
             }
         case SolidPrimitiveType_DgnCone:
             {
             DgnConeDetail detail;
-            parent.TryGetDgnConeDetail (detail);
-            auto fbData = BGFB::CreateDgnCone (m_fbb, (BGFB::DgnConeDetail*)&detail); // YES -- hard case of compatible structure layouts
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnCone,
-                fbData.Union ()
-                );
+            if (parent.TryGetDgnConeDetail (detail))
+                {
+                auto fbData = BGFB::CreateDgnCone (m_fbb, (BGFB::DgnConeDetail*)&detail); // YES -- hard case of compatible structure layouts
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnCone,
+                    fbData.Union ()
+                    );
+                }
             }
         case SolidPrimitiveType_DgnTorusPipe:
             {
             DgnTorusPipeDetail detail;
-            parent.TryGetDgnTorusPipeDetail (detail);
-            auto fbData = BGFB::CreateDgnTorusPipe (m_fbb, (BGFB::DgnTorusPipeDetail*)&detail); // YES -- hard case of compatible structure layouts
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnTorusPipe,
-                fbData.Union ()
-                );
+            if (parent.TryGetDgnTorusPipeDetail (detail))
+                {
+                auto fbData = BGFB::CreateDgnTorusPipe (m_fbb, (BGFB::DgnTorusPipeDetail*)&detail); // YES -- hard case of compatible structure layouts
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnTorusPipe,
+                    fbData.Union ()
+                    );
+                }
             }
         case SolidPrimitiveType_DgnSphere:
             {
             DgnSphereDetail detail;
-            parent.TryGetDgnSphereDetail (detail);
-            auto fbData = BGFB::CreateDgnSphere (m_fbb, (BGFB::DgnSphereDetail*)&detail); // YES -- hard case of compatible structure layouts
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnSphere,
-                fbData.Union ()
-                );
+            if (parent.TryGetDgnSphereDetail (detail))
+                {
+                auto fbData = BGFB::CreateDgnSphere (m_fbb, (BGFB::DgnSphereDetail*)&detail); // YES -- hard case of compatible structure layouts
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnSphere,
+                    fbData.Union ()
+                    );
+                }
             }
         case SolidPrimitiveType_DgnExtrusion:
             {
             DgnExtrusionDetail detail;
-            parent.TryGetDgnExtrusionDetail (detail);
-            auto fbData = BGFB::CreateDgnExtrusion (m_fbb,
-                            WriteAsFBCurveVector (detail.m_baseCurve.get ()),
-                            (BGFB::DVector3d*)&detail.m_extrusionVector,
-                            detail.m_capped);
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnExtrusion,
-                fbData.Union ()
-                );
+            if (parent.TryGetDgnExtrusionDetail (detail))
+                {
+                auto fbData = BGFB::CreateDgnExtrusion (m_fbb,
+                                WriteAsFBCurveVector (detail.m_baseCurve.get ()),
+                                (BGFB::DVector3d*)&detail.m_extrusionVector,
+                                detail.m_capped);
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnExtrusion,
+                    fbData.Union ()
+                    );
+                }
             }
         case SolidPrimitiveType_DgnRotationalSweep:
             {
             DgnRotationalSweepDetail detail;
-            parent.TryGetDgnRotationalSweepDetail (detail);
-            auto fbData = BGFB::CreateDgnRotationalSweep (m_fbb,
-                            WriteAsFBCurveVector (detail.m_baseCurve.get ()),
-                            (BGFB::DRay3d*)&detail.m_axisOfRotation,
-                            detail.m_sweepAngle,
-                            (int32_t)detail.m_numVRules,
-                            detail.m_capped);
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnRotationalSweep,
-                fbData.Union ()
-                );
+            if (parent.TryGetDgnRotationalSweepDetail (detail))
+                {
+                auto fbData = BGFB::CreateDgnRotationalSweep (m_fbb,
+                                WriteAsFBCurveVector (detail.m_baseCurve.get ()),
+                                (BGFB::DRay3d*)&detail.m_axisOfRotation,
+                                detail.m_sweepAngle,
+                                (int32_t)detail.m_numVRules,
+                                detail.m_capped);
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnRotationalSweep,
+                    fbData.Union ()
+                    );
+                }
             }
         case SolidPrimitiveType_DgnRuledSweep:
             {
             DgnRuledSweepDetail detail;
-            parent.TryGetDgnRuledSweepDetail (detail);
-            bvector<flatbuffers::Offset<BGFB::CurveVector>> fbCurves;
-            for (size_t i = 0; i < detail.m_sectionCurves.size (); i++)
+            if (parent.TryGetDgnRuledSweepDetail (detail))
                 {
-                fbCurves.push_back (WriteAsFBCurveVector (detail.m_sectionCurves[i].get ()));
+                bvector<flatbuffers::Offset<BGFB::CurveVector>> fbCurves;
+                for (size_t i = 0; i < detail.m_sectionCurves.size (); i++)
+                    {
+                    fbCurves.push_back (WriteAsFBCurveVector (detail.m_sectionCurves[i].get ()));
+                    }
+                auto fbChildren = m_fbb.CreateVector (fbCurves);
+                auto fbData = BGFB::CreateDgnRuledSweep (m_fbb,
+                                fbChildren,
+                                detail.m_capped);
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnRuledSweep,
+                    fbData.Union ()
+                    );
                 }
-            auto fbChildren = m_fbb.CreateVector (fbCurves);
-            auto fbData = BGFB::CreateDgnRuledSweep (m_fbb,
-                            fbChildren,
-                            detail.m_capped);
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnRuledSweep,
-                fbData.Union ()
-                );
             }
         }
     return 0;

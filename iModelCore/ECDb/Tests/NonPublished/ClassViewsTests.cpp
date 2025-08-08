@@ -1471,12 +1471,13 @@ TEST_F(ClassViewsFixture, complex_data) {
         </ECSchema>)xml");
         ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
         m_ecdb.SaveChanges();
-        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-        auto queryResponse = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT * FROM v1.EMixProxyView")).Get();
-        auto queryResultJson = ((ECSqlResponse*)queryResponse.get())->asJsonString();
-        BeJsDocument actualJs;
-        actualJs.Parse(queryResultJson);
-        EXPECT_STRCASEEQ(expected.Stringify(StringifyFormat::Indented).c_str(), actualJs.Stringify(StringifyFormat::Indented).c_str());
+        ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+            auto queryResponse = mgr.Enqueue(ECSqlRequest::MakeRequest("SELECT * FROM v1.EMixProxyView")).Get();
+            auto queryResultJson = ((ECSqlResponse*)queryResponse.get())->asJsonString();
+            BeJsDocument actualJs;
+            actualJs.Parse(queryResultJson);
+            EXPECT_STRCASEEQ(expected.Stringify(StringifyFormat::Indented).c_str(), actualJs.Stringify(StringifyFormat::Indented).c_str());
+        });
     }
 }
 
