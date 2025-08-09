@@ -652,6 +652,9 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! No code should depend on these views.
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus CreateClassViewsInDb() const;
+        
+        //! Removes unused schema references from schema
+        ECDB_EXPORT int RemovedUnusedSchemaReferences() const;
 
         //! Check if the schema is currently owned by current connection.
         //! @return true if own by current ecdb connection.

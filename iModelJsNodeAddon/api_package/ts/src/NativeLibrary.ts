@@ -770,8 +770,7 @@ export declare namespace IModelJsNative {
     public pullMergeBegin(): void;
     public pullMergeEnd(): void;
     public pullMergeResume(): void;
-    public removeUnusedSchemaReferences(): number;
-
+ 
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
     public static zlibCompress(data: Uint8Array): Uint8Array;
@@ -846,6 +845,7 @@ export declare namespace IModelJsNative {
     public concurrentQueryShutdown(): void;
     public attachDb(filename: string, alias: string): void;
     public detachDb(alias: string): void;
+    public removeUnusedSchemaReferences(): number;
 
   }
 

@@ -635,6 +635,16 @@ public:
         return Napi::Number::New(info.Env(), (int)r);
     }
 
+    Napi::Value removeUnusedSchemaReferences(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        bvector<ECN::ECSchemaCP> schemas = db.Schemas().GetSchemas();
+        int totalRemovedCount = 0;
+        for (ECN::ECSchemaCP schema : schemas) {
+            totalRemovedCount += const_cast<ECN::ECSchemaP>(schema)->RemoveUnusedSchemaReferences();
+        }
+        return Napi::Number::New(info.Env(), totalRemovedCount);
+    }
+
     static void Init(Napi::Env env, Napi::Object exports) {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "ECDb", {
@@ -663,6 +673,7 @@ public:
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeECDb::SchemaSyncGetLocalDbInfo),
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeECDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("openDb", &NativeECDb::OpenDb),
+            InstanceMethod("removeUnusedSchemaReferences", &NativeDgnDb::removeUnusedSchemaReferences),
             InstanceMethod("readInstance", &NativeECDb::ReadInstance),
             InstanceMethod("insertInstance", &NativeECDb::InsertInstance),
             InstanceMethod("updateInstance", &NativeECDb::UpdateInstance),
@@ -2848,16 +2859,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return Napi::String::New(info.Env(), id.c_str());
     }
 
-    Napi::Value removeUnusedSchemaReferences(NapiInfoCR info) {
-        auto& db = GetWritableDb(info);
-        bvector<ECN::ECSchemaCP> schemas = db.Schemas().GetSchemas();
-        int totalRemovedCount = 0;
-        for (ECN::SchemaCP schema : schemas) {
-            totalRemovedCount += schema->RemovedUnusedSchemaPreferences();
-        }
-        return Napi::Number::New(info.Env(), totalRemovedCount);
-    }
-
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -3066,7 +3067,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("pullMergeBegin", &NativeDgnDb::PullMergeBegin),
             InstanceMethod("pullMergeEnd", &NativeDgnDb::PullMergeEnd),
             InstanceMethod("pullMergeResume", &NativeDgnDb::PullMergeResume),
-            InstanceMethod("removeUnusedSchemaReferences", &NativeDgnDb::removeUnusedSchemaReferences),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
