@@ -457,7 +457,7 @@ struct SetNapiObjOnElement {
 /*---------------------------------------------------------------------------------**/ /**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void callJsPreHandler(DgnDbR db, DgnClassId classId, Utf8CP methodName, Napi::Object obj, std::optional<Napi::Value> options = std::nullopt) {
+static void callJsHandler(DgnDbR db, DgnClassId classId, Utf8CP methodName, Napi::Object obj, std::optional<Napi::Value> options = std::nullopt) {
     auto arg = Napi::Object::New(obj.Env());
     arg.Set("props", obj);
     if (options.has_value() && !options.value().IsUndefined()) {
@@ -482,7 +482,7 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
     BeJsConst inOptionsJson(optionsObj);
 
     auto classId = ECJsonUtilities::GetClassIdFromClassNameJson(inJson[DgnElement::json_classFullName()], dgndb.GetClassLocater());
-    callJsPreHandler(dgndb, classId, "onInsert", obj, optionsObj);
+    callJsHandler(dgndb, classId, "onInsert", obj, optionsObj);
 
     try {
         DgnElement::CreateParams params(dgndb, inJson);
@@ -547,7 +547,7 @@ void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj, Napi::Value option
         elProps[DgnElement::json_classFullName()] = el->GetElementClass()->GetFullName();
         elProps[DgnElement::json_model()] = el->GetModelId();
 
-        callJsPreHandler(dgndb, el->GetElementClassId(), "onUpdate", obj, optionsObj);
+        callJsHandler(dgndb, el->GetElementClassId(), "onUpdate", obj, optionsObj);
         el->FromJson(elProps);
         std::optional<EditOptions> options = GetEditOptionsFromJson(optionsJson);
 
@@ -704,7 +704,7 @@ void JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr, Napi::Value opt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Napi::String JsInterop::InsertElementAspect(DgnDbR db, Napi::Object obj) {
+Napi::String JsInterop::InsertElementAspect(DgnDbR db, Napi::Object obj, Napi::Value optionsObj) {
     BeJsConst aspectProps(obj);
 
     DgnElement::RelatedElement relatedElement;
@@ -745,7 +745,7 @@ Napi::String JsInterop::InsertElementAspect(DgnDbR db, Napi::Object obj) {
     BeJsNapiObject arg(obj.Env());
     ((Napi::Object)arg).Set("props", obj);
     arg[DgnElement::json_model()] = element->GetModelId();
-    db.CallJsHandlerMethod(aspectClassId, "onInsert", arg);
+    callJsHandler(db, aspectClassId, "onInsert", arg, optionsObj);
 
     DgnDbStatus stat;
     RefCountedCPtr<DgnElement::Aspect> createdAspectPtr
@@ -762,7 +762,7 @@ Napi::String JsInterop::InsertElementAspect(DgnDbR db, Napi::Object obj) {
     if (DgnDbStatus::Success != stat)
         throwDgnDbStatus(stat);
 
-    db.CallJsHandlerMethod(aspectClassId, "onInserted", arg);
+    callJsHandler(db, aspectClassId, "onInserted", arg, optionsObj);
 
     return Napi::String::New(obj.Env(), createdAspectPtr->GetAspectInstanceId().ToHexStr());
 }
@@ -770,7 +770,7 @@ Napi::String JsInterop::InsertElementAspect(DgnDbR db, Napi::Object obj) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::UpdateElementAspect(DgnDbR db, Napi::Object obj) {
+void JsInterop::UpdateElementAspect(DgnDbR db, Napi::Object obj, Napi::Value optionsObj) {
     BeJsConst aspectProps(obj);
 
     DgnElement::RelatedElement relatedElement;
@@ -797,7 +797,7 @@ void JsInterop::UpdateElementAspect(DgnDbR db, Napi::Object obj) {
     BeJsNapiObject arg(obj.Env());
     ((Napi::Object)arg).Set("props", obj);
     arg[DgnElement::json_model()] = element->GetModelId();
-    db.CallJsHandlerMethod(aspectClassId, "onUpdate", arg);
+    callJsHandler(db, aspectClassId, "onUpdate", arg);
 
     IECInstanceP aspect;
     bool isMultiAspect = aspectClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
@@ -826,13 +826,13 @@ void JsInterop::UpdateElementAspect(DgnDbR db, Napi::Object obj) {
     if (DgnDbStatus::Success != stat)
         throwDgnDbStatus(stat);
 
-    db.CallJsHandlerMethod(aspectClassId, "onUpdated", arg);
+    callJsHandler(db, aspectClassId, "onUpdated", arg);
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr)   {
+void JsInterop::DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr, Napi::Value optionsObj)   {
     ECInstanceId aspectId(BeInt64Id::FromString(aspectIdStr.c_str()).GetValue());
     if (!aspectId.IsValid())
         throwInvalidId();
@@ -868,7 +868,7 @@ void JsInterop::DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr)   {
     BeJsNapiObject arg(db.GetJsIModelDb()->Env());
     arg["aspectId"] = aspectId;
     arg[DgnElement::json_model()] = element->GetModelId();
-    db.CallJsHandlerMethod(aspectClassId, "onDelete", arg);
+    callJsHandler(db, aspectClassId, "onDelete", arg);
 
     if (isMultiAspect)
         {
@@ -891,7 +891,7 @@ void JsInterop::DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr)   {
     if (DgnDbStatus::Success != stat)
         throwDgnDbStatus(stat);
 
-    db.CallJsHandlerMethod(aspectClassId, "onDeleted", arg);
+    callJsHandler(db, aspectClassId, "onDeleted", arg);
 }
 
 /*---------------------------------------------------------------------------------**//**

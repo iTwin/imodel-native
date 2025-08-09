@@ -165,10 +165,10 @@ GenericGroupModelPtr GenericGroupModel::CreateAndInsert(DgnElementCR modeledElem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus GenericGroupModel::_OnInsertElement(DgnElementR element)
+DgnDbStatus GenericGroupModel::_OnInsertElement(DgnElementR element, std::optional<EditOptions> options)
     {
     if (nullptr != dynamic_cast<GroupInformationElementP>(&element))
-        return T_Super::_OnInsertElement(element);
+        return T_Super::_OnInsertElement(element, options);
 
     BeAssert(false);
     return DgnDbStatus::WrongModel;

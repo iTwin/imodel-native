@@ -494,7 +494,7 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
     DgnElementPtr newElement = element.CopyForEditInternal(opts);
     AddToPool(*newElement);
 
-    newElement->_OnInserted(&element);
+    newElement->_OnInserted(&element, options);
 
     if (parent.IsValid())
         parent->_OnChildInserted(*newElement);

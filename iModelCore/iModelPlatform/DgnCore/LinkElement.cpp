@@ -34,7 +34,7 @@ namespace dgn_ElementHandler
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus LinkPartition::_OnSubModelInsert(DgnModelCR model) const
+DgnDbStatus LinkPartition::_OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options) const
     {
     if (nullptr == dynamic_cast<LinkModelCP>(&model))
         {
@@ -42,7 +42,7 @@ DgnDbStatus LinkPartition::_OnSubModelInsert(DgnModelCR model) const
         return DgnDbStatus::ElementBlockedChange;
         }
 
-    return T_Super::_OnSubModelInsert(model);
+    return T_Super::_OnSubModelInsert(model, options);
     }
 
 //---------------------------------------------------------------------------------------
@@ -76,9 +76,9 @@ LinkPartitionCPtr LinkPartition::CreateAndInsert(SubjectCR parentSubject, Utf8St
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus LinkModel::_OnInsertElement(DgnElementR el)
+DgnDbStatus LinkModel::_OnInsertElement(DgnElementR el, std::optional<EditOptions> options)
     {
-    DgnDbStatus status = T_Super::_OnInsertElement(el);
+    DgnDbStatus status = T_Super::_OnInsertElement(el, options);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -92,7 +92,7 @@ DgnDbStatus LinkModel::_OnInsertElement(DgnElementR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus LinkElement::_OnInsert()
+DgnDbStatus LinkElement::_OnInsert(std::optional<EditOptions> options)
     {
     if (nullptr == GetModel()->ToInformationModel())
         {
@@ -100,7 +100,7 @@ DgnDbStatus LinkElement::_OnInsert()
         return DgnDbStatus::WrongModel;
         }
 
-    return T_Super::_OnInsert();
+    return T_Super::_OnInsert(options);
     }
 
 //---------------------------------------------------------------------------------------

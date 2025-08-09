@@ -513,9 +513,9 @@ public:
     static void DeleteElement(DgnDbR db, Utf8StringCR eidStr, Napi::Value options);
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);
     static InlineGeometryPartsResult InlineGeometryParts(DgnDbR db);
-    static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);
-    static void UpdateElementAspect(DgnDbR db, Napi::Object aspectProps);
-    static void DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr);
+    static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps, Napi::Value options);
+    static void UpdateElementAspect(DgnDbR db, Napi::Object aspectProps, Napi::Value options);
+    static void DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr, Napi::Value options);
 
     // Used by ExportGraphics, ExportPartGraphics, and GenerateElementMeshes.
     // Checks for common "bad" polyfaces, fixing them up if possible.

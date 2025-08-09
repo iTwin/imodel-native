@@ -1541,8 +1541,8 @@ private:
         }
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
     DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
     DGNPLATFORM_EXPORT DgnElementPtr _CloneForImport(DgnDbStatus *, DgnModelR, DgnImportContext &) const override;
