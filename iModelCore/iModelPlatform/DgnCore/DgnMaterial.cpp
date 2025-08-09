@@ -45,10 +45,10 @@ void RenderMaterial::_OnLoadedJsonProperties()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RenderMaterial::_OnDelete() const
+DgnDbStatus RenderMaterial::_OnDelete(std::optional<EditOptions> options) const
     {
     // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
+    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited;
     }
 
 /*---------------------------------------------------------------------------------**//**

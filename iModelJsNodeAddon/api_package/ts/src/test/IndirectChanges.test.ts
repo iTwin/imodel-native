@@ -3,10 +3,22 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
+/*
+ * PARAMETER EXTRACTION SETUP:
+ * 
+ * The extractEventArgs function now correctly extracts the indirect flag from:
+ * obj.options.indirect (boolean) -> "indirect: true" or "indirect: false"
+ * 
+ * Expected string format: "Subject:onInsert indirect:false"
+ * - Class name is extracted from fullName (e.g., "Subject" from "BisCore:Subject")
+ * - Method name comes from the handler method called
+ * - Indirect flag comes from the options.indirect property
+ */
+
 
 import { assert } from "chai";
 import { DbChangeStage, DbOpcode, DbResult, GuidString, Id64Array, Id64String, Logger, LogLevel } from "@itwin/core-bentley";
-import { type ModelGeometryChangesProps, ProfileOptions, type RelatedElementProps, type RelationshipProps, type SubjectProps } from "@itwin/core-common";
+import { type ModelGeometryChangesProps, ProfileOptions, type RelationshipProps, type SubjectProps } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
 import { copyFile, dbFileName, iModelJsNative } from "./utils";
 import { openDgnDb } from "./index";
@@ -29,21 +41,15 @@ class DependencyCallbackResults {
   public allInputsHandled: Id64Array = [];
   public rootChanged: RelationshipProps[] = [];
   public deletedDependency: RelationshipProps[] = [];
-  // public directChange: Id64Array = [];
-  // public validateOutput: RelationshipProps[] = [];
 }
 
 class MockTxn {
   public dres = new DependencyCallbackResults();
-
   public db: IModelJsNative.DgnDb;
 
   constructor(db: IModelJsNative.DgnDb) {
     this.db = db;
   }
-
-  public fmtElem = (elClassName: string, elId: Id64String) => { return `${elClassName}.${elId}`; };
-  public fmtRel = (props: RelationshipProps) => { return `${this.fmtElem("", props.sourceId)}->${this.fmtElem("", props.targetId)}`; };
 
   public resetDependencyResults() { this.dres = new DependencyCallbackResults(); }
 
@@ -75,27 +81,15 @@ class MockTxn {
   }
   _onAfterUndoRedo(_isUndo: boolean) {
   }
-
 }
 
-function makeSubject(codeValue: string, parent?: RelatedElementProps): SubjectProps {
+function makeSubject(codeValue: string): SubjectProps {
   return {
     classFullName: "BisCore:Subject",
     code: { spec: "0x1f", scope: "0x1", value: codeValue },
     model: "0x1",
-    parent: parent || { id: "0x1", relClassName: "BisCore:ElementOwnsChildElements" },
+    parent: { id: "0x1", relClassName: "BisCore:ElementOwnsChildElements" },
   };
-}
-
-export interface ElementDrivesElementProps extends RelationshipProps {
-  status: number;
-  priority: number;
-}
-
-function _updateElement(db1: IModelJsNative.DgnDb, elid: Id64String, newLabel: string) {
-  const ed2 = db1.getElement({ id: elid });
-  ed2.userLabel = newLabel;
-  db1.updateElement(ed2);
 }
 
 type ChangeValueType = Uint8Array | number | string | null | undefined;
@@ -107,106 +101,313 @@ interface IChange {
   isIndirect: boolean;
 }
 
-describe.only("multi user edit workflow", () => {
-  const seedFileName = "multiUserEditSeed.bim";
-  const user1FileName = "multiUserEdit1.bim";
-  const user2FileName = "multiUserEdit2.bim";
-  const changesetFileName = "multiUserEdit.changeset";
+// Helper function to extract parameters from handler method arguments
+interface EventArgument {
+  props?: {
+    classFullName?: string;
+    parent?: {
+      id?: string;
+      relClassName?: string;
+    };
+  };
+  options?: {
+    indirect?: boolean;
+  };
+  iModel?: unknown;
+}
+
+function extractEventArgs(arg: unknown): string {
+  if (!arg || typeof arg !== 'object') {
+    return "indirect: unknown";
+  }
+
+  const obj = arg as EventArgument;
+  
+  const indirect = obj?.options?.indirect !== undefined 
+                 ? obj.options.indirect.toString()
+                 : "unknown";
+  
+  return `indirect: ${indirect}`;
+}
+
+// Helper function to assert call strings match expected patterns
+function assertCallsMatch(expectedPatterns: string[]) {
+  const calls = MockCallsTracker.getCallStrings();
+  
+  assert.equal(calls.length, expectedPatterns.length, 
+    `Expected ${expectedPatterns.length} calls, got ${calls.length}. Expected: ${JSON.stringify(expectedPatterns)}, Actual: ${JSON.stringify(calls)}`);
+  
+  expectedPatterns.forEach((expected, index) => {
+    assert.equal(calls[index], expected, `Call ${index + 1} mismatch`);
+  });
+}
+
+// Static calls cache for tracking all handler method calls
+class MockCallsTracker {
+  static calls: { method: string; args: unknown[]; fullName: string }[] = [];
+
+  static resetCalls(): void {
+    MockCallsTracker.calls = [];
+  }
+
+  static addCall(method: string, args: unknown[], fullName: string): void {
+    MockCallsTracker.calls.push({ method, args, fullName });
+  }
+
+  // Convert calls to string array for easy assertion
+  static getCallStrings(): string[] {
+    return MockCallsTracker.calls.map(call => {
+      const classShortName = call.fullName.split(':')[1] || call.fullName; // Extract "Element" from "BisCore:Element"
+      
+      // Extract parameters from the args object
+      const params = extractEventArgs(call.args[0]);
+      return `${classShortName}:${call.method} ${params}`;
+    });
+  }
+}
+
+// Base template with all the handler method names
+// To add new handler methods, simply add them to this array - no code duplication needed!
+const handlerMethods = [
+  'onInsert', 'onInserted', 'onInsertElement', 'onInsertedElement',
+  'onUpdate', 'onUpdated', 'onUpdateElement', 'onUpdatedElement', 
+  'onDelete', 'onDeleted', 'onDeleteElement', 'onDeletedElement',
+  'onChildDelete', 'onChildDeleted', 'onChildInsert', 'onChildInserted',
+  'onChildUpdate', 'onChildUpdated', 'onChildAdd', 'onChildAdded',
+  'onChildDrop', 'onChildDropped'
+];
+
+
+describe.only("indirect changes flag", () => {
+  const testFileName = "indirectChangesTest.bim";
   let db: IModelJsNative.DgnDb;
-  let db2: IModelJsNative.DgnDb;
+  let mockTxn: MockTxn;
+
   before(async() => {
-    // create a seed file
-    const seedFilePath = copyFile(seedFileName, dbFileName);
-    db = openDgnDb(seedFilePath, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
-    assert.isTrue(db !== undefined, "Failed to create seed iModel");
+    // create a test file
+    const testFilePath = copyFile(testFileName, dbFileName);
+    db = openDgnDb(testFilePath, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
+    assert.isTrue(db !== undefined, "Failed to create test iModel");
+    
+    // Set up mocks
+    mockTxn = new MockTxn(db);
+    const getJsClass = (fullName: string) => {
+      // Dynamically create a class with all handler methods
+      const dynamicClass: any = {};
+      
+      // Add each handler method to the dynamic class
+      handlerMethods.forEach(methodName => {
+        dynamicClass[methodName] = (arg: unknown) => {
+          MockCallsTracker.addCall(methodName, [arg], fullName);
+        };
+      });
+      
+      return dynamicClass;
+    };
+    const mockJsDb = { txns: mockTxn, getJsClass };
+    db.setIModelDb(mockJsDb);
+    db.enableTxnTesting();
+    
     db.saveChanges();
-    db.closeFile();
-
-    const user1FilePath = copyFile(user1FileName, seedFilePath);
-    db = openDgnDb(user1FilePath);
-    assert.isTrue(db !== undefined, "Failed to open iModel");
-
-    const user2FilePath = copyFile(user2FileName, seedFilePath);
-    db2 = openDgnDb(user2FilePath);
-    assert.isTrue(db2 !== undefined, "Failed to open iModel");
   });
 
   after(() => {
-    db.closeFile();
-    db = undefined!;
-    db2.closeFile();
-    db2 = undefined!;
+    if (db) {
+      db.closeFile();
+      db = undefined!;
+    }
   });
 
-  it("create direct and indirect elements", () => {
-    assert.isTrue(db !== undefined);
-
+  it("insert, update and delete direct and indirect elements", () => {
     Logger.setLevelDefault(LogLevel.Info);
     Logger.setLevel('ECDb', LogLevel.Warning);
     Logger.setLevel('ECObjectsNative', LogLevel.Warning);
 
-    const mockTxn = new MockTxn(db);
-    const mockJsDb = { txns: mockTxn };
-    db.setIModelDb(mockJsDb);
-    db.enableTxnTesting();
+    // Helper function to create changeset and verify indirect flag
+    const createChangesetAndVerify = (description: string, expectedIndirectCount: number) => {
+      const saveResult = db.saveChanges();
+      assert.equal(DbResult.BE_SQLITE_OK, saveResult, "Failed to save changes");
+      
+      const changesetProps = db.startCreateChangeset();
+      changesetProps.description = description;
+      const index = changesetProps.index;
+      const changesetFilePath = copyFile(`${description.replace(/\s+/g, '_')}.changeset`, changesetProps.pathname);
+      db.completeCreateChangeset({index});
+      assert.isTrue(existsSync(changesetFilePath));
 
+      // Read changeset and verify indirect flag
+      const reader = new iModelJsNative.ChangesetReader();
+      reader.openFile(changesetFilePath, false);
+      const changes: IChange[] = [];
+      while (reader.step()) {
+        changes.push({
+          tableName: reader.getTableName(),
+          op: reader.getOpCode() === DbOpcode.Delete ? "deleted" : (reader.getOpCode() === DbOpcode.Update ? "updated" : "inserted"),
+          after: reader.getRow(DbChangeStage.New),
+          isIndirect: reader.isIndirectChange(),
+        });
+      }
+      reader.close();
+
+      const indirectChanges = changes.filter(c => c.isIndirect);
+      assert.equal(indirectChanges.length, expectedIndirectCount, `Expected ${expectedIndirectCount} indirect changes, got ${indirectChanges.length}`);
+      
+      return changes;
+    };
+
+    // 1. Create subject directly
     db.deleteAllTxns();
-
-    const beginResult = db.beginMultiTxnOperation();
-    assert.equal(DbResult.BE_SQLITE_OK, beginResult, "Failed to begin multi user edit operation");
-    const txnId = db.getCurrentTxnId();
-    assert.isTrue(txnId !== undefined, "Failed to get current transaction id");
-
-    const subject1Id = db.insertElement(makeSubject("subject1"), { indirect: false});
-    assert.isDefined(subject1Id, "Failed to insert element subject1");
-    const subject2Id = db.insertElement(makeSubject("subjectWithRel1", { id: subject1Id, relClassName: "BisCore.ElementOwnsChildElements" }));
-    assert.isDefined(subject2Id, "Failed to insert element subjectWithRel1");
-
-    const subject3Id = db.insertElement(makeSubject("subject3"), { indirect: true});
-    assert.isDefined(subject3Id, "Failed to insert element subject3");
-
-    const endResult = db.endMultiTxnOperation();
-    assert.equal(DbResult.BE_SQLITE_OK, endResult, "Failed to end multi user edit operation");
-
-    const saveResult = db.saveChanges();
-    assert.equal(DbResult.BE_SQLITE_OK, saveResult, "Failed to save changes");
-    const changesetProps = db.startCreateChangeset();
-    changesetProps.description = "create initial subjects";
-    const index = changesetProps.index;
-    const changesetFilePath = copyFile(changesetFileName, changesetProps.pathname);
-    db.completeCreateChangeset({index});
-    assert.isTrue(existsSync(changesetFilePath));
+    MockCallsTracker.resetCalls();
+    let beginResult = db.beginMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, beginResult);
     
-    assert.isTrue(db !== undefined);
-    const mockTxn2 = new MockTxn(db2);
-    const mockJsDb2 = { txns: mockTxn2};
-    db2.setIModelDb(mockJsDb2);
-    db2.enableTxnTesting();
-    db2.deleteAllTxns();
-    const changesetPropsCopy = JSON.parse(JSON.stringify(changesetProps));
-    changesetPropsCopy.pathname = changesetFilePath;
-    db2.applyChangeset(changesetPropsCopy, true);
-    const appliedElement = db2.getElement({ id: subject1Id });
-    assert.isDefined(appliedElement, "Failed to apply changeset to user2 iModel");
-    assert.equal(appliedElement.code.value, "subject1", "Applied element code value does not match expected value");
-    const appliedElement2 = db2.getElement({ id: subject2Id });
-    assert.isDefined(appliedElement2, "Failed to apply changeset to user2 iModel");
-    assert.equal(appliedElement2.code.value, "subjectWithRel1", "Applied element code value does not match expected value");
-    const appliedElement3 = db2.getElement({ id: subject3Id });
-    assert.isDefined(appliedElement3, "Failed to apply changeset to user2 iModel");
-    assert.equal(appliedElement3.code.value, "subject3", "Applied element code value does not match expected value");
+    const directSubjectId = db.insertElement(makeSubject("directSubject"), { indirect: false });
+    assert.isDefined(directSubjectId, "Failed to insert direct subject");
+    
+    let endResult = db.endMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, endResult);
+    
+    // Verify handler calls with proper string assertions
+    assertCallsMatch([
+      "Subject:onInsert indirect: true",
+      "RepositoryModel:onInsertElement indirect: true",
+      "Subject:onChildInsert indirect: true",
+      "Subject:onInserted indirect: true",
+      "RepositoryModel:onInsertedElement indirect: true",
+      "Subject:onChildInserted indirect: true",
+    ]);
+    MockCallsTracker.resetCalls();
+    const changes1 = createChangesetAndVerify("create subject directly", 0);
+    assert.isTrue(changes1.some(c => c.op === "inserted" && !c.isIndirect), "Should have direct change");
 
-    const reader = new iModelJsNative.ChangesetReader();
-    reader.openFile(changesetFilePath, false);
-        const changes: IChange[] = [];
-    while (reader.step()) {
-      changes.push({
-        tableName: reader.getTableName(),
-        op: reader.getOpCode() === DbOpcode.Delete ? "deleted" : (reader.getOpCode() === DbOpcode.Update ? "updated" : "inserted"),
-        after: reader.getRow(DbChangeStage.New),
-        isIndirect: reader.isIndirectChange(),
-      });
-    }
-    reader.close();
+    // 2. Create subject indirectly
+    db.deleteAllTxns();
+    MockCallsTracker.resetCalls();
+    beginResult = db.beginMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, beginResult);
+    
+    const indirectSubjectId = db.insertElement(makeSubject("indirectSubject"), { indirect: true });
+    assert.isDefined(indirectSubjectId, "Failed to insert indirect subject");
+    
+    endResult = db.endMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, endResult);
+    
+    // Verify handler calls with proper string assertions
+    assertCallsMatch([
+      "Subject:onInsert indirect: false",
+      "RepositoryModel:onInsertElement indirect: false",
+      "Subject:onChildInsert indirect: false",
+      "Subject:onInserted indirect: false",
+      "RepositoryModel:onInsertedElement indirect: false",
+      "Subject:onChildInserted indirect: false",
+    ]);
+    MockCallsTracker.resetCalls();
+    
+    const changes2 = createChangesetAndVerify("create subject indirectly", 1);
+    assert.isTrue(changes2.some(c => c.op === "inserted" && c.isIndirect), "Should have indirect insert");
+
+    // 3. Update subject directly
+    db.deleteAllTxns();
+    MockCallsTracker.resetCalls();
+    beginResult = db.beginMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, beginResult);
+    
+    const directElement = db.getElement({ id: directSubjectId });
+    directElement.userLabel = "updatedDirectly";
+    db.updateElement(directElement, { indirect: false });
+    
+    endResult = db.endMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, endResult);
+    
+    // Verify handler calls with proper string assertions
+    assertCallsMatch([
+      "Subject:onUpdate indirect: false",
+      "RepositoryModel:onUpdateElement indirect: unknown",
+      "Subject:onChildUpdate indirect: unknown",
+      "Subject:onUpdated indirect: unknown",
+      "RepositoryModel:onUpdatedElement indirect: unknown",
+      "Subject:onChildUpdated indirect: unknown",
+    ]);
+    MockCallsTracker.resetCalls();
+    
+    const changes3 = createChangesetAndVerify("update subject directly", 0);
+    assert.isTrue(changes3.some(c => c.op === "updated" && !c.isIndirect), "Should have direct update");
+
+    // 4. Update subject indirectly
+    db.deleteAllTxns();
+    MockCallsTracker.resetCalls();
+    beginResult = db.beginMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, beginResult);
+    
+    const indirectElement = db.getElement({ id: indirectSubjectId });
+    indirectElement.userLabel = "updatedIndirectly";
+    db.updateElement(indirectElement, { indirect: true });
+    
+    endResult = db.endMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, endResult);
+    
+    // Verify handler calls with proper string assertions
+    assertCallsMatch([
+      "Subject:onUpdate indirect: true",
+      "RepositoryModel:onUpdateElement indirect: unknown",
+      "Subject:onChildUpdate indirect: unknown",
+      "Subject:onUpdated indirect: unknown",
+      "RepositoryModel:onUpdatedElement indirect: unknown",
+      "Subject:onChildUpdated indirect: unknown",
+    ]);
+    MockCallsTracker.resetCalls();
+    
+    const changes4 = createChangesetAndVerify("update subject indirectly", 1);
+    assert.isTrue(changes4.some(c => c.op === "updated" && c.isIndirect), "Should have indirect update");
+
+    // 5. Delete subject directly
+    db.deleteAllTxns();
+    MockCallsTracker.resetCalls();
+    beginResult = db.beginMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, beginResult);
+    
+    db.deleteElement(directSubjectId, { indirect: false });
+    
+    endResult = db.endMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, endResult);
+    
+    // Verify handler calls with proper string assertions
+    assertCallsMatch([
+      "Subject:onDelete indirect: false",
+      "RepositoryModel:onDeleteElement indirect: unknown",
+      "Subject:onChildDelete indirect: unknown",
+      "Subject:onDeleted indirect: unknown",
+      "RepositoryModel:onDeletedElement indirect: unknown",
+      "Subject:onChildDeleted indirect: unknown",
+    ]);
+    MockCallsTracker.resetCalls();
+    
+    const changes5 = createChangesetAndVerify("delete subject directly", 0);
+    assert.isTrue(changes5.some(c => c.op === "deleted" && !c.isIndirect), "Should have direct delete");
+
+    // 6. Delete subject indirectly
+    db.deleteAllTxns();
+    MockCallsTracker.resetCalls();
+    beginResult = db.beginMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, beginResult);
+    
+    db.deleteElement(indirectSubjectId, { indirect: true });
+    
+    endResult = db.endMultiTxnOperation();
+    assert.equal(DbResult.BE_SQLITE_OK, endResult);
+    
+    // Verify handler calls with proper string assertions
+    assertCallsMatch([
+      "Subject:onDelete indirect: true",
+      "RepositoryModel:onDeleteElement indirect: unknown",
+      "Subject:onChildDelete indirect: unknown",
+      "Subject:onDeleted indirect: unknown",
+      "RepositoryModel:onDeletedElement indirect: unknown",
+      "Subject:onChildDeleted indirect: unknown",
+    ]);
+    MockCallsTracker.resetCalls();
+    
+    const changes6 = createChangesetAndVerify("delete subject indirectly", 1);
+    assert.isTrue(changes6.some(c => c.op === "deleted" && c.isIndirect), "Should have indirect delete");
   });
 });

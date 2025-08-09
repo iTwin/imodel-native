@@ -7,11 +7,16 @@
 /*---------------------------------------------------------------------------------**/ /**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::CallJsPreHandler(Utf8CP methodName) const {
+void DgnModel::CallJsPreHandler(Utf8CP methodName, std::optional<EditOptions> options) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb && m_napiObj) {
         auto arg = Napi::Object::New(m_napiObj->Env());
         arg.Set("props", *m_napiObj);
+        if (options.has_value()) {
+            BeJsNapiObject optionsObj(jsDb->Env());
+            optionsObj["indirect"] = options.value().IsIndirectChange;
+            arg.Set("options",optionsObj);
+        }
         m_dgndb.CallJsHandlerMethod(m_classId, methodName, arg);
     }
 }
@@ -19,11 +24,16 @@ void DgnModel::CallJsPreHandler(Utf8CP methodName) const {
 /*---------------------------------------------------------------------------------**/ /**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::CallJsPostHandler(Utf8CP methodName) const {
+void DgnModel::CallJsPostHandler(Utf8CP methodName, std::optional<EditOptions> options) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb) {
         BeJsNapiObject arg(jsDb->Env());
         arg["id"] = m_modelId;
+        if (options.has_value()) {
+            BeJsNapiObject optionsObj(jsDb->Env());
+            optionsObj["indirect"] = options.value().IsIndirectChange;
+            arg["options"].From(optionsObj);
+        }
         m_dgndb.CallJsHandlerMethod(m_classId, methodName, arg);
     }
 }
@@ -31,12 +41,17 @@ void DgnModel::CallJsPostHandler(Utf8CP methodName) const {
 /*---------------------------------------------------------------------------------**/ /**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::CallJsElementPreHandler(DgnElementCR element, Utf8CP methodName) const {
+void DgnModel::CallJsElementPreHandler(DgnElementCR element, Utf8CP methodName, std::optional<EditOptions> options) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb && element.m_napiObj) {
         BeJsNapiObject arg(jsDb->Env());
         arg["id"] = m_modelId;
         ((Napi::Object)arg)["elementProps"] = *element.m_napiObj;
+        if (options.has_value()) {
+            BeJsNapiObject optionsObj(jsDb->Env());
+            optionsObj["indirect"] = options.value().IsIndirectChange;
+            arg["options"].From(optionsObj);
+        }
         m_dgndb.CallJsHandlerMethod(m_classId, methodName, arg);
     }
 }
@@ -44,12 +59,17 @@ void DgnModel::CallJsElementPreHandler(DgnElementCR element, Utf8CP methodName) 
 /*---------------------------------------------------------------------------------**/ /**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::CallJsElementPostHandler(DgnElementId elementId, Utf8CP methodName) const {
+void DgnModel::CallJsElementPostHandler(DgnElementId elementId, Utf8CP methodName, std::optional<EditOptions> options) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb) {
         BeJsNapiObject arg(jsDb->Env());
         arg["id"] = m_modelId;
         arg["elementId"] = elementId;
+        if (options.has_value()) {
+            BeJsNapiObject optionsObj(jsDb->Env());
+            optionsObj["indirect"] = options.value().IsIndirectChange;
+            arg["options"].From(optionsObj);
+        }
         m_dgndb.CallJsHandlerMethod(m_classId, methodName, arg);
     }
 }
@@ -318,37 +338,37 @@ DgnModel::~DgnModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricModel2d::_OnInsertElement(DgnElementR element)
+DgnDbStatus GeometricModel2d::_OnInsertElement(DgnElementR element, std::optional<EditOptions> options)
     {
     auto geom = element.ToGeometrySource();
 
     // if it is a geometric element, it must be a 2d element.
-    return (geom && !geom->Is2d()) ? DgnDbStatus::Mismatch2d3d : T_Super::_OnInsertElement(element);
+    return (geom && !geom->Is2d()) ? DgnDbStatus::Mismatch2d3d : T_Super::_OnInsertElement(element, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SectionDrawingModel::_OnInsertElement(DgnElementR el)
+DgnDbStatus SectionDrawingModel::_OnInsertElement(DgnElementR el, std::optional<EditOptions> options)
     {
-    return T_Super::_OnInsertElement(el);;
+    return T_Super::_OnInsertElement(el, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricModel3d::_OnInsertElement(DgnElementR element)
+DgnDbStatus GeometricModel3d::_OnInsertElement(DgnElementR element, std::optional<EditOptions> options)
     {
     auto geom = element.ToGeometrySource();
 
     // if it is a geometric element, it must be a 3d element.
-    return (geom && !geom->Is3d()) ? DgnDbStatus::Mismatch2d3d : T_Super::_OnInsertElement(element);
+    return (geom && !geom->Is3d()) ? DgnDbStatus::Mismatch2d3d : T_Super::_OnInsertElement(element, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GroupInformationModel::_OnInsertElement(DgnElementR element)
+DgnDbStatus GroupInformationModel::_OnInsertElement(DgnElementR element, std::optional<EditOptions> options)
     {
     if (nullptr == dynamic_cast<GroupInformationElementCP>(&element))
         {
@@ -356,13 +376,13 @@ DgnDbStatus GroupInformationModel::_OnInsertElement(DgnElementR element)
         return DgnDbStatus::WrongModel;
         }
 
-    return T_Super::_OnInsertElement(element);
+    return T_Super::_OnInsertElement(element, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus InformationRecordModel::_OnInsertElement(DgnElementR element)
+DgnDbStatus InformationRecordModel::_OnInsertElement(DgnElementR element, std::optional<EditOptions> options)
     {
     if (nullptr == dynamic_cast<InformationRecordElementCP>(&element))
         {
@@ -370,7 +390,7 @@ DgnDbStatus InformationRecordModel::_OnInsertElement(DgnElementR element)
         return DgnDbStatus::WrongModel;
         }
 
-    return T_Super::_OnInsertElement(element);
+    return T_Super::_OnInsertElement(element, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -551,17 +571,17 @@ SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SpatialLocationModel::_OnInsertElement(DgnElementR element)
+DgnDbStatus SpatialLocationModel::_OnInsertElement(DgnElementR element, std::optional<EditOptions> options)
     {
-    return dynamic_cast<PhysicalElement*>(&element) ? DgnDbStatus::WrongModel : T_Super::_OnInsertElement(element);
+    return dynamic_cast<PhysicalElement*>(&element) ? DgnDbStatus::WrongModel : T_Super::_OnInsertElement(element, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus InformationModel::_OnInsertElement(DgnElementR element)
+DgnDbStatus InformationModel::_OnInsertElement(DgnElementR element, std::optional<EditOptions> options)
     {
-    return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element, options) : DgnDbStatus::WrongModel;
     }
 
 
@@ -618,19 +638,19 @@ DefinitionModelPtr DefinitionModel::CreateAndInsert(DefinitionElementCR modeledE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DefinitionModel::_OnInsertElement(DgnElementR el)
+DgnDbStatus DefinitionModel::_OnInsertElement(DgnElementR el, std::optional<EditOptions> options)
     {
     // NOTE: DefinitionModels can only contain DefinitionElements or other "information" elements
-    return el.IsInformationContentElement() ? T_Super::_OnInsertElement(el) : DgnDbStatus::WrongModel;
+    return el.IsInformationContentElement() ? T_Super::_OnInsertElement(el, options) : DgnDbStatus::WrongModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DocumentListModel::_OnInsertElement(DgnElementR element)
+DgnDbStatus DocumentListModel::_OnInsertElement(DgnElementR element, std::optional<EditOptions> options)
     {
     // only Document elements go into a DocumentListModel
-    return element.IsDocumentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    return element.IsDocumentElement() ? T_Super::_OnInsertElement(element, options) : DgnDbStatus::WrongModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -663,7 +683,7 @@ DocumentListModelPtr DocumentListModel::CreateAndInsert(DocumentPartitionCR mode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DrawingModel::_OnInsert()
+DgnDbStatus DrawingModel::_OnInsert(std::optional<EditOptions> options)
     {
     if (!GetDgnDb().Elements().Get<Drawing>(GetModeledElementId()).IsValid() && !GetDgnDb().Elements().Get<TemplateRecipe2d>(GetModeledElementId()).IsValid())
         {
@@ -671,7 +691,7 @@ DgnDbStatus DrawingModel::_OnInsert()
         return DgnDbStatus::BadElement;
         }
 
-    return T_Super::_OnInsert();
+    return T_Super::_OnInsert(options);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -723,17 +743,17 @@ DrawingModelPtr DrawingModel::Create(TemplateRecipe2dCR recipe)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RepositoryModel::_OnInsertElement(DgnElementR element)
+DgnDbStatus RepositoryModel::_OnInsertElement(DgnElementR element, std::optional<EditOptions> options)
     {
-    return element.IsInformationContentElement() && !element.IsDefinitionElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    return element.IsInformationContentElement() && !element.IsDefinitionElement() ? T_Super::_OnInsertElement(element, options) : DgnDbStatus::WrongModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RoleModel::_OnInsertElement(DgnElementR element)
+DgnDbStatus RoleModel::_OnInsertElement(DgnElementR element, std::optional<EditOptions> options)
     {
-    return element.IsGeometricElement() ? DgnDbStatus::WrongModel : T_Super::_OnInsertElement(element);
+    return element.IsGeometricElement() ? DgnDbStatus::WrongModel : T_Super::_OnInsertElement(element, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -965,14 +985,14 @@ DgnDbStatus DgnModel::PerformUpdate() {
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::Update() {
-    DgnDbStatus status = _OnUpdate();
+DgnDbStatus DgnModel::Update(std::optional<EditOptions> options) {
+    DgnDbStatus status = _OnUpdate(options);
     if (status != DgnDbStatus::Success)
         return status;
 
     status = PerformUpdate();
     if (DgnDbStatus::Success == status)
-        _OnUpdated();
+        _OnUpdated(options);
 
     return status;
 }
@@ -981,15 +1001,15 @@ struct UpdatedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& ha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnUpdated() {
-    CallJsPostHandler("onUpdated");
+void DgnModel::_OnUpdated(std::optional<EditOptions> options) {
+    CallJsPostHandler("onUpdated", options);
     CallAppData(UpdatedCaller());
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_OnUpdate() {
+DgnDbStatus DgnModel::_OnUpdate(std::optional<EditOptions> options) {
     ModelHandlerR modelHandler = GetModelHandler();
     if (modelHandler.GetDomain().IsReadonly())
         return DgnDbStatus::ReadOnlyDomain;
@@ -1002,7 +1022,7 @@ DgnDbStatus DgnModel::_OnUpdate() {
                 return stat;
         }
     }
-    CallJsPreHandler("onUpdate");
+    CallJsPreHandler("onUpdate", options);
     return DgnDbStatus::Success;
 }
 
@@ -1202,18 +1222,18 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_OnInsertElement(DgnElementR element) {
+DgnDbStatus DgnModel::_OnInsertElement(DgnElementR element, std::optional<EditOptions> options) {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
 
-    CallJsElementPreHandler(element, "onInsertElement"); // javascript `model.onInsertElement`
+    CallJsElementPreHandler(element, "onInsertElement", options); // javascript `model.onInsertElement`
     return DgnDbStatus::Success;
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element) {
+DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element, std::optional<EditOptions> options) {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
 
@@ -1224,7 +1244,7 @@ DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR original) {
+DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR original, std::optional<EditOptions> options) {
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
 
@@ -1235,7 +1255,7 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_OnDelete() {
+DgnDbStatus DgnModel::_OnDelete(std::optional<EditOptions> options) {
     ModelHandlerR modelHandler = GetModelHandler();
     if (modelHandler.GetDomain().IsReadonly())
         return DgnDbStatus::ReadOnlyDomain;
@@ -1273,8 +1293,8 @@ struct DeletedCaller {
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnDeleted() {
-    CallJsPostHandler("onDeleted");
+void DgnModel::_OnDeleted(std::optional<EditOptions> options) {
+    CallJsPostHandler("onDeleted", options);
     CallAppData(DeletedCaller());
     GetDgnDb().DeleteLinkTableRelationships(BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels), DgnElementId() /* all ModelSelectors */, GetModeledElementId()); // replicate former foreign key behavior
 }
@@ -1282,7 +1302,7 @@ void DgnModel::_OnDeleted() {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_OnInsert() {
+DgnDbStatus DgnModel::_OnInsert(std::optional<EditOptions> options) {
     if (GetDgnDb().IsReadonly())
         return DgnDbStatus::ReadOnly;
 
@@ -1293,16 +1313,16 @@ DgnDbStatus DgnModel::_OnInsert() {
     if (modelHandler.GetDomain().IsReadonly())
         return DgnDbStatus::ReadOnlyDomain;
 
-    CallJsPreHandler("onInsert");
+    CallJsPreHandler("onInsert", options);
     return DgnDbStatus::Success;
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnInserted()
+void DgnModel::_OnInserted(std::optional<EditOptions> options)
     {
-    CallJsPostHandler("onInserted");
+    CallJsPostHandler("onInserted", options);
     GetDgnDb().Models().AddLoadedModel(*this);
     }
 
@@ -1317,7 +1337,7 @@ void DgnModel::_OnLoaded()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::Delete()
+DgnDbStatus DgnModel::Delete(std::optional<EditOptions> options)
     {
     if (!m_persistent)
         return DgnDbStatus::WrongModel;
@@ -1329,7 +1349,7 @@ DgnDbStatus DgnModel::Delete()
     if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnSubModelDelete(*this))))
         return status;
 
-    DgnDbStatus stat = _OnDelete();
+    DgnDbStatus stat = _OnDelete(options);
     if (DgnDbStatus::Success != stat)
         return stat;
 
@@ -1338,11 +1358,11 @@ DgnDbStatus DgnModel::Delete()
     if (BE_SQLITE_DONE != stmt.Step())
         return DgnDbStatus::WriteError;
 
-    _OnDeleted();
+    _OnDeleted(options);
 
     // notify the element being modeled that the DgnModel has been deleted
     if (modeledElement.IsValid())
-        modeledElement->_OnSubModelDeleted(*this);
+        modeledElement->_OnSubModelDeleted(*this, options);
 
     return DgnDbStatus::Success;
     }
@@ -1350,7 +1370,7 @@ DgnDbStatus DgnModel::Delete()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::Insert()
+DgnDbStatus DgnModel::Insert(std::optional<EditOptions> options)
     {
     if (!m_modeledElementId.IsValid())
         {
@@ -1362,7 +1382,7 @@ DgnDbStatus DgnModel::Insert()
     if (!modeledElement.IsValid())
         return DgnDbStatus::BadElement;
 
-    DgnDbStatus status = _OnInsert();
+    DgnDbStatus status = _OnInsert(options);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -1395,11 +1415,11 @@ DgnDbStatus DgnModel::Insert()
     status = PerformUpdate(); // don't call _OnUpdate events
     BeAssert(status == DgnDbStatus::Success);
 
-    _OnInserted();
+    _OnInserted(options);
 
     // notify the element being modeled about the new DgnModel
     if (modeledElement.IsValid())
-        modeledElement->_OnSubModelInserted(*this);
+        modeledElement->_OnSubModelInserted(*this, options);
 
     return DgnDbStatus::Success;
     }

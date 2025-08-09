@@ -66,7 +66,7 @@ protected:
     DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source, CopyFromOptions const&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) const override;
     DgnCode _GenerateDefaultCode() const override { return DgnCode::CreateEmpty(); }
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_data.GetByteStream().GetSize() + (uint32_t)m_descr.size();}

@@ -1790,17 +1790,35 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     Napi::Value InsertElementAspect(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, aspectProps);
-        return JsInterop::InsertElementAspect(GetOpenedDb(info), aspectProps);
+        Napi::Value options;
+        if (ARGUMENT_IS_PRESENT(1)) {
+            options = info[1].As<Napi::Object>();
+        } else {
+            options = Env().Undefined();
+        }
+        return JsInterop::InsertElementAspect(GetOpenedDb(info), aspectProps, options);
     }
 
     void UpdateElementAspect(NapiInfoCR info)     {
         REQUIRE_ARGUMENT_ANY_OBJ(0, aspectProps);
-        JsInterop::UpdateElementAspect(GetOpenedDb(info), aspectProps);
+        Napi::Value options;
+        if (ARGUMENT_IS_PRESENT(1)) {
+            options = info[1].As<Napi::Object>();
+        } else {
+            options = Env().Undefined();
+        }
+        JsInterop::UpdateElementAspect(GetOpenedDb(info), aspectProps, options);
     }
 
     void DeleteElementAspect(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, aspectIdStr);
-        JsInterop::DeleteElementAspect(GetOpenedDb(info), aspectIdStr);
+        Napi::Value options;
+        if (ARGUMENT_IS_PRESENT(1)) {
+            options = info[1].As<Napi::Object>();
+        } else {
+            options = Env().Undefined();
+        }
+        JsInterop::DeleteElementAspect(GetOpenedDb(info), aspectIdStr, options);
     }
 
     Napi::Value ExportGraphics(NapiInfoCR info)

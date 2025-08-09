@@ -108,9 +108,9 @@ void DgnGeometryPart::_BindWriteParams(ECSqlStatement& statement, ForInsert forI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnGeometryPart::_OnInsert()
+DgnDbStatus DgnGeometryPart::_OnInsert(std::optional<EditOptions> options)
     {
-    return m_geometry.HasGeometry() ? T_Super::_OnInsert() : DgnDbStatus::BadElement; // can't insert a DgnGeometryPart without geometry
+    return m_geometry.HasGeometry() ? T_Super::_OnInsert(options) : DgnDbStatus::BadElement; // can't insert a DgnGeometryPart without geometry
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -140,10 +140,10 @@ DgnDbStatus DgnGeometryPart::_UpdateInDb(std::optional<EditOptions> options)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnGeometryPart::_OnDelete() const
+DgnDbStatus DgnGeometryPart::_OnDelete(std::optional<EditOptions> options) const
     {
     // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
+    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited;
     }
 
 /*---------------------------------------------------------------------------------**//**

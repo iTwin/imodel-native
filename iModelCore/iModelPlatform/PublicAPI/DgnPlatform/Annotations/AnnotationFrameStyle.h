@@ -114,7 +114,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source, CopyFromOptions const&) override;
-    DgnDbStatus _OnDelete() const override { return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
+    DgnDbStatus _OnDelete(std::optional<EditOptions> options =  std::nullopt) const override { return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
     DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
