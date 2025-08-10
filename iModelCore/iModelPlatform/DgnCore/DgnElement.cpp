@@ -486,7 +486,7 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP de
 SubjectCPtr Subject::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     SubjectPtr subject = Create(parentSubject, name, description);
-    return subject.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<Subject>(*subject) : nullptr;
+    return subject.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<Subject>(*subject, nullptr, std::nullopt) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -530,7 +530,7 @@ InformationPartitionElementPtr InformationPartitionElement::Create(DgnClassId cl
 InformationPartitionElementCPtr InformationPartitionElement::CreateAndInsert(DgnClassId classId, SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     InformationPartitionElementPtr partition = Create(classId, parentSubject, name, description);
-    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<InformationPartitionElement>(*partition) : nullptr;
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<InformationPartitionElement>(*partition, nullptr, std::nullopt) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -618,7 +618,7 @@ DefinitionPartitionPtr DefinitionPartition::Create(SubjectCR parentSubject, Utf8
 DefinitionPartitionCPtr DefinitionPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     DefinitionPartitionPtr partition = Create(parentSubject, name, description);
-    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<DefinitionPartition>(*partition) : nullptr;
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<DefinitionPartition>(*partition, nullptr, std::nullopt) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -652,7 +652,7 @@ DocumentPartitionPtr DocumentPartition::Create(SubjectCR parentSubject, Utf8Stri
 DocumentPartitionCPtr DocumentPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     DocumentPartitionPtr partition = Create(parentSubject, name, description);
-    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<DocumentPartition>(*partition) : nullptr;
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<DocumentPartition>(*partition, nullptr, std::nullopt) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -691,7 +691,7 @@ GroupInformationPartitionPtr GroupInformationPartition::Create(SubjectCR parentS
 GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     GroupInformationPartitionPtr partition = Create(parentSubject, name, description);
-    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<GroupInformationPartition>(*partition) : nullptr;
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<GroupInformationPartition>(*partition, nullptr, std::nullopt) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -725,7 +725,7 @@ InformationRecordPartitionPtr InformationRecordPartition::Create(SubjectCR paren
 InformationRecordPartitionCPtr InformationRecordPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     InformationRecordPartitionPtr partition = Create(parentSubject, name, description);
-    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<InformationRecordPartition>(*partition) : nullptr;
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<InformationRecordPartition>(*partition, nullptr, std::nullopt) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -759,7 +759,7 @@ SpatialLocationPartitionPtr SpatialLocationPartition::Create(SubjectCR parentSub
 SpatialLocationPartitionCPtr SpatialLocationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     SpatialLocationPartitionPtr partition = Create(parentSubject, name, description);
-    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<SpatialLocationPartition>(*partition) : nullptr;
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<SpatialLocationPartition>(*partition, nullptr, std::nullopt) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -792,7 +792,7 @@ PhysicalPartitionPtr PhysicalPartition::Create(SubjectCR parentSubject, Utf8Stri
 PhysicalPartitionCPtr PhysicalPartition::CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description)
     {
     PhysicalPartitionPtr partition = Create(parentSubject, name, description);
-    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<PhysicalPartition>(*partition) : nullptr;
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<PhysicalPartition>(*partition, nullptr, std::nullopt) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1828,7 +1828,7 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
     if (!cc.IsValid())
         return DgnElementCPtr();
 
-    DgnElementCPtr ccp = cc->Insert(stat);
+    DgnElementCPtr ccp = cc->Insert(stat, std::nullopt);
     if (!ccp.IsValid())
         return ccp;
 
@@ -3560,7 +3560,7 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
     if (newParentId.IsValid())
         outputEditElement->SetParentId(newParentId, sourceElement.GetParentRelClassId());
 
-    DgnElementCPtr outputElement = outputEditElement->Insert(&status);
+    DgnElementCPtr outputElement = outputEditElement->Insert(&status, std::nullopt);
     if (!outputElement.IsValid())
         return nullptr;
 
