@@ -532,10 +532,10 @@ public:
     static void UpdateLinkTableRelationship(DgnDbR db, Napi::Object props);
     static void DeleteLinkTableRelationship(DgnDbR db, Napi::Object props);
     static Napi::String InsertCodeSpec(DgnDbR db, Utf8StringCR name, BeJsConst jsonProperties);
-    static Napi::String InsertModel(DgnDbR db, Napi::Object);
-    static void UpdateModel(DgnDbR db, Napi::Object props);
+    static Napi::String InsertModel(DgnDbR db, Napi::Object, Napi::Value options);
+    static void UpdateModel(DgnDbR db, Napi::Object props, Napi::Value options);
     static DgnDbStatus UpdateModelGeometryGuid(DgnDbR db, DgnModelId modelId);
-    static void DeleteModel(DgnDbR db, Utf8StringCR idStr);
+    static void DeleteModel(DgnDbR db, Utf8StringCR idStr, Napi::Value options);
     static DgnDbStatus GetModel(Napi::Object results, DgnDbR db, BeJsConst inOpts);
     static void QueryModelExtents(BeJsValue extents, DgnDbR db, BeJsConst options);
     static DgnDbStatus QueryDefinitionElementUsage(BeJsValue usageInfo, DgnDbR db, bvector<Utf8String> const& idStringArray);

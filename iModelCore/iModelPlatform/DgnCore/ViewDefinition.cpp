@@ -140,7 +140,7 @@ DgnDbStatus ViewDefinition::_OnInsert(std::optional<EditOptions> options)
     if (!GetDisplayStyle().GetElementId().IsValid())
         {
         DgnDbStatus stat;
-        m_displayStyle->Insert(&stat);
+        m_displayStyle->Insert(&stat, options);
         if (DgnDbStatus::Success != stat)
             return stat;
         m_displayStyleId = m_displayStyle->GetElementId();
@@ -149,7 +149,7 @@ DgnDbStatus ViewDefinition::_OnInsert(std::optional<EditOptions> options)
     if (!GetCategorySelector().GetElementId().IsValid())
         {
         DgnDbStatus stat;
-        m_categorySelector->Insert(&stat);
+        m_categorySelector->Insert(&stat, options);
         if (DgnDbStatus::Success != stat)
             return stat;
         m_categorySelectorId = m_categorySelector->GetElementId();
@@ -1182,13 +1182,13 @@ DgnDbStatus SpatialViewDefinition::_OnInsert(std::optional<EditOptions> options)
     if (!GetModelSelector().GetElementId().IsValid())
         {
         DgnDbStatus stat;
-        m_modelSelector->Insert(&stat);
+        m_modelSelector->Insert(&stat, options);
         if (DgnDbStatus::Success != stat)
             return stat;
         m_modelSelectorId = m_modelSelector->GetElementId();
         }
 
-    return T_Super::_OnInsert();
+    return T_Super::_OnInsert(options);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -114,7 +114,7 @@ void DgnCategory::_OnInserted(DgnElementP copiedFrom, std::optional<EditOptions>
         // replace the guid. If we find further use cases, we can extend parameters to pass down the federation guid to _OnInserted
         defaultSubCat.CopyIdentityFrom(defaultSubCatId, BeGuid());
     }
-    DgnSubCategoryCPtr persistentSubCat = defaultSubCat.Insert();
+    DgnSubCategoryCPtr persistentSubCat = defaultSubCat.Insert(nullptr, options);
     BeAssert(persistentSubCat.IsValid());
     BeAssert(persistentSubCat->GetSubCategoryId() == defaultSubCatId);
     BeAssert(persistentSubCat->GetCategoryId() == GetCategoryId());
@@ -136,7 +136,7 @@ void DgnCategory::SetDefaultAppearance(DgnSubCategory::Appearance const& app) co
         }
     auto updatedSubCat = subCat->MakeCopy<DgnSubCategory>();
     updatedSubCat->GetAppearanceR() = app;
-    updatedSubCat->Update();
+    updatedSubCat->Update(std::nullopt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -144,7 +144,7 @@ void DgnCategory::SetDefaultAppearance(DgnSubCategory::Appearance const& app) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 DrawingCategoryCPtr DrawingCategory::Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status)
     {
-    DrawingCategoryCPtr category = GetDgnDb().Elements().Insert<DrawingCategory>(*this, status);
+    DrawingCategoryCPtr category = GetDgnDb().Elements().Insert<DrawingCategory>(*this, status, std::nullopt);
     if (!category.IsValid())
         return nullptr;
 
@@ -157,7 +157,7 @@ DrawingCategoryCPtr DrawingCategory::Insert(DgnSubCategory::Appearance const& ap
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialCategoryCPtr SpatialCategory::Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status)
     {
-    SpatialCategoryCPtr category = GetDgnDb().Elements().Insert<SpatialCategory>(*this, status);
+    SpatialCategoryCPtr category = GetDgnDb().Elements().Insert<SpatialCategory>(*this, status, std::nullopt);
     if (!category.IsValid())
         return nullptr;
 

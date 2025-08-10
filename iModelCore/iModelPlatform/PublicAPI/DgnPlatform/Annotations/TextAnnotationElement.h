@@ -105,7 +105,7 @@ public:
     TextAnnotationCP GetAnnotation() const { TextAnnotationDataCP item = GetItemCP(); return item ? item->GetAnnotation() : nullptr; }
     void SetAnnotation(TextAnnotationCP value) { GetItemR().SetAnnotation(value); }
 
-    TextAnnotation2dCPtr Insert() { return GetDgnDb().Elements().Insert<TextAnnotation2d>(*this); }
+    TextAnnotation2dCPtr Insert() { return GetDgnDb().Elements().Insert<TextAnnotation2d>(*this, nullptr, std::nullopt); }
 };
 
 namespace dgn_ElementHandler
@@ -148,7 +148,7 @@ public:
     TextAnnotationCP GetAnnotation() const { TextAnnotationDataCP item = GetItemCP(); return item ? item->GetAnnotation() : nullptr; }
     void SetAnnotation(TextAnnotationCP value) { GetItemR().SetAnnotation(value); }
 
-    TextAnnotation3dCPtr Insert() { return GetDgnDb().Elements().Insert<TextAnnotation3d>(*this); }
+    TextAnnotation3dCPtr Insert() { return GetDgnDb().Elements().Insert<TextAnnotation3d>(*this, nullptr, std::nullopt); }
 };
 
 namespace dgn_ElementHandler

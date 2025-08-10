@@ -85,7 +85,7 @@ FunctionalPartitionCPtr FunctionalPartition::CreateAndInsert(SubjectCR parentSub
     if (!partition.IsValid())
         return nullptr;
 
-    return parentSubject.GetDgnDb().Elements().Insert<FunctionalPartition>(*partition);
+    return parentSubject.GetDgnDb().Elements().Insert<FunctionalPartition>(*partition, nullptr, std::nullopt);
     }
 
 //---------------------------------------------------------------------------------------
