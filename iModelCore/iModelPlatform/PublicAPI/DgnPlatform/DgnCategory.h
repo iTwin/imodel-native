@@ -216,9 +216,9 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options) const override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + m_data.GetMemSize();}
@@ -235,7 +235,7 @@ public:
     DgnCategoryId GetCategoryId() const {return DgnCategoryId(GetParentId().GetValue());} //!< The ID of the category to which this sub-category belongs
     DGNPLATFORM_EXPORT bool IsDefaultSubCategory() const; //!< Returns true if this is the default sub-category for its category
 
-    DgnSubCategoryCPtr Insert(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Insert<DgnSubCategory>(*this, status);} //!< Inserts this sub-category into the DgnDb and returns the persistent sub-category.
+    DgnSubCategoryCPtr Insert(DgnDbStatus* status, std::optional<EditOptions> options) {return GetDgnDb().Elements().Insert<DgnSubCategory>(*this, status, options);} //!< Inserts this sub-category into the DgnDb and returns the persistent sub-category.
 
     Utf8CP GetDescription() const {return m_data.m_descr.empty() ? nullptr : m_data.m_descr.c_str();} //!< The sub-category description, or nullptr if not defined
     Appearance const& GetAppearance() const {return m_data.m_appearance;} //!< This sub-category's appearance
@@ -316,10 +316,10 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom, std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options) override;
+    DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom, std::optional<EditOptions> options) const override;
     DGNPLATFORM_EXPORT void _OnImported(DgnElementCR original, DgnImportContext& importer) const override;
     virtual SpatialCategoryCP _ToSpatialCategory() const {return nullptr;}
     virtual DrawingCategoryCP _ToDrawingCategory() const {return nullptr;}

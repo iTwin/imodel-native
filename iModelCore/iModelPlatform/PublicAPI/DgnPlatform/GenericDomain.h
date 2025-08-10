@@ -278,7 +278,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GenericGroupModel : GroupInformationModel
     friend struct generic_ModelHandler::GroupModel;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options) override;
     explicit GenericGroupModel(CreateParams const& params) : T_Super(params) {}
 
 public:
