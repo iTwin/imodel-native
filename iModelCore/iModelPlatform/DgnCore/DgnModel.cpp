@@ -417,7 +417,7 @@ InformationRecordModelPtr InformationRecordModel::Create(InformationRecordPartit
 InformationRecordModelPtr InformationRecordModel::CreateAndInsert(InformationRecordPartitionCR modeledElement)
     {
     InformationRecordModelPtr model = Create(modeledElement);
-    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert(std::nullopt))) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -479,7 +479,7 @@ PhysicalModelPtr PhysicalModel::Create(TemplateRecipe3dCR modeledElement)
 PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalPartitionCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
-    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert(std::nullopt))) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -488,7 +488,7 @@ PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalPartitionCR modeledEleme
 PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalElementCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
-    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert(std::nullopt))) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -497,7 +497,7 @@ PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalElementCR modeledElement
 PhysicalModelPtr PhysicalModel::CreateAndInsert(TemplateRecipe3dCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
-    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert(std::nullopt))) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -539,7 +539,7 @@ SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationElementCR mo
 SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPortionCR modeledElement)
     {
     SpatialLocationModelPtr model = Create(modeledElement);
-    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert(std::nullopt))) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -548,7 +548,7 @@ SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPor
 SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationElementCR modeledElement)
     {
     SpatialLocationModelPtr model = Create(modeledElement);
-    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert(std::nullopt))) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -565,7 +565,7 @@ SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationPartitionCR 
 SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPartitionCR modeledElement)
     {
     SpatialLocationModelPtr model = Create(modeledElement);
-    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert(std::nullopt))) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -615,7 +615,7 @@ DefinitionModelPtr DefinitionModel::Create(DefinitionPartitionCR modeledElement)
 DefinitionModelPtr DefinitionModel::CreateAndInsert(DefinitionPartitionCR modeledElement)
     {
     DefinitionModelPtr model = Create(modeledElement);
-    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert(std::nullopt))) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -632,7 +632,7 @@ DefinitionModelPtr DefinitionModel::Create(DefinitionElementCR modeledElement)
 DefinitionModelPtr DefinitionModel::CreateAndInsert(DefinitionElementCR modeledElement)
     {
     DefinitionModelPtr model = Create(modeledElement);
-    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert(std::nullopt))) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -677,7 +677,7 @@ DocumentListModelPtr DocumentListModel::Create(DocumentPartitionCR modeledElemen
 DocumentListModelPtr DocumentListModel::CreateAndInsert(DocumentPartitionCR modeledElement)
     {
     DocumentListModelPtr model = Create(modeledElement);
-    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert(std::nullopt))) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1237,7 +1237,7 @@ DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element, std::optional<EditO
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
 
-    CallJsElementPostHandler(element.m_elementId, "onDeleteElement"); // javascript `model.onDeleteElement`
+    CallJsElementPostHandler(element.m_elementId, "onDeleteElement", options); // javascript `model.onDeleteElement`
     return DgnDbStatus::Success;
 }
 
@@ -1248,7 +1248,7 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
     if (m_dgndb.IsReadonly())
         return DgnDbStatus::ReadOnly;
 
-    CallJsElementPreHandler(modified, "onUpdateElement"); // javascript `model.onUpdateElement`
+    CallJsElementPreHandler(modified, "onUpdateElement", options); // javascript `model.onUpdateElement`
     return DgnDbStatus::Success;
 }
 
@@ -1260,7 +1260,7 @@ DgnDbStatus DgnModel::_OnDelete(std::optional<EditOptions> options) {
     if (modelHandler.GetDomain().IsReadonly())
         return DgnDbStatus::ReadOnlyDomain;
 
-    CallJsPostHandler("onDelete");
+    CallJsPostHandler("onDelete", options);
     NotifyAppData([](AppData& handler, DgnModelR model) { handler._OnDelete(model); });
 
     // before we can delete a model, we must delete all of its elements. If that fails, we cannot continue.
@@ -1276,7 +1276,7 @@ DgnDbStatus DgnModel::_OnDelete(std::optional<EditOptions> options) {
         }
 
         // Note: this may look dangerous (deleting an element in the model we're iterating), but is is actually safe in SQLite.
-        auto stat = el->Delete();
+        auto stat = el->Delete(options);
         if (DgnDbStatus::Success != stat)
             return stat;
     }
@@ -1346,7 +1346,7 @@ DgnDbStatus DgnModel::Delete(std::optional<EditOptions> options)
     DgnDbStatus status;
     DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(GetModeledElementId());
     BeAssert(modeledElement.IsValid());
-    if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnSubModelDelete(*this))))
+    if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnSubModelDelete(*this, options))))
         return status;
 
     DgnDbStatus stat = _OnDelete(options);
@@ -1393,7 +1393,7 @@ DgnDbStatus DgnModel::Insert(std::optional<EditOptions> options)
     m_parentModelId = modeledElement->GetModelId(); // this is redundant data, make sure it's right
 
     // give the element being modeled a chance to reject the insert
-    if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnSubModelInsert(*this))))
+    if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnSubModelInsert(*this, options))))
         return status;
 
     CachedECSqlStatementPtr stmt = GetDgnDb().Models().GetInsertStmt(*this);
@@ -1950,7 +1950,7 @@ DgnDbStatus DgnModel::_ImportElementsFrom(DgnModelCR sourceModel, DgnImportConte
         {
         DgnElementPtr cc = GetDgnDb().Elements().GetForEdit<DgnElement>(entry.first);
         cc->SetParentId(importer.FindElementId(entry.second), cc->GetParentRelClassId());
-        cc->Update();
+        cc->Update(std::nullopt);
         }
 
     return DgnDbStatus::Success;
@@ -2120,7 +2120,7 @@ DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statOut, DgnModelCR sourceModel, 
     if (!newModel.IsValid())
         return nullptr;
 
-    if ((stat = newModel->Insert()) != DgnDbStatus::Success)
+    if ((stat = newModel->Insert(std::nullopt)) != DgnDbStatus::Success)
         return nullptr;
 
     importer.AddModelId(sourceModel.GetModelId(), newModel->GetModelId());
@@ -2141,7 +2141,7 @@ DgnModelPtr DgnModel::CopyModel(DgnModelCR model, DgnElementId newModeledElement
     DgnDbR db = model.GetDgnDb();
 
     DgnModelPtr model2 = model.Clone(newModeledElementId);
-    if (DgnDbStatus::Success != model2->Insert())
+    if (DgnDbStatus::Success != model2->Insert(std::nullopt))
         return nullptr;
 
     DgnImportContext nopimport(db, db);

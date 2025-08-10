@@ -268,7 +268,7 @@ DgnGeometryPartId DgnImportContext::_RemapGeometryPartId(DgnGeometryPartId sourc
     GeometryStreamIO::Import(destGeometryPart->GetGeometryStreamR(), sourceGeometryPart->GetGeometryStream(), *this);
     destGeometryPart->SetBoundingBox(sourceGeometryPart->GetBoundingBox());
 
-    if (!GetDestinationDb().Elements().Insert<DgnGeometryPart>(*destGeometryPart).IsValid())
+    if (!GetDestinationDb().Elements().Insert<DgnGeometryPart>(*destGeometryPart, nullptr, std::nullopt).IsValid())
         return DgnGeometryPartId();
 
     return m_remap.Add(sourceGeometryPartId, destGeometryPart->GetId());

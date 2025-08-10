@@ -573,10 +573,9 @@ void TxnManager::OnChangeSetApplied(ChangeStreamCR changeStream, bool invert) {
 
         if (nullptr == txnTable)
             continue; // this table does not have a TxnTable for it, skip it
-
         switch (opcode) {
             case DbOpcode::Delete:
-                txnTable->_OnAppliedDelete(change);
+                txnTable->_OnAppliedDelete(change); // TODO: Do we want to pass along indirect flag?
                 break;
             case DbOpcode::Insert:
                 txnTable->_OnAppliedAdd(change);
@@ -2275,7 +2274,8 @@ void dgn_TxnTable::Model::_OnAppliedUpdate(BeSQLite::Changes::Change const& chan
         return;
 
     model->Read(modelId);
-    model->_OnUpdated();
+    EditOptions options(change.IsIndirect());
+    model->_OnUpdated(options);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
