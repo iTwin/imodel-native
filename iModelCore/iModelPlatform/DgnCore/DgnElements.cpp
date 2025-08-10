@@ -470,12 +470,12 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
             return nullptr;
     }
 
-    if (DgnDbStatus::Success != (stat = element._OnInsert()))
+    if (DgnDbStatus::Success != (stat = element._OnInsert(options)))
         return nullptr;
 
     // ask parent whether its ok to add this child.
     DgnElementCPtr parent = GetElement(element.m_parent.m_id);
-    if (parent.IsValid() && DgnDbStatus::Success != (stat=parent->_OnChildInsert(element)))
+    if (parent.IsValid() && DgnDbStatus::Success != (stat=parent->_OnChildInsert(element, options)))
         return nullptr;
 
     ECClassCP elementClass = element.GetElementClass();
@@ -497,7 +497,7 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
     newElement->_OnInserted(&element, options);
 
     if (parent.IsValid())
-        parent->_OnChildInserted(*newElement);
+        parent->_OnChildInserted(*newElement, options);
 
     return newElement;
     }
@@ -565,7 +565,7 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement, std::optional<Ed
     if (&element.GetDgnDb() != &replacement.GetDgnDb())
         return DgnDbStatus::WrongDgnDb;
 
-    auto stat = replacement._OnUpdate(element);
+    auto stat = replacement._OnUpdate(element, options);
     if (DgnDbStatus::Success != stat)
         return stat; // something rejected proposed change
 
@@ -576,19 +576,19 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement, std::optional<Ed
         parentChanged = true;
         // ask original parent if it is okay to drop the child
         DgnElementCPtr originalParent = GetElement(element.m_parent.m_id);
-        if (originalParent.IsValid() && DgnDbStatus::Success != (stat = originalParent->_OnChildDrop(element)))
+        if (originalParent.IsValid() && DgnDbStatus::Success != (stat = originalParent->_OnChildDrop(element, options)))
             return stat;
 
         // ask new parent if it is okay to add the child
         DgnElementCPtr replacementParent = GetElement(replacement.m_parent.m_id);
-        if (replacementParent.IsValid() && DgnDbStatus::Success != (stat = replacementParent->_OnChildAdd(replacement)))
+        if (replacementParent.IsValid() && DgnDbStatus::Success != (stat = replacementParent->_OnChildAdd(replacement, options)))
             return stat;
         }
     else
         {
         // ask parent whether it is ok to update its child.
         DgnElementCPtr parent = GetElement(element.m_parent.m_id);
-        if (parent.IsValid() && DgnDbStatus::Success != (stat = parent->_OnChildUpdate(element, replacement)))
+        if (parent.IsValid() && DgnDbStatus::Success != (stat = parent->_OnChildUpdate(element, replacement, options)))
             return stat;
         }
 
@@ -596,26 +596,26 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement, std::optional<Ed
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    replacement._OnUpdated(element);
+    replacement._OnUpdated(element, options);
 
     if (parentChanged) // did parent change?
         {
         // notify original parent that child has been dropped
         DgnElementCPtr originalParent = GetElement(prevParent);
         if (originalParent.IsValid())
-            originalParent->_OnChildDropped(element);
+            originalParent->_OnChildDropped(element, options);
 
         // notify new parent that child has been added
         DgnElementCPtr replacementParent = GetElement(replacement.m_parent.m_id);
         if (replacementParent.IsValid())
-            replacementParent->_OnChildAdded(replacement);
+            replacementParent->_OnChildAdded(replacement, options);
         }
     else
         {
         // notify parent that its child has been updated
         DgnElementCPtr parent = GetElement(replacement.m_parent.m_id);
         if (parent.IsValid())
-            parent->_OnChildUpdated(element);
+            parent->_OnChildUpdated(element, options);
         }
 
     // now drop the old element from MRU cache. The next request will load the updated element.
@@ -637,7 +637,7 @@ DgnDbStatus DgnElements::PerformDelete(DgnElementCR element, std::optional<EditO
         if (!child.IsValid())
             continue;
 
-        auto stat = PerformDelete(*child);
+        auto stat = PerformDelete(*child, options);
         if (DgnDbStatus::Success != stat)
             return stat;
         }
@@ -646,7 +646,7 @@ DgnDbStatus DgnElements::PerformDelete(DgnElementCR element, std::optional<EditO
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    element._OnDeleted();
+    element._OnDeleted(options);
     return DgnDbStatus::Success;
     }
 
@@ -672,7 +672,7 @@ DgnDbStatus DgnElements::Delete(DgnElementCR elementIn, std::optional<EditOption
 
     // ask parent whether its ok to delete his child.
     auto parent = GetElement(element.m_parent.m_id);
-    if (parent.IsValid() && DgnDbStatus::Success != (stat=parent->_OnChildDelete(element)))
+    if (parent.IsValid() && DgnDbStatus::Success != (stat=parent->_OnChildDelete(element, options)))
         return stat;
 
     stat = PerformDelete(element, options);
@@ -680,7 +680,7 @@ DgnDbStatus DgnElements::Delete(DgnElementCR elementIn, std::optional<EditOption
         return stat;
 
     if (parent.IsValid())
-        parent->_OnChildDeleted(element);
+        parent->_OnChildDeleted(element, options);
 
     return DgnDbStatus::Success;
     }

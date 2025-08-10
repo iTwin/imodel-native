@@ -26,7 +26,7 @@ BentleyStatus DgnLineStyles::Insert(DgnStyleId& newStyleId, DgnModelId modelId, 
     lsElement->SetName(name);
     lsElement->SetDescription(description);
     lsElement->SetData(data.c_str());
-    LineStyleElementCPtr constLs = lsElement->Insert();
+    LineStyleElementCPtr constLs = lsElement->Insert(std::nullopt);
     if (!constLs.IsValid())
         {
         newStyleId = DgnStyleId();

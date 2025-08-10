@@ -172,7 +172,7 @@ public:
     static AnnotationFrameStyleCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationFrameStyle>(id); }
     static AnnotationFrameStylePtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationFrameStyle>(id); }
     static AnnotationFrameStylePtr GetForEdit(DefinitionModelCR model, Utf8CP name) { return GetForEdit(model.GetDgnDb(), QueryId(model, name)); }
-    AnnotationFrameStyleCPtr Insert() { return GetDgnDb().Elements().Insert<AnnotationFrameStyle>(*this); }
+    AnnotationFrameStyleCPtr Insert(std::optional<EditOptions> options) { return GetDgnDb().Elements().Insert<AnnotationFrameStyle>(*this, nullptr, options); }
 
     //=======================================================================================
     //! @ingroup GROUP_Annotation
