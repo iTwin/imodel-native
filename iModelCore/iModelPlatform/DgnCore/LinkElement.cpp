@@ -70,7 +70,7 @@ LinkPartitionCPtr LinkPartition::CreateAndInsert(SubjectCR parentSubject, Utf8St
     if (!partition.IsValid())
         return nullptr;
 
-    return parentSubject.GetDgnDb().Elements().Insert<LinkPartition>(*partition);
+    return parentSubject.GetDgnDb().Elements().Insert<LinkPartition>(*partition, nullptr, std::nullopt);
     }
 
 //---------------------------------------------------------------------------------------
@@ -245,7 +245,7 @@ UrlLink::CreateParams::CreateParams(InformationModelR linkModel, Utf8CP url /*= 
 //---------------------------------------------------------------------------------------
 UrlLinkCPtr UrlLink::Insert(DgnDbStatus* stat)
     {
-    UrlLinkCPtr link = GetDgnDb().Elements().Insert<UrlLink>(*this, stat);
+    UrlLinkCPtr link = GetDgnDb().Elements().Insert<UrlLink>(*this, stat, std::nullopt);
     BeAssert(link.IsValid());
     return link;
     }
@@ -255,7 +255,7 @@ UrlLinkCPtr UrlLink::Insert(DgnDbStatus* stat)
 //---------------------------------------------------------------------------------------
 UrlLinkCPtr UrlLink::Update(DgnDbStatus* stat)
     {
-    UrlLinkCPtr link = GetDgnDb().Elements().UpdateAndGet<UrlLink>(*this, stat);
+    UrlLinkCPtr link = GetDgnDb().Elements().UpdateAndGet<UrlLink>(*this, stat, std::nullopt);
     BeAssert(link.IsValid());
     return link;
     }
@@ -506,7 +506,7 @@ EmbeddedFileLink::CreateParams::CreateParams(LinkModelR linkModel, Utf8CP name, 
 //---------------------------------------------------------------------------------------
 EmbeddedFileLinkCPtr EmbeddedFileLink::Insert()
     {
-    EmbeddedFileLinkCPtr link = GetDgnDb().Elements().Insert<EmbeddedFileLink>(*this);
+    EmbeddedFileLinkCPtr link = GetDgnDb().Elements().Insert<EmbeddedFileLink>(*this, nullptr, std::nullopt);
     BeAssert(link.IsValid());
     return link;
     }
@@ -516,7 +516,7 @@ EmbeddedFileLinkCPtr EmbeddedFileLink::Insert()
 //---------------------------------------------------------------------------------------
 EmbeddedFileLinkCPtr EmbeddedFileLink::Update()
     {
-    EmbeddedFileLinkCPtr link = GetDgnDb().Elements().UpdateAndGet<EmbeddedFileLink>(*this);
+    EmbeddedFileLinkCPtr link = GetDgnDb().Elements().UpdateAndGet<EmbeddedFileLink>(*this, nullptr, std::nullopt);
     BeAssert(link.IsValid());
     return link;
     }

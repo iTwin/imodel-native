@@ -631,7 +631,7 @@ DgnDbStatus JsInterop::SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyA
         updatedElementGeom = const_cast<GeometryStreamP>(&updatedElement->ToGeometryPart()->GetGeometryStream());
 
     *updatedElementGeom = std::move(simplifiedGeom);
-    return updatedElement->Update();
+    return updatedElement->Update(std::nullopt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -758,7 +758,10 @@ Napi::String JsInterop::InsertElementAspect(DgnDbR db, Napi::Object obj, Napi::V
 
     BeAssert(createdAspectPtr != nullptr);
 
-    stat = elementEdit->Update();
+    BeJsConst optionsJson(optionsObj);
+    std::optional<EditOptions> options = GetEditOptionsFromJson(optionsJson);
+
+    stat = elementEdit->Update(options);
     if (DgnDbStatus::Success != stat)
         throwDgnDbStatus(stat);
 
@@ -822,7 +825,10 @@ void JsInterop::UpdateElementAspect(DgnDbR db, Napi::Object obj, Napi::Value opt
     if (BentleyStatus::SUCCESS != ECN::JsonECInstanceConverter::JsonToECInstance(*aspect, aspectProps, db.GetClassLocater(), shouldConvertProperty))
         throwBadRequest();
 
-    auto stat = elementEdit->Update();
+    BeJsConst optionsJson(optionsObj);
+    std::optional<EditOptions> options = GetEditOptionsFromJson(optionsJson);
+
+    auto stat = elementEdit->Update(options);
     if (DgnDbStatus::Success != stat)
         throwDgnDbStatus(stat);
 
@@ -887,7 +893,10 @@ void JsInterop::DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr, Napi::V
         aspect->Delete();
         }
 
-    auto stat = elementEdit->Update();
+    BeJsConst optionsJson(optionsObj);
+    std::optional<EditOptions> options = GetEditOptionsFromJson(optionsJson);
+
+    auto stat = elementEdit->Update(options);
     if (DgnDbStatus::Success != stat)
         throwDgnDbStatus(stat);
 
@@ -1066,7 +1075,7 @@ struct SetNapiObjOnModel {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Napi::String JsInterop::InsertModel(DgnDbR dgndb, Napi::Object napiObj) {
+Napi::String JsInterop::InsertModel(DgnDbR dgndb, Napi::Object napiObj, Napi::Value optObj) {
     BeJsConst inJson(napiObj);
     DgnModel::CreateParams params(dgndb, inJson);
     if (!params.m_classId.IsValid())
@@ -1087,7 +1096,10 @@ Napi::String JsInterop::InsertModel(DgnDbR dgndb, Napi::Object napiObj) {
     model->FromJson(inJson);
 
     SetNapiObjOnModel _v(*model, &napiObj);
-    DgnDbStatus status = model->Insert();
+
+    BeJsConst optionsJson(optObj);
+    std::optional<EditOptions> options = GetEditOptionsFromJson(optionsJson);
+    DgnDbStatus status = model->Insert(options);
     if (DgnDbStatus::Success != status)
         throwDgnDbStatus(status);
 
@@ -1124,7 +1136,7 @@ DgnDbStatus JsInterop::UpdateModelGeometryGuid(DgnDbR db, DgnModelId modelId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::UpdateModel(DgnDbR dgndb, Napi::Object napiObj) {
+void JsInterop::UpdateModel(DgnDbR dgndb, Napi::Object napiObj, Napi::Value optObj) {
     BeJsConst inJson(napiObj);
     DgnModelId mid = inJson[DgnModel::json_id()].GetId64<DgnModelId>();
     if (!mid.IsValid())
@@ -1153,7 +1165,9 @@ void JsInterop::UpdateModel(DgnDbR dgndb, Napi::Object napiObj) {
 
     SetNapiObjOnModel _v(*model, &napiObj);
     model->FromJson(inJson);
-    auto stat = model->Update();
+    BeJsConst optionsJson(optObj);
+    std::optional<EditOptions> options = GetEditOptionsFromJson(optionsJson);
+    auto stat = model->Update(options);
     if (stat != DgnDbStatus::Success)
         THROW_JS_DGN_DB_EXCEPTION(Env(), "error updating model", stat);
 }
@@ -1161,7 +1175,7 @@ void JsInterop::UpdateModel(DgnDbR dgndb, Napi::Object napiObj) {
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::DeleteModel(DgnDbR dgndb, Utf8StringCR midStr) {
+void JsInterop::DeleteModel(DgnDbR dgndb, Utf8StringCR midStr, Napi::Value optionsObj) {
     DgnModelId mid(BeInt64Id::FromString(midStr.c_str()).GetValue());
     if (!mid.IsValid())
         throwInvalidId();
@@ -1170,7 +1184,9 @@ void JsInterop::DeleteModel(DgnDbR dgndb, Utf8StringCR midStr) {
     if (!model.IsValid())
         throwMissingId();
 
-    auto stat = model->Delete();
+    BeJsConst optionsJson(optionsObj);
+    std::optional<EditOptions> options = GetEditOptionsFromJson(optionsJson);
+    auto stat = model->Delete(options);
     if (stat != DgnDbStatus::Success)
         THROW_JS_DGN_DB_EXCEPTION(Env(), "error deleting model", stat);
 }

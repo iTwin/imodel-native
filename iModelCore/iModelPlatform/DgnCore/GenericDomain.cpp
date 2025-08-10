@@ -156,7 +156,7 @@ GenericGroupModelPtr GenericGroupModel::CreateAndInsert(DgnElementCR modeledElem
     if (!model.IsValid())
         return nullptr;
 
-    if (DgnDbStatus::Success != model->Insert())
+    if (DgnDbStatus::Success != model->Insert(std::nullopt))
         return nullptr;
 
     return model;
@@ -207,7 +207,7 @@ GraphicalModel3dPtr GenericGraphicalModel3d::CreateAndInsert(DgnElementCR modele
     if (!model.IsValid())
         return nullptr;
 
-    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
+    return (DgnDbStatus::Success != model->Insert(std::nullopt)) ? nullptr : model;
     }
 
 /*---------------------------------------------------------------------------------**//**
