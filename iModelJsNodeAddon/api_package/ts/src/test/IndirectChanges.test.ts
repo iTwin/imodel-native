@@ -3,19 +3,6 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-/*
- * PARAMETER EXTRACTION SETUP:
- * 
- * The extractEventArgs function now correctly extracts the indirect flag from:
- * obj.options.indirect (boolean) -> "indirect: true" or "indirect: false"
- * 
- * Expected string format: "Subject:onInsert indirect:false"
- * - Class name is extracted from fullName (e.g., "Subject" from "BisCore:Subject")
- * - Method name comes from the handler method called
- * - Indirect flag comes from the options.indirect property
- */
-
-
 import { assert } from "chai";
 import { DbChangeStage, DbOpcode, DbResult, GuidString, Id64Array, Id64String, Logger, LogLevel } from "@itwin/core-bentley";
 import { type ModelGeometryChangesProps, ProfileOptions, type RelationshipProps, type SubjectProps } from "@itwin/core-common";
@@ -173,7 +160,6 @@ class MockCallsTracker {
 }
 
 // Base template with all the handler method names
-// To add new handler methods, simply add them to this array - no code duplication needed!
 const handlerMethods = [
   'onInsert', 'onInserted', 'onInsertElement', 'onInsertedElement',
   'onUpdate', 'onUpdated', 'onUpdateElement', 'onUpdatedElement', 
@@ -269,7 +255,6 @@ describe("indirect changes flag", () => {
     let endResult = db.endMultiTxnOperation();
     assert.equal(DbResult.BE_SQLITE_OK, endResult);
     
-    // Verify handler calls with proper string assertions
     assertCallsMatch([
       "Subject:onInsert indirect: false",
       "RepositoryModel:onInsertElement indirect: false",
@@ -296,7 +281,6 @@ describe("indirect changes flag", () => {
     endResult = db.endMultiTxnOperation();
     assert.equal(DbResult.BE_SQLITE_OK, endResult);
     
-    // Verify handler calls with proper string assertions
     assertCallsMatch([
       "Subject:onInsert indirect: true",
       "RepositoryModel:onInsertElement indirect: true",
@@ -325,7 +309,6 @@ describe("indirect changes flag", () => {
     endResult = db.endMultiTxnOperation();
     assert.equal(DbResult.BE_SQLITE_OK, endResult);
     
-    // Verify handler calls with proper string assertions
     assertCallsMatch([
     "Subject:onUpdate indirect: false",
     "RepositoryModel:onUpdateElement indirect: false",
@@ -350,7 +333,6 @@ describe("indirect changes flag", () => {
     db.updateElement(indirectElement, { indirect: true });
     endResult = db.endMultiTxnOperation();
     assert.equal(DbResult.BE_SQLITE_OK, endResult);
-    // Verify handler calls with proper string assertions
     assertCallsMatch([
       "Subject:onUpdate indirect: true",
       "RepositoryModel:onUpdateElement indirect: true",
@@ -371,7 +353,6 @@ describe("indirect changes flag", () => {
     db.deleteElement(directSubjectId, { indirect: false });
     endResult = db.endMultiTxnOperation();
     assert.equal(DbResult.BE_SQLITE_OK, endResult);
-    // Verify handler calls with proper string assertions
     assertCallsMatch([
       "Subject:onDelete indirect: false",
       "RepositoryModel:onDeleteElement indirect: false",
@@ -393,7 +374,6 @@ describe("indirect changes flag", () => {
     db.deleteElement(indirectSubjectId, { indirect: true });
     endResult = db.endMultiTxnOperation();
     assert.equal(DbResult.BE_SQLITE_OK, endResult);
-    // Verify handler calls with proper string assertions
     assertCallsMatch([
       "Subject:onDelete indirect: true",
       "RepositoryModel:onDeleteElement indirect: true",
