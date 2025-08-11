@@ -550,6 +550,8 @@ public:
     static Napi::Value ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info);
     static void ClearECDbCache(ECDbR db, NapiInfoCR info);
 
+    static Napi::Value RemoveUnusedSchemaReferences(ECDbR db, NapiInfoCR info);
+
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
     static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);

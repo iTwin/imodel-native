@@ -635,6 +635,16 @@ public:
         return Napi::Number::New(info.Env(), (int)r);
     }
 
+    Napi::Value RemoveUnusedSchemaReferences(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        bvector<ECN::ECSchemaCP> schemas = db.Schemas().GetSchemas();
+        int totalRemovedCount = 0;
+        for (ECN::ECSchemaCP schema : schemas) {
+            totalRemovedCount += const_cast<ECN::ECSchemaP>(schema)->RemoveUnusedSchemaReferences();
+        }
+        return Napi::Number::New(info.Env(), totalRemovedCount);
+    }
+
     static void Init(Napi::Env env, Napi::Object exports) {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "ECDb", {
@@ -669,6 +679,7 @@ public:
             InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
+            InstanceMethod("removeUnusedSchemaReferences", &NativeECDb::RemoveUnusedSchemaReferences),
         });
 
         exports.Set("ECDb", t);
