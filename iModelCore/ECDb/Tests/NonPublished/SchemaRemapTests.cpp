@@ -32,7 +32,7 @@ struct SchemaRemapTestFixture : public ECDbTestFixture
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRemapTestFixture, StructPropertyRemap) {
-    SchemaItem schema1(R"xml(
+   SchemaItem schema1(R"xml(
         <?xml version="1.0" encoding="utf-8" ?>
         <ECSchema
           schemaName="TestSchema"
@@ -45,6 +45,7 @@ TEST_F(SchemaRemapTestFixture, StructPropertyRemap) {
             <ECProperty propertyName="i1" typeName="int" />
             <ECProperty propertyName="i2" typeName="int" />
             <ECProperty propertyName="i3" typeName="int" />
+
           </ECStructClass>
           <ECStructClass typeName="S2" modifier="None">
             <ECProperty propertyName="i0" typeName="int" />
@@ -64,7 +65,10 @@ TEST_F(SchemaRemapTestFixture, StructPropertyRemap) {
             </ECCustomAttributes>
             <ECStructProperty propertyName="p0" typeName="S1"/>
             <ECStructProperty propertyName="p1" typeName="S1"/>
-            <ECStructProperty propertyName="p2" typeName="S2"/>
+            <ECStructProperty propertyName="pF" typeName="S2"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="Foo">
+            <BaseClass>Element</BaseClass>
           </ECEntityClass>
         </ECSchema>
     )xml");
@@ -101,15 +105,19 @@ TEST_F(SchemaRemapTestFixture, StructPropertyRemap) {
                     <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
                 </ShareColumns>
             </ECCustomAttributes>
-            <ECStructProperty propertyName="p0" typeName="S1"/>
-            <ECStructProperty propertyName="p2" typeName="S2"/>
+            <ECStructProperty propertyName="p1" typeName="S1"/>
+            <ECStructProperty propertyName="pF" typeName="S2"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="Foo">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="pV" typeName="int"/>
+            <ECProperty propertyName="pX" typeName="int"/>
           </ECEntityClass>
         </ECSchema>
     )xml");
 
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
-      SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade |
-        SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues
+      SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade
     ));
 
     SchemaItem schema3(R"xml(
@@ -143,18 +151,18 @@ TEST_F(SchemaRemapTestFixture, StructPropertyRemap) {
                     <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
                 </ShareColumns>
             </ECCustomAttributes>
-            <ECStructProperty propertyName="p0" typeName="S1"/>
             <ECStructProperty propertyName="p1" typeName="S1"/>
-            <ECStructProperty propertyName="p2" typeName="S2"/>
+            <ECStructProperty propertyName="pF" typeName="S2"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="Foo">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="pV" typeName="int"/>
           </ECEntityClass>
         </ECSchema>
     )xml");
 
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema3,
-      SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade |
-        SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues
-    ));
-
+                           SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
     m_ecdb.SaveChanges();
 }
 

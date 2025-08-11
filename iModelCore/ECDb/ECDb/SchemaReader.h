@@ -19,6 +19,7 @@ struct SchemaDbEntry final
         ECN::ECSchemaPtr m_cachedSchema = nullptr;    //Contain ECSchema which might be not complete
         int m_typeCountInSchema = -1; //This is read from Db
         uint32_t m_loadedTypeCount = 0; //Every time a class or enum or KOQ is loaded from db for this schema it is incremented
+        bool m_isKnownBad = false; //This is set to true if we know that this schema is not valid. This is used to avoid loading it again
 
         explicit SchemaDbEntry(ECN::ECSchemaR schema) : m_cachedSchema(&schema) {}
         SchemaDbEntry(ECN::ECSchemaPtr& schema, int typeCountInSchema) : m_cachedSchema(schema), m_typeCountInSchema(typeCountInSchema), m_loadedTypeCount(0)
@@ -26,6 +27,8 @@ struct SchemaDbEntry final
 
         ECN::ECSchemaId GetId() const { return m_cachedSchema->GetId(); }
         bool IsFullyLoaded() const { return m_typeCountInSchema == m_loadedTypeCount; }
+        bool IsKnownBad() const { return m_isKnownBad; }
+        void SetKnownBad() { m_isKnownBad = true; }
     };
 
 /*---------------------------------------------------------------------------------------
