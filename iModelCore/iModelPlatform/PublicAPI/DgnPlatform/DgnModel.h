@@ -248,10 +248,10 @@ public:
     NapiObjectCP m_napiObj;
 protected:
 
-    void CallJsPreHandler(Utf8CP methodName, std::optional<EditOptions> options = std::nullopt); const;
-    void CallJsPostHandler(Utf8CP methodName, std::optional<EditOptions> options = std::nullopt); const;
-    void CallJsElementPreHandler(DgnElementCR, Utf8CP methodName, std::optional<EditOptions> options = std::nullopt); const;
-    DGNPLATFORM_EXPORT void CallJsElementPostHandler(DgnElementId, Utf8CP methodName, std::optional<EditOptions> options = std::nullopt); const;
+    void CallJsPreHandler(Utf8CP methodName, std::optional<EditOptions> options = std::nullopt) const;
+    void CallJsPostHandler(Utf8CP methodName, std::optional<EditOptions> options = std::nullopt) const;
+    void CallJsElementPreHandler(DgnElementCR, Utf8CP methodName, std::optional<EditOptions> options = std::nullopt) const;
+    DGNPLATFORM_EXPORT void CallJsElementPostHandler(DgnElementId, Utf8CP methodName, std::optional<EditOptions> options = std::nullopt) const;
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
@@ -340,20 +340,20 @@ protected:
     //! @param[in] element The element that was just inserted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnInsertedElement(DgnElementCR element, std::optional<EditOptions> options = std::nullopt); {CallJsElementPostHandler(element.m_elementId, "onInsertedElement", options);}
+    virtual void _OnInsertedElement(DgnElementCR element, std::optional<EditOptions> options = std::nullopt) {CallJsElementPostHandler(element.m_elementId, "onInsertedElement", options);}
 
     //! Called after a change representing update of a DgnElement (belonging to this DgnModel) was applied to the DgnDb.
     //! @param[in] modified The element in its changed state. This state was saved to the DgnDb
     //! @param[in] original The element in its pre-changed state.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original, std::optional<EditOptions> options = std::nullopt); {CallJsElementPostHandler(modified.m_elementId, "onUpdatedElement", options);}
+    virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original, std::optional<EditOptions> options = std::nullopt) {CallJsElementPostHandler(modified.m_elementId, "onUpdatedElement", options);}
 
     //! Called after a DgnElement in this DgnModel has been deleted from the DgnDb
     //! @param[in] element The element that was just deleted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnDeletedElement(DgnElementId id, std::optional<EditOptions> options = std::nullopt); {CallJsElementPostHandler(id, "onDeletedElement", options);}
+    virtual void _OnDeletedElement(DgnElementId id, std::optional<EditOptions> options = std::nullopt) {CallJsElementPostHandler(id, "onDeletedElement", options);}
 
     /** @} */
 
@@ -894,9 +894,9 @@ protected:
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryElementsRange() const;//!< @private
     virtual AxisAlignedBox3d _QueryNonElementModelRange() const { return AxisAlignedBox3d(DRange3d::NullRange()); }
 
-    void _OnInsertedElement(DgnElementCR element, std::optional<EditOptions> options = std::nullopt); override {T_Super::_OnInsertedElement(element, options); AddToRangeIndex(element);}
-    void _OnDeletedElement(DgnElementId id, std::optional<EditOptions> options = std::nullopt); override {RemoveFromRangeIndex(id); T_Super::_OnDeletedElement(id, options);}
-    void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original, std::optional<EditOptions> options = std::nullopt); override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original, options);}
+    void _OnInsertedElement(DgnElementCR element, std::optional<EditOptions> options = std::nullopt) override {T_Super::_OnInsertedElement(element, options); AddToRangeIndex(element);}
+    void _OnDeletedElement(DgnElementId id, std::optional<EditOptions> options = std::nullopt) override {RemoveFromRangeIndex(id); T_Super::_OnDeletedElement(id, options);}
+    void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original, std::optional<EditOptions> options = std::nullopt) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original, options);}
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
     GeometricModelCP _ToGeometricModel() const override final {return this;}
@@ -964,7 +964,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryElementsRange() const override;
     GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt); override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
@@ -998,7 +998,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
     DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryElementsRange() const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt); override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt) override;
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
 
     bool Is3d() const final { return false; }
@@ -1098,7 +1098,7 @@ private:
 
 protected:
     SpatialLocationModelCP _ToSpatialLocationModel() const override final {return this;}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR, std::optional<EditOptions> options = std::nullopt); override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR, std::optional<EditOptions> options = std::nullopt) override;
     explicit SpatialLocationModel(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -1123,7 +1123,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RoleModel : DgnModel
 
 protected:
     RoleModelCP _ToRoleModel() const override final {return this;}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt); override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt) override;
     explicit RoleModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1138,7 +1138,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationModel : DgnModel
 
 protected:
     InformationModelCP _ToInformationModel() const override final {return this;}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt); override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt) override;
     explicit InformationModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1157,7 +1157,7 @@ private:
 
 protected:
     DefinitionModelCP _ToDefinitionModel() const override final {return this;}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt); override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt) override;
 
     explicit DefinitionModel(CreateParams const& params) : T_Super(params) {}
     static DefinitionModelPtr Create(CreateParams const& params) {return new DefinitionModel(params);}
@@ -1180,7 +1180,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DocumentListModel : InformationModel
     friend struct dgn_ModelHandler::DocumentList;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt); override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt) override;
     explicit DocumentListModel(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -1199,7 +1199,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GroupInformationModel : InformationModel
     friend struct dgn_ModelHandler::GroupInformation;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt); override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt) override;
     explicit GroupInformationModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1215,7 +1215,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationRecordModel : InformationModel
 
 protected:
     InformationRecordModelCP _ToInformationRecordModel() const override final {return this;}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt); override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt) override;
 
     explicit InformationRecordModel(CreateParams const& params) : T_Super(params) {}
     static InformationRecordModelPtr Create(CreateParams const& params) {return new InformationRecordModel(params);}
@@ -1235,8 +1235,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RepositoryModel : InformationModel
     friend struct dgn_ModelHandler::Repository;
 
 protected:
-    DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt); override {BeAssert(false && "The RepositoryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt); override;
+    DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) override {BeAssert(false && "The RepositoryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt) override;
     explicit RepositoryModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -1254,7 +1254,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : DefinitionModel
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DictionaryModel, DefinitionModel);
 protected:
-    DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt); override {BeAssert(false && "The DictionaryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
+    DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) override {BeAssert(false && "The DictionaryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
     DGNPLATFORM_EXPORT DgnModelPtr _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const override;
 public:
     explicit DictionaryModel(CreateParams const& params) : T_Super(params) {}
@@ -1270,7 +1270,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
     friend struct dgn_ModelHandler::Drawing;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt); override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
     explicit DrawingModel(CreateParams const& params) : T_Super(params) {}
 
     DrawingModelCP _ToDrawingModel() const override {return this;}
@@ -1308,7 +1308,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : DrawingModel
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SectionDrawingModel, DrawingModel);
 protected:
     SectionDrawingModelCP _ToSectionDrawingModel() const override final {return this;}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt); override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt) override;
 public:
     SectionDrawingModel(CreateParams const& params) : T_Super(params) {}
 
