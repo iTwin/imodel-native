@@ -115,7 +115,7 @@ public:
     static DgnClassId QueryClassId(DgnDbR db) {return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_RenderMaterial);} //!< Returns the class ID used for RenderMaterial elements.
     static ECN::ECClassCP QueryECClass(DgnDbR db) {return db.Schemas().GetClass(QueryClassId(db));} //!< Looks up the ECClass used for RenderMaterial elements.
 
-    RenderMaterialCPtr Insert(DgnDbStatus* status, std::optional<EditOptions> options) {return GetDgnDb().Elements().Insert<RenderMaterial>(*this, status, options);} //!< Inserts this RenderMaterial into the DgnDb and returns the persistent RenderMaterial.
+    RenderMaterialCPtr Insert(DgnDbStatus* status = nullptr, std::optional<EditOptions> options = std::nullopt) {return GetDgnDb().Elements().Insert<RenderMaterial>(*this, status, options);} //!< Inserts this RenderMaterial into the DgnDb and returns the persistent RenderMaterial.
 
     //! Get an asset of the RenderMaterial as a Json value.
     BeJsConst GetAsset(Utf8CP asset) const {return GetMaterialAssets()[asset];}

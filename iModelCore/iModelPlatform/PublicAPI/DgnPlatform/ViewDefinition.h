@@ -882,7 +882,7 @@ public:
     /** @} */
 
     //! Inserts into the database and returns the new persistent copy.
-    ViewDefinitionCPtr Insert(DgnDbStatus* status, std::optional<EditOptions> options) {return GetDgnDb().Elements().Insert<ViewDefinition>(*this, status, options);}
+    ViewDefinitionCPtr Insert(DgnDbStatus* status = nullptr, std::optional<EditOptions> options = std::nullopt) {return GetDgnDb().Elements().Insert<ViewDefinition>(*this, status, options);}
 
     //! Create a DgnCode for a ViewDefinition given a name that is meant to be unique within the scope of the specified DefinitionModel
     static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_ViewDefinition, scope, name); }

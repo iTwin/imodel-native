@@ -235,7 +235,7 @@ public:
     DgnCategoryId GetCategoryId() const {return DgnCategoryId(GetParentId().GetValue());} //!< The ID of the category to which this sub-category belongs
     DGNPLATFORM_EXPORT bool IsDefaultSubCategory() const; //!< Returns true if this is the default sub-category for its category
 
-    DgnSubCategoryCPtr Insert(DgnDbStatus* status, std::optional<EditOptions> options) {return GetDgnDb().Elements().Insert<DgnSubCategory>(*this, status, options);} //!< Inserts this sub-category into the DgnDb and returns the persistent sub-category.
+    DgnSubCategoryCPtr Insert(DgnDbStatus* status = nullptr, std::optional<EditOptions> options = std::nullopt) {return GetDgnDb().Elements().Insert<DgnSubCategory>(*this, status, options);} //!< Inserts this sub-category into the DgnDb and returns the persistent sub-category.
 
     Utf8CP GetDescription() const {return m_data.m_descr.empty() ? nullptr : m_data.m_descr.c_str();} //!< The sub-category description, or nullptr if not defined
     Appearance const& GetAppearance() const {return m_data.m_appearance;} //!< This sub-category's appearance

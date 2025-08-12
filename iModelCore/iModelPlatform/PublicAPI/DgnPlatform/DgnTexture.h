@@ -99,7 +99,7 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Texture);} //!< Return the class ID used for textures
     static DgnClassId QueryDgnClassId(DgnDbR db) {return DgnClassId(QueryECClassId(db));} //!< Return the class ID used for textures
 
-    DgnTextureCPtr Insert(DgnDbStatus* status, std::optional<EditOptions> options) {return GetDgnDb().Elements().Insert<DgnTexture>(*this, status, options);} //!< Inserts the texture into the DgnDb and returns the persistent copy.
+    DgnTextureCPtr Insert(DgnDbStatus* status = nullptr, std::optional<EditOptions> options = std::nullopt) {return GetDgnDb().Elements().Insert<DgnTexture>(*this, status, options);} //!< Inserts the texture into the DgnDb and returns the persistent copy.
 
     //! Create a DgnCode for a texture given a name that is meant to be unique within the scope of the specified DefinitionModel
     //! Create a DgnCode for a texture.
