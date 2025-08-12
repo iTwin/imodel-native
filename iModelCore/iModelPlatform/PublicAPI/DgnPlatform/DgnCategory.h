@@ -216,9 +216,9 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt); override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options = std::nullopt); override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt); const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) const override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + m_data.GetMemSize();}
@@ -316,10 +316,10 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt); const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt); override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options = std::nullopt); override;
-    DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom, std::optional<EditOptions> options = std::nullopt); const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom, std::optional<EditOptions> options = std::nullopt) const override;
     DGNPLATFORM_EXPORT void _OnImported(DgnElementCR original, DgnImportContext& importer) const override;
     virtual SpatialCategoryCP _ToSpatialCategory() const {return nullptr;}
     virtual DrawingCategoryCP _ToDrawingCategory() const {return nullptr;}
