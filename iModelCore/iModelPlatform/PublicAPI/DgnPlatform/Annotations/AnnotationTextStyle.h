@@ -120,7 +120,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
-    DgnDbStatus _OnDelete(std::optional<EditOptions> options) const override { return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
+    DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt); const override { return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
     DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
@@ -181,7 +181,7 @@ public:
     static AnnotationTextStyleCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationTextStyle>(id); }
     static AnnotationTextStylePtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationTextStyle>(id); }
     static AnnotationTextStylePtr GetForEdit(DefinitionModelCR model, Utf8CP name) { return GetForEdit(model.GetDgnDb(), QueryId(model, name)); }
-    AnnotationTextStyleCPtr Insert(std::optional<EditOptions> options) { return GetDgnDb().Elements().Insert<AnnotationTextStyle>(*this, nullptr, options); }
+    AnnotationTextStyleCPtr Insert(std::optional<EditOptions> options = std::nullopt); { return GetDgnDb().Elements().Insert<AnnotationTextStyle>(*this, nullptr, options); }
 
     //=======================================================================================
     //! @ingroup GROUP_Annotation
