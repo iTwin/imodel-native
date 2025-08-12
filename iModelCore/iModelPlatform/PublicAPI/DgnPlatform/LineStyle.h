@@ -1541,8 +1541,8 @@ private:
         }
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options) const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt); const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt); override;
     DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
     DGNPLATFORM_EXPORT DgnElementPtr _CloneForImport(DgnDbStatus *, DgnModelR, DgnImportContext &) const override;
@@ -1573,7 +1573,7 @@ public:
     static LineStyleElementCPtr Get(DgnDbR db, DgnStyleId id) { return db.Elements().Get<LineStyleElement>(id); }
     static LineStyleElementPtr GetForEdit(DgnDbR db, DgnStyleId id) { return db.Elements().GetForEdit<LineStyleElement>(id); }
     static LineStyleElementPtr GetForEdit(DgnDbR db, Utf8CP name) { return GetForEdit(db, QueryId(db, name)); }
-    LineStyleElementCPtr Insert(std::optional<EditOptions> options) { return GetDgnDb().Elements().Insert<LineStyleElement>(*this, nullptr, options); }
+    LineStyleElementCPtr Insert(std::optional<EditOptions> options = std::nullopt); { return GetDgnDb().Elements().Insert<LineStyleElement>(*this, nullptr, options); }
 
     //=======================================================================================
     // @bsiclass

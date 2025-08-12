@@ -78,7 +78,7 @@ struct EXPORT_VTABLE_ATTRIBUTE FunctionalPartition : InformationPartitionElement
     friend struct func_ElementHandler::FunctionalPartitionHandler;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options = std::nullopt); const override;
     explicit FunctionalPartition(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -107,7 +107,7 @@ struct EXPORT_VTABLE_ATTRIBUTE FunctionalModel : RoleModel
     friend struct func_ModelHandler::Functional;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt); override;
     explicit FunctionalModel(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -128,7 +128,7 @@ private:
     BE_PROP_NAME(TypeDefinition)
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt); override;
     explicit FunctionalElement(CreateParams const& params) : T_Super(params) {}
 
 public:
