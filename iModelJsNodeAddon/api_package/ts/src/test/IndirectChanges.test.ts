@@ -259,7 +259,7 @@ describe("indirect changes flag", () => {
       "Subject:onInsert indirect: false",
       "RepositoryModel:onInsertElement indirect: false",
       "Subject:onChildInsert indirect: false",
-      "Subject:onInserted indirect: undefined", // TODO: needs to be fixed
+      "Subject:onInserted indirect: false",
       "RepositoryModel:onInsertedElement indirect: false",
       "Subject:onChildInserted indirect: false",
     ]);
@@ -285,7 +285,7 @@ describe("indirect changes flag", () => {
       "Subject:onInsert indirect: true",
       "RepositoryModel:onInsertElement indirect: true",
       "Subject:onChildInsert indirect: true",
-      "Subject:onInserted indirect: undefined", // TODO: needs to be fixed
+      "Subject:onInserted indirect: true",
       "RepositoryModel:onInsertedElement indirect: true",
       "Subject:onChildInserted indirect: true",
     ]);

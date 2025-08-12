@@ -902,7 +902,7 @@ void DgnElement::_OnInserted(DgnElementP copiedFrom, std::optional<EditOptions> 
     if (copiedFrom)
         copiedFrom->CallAppData(OnInsertedCaller(*this));
 
-    CallJsPostHandler("onInserted");
+    CallJsPostHandler("onInserted", options);
 
     GetModel()->_OnInsertedElement(*this, options);
 }
