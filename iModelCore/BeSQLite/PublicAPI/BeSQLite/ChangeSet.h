@@ -527,6 +527,10 @@ protected:
     BE_SQLITE_EXPORT DbResult CreateSession();
     virtual OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) = 0;
     virtual void _OnCommitted(bool isCommit, Utf8CP operation) {}
+
+    virtual void _ommitBegin(bool isCommit, Utf8CP operation) {}
+    virtual void _CommitEnd() {}
+
     void SetDb(Db* db) { m_db = db; }
     Db* GetDb() { return m_db; }
     Utf8CP GetName() const { return m_name.c_str(); }

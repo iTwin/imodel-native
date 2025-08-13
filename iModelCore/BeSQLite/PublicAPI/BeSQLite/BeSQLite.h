@@ -2046,7 +2046,7 @@ public:
     //! Get the name of this Savepoint.
     Utf8CP GetName() const {return m_name.c_str();}
 
-    //! Get the default transaction mode for this SavePoint
+    //! Get the default transaction mode for this SavePointπ
     BeSQLiteTxnMode GetTxnMode() const {return m_txnMode;}
 
     //! Sets the default transaction mode for this Savepoint.
@@ -2067,6 +2067,8 @@ public:
     //! @note After Commit, the Savepoint is not active. If you mean to save your changes but leave this Savepoint open, call Save.
     //! @note If a Savepoint is active when it is destroyed, it is automatically committed.
     BE_SQLITE_EXPORT DbResult Commit(Utf8CP operation=nullptr);
+
+
 
     //! Commit this transaction and then restart it. If this is the outermost Savepoint, this will save changes to disk but leave
     //! a new transaction active.

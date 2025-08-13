@@ -779,7 +779,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             UndoChangeSet propagatedIndirectChanges;
             DbResult result = propagatedIndirectChanges.FromChangeTrack(*this);
             if (BE_SQLITE_OK != result)
-                {
+                
                 BeAssert(false && "propagatedIndirectChanges.FromChangeTrack failed");
                 LOG.fatalv("failed to create indirect changeset: %s", BeSQLiteLib::GetErrorName(result));
                 if (BE_SQLITE_NOMEM == result)
@@ -797,7 +797,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             }
         }
     }
-
+    
     if (!ddlChanges._IsEmpty()) {
         rc = SaveTxn(ddlChanges, operation, TxnType::Ddl);
         if (rc != BE_SQLITE_OK) {
