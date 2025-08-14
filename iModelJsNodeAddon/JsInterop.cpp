@@ -873,16 +873,31 @@ void JsInterop::AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext)
     schemaContext->AddFinalSchemaPaths(paths);
     }
 
-DropSchemaResult JsInterop::RemoveUnusedSchemaReferences(ECDb ecdb, bvector<Utf8String> const& schemaNames, const SchemaImportOptions& opts)
+DropSchemaResult JsInterop::RemoveUnusedSchemaReferences(ECDb ecdb, bvector<Utf8String>& schemaNames, const SchemaImportOptions& opts)
     {
-        if (schemaNames.size() == 0)
-            return DropSchemaResult::Success;
-
         if (!opts.m_schemaLockHeld) {
             NativeLogging::CategoryLogger("JsInterop").error("Schema lock must be held when dropping schemas");
             return DropSchemaResult::Error;
         }
+        
+        if (schemaNames.size() == 0) {
+            auto stmt = ecdb.GetCachedStatement(R"sql(
+            SELECT [ss].[Name]
+            FROM   [ec_Schema] [ss]
+            JOIN [ec_CustomAttribute] [ca] ON [ca].[ContainerId] = [ss].[Id]
+            JOIN [ec_Class] [cc] ON [cc].[Id] = [ca].[ClassId]
+            JOIN [ec_Schema] [sa] ON [sa].[Id] = [cc].[SchemaId]
+            WHERE  [cc].[Name] = 'DynamicSchema'
+                    AND [sa].[Name] = 'CoreCustomAttributes'
+                    AND [ca].[ContainerType] = 1
+            ORDER  BY [ss].Id DESC;)sql");
 
+            while (stmt->Step() == BE_SQLITE_ROW)
+                {
+                schemaNames.push_back(Utf8String(stmt->GetValueText(0)));
+                }
+        }
+        
         NativeLogging::CategoryLogger logger("JsInterop");
         for (Utf8String const& schemaName : schemaNames) {
             ECSchemaPtr schema;
