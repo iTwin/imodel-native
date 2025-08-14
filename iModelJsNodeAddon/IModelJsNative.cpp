@@ -643,15 +643,9 @@ public:
         JsInterop::SchemaImportOptions options;
         options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
 
-        LastErrorListener lastError(m_ecdb);
         DropSchemaResult rc = JsInterop::RemoveUnusedSchemaReferences(m_ecdb, schemaNames, options);
-        if (rc.GetStatus() != DropSchemaResult::Success) {
-            if (lastError.HasError()) {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
-            } else {
-                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to remove unused schema references: %s", rc.GetStatusAsString().c_str()).c_str(), rc.GetStatus());
-            }
-        }
+        if (!rc.IsSuccess())
+            BeNapi::ThrowJsException(info.Env(), rc.GetStatusAsString(), (int)rc.GetStatus(), { "DropSchemaError"});
     }
 
     static void Init(Napi::Env env, Napi::Object exports) {
