@@ -873,41 +873,22 @@ void JsInterop::AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext)
     schemaContext->AddFinalSchemaPaths(paths);
     }
 
-DropSchemaResult JsInterop::RemoveUnusedSchemaReferences(ECDbR ecdb, bvector<Utf8String>& schemaNames, const SchemaImportOptions& opts)
+DbResult JsInterop::DropSchemas(ECDbR ecdb, bvector<Utf8String>& schemaNames, const SchemaImportOptions& opts)
     {
         if (!opts.m_schemaLockHeld) {
             NativeLogging::CategoryLogger("JsInterop").error("Schema lock must be held when dropping schemas");
             return DropSchemaResult::Error;
         }
         
-        if (schemaNames.size() == 0) {
-            auto stmt = ecdb.GetCachedStatement(R"sql(
-            SELECT [ss].[Name]
-            FROM   [ec_Schema] [ss]
-            JOIN [ec_CustomAttribute] [ca] ON [ca].[ContainerId] = [ss].[Id]
-            JOIN [ec_Class] [cc] ON [cc].[Id] = [ca].[ClassId]
-            JOIN [ec_Schema] [sa] ON [sa].[Id] = [cc].[SchemaId]
-            WHERE  [cc].[Name] = 'DynamicSchema'
-                    AND [sa].[Name] = 'CoreCustomAttributes'
-                    AND [ca].[ContainerType] = 1
-            ORDER  BY [ss].Id DESC;)sql");
-
-            while (stmt->Step() == BE_SQLITE_ROW)
-                {
-                schemaNames.push_back(Utf8String(stmt->GetValueText(0)));
-                }
-        }
-        
         NativeLogging::CategoryLogger logger("JsInterop");
-        for (Utf8String const& schemaName : schemaNames) {
-            DropSchemaResult res = ecdb.Schemas().DropSchema(schemaName.c_str());
-            if (!res.IsSuccess()) {
-                logger.errorv("Failed to drop schema %s schemaName.c_str()");
-                return DropSchemaResult::Error;
-            };
-        }
-        ecdb.SaveChanges();
-        return DropSchemaResult::Success;
+        DropSchemaResult res = ecdb.Schemas().DropSchemas(schemaNames);
+        
+        if (!res.IsSuccess()) {
+            logger.errorv("Failed to drop schema %s", schemaName.c_str());
+            return BE_SQLITE_ERROR;
+        };
+
+        return ecdb.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------

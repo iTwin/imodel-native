@@ -635,7 +635,7 @@ public:
         return Napi::Number::New(info.Env(), (int)r);
     }
 
-    void RemoveUnusedSchemaReferences(NapiInfoCR info)
+    void DropSchemas(NapiInfoCR info)
     {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaNames);
         OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
@@ -643,7 +643,7 @@ public:
         JsInterop::SchemaImportOptions options;
         options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
 
-        DropSchemaResult rc = JsInterop::RemoveUnusedSchemaReferences(m_ecdb, schemaNames, options);
+        DropSchemaResult rc = JsInterop::DropSchemas(m_ecdb, schemaNames, options);
         if (!rc.IsSuccess())
             BeNapi::ThrowJsException(info.Env(), rc.GetStatusAsString(), (int)rc.GetStatus(), { "DropSchemaError"});
     }
@@ -682,7 +682,7 @@ public:
             InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
-            InstanceMethod("removeUnusedSchemaReferences", &NativeECDb::RemoveUnusedSchemaReferences),
+            InstanceMethod("dropSchemas", &NativeECDb::DropSchemas),
         });
 
         exports.Set("ECDb", t);
