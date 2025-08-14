@@ -873,6 +873,35 @@ void JsInterop::AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext)
     schemaContext->AddFinalSchemaPaths(paths);
     }
 
+DropSchemaResult JsInterop::RemoveUnusedSchemaReferences(ECDb ecdb, bvector<Utf8String> const& schemaNames, const SchemaImportOptions& opts)
+    {
+        if (schemaNames.size() == 0)
+            return DropSchemaResult::Success;
+
+        if (!opts.m_schemaLockHeld) {
+            NativeLogging::CategoryLogger("JsInterop").error("Schema lock must be held when dropping schemas");
+            return DropSchemaResult::Error;
+        }
+
+        NativeLogging::CategoryLogger logger("JsInterop");
+        for (Utf8String const& schemaName : schemaNames) {
+            ECSchemaPtr schema;
+            SchemaReadStatus schemaStatus = ECSchema::LocateSchema(schema, schemaName.c_str(), ecdb.GetSchemaContext(), SchemaMatchType::LatestCompatible, nullptr);
+            if (schemaStatus != SchemaReadStatus::Success)
+                {
+                logger.errorv("Failed to locate schema %s. Status: %d", schemaName.c_str(), static_cast<int>(schemaStatus));
+                return DropSchemaResult::Error;
+                }
+            DropSchemaResult res = ecdb.Schemas().DropSchema(schemaName.c_str());
+            if (res != DropSchemaResult::Success) {
+                logger.errorv("Failed to drop schema %s. Status: %d", schemaName.c_str(), static_cast<int>(res));
+                return DropSchemaResult::Error;
+            };
+        }
+        ecdb.SaveChanges();
+        return DropSchemaResult::Success;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------

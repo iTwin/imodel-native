@@ -351,7 +351,7 @@ public:
     //! @return true if the Change Cache file is attached and valid. false otherwise
     //! @see @ref ECDbChange
     ECDB_EXPORT bool IsChangeCacheAttached() const;
-    
+
     //! Attaches the Change cache file to this %ECDb file.
     //! If it does not exist, a new one is created and attached.
     //! If a Change Cache file is already attached, an error is returned.

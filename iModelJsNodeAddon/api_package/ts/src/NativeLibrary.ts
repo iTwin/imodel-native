@@ -845,7 +845,7 @@ export declare namespace IModelJsNative {
     public concurrentQueryShutdown(): void;
     public attachDb(filename: string, alias: string): void;
     public detachDb(alias: string): void;
-    public removeUnusedSchemaReferences(): number;
+    public removeUnusedSchemaReferences(schemaNames: Array<string>, opts: SchemaImportOptions): void;
 
   }
 

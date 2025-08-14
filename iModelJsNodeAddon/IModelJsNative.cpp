@@ -635,14 +635,23 @@ public:
         return Napi::Number::New(info.Env(), (int)r);
     }
 
-    Napi::Value RemoveUnusedSchemaReferences(NapiInfoCR info) {
-        auto& db = GetWritableDb(info);
-        bvector<ECN::ECSchemaCP> schemas = db.Schemas().GetSchemas();
-        int totalRemovedCount = 0;
-        for (ECN::ECSchemaCP schema : schemas) {
-            totalRemovedCount += const_cast<ECN::ECSchemaP>(schema)->RemoveUnusedSchemaReferences();
+    void RemoveUnusedSchemaReferences(NapiInfoCR info)
+    {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaNames);
+        OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
+
+        JsInterop::SchemaImportOptions options;
+        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+
+        LastErrorListener lastError(m_ecdb);
+        DropSchemaResult rc = JsInterop::RemoveUnusedSchemaReferences(m_ecdb, schemaNames, options);
+        if (rc.GetStatus() != DropSchemaResult::Success) {
+            if (lastError.HasError()) {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), rc);
+            } else {
+                THROW_JS_SCHEMA_SYNC_EXCEPTION(info.Env(), Utf8PrintfString("fail to remove unused schema references: %s", rc.GetStatusAsString().c_str()).c_str(), rc.GetStatus());
+            }
         }
-        return Napi::Number::New(info.Env(), totalRemovedCount);
     }
 
     static void Init(Napi::Env env, Napi::Object exports) {
