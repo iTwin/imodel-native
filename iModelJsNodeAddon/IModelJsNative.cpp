@@ -534,11 +534,16 @@ public:
         return Napi::Number::New(Env(), (int)status);
     }
     void DropSchema(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_STRING(0, schemaName);
-        DropSchemaResult rc = m_ecdb.Schemas().DropSchema(schemaName);
-        if (rc.GetStatus() != DropSchemaResult::Success) {
-            BeNapi::ThrowJsException(info.Env(), rc.GetStatusAsString(), (int)rc.GetStatus(), {"schema-sync", rc.GetStatusAsString()});
-        }
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaNames);
+        OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
+        ECSchemaReadContextPtr customContext = nullptr;
+
+        JsInterop::SchemaImportOptions options;
+        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        DbResult status = JsInterop::DropSchema(m_ecdb, schemaNames, options);
+        if (status != BE_SQLITE_OK) {
+            JsInterop::throwSqlResult("error dropping schema(s)", m_ecdb.GetDbFileName(), status);
+        }   
     }
     void SchemaSyncSetDefaultUri(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
@@ -635,19 +640,6 @@ public:
         return Napi::Number::New(info.Env(), (int)r);
     }
 
-    void DropSchemas(NapiInfoCR info)
-    {
-        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaNames);
-        OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
-
-        JsInterop::SchemaImportOptions options;
-        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
-
-        DropSchemaResult rc = JsInterop::DropSchemas(m_ecdb, schemaNames, options);
-        if (!rc.IsSuccess())
-            BeNapi::ThrowJsException(info.Env(), rc.GetStatusAsString(), (int)rc.GetStatus(), { "DropSchemaError"});
-    }
-
     static void Init(Napi::Env env, Napi::Object exports) {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "ECDb", {
@@ -682,7 +674,6 @@ public:
             InstanceMethod("deleteInstance", &NativeECDb::DeleteInstance),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
-            InstanceMethod("dropSchemas", &NativeECDb::DropSchemas),
         });
 
         exports.Set("ECDb", t);

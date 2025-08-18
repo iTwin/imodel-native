@@ -873,22 +873,28 @@ void JsInterop::AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext)
     schemaContext->AddFinalSchemaPaths(paths);
     }
 
-DbResult JsInterop::DropSchemas(ECDbR ecdb, bvector<Utf8String>& schemaNames, const SchemaImportOptions& opts)
-    {
-        if (!opts.m_schemaLockHeld) {
-            NativeLogging::CategoryLogger("JsInterop").error("Schema lock must be held when dropping schemas");
-            return DropSchemaResult::Error;
-        }
-        
-        NativeLogging::CategoryLogger logger("JsInterop");
-        DropSchemaResult res = ecdb.Schemas().DropSchemas(schemaNames);
-        
-        if (!res.IsSuccess()) {
-            logger.errorv("Failed to drop schema %s", schemaName.c_str());
-            return BE_SQLITE_ERROR;
-        };
+DbResult JsInterop::DropSchema(ECDbR ecdb, bvector<Utf8String>& schemaNames, const SchemaImportOptions& opts)
+{
+    NativeLogging::CategoryLogger logger("JsInterop");
 
-        return ecdb.SaveChanges();
+    if (!opts.m_schemaLockHeld) {
+        logger.error("Schema lock must be held when dropping schemas");
+        return BE_SQLITE_ERROR;
+    }
+
+    DropSchemaResult res = ecdb.Schemas().DropSchemas(schemaNames);
+    if (!res.IsSuccess()) {
+        Utf8String joined;
+        for (auto const& name : schemaNames) {
+            if (!joined.empty())
+                joined.append(", ");
+            joined.append(name.c_str());
+        }
+        logger.errorv("Failed to drop schema(s): %s", joined.c_str());
+        return BE_SQLITE_ERROR;
+    }
+
+    return ecdb.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------

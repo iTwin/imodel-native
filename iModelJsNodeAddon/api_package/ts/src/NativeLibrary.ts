@@ -817,7 +817,7 @@ export declare namespace IModelJsNative {
     public closeDb(): void;
     public createDb(dbName: string): DbResult;
     public dispose(): void;
-    public dropSchema(schemaName: string): void;
+    public dropSchema(schemaNames: ReadonlyArray<string> | string, opts?: SchemaImportOptions): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
     public schemaSyncGetDefaultUri(): string;
     public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
@@ -845,8 +845,6 @@ export declare namespace IModelJsNative {
     public concurrentQueryShutdown(): void;
     public attachDb(filename: string, alias: string): void;
     public detachDb(alias: string): void;
-    public dropSchemas(schemaNames: Array<string>, opts: SchemaImportOptions): DbResult;
-
   }
 
   class ChangedElementsECDb implements IDisposable {
