@@ -85,18 +85,18 @@ DgnCategoryId DgnCategory::QueryCategoryId(DgnDbR db, DgnCodeCR code)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnCategory::_OnDelete() const
+DgnDbStatus DgnCategory::_OnDelete(std::optional<EditOptions> options) const
     {
     // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
+    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCategory::_OnInserted(DgnElementP copiedFrom) const
+void DgnCategory::_OnInserted(DgnElementP copiedFrom, std::optional<EditOptions> options) const
     {
-    T_Super::_OnInserted(copiedFrom);
+    T_Super::_OnInserted(copiedFrom, options);
 
     // Create the default sub-category.
     DgnSubCategoryId defaultSubCatId = GetDefaultSubCategoryId();
@@ -114,7 +114,7 @@ void DgnCategory::_OnInserted(DgnElementP copiedFrom) const
         // replace the guid. If we find further use cases, we can extend parameters to pass down the federation guid to _OnInserted
         defaultSubCat.CopyIdentityFrom(defaultSubCatId, BeGuid());
     }
-    DgnSubCategoryCPtr persistentSubCat = defaultSubCat.Insert();
+    DgnSubCategoryCPtr persistentSubCat = defaultSubCat.Insert(nullptr, options);
     BeAssert(persistentSubCat.IsValid());
     BeAssert(persistentSubCat->GetSubCategoryId() == defaultSubCatId);
     BeAssert(persistentSubCat->GetCategoryId() == GetCategoryId());
@@ -136,7 +136,7 @@ void DgnCategory::SetDefaultAppearance(DgnSubCategory::Appearance const& app) co
         }
     auto updatedSubCat = subCat->MakeCopy<DgnSubCategory>();
     updatedSubCat->GetAppearanceR() = app;
-    updatedSubCat->Update();
+    updatedSubCat->Update(std::nullopt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -144,7 +144,7 @@ void DgnCategory::SetDefaultAppearance(DgnSubCategory::Appearance const& app) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 DrawingCategoryCPtr DrawingCategory::Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status)
     {
-    DrawingCategoryCPtr category = GetDgnDb().Elements().Insert<DrawingCategory>(*this, status);
+    DrawingCategoryCPtr category = GetDgnDb().Elements().Insert<DrawingCategory>(*this, status, std::nullopt);
     if (!category.IsValid())
         return nullptr;
 
@@ -157,7 +157,7 @@ DrawingCategoryCPtr DrawingCategory::Insert(DgnSubCategory::Appearance const& ap
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialCategoryCPtr SpatialCategory::Insert(DgnSubCategory::Appearance const& appearance, DgnDbStatus* status)
     {
-    SpatialCategoryCPtr category = GetDgnDb().Elements().Insert<SpatialCategory>(*this, status);
+    SpatialCategoryCPtr category = GetDgnDb().Elements().Insert<SpatialCategory>(*this, status, std::nullopt);
     if (!category.IsValid())
         return nullptr;
 
@@ -388,7 +388,7 @@ size_t DgnSubCategory::QueryCount(DgnDbR db, DgnCategoryId catId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnSubCategory::_OnInsert()
+DgnDbStatus DgnSubCategory::_OnInsert(std::optional<EditOptions> options)
     {
     // A sub-category requires a parent category.
     if (!DgnCategory::IsValidName(GetSubCategoryName()))
@@ -396,16 +396,16 @@ DgnDbStatus DgnSubCategory::_OnInsert()
 
     DgnCategoryId catId(GetParentId().GetValueUnchecked());
     DgnCategoryCPtr cat = catId.IsValid() ? DgnCategory::Get(GetDgnDb(), catId) : nullptr;
-    return cat.IsValid() ? T_Super::_OnInsert() : DgnDbStatus::InvalidParent;
+    return cat.IsValid() ? T_Super::_OnInsert(options) : DgnDbStatus::InvalidParent;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnSubCategory::_OnDelete() const
+DgnDbStatus DgnSubCategory::_OnDelete(std::optional<EditOptions> options) const
     {
     // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
+    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -718,25 +718,25 @@ bool DgnCategory::IsValidName(Utf8StringCR name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnCategory::_OnInsert()
+DgnDbStatus DgnCategory::_OnInsert(std::optional<EditOptions> options)
     {
-    return IsValidName(GetCategoryName()) ? T_Super::_OnInsert() : DgnDbStatus::InvalidName;
+    return IsValidName(GetCategoryName()) ? T_Super::_OnInsert(options) : DgnDbStatus::InvalidName;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnCategory::_OnUpdate(DgnElementCR el)
+DgnDbStatus DgnCategory::_OnUpdate(DgnElementCR el, std::optional<EditOptions> options)
     {
-    return IsValidName(GetCategoryName()) ? T_Super::_OnUpdate(el) : DgnDbStatus::InvalidName;
+    return IsValidName(GetCategoryName()) ? T_Super::_OnUpdate(el, options) : DgnDbStatus::InvalidName;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnSubCategory::_OnUpdate(DgnElementCR el)
+DgnDbStatus DgnSubCategory::_OnUpdate(DgnElementCR el, std::optional<EditOptions> options)
     {
-    return DgnCategory::IsValidName(GetSubCategoryName()) ? T_Super::_OnUpdate(el) : DgnDbStatus::InvalidName;
+    return DgnCategory::IsValidName(GetSubCategoryName()) ? T_Super::_OnUpdate(el, options) : DgnDbStatus::InvalidName;
     }
 
 //---------------------------------------------------------------------------------------

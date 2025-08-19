@@ -38,10 +38,10 @@ private:
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options =  std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb(std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb(std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options =  std::nullopt) const override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 

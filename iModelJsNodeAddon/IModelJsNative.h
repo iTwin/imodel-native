@@ -487,6 +487,7 @@ struct JsInterop {
     BE_JSON_NAME(writeable)
     BE_JSON_NAME(yesNo)
     BE_JSON_NAME(uncompressedSize)
+    BE_JSON_NAME(indirect)
 
 #define JSON_NAME(__val__) JsInterop::json_##__val__()
 
@@ -508,13 +509,13 @@ public:
     static DgnDbStatus GetSchemaItem(BeJsValue results, DgnDbR db, Utf8CP schemaName, Utf8CP itemName);
     static DgnDbStatus GetElement(BeJsValue results, DgnDbR db, Napi::Object);
     static Napi::String InsertElement(DgnDbR db, Napi::Object props, Napi::Value options);
-    static void UpdateElement(DgnDbR db, Napi::Object);
-    static void DeleteElement(DgnDbR db, Utf8StringCR eidStr);
+    static void UpdateElement(DgnDbR db, Napi::Object, Napi::Value options);
+    static void DeleteElement(DgnDbR db, Utf8StringCR eidStr, Napi::Value options);
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);
     static InlineGeometryPartsResult InlineGeometryParts(DgnDbR db);
-    static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps);
-    static void UpdateElementAspect(DgnDbR db, Napi::Object aspectProps);
-    static void DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr);
+    static Napi::String InsertElementAspect(DgnDbR db, Napi::Object aspectProps, Napi::Value options);
+    static void UpdateElementAspect(DgnDbR db, Napi::Object aspectProps, Napi::Value options);
+    static void DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr, Napi::Value options);
 
     // Used by ExportGraphics, ExportPartGraphics, and GenerateElementMeshes.
     // Checks for common "bad" polyfaces, fixing them up if possible.
@@ -531,10 +532,10 @@ public:
     static void UpdateLinkTableRelationship(DgnDbR db, Napi::Object props);
     static void DeleteLinkTableRelationship(DgnDbR db, Napi::Object props);
     static Napi::String InsertCodeSpec(DgnDbR db, Utf8StringCR name, BeJsConst jsonProperties);
-    static Napi::String InsertModel(DgnDbR db, Napi::Object);
-    static void UpdateModel(DgnDbR db, Napi::Object props);
+    static Napi::String InsertModel(DgnDbR db, Napi::Object, Napi::Value options);
+    static void UpdateModel(DgnDbR db, Napi::Object props, Napi::Value options);
     static DgnDbStatus UpdateModelGeometryGuid(DgnDbR db, DgnModelId modelId);
-    static void DeleteModel(DgnDbR db, Utf8StringCR idStr);
+    static void DeleteModel(DgnDbR db, Utf8StringCR idStr, Napi::Value options);
     static DgnDbStatus GetModel(Napi::Object results, DgnDbR db, BeJsConst inOpts);
     static void QueryModelExtents(BeJsValue extents, DgnDbR db, BeJsConst options);
     static DgnDbStatus QueryDefinitionElementUsage(BeJsValue usageInfo, DgnDbR db, bvector<Utf8String> const& idStringArray);

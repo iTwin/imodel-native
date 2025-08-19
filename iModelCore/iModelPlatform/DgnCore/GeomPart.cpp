@@ -108,17 +108,17 @@ void DgnGeometryPart::_BindWriteParams(ECSqlStatement& statement, ForInsert forI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnGeometryPart::_OnInsert()
+DgnDbStatus DgnGeometryPart::_OnInsert(std::optional<EditOptions> options)
     {
-    return m_geometry.HasGeometry() ? T_Super::_OnInsert() : DgnDbStatus::BadElement; // can't insert a DgnGeometryPart without geometry
+    return m_geometry.HasGeometry() ? T_Super::_OnInsert(options) : DgnDbStatus::BadElement; // can't insert a DgnGeometryPart without geometry
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnGeometryPart::_InsertInDb()
+DgnDbStatus DgnGeometryPart::_InsertInDb(std::optional<EditOptions> options)
     {
-    DgnDbStatus status = T_Super::_InsertInDb();
+    DgnDbStatus status = T_Super::_InsertInDb(options);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -128,9 +128,9 @@ DgnDbStatus DgnGeometryPart::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnGeometryPart::_UpdateInDb()
+DgnDbStatus DgnGeometryPart::_UpdateInDb(std::optional<EditOptions> options)
     {
-    DgnDbStatus status = T_Super::_UpdateInDb();
+    DgnDbStatus status = T_Super::_UpdateInDb(options);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -140,10 +140,10 @@ DgnDbStatus DgnGeometryPart::_UpdateInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnGeometryPart::_OnDelete() const
+DgnDbStatus DgnGeometryPart::_OnDelete(std::optional<EditOptions> options) const
     {
     // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
+    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -268,7 +268,7 @@ DgnGeometryPartId DgnImportContext::_RemapGeometryPartId(DgnGeometryPartId sourc
     GeometryStreamIO::Import(destGeometryPart->GetGeometryStreamR(), sourceGeometryPart->GetGeometryStream(), *this);
     destGeometryPart->SetBoundingBox(sourceGeometryPart->GetBoundingBox());
 
-    if (!GetDestinationDb().Elements().Insert<DgnGeometryPart>(*destGeometryPart).IsValid())
+    if (!GetDestinationDb().Elements().Insert<DgnGeometryPart>(*destGeometryPart, nullptr, std::nullopt).IsValid())
         return DgnGeometryPartId();
 
     return m_remap.Add(sourceGeometryPartId, destGeometryPart->GetId());

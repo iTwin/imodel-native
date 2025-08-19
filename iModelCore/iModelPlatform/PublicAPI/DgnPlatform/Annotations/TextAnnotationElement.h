@@ -85,8 +85,8 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation2d : AnnotationElement2d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation2d, AnnotationElement2d);
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR originalElment, std::optional<EditOptions> options = std::nullopt) override;
     DGNPLATFORM_EXPORT DgnElementPtr _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const override;
     DGNPLATFORM_EXPORT DgnElementPtr _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const override;
     TextAnnotationDataCP GetItemCP() const { return TextAnnotationData::GetCP(*this); }
@@ -105,7 +105,7 @@ public:
     TextAnnotationCP GetAnnotation() const { TextAnnotationDataCP item = GetItemCP(); return item ? item->GetAnnotation() : nullptr; }
     void SetAnnotation(TextAnnotationCP value) { GetItemR().SetAnnotation(value); }
 
-    TextAnnotation2dCPtr Insert() { return GetDgnDb().Elements().Insert<TextAnnotation2d>(*this); }
+    TextAnnotation2dCPtr Insert() { return GetDgnDb().Elements().Insert<TextAnnotation2d>(*this, nullptr, std::nullopt); }
 };
 
 namespace dgn_ElementHandler
@@ -128,8 +128,8 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : GraphicalElement3d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation3d, GraphicalElement3d);
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR originalElment, std::optional<EditOptions> options = std::nullopt) override;
     DGNPLATFORM_EXPORT DgnElementPtr _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const override;
     DGNPLATFORM_EXPORT DgnElementPtr _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const override;
     TextAnnotationDataCP GetItemCP() const { return TextAnnotationData::GetCP(*this); }
@@ -148,7 +148,7 @@ public:
     TextAnnotationCP GetAnnotation() const { TextAnnotationDataCP item = GetItemCP(); return item ? item->GetAnnotation() : nullptr; }
     void SetAnnotation(TextAnnotationCP value) { GetItemR().SetAnnotation(value); }
 
-    TextAnnotation3dCPtr Insert() { return GetDgnDb().Elements().Insert<TextAnnotation3d>(*this); }
+    TextAnnotation3dCPtr Insert() { return GetDgnDb().Elements().Insert<TextAnnotation3d>(*this, nullptr, std::nullopt); }
 };
 
 namespace dgn_ElementHandler

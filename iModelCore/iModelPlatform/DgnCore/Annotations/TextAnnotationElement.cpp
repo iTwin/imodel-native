@@ -173,10 +173,10 @@ static DgnDbStatus updateGeometryOnChange(DgnDbStatus superStatus, DgnElementR n
 
     return DgnDbStatus::Success;
     }
-DgnDbStatus TextAnnotation2d::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, nullptr, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
-DgnDbStatus TextAnnotation3d::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, nullptr, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
-DgnDbStatus TextAnnotation2d::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, &el, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
-DgnDbStatus TextAnnotation3d::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, &el, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
+DgnDbStatus TextAnnotation2d::_OnInsert(std::optional<EditOptions> options) { return updateGeometryOnChange(T_Super::_OnInsert(options), *this, nullptr, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
+DgnDbStatus TextAnnotation3d::_OnInsert(std::optional<EditOptions> options) { return updateGeometryOnChange(T_Super::_OnInsert(options), *this, nullptr, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
+DgnDbStatus TextAnnotation2d::_OnUpdate(DgnElementCR el, std::optional<EditOptions> options) { return updateGeometryOnChange(T_Super::_OnUpdate(el, options), *this, &el, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
+DgnDbStatus TextAnnotation3d::_OnUpdate(DgnElementCR el, std::optional<EditOptions> options) { return updateGeometryOnChange(T_Super::_OnUpdate(el, options), *this, &el, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
