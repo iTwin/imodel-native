@@ -1521,7 +1521,7 @@ TEST (BeFileNameTests, GetFileSizeForSymbolicLink)
     int e = _wstati64 (symLinkFileName.GetName(), &status);
 
     ASSERT_TRUE (-1 != e);
-    // ASSERT_EQ (fileSize, status.st_size);
+    ASSERT_EQ (fileSize, status.st_size);
 
 #endif
     }
