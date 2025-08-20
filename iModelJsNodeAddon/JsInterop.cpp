@@ -873,6 +873,30 @@ void JsInterop::AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext)
     schemaContext->AddFinalSchemaPaths(paths);
     }
 
+DbResult JsInterop::DropSchema(ECDbR ecdb, bvector<Utf8String>& schemaNames, const SchemaImportOptions& opts)
+{
+    NativeLogging::CategoryLogger logger("JsInterop");
+
+    if (!opts.m_schemaLockHeld) {
+        logger.error("Schema lock must be held when dropping schemas");
+        return BE_SQLITE_ERROR;
+    }
+
+    DropSchemaResult res = ecdb.Schemas().DropSchemas(schemaNames);
+    if (!res.IsSuccess()) {
+        Utf8String joined;
+        for (auto const& name : schemaNames) {
+            if (!joined.empty())
+                joined.append(", ");
+            joined.append(name.c_str());
+        }
+        logger.errorv("Failed to drop schema(s): %s", joined.c_str());
+        return BE_SQLITE_ERROR;
+    }
+
+    return ecdb.SaveChanges();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
