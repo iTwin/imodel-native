@@ -706,7 +706,6 @@ export declare namespace IModelJsNative {
     public insertModel(modelProps: ModelProps): Id64String;
     public isChangeCacheAttached(): boolean;
     public isGeometricModelTrackingSupported(): boolean;
-    public isIndirectChanges(): boolean;
     public isLinkTableRelationship(classFullName: string): boolean | undefined;
     public isOpen(): boolean;
     public isProfilerPaused(): boolean;
@@ -785,6 +784,8 @@ export declare namespace IModelJsNative {
     public pullMergeRebaseEnd(): void;
     public pullMergeReverseLocalChanges(): TxnIdString[];
     public getTxnProps(id: TxnIdString): TxnProps | undefined;
+    public setTxnMode(mode: "direct" | "indirect"): void;
+    public getTxnMode(): "direct" | "indirect";
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
     public static zlibCompress(data: Uint8Array): Uint8Array;

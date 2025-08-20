@@ -1475,7 +1475,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     Napi::Value GetRedoString(NapiInfoCR info) {return toJsString(Env(), GetOpenedDb(info).Txns().GetRedoString());}
     Napi::Value HasUnsavedChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().HasChanges());}
     Napi::Value HasPendingTxns(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().HasPendingTxns());}
-    Napi::Value IsIndirectChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsIndirectChanges());}
     Napi::Value IsRedoPossible(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsRedoPossible());}
     Napi::Value IsUndoPossible(NapiInfoCR info) {
         return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsUndoPossible());
@@ -2865,7 +2864,27 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             return Napi::String ::New(Env(), "Rebasing");
         return Napi::String ::New(Env(), "None");
     }
-    
+    void SetTxnMode(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, mode);
+        auto& db = GetWritableDb(info);
+        if (mode == "direct")
+            db.Txns().SetMode(ChangeTracker::Mode::Direct);
+        else if (mode == "indirect")
+            db.Txns().SetMode(ChangeTracker::Mode::Indirect);
+        else
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txn mode", DgnDbStatus::BadArg);
+    }
+    Napi::Value  GetTxnMode(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        switch (db.Txns().GetMode()) {
+            case ChangeTracker::Mode::Direct:
+                return Napi::String::New(info.Env(), "direct");
+            case ChangeTracker::Mode::Indirect:
+                return Napi::String::New(info.Env(), "indirect");
+            default:
+                THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txn mode", DgnDbStatus::BadArg);
+        }
+    }
     Napi::Value  GetTxnProps(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdStr);
         auto& db = GetWritableDb(info);
@@ -3019,7 +3038,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("isGeometricModelTrackingSupported", &NativeDgnDb::IsGeometricModelTrackingSupported),
-            InstanceMethod("isIndirectChanges", &NativeDgnDb::IsIndirectChanges),
             InstanceMethod("isLinkTableRelationship", &NativeDgnDb::IsLinkTableRelationship),
             InstanceMethod("isOpen", &NativeDgnDb::IsDgnDbOpen),
             InstanceMethod("isProfilerPaused", &NativeDgnDb::IsProfilerPaused),
@@ -3106,6 +3124,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("pullMergeRebaseEnd", &NativeDgnDb::PullMergeRebaseEnd),
             InstanceMethod("pullMergeReverseLocalChanges", &NativeDgnDb::PullMergeReverseLocalChanges),
             InstanceMethod("getTxnProps", &NativeDgnDb::GetTxnProps),
+            InstanceMethod("setTxnMode", &NativeDgnDb::SetTxnMode),
+            InstanceMethod("getTxnMode", &NativeDgnDb::GetTxnMode),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),

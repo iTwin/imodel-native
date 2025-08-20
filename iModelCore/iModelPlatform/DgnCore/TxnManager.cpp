@@ -510,9 +510,7 @@ TxnManager::TxnId TxnManager::GetMultiTxnOperationStart()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker) {
-    BeAssert(false == m_indirectChanges); // should never be recursive
-    AutoRestore<bool> saveIndirect(&m_indirectChanges, true); // so we can tell whether we're propagating changes from JavaScript
+BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker) {    
     SetandRestoreIndirectChanges _v(tracker);
     for (auto table : m_tables) {
         table->_PropagateChanges();

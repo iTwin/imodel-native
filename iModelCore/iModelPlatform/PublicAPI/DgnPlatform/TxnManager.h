@@ -435,7 +435,6 @@ private:
     bool m_fatalValidationError;
     bool m_initTableHandlers;
     bool m_inProfileUpgrade = false;
-    bool m_indirectChanges = false;
     bool m_trackChangesetHealthStats = false;
     bvector<ECN::ECClassId> m_childPropagatesChangesToParentRels;
     ChangesetPropsPtr m_changesetInProgress;
@@ -559,7 +558,6 @@ public:
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
 
-    bool IsIndirectChanges() { return m_indirectChanges; }
     bool HasFatalError() {return m_fatalValidationError;}
     int NumValidationErrors() {return m_txnErrors;}
     void LogError(bool fatal) { ++m_txnErrors; m_fatalValidationError |= fatal;}
