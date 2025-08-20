@@ -531,6 +531,17 @@ export declare namespace IModelJsNative {
     readonly parentChangesetIndex?: string;
   }
 
+  export interface TxnProps {
+    id: TxnIdString;
+    nextId?: TxnIdString;
+    prevId?: TxnIdString;
+    props: { description?: string; source?: string, appData: { [key: string]: any } };
+    type: "Data" | "EcSchema" | "Ddl";
+    reversed: boolean;
+    grouped: boolean;
+    timestamp: string; // ISO 8601 format
+  }
+
   type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
   interface IGeometrySource {
     geom?: Uint8Array | GeometryStreamProps;
@@ -769,11 +780,16 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
-    public pullMergeInProgress(): boolean;
-    public pullMergeBegin(): void;
-    public pullMergeEnd(): void;
-    public pullMergeResume(): void;
 
+    public pullMergeGetStage(): "None" | "Merging" | "Rebasing";
+    public pullMergeReinstateTxn(id: TxnIdString): void;
+    public pullMergeSaveRebasedTxn(id: TxnIdString): void;
+    public pullMergeRebaseBegin(): TxnIdString[];
+    public pullMergeRebaseEnd(): void;
+    public pullMergeReverseLocalChanges(): TxnIdString[];
+    public getTxnProps(id: TxnIdString): TxnProps | undefined;
+    public setTxnMode(mode: "direct" | "indirect"): void;
+    public getTxnMode(): "direct" | "indirect";
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
     public static zlibCompress(data: Uint8Array): Uint8Array;
