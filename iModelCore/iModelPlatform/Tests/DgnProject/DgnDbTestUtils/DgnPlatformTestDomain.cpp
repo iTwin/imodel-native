@@ -1,4 +1,4 @@
-/*---------------------------------------------------------------------------------------------
+    /*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
@@ -129,9 +129,9 @@ TestElementPtr TestElement::CreateWithoutGeometry(DgnDbR db, DgnModelId mid, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_InsertInDb(std::optional<EditOptions> options)
+DgnDbStatus TestElement::_InsertInDb()
 {
-    DgnDbStatus stat = T_Super::_InsertInDb(options);
+    DgnDbStatus stat = T_Super::_InsertInDb();
     if (DgnDbStatus::Success != stat)
         return stat;
     return DgnDbStatus::Success;
@@ -220,9 +220,9 @@ void TestElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_UpdateInDb(std::optional<EditOptions> options)
+DgnDbStatus TestElement::_UpdateInDb()
 {
-    DgnDbStatus status = T_Super::_UpdateInDb(options);
+    DgnDbStatus status = T_Super::_UpdateInDb();
     if (DgnDbStatus::Success != status)
         return status;
     return DgnDbStatus::Success;
@@ -231,9 +231,9 @@ DgnDbStatus TestElement::_UpdateInDb(std::optional<EditOptions> options)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_DeleteInDb(std::optional<EditOptions> options) const
+DgnDbStatus TestElement::_DeleteInDb() const
 {
-    DgnDbStatus status = T_Super::_DeleteInDb(options);
+    DgnDbStatus status = T_Super::_DeleteInDb();
     if (DgnDbStatus::Success != status)
         return status;
     return DgnDbStatus::Success;

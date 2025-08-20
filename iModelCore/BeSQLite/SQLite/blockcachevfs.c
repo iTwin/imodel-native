@@ -6358,6 +6358,10 @@ u8 *bcvDatabaseVtabData(
     bcvBufferAppendU64(&rc, &buf, (u64)pCommon->nBlk);
     bcvBufferMsgString(&rc, &buf, "cachesize");
     bcvBufferAppendU64(&rc, &buf, (u64)(pCommon->nMaxCache / pCommon->szBlk));
+    bcvBufferMsgString(&rc, &buf, "memory_used");
+    bcvBufferAppendU64(&rc, &buf, (u64)sqlite3_memory_used());
+    bcvBufferMsgString(&rc, &buf, "memory_highwater");
+    bcvBufferAppendU64(&rc, &buf, (u64)sqlite3_memory_highwater(0));
   }
 
   if( rc!=SQLITE_OK ){

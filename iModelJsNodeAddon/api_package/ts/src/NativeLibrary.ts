@@ -531,6 +531,17 @@ export declare namespace IModelJsNative {
     readonly parentChangesetIndex?: string;
   }
 
+  export interface TxnProps {
+    id: TxnIdString;
+    nextId?: TxnIdString;
+    prevId?: TxnIdString;
+    props: { description?: string; source?: string, appData: { [key: string]: any } };
+    type: "Data" | "EcSchema" | "Ddl";
+    reversed: boolean;
+    grouped: boolean;
+    timestamp: string; // ISO 8601 format
+  }
+
   type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
   interface IGeometrySource {
     geom?: Uint8Array | GeometryStreamProps;
@@ -609,7 +620,7 @@ export declare namespace IModelJsNative {
     public createClassViewsInDb(): BentleyStatus;
     public createIModel(fileName: string, props: CreateEmptyStandaloneIModelProps): void;
     public deleteAllTxns(): void;
-    public deleteElement(elemIdJson: string, options?: { indirect?: boolean }): void;
+    public deleteElement(elemIdJson: string): void;
     public deleteElementAspect(aspectIdJson: string): void;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
     public deleteLocalValue(name: string): void;
@@ -689,16 +700,13 @@ export declare namespace IModelJsNative {
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
-    public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean, indirect?: boolean }): Id64String;
+    public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean }): Id64String;
     public insertElementAspect(aspectProps: ElementAspectProps): Id64String;
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
     public insertModel(modelProps: ModelProps): Id64String;
     public isChangeCacheAttached(): boolean;
     public isGeometricModelTrackingSupported(): boolean;
-    // Inidcates whether the current operation is an indirect change (isPropagatingChanges or explicit indirect changes)
     public isIndirectChanges(): boolean;
-    // Indicates whether the TxnManager is currently propagating changes
-    public isPropagatingChanges(): boolean;
     public isLinkTableRelationship(classFullName: string): boolean | undefined;
     public isOpen(): boolean;
     public isProfilerPaused(): boolean;
@@ -755,7 +763,7 @@ export declare namespace IModelJsNative {
     public disableChangesetStatsTracking(): void;
     public getChangesetHealthData(changesetId: string): ChangesetHealthStats;
     public getAllChangesetHealthData(): ChangesetHealthStats[];
-    public updateElement(elemProps: Partial<ElementProps>, options?: { indirect?: boolean }): void;
+    public updateElement(elemProps: Partial<ElementProps>): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;
     public updateIModelProps(props: IModelProps): void;
@@ -769,11 +777,16 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
-    public pullMergeInProgress(): boolean;
-    public pullMergeBegin(): void;
-    public pullMergeEnd(): void;
-    public pullMergeResume(): void;
 
+    public pullMergeGetStage(): "None" | "Merging" | "Rebasing";
+    public pullMergeReinstateTxn(id: TxnIdString): void;
+    public pullMergeSaveRebasedTxn(id: TxnIdString): void;
+    public pullMergeRebaseBegin(): TxnIdString[];
+    public pullMergeRebaseEnd(): void;
+    public pullMergeReverseLocalChanges(): TxnIdString[];
+    public getTxnProps(id: TxnIdString): TxnProps | undefined;
+    public setTxnMode(mode: "direct" | "indirect"): void;
+    public getTxnMode(): "direct" | "indirect";
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
     public static zlibCompress(data: Uint8Array): Uint8Array;

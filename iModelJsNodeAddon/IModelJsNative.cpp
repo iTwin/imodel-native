@@ -1475,8 +1475,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     Napi::Value GetRedoString(NapiInfoCR info) {return toJsString(Env(), GetOpenedDb(info).Txns().GetRedoString());}
     Napi::Value HasUnsavedChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().HasChanges());}
     Napi::Value HasPendingTxns(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().HasPendingTxns());}
-    Napi::Value IsIndirectChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsIndirectChanges());}
-    Napi::Value IsPropagatingChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsPropagatingChanges());}
     Napi::Value IsRedoPossible(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsRedoPossible());}
     Napi::Value IsUndoPossible(NapiInfoCR info) {
         return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsUndoPossible());
@@ -1710,37 +1708,25 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     Napi::Value InsertElement(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, elemProps);
-        Napi::Value options;
+        Napi::Value insertOptions;
         if (ARGUMENT_IS_PRESENT(1)) {\
-            options = info[1].As<Napi::Object>();
+            insertOptions = info[1].As<Napi::Object>();
         } else {
-            options = Env().Undefined();
+            insertOptions = Env().Undefined();
         }
-        return JsInterop::InsertElement(db, elemProps, options);
+        return JsInterop::InsertElement(db, elemProps, insertOptions);
     }
 
     void UpdateElement(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, elemProps);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {\
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        JsInterop::UpdateElement(db, elemProps, options);
+        JsInterop::UpdateElement(db, elemProps);
     }
 
     void DeleteElement(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {\
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        JsInterop::DeleteElement(db, elemIdStr, options);
+        JsInterop::DeleteElement(db, elemIdStr);
     }
 
     Napi::Value QueryDefinitionElementUsage(NapiInfoCR info)
@@ -1790,35 +1776,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     Napi::Value InsertElementAspect(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, aspectProps);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        return JsInterop::InsertElementAspect(GetOpenedDb(info), aspectProps, options);
+        return JsInterop::InsertElementAspect(GetOpenedDb(info), aspectProps);
     }
 
     void UpdateElementAspect(NapiInfoCR info)     {
         REQUIRE_ARGUMENT_ANY_OBJ(0, aspectProps);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        JsInterop::UpdateElementAspect(GetOpenedDb(info), aspectProps, options);
+        JsInterop::UpdateElementAspect(GetOpenedDb(info), aspectProps);
     }
 
     void DeleteElementAspect(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, aspectIdStr);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        JsInterop::DeleteElementAspect(GetOpenedDb(info), aspectIdStr, options);
+        JsInterop::DeleteElementAspect(GetOpenedDb(info), aspectIdStr);
     }
 
     Napi::Value ExportGraphics(NapiInfoCR info)
@@ -2062,24 +2030,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     Napi::Value InsertModel(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, modelProps);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
+        return JsInterop::InsertModel(GetOpenedDb(info), modelProps);
         }
-        return JsInterop::InsertModel(GetOpenedDb(info), modelProps, options);
-    }
 
     void UpdateModel(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, modelProps);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        JsInterop::UpdateModel(GetOpenedDb(info), modelProps, options);
+        JsInterop::UpdateModel(GetOpenedDb(info), modelProps);
     }
 
     Napi::Value UpdateModelGeometryGuid(NapiInfoCR info)
@@ -2092,13 +2048,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     void DeleteModel(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        JsInterop::DeleteModel(GetOpenedDb(info), elemIdStr, options);
+        JsInterop::DeleteModel(GetOpenedDb(info), elemIdStr);
     }
 
     Napi::Value SaveChanges(NapiInfoCR info)
@@ -2861,26 +2811,94 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return blob;
     }
 
-    void PullMergeResume(NapiInfoCR info) {
+    Napi::Value PullMergeReverseLocalChanges(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        db.Txns().PullMergeResume();
+        auto txns = db.Txns().PullMergeReverseLocalChanges();
+        auto array = Napi::Array::New(Env(), txns.size());        
+        for (size_t i = 0; i < txns.size(); ++i) {
+            array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
+        }
+        return array;
     }
 
-    void PullMergeBegin(NapiInfoCR info) {
+    Napi::Value PullMergeRebaseBegin(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        db.Txns().PullMergeBegin();
+        auto txns = db.Txns().PullMergeRebaseBegin();
+        auto array = Napi::Array::New(Env(), txns.size());        
+        for (size_t i = 0; i < txns.size(); ++i) {
+            array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
+        }
+        return array;
     }
 
-    void PullMergeEnd(NapiInfoCR info) {
+    void PullMergeRebaseEnd(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        db.Txns().PullMergeEnd();
+        db.Txns().PullMergeRebaseEnd();
     }
 
-    Napi::Value PullMergeInProgress(NapiInfoCR info) {
+    void PullMergeSaveRebasedTxn(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, txnIdStr);
         auto& db = GetWritableDb(info);
-        return Napi::Boolean::New(Env(), db.Txns().PullMergeInProgress());
+        auto id = BeInt64Id::FromString(txnIdStr.c_str());
+        if (!id.IsValid()) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txnId", DgnDbStatus::BadArg);
+        }
+        db.Txns().PullMergeSaveRebasedTxn(TxnManager::TxnId(id.GetValue()));
     }
 
+    void PullMergeReinstateTxn(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, txnIdStr);
+        auto& db = GetWritableDb(info);
+        auto id = BeInt64Id::FromString(txnIdStr.c_str());
+        if (!id.IsValid()) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txnId", DgnDbStatus::BadArg);
+        }
+        db.Txns().PullMergeReinstateTxn(TxnManager::TxnId(id.GetValue()));
+    }
+
+    Napi::Value PullMergeGetStage(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        if (db.Txns().PullMergeGetStage() == TxnManager::PullMergeStage::Merging)
+            return Napi::String ::New(Env(), "Merging");
+        if (db.Txns().PullMergeGetStage() == TxnManager::PullMergeStage::Rebasing)
+            return Napi::String ::New(Env(), "Rebasing");
+        return Napi::String ::New(Env(), "None");
+    }
+    void SetTxnMode(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, mode);
+        auto& db = GetWritableDb(info);
+        if (mode == "direct")
+            db.Txns().SetMode(ChangeTracker::Mode::Direct);
+        else if (mode == "indirect")
+            db.Txns().SetMode(ChangeTracker::Mode::Indirect);
+        else
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txn mode", DgnDbStatus::BadArg);
+    }
+    Napi::Value  GetTxnMode(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        switch (db.Txns().GetMode()) {
+            case ChangeTracker::Mode::Direct:
+                return Napi::String::New(info.Env(), "direct");
+            case ChangeTracker::Mode::Indirect:
+                return Napi::String::New(info.Env(), "indirect");
+            default:
+                THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txn mode", DgnDbStatus::BadArg);
+        }
+    }
+    Napi::Value  GetTxnProps(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, txnIdStr);
+        auto& db = GetWritableDb(info);
+        auto id = BeInt64Id::FromString(txnIdStr.c_str());
+        if (!id.IsValid()) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txnId", DgnDbStatus::BadArg);
+        }
+        BeJsNapiObject props(info.Env());        
+        if (db.Txns().GetTxnProps(TxnManager::TxnId(id.GetValue()), BeJsValue(props)))
+            return props;
+
+        return info.Env().Undefined();
+    }
+    
     static Napi::Value ComputeChangesetId(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, args);
         auto parentId = args.Get("parentId").As<Napi::String>();
@@ -3020,8 +3038,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("isGeometricModelTrackingSupported", &NativeDgnDb::IsGeometricModelTrackingSupported),
-            InstanceMethod("isIndirectChanges", &NativeDgnDb::IsIndirectChanges),
-            InstanceMethod("isPropagatingChanges", &NativeDgnDb::IsPropagatingChanges),
             InstanceMethod("isLinkTableRelationship", &NativeDgnDb::IsLinkTableRelationship),
             InstanceMethod("isOpen", &NativeDgnDb::IsDgnDbOpen),
             InstanceMethod("isProfilerPaused", &NativeDgnDb::IsProfilerPaused),
@@ -3101,10 +3117,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
             InstanceMethod("getNoCaseCollation", &NativeDgnDb::GetNoCaseCollation),
             InstanceMethod("setNoCaseCollation", &NativeDgnDb::SetNoCaseCollation),
-            InstanceMethod("pullMergeInProgress", &NativeDgnDb::PullMergeInProgress),
-            InstanceMethod("pullMergeBegin", &NativeDgnDb::PullMergeBegin),
-            InstanceMethod("pullMergeEnd", &NativeDgnDb::PullMergeEnd),
-            InstanceMethod("pullMergeResume", &NativeDgnDb::PullMergeResume),
+            InstanceMethod("pullMergeGetStage", &NativeDgnDb::PullMergeGetStage),
+            InstanceMethod("pullMergeReinstateTxn", &NativeDgnDb::PullMergeReinstateTxn),
+            InstanceMethod("pullMergeSaveRebasedTxn", &NativeDgnDb::PullMergeSaveRebasedTxn),
+            InstanceMethod("pullMergeRebaseBegin", &NativeDgnDb::PullMergeRebaseBegin),
+            InstanceMethod("pullMergeRebaseEnd", &NativeDgnDb::PullMergeRebaseEnd),
+            InstanceMethod("pullMergeReverseLocalChanges", &NativeDgnDb::PullMergeReverseLocalChanges),
+            InstanceMethod("getTxnProps", &NativeDgnDb::GetTxnProps),
+            InstanceMethod("setTxnMode", &NativeDgnDb::SetTxnMode),
+            InstanceMethod("getTxnMode", &NativeDgnDb::GetTxnMode),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),

@@ -115,7 +115,7 @@ public:
         for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
             viewDef.GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
-        EXPECT_TRUE(viewDef.Insert(nullptr, std::nullopt).IsValid());
+        EXPECT_TRUE(viewDef.Insert().IsValid());
         return viewDef.GetViewId();
         }
 

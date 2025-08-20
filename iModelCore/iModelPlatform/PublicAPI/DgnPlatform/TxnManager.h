@@ -419,6 +419,12 @@ public:
         ~SetandRestoreIndirectChanges() { m_tracker.SetMode(BeSQLite::ChangeTracker::Mode::Direct); }
     };
 
+    enum class PullMergeStage {
+        None,
+        Merging, //! merging incoming changes.
+        Rebasing, //! rebasing local changes on top of incoming changes.
+    };
+
 private:
     bvector<TxnRange> m_reversedTxn;
     BeSQLite::StatementCache m_stmts;
@@ -429,8 +435,8 @@ private:
     bool m_fatalValidationError;
     bool m_initTableHandlers;
     bool m_inProfileUpgrade = false;
+    bool m_indirectChanges = false;
     bool m_trackChangesetHealthStats = false;
-    bool m_isPropagatingChanges = false;
     bvector<ECN::ECClassId> m_childPropagatesChangesToParentRels;
     ChangesetPropsPtr m_changesetInProgress;
     std::map<Utf8String, BeJsDocument> m_changesetHealthStatistics;
@@ -457,7 +463,7 @@ private:
     BeSQLite::ZipErrors ReadChanges(BeSQLite::ChangeSet& changeset, TxnId rowId);
     BeSQLite::DbResult ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
-    void ApplyTxnChanges(TxnId, TxnAction);
+    BeSQLite::DbResult ApplyTxnChanges(TxnId, TxnAction, bool skipSchemaChanges = false);
     BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
 
@@ -486,7 +492,11 @@ private:
     BentleyStatus PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8StringCR compoundSQL);
     void NotifyOnCommit();
     void ThrowIfChangesetInProgress();
-    BeSQLite::DbResult UpdateTxn(BeSQLite::ChangeSetCR changeSet, TxnId id);
+    BeSQLite::DbResult PullMergeUpdateTxn(BeSQLite::ChangeSetCR changeSet, TxnId id);
+    void PullMergeSetTxnActive(TxnManager::TxnId txnId);
+    void PullMergeAbortRebase(TxnManager::TxnId id, Utf8String err, BeSQLite::DbResult rc);
+    bool PullMergeEraseTxn(TxnManager::TxnId txnId);
+        
 public:
     void StartNewSession();
     void CallJsTxnManager(Utf8CP methodName) { DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
@@ -521,8 +531,16 @@ public:
     DGNPLATFORM_EXPORT void PullMergeBegin();
     DGNPLATFORM_EXPORT void PullMergeEnd();
     DGNPLATFORM_EXPORT void PullMergeResume();
+    DGNPLATFORM_EXPORT void PullMergeSaveRebasedTxn(TxnManager::TxnId txnId);
+    DGNPLATFORM_EXPORT void PullMergeReinstateTxn(TxnManager::TxnId txnId);
+    DGNPLATFORM_EXPORT void PullMergeRebaseEnd();
+    DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges();
+    DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeRebaseBegin();
+    DGNPLATFORM_EXPORT PullMergeStage PullMergeGetStage() const;
 
+    DGNPLATFORM_EXPORT bool GetTxnProps(TxnId id, BeJsValue props) const;
     DGNPLATFORM_EXPORT ChangesetStatus PullMergeApply(ChangesetPropsCR revision);     // for testing
+
     //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);
     DGNPLATFORM_EXPORT static void DropTxnMonitor(TxnMonitor& monitor);
@@ -541,9 +559,6 @@ public:
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
 
-    //! Returns true if the TxnManager is currently processing changes, so any changes made while this is true are considered "indirect" changes.
-    bool IsPropagatingChanges() { return m_isPropagatingChanges; }
-    bool IsIndirectChanges() { return m_isPropagatingChanges || GetMode() == ChangeTracker::Mode::Indirect; }
     bool HasFatalError() {return m_fatalValidationError;}
     int NumValidationErrors() {return m_txnErrors;}
     void LogError(bool fatal) { ++m_txnErrors; m_fatalValidationError |= fatal;}
@@ -714,37 +729,6 @@ public:
     DGNPLATFORM_EXPORT static uint64_t GetMaxReasonableTxnSize();
 
     void OnGeometryGuidChanges(bset<DgnModelId> const&);
-};
-
-//=======================================================================================
-//! Can be used to temporarily change the TxnManager mode (Direct or Indirect) for the duration of a scope.
-//! Automatically restores the previous mode when the guard is destroyed (unless the provided options are unset).
-// @bsiclass
-//=======================================================================================
-struct TxnModeGuard {
-    TxnManagerR m_txnMgr;
-    TxnManager::Mode m_prevMode;
-    bool m_restoreOnDestructor = false;
-
-    TxnModeGuard(TxnManagerR txnMgr, std::optional<EditOptions> const& options)
-        : m_txnMgr(txnMgr), m_prevMode(txnMgr.GetMode())
-    {
-        if (options.has_value()) {
-            bool isIndirect = options->IsIndirectChange;
-            if (m_prevMode != TxnManager::Mode::Indirect && isIndirect) {
-                m_txnMgr.SetMode(TxnManager::Mode::Indirect);
-            } else if (m_prevMode != TxnManager::Mode::Direct && !isIndirect) {
-                m_txnMgr.SetMode(TxnManager::Mode::Direct);
-            }
-
-            m_restoreOnDestructor = true;
-        }
-    }
-
-    ~TxnModeGuard() {
-        if (m_restoreOnDestructor)
-            m_txnMgr.SetMode(m_prevMode);
-    }
 };
 
 //=======================================================================================
