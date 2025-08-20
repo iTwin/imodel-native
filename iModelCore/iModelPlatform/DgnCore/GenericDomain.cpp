@@ -156,7 +156,7 @@ GenericGroupModelPtr GenericGroupModel::CreateAndInsert(DgnElementCR modeledElem
     if (!model.IsValid())
         return nullptr;
 
-    if (DgnDbStatus::Success != model->Insert(std::nullopt))
+    if (DgnDbStatus::Success != model->Insert())
         return nullptr;
 
     return model;
@@ -165,10 +165,10 @@ GenericGroupModelPtr GenericGroupModel::CreateAndInsert(DgnElementCR modeledElem
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus GenericGroupModel::_OnInsertElement(DgnElementR element, std::optional<EditOptions> options)
+DgnDbStatus GenericGroupModel::_OnInsertElement(DgnElementR element)
     {
     if (nullptr != dynamic_cast<GroupInformationElementP>(&element))
-        return T_Super::_OnInsertElement(element, options);
+        return T_Super::_OnInsertElement(element);
 
     BeAssert(false);
     return DgnDbStatus::WrongModel;
@@ -207,7 +207,7 @@ GraphicalModel3dPtr GenericGraphicalModel3d::CreateAndInsert(DgnElementCR modele
     if (!model.IsValid())
         return nullptr;
 
-    return (DgnDbStatus::Success != model->Insert(std::nullopt)) ? nullptr : model;
+    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
     }
 
 /*---------------------------------------------------------------------------------**//**

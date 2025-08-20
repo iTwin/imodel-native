@@ -190,7 +190,7 @@ void ViewAttachment::ClearClip()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Sheet::Model::_OnInsert(std::optional<EditOptions> options)
+DgnDbStatus Sheet::Model::_OnInsert()
     {
     if (!GetDgnDb().Elements().Get<Sheet::Element>(GetModeledElementId()).IsValid())
         {
@@ -198,7 +198,7 @@ DgnDbStatus Sheet::Model::_OnInsert(std::optional<EditOptions> options)
         return DgnDbStatus::BadElement;
         }
 
-    return T_Super::_OnInsert(options);
+    return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**

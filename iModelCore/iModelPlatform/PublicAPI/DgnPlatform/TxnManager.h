@@ -429,8 +429,8 @@ private:
     bool m_fatalValidationError;
     bool m_initTableHandlers;
     bool m_inProfileUpgrade = false;
+    bool m_indirectChanges = false;
     bool m_trackChangesetHealthStats = false;
-    bool m_isPropagatingChanges = false;
     bvector<ECN::ECClassId> m_childPropagatesChangesToParentRels;
     ChangesetPropsPtr m_changesetInProgress;
     std::map<Utf8String, BeJsDocument> m_changesetHealthStatistics;
@@ -541,9 +541,7 @@ public:
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
 
-    //! Returns true if the TxnManager is currently processing changes, so any changes made while this is true are considered "indirect" changes.
-    bool IsPropagatingChanges() { return m_isPropagatingChanges; }
-    bool IsIndirectChanges() { return m_isPropagatingChanges || GetMode() == ChangeTracker::Mode::Indirect; }
+    bool IsIndirectChanges() { return m_indirectChanges; }
     bool HasFatalError() {return m_fatalValidationError;}
     int NumValidationErrors() {return m_txnErrors;}
     void LogError(bool fatal) { ++m_txnErrors; m_fatalValidationError |= fatal;}
@@ -714,37 +712,6 @@ public:
     DGNPLATFORM_EXPORT static uint64_t GetMaxReasonableTxnSize();
 
     void OnGeometryGuidChanges(bset<DgnModelId> const&);
-};
-
-//=======================================================================================
-//! Can be used to temporarily change the TxnManager mode (Direct or Indirect) for the duration of a scope.
-//! Automatically restores the previous mode when the guard is destroyed (unless the provided options are unset).
-// @bsiclass
-//=======================================================================================
-struct TxnModeGuard {
-    TxnManagerR m_txnMgr;
-    TxnManager::Mode m_prevMode;
-    bool m_restoreOnDestructor = false;
-
-    TxnModeGuard(TxnManagerR txnMgr, std::optional<EditOptions> const& options)
-        : m_txnMgr(txnMgr), m_prevMode(txnMgr.GetMode())
-    {
-        if (options.has_value()) {
-            bool isIndirect = options->IsIndirectChange;
-            if (m_prevMode != TxnManager::Mode::Indirect && isIndirect) {
-                m_txnMgr.SetMode(TxnManager::Mode::Indirect);
-            } else if (m_prevMode != TxnManager::Mode::Direct && !isIndirect) {
-                m_txnMgr.SetMode(TxnManager::Mode::Direct);
-            }
-
-            m_restoreOnDestructor = true;
-        }
-    }
-
-    ~TxnModeGuard() {
-        if (m_restoreOnDestructor)
-            m_txnMgr.SetMode(m_prevMode);
-    }
 };
 
 //=======================================================================================

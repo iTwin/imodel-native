@@ -258,7 +258,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue val, BeJsConst opts) const override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs, CopyFromOptions const&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     explicit DisplayStyle(CreateParams const& params) : T_Super(params) {}
     virtual DisplayStyle2dCP _ToDisplayStyle2d() const {return nullptr;}
     virtual DisplayStyle3dCP _ToDisplayStyle3d() const {return nullptr;}
@@ -665,10 +665,10 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb(std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) const override;
-    DGNPLATFORM_EXPORT void _OnDeleted(std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
+    DGNPLATFORM_EXPORT void _OnDeleted() const override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
 
@@ -724,9 +724,9 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb(std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
 
@@ -809,17 +809,17 @@ protected:
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
-    void _OnInserted(DgnElementP copiedFrom, std::optional<EditOptions> options = std::nullopt) const override {ClearState(); T_Super::_OnInserted(copiedFrom, options);}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) const override;
-    void _OnDeleted(std::optional<EditOptions> options = std::nullopt) const override {DeleteThumbnail(); T_Super::_OnDeleted(options);}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    void _OnInserted(DgnElementP copiedFrom) const override {ClearState(); T_Super::_OnInserted(copiedFrom);}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
+    void _OnDeleted() const override {DeleteThumbnail(); T_Super::_OnDeleted();}
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DgnCode _GenerateDefaultCode() const override {return DgnCode();}
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
     DgnDbStatus _SetParentId(DgnElementId, DgnClassId) override {return DgnDbStatus::InvalidParent;}
-    DgnDbStatus _OnChildInsert(DgnElementCR, std::optional<EditOptions> options = std::nullopt) const override {return DgnDbStatus::InvalidParent;}
-    DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR, std::optional<EditOptions> options = std::nullopt) const override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
     virtual bool _IsValidBaseModel(DgnModelCR model) const {return true;}
     virtual OrthographicViewDefinitionCP _ToOrthographicView() const {return nullptr;}
     virtual ViewDefinition3dCP _ToView3d() const {return nullptr;}
@@ -882,7 +882,7 @@ public:
     /** @} */
 
     //! Inserts into the database and returns the new persistent copy.
-    ViewDefinitionCPtr Insert(DgnDbStatus* status = nullptr, std::optional<EditOptions> options = std::nullopt) {return GetDgnDb().Elements().Insert<ViewDefinition>(*this, status, options);}
+    ViewDefinitionCPtr Insert(DgnDbStatus* status=nullptr) {return GetDgnDb().Elements().Insert<ViewDefinition>(*this, status);}
 
     //! Create a DgnCode for a ViewDefinition given a name that is meant to be unique within the scope of the specified DefinitionModel
     static DgnCode CreateCode(DefinitionModelCR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_ViewDefinition, scope, name); }
@@ -1472,8 +1472,8 @@ protected:
     DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
-    void _OnInserted(DgnElementP copiedFrom, std::optional<EditOptions> options = std::nullopt) const override {m_modelSelector=nullptr; T_Super::_OnInserted(copiedFrom, options);}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    void _OnInserted(DgnElementP copiedFrom) const override {m_modelSelector=nullptr; T_Super::_OnInserted(copiedFrom);}
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     bool _ViewsModel(DgnModelId modelId) override {return GetModelSelector().ContainsModel(modelId);}

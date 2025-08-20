@@ -502,17 +502,6 @@ struct PropertyArrayIndex
 };
 
 //=======================================================================================
-//! Common options given to Insert/Update/Delete methods of DgnElement.
-// @bsiclass
-//=======================================================================================
-struct EditOptions {
-    bool IsIndirectChange = false;
-
-    EditOptions() = default;
-    explicit EditOptions(bool isIndirectChange) : IsIndirectChange(isIndirectChange) {}
-};
-
-//=======================================================================================
 //! Helps with access to an individual element property
 // @bsiclass
 //=======================================================================================
@@ -1243,12 +1232,10 @@ public:
 protected:
     virtual Utf8CP _GetHandlerECClassName() const {return MyHandlerECClassName();} //!< @private
     virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;} //!< @private
-    void CallJsHandler(Utf8CP methodName, BeJsNapiObject& arg, std::optional<EditOptions> options = std::nullopt) const;
     void CallJsPostHandler(Utf8CP methodName) const;
-    void CallJsPostHandler(Utf8CP methodName, std::optional<EditOptions> options = std::nullopt) const;
-    void CallJsChildPreHandler(DgnElementCR child, Utf8CP methodName, std::optional<EditOptions> options = std::nullopt) const;
-    DGNPLATFORM_EXPORT void CallJsSubModelHandler(DgnModelCR model, Utf8CP methodName, std::optional<EditOptions> options = std::nullopt) const;
-    DGNPLATFORM_EXPORT void CallJsChildPostHandler(DgnElementCR child, Utf8CP methodName, std::optional<EditOptions> options = std::nullopt) const;
+    void CallJsChildPreHandler(DgnElementCR child, Utf8CP methodName) const;
+    DGNPLATFORM_EXPORT void CallJsSubModelHandler(DgnModelCR model, Utf8CP methodName) const;
+    DGNPLATFORM_EXPORT void CallJsChildPostHandler(DgnElementCR child, Utf8CP methodName) const;
 
     void InvalidateElementId() {m_elementId = DgnElementId();} //!< @private
     void InvalidateCode() {m_code = DgnCode();} //!< @private
@@ -1299,7 +1286,7 @@ protected:
     //! Called when an element is about to be inserted into the DgnDb.
     //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
     //! Called whenever the JsonProperties of this element are loaded. You can override this method if you have internal state derived from JsonProperties.
     //! @note If you override this method, you @em must call T_Super::_OnLoadedJsonProperties()
@@ -1326,11 +1313,11 @@ protected:
     //! Override this method if your element needs to do additional Inserts into the database (for example,
     //! insert a relationship between the element and something else).
     //! @note If you override this method, you @em must call T_Super::_InsertInDb() first.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb(std::optional<EditOptions> options = std::nullopt);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb();
 
     //! Called after a DgnElement was successfully inserted into the database.
     //! @note If you override this method, you @em must call T_Super::_OnInserted.
-    DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom, std::optional<EditOptions> options = std::nullopt) const;
+    DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const;
 
     //! Called after a DgnElement was successfully imported into the database.
     //! @note If you override this method, you @em must call T_Super::_OnImported.
@@ -1341,7 +1328,7 @@ protected:
     //! Subclasses may override this method to control whether their instances are updated.
     //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original, std::optional<EditOptions> options = std::nullopt);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original);
 
     //! Called to update a DgnElement in the DgnDb with new values. Override to update subclass custom-handled properties.
     //! @note This method is called from DgnElements::Update, on the persistent element, after its values have been
@@ -1349,27 +1336,27 @@ protected:
     //! override this method if your element needs to do additional work when updating the element, such as updating
     //! a relationship.
     //! @note If you override this method, you @em must call T_Super::_UpdateInDb, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb(std::optional<EditOptions> options = std::nullopt);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb();
 
     //! Called on the replacement element, after a DgnElement was successfully updated, but before the data is
     //! copied into the original element and before its parent is notified.
     //! The replacement element will be in its post-updated state and the original element is supplied.
     //! @note If you override this method, you @em must call T_Super::_OnUpdated.
-    DGNPLATFORM_EXPORT virtual void _OnUpdated(DgnElementCR original, std::optional<EditOptions> options = std::nullopt) const;
+    DGNPLATFORM_EXPORT virtual void _OnUpdated(DgnElementCR original) const;
 
     //! Called when an element is about to be deleted from the DgnDb.
     //! Subclasses may override this method to control when/if their instances are deleted.
     //! @return DgnDbStatus::Success to allow the delete, otherwise the delete will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnDelete, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const;
 
     //! Called to delete a DgnElement from the DgnDb. Override to do any additional processing on delete.
     //! @note If you override this method, you @em must call T_Super::_DeleteInDb, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _DeleteInDb(std::optional<EditOptions> options = std::nullopt) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _DeleteInDb() const;
 
     //! Called after a DgnElement was successfully deleted. Note that the element will not be marked as persistent when this is called.
     //! @note If you override this method, you @em must call T_Super::_OnDeleted.
-    DGNPLATFORM_EXPORT virtual void _OnDeleted(std::optional<EditOptions> options = std::nullopt) const;
+    DGNPLATFORM_EXPORT virtual void _OnDeleted() const;
 
     //! Called when a new element is to be inserted into a DgnDb with this element as its parent.
     //! Subclasses may override this method to control which other elements may become children.
@@ -1378,7 +1365,7 @@ protected:
     //! @note implementers should not presume that returning DgnDbStatus::Success means that the element will become a child element,
     //! since the insert may fail for other reasons. Instead, rely on _OnChildInserted for that purpose.
     //! @note If you override this method, you @em must call T_Super::_OnChildInsert, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildInsert(DgnElementCR child, std::optional<EditOptions> options = std::nullopt) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildInsert(DgnElementCR child) const;
 
     //! Called when an element that has this element as its parent is about to be updated in the DgnDb.
     //! Subclasses may override this method to control modifications to its children.
@@ -1388,7 +1375,7 @@ protected:
     //! @note implementers should not presume that returning DgnDbStatus::Success means that the element was updated,
     //! since the update may fail for other reasons. Instead, rely on _OnChildUpdated for that purpose.
     //! @note If you override this method, you @em must call T_Super::_OnChildUpdate, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildUpdate(DgnElementCR original, DgnElementCR replacement, std::optional<EditOptions> options = std::nullopt) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildUpdate(DgnElementCR original, DgnElementCR replacement) const;
 
     //! Called when an child element of this element is about to be deleted from the DgnDb.
     //! Subclasses may override this method to block deletion of their children.
@@ -1397,7 +1384,7 @@ protected:
     //! @note implementers should not presume that returning DgnDbStatus::Success means that the element was deleted,
     //! since the delete may fail for other reasons. Instead, rely on _OnChildDeleted for that purpose.
     //! @note If you override this method, you @em must call T_Super::_OnChildDelete, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildDelete(DgnElementCR child, std::optional<EditOptions> options = std::nullopt) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildDelete(DgnElementCR child) const;
 
     //! Called when an existing element is about to be added as a child to this parent.
     //! Subclasses may override this method to block children from being added.
@@ -1406,7 +1393,7 @@ protected:
     //! @note implementers should not presume that returning DgnDbStatus::Success means that the element was added,
     //! since the add may fail for other reasons. Instead, rely on _OnChildAdded for that purpose.
     //! @note If you override this method, you @em must call T_Super::_OnChildAdd, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildAdd(DgnElementCR child, std::optional<EditOptions> options = std::nullopt) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildAdd(DgnElementCR child) const;
 
     //! Called when an existing element is about to be dropped as a child from this parent.
     //! Subclasses may override this method to block children from being dropped.
@@ -1415,28 +1402,28 @@ protected:
     //! @note implementers should not presume that returning DgnDbStatus::Success means that the element was dropped,
     //! since the drop may fail for other reasons. Instead, rely on _OnChildDropped for that purpose.
     //! @note If you override this method, you @em must call T_Super::_OnChildDrop, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildDrop(DgnElementCR child, std::optional<EditOptions> options = std::nullopt) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildDrop(DgnElementCR child) const;
 
     //! Called after a new element was inserted with this element as its parent.
     //! @note If you override this method, you @em must call T_Super::_OnChildInserted.
-    virtual void _OnChildInserted(DgnElementCR child, std::optional<EditOptions> options = std::nullopt) const {CallJsChildPostHandler(child, "onChildInserted", options);}
+    virtual void _OnChildInserted(DgnElementCR child) const {CallJsChildPostHandler(child, "onChildInserted");}
 
     //! Called after an element, with this element as its parent, was successfully updated.
     //! @note if the parent of an element is changed, this method will @em not be paired with a call to _OnChildUpdate
     //! @note If you override this method, you @em must call T_Super::_OnChildUpdated.
-    virtual void _OnChildUpdated(DgnElementCR child, std::optional<EditOptions> options = std::nullopt) const {CallJsChildPostHandler(child, "onChildUpdated", options);}
+    virtual void _OnChildUpdated(DgnElementCR child) const {CallJsChildPostHandler(child, "onChildUpdated");}
 
     //! Called after an element, with this element as its parent, was successfully deleted.
     //! @note If you override this method, you @em must call T_Super::_OnChildDeleted.
-    virtual void _OnChildDeleted(DgnElementCR child, std::optional<EditOptions> options = std::nullopt) const {CallJsChildPostHandler(child, "onChildDeleted", options);}
+    virtual void _OnChildDeleted(DgnElementCR child) const {CallJsChildPostHandler(child, "onChildDeleted");}
 
     //! Called after an existing element was successfully added to this parent.
     //! @note If you override this method, you @em must call T_Super::_OnChildAdded.
-    virtual void _OnChildAdded(DgnElementCR child, std::optional<EditOptions> options = std::nullopt) const {CallJsChildPostHandler(child, "onChildAdded", options);}
+    virtual void _OnChildAdded(DgnElementCR child) const {CallJsChildPostHandler(child, "onChildAdded");}
 
     //! Called after an existing element was successfully dropped from this parent.
     //! @note If you override this method, you @em must call T_Super::_OnChildDropped.
-    virtual void _OnChildDropped(DgnElementCR child, std::optional<EditOptions> options = std::nullopt) const {CallJsChildPostHandler(child, "onChildDropped", options);}
+    virtual void _OnChildDropped(DgnElementCR child) const {CallJsChildPostHandler(child, "onChildDropped");}
 
     //! Called when a child element of this element is about to be imported into another DgnDb or model
     //! Subclasses may override this method to block control import of their children.
@@ -1458,21 +1445,21 @@ protected:
     //! @param[in] model the new DgnModel
     //! @return DgnDbStatus::Success to allow the DgnModel insert, otherwise it will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelInsert, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options = std::nullopt) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnSubModelInsert(DgnModelCR model) const;
 
     //! Called after this element has been <i>modeled</i> by a new DgnModel.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelInserted.
-    virtual void _OnSubModelInserted(DgnModelCR model, std::optional<EditOptions> options = std::nullopt) const { CallJsSubModelHandler(model, "onSubModelInserted", options); }
+    virtual void _OnSubModelInserted(DgnModelCR model) const { CallJsSubModelHandler(model, "onSubModelInserted"); }
 
     //! Called when a delete of a DgnModel modeling this element is in progress. Subclasses may override this method to block the deletion.
     //! @param[in] model the DgnModel being deleted
     //! @return DgnDbStatus::Success to allow the DgnModel deletion, otherwise it will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelDelete, forwarding its status.
-    virtual DgnDbStatus _OnSubModelDelete(DgnModelCR model, std::optional<EditOptions> options = std::nullopt) const { CallJsSubModelHandler(model, "onSubModelDelete", options); return DgnDbStatus::Success; }
+    virtual DgnDbStatus _OnSubModelDelete(DgnModelCR model) const { CallJsSubModelHandler(model, "onSubModelDelete"); return DgnDbStatus::Success; }
 
     //! Called after a delete of a DgnModel modeling this element has completed.
     //! @note If you override this method, you @em must call T_Super::_OnSubModelDeleted.
-    virtual void _OnSubModelDeleted(DgnModelCR model, std::optional<EditOptions> options = std::nullopt) const { CallJsSubModelHandler(model, "onSubModelDeleted", options); }
+    virtual void _OnSubModelDeleted(DgnModelCR model) const { CallJsSubModelHandler(model, "onSubModelDeleted"); }
 
 public:
     virtual void _OnBeforeOutputsHandled(ElementDependency::Graph const& graph, ElementDependency::Edge const& edge) const {}
@@ -1689,23 +1676,21 @@ public:
 
     //! Update the persistent state of a DgnElement in the DgnDb from this modified copy of it.
     //! This is merely a shortcut for el.GetDgnDb().Elements().Update(el);
-    //! @param[in] options Additional 
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnDbStatus Update(std::optional<EditOptions> options = std::nullopt);
-    DGNPLATFORM_EXPORT DgnElementCPtr UpdateAndGet(DgnDbStatus* stat = nullptr, std::optional<EditOptions> options = std::nullopt);
+    DGNPLATFORM_EXPORT DgnDbStatus Update();
+    DGNPLATFORM_EXPORT DgnElementCPtr UpdateAndGet(DgnDbStatus* stat=nullptr);
 
     //! Insert this DgnElement into the DgnDb.
     //! This is merely a shortcut for el.GetDgnDb().Elements().Insert(el, stat);
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnElementCPtr Insert(DgnDbStatus* stat = nullptr, std::optional<EditOptions> options = std::nullopt);
+    DGNPLATFORM_EXPORT DgnElementCPtr Insert(DgnDbStatus* stat=nullptr);
 
-    //TODO-Rob/Rohit : Seems unused?! Only present in ExternalSourceTest.cpp
-    template<class T> RefCountedCPtr<T> InsertT(DgnDbStatus* stat = nullptr, std::optional<EditOptions> options = std::nullopt) {return dynamic_cast<T const*>(Insert(stat, options).get());}
+    template<class T> RefCountedCPtr<T> InsertT(DgnDbStatus* stat=nullptr) {return dynamic_cast<T const*>(Insert(stat).get());}
 
     //! Delete this DgnElement from the DgnDb,
     //! This is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnDbStatus Delete(std::optional<EditOptions> options = std::nullopt) const;
+    DGNPLATFORM_EXPORT DgnDbStatus Delete() const;
 
     //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
@@ -2264,10 +2249,10 @@ protected:
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb(std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb(std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     DGNPLATFORM_EXPORT bool _EqualProperty(ECN::ECPropertyValueCR prop, DgnElementCR other) const override; // Handles GeometryStream
@@ -2340,9 +2325,9 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
@@ -2424,7 +2409,7 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(BeJsValue out, BeJsConst opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(BeJsConst props) override;
@@ -3011,7 +2996,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR, CopyFromOptions const&) override;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DefinitionElementCP _ToDefinitionElement() const override final {return this;}
 public:
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
@@ -3190,8 +3175,8 @@ private:
     BE_PROP_NAME(Description)
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
     DGNPLATFORM_EXPORT static DgnElement::CreateParams InitCreateParams(SubjectCR parentSubject, Utf8StringCR name, DgnDomain::Handler& handler);
 
@@ -3238,7 +3223,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionPartition : InformationPartitionElement
     friend struct dgn_ElementHandler::DefinitionPartition;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
     explicit DefinitionPartition(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -3265,7 +3250,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DocumentPartition : InformationPartitionElement
     friend struct dgn_ElementHandler::DocumentPartition;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
     explicit DocumentPartition(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -3292,7 +3277,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GroupInformationPartition : InformationPartitionE
     friend struct dgn_ElementHandler::GroupInformationPartition;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
     explicit GroupInformationPartition(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -3319,7 +3304,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationRecordPartition : InformationPartition
     friend struct dgn_ElementHandler::InformationRecordPartition;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
     explicit InformationRecordPartition(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -3346,7 +3331,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalPartition : InformationPartitionElement
     friend struct dgn_ElementHandler::PhysicalPartition;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
     explicit PhysicalPartition(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -3391,7 +3376,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationPartition : InformationPartitionEl
     friend struct dgn_ElementHandler::SpatialLocationPartition;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
     explicit SpatialLocationPartition(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -3431,10 +3416,10 @@ struct EXPORT_VTABLE_ATTRIBUTE Subject : InformationReferenceElement
     friend struct dgn_ElementHandler::Subject;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR, std::optional<EditOptions> options = std::nullopt) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options = std::nullopt) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
 
     explicit Subject(CreateParams const& params) : T_Super(params) {}
@@ -3845,7 +3830,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RoleElement : DgnElement
 
 protected:
     RoleElementCP _ToRoleElement() const override final {return this;}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     explicit RoleElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -3902,13 +3887,13 @@ private:
     void AddToPool(DgnElementCR) const;
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, Utf8CP jsonProps, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
-    DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&, std::optional<EditOptions> options = std::nullopt);
-    DgnDbStatus PerformDelete(DgnElementCR, std::optional<EditOptions> options = std::nullopt);
+    DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
+    DgnDbStatus PerformDelete(DgnElementCR);
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
-    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat, std::optional<EditOptions> options = std::nullopt);
-    DGNPLATFORM_EXPORT DgnDbStatus UpdateElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt);
+    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat);
+    DGNPLATFORM_EXPORT DgnDbStatus UpdateElement(DgnElementR element);
 
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
@@ -4023,36 +4008,31 @@ public:
     //! Insert a copy of the supplied DgnElement into this DgnDb.
     //! @param[in] element The DgnElement to insert.
     //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the insert was successful, error status otherwise.
-    //! @param[in] options Additional options for the insert operation, such as whether this is an indirect change.
     //! @return RefCountedCPtr to the newly persisted /b copy of /c element. Will be invalid if the insert failed.
     //! @note The element's code must be unique among all elements within the DgnDb, or this method will fail with DgnDbStatus::DuplicateCode.
     //! @note This function can only be safely invoked from the client thread.
-    template<class T> RefCountedCPtr<T> Insert(T& element, DgnDbStatus* stat = nullptr, std::optional<EditOptions> options = std::nullopt) {return (T const*) InsertElement(element, stat, options).get();}
+    template<class T> RefCountedCPtr<T> Insert(T& element, DgnDbStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
 
-    DgnDbStatus Update(DgnElementR modifiedElement, std::optional<EditOptions> options = std::nullopt) {return UpdateElement(modifiedElement, options);}
-
-    template<class T> RefCountedCPtr<T> UpdateAndGet(T& modifiedElement, DgnDbStatus* stat, std::optional<EditOptions> options = std::nullopt) {
+    DgnDbStatus Update(DgnElementR modifiedElement) {return UpdateElement(modifiedElement);}
+    template<class T> RefCountedCPtr<T> UpdateAndGet(T& modifiedElement, DgnDbStatus* stat=nullptr) {
         DgnDbStatus temp;
         if (nullptr == stat)
             stat = &temp;
-        *stat = UpdateElement(modifiedElement, options);
+        *stat = UpdateElement(modifiedElement);
         return (DgnDbStatus::Success != *stat) ? nullptr : Get<T>(modifiedElement.GetElementId());
     }
 
 
     //! Delete a DgnElement from this DgnDb.
     //! @param[in] element The element to delete.
-    //! @param[in] options Additional options for the delete operation, such as whether this is an indirect change.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element, std::optional<EditOptions> options = std::nullopt);
+    DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
-    //! @param[in] id The DgnElementId of the element to delete.
-    //! @param[in] options Additional options for the delete operation, such as whether this is an indirect change.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This method is merely a shortcut to #GetElement and then #Delete
-    DgnDbStatus Delete(DgnElementId id, std::optional<EditOptions> options = std::nullopt) {auto el=GetElement(id); return el.IsValid() ? Delete(*el, options) : DgnDbStatus::NotFound;}
+    DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::NotFound;}
 
     //! Set the maximum number of elements to be held by the "Most Recentley Used" element cache for this DgnDb.
     //! @param newMax The maximum number of elements to be held in the element MRU cache. After this many elements are in memory,

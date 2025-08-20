@@ -34,7 +34,7 @@ namespace dgn_ElementHandler
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus LinkPartition::_OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options) const
+DgnDbStatus LinkPartition::_OnSubModelInsert(DgnModelCR model) const
     {
     if (nullptr == dynamic_cast<LinkModelCP>(&model))
         {
@@ -42,7 +42,7 @@ DgnDbStatus LinkPartition::_OnSubModelInsert(DgnModelCR model, std::optional<Edi
         return DgnDbStatus::ElementBlockedChange;
         }
 
-    return T_Super::_OnSubModelInsert(model, options);
+    return T_Super::_OnSubModelInsert(model);
     }
 
 //---------------------------------------------------------------------------------------
@@ -70,15 +70,15 @@ LinkPartitionCPtr LinkPartition::CreateAndInsert(SubjectCR parentSubject, Utf8St
     if (!partition.IsValid())
         return nullptr;
 
-    return parentSubject.GetDgnDb().Elements().Insert<LinkPartition>(*partition, nullptr, std::nullopt);
+    return parentSubject.GetDgnDb().Elements().Insert<LinkPartition>(*partition);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus LinkModel::_OnInsertElement(DgnElementR el, std::optional<EditOptions> options)
+DgnDbStatus LinkModel::_OnInsertElement(DgnElementR el)
     {
-    DgnDbStatus status = T_Super::_OnInsertElement(el, options);
+    DgnDbStatus status = T_Super::_OnInsertElement(el);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -92,7 +92,7 @@ DgnDbStatus LinkModel::_OnInsertElement(DgnElementR el, std::optional<EditOption
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus LinkElement::_OnInsert(std::optional<EditOptions> options)
+DgnDbStatus LinkElement::_OnInsert()
     {
     if (nullptr == GetModel()->ToInformationModel())
         {
@@ -100,7 +100,7 @@ DgnDbStatus LinkElement::_OnInsert(std::optional<EditOptions> options)
         return DgnDbStatus::WrongModel;
         }
 
-    return T_Super::_OnInsert(options);
+    return T_Super::_OnInsert();
     }
 
 //---------------------------------------------------------------------------------------
@@ -245,7 +245,7 @@ UrlLink::CreateParams::CreateParams(InformationModelR linkModel, Utf8CP url /*= 
 //---------------------------------------------------------------------------------------
 UrlLinkCPtr UrlLink::Insert(DgnDbStatus* stat)
     {
-    UrlLinkCPtr link = GetDgnDb().Elements().Insert<UrlLink>(*this, stat, std::nullopt);
+    UrlLinkCPtr link = GetDgnDb().Elements().Insert<UrlLink>(*this, stat);
     BeAssert(link.IsValid());
     return link;
     }
@@ -255,7 +255,7 @@ UrlLinkCPtr UrlLink::Insert(DgnDbStatus* stat)
 //---------------------------------------------------------------------------------------
 UrlLinkCPtr UrlLink::Update(DgnDbStatus* stat)
     {
-    UrlLinkCPtr link = GetDgnDb().Elements().UpdateAndGet<UrlLink>(*this, stat, std::nullopt);
+    UrlLinkCPtr link = GetDgnDb().Elements().UpdateAndGet<UrlLink>(*this, stat);
     BeAssert(link.IsValid());
     return link;
     }
@@ -506,7 +506,7 @@ EmbeddedFileLink::CreateParams::CreateParams(LinkModelR linkModel, Utf8CP name, 
 //---------------------------------------------------------------------------------------
 EmbeddedFileLinkCPtr EmbeddedFileLink::Insert()
     {
-    EmbeddedFileLinkCPtr link = GetDgnDb().Elements().Insert<EmbeddedFileLink>(*this, nullptr, std::nullopt);
+    EmbeddedFileLinkCPtr link = GetDgnDb().Elements().Insert<EmbeddedFileLink>(*this);
     BeAssert(link.IsValid());
     return link;
     }
@@ -516,7 +516,7 @@ EmbeddedFileLinkCPtr EmbeddedFileLink::Insert()
 //---------------------------------------------------------------------------------------
 EmbeddedFileLinkCPtr EmbeddedFileLink::Update()
     {
-    EmbeddedFileLinkCPtr link = GetDgnDb().Elements().UpdateAndGet<EmbeddedFileLink>(*this, nullptr, std::nullopt);
+    EmbeddedFileLinkCPtr link = GetDgnDb().Elements().UpdateAndGet<EmbeddedFileLink>(*this);
     BeAssert(link.IsValid());
     return link;
     }

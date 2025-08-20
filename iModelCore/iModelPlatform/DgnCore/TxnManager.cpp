@@ -457,8 +457,8 @@ TxnManager::TxnId TxnManager::GetMultiTxnOperationStart()
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker) {
-    BeAssert(false == m_isPropagatingChanges); // should never be recursive
-    AutoRestore<bool> saveIndirect(&m_isPropagatingChanges, true); // so we can tell whether we're propagating changes from JavaScript
+    BeAssert(false == m_indirectChanges); // should never be recursive
+    AutoRestore<bool> saveIndirect(&m_indirectChanges, true); // so we can tell whether we're propagating changes from JavaScript
     SetandRestoreIndirectChanges _v(tracker);
     for (auto table : m_tables) {
         table->_PropagateChanges();
@@ -573,9 +573,10 @@ void TxnManager::OnChangeSetApplied(ChangeStreamCR changeStream, bool invert) {
 
         if (nullptr == txnTable)
             continue; // this table does not have a TxnTable for it, skip it
+
         switch (opcode) {
             case DbOpcode::Delete:
-                txnTable->_OnAppliedDelete(change); // TODO: Do we want to pass along indirect flag?
+                txnTable->_OnAppliedDelete(change);
                 break;
             case DbOpcode::Insert:
                 txnTable->_OnAppliedAdd(change);
@@ -2274,8 +2275,7 @@ void dgn_TxnTable::Model::_OnAppliedUpdate(BeSQLite::Changes::Change const& chan
         return;
 
     model->Read(modelId);
-    EditOptions options(change.IsIndirect());
-    model->_OnUpdated(options);
+    model->_OnUpdated();
 }
 
 /*---------------------------------------------------------------------------------**/ /**
