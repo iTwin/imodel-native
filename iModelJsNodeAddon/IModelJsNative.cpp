@@ -2812,26 +2812,74 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return blob;
     }
 
-    void PullMergeResume(NapiInfoCR info) {
+    Napi::Value PullMergeReverseLocalChanges(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        db.Txns().PullMergeResume();
+        auto txns = db.Txns().PullMergeReverseLocalChanges();
+        auto array = Napi::Array::New(Env(), txns.size());        
+        for (size_t i = 0; i < txns.size(); ++i) {
+            array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
+        }
+        return array;
     }
 
-    void PullMergeBegin(NapiInfoCR info) {
+    Napi::Value PullMergeRebaseBegin(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        db.Txns().PullMergeBegin();
+        auto txns = db.Txns().PullMergeRebaseBegin();
+        auto array = Napi::Array::New(Env(), txns.size());        
+        for (size_t i = 0; i < txns.size(); ++i) {
+            array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
+        }
+        return array;
     }
 
-    void PullMergeEnd(NapiInfoCR info) {
+    void PullMergeRebaseEnd(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        db.Txns().PullMergeEnd();
+        db.Txns().PullMergeRebaseEnd();
     }
 
-    Napi::Value PullMergeInProgress(NapiInfoCR info) {
+    void PullMergeSaveRebasedTxn(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, txnIdStr);
         auto& db = GetWritableDb(info);
-        return Napi::Boolean::New(Env(), db.Txns().PullMergeInProgress());
+        auto id = BeInt64Id::FromString(txnIdStr.c_str());
+        if (!id.IsValid()) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txnId", DgnDbStatus::BadArg);
+        }
+        db.Txns().PullMergeSaveRebasedTxn(TxnManager::TxnId(id.GetValue()));
     }
 
+    void PullMergeReinstateTxn(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, txnIdStr);
+        auto& db = GetWritableDb(info);
+        auto id = BeInt64Id::FromString(txnIdStr.c_str());
+        if (!id.IsValid()) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txnId", DgnDbStatus::BadArg);
+        }
+        db.Txns().PullMergeReinstateTxn(TxnManager::TxnId(id.GetValue()));
+    }
+
+    Napi::Value PullMergeGetStage(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        if (db.Txns().PullMergeGetStage() == TxnManager::PullMergeStage::Merging)
+            return Napi::String ::New(Env(), "Merging");
+        if (db.Txns().PullMergeGetStage() == TxnManager::PullMergeStage::Rebasing)
+            return Napi::String ::New(Env(), "Rebasing");
+        return Napi::String ::New(Env(), "None");
+    }
+    
+    Napi::Value  GetTxnProps(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, txnIdStr);
+        auto& db = GetWritableDb(info);
+        auto id = BeInt64Id::FromString(txnIdStr.c_str());
+        if (!id.IsValid()) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txnId", DgnDbStatus::BadArg);
+        }
+        BeJsNapiObject props(info.Env());        
+        if (db.Txns().GetTxnProps(TxnManager::TxnId(id.GetValue()), BeJsValue(props)))
+            return props;
+
+        return info.Env().Undefined();
+    }
+    
     static Napi::Value ComputeChangesetId(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, args);
         auto parentId = args.Get("parentId").As<Napi::String>();
@@ -3051,10 +3099,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
             InstanceMethod("getNoCaseCollation", &NativeDgnDb::GetNoCaseCollation),
             InstanceMethod("setNoCaseCollation", &NativeDgnDb::SetNoCaseCollation),
-            InstanceMethod("pullMergeInProgress", &NativeDgnDb::PullMergeInProgress),
-            InstanceMethod("pullMergeBegin", &NativeDgnDb::PullMergeBegin),
-            InstanceMethod("pullMergeEnd", &NativeDgnDb::PullMergeEnd),
-            InstanceMethod("pullMergeResume", &NativeDgnDb::PullMergeResume),
+            InstanceMethod("pullMergeGetStage", &NativeDgnDb::PullMergeGetStage),
+            InstanceMethod("pullMergeReinstateTxn", &NativeDgnDb::PullMergeReinstateTxn),
+            InstanceMethod("pullMergeSaveRebasedTxn", &NativeDgnDb::PullMergeSaveRebasedTxn),
+            InstanceMethod("pullMergeRebaseBegin", &NativeDgnDb::PullMergeRebaseBegin),
+            InstanceMethod("pullMergeRebaseEnd", &NativeDgnDb::PullMergeRebaseEnd),
+            InstanceMethod("pullMergeReverseLocalChanges", &NativeDgnDb::PullMergeReverseLocalChanges),
+            InstanceMethod("getTxnProps", &NativeDgnDb::GetTxnProps),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
