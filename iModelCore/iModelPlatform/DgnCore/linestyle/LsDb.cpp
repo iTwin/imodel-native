@@ -526,18 +526,18 @@ LineStyleElement::Iterator LineStyleElement::MakeIterator(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus LineStyleElement::_OnDelete(std::optional<EditOptions> options) const
+DgnDbStatus LineStyleElement::_OnDelete() const
     {
     // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited;
+    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus LineStyleElement::_OnInsert(std::optional<EditOptions> options)
+DgnDbStatus LineStyleElement::_OnInsert()
     {
-    auto status = T_Super::_OnInsert(options);
+    auto status = T_Super::_OnInsert();
     if (DgnDbStatus::Success != status)
         return status;
 

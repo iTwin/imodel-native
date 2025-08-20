@@ -50,7 +50,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Model : GraphicalModel2d
 protected:
     ModelCP _ToSheetModel() const override final {return this;}
 
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
 
 public:
     //! construct a new SheetModel
@@ -170,11 +170,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewAttachment : GraphicalElement2d
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus CheckValid() const;
-    DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnInsert(options) : status;}
-    DgnDbStatus _OnUpdate(DgnElementCR original, std::optional<EditOptions> options = std::nullopt) override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnUpdate(original, options) : status;}
+    DgnDbStatus _OnInsert() override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnInsert() : status;}
+    DgnDbStatus _OnUpdate(DgnElementCR original) override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnUpdate(original) : status;}
     DgnDbStatus _SetParentId(DgnElementId, DgnClassId) override {return DgnDbStatus::InvalidParent;}
-    DgnDbStatus _OnChildInsert(DgnElementCR, std::optional<EditOptions> options = std::nullopt) const override {return DgnDbStatus::InvalidParent;}
-    DgnDbStatus _OnChildUpdate(DgnElementCR original, DgnElementCR updated, std::optional<EditOptions> options = std::nullopt) const override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _OnChildUpdate(DgnElementCR original, DgnElementCR updated) const override {return DgnDbStatus::InvalidParent;}
 
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewAttachment));}
     static Placement2d ComputePlacement(DgnDbR db, DgnViewId viewId, DPoint2dCR origin, double scale);

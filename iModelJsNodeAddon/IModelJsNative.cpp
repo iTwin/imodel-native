@@ -1708,37 +1708,25 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     Napi::Value InsertElement(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, elemProps);
-        Napi::Value options;
+        Napi::Value insertOptions;
         if (ARGUMENT_IS_PRESENT(1)) {\
-            options = info[1].As<Napi::Object>();
+            insertOptions = info[1].As<Napi::Object>();
         } else {
-            options = Env().Undefined();
+            insertOptions = Env().Undefined();
         }
-        return JsInterop::InsertElement(db, elemProps, options);
+        return JsInterop::InsertElement(db, elemProps, insertOptions);
     }
 
     void UpdateElement(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, elemProps);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {\
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        JsInterop::UpdateElement(db, elemProps, options);
+        JsInterop::UpdateElement(db, elemProps);
     }
 
     void DeleteElement(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {\
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        JsInterop::DeleteElement(db, elemIdStr, options);
+        JsInterop::DeleteElement(db, elemIdStr);
     }
 
     Napi::Value QueryDefinitionElementUsage(NapiInfoCR info)
@@ -1788,35 +1776,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     Napi::Value InsertElementAspect(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, aspectProps);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        return JsInterop::InsertElementAspect(GetOpenedDb(info), aspectProps, options);
+        return JsInterop::InsertElementAspect(GetOpenedDb(info), aspectProps);
     }
 
     void UpdateElementAspect(NapiInfoCR info)     {
         REQUIRE_ARGUMENT_ANY_OBJ(0, aspectProps);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        JsInterop::UpdateElementAspect(GetOpenedDb(info), aspectProps, options);
+        JsInterop::UpdateElementAspect(GetOpenedDb(info), aspectProps);
     }
 
     void DeleteElementAspect(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, aspectIdStr);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        JsInterop::DeleteElementAspect(GetOpenedDb(info), aspectIdStr, options);
+        JsInterop::DeleteElementAspect(GetOpenedDb(info), aspectIdStr);
     }
 
     Napi::Value ExportGraphics(NapiInfoCR info)
@@ -2060,24 +2030,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     Napi::Value InsertModel(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, modelProps);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
+        return JsInterop::InsertModel(GetOpenedDb(info), modelProps);
         }
-        return JsInterop::InsertModel(GetOpenedDb(info), modelProps, options);
-    }
 
     void UpdateModel(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, modelProps);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        JsInterop::UpdateModel(GetOpenedDb(info), modelProps, options);
+        JsInterop::UpdateModel(GetOpenedDb(info), modelProps);
     }
 
     Napi::Value UpdateModelGeometryGuid(NapiInfoCR info)
@@ -2090,13 +2048,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     void DeleteModel(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
-        Napi::Value options;
-        if (ARGUMENT_IS_PRESENT(1)) {
-            options = info[1].As<Napi::Object>();
-        } else {
-            options = Env().Undefined();
-        }
-        JsInterop::DeleteModel(GetOpenedDb(info), elemIdStr, options);
+        JsInterop::DeleteModel(GetOpenedDb(info), elemIdStr);
     }
 
     Napi::Value SaveChanges(NapiInfoCR info)

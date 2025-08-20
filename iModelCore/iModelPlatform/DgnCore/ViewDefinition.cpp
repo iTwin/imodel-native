@@ -135,12 +135,12 @@ bool ViewDefinition::_EqualState(ViewDefinitionR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_OnInsert(std::optional<EditOptions> options)
+DgnDbStatus ViewDefinition::_OnInsert()
     {
     if (!GetDisplayStyle().GetElementId().IsValid())
         {
         DgnDbStatus stat;
-        m_displayStyle->Insert(&stat, options);
+        m_displayStyle->Insert(&stat);
         if (DgnDbStatus::Success != stat)
             return stat;
         m_displayStyleId = m_displayStyle->GetElementId();
@@ -149,22 +149,22 @@ DgnDbStatus ViewDefinition::_OnInsert(std::optional<EditOptions> options)
     if (!GetCategorySelector().GetElementId().IsValid())
         {
         DgnDbStatus stat;
-        m_categorySelector->Insert(&stat, options);
+        m_categorySelector->Insert(&stat);
         if (DgnDbStatus::Success != stat)
             return stat;
         m_categorySelectorId = m_categorySelector->GetElementId();
         }
 
-    return T_Super::_OnInsert(options);
+    return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_OnDelete(std::optional<EditOptions> options) const
+DgnDbStatus ViewDefinition::_OnDelete() const
     {
     // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited;
+    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -652,9 +652,9 @@ void CategorySelector::_RemapIds(DgnImportContext& importContext)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CategorySelector::_InsertInDb(std::optional<EditOptions> options)
+DgnDbStatus CategorySelector::_InsertInDb()
     {
-    auto status = T_Super::_InsertInDb(options);
+    auto status = T_Super::_InsertInDb();
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -702,9 +702,9 @@ bool CategorySelector::EqualState(CategorySelectorCR other) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CategorySelector::_OnUpdate(DgnElementCR el, std::optional<EditOptions> options)
+DgnDbStatus CategorySelector::_OnUpdate(DgnElementCR el)
     {
-    auto status = T_Super::_OnUpdate(el, options);
+    auto status = T_Super::_OnUpdate(el);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -729,10 +729,10 @@ DgnDbStatus CategorySelector::_OnUpdate(DgnElementCR el, std::optional<EditOptio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CategorySelector::_OnDelete(std::optional<EditOptions> options) const
+DgnDbStatus CategorySelector::_OnDelete() const
     {
     // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited;
+    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -819,9 +819,9 @@ void ModelSelector::_RemapIds(DgnImportContext& importContext)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::_InsertInDb(std::optional<EditOptions> options)
+DgnDbStatus ModelSelector::_InsertInDb()
     {
-    DgnDbStatus status = T_Super::_InsertInDb(options);
+    DgnDbStatus status = T_Super::_InsertInDb();
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -831,9 +831,9 @@ DgnDbStatus ModelSelector::_InsertInDb(std::optional<EditOptions> options)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::_OnUpdate(DgnElementCR el, std::optional<EditOptions> options)
+DgnDbStatus ModelSelector::_OnUpdate(DgnElementCR el)
     {
-    DgnDbStatus status = T_Super::_OnUpdate(el, options);
+    DgnDbStatus status = T_Super::_OnUpdate(el);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -856,18 +856,18 @@ DgnDbStatus ModelSelector::_OnUpdate(DgnElementCR el, std::optional<EditOptions>
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::_OnDelete(std::optional<EditOptions> options) const
+DgnDbStatus ModelSelector::_OnDelete() const
     {
     // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited;
+    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ModelSelector::_OnDeleted(std::optional<EditOptions> options) const
+void ModelSelector::_OnDeleted() const
     {
-    T_Super::_OnDeleted(options);
+    T_Super::_OnDeleted();
     // provide clean up behavior previously handled by foreign keys (the bis_ModelSelectorRefersToModels table uses "logical" foreign keys now)
     GetDgnDb().DeleteLinkTableRelationships(BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels), GetElementId(), DgnElementId() /* all targets */);
     }
@@ -1177,18 +1177,18 @@ void ViewDefinition::DeleteThumbnail() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SpatialViewDefinition::_OnInsert(std::optional<EditOptions> options)
+DgnDbStatus SpatialViewDefinition::_OnInsert()
     {
     if (!GetModelSelector().GetElementId().IsValid())
         {
         DgnDbStatus stat;
-        m_modelSelector->Insert(&stat, options);
+        m_modelSelector->Insert(&stat);
         if (DgnDbStatus::Success != stat)
             return stat;
         m_modelSelectorId = m_modelSelector->GetElementId();
         }
 
-    return T_Super::_OnInsert(options);
+    return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1538,10 +1538,10 @@ void DisplayStyle::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DisplayStyle::_OnDelete(std::optional<EditOptions> options) const
+DgnDbStatus DisplayStyle::_OnDelete() const
     {
     // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited;
+    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
     }
 
 /*---------------------------------------------------------------------------------**//**

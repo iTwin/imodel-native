@@ -129,10 +129,10 @@ void DgnTexture::_CopyFrom(DgnElementCR src, CopyFromOptions const& opts)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnTexture::_OnDelete(std::optional<EditOptions> options) const
+DgnDbStatus DgnTexture::_OnDelete() const
     {
     // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete(options) : DgnDbStatus::DeletionProhibited;
+    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -182,7 +182,7 @@ bool inlineGeometryPartReference(DgnGeometryPartCR part, GeometricElement3dCR el
         return false;
 
     auto updatedElem = elem.CopyForEdit();
-    return SUCCESS == builder->Finish(*updatedElem->ToGeometrySourceP()) && DgnDbStatus::Success == updatedElem->Update(std::nullopt);
+    return SUCCESS == builder->Finish(*updatedElem->ToGeometrySourceP()) && DgnDbStatus::Success == updatedElem->Update();
     }
 
 END_UNNAMED_NAMESPACE
@@ -207,7 +207,7 @@ InlineGeometryPartsResult JsInterop::InlineGeometryParts(DgnDbR db)
             continue;
 
         ++result.m_numRefsInlined;
-        if (DgnDbStatus::Success == part->Delete(std::nullopt))
+        if (DgnDbStatus::Success == part->Delete())
             ++result.m_numPartsDeleted;
         }
 
