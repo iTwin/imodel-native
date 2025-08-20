@@ -515,6 +515,18 @@ public:
         return Napi::Number::New(Env(), (int)status);
     }
 
+    void DeleteSchemaItems(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, schemaName); 
+        REQUIRE_ARGUMENT_STRING_ARRAY(1, itemNames);
+        OPTIONAL_ARGUMENT_ANY_OBJ(2, jsOpts, Napi::Object::New(Env()));
+        
+        JsInterop::SchemaImportOptions options;
+        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        DbResult status = JsInterop::DeleteSchemaItems(m_ecdb, schemaName, itemNames, options);
+        if (status != BE_SQLITE_OK) {
+            JsInterop::throwSqlResult("error deleting schema items", m_ecdb.GetDbFileName(), status);
+        }
+    }
 
     Napi::Value GetSchemaProps(NapiInfoCR info)  {
         REQUIRE_ARGUMENT_STRING(0, schemaName);
@@ -653,6 +665,7 @@ public:
             InstanceMethod("createDb", &NativeECDb::CreateDb),
             InstanceMethod("dispose", &NativeECDb::Dispose),
             InstanceMethod("dropSchema", &NativeECDb::DropSchema),
+            InstanceMethod("deleteSchemaItems", &NativeECDb::DeleteSchemaItems),
             InstanceMethod("getFilePath", &NativeECDb::GetFilePath),
             InstanceMethod("getLastError", &NativeECDb::GetLastError),
             InstanceMethod("getLastInsertRowId", &NativeECDb::GetLastInsertRowId),

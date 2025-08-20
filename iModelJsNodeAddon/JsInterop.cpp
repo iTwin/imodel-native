@@ -872,9 +872,41 @@ void JsInterop::AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext)
     bvector<WString> paths {dgnPath, domainPath, ecdbPath};
     schemaContext->AddFinalSchemaPaths(paths);
     }
+    
+DbResult JsInterop::DeleteSchemaItems(ECDbR ecdb, Utf8StringCR schemaName, bvector<Utf8String> const& schemaItems, const SchemaImportOptions& opts)
+    {
+    NativeLogging::CategoryLogger logger("JsInterop");
 
+    if (!opts.m_schemaLockHeld) {
+        logger.error("Schema lock must be held when deleting schema items");
+        return BE_SQLITE_ERROR;
+     }
+
+    auto schema = ecdb.Schemas().GetSchema(schemaName);
+    if (nullptr == schema) {
+        logger.errorv("Schema not found: %s", schemaName.c_str());
+        return BE_SQLITE_ERROR;
+    }
+
+    for (Utf8StringCR itemName : schemaItems) {
+        ECClassCP schemaItem = schema->GetClass(itemName.c_str());
+        if (!schemaItem) {
+            logger.warnv("Class not found: %s.%s", schemaName.c_str(), itemName.c_str());
+            continue;
+    
+        schema->DeleteClass(itemName.c_str());
+        }
+    }
+
+    return ecdb.SaveChanges();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult JsInterop::DropSchema(ECDbR ecdb, bvector<Utf8String>& schemaNames, const SchemaImportOptions& opts)
-{
+    {
     NativeLogging::CategoryLogger logger("JsInterop");
 
     if (!opts.m_schemaLockHeld) {

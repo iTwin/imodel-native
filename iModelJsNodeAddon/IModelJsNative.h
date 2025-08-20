@@ -551,6 +551,7 @@ public:
     static void ClearECDbCache(ECDbR db, NapiInfoCR info);
 
     static DbResult DropSchema(ECDbR ecdb, bvector<Utf8String>& schemaNames, const SchemaImportOptions& opts);
+    static DbResult DeleteSchemaItems(ECDbR ecdb, Utf8StringCR schemaName, bvector<Utf8String>& itemNames, const SchemaImportOptions& opts);
 
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
