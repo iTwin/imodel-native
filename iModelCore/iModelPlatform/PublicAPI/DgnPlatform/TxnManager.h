@@ -82,6 +82,7 @@ namespace dgn_TxnTable {
     struct RelationshipLinkTable;
     struct UniqueRelationshipLinkTable;
     struct MultiRelationshipLinkTable;
+    struct SubCategory;
 }
 
 //=======================================================================================
@@ -360,6 +361,7 @@ public:
     private:
         ChangedIds<DgnModelId> m_models;    // the set of models that have changes for the current transaction
         ChangedIds<DgnModelId> m_geometricModels; // the set of models that have geometric changes for the current transaction
+        ChangedIds<DgnSubCategoryId> m_subCategories; // the set of subcategories whose appearances changed during the current transaction
         bmap<DgnModelId, GeometricElementChanges> m_geometryChanges; // changes to elements within geometric models
         bmap<DgnElementId, DgnModelId> m_modelsForDeletedElements; // maps Id of a deleted element to its model Id
         ChangedIds<DgnElementId> m_deletedGeometricElements; // Ids of deleted geometric elements
@@ -389,6 +391,7 @@ public:
         void AddGeometricElementChange(DgnModelId modelId, DgnElementId elementId, TxnTable::ChangeType type, bool fromCommit);
         void AddDeletedElement(DgnElementId elemId, DgnModelId modelId) { m_modelsForDeletedElements.Insert(elemId, modelId); }
         void AddDeletedGeometricElement(DgnElementId elemId, bool fromCommit) { m_deletedGeometricElements.Insert(elemId, fromCommit); }
+        void AddSubCategoryAppearanceChange(DgnSubCategoryId subCategoryId, bool fromCommit) { m_subCategories.Insert(subCategoryId, fromCommit); }
 
         void Process();
         void Notify();
@@ -814,6 +817,20 @@ namespace dgn_TxnTable
         Utf8CP _GetTableName() const override {return MyTableName();}
     };
 
+    struct SubCategory : TxnTable {
+    private:
+        int m_appearanceColumnIndex = -1;
+
+        void AddChange(BeSQLite::Changes::Change const& change, bool fromCommit) const;
+
+        Utf8CP _GetTableName() const override { return BIS_TABLE(BIS_CLASS_SubCategory); }
+        void _Initialize() override;
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override { AddChange(change, true); }
+        void _OnAppliedUpdate(BeSQLite::Changes::Change const& change) override  { AddChange(change, false); }
+    public:
+        SubCategory(TxnManager& mgr) : TxnTable(mgr) { }
+    };
+    
     struct Model : TxnTable
     {
     private:
@@ -978,6 +995,11 @@ namespace dgn_TableHandler {
     struct ElementDep : DgnDomain::TableHandler {
         TABLEHANDLER_DECLARE_MEMBERS(ElementDep, DGNPLATFORM_EXPORT)
         TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ElementDep(mgr);}
+    };
+
+    struct SubCategory : DgnDomain::TableHandler {
+        TABLEHANDLER_DECLARE_MEMBERS(SubCategory, DGNPLATFORM_EXPORT)
+        TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::SubCategory(mgr);}
     };
 };
 

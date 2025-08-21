@@ -2612,6 +2612,35 @@ void dgn_TxnTable::RelationshipLinkTable::_OnValidated()
         }
     }
 
+void dgn_TxnTable::SubCategory::_Initialize() {
+    auto ecsql = "SELECT ti.cid SqliteColumnIndex"
+        " FROM   ec_PropertyMap pp"
+               " JOIN ec_Column c ON c.Id = pp.ColumnId"
+               " JOIN ec_Table t ON t.Id = c.TableId"
+               " JOIN ec_Class cl ON cl.Id = pp.ClassId"
+               " JOIN ec_PropertyPath p ON p.Id = pp.PropertyPathId"
+               " JOIN ec_Schema s ON cl.SchemaId = s.Id"
+               " JOIN pragma_table_info(t.Name) ti ON ti.name = c.Name"
+        " WHERE  s.Name = 'BisCore'"
+                 " AND cl.Name = 'SubCategory'"
+                 " AND p.AccessString = 'Propertes'";
+
+    auto stmt = m_txnMgr.GetDgnDb().GetCachedStatement(ecsql);
+    if (!stmt.IsValid() || BE_SQLITE_ROW != stmt->Step()) {
+        BeAssert(false && "Could not query column Id for subcategory appearance");
+        return;
+    }
+    
+    m_appearanceColumnIndex = stmt->GetValueInt(0);
+}
+
+void dgn_TxnTable::SubCategory::AddChange(BeSQLite::Changes::Change const& change, bool fromCommit) const {
+    if (change.GetNewValue(m_appearanceColumnIndex).IsValid()) {
+        auto subCategoryId = change.GetValue(0, Changes::Change::Stage::Old).GetValueId<DgnSubCategoryId>();
+        m_txnMgr.m_modelChanges.AddSubCategoryAppearanceChange(subCategoryId, fromCommit);
+    }
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
