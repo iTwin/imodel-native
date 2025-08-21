@@ -999,11 +999,20 @@ DbResult JsInterop::DeleteSchemaItems(ECDbR ecdb, Utf8String schemaName, bvector
     }
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    schemaContext->AddFirstSchemaLocater(ecdb.GetSchemaLocater());
     ECN::SchemaKey schemaKey(schemaName.c_str(), 0, 0, 0);
+    auto availableSchemas = ecdb.Schemas().GetSchemas();
+    Utf8String schemaList;
+    for (ECSchemaCP schema : availableSchemas)
+        {
+        if (!schemaList.empty())
+            schemaList.append(", ");
+        schemaList.append(schema->GetName());
+        }
     ECSchemaPtr schema = ecdb.GetSchemaLocater().LocateSchema(schemaKey, ECN::SchemaMatchType::LatestWriteCompatible, *schemaContext);
 
     if (!schema.IsValid()) {
-        logger.errorv("Schema not found: %s", schemaName.c_str());
+        logger.errorv("DeleteSchemaItems: Unable to locate schema '%s'. Available schemas: %s", schemaName.c_str(), schemaList.c_str());
         return BE_SQLITE_ERROR;
     }
 
