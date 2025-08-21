@@ -986,6 +986,42 @@ Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
     }
     return Napi::Value::From(info.Env(), db.GetModifiedRowCount() > 0);
 }
+//------------------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult JsInterop::DeleteSchemaItems(ECDbR ecdb, Utf8String schemaName, bvector<Utf8String> const& itemNames, const SchemaImportOptions& opts)
+    {
+    NativeLogging::CategoryLogger logger("JsInterop");
+
+    if (!opts.m_schemaLockHeld) {
+        logger.error("Schema lock must be held when deleting schema items");
+        return BE_SQLITE_ERROR;
+    }
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    ECN::SchemaKey schemaKey(schemaName.c_str(), 0, 0, 0);
+    ECSchemaPtr schema = ecdb.GetSchemaLocater().LocateSchema(schemaKey, ECN::SchemaMatchType::LatestWriteCompatible, *schemaContext);
+
+    if (!schema.IsValid()) {
+        logger.errorv("Schema not found: %s", schemaName.c_str());
+        return BE_SQLITE_ERROR;
+    }
+
+    for (Utf8StringCR itemName : itemNames) {
+        ECClassP schemaItem = schema->GetClassP(itemName.c_str());
+        if (nullptr == schemaItem) {
+            logger.warningv("Class not found: %s.%s", schemaName.c_str(), itemName.c_str());
+            continue;
+        }
+
+        if (ECObjectsStatus::Success != schema->DeleteClass(*schemaItem)) {
+            logger.errorv("Failed to delete class '%s' from schema '%s'", itemName.c_str(), schemaName.c_str());
+            return BE_SQLITE_ERROR;
+        }
+    }
+
+    return ecdb.SaveChanges();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
