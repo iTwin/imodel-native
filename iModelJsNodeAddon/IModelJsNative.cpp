@@ -527,7 +527,18 @@ public:
            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "unable to serialize schema", IModelJsNativeErrorKey::SchemaError);
         return props;
     }
+    void DeleteSchemaItems(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, schemaName); 
+        REQUIRE_ARGUMENT_STRING_ARRAY(1, itemNames);
+        OPTIONAL_ARGUMENT_ANY_OBJ(2, jsOpts, Napi::Object::New(Env()));
 
+        JsInterop::SchemaImportOptions options;
+        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        DbResult status = JsInterop::DeleteSchemaItems(m_ecdb, schemaName, itemNames, options);
+        if (status != BE_SQLITE_OK) {
+            JsInterop::throwSqlResult("error deleting schema items", m_ecdb.GetDbFileName(), status);
+        }
+    }
     Napi::Value ImportSchema(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaPathName);
         DbResult status = JsInterop::ImportSchema(m_ecdb, BeFileName(schemaPathName.c_str(), true));
@@ -655,6 +666,7 @@ public:
             InstanceMethod("importSchema", &NativeECDb::ImportSchema),
             InstanceMethod("isOpen", &NativeECDb::IsOpen),
             InstanceMethod("schemaSyncSetDefaultUri", &NativeECDb::SchemaSyncSetDefaultUri),
+            InstanceMethod("deleteSchemaItems", &NativeECDb::DeleteSchemaItems),
             InstanceMethod("schemaSyncGetDefaultUri", &NativeECDb::SchemaSyncGetDefaultUri),
             InstanceMethod("schemaSyncPull", &NativeECDb::SchemaSyncPull),
             InstanceMethod("schemaSyncPush", &NativeECDb::SchemaSyncPush),
