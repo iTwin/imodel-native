@@ -1647,7 +1647,8 @@ void DgnElement::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
         const auto ecOtherInstanceIsValid = ecOther->IsValid();
         if (ecOtherInstanceIsValid)
             {
-            bool sameClass = (GetElementClassId() == other.GetElementClassId());
+            // bool test = (&other.GetDgnDb() == &GetDgnDb()) && (GetElementClassId() == other.GetElementClassId());
+            bool sameClass = (other.GetDgnDb().GetDbFileName() == GetDgnDb().GetDbFileName()) && (GetElementClassId() == other.GetElementClassId());
             // Note that we are NOT necessarily going to call _SetPropertyValue on each property.
             // If the subclass needs to validate specific auto-handled properties even during copying, then it
             // must override _CopyFrom and validate after the copy is done.
