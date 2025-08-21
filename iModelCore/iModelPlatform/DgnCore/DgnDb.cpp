@@ -341,7 +341,7 @@ void DgnDb::_OnDbGuidChange(BeSQLite::BeGuid guid) {
 bool DgnDb::RequireStandaloneTxns() const {
     BeJsDocument standalone;
     QueryStandaloneEditFlags(standalone);
-    return standalone.isNull() ? false : standalone["txns"].asBool();
+    return standalone.isNull() ? false : standalone.asBool();
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -354,7 +354,7 @@ void DgnDb::_OnBeforeSetBriefcaseId(BeBriefcaseId newId) {
     T_Super::_OnBeforeSetBriefcaseId(newId);
 
     Txns().EnableTracking(false);
-    Txns().DeleteAllTxns(); // this will delete any reversed txns
+    Txns().ClearAllTxns(); // this will clear any reversed txns
 }
 
 /*---------------------------------------------------------------------------------**/ /**
