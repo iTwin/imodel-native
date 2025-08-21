@@ -99,7 +99,7 @@ VolumeElementPtr VolumeElement::GetForEdit(DgnDbCR dgndb, Dgn::DgnElementId elem
 //+---------------+---------------+---------------+---------------+---------------+-----
 VolumeElementCPtr VolumeElement::Insert()
     {
-    return GetDgnDb().Elements().Insert<VolumeElement>(*this);
+    return GetDgnDb().Elements().Insert<VolumeElement>(*this, nullptr, std::nullopt);
     }
 
 //--------------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ VolumeElementCPtr VolumeElement::Insert()
 //+---------------+---------------+---------------+---------------+---------------+-----
 VolumeElementCPtr VolumeElement::Update()
     {
-    return GetDgnDb().Elements().UpdateAndGet<VolumeElement>(*this);
+    return GetDgnDb().Elements().UpdateAndGet<VolumeElement>(*this, nullptr, std::nullopt);
     }
 
 //--------------------------------------------------------------------------------------

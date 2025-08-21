@@ -54,10 +54,10 @@ FunctionalDomain::~FunctionalDomain()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus FunctionalPartition::_OnSubModelInsert(DgnModelCR model) const 
+DgnDbStatus FunctionalPartition::_OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options) const 
     {
     // A FunctionalPartition can only be modeled by a FunctionalModel
-    return model.IsRoleModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
+    return model.IsRoleModel() ? T_Super::_OnSubModelInsert(model, options) : DgnDbStatus::ElementBlockedChange;
     }
 
 //---------------------------------------------------------------------------------------
@@ -85,7 +85,7 @@ FunctionalPartitionCPtr FunctionalPartition::CreateAndInsert(SubjectCR parentSub
     if (!partition.IsValid())
         return nullptr;
 
-    return parentSubject.GetDgnDb().Elements().Insert<FunctionalPartition>(*partition);
+    return parentSubject.GetDgnDb().Elements().Insert<FunctionalPartition>(*partition, nullptr, std::nullopt);
     }
 
 //---------------------------------------------------------------------------------------
@@ -115,22 +115,22 @@ FunctionalModelPtr FunctionalModel::Create(FunctionalPartitionCR modeledElement)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus FunctionalModel::_OnInsertElement(DgnElementR element)
+DgnDbStatus FunctionalModel::_OnInsertElement(DgnElementR element, std::optional<EditOptions> options)
     {
     // FunctionModels can *only* contain FunctionalElements
     FunctionalElementP funcElement = dynamic_cast<FunctionalElementP>(&element);
-    return (nullptr == funcElement) ? DgnDbStatus::WrongModel : T_Super::_OnInsertElement(element);
+    return (nullptr == funcElement) ? DgnDbStatus::WrongModel : T_Super::_OnInsertElement(element, options);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus FunctionalElement::_OnInsert()
+DgnDbStatus FunctionalElement::_OnInsert(std::optional<EditOptions> options)
     {
     // FunctionalElements can reside *only* in a FunctionalModel
     DgnModelPtr model = GetModel();
     FunctionalModelP funcModel = dynamic_cast<FunctionalModelP>(model.get());
-    return (nullptr == funcModel) ? DgnDbStatus::WrongModel : T_Super::_OnInsert();
+    return (nullptr == funcModel) ? DgnDbStatus::WrongModel : T_Super::_OnInsert(options);
     }
 
 //---------------------------------------------------------------------------------------
