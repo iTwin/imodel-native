@@ -2682,7 +2682,7 @@ void dgn_TxnTable::SubCategory::_Initialize() {
                " JOIN pragma_table_info(t.Name) ti ON ti.name = c.Name"
         " WHERE  s.Name = 'BisCore'"
                  " AND cl.Name = 'SubCategory'"
-                 " AND p.AccessString = 'Propertes'";
+                 " AND p.AccessString = 'Properties'";
 
     auto stmt = m_txnMgr.GetDgnDb().GetCachedStatement(ecsql);
     if (!stmt.IsValid() || BE_SQLITE_ROW != stmt->Step()) {
