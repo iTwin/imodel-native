@@ -1158,7 +1158,6 @@ ChangesetStatus TxnManager::ProcessRevisions(bvector<ChangesetPropsCP> const &re
         for (ChangesetPropsCP revision : revisions) {
             ReverseChangeset(*revision);
         }
-        PullMergeEnd();
         break;
     default:
         BeAssert(false && "Invalid revision process option");
