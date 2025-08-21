@@ -378,6 +378,7 @@ public:
             m_geometricModels.clear();
             m_modelsForDeletedElements.clear();
             m_deletedGeometricElements.clear();
+            m_subCategories.clear();
 
             if (!preserveGeometryChanges)
                 m_geometryChanges.clear();
