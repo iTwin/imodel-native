@@ -5637,7 +5637,6 @@ DEFINE_SCHEMA(SelectedNodeInstancesSpecification_ContentModifierAppliesCalculate
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstancesSpecification_ContentModifierAppliesCalculatedPropertiesOnNestedContentProperties_WithMergedUnrelatedInstances)
     {
     // set up data set
-    ECClassCP classA = GetClass("A");
     ECClassCP classA1 = GetClass("A1");
     ECClassCP classA2 = GetClass("A2");
     ECClassCP classB = GetClass("B");
@@ -5734,7 +5733,6 @@ DEFINE_SCHEMA(SelectedNodeInstancesSpecification_ContentModifierAppliesRelatedPr
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstancesSpecification_ContentModifierAppliesRelatedPropertiesOnNestedContentProperties_WithMergedUnrelatedInstances)
     {
     // set up data set
-    ECClassCP classA = GetClass("A");
     ECClassCP classA1 = GetClass("A1");
     ECClassCP classA2 = GetClass("A2");
     ECClassCP classB = GetClass("B");
