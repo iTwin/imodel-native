@@ -6592,6 +6592,64 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_GetsRelatedLabel_NullWhenTheresNoRelatedInstance, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is contained by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_GetsRelatedLabel_NullWhenTheresNoRelatedInstance)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relationshipAHasB = GetClass("A_Has_B")->GetRelationshipClassCP();
+
+    // insert some instances
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), true, false));
+    rules->AddPresentationRule(*rule);
+
+    ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "A");
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("LabelB", 0, Utf8PrintfString("this.GetRelatedDisplayLabel(\"%s\", \"Forward\", \"%s\")", relationshipAHasB->GetFullName(), classB->GetFullName())));
+    rules->AddPresentationRule(*modifier);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(0, false, classB->GetFullName(), "UserLabel"));
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
+    EXPECT_EQ(0, jsonDoc["Values"].MemberCount());
+    EXPECT_EQ(0, jsonDoc["DisplayValues"].MemberCount());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(ContentRelatedInstancesSpecification_ContentModifierAppliesCalculatedPropertiesSpecificationPolymorphically, R"*(
     <ECEntityClass typeName="A" />
     <ECEntityClass typeName="B">
