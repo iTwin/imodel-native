@@ -74,8 +74,8 @@ PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyFi
         Utf8PrintfString fieldType("%d", (int)type);
         field = PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
         CreateFieldsList("ECClassId", "ECInstanceId", value, fieldType));
-        } 
-    else 
+        }
+    else
         {
         field = PresentationQueryContractSimpleField::Create(calculatedFieldName.c_str(), "CAST(null AS TEXT)", false);
         }
@@ -283,31 +283,36 @@ bool ContentQueryContract::ShouldHandleRelatedContentField(ContentDescriptor::Re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ContentQueryContract::GetPropertyClass(ContentDescriptor::RelatedContentField const* parentField) const
+ECClassCR ContentQueryContract::GetSelectClass(ContentDescriptor::RelatedContentField const* parentField) const
     {
     if (parentField)
-        return parentField->IsRelationshipField() ? &parentField->GetRelationshipClass() : &parentField->GetContentClass();
-    return m_relationshipClass ? m_relationshipClass : m_class;
+        return parentField->IsRelationshipField() ? parentField->GetRelationshipClass() : parentField->GetContentClass();
+    return m_relationshipClass ? *m_relationshipClass : *m_class;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentQueryContract::CreateContractFields(bvector<PresentationQueryContractFieldCPtr>& contractFields, bvector<ContentDescriptor::Field*> const& fields, ContentDescriptor::RelatedContentField const* parentField) const
+bool ContentQueryContract::CreateContractFields(
+    bvector<PresentationQueryContractFieldCPtr>& contractFields, 
+    bvector<ContentDescriptor::Field*> const& fields, 
+    ContentDescriptor::RelatedContentField const* parentField,
+    bool skipFields
+) const
     {
+    ECClassCR selectClass = GetSelectClass(parentField);
     bool didCreateNonNullField = false;
     for (ContentDescriptor::Field const* descriptorField : fields)
         {
         PresentationQueryContractFieldCPtr contractField;
         if (descriptorField->IsCalculatedPropertyField())
             {
-            ECClassCP selectClass = GetPropertyClass(parentField);
-            Utf8String prefix;
-            if (parentField)
-                prefix = parentField->IsRelationshipField() ? parentField->GetRelationshipClassAlias() : parentField->GetContentClassAlias();
-
-            if (nullptr == descriptorField->AsCalculatedPropertyField()->GetClass() || selectClass->Is(descriptorField->AsCalculatedPropertyField()->GetClass()))
+            if (!skipFields && (nullptr == descriptorField->AsCalculatedPropertyField()->GetClass() || selectClass.Is(descriptorField->AsCalculatedPropertyField()->GetClass())))
                 {
+                Utf8String prefix;
+                if (parentField)
+                    prefix = parentField->IsRelationshipField() ? parentField->GetRelationshipClassAlias() : parentField->GetContentClassAlias();
+
                 contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), prefix, descriptorField->AsCalculatedPropertyField()->GetType());
                 didCreateNonNullField = true;
                 }
@@ -319,9 +324,7 @@ bool ContentQueryContract::CreateContractFields(bvector<PresentationQueryContrac
         else if (descriptorField->IsPropertiesField())
             {
             ContentDescriptor::ECPropertiesField const& propertiesField = *descriptorField->AsPropertiesField();
-            ECClassCP propertyClass = GetPropertyClass(parentField);
-
-            ContentDescriptor::Property const* fieldPropertyForThisContract = FindMatchingProperty(propertiesField, propertyClass);
+            ContentDescriptor::Property const* fieldPropertyForThisContract = !skipFields ? FindMatchingProperty(propertiesField, &selectClass) : nullptr;
             if (propertiesField.IsCompositePropertiesField() && m_skipCompositePropertyFields)
                 {
                 didCreateNonNullField = (nullptr != fieldPropertyForThisContract);
@@ -348,21 +351,22 @@ bool ContentQueryContract::CreateContractFields(bvector<PresentationQueryContrac
             }
         else if (descriptorField->IsNestedContentField() && descriptorField->AsNestedContentField()->AsRelatedContentField())
             {
-            if (!ShouldHandleRelatedContentField(*descriptorField->AsNestedContentField()->AsRelatedContentField()))
+            auto const& relatedContentField = *descriptorField->AsNestedContentField()->AsRelatedContentField();
+            if (!ShouldHandleRelatedContentField(relatedContentField))
                 continue;
 
-            auto relatedContentField = descriptorField->AsNestedContentField()->AsRelatedContentField();
-            Utf8PrintfString keyFieldName("/key/%s", relatedContentField->GetUniqueName().c_str());
-            Utf8PrintfString displayLabelFieldName("/DisplayLabel/%s", relatedContentField->GetUniqueName().c_str());
-            bvector<PresentationQueryContractFieldCPtr> nestedContractFields;
-            if (CreateContractFields(nestedContractFields, relatedContentField->GetFields(), relatedContentField))
-                {
-                auto selectClass = relatedContentField->IsRelationshipField()
-                    ? SelectClass{relatedContentField->GetRelationshipClass(), relatedContentField->GetRelationshipClassAlias()}
-                    : SelectClass{relatedContentField->GetContentClass(), relatedContentField->GetContentClassAlias()};
+            auto shouldSkipThisField = skipFields || !selectClass.Is(relatedContentField.GetPathFromSelectToContentClass().front().GetSourceClass());
 
-                contractFields.push_back(CreateInstanceKeyField(keyFieldName.c_str(), selectClass.GetAlias().c_str(), {}));
-                contractFields.push_back(m_relatedInstanceDisplayLabelFieldFactory(displayLabelFieldName.c_str(), selectClass));
+            Utf8PrintfString keyFieldName("/key/%s", relatedContentField.GetUniqueName().c_str());
+            Utf8PrintfString displayLabelFieldName("/DisplayLabel/%s", relatedContentField.GetUniqueName().c_str());
+            bvector<PresentationQueryContractFieldCPtr> nestedContractFields;
+            if (CreateContractFields(nestedContractFields, relatedContentField.GetFields(), &relatedContentField, shouldSkipThisField))
+                {
+                auto relatedContentSelectClass = relatedContentField.IsRelationshipField()
+                    ? SelectClass{relatedContentField.GetRelationshipClass(), relatedContentField.GetRelationshipClassAlias()}
+                    : SelectClass{relatedContentField.GetContentClass(), relatedContentField.GetContentClassAlias()};
+                contractFields.push_back(CreateInstanceKeyField(keyFieldName.c_str(), relatedContentSelectClass.GetAlias().c_str(), {}));
+                contractFields.push_back(m_relatedInstanceDisplayLabelFieldFactory(displayLabelFieldName.c_str(), relatedContentSelectClass));
                 didCreateNonNullField = true;
                 }
             else
@@ -403,7 +407,7 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
             // primary instance key
             bvector<Utf8CP> selectAliases = m_relationshipClass ? bvector<Utf8CP>{m_relationshipClassAlias.c_str()} : m_queryInfo.GetSelectAliases(IQueryInfoProvider::SELECTION_SOURCE_From);
             Utf8CP selectAlias = selectAliases.empty() ? nullptr : selectAliases.front();
-            m_fields->push_back(selectAlias 
+            m_fields->push_back(selectAlias
                 ? CreateInstanceKeyField(ECInstanceKeysFieldName, selectAlias, ECClassId()).get()
                 : PresentationQueryContractSimpleField::Create(ECInstanceKeysFieldName, "", false).get());
 
@@ -422,7 +426,7 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
                 m_fields->push_back(m_displayLabelField);
 
             // fields
-            CreateContractFields(*m_fields, m_descriptor->GetAllFields(), nullptr);
+            CreateContractFields(*m_fields, m_descriptor->GetAllFields(), nullptr, false);
             }
         }
     return *m_fields;
