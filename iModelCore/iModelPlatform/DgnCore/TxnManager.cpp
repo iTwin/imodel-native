@@ -1289,6 +1289,65 @@ void TxnManager::ModelChanges::Process()
     m_deletedGeometricElements.clear();
     m_modelsForDeletedElements.clear();
 
+    if (!m_subCategories.empty()) {
+        // If a subcategory's appearance changed, then the geometry of all models containing any elements belonging to its category
+        // is considered changed. This is a simplification for efficiency - we don't want to scan element geometry streams to find
+        // references to particular subcategories.
+        // This will invalidate all tiles for these models.
+        auto processSubCategories = [&](bvector<Utf8String> const& ids, bool fromCommit) {
+            if (ids.empty()) {
+                return;
+            }
+
+            auto idList = BeStringUtilities::Join(ids, ",");
+            auto fmtString =
+                "SELECT DISTINCT Model.Id FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement) \
+                " WHERE Category.Id IN (" \
+                    "SELECT DISTINCT Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) \
+                    " WHERE ECInstanceId IN (%s)" \
+                ")";
+
+            auto stmt = m_mgr.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString(fmtString, idList.c_str()).c_str(), true);
+            BeAssert(stmt.IsValid());
+            while (BE_SQLITE_ROW == stmt->Step()) {
+                m_geometricModels.Insert(stmt->GetValueId<DgnModelId>(0), fromCommit);
+            }
+        };
+
+        bvector<Utf8String> commitSubCategories, otherSubCategories;
+        for (auto const& entry : m_subCategories) {
+            auto& group = entry.second ? commitSubCategories : otherSubCategories;
+            group.push_back(entry.first.ToHexStr());
+        }
+
+        processSubCategories(commitSubCategories, true);
+        processSubCategories(otherSubCategories, false);
+
+        if (IsTrackingGeometry()) {
+            // The geometry of each element in the affected categories is also considered changed as a result of the subcategory
+            // appearance change.
+            bvector<Utf8String> subCategoryIds;
+            for (auto const& entry : m_subCategories) {
+                subCategoryIds.push_back(entry.first.ToHexStr());
+            }
+
+            auto ecsqlFmt =
+                "SELECT Model.Id, ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement) \
+                " WHERE Category.Id IN (" \
+                    "SELECT DISTINCT Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) \
+                    " WHERE ECInstanceId IN (%s)"
+                ")";
+            auto stmt = m_mgr.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString(ecsqlFmt, BeStringUtilities::Join(subCategoryIds, ",").c_str()).c_str(), true);
+            BeAssert(stmt.IsValid());
+            while (BE_SQLITE_ROW == stmt->Step()) {
+                InsertGeometryChange(stmt->GetValueId<DgnModelId>(0), stmt->GetValueId<DgnElementId>(1), TxnTable::ChangeType::Update);
+            }
+        }
+
+        // Don't need these any more.
+        m_subCategories.clear();
+    }
+
     if (m_models.empty() && m_geometricModels.empty())
         return;
 
@@ -2611,6 +2670,35 @@ void dgn_TxnTable::RelationshipLinkTable::_OnValidated()
         m_changes = false;
         }
     }
+
+void dgn_TxnTable::SubCategory::_Initialize() {
+    auto ecsql = "SELECT ti.cid SqliteColumnIndex"
+        " FROM   ec_PropertyMap pp"
+               " JOIN ec_Column c ON c.Id = pp.ColumnId"
+               " JOIN ec_Table t ON t.Id = c.TableId"
+               " JOIN ec_Class cl ON cl.Id = pp.ClassId"
+               " JOIN ec_PropertyPath p ON p.Id = pp.PropertyPathId"
+               " JOIN ec_Schema s ON cl.SchemaId = s.Id"
+               " JOIN pragma_table_info(t.Name) ti ON ti.name = c.Name"
+        " WHERE  s.Name = 'BisCore'"
+                 " AND cl.Name = 'SubCategory'"
+                 " AND p.AccessString = 'Properties'";
+
+    auto stmt = m_txnMgr.GetDgnDb().GetCachedStatement(ecsql);
+    if (!stmt.IsValid() || BE_SQLITE_ROW != stmt->Step()) {
+        BeAssert(false && "Could not query column Id for subcategory appearance");
+        return;
+    }
+    
+    m_appearanceColumnIndex = stmt->GetValueInt(0);
+}
+
+void dgn_TxnTable::SubCategory::AddChange(BeSQLite::Changes::Change const& change, bool fromCommit) const {
+    if (change.GetNewValue(m_appearanceColumnIndex).IsValid()) {
+        auto subCategoryId = change.GetValue(0, Changes::Change::Stage::Old).GetValueId<DgnSubCategoryId>();
+        m_txnMgr.m_modelChanges.AddSubCategoryAppearanceChange(subCategoryId, fromCommit);
+    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
