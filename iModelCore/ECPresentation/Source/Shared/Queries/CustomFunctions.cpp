@@ -491,12 +491,15 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
                 ctx.SetResultError(Utf8PrintfString("Could not get ECValue from evaluated ECExpression: %s", expression).c_str());
                 return;
                 }
-            if (!value.IsPrimitive())
+            if (value.IsUninitialized())
+                {
+                value.SetIsNull(true);
+                }
+            if (!value.IsPrimitive() && !value.IsNull())
                 {  
                 ctx.SetResultError("Calculated property evaluated to a type that is not primitive");
                 return;
                 }
-
             if (!value.ConvertToPrimitiveType(requestedTypePrimitive))
                 {
                 ctx.SetResultError("Calculated property evaluated to a type that couldn't be converted to requested type");
@@ -510,6 +513,12 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
                 }
 
             iter = GetCache().Insert(key, std::make_shared<ECValue>(value)).first;
+            }
+
+        if (iter->second->IsNull())
+            {
+            ctx.SetResultNull();
+            return;
             }
 
         switch (requestedTypePrimitive)
