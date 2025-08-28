@@ -779,8 +779,10 @@ export declare namespace IModelJsNative {
     public setAutoCheckpointThreshold(frames: number): void;
 
     public pullMergeGetStage(): "None" | "Merging" | "Rebasing";
-    public pullMergeReinstateTxn(id: TxnIdString): void;
-    public pullMergeSaveRebasedTxn(id: TxnIdString): void;
+    public pullMergeRebaseReinstateTxn(): void;
+    public pullMergeRebaseUpdateTxn(): void;
+    public pullMergeRebaseNext(): TxnIdString | undefined;
+    public pullMergeRebaseAbortTxn(): void
     public pullMergeRebaseBegin(): TxnIdString[];
     public pullMergeRebaseEnd(): void;
     public pullMergeReverseLocalChanges(): TxnIdString[];
