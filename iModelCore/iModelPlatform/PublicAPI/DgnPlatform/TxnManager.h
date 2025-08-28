@@ -530,8 +530,10 @@ public:
     DGNPLATFORM_EXPORT void PullMergeBegin();
     DGNPLATFORM_EXPORT void PullMergeEnd();
     DGNPLATFORM_EXPORT void PullMergeResume();
-    DGNPLATFORM_EXPORT void PullMergeSaveRebasedTxn(TxnManager::TxnId txnId);
-    DGNPLATFORM_EXPORT void PullMergeReinstateTxn(TxnManager::TxnId txnId);
+    DGNPLATFORM_EXPORT TxnId PullMergeRebaseNext();
+    DGNPLATFORM_EXPORT void PullMergeRebaseAbortTxn();
+    DGNPLATFORM_EXPORT void PullMergeRebaseUpdateTxn();
+    DGNPLATFORM_EXPORT void PullMergeRebaseReinstateTxn();
     DGNPLATFORM_EXPORT void PullMergeRebaseEnd();
     DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges();
     DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeRebaseBegin();

@@ -7,8 +7,6 @@
 
 BEGIN_UNNAMED_NAMESPACE
 
-
-
 typedef bvector<TxnMonitorP> TxnMonitors;
 static TxnMonitors s_monitors;
 static T_OnCommitCallback s_onCommitCallback = nullptr;
@@ -18,11 +16,6 @@ static T_OnCommitCallback s_onCommitCallback = nullptr;
 //=======================================================================================
 struct PullMergeConf final {
     static constexpr int VER = 0x1;
-    enum class MergeStage {
-        None = 0,
-        MergingRemoteChanges = 1,
-        RebasingLocalChanges = 2,
-    };
 
 private:
     static constexpr auto JVersion = "version";
@@ -30,14 +23,18 @@ private:
     static constexpr auto JEndTxnId = "end_txn_id";
     static constexpr auto JMergeStage = "merge_stage";
     static constexpr auto JKey = "pull_merge_conf";
+    static constexpr auto JInProgressRebaseTxnId = "inprogress_rebase_txn_id";
 
     TxnManager::TxnId _endTxnId;
     TxnManager::TxnId _startTxnId;
+    TxnManager::TxnId _inProgressRebaseTxnId;
     TxnManager::PullMergeStage _mergeStage = TxnManager::PullMergeStage::None;
 
 public:
     TxnManager::TxnId GetEndTxnId() const { return _endTxnId; }
     TxnManager::TxnId GetStartTxnId() const { return _startTxnId; }
+    TxnManager::TxnId GetInProgressRebaseTxnId() const {
+        return _mergeStage == TxnManager::PullMergeStage::Rebasing ? _inProgressRebaseTxnId : TxnManager::TxnId(); }
     TxnManager::PullMergeStage GetMergeStage() const { return _mergeStage; }
     bool IsMergingRemoteChanges() const { return _mergeStage == TxnManager::PullMergeStage::Merging; }
     bool IsRebasingLocalChanges() const { return _mergeStage == TxnManager::PullMergeStage::Rebasing; }
@@ -48,7 +45,19 @@ public:
         doc[PullMergeConf::JVersion] = VER;
         doc[PullMergeConf::JMergeStage] = static_cast<int>(_mergeStage);
         doc[PullMergeConf::JEndTxnId] = static_cast<int64_t>(_endTxnId.GetValue());
+        doc[PullMergeConf::JInProgressRebaseTxnId] = static_cast<int64_t>(_inProgressRebaseTxnId.GetValue());
         return db.SaveBriefcaseLocalValue(PullMergeConf::JKey, doc.Stringify());
+    }
+    PullMergeConf& SetInProgressRebaseTxnId(TxnManager::TxnId id) { 
+        if (id.IsValid() && _mergeStage == TxnManager::PullMergeStage::Rebasing )
+            _inProgressRebaseTxnId = id;
+        else
+            _inProgressRebaseTxnId = TxnManager::TxnId();
+        return *this;
+    }
+    PullMergeConf& ResetInProgressRebaseTxnId() {
+        _inProgressRebaseTxnId = TxnManager::TxnId();
+        return *this;
     }
     PullMergeConf& SetEndTxnId(TxnManager::TxnId id) { _endTxnId = id; return *this; }
     PullMergeConf& SetStartTxnId(TxnManager::TxnId id) { _startTxnId = id; return *this; }
@@ -72,6 +81,7 @@ public:
             info._mergeStage = static_cast<TxnManager::PullMergeStage>(doc[PullMergeConf::JMergeStage].GetInt(static_cast<int>(TxnManager::PullMergeStage::None)));
             info._endTxnId  = TxnManager::TxnId(doc[PullMergeConf::JEndTxnId].GetUInt64(0));
             info._startTxnId  = TxnManager::TxnId(doc[PullMergeConf::JStartTxnId].GetUInt64(0));
+            info._inProgressRebaseTxnId = TxnManager::TxnId(doc[PullMergeConf::JInProgressRebaseTxnId].GetUInt64(0));
         }
         return info;
     }
@@ -525,7 +535,7 @@ BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker) {
 
 #define TABLE_NAME_STARTS_WITH(NAME) (0==strncmp(NAME, tableName, sizeof(NAME)-1))
 /*---------------------------------------------------------------------------------**//**
-* When journalling changes, SQLite calls this method to determine whether changes to a specific table are eligible or not.
+* When journaling changes, SQLite calls this method to determine whether changes to a specific table are eligible or not.
 * @note tables with no primary key are skipped automatically.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -721,12 +731,19 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     auto conf = PullMergeConf::Load(m_dgndb);
 
     // During PullMergeEnd() we donot allow COMMIT but we do let be_Local which is untracked to be saved.
-    if (conf.IsRebasingLocalChanges() && isCommit){
-        if (HasDataChanges()) {
-            LOG.error("Saving changes are not allowed when rebasing local changes");
-            return OnCommitStatus::RebaseInProgress;
+    if (conf.IsRebasingLocalChanges()) {
+        if (isCommit) {
+            if (HasDataChanges()) {
+                LOG.error("Saving changes are not allowed when rebasing local changes");
+                return OnCommitStatus::RebaseInProgress;
+            } else {
+                return OnCommitStatus::NoChanges;
+            }
         } else {
-            return OnCommitStatus::NoChanges;
+            // if (conf.GetInProgressRebaseTxnId().IsValid()) {
+            //     LOG.error("Abort changes are not allowed when rebasing local changes");
+            //     return OnCommitStatus::RebaseInProgress;                
+            // }
         }
     }
 
@@ -791,7 +808,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
         rc = outData.FromChangeGroup(dataChangeGroup);
         if (rc != BE_SQLITE_OK) {
-            LOG.errorv("failed to read changes grom data change group: %s", BeSQLiteLib::GetErrorName(rc));
+            LOG.errorv("failed to read changes from data change group: %s", BeSQLiteLib::GetErrorName(rc));
             return rc;
         }
 
@@ -1987,6 +2004,10 @@ DgnDbStatus TxnManager::ReverseAll() {
 void TxnManager::ReplayExternalTxns(TxnId from) {
     if (!m_initTableHandlers || !m_dgndb.IsReadonly())
         return; // this method can only be called on a readonly connection with the TxnManager active
+    
+    if (PullMergeConf::Load(m_dgndb).InProgress()) {
+        m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
+    }
 
     TxnId curr = QueryNextTxnId(from);
     bool haveTxns = curr.IsValid();
@@ -3045,7 +3066,11 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
     if (m_dgndb.IsReadonly() && !HasPendingTxns()) {
         m_dgndb.ThrowException("file is readonly", (int) ChangesetStatus::CannotMergeIntoReadonly);
     }
-
+    
+    while(!m_multiTxnOp.empty()) {
+        EndMultiTxnOperation();
+    }
+    
     DeleteReversedTxns();
     TxnId startTxnId = QueryNextTxnId(TxnId(0));
     TxnId endTxnId = GetCurrentTxnId();
@@ -3085,7 +3110,7 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TxnManager::PullMergeEraseTxn(TxnId txnId) {    
     LOG.infov("Erasing Txn with id: %" PRIX64, txnId.GetValue());
-    if (txnId.IsValid()) {
+    if (!txnId.IsValid()) {
         LOG.error("cannot delete a null Txn");
         return false;
     }
@@ -3114,10 +3139,6 @@ void TxnManager::PullMergeAbortRebase(TxnId id, Utf8String err, DbResult rc){
     if (!conf.InProgress()) {
         return;
     }
-    Restart();
-    m_dgndb.AbandonChanges();
-    conf.SetStartTxnId(QueryNextTxnId(TxnId(0)));
-    m_dgndb.SaveChanges();
     LOG.error(err.c_str());
     m_dgndb.ThrowException(err.c_str(), static_cast<int>(rc));
 }
@@ -3140,7 +3161,17 @@ void TxnManager::PullMergeSetTxnActive(TxnId txnId) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::PullMergeReinstateTxn(TxnId txnId) {
+void TxnManager::PullMergeRebaseReinstateTxn() {
+    auto conf = PullMergeConf::Load(m_dgndb);
+    if (!conf.IsRebasingLocalChanges()){
+         m_dgndb.ThrowException("PullMergeRebaseReinstateTxn(): pull merge not in progress.", BE_SQLITE_ERROR);
+    }
+
+    auto txnId = conf.GetInProgressRebaseTxnId();
+    if (!txnId.IsValid()) {
+         m_dgndb.ThrowException("PullMergeRebaseReinstateTxn(): in progress rebase txn id is not set", BE_SQLITE_ERROR);
+    }
+
     const auto type = GetTxnType(txnId);
     const auto desc = GetTxnDescription(txnId);
     const auto currTxnIdStr = BeInt64Id(txnId.GetValue()).ToHexStr();
@@ -3167,7 +3198,17 @@ void TxnManager::PullMergeReinstateTxn(TxnId txnId) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::PullMergeSaveRebasedTxn(TxnId txnId) {
+void TxnManager::PullMergeRebaseUpdateTxn() {
+    auto conf = PullMergeConf::Load(m_dgndb);
+    if (!conf.IsRebasingLocalChanges()){
+         m_dgndb.ThrowException("PullMergeRebaseReinstateTxn(): pull merge not in progress.", BE_SQLITE_ERROR);
+    }
+
+    auto txnId = conf.GetInProgressRebaseTxnId();
+    if (!txnId.IsValid()) {
+         m_dgndb.ThrowException("PullMergeRebaseReinstateTxn(): in progress rebase txn id is not set", BE_SQLITE_ERROR);
+    }
+
     const auto type = GetTxnType(txnId);
     if(type == TxnType::Ddl) {
         PullMergeSetTxnActive(txnId);
@@ -3222,9 +3263,9 @@ void TxnManager::PullMergeSaveRebasedTxn(TxnId txnId) {
     }
     Restart();
     rc = m_dgndb.SaveChanges(); // save dgn_txn/be_Local
-        if (rc != BE_SQLITE_OK) {
-            PullMergeAbortRebase(txnId, SqlPrintfString("unable to save rebased txn (id: %s)", idStr.c_str()).GetUtf8CP(), rc);
-        }
+    if (rc != BE_SQLITE_OK) {
+        PullMergeAbortRebase(txnId, SqlPrintfString("unable to save rebased txn (id: %s)", idStr.c_str()).GetUtf8CP(), rc);
+    }
     m_curr = txnId;
 }
 
@@ -3256,6 +3297,45 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeRebaseBegin() {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TxnManager::TxnId TxnManager::PullMergeRebaseNext() {
+    auto conf = PullMergeConf::Load(m_dgndb);
+    if (!conf.IsRebasingLocalChanges()){
+        m_dgndb.ThrowException("PullMergeRebaseEnd(): not rebasing local changes", BE_SQLITE_ERROR);
+    }
+
+    if (HasChanges()) {
+        m_dgndb.ThrowException("PullMergeRebaseNext(): expect no unsaved changes", BE_SQLITE_ERROR);
+    }    
+    auto id = conf.GetInProgressRebaseTxnId();
+    if (id.IsValid()) {
+        id = QueryNextTxnId(id);
+    } else {
+        id = QueryNextTxnId(TxnId(0));
+    }
+
+    conf.SetInProgressRebaseTxnId(id).Save(m_dgndb);
+    m_dgndb.SaveChanges();
+    return id;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::PullMergeRebaseAbortTxn() {
+    auto conf = PullMergeConf::Load(m_dgndb);
+    if (!conf.IsRebasingLocalChanges()){
+        m_dgndb.ThrowException("PullMergeRebaseAbortTxn(): not rebasing local changes", BE_SQLITE_ERROR);
+    }
+
+    conf.ResetInProgressRebaseTxnId().Save(m_dgndb);
+    m_dgndb.AbandonChanges();
+    conf.ResetInProgressRebaseTxnId().Save(m_dgndb);
+    m_dgndb.SaveChanges();   
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::PullMergeRebaseEnd() {
     auto conf = PullMergeConf::Load(m_dgndb);
     if (!conf.IsRebasingLocalChanges()){
@@ -3281,10 +3361,10 @@ void TxnManager::PullMergeRebaseEnd() {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::PullMergeEnd() {
-   auto txnsToBeRebased = PullMergeRebaseBegin();
-   for(auto txnId : txnsToBeRebased) {
-       PullMergeReinstateTxn(txnId);
-       PullMergeSaveRebasedTxn(txnId);
+   PullMergeRebaseBegin();
+    while(PullMergeRebaseNext().IsValid()){
+       PullMergeRebaseReinstateTxn();
+       PullMergeRebaseUpdateTxn();
    }
    PullMergeRebaseEnd();
 }
