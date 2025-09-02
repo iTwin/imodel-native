@@ -1710,6 +1710,8 @@ BentleyStatus SchemaReader::ReadSchemaStub(SchemaDbEntry*& schemaEntry, Context&
         schema->SetOriginalECXmlVersion(0, 0); // ECObjects set by default ECVersion as the original version. ECDb must not do that, as profile upgrade logic is based on the original version in case it was not set
 
     schema->SetId(ecSchemaId);
+    Utf8PrintfString origin("ECDb file %s, schemaId %" PRIu64, m_schemaManager.GetECDb().GetDbFileName(), ecSchemaId.GetValue());
+    schema->SetOrigin(origin);
 
     if (!Utf8String::IsNullOrEmpty(displayLabel))
         schema->SetDisplayLabel(displayLabel);
