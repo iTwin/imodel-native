@@ -4754,13 +4754,13 @@ BentleyStatus SchemaWriter::UpdatePhenomena(Context& ctx, PhenomenonChanges& cha
             PhenomenonCP phen = newSchema.GetPhenomenonCP(change.GetChangeName());
             if (phen == nullptr)
                 {
-                BeAssert(false && "Failed to find phenomenon");
+                LOG.warningv("SchemaWriter::UpdatePhenomena - failed find phenomenon %s", change.GetChangeName());
                 return ERROR;
                 }
 
             if (SUCCESS != ImportPhenomenon(ctx, *phen))
                 {
-                LOG.debugv("SchemaWriter::UpdatePhenomena - failed to ImportPhenomena %s", phen->GetFullName().c_str());
+                LOG.warningv("SchemaWriter::UpdatePhenomena - failed to ImportPhenomena %s", phen->GetFullName().c_str());
                 return ERROR;
                 }
             }
@@ -4771,18 +4771,18 @@ BentleyStatus SchemaWriter::UpdatePhenomena(Context& ctx, PhenomenonChanges& cha
             PhenomenonCP newVal = newSchema.GetPhenomenonCP(change.GetChangeName());
             if (oldVal == nullptr)
                 {
-                BeAssert(false && "Failed to find Phenomenon");
+                LOG.warningv("SchemaWriter::UpdatePhenomena - failed find old phenomenon %s", change.GetChangeName());
                 return ERROR;
                 }
             if (newVal == nullptr)
                 {
-                BeAssert(false && "Failed to find Phenomenon");
+                LOG.warningv("SchemaWriter::UpdatePhenomena - failed find new phenomenon %s", change.GetChangeName());
                 return ERROR;
                 }
 
             if (UpdatePhenomenon(ctx, change, oldSchema, *oldVal, *newVal) != SUCCESS)
                 {
-                LOG.debugv("SchemaWriter::UpdatePhenomena - failed to UpdatePhenomenon %s", newVal->GetFullName().c_str());
+                LOG.warningv("SchemaWriter::UpdatePhenomena - failed to UpdatePhenomenon %s", newVal->GetFullName().c_str());
                 return ERROR;
                 }
 
