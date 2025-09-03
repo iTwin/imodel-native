@@ -107,6 +107,10 @@ export namespace NativeCloudSqlite {
     readonly activeClients?: number;
     /** The total number of attached containers on this cache. */
     readonly attachedContainers?: number;
+    /** The total amount of memory used by sqlite, in bytes. */
+    readonly memoryUsed?: number;
+    /** The maximum value of memoryUsed since high-water mark was last reset, in bytes. */
+    readonly memoryHighwater?: number;
   }
 
   /** Properties for accessing a CloudContainer */
