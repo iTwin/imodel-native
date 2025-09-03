@@ -877,7 +877,6 @@ DbResult JsInterop::DropSchemas(ECDbR ecdb, bvector<Utf8String>& schemaNames)
 {
     NativeLogging::CategoryLogger logger("JsInterop");
 
-
     DropSchemaResult res = ecdb.Schemas().DropSchemas(schemaNames);
     if (!res.IsSuccess()) {
         Utf8String joined;
