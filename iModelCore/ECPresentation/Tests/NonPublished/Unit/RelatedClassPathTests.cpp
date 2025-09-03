@@ -437,7 +437,6 @@ TEST_F(RelatedClassPathTests, Unify_ReturnsErrorWhenSourcesDontHaveCommonBase)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
-    ECClassCP classCD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Base_of_CD");
     ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
     ECClassCP classD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "D");
     ECRelationshipClassCP relACD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ACD")->GetRelationshipClassCP();
@@ -493,7 +492,6 @@ TEST_F(RelatedClassPathTests, Unify_ReturnsErrorWhenTargetsDontHaveCommonBase)
     {
     ECClassCP classA = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "A");
     ECClassCP classB = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "B");
-    ECClassCP classCD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Base_of_CD");
     ECClassCP classC = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "C");
     ECClassCP classD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "D");
     ECRelationshipClassCP relACD = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ACD")->GetRelationshipClassCP();
