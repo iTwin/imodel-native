@@ -615,7 +615,7 @@ export declare namespace IModelJsNative {
     public deleteLocalValue(name: string): void;
     public deleteModel(modelIdJson: string): void;
     public detachChangeCache(): number;
-    public dropSchema(schemaName: string): void;
+    public dropSchemas(schemaNames: ReadonlyArray<string>): void;
     public dumpChangeset(changeSet: ChangesetFileProps): void;
     public elementGeometryCacheOperation(requestProps: any/* ElementGeometryCacheOperationRequestProps */): BentleyStatus;
     public embedFile(arg: EmbedFileArg): void;
@@ -817,7 +817,7 @@ export declare namespace IModelJsNative {
     public closeDb(): void;
     public createDb(dbName: string): DbResult;
     public dispose(): void;
-    public dropSchema(schemaNames: ReadonlyArray<string> | string, opts?: SchemaImportOptions): void;
+    public dropSchemas(schemaNames: ReadonlyArray<string>): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
     public schemaSyncGetDefaultUri(): string;
     public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
