@@ -530,11 +530,7 @@ public:
     void DeleteSchemaItems(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaName); 
         REQUIRE_ARGUMENT_STRING_ARRAY(1, itemNames);
-        OPTIONAL_ARGUMENT_ANY_OBJ(2, jsOpts, Napi::Object::New(Env()));
-
-        JsInterop::SchemaImportOptions options;
-        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
-        DbResult status = JsInterop::DeleteSchemaItems(m_ecdb, schemaName, itemNames, options);
+        DbResult status = JsInterop::DeleteSchemaItems(m_ecdb, schemaName, itemNames);
         if (status != BE_SQLITE_OK) {
             JsInterop::throwSqlResult("error deleting schema items", m_ecdb.GetDbFileName(), status);
         }

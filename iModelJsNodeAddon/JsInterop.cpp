@@ -989,26 +989,16 @@ Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
 //------------------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::DeleteSchemaItems(ECDbR ecdb, Utf8String schemaName, bvector<Utf8String> const& itemNames, const SchemaImportOptions& opts)
+DbResult JsInterop::DeleteSchemaItems(ECDbR ecdb, Utf8String schemaName, bvector<Utf8String> const& itemNames)
     {
     NativeLogging::CategoryLogger logger("JsInterop");
-
-    if (!opts.m_schemaLockHeld) {
-        logger.error("Schema lock must be held when deleting schema items");
-        return BE_SQLITE_ERROR;
-    }
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
     schemaContext->AddFirstSchemaLocater(ecdb.GetSchemaLocater());
     ECN::SchemaKey schemaKey(schemaName.c_str(), 1, 0, 0); // default read, write, minor versions
     auto availableSchemas = ecdb.Schemas().GetSchemas();
     Utf8String schemaList;
-    for (ECSchemaCP schema : availableSchemas)
-        {
-        if (!schemaList.empty())
-            schemaList.append(", ");
-        schemaList.append(schema->GetName());
-        }
+    BeStringUtilities::Join(schemaList, availableSchemas, ", ", [](ECSchemaCP schema) { return schema->GetName(); });
     ECSchemaPtr schema = ecdb.GetSchemaLocater().LocateSchema(schemaKey, ECN::SchemaMatchType::Latest, *schemaContext);
 
     if (!schema.IsValid()) {
