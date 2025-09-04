@@ -341,7 +341,7 @@ void DgnDb::_OnDbGuidChange(BeSQLite::BeGuid guid) {
 bool DgnDb::RequireStandaloneTxns() const {
     BeJsDocument standalone;
     QueryStandaloneEditFlags(standalone);
-    return standalone.isNull() ? false : standalone.asBool();
+    return standalone.isNull() ? false : standalone["txns"].asBool();
 }
 
 /*---------------------------------------------------------------------------------**/ /**
