@@ -6,6 +6,7 @@
 
 #include<Bentley/Bentley.h>
 #include<Bentley/BeAssert.h>
+#include <utility>
 
 BEGIN_BENTLEY_NAMESPACE
 //=======================================================================================
