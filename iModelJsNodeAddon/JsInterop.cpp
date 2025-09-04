@@ -880,14 +880,9 @@ DbResult JsInterop::DropSchemas(ECDbR ecdb, bvector<Utf8String>& schemaNames)
     DropSchemaResult res = ecdb.Schemas().DropSchemas(schemaNames);
     if (!res.IsSuccess()) {
         Utf8String joined;
-        for (auto const& name : schemaNames) {
-            if (!joined.empty())
-                joined.append(", ");
-            joined.append(name.c_str());
-        }
+        BeStringUtilities::Join(joined, schemaNames, ", ");
         logger.errorv("Failed to drop schema(s): %s", joined.c_str());
-        return BE_SQLITE_ERROR;
-    }
+        return BE_SQLITE_ERROR;    }
 
     return ecdb.SaveChanges();
     }
