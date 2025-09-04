@@ -791,7 +791,7 @@ ECN::StructValueIdentifier ElementAutoHandledPropertiesECInstanceAdapter::GetMax
 +---------------+---------------+---------------+---------------+---------------+------*/
 StructArrayEntry const* ElementAutoHandledPropertiesECInstanceAdapter::GetAddressOfStructArrayEntry (StructValueIdentifier key) const
     {
-    if (nullptr == m_element.m_structInstances)
+    if (nullptr == m_element.m_structInstances || m_element.m_structInstances->empty())
         return nullptr;
 
     StructArrayEntry const* instanceArray = &(*m_element.m_structInstances)[0];
