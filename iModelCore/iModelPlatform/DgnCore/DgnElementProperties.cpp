@@ -768,6 +768,9 @@ ECN::StructValueIdentifier ElementAutoHandledPropertiesECInstanceAdapter::GetMax
         return 0;
 
     size_t numEntries =  m_element.m_structInstances->size();
+    if (0 == numEntries)
+        return 0;
+
     StructArrayEntry const* instanceArray = &(*m_element.m_structInstances)[0];
 
     // we cannot simply use the size of the array because structs may have been removed at some point - so we must walk the array and find the highest ID
