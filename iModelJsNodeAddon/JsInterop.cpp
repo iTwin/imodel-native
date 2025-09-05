@@ -997,8 +997,11 @@ DbResult JsInterop::DeleteSchemaItems(ECDbR ecdb, Utf8String schemaName, bvector
     schemaContext->AddFirstSchemaLocater(ecdb.GetSchemaLocater());
     ECN::SchemaKey schemaKey(schemaName.c_str(), 1, 0, 0); // default read, write, minor versions
     auto availableSchemas = ecdb.Schemas().GetSchemas();
-    Utf8String schemaList;
-    BeStringUtilities::Join(schemaList, availableSchemas, ", ", [](ECSchemaCP schema) { return schema->GetName(); });
+    bvector<Utf8String> schemaNames;
+    schemaNames.reserve(availableSchemas.size());
+    for (auto s : availableSchemas)
+        schemaNames.push_back(s->GetName());
+    Utf8String schemaList = BeStringUtilities::Join(schemaNames, ", ");
     ECSchemaPtr schema = ecdb.GetSchemaLocater().LocateSchema(schemaKey, ECN::SchemaMatchType::Latest, *schemaContext);
 
     if (!schema.IsValid()) {
