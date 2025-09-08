@@ -2886,7 +2886,46 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
                 THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txn mode", DgnDbStatus::BadArg);
         }
     }
-    Napi::Value  GetTxnProps(NapiInfoCR info) {
+    Napi::Value  StashChanges(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, args);
+        auto& db = GetWritableDb(info);
+        BeJsNapiObject stashInfo(info.Env());
+
+        BeFileName stashRootDir;
+        Utf8String description;
+        Utf8String iModelId;
+        bool resetBriefcase = false;
+
+        auto obj = BeJsConst(args);
+        if (obj.isStringMember("stashRootDir"))
+            stashRootDir.AssignUtf8(obj["stashRootDir"].asCString());
+        if (obj.isStringMember("description"))
+            description.assign(obj["description"].asCString());
+        if (obj.isStringMember("iModelId"))
+            iModelId.assign(obj["iModelId"].asCString());
+        if (obj.isBoolMember("resetBriefcase"))
+            resetBriefcase = obj["resetBriefcase"].asBool();
+
+        db.Txns().Stash(
+            stashRootDir,
+            description,
+            iModelId,
+            resetBriefcase,
+            stashInfo
+        );
+        return stashInfo;
+    }
+    Napi::Value GetPendingTxnsHash(NapiInfoCR info) {
+        OPTIONAL_ARGUMENT_BOOL(0, includeReversedTxns, false);
+        auto& db = GetWritableDb(info);
+        Utf8String hash;
+        if (SUCCESS !=db.Txns().GetPendingTxnsSha256HashString(hash, includeReversedTxns)){
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "failed to get pending txns hash", DgnDbStatus::BadArg);
+        }
+        return Napi::String::New(info.Env(), hash);
+    }
+
+    Napi::Value GetTxnProps(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdStr);
         auto& db = GetWritableDb(info);
         auto id = BeInt64Id::FromString(txnIdStr.c_str());
@@ -3129,6 +3168,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getTxnProps", &NativeDgnDb::GetTxnProps),
             InstanceMethod("setTxnMode", &NativeDgnDb::SetTxnMode),
             InstanceMethod("getTxnMode", &NativeDgnDb::GetTxnMode),
+            InstanceMethod("getPendingTxnsHash", &NativeDgnDb::GetPendingTxnsHash),
+            InstanceMethod("stashChanges", &NativeDgnDb::StashChanges),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),

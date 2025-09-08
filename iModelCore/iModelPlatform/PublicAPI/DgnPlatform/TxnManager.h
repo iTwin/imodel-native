@@ -538,10 +538,13 @@ public:
     DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges();
     DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeRebaseBegin();
     DGNPLATFORM_EXPORT PullMergeStage PullMergeGetStage() const;
+    DGNPLATFORM_EXPORT void Stash(BeFileNameCR pathname, Utf8StringCR description, Utf8StringCR iModelId, bool resetBriefcase, BeJsValue out);
+    DGNPLATFORM_EXPORT BentleyStatus GetPendingTxnsSha256HashString(Utf8StringR hash, bool includeReversedTxns = true) const;
+
 
     DGNPLATFORM_EXPORT bool GetTxnProps(TxnId id, BeJsValue props) const;
     DGNPLATFORM_EXPORT ChangesetStatus PullMergeApply(ChangesetPropsCR revision);     // for testing
-
+    
     //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);
     DGNPLATFORM_EXPORT static void DropTxnMonitor(TxnMonitor& monitor);

@@ -946,6 +946,248 @@ ChangesetStatus TxnManager::MergeDdlChanges(ChangesetPropsCR revision, Changeset
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/    
+BentleyStatus TxnManager::GetPendingTxnsSha256HashString(Utf8StringR hash, bool includeReversedTxns) const {
+    if (!HasPendingTxns())
+        return BentleyStatus::SUCCESS;
+
+    Statement stmt;
+    DbResult rc;
+    if (includeReversedTxns)
+        rc = stmt.Prepare(m_dgndb, R"sql(SELECT lower(hex(sha3_query('SELECT [Change] FROM [main].[dgn_Txns] ORDER BY [Id]', 256))))sql");
+    else
+        rc = stmt.Prepare(m_dgndb, R"sql(SELECT lower(hex(sha3_query('SELECT [Change] FROM [main].[dgn_Txns] WHERE [IsDeleted] = 0 ORDER BY [Id]', 256))))sql");
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("failed to prepare statement to compute hash: %s", BeSQLiteLib::GetErrorName(rc));
+        return BentleyStatus::ERROR;
+    }
+
+    rc = stmt.Step();
+    if (rc != BE_SQLITE_ROW) {
+        LOG.errorv("failed to compute hash: %s", BeSQLiteLib::GetErrorName(rc));
+        return BentleyStatus::ERROR;
+    }
+
+    hash = stmt.GetValueText(0);
+    return BentleyStatus::SUCCESS;
+}
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::Stash(BeFileNameCR stashRootDir, Utf8StringCR description, Utf8StringCR iModelId, bool resetBriefcase, BeJsValue out) {
+    if (!m_dgndb.IsDbOpen()){
+        m_dgndb.ThrowException("not a open db", BE_SQLITE_ERROR);
+    }
+
+    auto conf = PullMergeConf::Load(m_dgndb);
+    if (conf.InProgress()) {
+        m_dgndb.ThrowException("pull/merge in progress", BE_SQLITE_ERROR);
+    }
+
+    if (!m_dgndb.IsBriefcase()) {
+        m_dgndb.ThrowException("not a briefcase db", BE_SQLITE_ERROR);
+    }
+
+    if (HasChanges()) {
+        m_dgndb.ThrowException("there are uncommitted changes", BE_SQLITE_ERROR);
+    }
+
+    m_dgndb.SaveChanges("before stashing changes");
+    
+    auto briefcaseId = m_dgndb.GetBriefcaseId().GetValue();
+
+    Utf8String val;
+    BeGuid guid(true);
+
+    auto rc = m_dgndb.QueryBriefcaseLocalValue(val, "bis_elementidsequence");
+    if (BE_SQLITE_ROW != rc){
+        m_dgndb.ThrowException("failed to query bis_elementidsequence", (int)BE_SQLITE_ERROR);
+    }
+
+    const auto elementIdSeq = BeInt64Id::FromString(val.c_str());
+
+    rc = m_dgndb.QueryBriefcaseLocalValue(val, "ec_instanceidsequence");
+    if (BE_SQLITE_ROW != rc) {
+        m_dgndb.ThrowException("failed to query ec_instanceidsequence", (int)BE_SQLITE_ERROR);
+    }
+
+    const auto instanceIdSeq = BeInt64Id::FromString(val.c_str());
+
+    BeJsDocument stashInfo;
+    stashInfo.SetEmptyObject();
+    stashInfo["id"] = guid.ToString().ToLower();
+    stashInfo["iModelId"] = iModelId;
+    stashInfo["briefcaseId"] = briefcaseId;    
+    stashInfo["timestamp"] = DateTime::GetCurrentTime().ToString();
+    stashInfo["description"] = description;
+    val.clear();
+    if (SUCCESS != GetPendingTxnsSha256HashString(val)) {
+        m_dgndb.ThrowException("failed to compute hash via GetPendingTxnsSha256HashString()", (int)BE_SQLITE_ERROR);
+    }
+
+    stashInfo["hash"] = val;
+    val.clear();
+    rc = m_dgndb.QueryBriefcaseLocalValue(val, "parentChangeset");
+    if (BE_SQLITE_ROW != rc) {
+        rc = m_dgndb.QueryBriefcaseLocalValue(val, "ParentChangeSetId");
+        if (BE_SQLITE_ROW != rc) {
+            m_dgndb.ThrowException("failed to query parentChangeset or ParentChangeSetId", (int)BE_SQLITE_ERROR);
+        }
+        val.assign(SqlPrintfString("{\"id\": \"%s\"}", val.c_str()));
+    }
+    
+    if (val.empty()) {
+        m_dgndb.ThrowException("failed to query parentChangeset or ParentChangeSetId", (int)BE_SQLITE_ERROR);
+    }
+    
+    stashInfo["parentChangeset"].From(BeJsDocument(val));
+    if (instanceIdSeq.IsValid() || elementIdSeq.IsValid()) {
+        auto idSeq = stashInfo["idSequences"];
+        idSeq.SetEmptyObject();
+        if (elementIdSeq.IsValid())
+            idSeq["element"] = elementIdSeq.ToHexStr();
+
+        if (instanceIdSeq.IsValid())
+            idSeq["instance"] = instanceIdSeq.ToHexStr();
+    }
+
+    Db db;
+    BeFileName lockFile(Utf8String(m_dgndb.GetTempFileBaseName() + "-locks"));
+    BeFileName stashFile = stashRootDir;
+    stashFile.AppendSeparator();
+    stashFile.AppendUtf8(guid.ToString().ToLower().c_str());
+    stashFile.AppendExtension(L"stash");
+
+    rc = db.CreateNewDb(stashFile, Db::CreateParams(), guid);
+    if (rc != BE_SQLITE_OK) {
+        m_dgndb.ThrowException("fail to create stash file", (int)rc);
+    }
+
+    auto throwErrorAndDeleteStashFile = [&](Utf8CP error, int errCode) {
+        if (db.IsDbOpen()) {
+            db.AbandonChanges();
+            db.CloseDb();
+        }
+
+        stashInfo.SetNull();
+        if (stashFile.DoesPathExist())
+            stashFile.BeDeleteFile();
+
+        m_dgndb.ThrowException(error, (int)errCode);
+    };
+
+    rc = db.ExecuteDdl(R"sql(
+            CREATE TABLE [txns] (
+                [Id]	            INTEGER PRIMARY KEY NOT NULL,
+                [Deleted]	        BOOLEAN,
+                [Grouped]	        BOOLEAN,
+                [Operation]	        TEXT,
+                [IsSchemaChange]	BOOLEAN,
+                [Time]	            TIMESTAMP,
+                [Change]	        BLOB
+            )
+        )sql");
+        
+    if (rc != BE_SQLITE_OK) {
+        throwErrorAndDeleteStashFile("failed to create Txn table", (int)rc);
+    }
+
+    rc = db.ExecuteDdl(R"sql(
+        CREATE TABLE [locks](
+            [id] INTEGER PRIMARY KEY NOT NULL,
+            [state] INTEGER NOT NULL,
+            [origin] INTEGER
+        )
+    )sql");
+
+    if (rc != BE_SQLITE_OK) {
+        throwErrorAndDeleteStashFile("failed to create locks table", (int)rc);
+    }
+
+    if (lockFile.DoesPathExist()) {
+        rc = db.AttachDb(lockFile.GetNameUtf8().c_str(), "locks_attach_db");
+        if (rc != BE_SQLITE_OK) {
+            throwErrorAndDeleteStashFile("failed to attach locks file", (int)rc);
+        }
+       
+        rc = db.ExecuteSql(R"sql(
+            INSERT INTO [main].[locks] ([id], [state], [origin]) 
+            SELECT [id], [state], [origin] FROM [locks_attach_db].[locks]
+        )sql");
+        
+        if (rc != BE_SQLITE_OK) {
+            throwErrorAndDeleteStashFile("failed to insert into locks table", (int)rc);
+        }
+    }
+
+    Statement lockCountStmt;
+    rc = lockCountStmt.Prepare(db, R"sql(SELECT count(*) FROM [main].[locks] WHERE [origin] = 0)sql");
+    if (rc != BE_SQLITE_OK) {
+        throwErrorAndDeleteStashFile("failed to prepare statement", (int)rc);
+    }
+
+    rc = lockCountStmt.Step();
+    if (rc != BE_SQLITE_ROW) {
+        throwErrorAndDeleteStashFile("failed to get acquired lock count", (int)rc);
+    }
+
+    stashInfo["acquiredLocks"] = lockCountStmt.GetValueInt(0);
+    lockCountStmt.Finalize();
+
+    rc = db.AttachDb(m_dgndb.GetDbFileName(), "imodel_attach_db");
+    if (rc != BE_SQLITE_OK) {
+        throwErrorAndDeleteStashFile("failed to attach stash file", (int)rc);
+    }
+
+    rc = db.ExecuteSql(R"sql(
+        INSERT INTO [main].[txns] ([Id], [Deleted], [Grouped], [Operation], [IsSchemaChange], [Time], [Change]) 
+        SELECT [Id], [Deleted], [Grouped], [Operation], [IsSchemaChange], [Time], [Change] FROM [imodel_attach_db].[dgn_Txns]
+    )sql");
+
+    if (rc != BE_SQLITE_OK) {
+        throwErrorAndDeleteStashFile("failed to insert into stash file", (int)rc);
+    }
+
+    auto txnInfos = stashInfo["txns"];
+    txnInfos.SetEmptyArray();
+    for (TxnId curr = QueryNextTxnId(TxnId(0)); curr.IsValid(); curr = QueryNextTxnId(curr)) {
+        GetTxnProps(curr, txnInfos.appendObject());
+    }
+
+    db.SaveBriefcaseLocalValue("$stash_info", stashInfo.Stringify());
+    rc = db.SaveChanges();
+    if (rc != BE_SQLITE_OK) {
+        throwErrorAndDeleteStashFile("failed to save changes", (int)rc);
+    }
+
+    db.CloseDb();
+    // ========
+    out.From(stashInfo);
+
+    if (resetBriefcase) {
+        TxnId startTxnId = QueryNextTxnId(TxnId(0));
+        TxnId endTxnId = GetCurrentTxnId();
+        if (startTxnId < endTxnId) {
+            OnBeforeUndoRedo(true);
+            for (TxnId curr = QueryPreviousTxnId(endTxnId); curr.IsValid() && curr >= startTxnId; curr = QueryPreviousTxnId(curr)) {
+                LOG.infov("Reversing TxnId: %s, Descr: %s", BeInt64Id(curr.GetValue()).ToHexStr().c_str(),GetTxnDescription(curr).c_str());
+                auto rc = ApplyTxnChanges(curr, TxnAction::Reverse);
+                if (BE_SQLITE_OK != rc) {
+                    m_dgndb.AbandonChanges();
+                    throwErrorAndDeleteStashFile("failed to reset briefcase", (int)rc);
+                }
+            }
+        }
+        DeleteAllTxns();
+        m_curr = TxnId(SessionId(0), 0);
+        m_action = TxnAction::None;
+        m_reversedTxn.clear();        
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges, bool fastForward) {
     if (TrackChangesetHealthStats())
