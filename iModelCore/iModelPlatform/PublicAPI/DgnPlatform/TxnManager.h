@@ -818,18 +818,19 @@ namespace dgn_TxnTable
         Utf8CP _GetTableName() const override {return MyTableName();}
     };
 
-    struct SubCategory : TxnTable {
+    struct DefinitionElement : TxnTable {
     private:
-        int m_appearanceColumnIndex = -1;
+        int m_subcategoryAppearanceColumnIndex = -1;
+        DgnClassId m_subCategoryClassId;
 
         void AddChange(BeSQLite::Changes::Change const& change, bool fromCommit) const;
 
-        Utf8CP _GetTableName() const override { return BIS_TABLE(BIS_CLASS_SubCategory); }
+        Utf8CP _GetTableName() const override { return BIS_TABLE(BIS_CLASS_DefinitionElement); }
         void _Initialize() override;
         void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override { AddChange(change, true); }
         void _OnAppliedUpdate(BeSQLite::Changes::Change const& change) override  { AddChange(change, false); }
     public:
-        SubCategory(TxnManager& mgr) : TxnTable(mgr) { }
+        DefinitionElement(TxnManager& mgr) : TxnTable(mgr) { }
     };
     
     struct Model : TxnTable

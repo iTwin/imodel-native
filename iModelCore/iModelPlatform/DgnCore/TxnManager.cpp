@@ -2671,7 +2671,7 @@ void dgn_TxnTable::RelationshipLinkTable::_OnValidated()
         }
     }
 
-void dgn_TxnTable::SubCategory::_Initialize() {
+void dgn_TxnTable::DefinitionElement::_Initialize() {
     auto ecsql = "SELECT ti.cid SqliteColumnIndex"
         " FROM   ec_PropertyMap pp"
                " JOIN ec_Column c ON c.Id = pp.ColumnId"
@@ -2690,11 +2690,13 @@ void dgn_TxnTable::SubCategory::_Initialize() {
         return;
     }
     
-    m_appearanceColumnIndex = stmt->GetValueInt(0);
+    m_subcategoryAppearanceColumnIndex = stmt->GetValueInt(0);
+    m_subCategoryClassId = m_txnMgr.GetDgnDb().Schemas().GetClassId("BisCore", "DefinitionElement");
+    BeAssert(m_subCategoryClassId.IsValid());
 }
 
-void dgn_TxnTable::SubCategory::AddChange(BeSQLite::Changes::Change const& change, bool fromCommit) const {
-    if (change.GetNewValue(m_appearanceColumnIndex).IsValid()) {
+void dgn_TxnTable::DefinitionElement::AddChange(BeSQLite::Changes::Change const& change, bool fromCommit) const {
+    if (change.GetNewValue(m_subcategoryAppearanceColumnIndex).IsValid()) {
         auto subCategoryId = change.GetValue(0, Changes::Change::Stage::Old).GetValueId<DgnSubCategoryId>();
         m_txnMgr.m_modelChanges.AddSubCategoryAppearanceChange(subCategoryId, fromCommit);
     }
