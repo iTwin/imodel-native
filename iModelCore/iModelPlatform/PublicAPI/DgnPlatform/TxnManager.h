@@ -317,6 +317,8 @@ public:
     // A set of Ids of entities that were affected by a transaction, along with a flag for
     // each indicating whether any of the changes to the entity originated from a commit
     // (vs applying a changeset, e.g. undo/redo).
+    // We care about that distinction because when a model or element is modified by a commit
+    // (and never when applying a changeset) we need to auto-update its LastMod and (for models) GeometryGuid properties.
     // @bsistruct
     //=======================================================================================
     template<typename Id> struct ChangedIds
