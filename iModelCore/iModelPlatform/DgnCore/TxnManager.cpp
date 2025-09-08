@@ -2696,9 +2696,11 @@ void dgn_TxnTable::DefinitionElement::_Initialize() {
 }
 
 void dgn_TxnTable::DefinitionElement::AddChange(BeSQLite::Changes::Change const& change, bool fromCommit) const {
-    if (change.GetNewValue(m_subcategoryAppearanceColumnIndex).IsValid()) {
-        auto subCategoryId = change.GetValue(0, Changes::Change::Stage::Old).GetValueId<DgnSubCategoryId>();
-        m_txnMgr.m_modelChanges.AddSubCategoryAppearanceChange(subCategoryId, fromCommit);
+    auto elementId = change.GetValue(0, Changes::Change::Stage::Old).GetValueId<DgnSubCategoryId>();
+    CachedStatementPtr stmt = m_txnMgr.GetDgnDb().Elements().GetStatement("SELECT ECClassId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    stmt->BindId(1, elementId);
+    if (BE_SQLITE_ROW == stmt->Step() && m_subCategoryClassId == stmt->GetValueId<DgnClassId>(0) && change.GetNewValue(m_subCategoryAppearanceColumnIndex).IsValid()) {
+      m_txnMgr.m_modelChanges.AddSubCategoryAppearanceChange(elementId, fromCommit);
     }
 }
 
