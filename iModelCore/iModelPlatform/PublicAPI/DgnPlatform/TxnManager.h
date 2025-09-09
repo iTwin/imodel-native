@@ -314,34 +314,6 @@ public:
     };
 
     //=======================================================================================
-    // A set of Ids of entities that were affected by a transaction, along with a flag for
-    // each indicating whether any of the changes to the entity originated from a commit
-    // (vs applying a changeset, e.g. undo/redo).
-    // We care about that distinction because when a model or element is modified by a commit
-    // (and never when applying a changeset) we need to auto-update its LastMod and (for models) GeometryGuid properties.
-    // @bsistruct
-    //=======================================================================================
-    template<typename Id> struct ChangedIds
-    {
-        using Map = bmap<Id, bool>;
-    private:
-        Map m_ids;
-    public:
-        void Insert(Id id, bool fromCommit)
-            {
-            auto iter = m_ids.Insert(id, fromCommit);
-            if (fromCommit && !iter.second)
-                iter.first->second = true;
-            }
-
-        bool empty() const { return m_ids.empty(); }
-        typename Map::const_iterator begin() const { return m_ids.begin(); }
-        typename Map::const_iterator end() const { return m_ids.end(); }
-        void erase(Id id) { m_ids.erase(id); }
-        void clear() { m_ids.clear(); }
-    };
-
-    //=======================================================================================
     // Keeps track of changes to models, and optionally to geometric elements within those
     // models. The latter requires a writable DgnDb with BisCore 1.0.11 or newer.
     // @bsistruct
@@ -363,12 +335,12 @@ public:
     private:
         enum class State : uint8_t { Idle, Commit, Apply };
 
-        ChangedIds<DgnModelId> m_models;    // the set of models that have changes for the current transaction
-        ChangedIds<DgnModelId> m_geometricModels; // the set of models that have geometric changes for the current transaction
-        ChangedIds<DgnSubCategoryId> m_subCategories; // the set of subcategories whose appearances changed during the current transaction
+        bset<DgnModelId> m_models;    // the set of models that have changes for the current transaction
+        bset<DgnModelId> m_geometricModels; // the set of models that have geometric changes for the current transaction
+        bset<DgnSubCategoryId> m_subCategories; // the set of subcategories whose appearances changed during the current transaction
         bmap<DgnModelId, GeometricElementChanges> m_geometryChanges; // changes to elements within geometric models
         bmap<DgnElementId, DgnModelId> m_modelsForDeletedElements; // maps Id of a deleted element to its model Id
-        ChangedIds<DgnElementId> m_deletedGeometricElements; // Ids of deleted geometric elements
+        bset<DgnElementId> m_deletedGeometricElements; // Ids of deleted geometric elements
         TxnManager& m_mgr;
         Mode m_mode = Mode::Legacy;
         bool m_determinedMode = false;
@@ -396,11 +368,11 @@ public:
     public:
         explicit ModelChanges(TxnManager& mgr);
 
-        void AddModel(DgnModelId modelId, bool fromCommit) { m_models.Insert(modelId, fromCommit); }
-        void AddGeometricElementChange(DgnModelId modelId, DgnElementId elementId, TxnTable::ChangeType type, bool fromCommit);
+        void AddModel(DgnModelId modelId) { m_models.insert(modelId); }
+        void AddGeometricElementChange(DgnModelId modelId, DgnElementId elementId, TxnTable::ChangeType type);
         void AddDeletedElement(DgnElementId elemId, DgnModelId modelId) { m_modelsForDeletedElements.Insert(elemId, modelId); }
-        void AddDeletedGeometricElement(DgnElementId elemId, bool fromCommit) { m_deletedGeometricElements.Insert(elemId, fromCommit); }
-        void AddSubCategoryAppearanceChange(DgnSubCategoryId subCategoryId, bool fromCommit) { m_subCategories.Insert(subCategoryId, fromCommit); }
+        void AddDeletedGeometricElement(DgnElementId elemId) { m_deletedGeometricElements.insert(elemId); }
+        void AddSubCategoryAppearanceChange(DgnSubCategoryId subCategoryId) { m_subCategories.insert(subCategoryId); }
 
         void BeginValidate() { BeAssert(IsIdle()); m_state = State::Commit; }
         void BeginApply() { BeAssert(IsIdle()); m_state = State::Apply; }
@@ -747,9 +719,9 @@ namespace dgn_TxnTable
 
         void _Initialize() override;
         void _OnValidate() override;
-        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert, true);}
-        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete, true);}
-        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update, true);}
+        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
+        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
         void _OnValidated() override;
         void _OnApply() override;
         void _OnAppliedAdd(BeSQLite::Changes::Change const&) override;
@@ -757,8 +729,8 @@ namespace dgn_TxnTable
         void _OnAppliedUpdate(BeSQLite::Changes::Change const&) override;
         void _OnApplied() override;
 
-        void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType, bool fromCommit);
-        void AddElement(DgnElementId, DgnModelId, ChangeType changeType, DgnClassId, bool fromCommit);
+        void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
+        void AddElement(DgnElementId, DgnModelId, ChangeType changeType, DgnClassId);
 
         //! iterator for elements that are directly changed. Only valid during _PropagateChanges.
         struct Iterator : BeSQLite::DbTableIterator
@@ -804,14 +776,14 @@ namespace dgn_TxnTable
         virtual int32_t _GetLastCol() = 0;
 
         bool HasChangeInColumns(BeSQLite::Changes::Change const& change);
-        void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType, bool fromCommit);
+        void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
 
-        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert, true);}
-        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update, true);}
-        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete, true);}
-        void _OnAppliedAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert, false);}
-        void _OnAppliedUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update, false);}
-        void _OnAppliedDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete, false);}
+        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
+        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
+        void _OnAppliedAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
+        void _OnAppliedUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
+        void _OnAppliedDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
     };
 
     struct Geometric3d : Geometric {
@@ -833,12 +805,12 @@ namespace dgn_TxnTable
         int m_subcategoryAppearanceColumnIndex = -1;
         DgnClassId m_subCategoryClassId;
 
-        void AddChange(BeSQLite::Changes::Change const& change, bool fromCommit) const;
+        void AddChange(BeSQLite::Changes::Change const& change) const;
 
         Utf8CP _GetTableName() const override { return BIS_TABLE(BIS_CLASS_DefinitionElement); }
         void _Initialize() override;
-        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override { AddChange(change, true); }
-        void _OnAppliedUpdate(BeSQLite::Changes::Change const& change) override  { AddChange(change, false); }
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override { AddChange(change); }
+        void _OnAppliedUpdate(BeSQLite::Changes::Change const& change) override  { AddChange(change); }
     public:
         DefinitionElement(TxnManager& mgr) : TxnTable(mgr) { }
     };
