@@ -323,21 +323,30 @@ BentleyStatus RelatedClass::Unify(RelatedClass& result, RelatedClassCR lhs, Rela
         return ERROR;
 
     result = lhs;
+
     if (lhs.GetSourceClass() != rhs.GetSourceClass())
         {
         ECClassCP baseSource = GetNearestCommonRelationshipEndClass(*lhs.GetSourceClass(), *rhs.GetSourceClass(),
             lhs.IsForwardRelationship() ? *lhs.GetRelationship().GetClass().GetSource().GetAbstractConstraint() : *lhs.GetRelationship().GetClass().GetTarget().GetAbstractConstraint());
+        if (!baseSource)
+            return ERROR;
+
         result.SetSourceClass(*baseSource);
         }
+
     if (lhs.GetTargetClass() != rhs.GetTargetClass())
         {
         ECClassCP baseTarget = GetNearestCommonRelationshipEndClass(lhs.GetTargetClass().GetClass(), rhs.GetTargetClass().GetClass(),
             lhs.IsForwardRelationship() ? *lhs.GetRelationship().GetClass().GetTarget().GetAbstractConstraint() : *lhs.GetRelationship().GetClass().GetSource().GetAbstractConstraint());
+        if (!baseTarget)
+            return ERROR;
+
         SelectClassWithExcludes<ECClass> targetSelectClass(lhs.GetTargetClass());
         targetSelectClass.SetClass(*baseTarget);
         targetSelectClass.SetIsSelectPolymorphic(true);
         result.SetTargetClass(targetSelectClass);
         }
+
     return SUCCESS;
     }
 

@@ -150,7 +150,7 @@ static void SkipValues(int& sqlColumnIndex, bvector<ContentDescriptor::Field*> c
             if (!contract.ShouldHandleRelatedContentField(relatedContentField))
                 continue; // don't increase sqlColumnIndex even for this field
 
-            // Skip display label column 
+            // Skip display label column
             ++sqlColumnIndex;
             // Skip related content select fields
             SkipValues(sqlColumnIndex, relatedContentField.GetFields(), contract);

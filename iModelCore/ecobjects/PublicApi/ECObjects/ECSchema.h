@@ -3209,6 +3209,7 @@ private:
 
     uint32_t                m_originalECXmlVersionMajor;
     uint32_t                m_originalECXmlVersionMinor;
+    Utf8String              m_schemaOrigin;
 
     // maps class name -> class pointer
     ClassMap                    m_classMap;
@@ -3227,7 +3228,7 @@ private:
 
     ECSchema() : m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
         m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap),
-        m_propertyCategoryContainer(m_propertyCategoryMap), m_formatContainer(m_formatMap), m_unitsContext(*this)
+        m_propertyCategoryContainer(m_propertyCategoryMap), m_formatContainer(m_formatMap), m_unitsContext(*this), m_schemaOrigin()
         { }
     virtual ~ECSchema();
 
@@ -3316,6 +3317,10 @@ public:
 
     SchemaKeyCR GetSchemaKey() const {return m_key;} //!< Returns a SchemaKey fully describing this schema
     ECOBJECTS_EXPORT void DebugDump() const; //!< Prints out detailed information about this ECSchema, and then calls Dump() on each ECClass.
+    //! Gets information about the schema origin (where the schema was loaded/constructed from)
+    Utf8StringCR GetOrigin() const { return m_schemaOrigin; }
+    //! Adds information about the schema origin.
+    void SetOrigin(Utf8StringCR value) { m_schemaOrigin = value; };
 
     //! Return a transient dictionary use to store app data. This is not serialized with the schema xml.
     ECOBJECTS_EXPORT ECAppData& GetAppData() const;
