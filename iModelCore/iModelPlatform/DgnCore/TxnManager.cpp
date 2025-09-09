@@ -1286,18 +1286,23 @@ void TxnManager::ClearModelChanges() {
 void TxnManager::ModelChanges::Process()
     {
     BeAssert(State::Idle != m_state);
-    // bool fromCommit = State::Commit == m_state;
+    bool fromCommit = State::Commit == m_state;
+    auto sanityCheck = [=](bool isFromCommit) {
+        if (isFromCommit != fromCommit) {
+            throw std::runtime_error("Mismatched fromCommit flag");
+        }
+    };
     m_state = State::Idle;
 
     auto mode = DetermineMode();
 
     // When we get a Change that deletes a geometric element, we don't have access to its model Id at that time - look it up now.
-    for (auto const& deleted : m_deletedGeometricElements)
-        {
+    for (auto const& deleted : m_deletedGeometricElements) {
+        sanityCheck(deleted.second);
         auto iter = m_modelsForDeletedElements.find(deleted.first);
         if (m_modelsForDeletedElements.end() != iter)
-            AddGeometricElementChange(iter->second, deleted.first, TxnTable::ChangeType::Delete, deleted.second);
-        }
+            AddGeometricElementChange(iter->second, deleted.first, TxnTable::ChangeType::Delete, fromCommit);
+    }
 
     m_deletedGeometricElements.clear();
     m_modelsForDeletedElements.clear();
@@ -1329,7 +1334,8 @@ void TxnManager::ModelChanges::Process()
 
         bvector<Utf8String> commitSubCategories, otherSubCategories;
         for (auto const& entry : m_subCategories) {
-            auto& group = entry.second ? commitSubCategories : otherSubCategories;
+            sanityCheck(entry.second);
+            auto& group = fromCommit ? commitSubCategories : otherSubCategories;
             group.push_back(entry.first.ToHexStr());
         }
 
@@ -1381,7 +1387,8 @@ void TxnManager::ModelChanges::Process()
         BeGuid guid(true); // create a new GUID to represent this state of the changed geometric models
         for (auto model : m_geometricModels)
             {
-            if (!model.second)
+            sanityCheck(model.second);
+            if (!fromCommit)
                 continue; // change wasn't from commit - don't update GeometryGuid or LastMod
 
             m_models.erase(model.first); // we don't need to update LastMod below - this statement updates it.
@@ -1401,7 +1408,8 @@ void TxnManager::ModelChanges::Process()
 
         for (auto model : m_models)
             {
-            if (!model.second)
+            sanityCheck(model.second);
+            if (!fromCommit)
                 continue; // change wasn't from commit - don't update LastMod.
 
             stmt->BindId(1, model.first);
