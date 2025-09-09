@@ -70,7 +70,7 @@ HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Category);
 HANDLER_DEFINE_MEMBERS(DrawingCategory);
 HANDLER_DEFINE_MEMBERS(SpatialCategory);
-HANDLER_DEFINE_MEMBERS(DefinitionElement);
+HANDLER_DEFINE_MEMBERS(SubCategory);
 HANDLER_DEFINE_MEMBERS(PhysicalMaterial)
 HANDLER_DEFINE_MEMBERS(PhysicalType)
 HANDLER_DEFINE_MEMBERS(TemplateRecipe3d)
@@ -225,7 +225,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterTableHandler(dgn_TableHandler::Geometric2d::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());
     RegisterTableHandler(dgn_TableHandler::ElementDep::GetHandler());
-    RegisterTableHandler(dgn_TableHandler::SubCategory::GetHandler());
+    RegisterTableHandler(dgn_TableHandler::DefinitionElement::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------

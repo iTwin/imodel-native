@@ -82,7 +82,7 @@ namespace dgn_TxnTable {
     struct RelationshipLinkTable;
     struct UniqueRelationshipLinkTable;
     struct MultiRelationshipLinkTable;
-    struct SubCategory;
+    struct DefinitionElement;
 }
 
 //=======================================================================================
@@ -376,6 +376,9 @@ public:
         State m_state = State::Idle;
 
         bool IsReadonly() const { return m_determinedMode && m_mode == Mode::Readonly; }
+        bool IsIdle() const { return m_state == State::Idle; }
+        bool IsCommitting() const { return m_state == State::Commit; }
+        bool IsApplying() const { return m_state == State::Apply; }
 
         void Clear(bool preserveGeometryChanges)
             {
@@ -399,8 +402,8 @@ public:
         void AddDeletedGeometricElement(DgnElementId elemId, bool fromCommit) { m_deletedGeometricElements.Insert(elemId, fromCommit); }
         void AddSubCategoryAppearanceChange(DgnSubCategoryId subCategoryId, bool fromCommit) { m_subCategories.Insert(subCategoryId, fromCommit); }
 
-        void BeginValidate() { BeAssert(State::Idle == m_state); m_state = State::Commit; }
-        void BeginApply() { BeAssert(State::Idle == m_state); m_state = State::Apply; }
+        void BeginValidate() { BeAssert(IsIdle()); m_state = State::Commit; }
+        void BeginApply() { BeAssert(IsIdle()); m_state = State::Apply; }
         void Process();
         void Notify();
         void ClearAll() { Clear(false); }
@@ -1006,9 +1009,9 @@ namespace dgn_TableHandler {
         TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ElementDep(mgr);}
     };
 
-    struct SubCategory : DgnDomain::TableHandler {
-        TABLEHANDLER_DECLARE_MEMBERS(SubCategory, DGNPLATFORM_EXPORT)
-        TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::SubCategory(mgr);}
+    struct DefinitionElement : DgnDomain::TableHandler {
+        TABLEHANDLER_DECLARE_MEMBERS(DefinitionElement, DGNPLATFORM_EXPORT)
+        TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::DefinitionElement(mgr);}
     };
 };
 
