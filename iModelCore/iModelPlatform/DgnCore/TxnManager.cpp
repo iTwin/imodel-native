@@ -495,6 +495,13 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnValidateChanges(ChangeStreamCR changeStream) {
+    if (!m_initTableHandlers) {
+        BeAssert(false); // validation cannot happen without table handlers initialized.
+        return;
+    }
+
+    m_modelChanges.BeginValidate();
+
     BeAssert(!m_dgndb.IsReadonly());
 
     Changes changes(changeStream, false);
@@ -550,6 +557,8 @@ void TxnManager::OnValidateChanges(ChangeStreamCR changeStream) {
 void TxnManager::OnChangeSetApplied(ChangeStreamCR changeStream, bool invert) {
     if (!m_initTableHandlers) // won't do anything if we don't have table handlers
         return;
+
+    m_modelChanges.BeginApply();
 
     Changes changes(changeStream, invert);
     Utf8String currTable;
@@ -1276,6 +1285,10 @@ void TxnManager::ClearModelChanges() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ModelChanges::Process()
     {
+    BeAssert(State::Idle != m_state);
+    bool fromCommit = State::Commit == m_state;
+    m_state = State::Idle;
+
     auto mode = DetermineMode();
 
     // When we get a Change that deletes a geometric element, we don't have access to its model Id at that time - look it up now.

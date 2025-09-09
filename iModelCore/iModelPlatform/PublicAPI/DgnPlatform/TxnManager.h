@@ -361,6 +361,8 @@ public:
           Full,
         };
     private:
+        enum class State : uint8_t { Idle, Commit, Apply };
+
         ChangedIds<DgnModelId> m_models;    // the set of models that have changes for the current transaction
         ChangedIds<DgnModelId> m_geometricModels; // the set of models that have geometric changes for the current transaction
         ChangedIds<DgnSubCategoryId> m_subCategories; // the set of subcategories whose appearances changed during the current transaction
@@ -371,6 +373,7 @@ public:
         Mode m_mode = Mode::Legacy;
         bool m_determinedMode = false;
         bool m_trackGeometry = false; // true if we are currently tracking changes to geometric elements
+        State m_state = State::Idle;
 
         bool IsReadonly() const { return m_determinedMode && m_mode == Mode::Readonly; }
 
@@ -396,6 +399,8 @@ public:
         void AddDeletedGeometricElement(DgnElementId elemId, bool fromCommit) { m_deletedGeometricElements.Insert(elemId, fromCommit); }
         void AddSubCategoryAppearanceChange(DgnSubCategoryId subCategoryId, bool fromCommit) { m_subCategories.Insert(subCategoryId, fromCommit); }
 
+        void BeginValidate() { BeAssert(State::Idle == m_state); m_state = State::Commit; }
+        void BeginApply() { BeAssert(State::Idle == m_state); m_state = State::Apply; }
         void Process();
         void Notify();
         void ClearAll() { Clear(false); }
