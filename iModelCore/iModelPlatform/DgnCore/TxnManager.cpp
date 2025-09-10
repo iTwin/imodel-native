@@ -2700,7 +2700,7 @@ void dgn_TxnTable::DefinitionElement::_Initialize() {
     }
     
     m_subcategoryAppearanceColumnIndex = stmt->GetValueInt(0);
-    m_subCategoryClassId = m_txnMgr.GetDgnDb().Schemas().GetClassId("BisCore", "DefinitionElement");
+    m_subCategoryClassId = m_txnMgr.GetDgnDb().Schemas().GetClassId("BisCore", "SubCategory");
     BeAssert(m_subCategoryClassId.IsValid());
 }
 
@@ -2708,9 +2708,16 @@ void dgn_TxnTable::DefinitionElement::AddChange(BeSQLite::Changes::Change const&
     auto elementId = change.GetValue(0, Changes::Change::Stage::Old).GetValueId<DgnSubCategoryId>();
     CachedStatementPtr stmt = m_txnMgr.GetDgnDb().Elements().GetStatement("SELECT ECClassId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
-    if (BE_SQLITE_ROW == stmt->Step() && m_subCategoryClassId == stmt->GetValueId<DgnClassId>(0) && change.GetNewValue(m_subcategoryAppearanceColumnIndex).IsValid()) {
-      m_txnMgr.m_modelChanges.AddSubCategoryAppearanceChange(elementId);
-    }
+    if (BE_SQLITE_ROW != stmt->Step())
+        return;
+
+    auto classId = stmt->GetValueId<DgnClassId>(0);
+    if (classId != m_subCategoryClassId)
+        return;
+
+    auto newValue = change.GetNewValue(m_subcategoryAppearanceColumnIndex);
+    if (newValue.IsValid())
+        m_txnMgr.m_modelChanges.AddSubCategoryAppearanceChange(elementId);
 }
 
 /*---------------------------------------------------------------------------------**//**
