@@ -204,6 +204,11 @@ BentleyStatus SchemaManager::RepopulateCacheTables() const { return Main().Repop
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+BentleyStatus SchemaManager::ClearCacheTables() const { return Main().ClearCacheTables(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 BentleyStatus SchemaManager::UpgradeECInstances() const { return Main().UpgradeECInstances() == BE_SQLITE_OK ? SUCCESS : ERROR; }
 
 //---------------------------------------------------------------------------------------

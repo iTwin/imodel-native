@@ -229,6 +229,7 @@ public:
     DropSchemaResult DropSchema(Utf8StringCR name, SchemaImportToken const* token, bool logIssue) const;
     DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, SchemaImportToken const* token, bool logIssue) const;
     BentleyStatus RepopulateCacheTables() const;
+    BentleyStatus ClearCacheTables() const;
     DbResult UpgradeECInstances() const { return UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(GetECDb()); }
     BentleyStatus CreateClassViews() const;
     BentleyStatus CreateClassViews(bvector<ECN::ECClassId> const& ecclassids) const;

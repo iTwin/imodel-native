@@ -473,17 +473,17 @@ BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker) {
 
 #define TABLE_NAME_STARTS_WITH(NAME) (0==strncmp(NAME, tableName, sizeof(NAME)-1))
 /*---------------------------------------------------------------------------------**//**
-* When journalling changes, SQLite calls this method to determine whether changes to a specific table are eligible or not.
+* When journaling changes, SQLite calls this method to determine whether changes to a specific table are eligible or not.
 * @note tables with no primary key are skipped automatically.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName) {
-    // Skip these tables - they hold redundant data that will be automatically updated when the changeset is applied
     return (
                TABLE_NAME_STARTS_WITH(BEDB_TABLE_Local) ||
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Txns) ||
                TABLE_NAME_STARTS_WITH(DGN_VTABLE_SpatialIndex) ||
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Rebase) ||
+               (0 == strncmp(tableName, "ec_cache_", 9)) ||
                DgnSearchableText::IsUntrackedFts5Table(tableName)
             ) ? TrackChangesForTable::No : TrackChangesForTable::Yes;
 }
@@ -1009,22 +1009,6 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
         m_dgndb.ThrowException("unable to save changes", (int) ChangesetStatus::SQLiteError);
 }
 
-namespace
-    {
-    bool IsCacheTableNameInChangeset(const Changes& changes)
-        {
-        for (const auto& change: changes)
-            {
-            if (change.GetOpcode() == DbOpcode::Insert)  // we only care about update/delete operations
-                continue;
-            
-            if (const auto tableName = change.GetTableName(); !tableName.empty() && 0 == strncmp(tableName.c_str(), "ec_cache_", 9))
-                return true;
-            }
-        return false;
-        }
-    }
-
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1082,7 +1066,7 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
             auto schemaApplyArgs = ApplyChangesArgs::Default()
                 .SetInvert(invert)
                 .SetIgnoreNoop(true)
-                .SetFkNoAction(IsCacheTableNameInChangeset(changeStream.GetChanges()))
+                .SetFkNoAction(false)
                 .ApplyOnlySchemaChanges();
 
             m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
@@ -1442,7 +1426,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     if (!IsInAbandon())
         OnBeginApplyChanges();
 
-
+    
     if (containsSchemaChanges)  {
         // notify ECPresentation and ConcurrentQuery to stop/cancel all running task before applying schema changeset.
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
@@ -1465,16 +1449,13 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     // apply schema part of changeset before data changes if schema changes are present
     if (containsSchemaChanges)
         {
-        // If the SQLITE_CHANGESETAPPLY_FKNOACTION flag is set, we need to check if the cache tables have been tracked in the changeset.
-        // If the cache tables are not tracked, we should set the flag to false to allow cascades and avoid any possible FK constraint violations.
-        if (fkNoAction)
-            fkNoAction = IsCacheTableNameInChangeset(Changes(changeset, false));
 
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
+        m_dgndb.Schemas().ClearCacheTables(); // clear the cache tables before applying schema changes
         auto schemaApplyArgs = ApplyChangesArgs::Default()
             .SetInvert(invert)
             .SetIgnoreNoop(true)
-            .SetFkNoAction(fkNoAction)
+            .SetFkNoAction(false) // ec_cache_ tables need to be delete rows when ec_class table changes
             .ApplyOnlySchemaChanges();
 
         if (fastForward) {
@@ -1788,7 +1769,16 @@ void TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action) {
     UndoChangeSet changeset;
     ReadDataChanges(changeset, rowId, action);
 
-    auto rc = ApplyChanges(changeset, action, false);
+    auto hasECChanges = [](ChangeSetR cs) {
+        for (auto& change : cs.GetChanges()) {
+            if (change.GetTableName().StartsWithIAscii("ec_")) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    auto rc = ApplyChanges(changeset, action, hasECChanges(changeset));
     BeAssert(!HasDataChanges());
 
     if (BE_SQLITE_OK != rc || m_dgndb.IsReadonly())
@@ -3060,8 +3050,21 @@ void TxnManager::PullMergeEnd() {
         return;
     }
 
+    if (HasChanges()) {
+        LOG.warning("PullMergeEnd: Do not expect change tracking to have any changes to be present at this point. This is unexpected and may lead to a failure");
+        auto changeset = ChangeSet{};
+        changeset.FromChangeTrack(*this);
+        bset<Utf8String> changedTables;
+        for(auto& change : changeset.GetChanges()) {
+            if (changedTables.find(change.GetTableName()) != changedTables.end()) {
+                continue;
+            }
+            changedTables.insert(change.GetTableName());
+            LOG.warningv("PullMergeEnd: unexpected changes to %s table. This may lead to a failure", change.GetTableName().c_str());
+        }
+    }
     conf.SetMergeStage(PullMergeConf::MergeStage::RebasingLocalChanges).Save(m_dgndb);
-    m_dgndb.SaveChanges();
+    m_dgndb.SaveChanges("PullMergeEnd: save pull-merge conf");
 
     enum class NotifyId {Begin, End};
     auto notifyJs = [&](NotifyId notifyId, TxnManager::TxnId id, Utf8StringCR descr, TxnType type) {
@@ -3190,7 +3193,7 @@ void TxnManager::PullMergeEnd() {
         .SetStartTxnId(TxnId(0))
         .Save(m_dgndb);
 
-    rc = m_dgndb.SaveChanges();
+    rc = m_dgndb.SaveChanges("PullMergeEnd: save pull-merge conf");
     if (rc != BE_SQLITE_OK ){
         m_dgndb.ThrowException("Unable to save merge state", static_cast<int>(rc));
     }
