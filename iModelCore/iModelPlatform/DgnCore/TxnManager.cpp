@@ -1301,62 +1301,36 @@ void TxnManager::ModelChanges::Process()
     m_deletedGeometricElements.clear();
     m_modelsForDeletedElements.clear();
 
+    // If a subcategory's appearance changed, then the geometry of all models containing any elements belonging to its category
+    // is considered changed, as are the elements themselves.
+    // This will invalidate all tiles for these models.
+    // NOTE: This is a simplification for efficiency - we don't want to scan element geometry streams to find references to particular subcategories.
     if (!m_subCategories.empty()) {
-#if defined(DO_SUBCATEGORIES)
-        // If a subcategory's appearance changed, then the geometry of all models containing any elements belonging to its category
-        // is considered changed. This is a simplification for efficiency - we don't want to scan element geometry streams to find
-        // references to particular subcategories.
-        // This will invalidate all tiles for these models.
-        auto processSubCategories = [&](bvector<Utf8String> const& ids, bool fromCommit) {
-            if (ids.empty()) {
-                return;
-            }
+        bvector<Utf8String> ids;
+        for (auto const& subCatId : m_subCategories)
+            ids.push_back(subCatId.ToHexStr());
 
-            auto idList = BeStringUtilities::Join(ids, ",");
-            auto fmtString =
-                "SELECT DISTINCT Model.Id FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement) \
-                " WHERE Category.Id IN (" \
-                    "SELECT DISTINCT Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) \
-                    " WHERE ECInstanceId IN (%s)" \
-                ")";
-
-            auto stmt = m_mgr.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString(fmtString, idList.c_str()).c_str(), true);
-            BeAssert(stmt.IsValid());
-            while (BE_SQLITE_ROW == stmt->Step()) {
-                m_geometricModels.Insert(stmt->GetValueId<DgnModelId>(0), fromCommit);
-            }
-        };
-
-        bvector<Utf8String> commitSubCategories, otherSubCategories;
-        for (auto const& entry : m_subCategories) {
-            auto& group = fromCommit ? commitSubCategories : otherSubCategories;
-            group.push_back(entry.first.ToHexStr());
+        auto idList = BeStringUtilities::Join(ids, ",");
+        auto ecsql = Utf8PrintfString(R"__(
+          SELECT ModelId, ECInstanceId, CategoryId FROM
+            (
+            SELECT Model.Id as ModelId, ECInstanceId, Category.Id as CategoryId FROM BisCore.GeometricElement2d WHERE GeometryStream IS NOT NULL
+            UNION ALL
+            SELECT Model.Id as ModelId, ECInstanceId, Category.Id as CategoryId FROM BisCore.GeometricElement3d WHERE GeometryStream IS NOT NULL
+            )
+          WHERE CategoryId IN
+            (
+            SELECT DISTINCT Parent.Id FROM BisCore.SubCategory WHERE ECInstanceId IN (%s)
+            )
+          )__", idList.c_str());
+        auto stmt = m_mgr.GetDgnDb().GetPreparedECSqlStatement(ecsql.c_str(), true);
+        BeAssert(stmt.IsValid());
+        while (BE_SQLITE_ROW == stmt->Step()) {
+            auto modelId = stmt->GetValueId<DgnModelId>(0);
+            m_geometricModels.insert(modelId);
+            if (IsTrackingGeometry())
+                InsertGeometryChange(modelId, stmt->GetValueId<DgnElementId>(1), TxnTable::ChangeType::Update);
         }
-
-        processSubCategories(commitSubCategories, true);
-        processSubCategories(otherSubCategories, false);
-
-        if (IsTrackingGeometry()) {
-            // The geometry of each element in the affected categories is also considered changed as a result of the subcategory
-            // appearance change.
-            bvector<Utf8String> subCategoryIds;
-            for (auto const& entry : m_subCategories) {
-                subCategoryIds.push_back(entry.first.ToHexStr());
-            }
-
-            auto ecsqlFmt =
-                "SELECT Model.Id, ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement) \
-                " WHERE Category.Id IN (" \
-                    "SELECT DISTINCT Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) \
-                    " WHERE ECInstanceId IN (%s)"
-                ")";
-            auto stmt = m_mgr.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString(ecsqlFmt, BeStringUtilities::Join(subCategoryIds, ",").c_str()).c_str(), true);
-            BeAssert(stmt.IsValid());
-            while (BE_SQLITE_ROW == stmt->Step()) {
-                InsertGeometryChange(stmt->GetValueId<DgnModelId>(0), stmt->GetValueId<DgnElementId>(1), TxnTable::ChangeType::Update);
-            }
-        }
-#endif
 
         // Don't need these any more.
         m_subCategories.clear();
