@@ -26,7 +26,7 @@ BentleyStatus DgnLineStyles::Insert(DgnStyleId& newStyleId, DgnModelId modelId, 
     lsElement->SetName(name);
     lsElement->SetDescription(description);
     lsElement->SetData(data.c_str());
-    LineStyleElementCPtr constLs = lsElement->Insert();
+    LineStyleElementCPtr constLs = lsElement->Insert(std::nullopt);
     if (!constLs.IsValid())
         {
         newStyleId = DgnStyleId();
@@ -64,7 +64,7 @@ BentleyStatus DgnLineStyles::Update (DgnStyleId styleId, Utf8CP name, LsComponen
 
     lsElement->SetName(name);
     lsElement->SetData(data.c_str());
-    auto stat = lsElement->Update();
+    auto stat = lsElement->Update(std::nullopt);
     return stat == DgnDbStatus::Success ? SUCCESS : ERROR;
     }
 

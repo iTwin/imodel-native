@@ -37,7 +37,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LinkPartition : InformationPartitionElement
     friend struct dgn_ElementHandler::LinkPartitionHandler;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model, std::optional<EditOptions> options = std::nullopt) const override;
     explicit LinkPartition(CreateParams const& params) : T_Super(params) {}
 
 public:
@@ -89,14 +89,14 @@ public:
     };
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
-    DgnDbStatus _OnDelete() override {
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element, std::optional<EditOptions> options = std::nullopt) override;
+    DgnDbStatus _OnDelete(std::optional<EditOptions> options = std::nullopt) override {
         if (GetModelId().GetValue() == GetDgnDb().Elements().GetRealityDataSourcesPartitionId().GetValue()) { 
             BeAssert(false && "The RealityDataSourcesModel cannot be deleted"); 
             return DgnDbStatus::WrongModel; 
         } 
 
-        return T_Super::_OnDelete();
+        return T_Super::_OnDelete(options);
     }
 public:
     explicit LinkModel(CreateParams const& params) : T_Super(params) {}
@@ -123,7 +123,7 @@ protected:
     explicit LinkElement(CreateParams const& params) : T_Super(params) {}
 
     //! Called when an element is about to be inserted into the DgnDb.
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(std::optional<EditOptions> options = std::nullopt) override;
 
 public:
     //! Add the link to a source element
