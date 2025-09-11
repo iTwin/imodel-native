@@ -1108,6 +1108,7 @@ void TxnManager::StashRestore(BeFileNameCR stashFile) {
     PurgeCaches();
     Initialize();
 }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1399,6 +1400,9 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     return status;
 }
 
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::SetChangesetHealthStatistics(ChangesetPropsCR revision) {
     const auto scope = Profiler::GetScope(m_dgndb);
     if (scope == nullptr) {
@@ -1413,6 +1417,9 @@ void TxnManager::SetChangesetHealthStatistics(ChangesetPropsCR revision) {
     m_changesetHealthStatistics[revision.GetChangesetId()] = stats.Stringify();
 }
 
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BeJsDocument TxnManager::GetAllChangesetHealthStatistics() const {
     BeJsDocument stats;
     auto changesets = stats["changesets"];
@@ -1421,6 +1428,9 @@ BeJsDocument TxnManager::GetAllChangesetHealthStatistics() const {
     return stats;
 }
 
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BeJsDocument TxnManager::GetChangesetHealthStatistics(Utf8StringCR changesetId) const {
     if (const auto it = m_changesetHealthStatistics.find(changesetId); it != m_changesetHealthStatistics.end())
         return BeJsDocument(it->second.Stringify());
