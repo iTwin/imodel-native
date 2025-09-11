@@ -2886,6 +2886,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
                 THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txn mode", DgnDbStatus::BadArg);
         }
     }
+    void DiscardLocalChanges(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        auto rc = db.Txns().DiscardLocalChanges();
+        if (rc != BE_SQLITE_OK) {
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "failed to discard all local changes", rc);
+        }
+    }
     Napi::Value  StashChanges(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, args);
         auto& db = GetWritableDb(info);
@@ -2894,7 +2901,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         BeFileName stashRootDir;
         Utf8String description;
         Utf8String iModelId;
-        bool resetBriefcase = false;
 
         auto obj = BeJsConst(args);
         if (obj.isStringMember("stashRootDir"))
@@ -2903,17 +2909,19 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             description.assign(obj["description"].asCString());
         if (obj.isStringMember("iModelId"))
             iModelId.assign(obj["iModelId"].asCString());
-        if (obj.isBoolMember("resetBriefcase"))
-            resetBriefcase = obj["resetBriefcase"].asBool();
 
         db.Txns().Stash(
             stashRootDir,
             description,
             iModelId,
-            resetBriefcase,
             stashInfo
         );
         return stashInfo;
+    }
+    void StashRestore(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, stashFile);
+        auto& db = GetWritableDb(info);
+        db.Txns().StashRestore(BeFileName(stashFile));
     }
     Napi::Value GetPendingTxnsHash(NapiInfoCR info) {
         OPTIONAL_ARGUMENT_BOOL(0, includeReversedTxns, false);
@@ -2923,6 +2931,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "failed to get pending txns hash", DgnDbStatus::BadArg);
         }
         return Napi::String::New(info.Env(), hash);
+    }
+
+    Napi::Value HasPendingSchemaChanges(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        return Napi::Boolean::New(info.Env(), db.Txns().HasPendingSchemaChanges());
     }
 
     Napi::Value GetTxnProps(NapiInfoCR info) {
@@ -3166,10 +3179,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("pullMergeRebaseAbortTxn", &NativeDgnDb::PullMergeRebaseAbortTxn),
             InstanceMethod("pullMergeReverseLocalChanges", &NativeDgnDb::PullMergeReverseLocalChanges),
             InstanceMethod("getTxnProps", &NativeDgnDb::GetTxnProps),
+            InstanceMethod("hasPendingSchemaChanges", &NativeDgnDb::HasPendingSchemaChanges),
             InstanceMethod("setTxnMode", &NativeDgnDb::SetTxnMode),
             InstanceMethod("getTxnMode", &NativeDgnDb::GetTxnMode),
             InstanceMethod("getPendingTxnsHash", &NativeDgnDb::GetPendingTxnsHash),
             InstanceMethod("stashChanges", &NativeDgnDb::StashChanges),
+            InstanceMethod("stashRestore", &NativeDgnDb::StashRestore),
+            InstanceMethod("discardLocalChanges", &NativeDgnDb::DiscardLocalChanges),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),

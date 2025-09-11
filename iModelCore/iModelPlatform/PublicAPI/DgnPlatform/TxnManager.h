@@ -525,6 +525,7 @@ public:
 
     //! PullMerge
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> OpenLocalTxn(TxnManager::TxnId id);
+    DGNPLATFORM_EXPORT void PurgeCaches();
     DGNPLATFORM_EXPORT bool PullMergeInProgress() const;
     DGNPLATFORM_EXPORT void PullMergeEraseConf();
     DGNPLATFORM_EXPORT void PullMergeBegin();
@@ -538,10 +539,11 @@ public:
     DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges();
     DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeRebaseBegin();
     DGNPLATFORM_EXPORT PullMergeStage PullMergeGetStage() const;
-    DGNPLATFORM_EXPORT void Stash(BeFileNameCR pathname, Utf8StringCR description, Utf8StringCR iModelId, bool resetBriefcase, BeJsValue out);
+    DGNPLATFORM_EXPORT void Stash(BeFileNameCR pathname, Utf8StringCR description, Utf8StringCR iModelId, BeJsValue out);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DiscardLocalChanges();
     DGNPLATFORM_EXPORT BentleyStatus GetPendingTxnsSha256HashString(Utf8StringR hash, bool includeReversedTxns = true) const;
-
-
+    DGNPLATFORM_EXPORT bool HasPendingSchemaChanges() const;
+    DGNPLATFORM_EXPORT void StashRestore(BeFileNameCR stashFile);
     DGNPLATFORM_EXPORT bool GetTxnProps(TxnId id, BeJsValue props) const;
     DGNPLATFORM_EXPORT ChangesetStatus PullMergeApply(ChangesetPropsCR revision);     // for testing
     
