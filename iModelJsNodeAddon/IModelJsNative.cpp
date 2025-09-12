@@ -1480,6 +1480,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsUndoPossible());
     }
     void RestartTxnSession(NapiInfoCR info) {GetOpenedDb(info).Txns().Initialize();}
+    Napi::Value CurrentTxnSessionId(NapiInfoCR info) { return Napi::Number::New(Env(), GetOpenedDb(info).Txns().GetCurrentSessionId().GetValue()); }
     Napi::Value ReinstateTxn(NapiInfoCR info) {return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().ReinstateTxn());}
     Napi::Value ReverseAll(NapiInfoCR info) {return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().ReverseAll());}
     Napi::Value ReverseTo(NapiInfoCR info) {
@@ -3123,6 +3124,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("resetBriefcaseId", &NativeDgnDb::ResetBriefcaseId),
             InstanceMethod("restartDefaultTxn", &NativeDgnDb::RestartDefaultTxn),
             InstanceMethod("restartTxnSession", &NativeDgnDb::RestartTxnSession),
+            InstanceMethod("currentTxnSessionId",&NativeDgnDb::CurrentTxnSessionId),
             InstanceMethod("resumeProfiler", &NativeDgnDb::ResumeProfiler),
             InstanceMethod("reverseAll", &NativeDgnDb::ReverseAll),
             InstanceMethod("reverseTo", &NativeDgnDb::ReverseTo),

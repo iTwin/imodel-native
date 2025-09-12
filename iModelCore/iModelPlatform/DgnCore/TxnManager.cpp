@@ -290,6 +290,7 @@ bool TxnManager::GetTxnProps(TxnId id, BeJsValue obj) const {
 
     obj.SetEmptyObject();
     obj["id"] = stmt.GetValueId<BeInt64Id>(0).ToHexStr();
+    obj["sessionId"] = stmt.GetValueId<TxnId>(0).GetSession().GetValue();
     auto nextId = QueryNextTxnId(id);
     if (nextId.IsValid())
         obj["nextId"] = BeInt64Id(nextId.GetValue()).ToHexStr();

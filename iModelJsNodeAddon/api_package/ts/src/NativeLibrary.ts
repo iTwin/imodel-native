@@ -533,6 +533,7 @@ export declare namespace IModelJsNative {
 
   export interface TxnProps {
     id: TxnIdString;
+    sessionId: number;
     nextId?: TxnIdString;
     prevId?: TxnIdString;
     props: { description?: string; source?: string, appData: { [key: string]: any } };
@@ -740,6 +741,7 @@ export declare namespace IModelJsNative {
     public resetBriefcaseId(idValue: number): void;
     public restartDefaultTxn(): void;
     public restartTxnSession(): void;
+    public currentTxnSessionId(): number;
     public resumeProfiler(): DbResult;
     public reverseAll(): IModelStatus;
     public reverseTo(txnId: TxnIdString): IModelStatus;
