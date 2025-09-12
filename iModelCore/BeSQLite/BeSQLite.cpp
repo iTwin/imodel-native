@@ -6446,11 +6446,9 @@ DbResult Db::QueryCreationDate(DateTime& creationDate) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Db::QueryStandaloneEditFlags(BeJsValue out) const {
     Utf8String val;
-    if (BE_SQLITE_ROW == QueryBriefcaseLocalValue(val, BE_LOCAL_StandaloneEdit))
-    {
+    if (BE_SQLITE_ROW == QueryBriefcaseLocalValue(val, BE_LOCAL_StandaloneEdit)) {
         BeJsDocument doc(val);
-        if(doc.isObject())
-        {
+        if(doc.isObject()) {
             out.From(doc);
             return;
         }
@@ -6459,8 +6457,7 @@ void Db::QueryStandaloneEditFlags(BeJsValue out) const {
          * Though we intend for this to be an object, we did previously allow a boolean value to slip through
          * So we need to handle that here for backward compatibility
          */
-        if(doc.isBool())
-        {
+        if(doc.isBool()) {
             out.SetEmptyObject();
             out["txns"] = doc.asBool();
             return;
@@ -6468,10 +6465,7 @@ void Db::QueryStandaloneEditFlags(BeJsValue out) const {
 
         if(!val.empty())
             LOG.warningv("QueryStandaloneEditFlags got an unsupported value: '%s' supported value must be either boolean or json object.", val.c_str());
-        }
-
-    // otherwise make it an empty object
-    out.SetEmptyObject();
+    }
 }
 
 /*---------------------------------------------------------------------------------**/ /**
