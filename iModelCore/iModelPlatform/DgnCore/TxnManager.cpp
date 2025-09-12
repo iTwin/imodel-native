@@ -559,6 +559,13 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnValidateChanges(ChangeStreamCR changeStream) {
+    if (!m_initTableHandlers) {
+        BeAssert(false); // validation cannot happen without table handlers initialized.
+        return;
+    }
+
+    m_modelChanges.BeginValidate();
+
     BeAssert(!m_dgndb.IsReadonly());
 
     Changes changes(changeStream, false);
@@ -614,6 +621,8 @@ void TxnManager::OnValidateChanges(ChangeStreamCR changeStream) {
 void TxnManager::OnChangeSetApplied(ChangeStreamCR changeStream, bool invert) {
     if (!m_initTableHandlers) // won't do anything if we don't have table handlers
         return;
+
+    m_modelChanges.BeginApply();
 
     Changes changes(changeStream, invert);
     Utf8String currTable;
@@ -1703,8 +1712,8 @@ void TxnManager::ModelChanges::InsertGeometryChange(DgnModelId modelId, DgnEleme
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ModelChanges::AddGeometricElementChange(DgnModelId modelId, DgnElementId elementId, TxnTable::ChangeType type, bool fromCommit) {
-    m_geometricModels.Insert(modelId, fromCommit);
+void TxnManager::ModelChanges::AddGeometricElementChange(DgnModelId modelId, DgnElementId elementId, TxnTable::ChangeType type) {
+    m_geometricModels.insert(modelId);
 
     if (IsTrackingGeometry()) {
         InsertGeometryChange(modelId, elementId, type);
@@ -1755,18 +1764,56 @@ void TxnManager::ClearModelChanges() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ModelChanges::Process()
     {
+    BeAssert(State::Idle != m_state);
+    bool fromCommit = State::Commit == m_state;
+    m_state = State::Idle;
+
     auto mode = DetermineMode();
 
     // When we get a Change that deletes a geometric element, we don't have access to its model Id at that time - look it up now.
-    for (auto const& deleted : m_deletedGeometricElements)
-        {
-        auto iter = m_modelsForDeletedElements.find(deleted.first);
+    for (auto const& deleted : m_deletedGeometricElements) {
+        auto iter = m_modelsForDeletedElements.find(deleted);
         if (m_modelsForDeletedElements.end() != iter)
-            AddGeometricElementChange(iter->second, deleted.first, TxnTable::ChangeType::Delete, deleted.second);
-        }
+            AddGeometricElementChange(iter->second, deleted, TxnTable::ChangeType::Delete);
+    }
 
     m_deletedGeometricElements.clear();
     m_modelsForDeletedElements.clear();
+
+    // If a subcategory's appearance changed, then the geometry of all models containing any elements belonging to its category
+    // is considered changed, as are the elements themselves.
+    // This will invalidate all tiles for these models.
+    // NOTE: This is a simplification for efficiency - we don't want to scan element geometry streams to find references to particular subcategories.
+    if (!m_subCategories.empty()) {
+        bvector<Utf8String> ids;
+        for (auto const& subCatId : m_subCategories)
+            ids.push_back(subCatId.ToHexStr());
+
+        auto idList = BeStringUtilities::Join(ids, ",");
+        auto ecsql = Utf8PrintfString(R"__(
+          SELECT ModelId, ECInstanceId, CategoryId FROM
+            (
+            SELECT Model.Id as ModelId, ECInstanceId, Category.Id as CategoryId FROM BisCore.GeometricElement2d WHERE GeometryStream IS NOT NULL
+            UNION ALL
+            SELECT Model.Id as ModelId, ECInstanceId, Category.Id as CategoryId FROM BisCore.GeometricElement3d WHERE GeometryStream IS NOT NULL
+            )
+          WHERE CategoryId IN
+            (
+            SELECT DISTINCT Parent.Id FROM BisCore.SubCategory WHERE ECInstanceId IN (%s)
+            )
+          )__", idList.c_str());
+        auto stmt = m_mgr.GetDgnDb().GetPreparedECSqlStatement(ecsql.c_str(), true);
+        BeAssert(stmt.IsValid());
+        while (BE_SQLITE_ROW == stmt->Step()) {
+            auto modelId = stmt->GetValueId<DgnModelId>(0);
+            m_geometricModels.insert(modelId);
+            if (IsTrackingGeometry())
+                InsertGeometryChange(modelId, stmt->GetValueId<DgnElementId>(1), TxnTable::ChangeType::Update);
+        }
+
+        // Don't need these any more.
+        m_subCategories.clear();
+    }
 
     if (m_models.empty() && m_geometricModels.empty())
         return;
@@ -1780,7 +1827,8 @@ void TxnManager::ModelChanges::Process()
     SetandRestoreIndirectChanges _v(m_mgr);
 
     // if there were any geometric changes, update the "GeometryGuid" and "LastMod" properties in the Model table.
-    if (!m_geometricModels.empty())
+    // only do this if the changes came from a commit, not from applying a changeset.
+    if (fromCommit && !m_geometricModels.empty())
         {
         auto stmt = m_mgr.GetDgnDb().GetGeometricModelUpdateStatement();
         BeAssert(stmt.IsValid()); // because DetermineStatus()
@@ -1788,12 +1836,9 @@ void TxnManager::ModelChanges::Process()
         BeGuid guid(true); // create a new GUID to represent this state of the changed geometric models
         for (auto model : m_geometricModels)
             {
-            if (!model.second)
-                continue; // change wasn't from commit - don't update GeometryGuid or LastMod
-
-            m_models.erase(model.first); // we don't need to update LastMod below - this statement updates it.
+            m_models.erase(model); // we don't need to update LastMod below - this statement updates it.
             stmt->BindGuid(1, guid);
-            stmt->BindId(2, model.first);
+            stmt->BindId(2, model);
             DbResult rc = stmt->Step();
             UNUSED_VARIABLE(rc);
             BeAssert(BE_SQLITE_DONE == rc);
@@ -1801,17 +1846,14 @@ void TxnManager::ModelChanges::Process()
             }
         }
 
-    if (!m_models.empty())
+    if (fromCommit && !m_models.empty())
         {
         auto stmt = m_mgr.GetDgnDb().GetModelLastModUpdateStatement();
         BeAssert(stmt.IsValid()); // because DetermineStatus()
 
         for (auto model : m_models)
             {
-            if (!model.second)
-                continue; // change wasn't from commit - don't update LastMod.
-
-            stmt->BindId(1, model.first);
+            stmt->BindId(1, model);
             DbResult rc = stmt->Step();
             UNUSED_VARIABLE(rc);
             BeAssert(BE_SQLITE_DONE == rc);
@@ -2856,7 +2898,7 @@ void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelId, ChangeType changeType, DgnClassId elementClassId, bool fromCommit)
+void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelId, ChangeType changeType, DgnClassId elementClassId)
     {
     enum Column : int {ElementId=1,ModelId=2,ChangeType=3,ECClass=4};
 
@@ -2873,7 +2915,7 @@ void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelI
 
     m_stmt.Reset();
     m_stmt.ClearBindings();
-    m_txnMgr.m_modelChanges.AddModel(modelId, fromCommit); // add to set of changed models.
+    m_txnMgr.m_modelChanges.AddModel(modelId); // add to set of changed models.
     if (ChangeType::Delete == changeType)
         m_txnMgr.m_modelChanges.AddDeletedElement(elementId, modelId); // Record model Id in case it's a geometric element.
     }
@@ -2894,7 +2936,7 @@ DgnModelId TxnTable::GetModelAndClass(ECClassId& classId, DgnElementId elementId
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType changeType, bool fromCommit) {
+void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType changeType) {
     Changes::Change::Stage stage;
     switch (changeType) {
     case ChangeType::Insert:
@@ -2924,7 +2966,7 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
         classId = change.GetValue((int)DgnElement::ColumnNumbers::ECClassId, stage).GetValueId<DgnClassId>();
     }
 
-    AddElement(elementId, modelId, changeType, classId, fromCommit);
+    AddElement(elementId, modelId, changeType, classId);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2943,7 +2985,7 @@ bool dgn_TxnTable::Geometric::HasChangeInColumns(BeSQLite::Changes::Change const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Geometric::AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType, bool fromCommit) {
+void dgn_TxnTable::Geometric::AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType) {
     if (ChangeType::Update == changeType && !HasChangeInColumns(change))
         return; // no geometric changes
 
@@ -2952,13 +2994,13 @@ void dgn_TxnTable::Geometric::AddChange(BeSQLite::Changes::Change const& change,
 
     if (ChangeType::Delete == changeType) {
         // We don't have access to the model Id here. Rely on the Element txn table to record it for later use.
-        m_txnMgr.m_modelChanges.AddDeletedGeometricElement(elementId, fromCommit);
+        m_txnMgr.m_modelChanges.AddDeletedGeometricElement(elementId);
         return;
     }
 
     DgnClassId classId;
     auto modelId = GetModelAndClass(classId, elementId);
-    m_txnMgr.m_modelChanges.AddGeometricElementChange(modelId, elementId, changeType, fromCommit); // mark this model as having geometric changes.
+    m_txnMgr.m_modelChanges.AddGeometricElementChange(modelId, elementId, changeType); // mark this model as having geometric changes.
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -3123,6 +3165,46 @@ void dgn_TxnTable::RelationshipLinkTable::_OnValidated()
         m_changes = false;
         }
     }
+
+void dgn_TxnTable::DefinitionElement::_Initialize() {
+    auto ecsql = "SELECT ti.cid SqliteColumnIndex"
+        " FROM   ec_PropertyMap pp"
+               " JOIN ec_Column c ON c.Id = pp.ColumnId"
+               " JOIN ec_Table t ON t.Id = c.TableId"
+               " JOIN ec_Class cl ON cl.Id = pp.ClassId"
+               " JOIN ec_PropertyPath p ON p.Id = pp.PropertyPathId"
+               " JOIN ec_Schema s ON cl.SchemaId = s.Id"
+               " JOIN pragma_table_info(t.Name) ti ON ti.name = c.Name"
+        " WHERE  s.Name = 'BisCore'"
+                 " AND cl.Name = 'SubCategory'"
+                 " AND p.AccessString = 'Properties'";
+
+    auto stmt = m_txnMgr.GetDgnDb().GetCachedStatement(ecsql);
+    if (!stmt.IsValid() || BE_SQLITE_ROW != stmt->Step()) {
+        BeAssert(false && "Could not query column Id for subcategory appearance");
+        return;
+    }
+    
+    m_subcategoryAppearanceColumnIndex = stmt->GetValueInt(0);
+    m_subCategoryClassId = m_txnMgr.GetDgnDb().Schemas().GetClassId("BisCore", "SubCategory");
+    BeAssert(m_subCategoryClassId.IsValid());
+}
+
+void dgn_TxnTable::DefinitionElement::AddChange(BeSQLite::Changes::Change const& change) const {
+    auto elementId = change.GetValue(0, Changes::Change::Stage::Old).GetValueId<DgnSubCategoryId>();
+    CachedStatementPtr stmt = m_txnMgr.GetDgnDb().Elements().GetStatement("SELECT ECClassId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    stmt->BindId(1, elementId);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return;
+
+    auto classId = stmt->GetValueId<DgnClassId>(0);
+    if (classId != m_subCategoryClassId)
+        return;
+
+    auto newValue = change.GetNewValue(m_subcategoryAppearanceColumnIndex);
+    if (newValue.IsValid())
+        m_txnMgr.m_modelChanges.AddSubCategoryAppearanceChange(elementId);
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

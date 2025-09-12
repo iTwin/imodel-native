@@ -1412,7 +1412,7 @@ BentleyStatus Graph::WriteAffectedGraphToFile(BeFileNameCR dotFilename, bvector<
         {
         auto el = elements.GetElement(elementId);
         if (el.IsValid())
-            txnElements.AddElement(elementId, el->GetModelId(), TxnTable::ChangeType::Update, el->GetElementClassId(), false);
+            txnElements.AddElement(elementId, el->GetModelId(), TxnTable::ChangeType::Update, el->GetElementClassId());
         }
 
     auto& dependencies = m_txnMgr.ElementDependencies();
