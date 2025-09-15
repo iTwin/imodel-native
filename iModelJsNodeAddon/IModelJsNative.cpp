@@ -540,13 +540,15 @@ public:
         DbResult status = JsInterop::ImportSchema(m_ecdb, BeFileName(schemaPathName.c_str(), true));
         return Napi::Number::New(Env(), (int)status);
     }
-    void DropSchema(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_STRING(0, schemaName);
-        DropSchemaResult rc = m_ecdb.Schemas().DropSchema(schemaName);
-        if (rc.GetStatus() != DropSchemaResult::Success) {
-            BeNapi::ThrowJsException(info.Env(), rc.GetStatusAsString(), (int)rc.GetStatus(), {"schema-sync", rc.GetStatusAsString()});
-        }
+    
+    void DropSchemas(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaNames);
+        DbResult status = JsInterop::DropSchemas(m_ecdb, schemaNames);
+        if (status != BE_SQLITE_OK) {
+            JsInterop::throwSqlResult("error dropping schema(s)", m_ecdb.GetDbFileName(), status);
+        }   
     }
+
     void SchemaSyncSetDefaultUri(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         LastErrorListener lastError(m_ecdb);
@@ -654,7 +656,7 @@ public:
             InstanceMethod("concurrentQueryShutdown", &NativeECDb::ConcurrentQueryShutdown),
             InstanceMethod("createDb", &NativeECDb::CreateDb),
             InstanceMethod("dispose", &NativeECDb::Dispose),
-            InstanceMethod("dropSchema", &NativeECDb::DropSchema),
+            InstanceMethod("dropSchemas", &NativeECDb::DropSchemas),
             InstanceMethod("getFilePath", &NativeECDb::GetFilePath),
             InstanceMethod("getLastError", &NativeECDb::GetLastError),
             InstanceMethod("getLastInsertRowId", &NativeECDb::GetLastInsertRowId),
@@ -2079,13 +2081,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return Napi::Number::New(Env(), (int)result);
         }
 
-    void DropSchema(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_STRING(0, schemaName);
-        auto rc = GetOpenedDb(info).DropSchema(schemaName);
+    void DropSchemas(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaNames);
+        auto rc = GetOpenedDb(info).DropSchemas(schemaNames, false);
         if (rc.GetStatus() != DropSchemaResult::Success) {
             BeNapi::ThrowJsException(info.Env(), rc.GetStatusAsString(), (int)rc.GetStatus(), {"schema-sync", "DropSchemaError"});
         }
     }
+
     void SchemaSyncSetDefaultUri(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
@@ -2915,7 +2918,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("deleteModel", &NativeDgnDb::DeleteModel),
             InstanceMethod("detachChangeCache", &NativeDgnDb::DetachChangeCache),
             InstanceMethod("deleteSchemaItems", &NativeDgnDb::DeleteSchemaItems),
-            InstanceMethod("dropSchema",&NativeDgnDb::DropSchema),
+            InstanceMethod("dropSchemas", &NativeDgnDb::DropSchemas),
             InstanceMethod("dumpChangeset", &NativeDgnDb::DumpChangeSet),
             InstanceMethod("elementGeometryCacheOperation", &NativeDgnDb::ElementGeometryCacheOperation),
             InstanceMethod("embedFile", &NativeDgnDb::EmbedFile),

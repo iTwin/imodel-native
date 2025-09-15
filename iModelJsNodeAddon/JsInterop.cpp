@@ -873,6 +873,19 @@ void JsInterop::AddFallbackSchemaLocaters(ECSchemaReadContextPtr schemaContext)
     schemaContext->AddFinalSchemaPaths(paths);
     }
 
+DbResult JsInterop::DropSchemas(ECDbR ecdb, bvector<Utf8String>& schemaNames)
+{
+    NativeLogging::CategoryLogger logger("JsInterop");
+
+    DropSchemaResult res = ecdb.Schemas().DropSchemas(schemaNames);
+    if (!res.IsSuccess()) {
+        Utf8String joined = BeStringUtilities::Join(schemaNames, ", ");
+        logger.errorv("Failed to drop schema(s): %s", joined.c_str());
+        return BE_SQLITE_ERROR;    
+    }
+    return ecdb.SaveChanges();
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -889,8 +902,16 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 
     SanitizingSchemaLocater finalLocater(dgndb.GetSchemaLocater());
     JsInterop::AddFallbackSchemaLocaters(finalLocater, schemaContext);
-    bvector<ECSchemaCP> schemas;
+    
+    // We want to manually add all schema folders here so when we later try and lookup schemas, the right paths are always consistently available
+    for(auto it = schemaSources.rbegin(); it != schemaSources.rend(); ++it)
+        {
+        BeFileName schemaFile(it->c_str(), BentleyCharEncoding::Utf8);
+        BeFileName schemaDirectory (BeFileName::DevAndDir, schemaFile.GetWCharCP());
+        schemaContext->AddSchemaPath(schemaDirectory, true); // We always add the last path we used to the top in the priority list, if it does not exist yet
+        }
 
+    bvector<ECSchemaCP> schemas;
     for (Utf8String schemaSource : schemaSources)
         {
         ECSchemaPtr schema;
@@ -927,6 +948,35 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
         {
         Utf8String contextDesc = schemaContext->GetDescription();
         logger.errorv("ImportSchemas returned non-success code. Context setup: %s", contextDesc.c_str());
+
+        auto describeSchema = [](ECSchemaCP schema) -> Utf8PrintfString {
+            return Utf8PrintfString("Schema: %s (version %d.%d.%d, origin: %s)",
+                                   schema->GetName().c_str(),
+                                   schema->GetVersionRead(),
+                                   schema->GetVersionWrite(),
+                                   schema->GetVersionMinor(),
+                                   schema->GetOrigin().c_str());
+        };
+
+        Utf8PrintfString errorDetails("Schema paths provided to the method call (%d):\n", schemaSources.size());
+        for(const auto& schemaFile : schemaSources)
+        {
+            errorDetails.append("    ").append(schemaFile).append("\n");
+        }
+        Utf8PrintfString providedSchemasMsg("Schemas provided to import schemas (%d):\n", schemas.size());
+        errorDetails.append(providedSchemasMsg.c_str());
+        for (const auto& schema : schemas)
+        {
+            errorDetails.append("    ").append(describeSchema(schema)).append(")\n");
+        }
+        const auto& cachedSchemas = schemaContext->GetCache().GetSchemas();
+        Utf8PrintfString cachedSchemasMsg("Cached schemas in the context (%d):\n", cachedSchemas.size());
+        errorDetails.append(cachedSchemasMsg.c_str());
+        for(const auto& schema: cachedSchemas)
+        {
+            errorDetails.append("    ").append(describeSchema(schema)).append(")\n");
+        }
+        logger.errorv("Failed to import schemas. Details:\n%s", errorDetails.c_str());
         return DgnDb::SchemaStatusToDbResult(status, true);
         }
 
