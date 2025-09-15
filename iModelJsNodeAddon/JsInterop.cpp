@@ -989,20 +989,20 @@ Napi::Value JsInterop::UpdateInstance(ECDbR db, NapiInfoCR info) {
 //------------------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::DeleteSchemaItems(ECDbR ecdb, Utf8String schemaName, bvector<Utf8String> const& itemNames)
+DbResult JsInterop::DeleteSchemaItems(ECDbR db, Utf8String schemaName, bvector<Utf8String> const& itemNames)
     {
     NativeLogging::CategoryLogger logger("JsInterop");
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-    schemaContext->AddFirstSchemaLocater(ecdb.GetSchemaLocater());
+    schemaContext->AddFirstSchemaLocater(db.GetSchemaLocater());
     ECN::SchemaKey schemaKey(schemaName.c_str(), 1, 0, 0); // default read, write, minor versions
-    auto availableSchemas = ecdb.Schemas().GetSchemas();
+    auto availableSchemas = db.Schemas().GetSchemas();
     bvector<Utf8String> schemaNames;
     schemaNames.reserve(availableSchemas.size());
     for (auto s : availableSchemas)
         schemaNames.push_back(s->GetName());
     Utf8String schemaList = BeStringUtilities::Join(schemaNames, ", ");
-    ECSchemaPtr schema = ecdb.GetSchemaLocater().LocateSchema(schemaKey, ECN::SchemaMatchType::Latest, *schemaContext);
+    ECSchemaPtr schema = db.GetSchemaLocater().LocateSchema(schemaKey, ECN::SchemaMatchType::Latest, *schemaContext);
 
     if (!schema.IsValid()) {
         logger.errorv("DeleteSchemaItems: Unable to locate schema '%s'. Available schemas: %s", schemaName.c_str(), schemaList.c_str());
@@ -1022,7 +1022,46 @@ DbResult JsInterop::DeleteSchemaItems(ECDbR ecdb, Utf8String schemaName, bvector
         }
     }
 
-    return ecdb.SaveChanges();
+    return db.SaveChanges();
+    }
+
+//------------------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult JsInterop::DeleteSchemaItems(DgnDbR db, Utf8String schemaName, bvector<Utf8String> const& itemNames)
+    {
+    NativeLogging::CategoryLogger logger("JsInterop");
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    schemaContext->AddFirstSchemaLocater(db.GetSchemaLocater());
+    ECN::SchemaKey schemaKey(schemaName.c_str(), 1, 0, 0); // default read, write, minor versions
+    auto availableSchemas = db.Schemas().GetSchemas();
+    bvector<Utf8String> schemaNames;
+    schemaNames.reserve(availableSchemas.size());
+    for (auto s : availableSchemas)
+        schemaNames.push_back(s->GetName());
+    Utf8String schemaList = BeStringUtilities::Join(schemaNames, ", ");
+    ECSchemaPtr schema = db.GetSchemaLocater().LocateSchema(schemaKey, ECN::SchemaMatchType::Latest, *schemaContext);
+
+    if (!schema.IsValid()) {
+        logger.errorv("DeleteSchemaItems: Unable to locate schema '%s'. Available schemas: %s", schemaName.c_str(), schemaList.c_str());
+        return BE_SQLITE_ERROR;
+    }
+
+    for (Utf8StringCR itemName : itemNames) {
+        ECClassP schemaItem = schema->GetClassP(itemName.c_str());
+        if (nullptr == schemaItem) {
+            logger.warningv("Class not found: %s.%s", schemaName.c_str(), itemName.c_str());
+            continue;
+        }
+
+        if (ECObjectsStatus::Success != schema->DeleteClass(*schemaItem)) {
+            logger.errorv("Failed to delete class '%s' from schema '%s'", itemName.c_str(), schemaName.c_str());
+            return BE_SQLITE_ERROR;
+        }
+    }
+
+    return db.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------

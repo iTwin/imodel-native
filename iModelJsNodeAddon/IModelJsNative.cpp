@@ -2855,6 +2855,16 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         return Napi::String::New(info.Env(), id.c_str());
     }
+
+    void DeleteSchemaItems(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        REQUIRE_ARGUMENT_STRING(0, schemaName); 
+        REQUIRE_ARGUMENT_STRING_ARRAY(1, itemNames);
+        DbResult status = JsInterop::DeleteSchemaItems(db, schemaName, itemNames);
+        if (status != BE_SQLITE_OK) {
+            JsInterop::throwSqlResult("error deleting schema items", db.GetDbFileName(), status);
+        }
+    }
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2904,6 +2914,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("deleteLocalValue", &NativeDgnDb::DeleteLocalValue),
             InstanceMethod("deleteModel", &NativeDgnDb::DeleteModel),
             InstanceMethod("detachChangeCache", &NativeDgnDb::DetachChangeCache),
+            InstanceMethod("deleteSchemaItems", &NativeDgnDb::DeleteSchemaItems),
             InstanceMethod("dropSchema",&NativeDgnDb::DropSchema),
             InstanceMethod("dumpChangeset", &NativeDgnDb::DumpChangeSet),
             InstanceMethod("elementGeometryCacheOperation", &NativeDgnDb::ElementGeometryCacheOperation),
