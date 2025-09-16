@@ -319,7 +319,7 @@ bool TxnManager::GetTxnProps(TxnId id, BeJsValue obj) const {
         else if (type == TxnType::Ddl)
             obj["type"] = "Ddl";
         else if (type == TxnType::EcSchema)
-            obj["type"] = "EcSchema";
+            obj["type"] = "ECSchema";
     }
     obj["reversed"] = stmt.GetValueBoolean(3);
     obj["grouped"] = stmt.GetValueBoolean(4);

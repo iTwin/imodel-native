@@ -537,7 +537,7 @@ export declare namespace IModelJsNative {
     nextId?: TxnIdString;
     prevId?: TxnIdString;
     props: { description?: string; source?: string, appData: { [key: string]: any } };
-    type: "Data" | "EcSchema" | "Ddl";
+    type: "Data" | "ECSchema" | "Ddl";
     reversed: boolean;
     grouped: boolean;
     timestamp: string; // ISO 8601 format
