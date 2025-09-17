@@ -2275,7 +2275,7 @@ TEST_F (BeSQLiteDbTests, ChangeSetApply_IgnoreNoop)
     BeTest::SetFailOnAssert(true);
 
     // Apply to a db that already have data but with ignoreNoop flag
-    ASSERT_EQ(BE_SQLITE_OK, changeSet.ApplyChanges(afterDb, nullptr, false, /* ignoreNoop = */true)) << "with ignore noop flag this should succeed";
+    ASSERT_EQ(BE_SQLITE_OK, changeSet.ApplyChanges(afterDb, false, /* ignoreNoop = */true)) << "with ignore noop flag this should succeed";
 
     beforeDb.SaveChanges();
     afterDb.SaveChanges();
