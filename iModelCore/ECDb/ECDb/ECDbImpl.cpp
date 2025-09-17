@@ -385,8 +385,7 @@ BentleyStatus ECDb::Impl::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdS
     if (!briefcaseId.IsValid() || m_ecdb.IsReadonly())
         return ERROR;
 
-    BeBriefcaseBasedId currentId;
-    GetInstanceIdSequence().GetCurrentValue(currentId);
+    const auto currentId = GetInstanceIdSequence().GetCurrentValue<BeBriefcaseBasedId>();
 
     //ECInstanceId sequence. It has to compute the current max ECInstanceId across all EC data tables
     ECInstanceId maxECInstanceId;

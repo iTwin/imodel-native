@@ -434,8 +434,7 @@ DbResult DgnDb::InitializeElementIdSequence()
 //--------------------------------------------------------------------------------------
 DbResult DgnDb::ResetElementIdSequence(BeBriefcaseId briefcaseId)
     {
-    BeBriefcaseBasedId currentId;
-    m_elementIdSequence.GetCurrentValue(currentId);
+    const auto currentId = m_elementIdSequence.GetCurrentValue<BeBriefcaseBasedId>();
 
     BeBriefcaseBasedId firstId(briefcaseId, 0);
     BeBriefcaseBasedId lastId(briefcaseId.GetNextBriefcaseId(), 0);

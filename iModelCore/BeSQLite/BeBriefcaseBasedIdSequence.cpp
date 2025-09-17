@@ -59,11 +59,10 @@ DbResult BeBriefcaseBasedIdSequence::Reset(uint64_t newValue) const
 //----------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult BeBriefcaseBasedIdSequence::GetCurrentInt64Value(uint64_t& currentValue) const {
-    if (GetDb().IsReadonly())
-        return BE_SQLITE_READONLY;
-
-    return GetDb().GetBLVCache().QueryValue(currentValue, m_briefcaseLocalValueIndex);
+uint64_t BeBriefcaseBasedIdSequence::GetCurrentInt64Value() const {
+    uint64_t currentValue = 0;
+    GetDb().GetBLVCache().QueryValue(currentValue, m_briefcaseLocalValueIndex);
+    return currentValue;
 }
 
 //----------------------------------------------------------------------------------

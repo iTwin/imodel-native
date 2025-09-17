@@ -22,7 +22,7 @@ private:
     mutable size_t m_briefcaseLocalValueIndex;
 
     BE_SQLITE_EXPORT DbResult GetNextInt64Value(uint64_t& nextValue) const;
-    BE_SQLITE_EXPORT DbResult GetCurrentInt64Value(uint64_t& currentValue) const;
+    BE_SQLITE_EXPORT uint64_t GetCurrentInt64Value() const;
     Db& GetDb() const { return *m_db; }
 
 public:
@@ -45,14 +45,8 @@ public:
 
     BE_SQLITE_EXPORT DbResult CheckMaxValue(uint64_t value) const;
     template <typename TBeBriefcaseBasedId>
-    DbResult GetCurrentValue(TBeBriefcaseBasedId& val) const {
-        uint64_t currentValueInt = INT64_C(0);
-        DbResult stat = GetCurrentInt64Value(currentValueInt);
-        if (stat != BE_SQLITE_OK)
-            return stat;
-
-        val = TBeBriefcaseBasedId(currentValueInt);
-        return BE_SQLITE_OK;
+    TBeBriefcaseBasedId GetCurrentValue() const {
+        return TBeBriefcaseBasedId(GetCurrentInt64Value());
     }
     //! Get the next value in the sequence
     template <typename TBeBriefcaseBasedId>
