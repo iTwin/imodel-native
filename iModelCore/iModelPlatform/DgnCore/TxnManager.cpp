@@ -2270,11 +2270,6 @@ DbResult TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action, bool skipSch
         return BE_SQLITE_ERROR;
     }
     
-    // if (m_dgndb.IsReadonly()) {
-    //     LOG.errorv("ApplyTxnChanges called on a read-only database. txnId 0x" PRIx64, rowId.m_id.m_64);
-    //     return BE_SQLITE_READONLY;
-    // }
-
     if(TxnAction::Reverse != action && TxnAction::Reinstate != action){
         LOG.errorv("ApplyTxnChanges called with an invalid action. txnId 0x" PRIx64, rowId.m_id.m_64);
         BeAssert(false);
