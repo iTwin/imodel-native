@@ -267,6 +267,13 @@ protected:
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
     ECDB_EXPORT virtual DbResult _AfterSchemaChangeSetApplied() const;
     ECDB_EXPORT virtual DbResult _AfterDataChangeSetApplied(bool schemaChanged);
+    //! Resets ECDb's ECInstanceId sequence to the current maximum ECInstanceId for the specified BriefcaseId.
+    //! @param[in] briefcaseId BriefcaseId to which the sequence will be reset
+    //! @param[in] ecClassIgnoreList List of ids of ECClasses whose ECInstanceIds should be ignored when
+    //!            computing the maximum ECInstanceId. Subclasses of the specified classes will be ignored as well.
+    //!            If nullptr, no ECClass will be ignored.
+    //! SUCCESS or ERROR
+    ECDB_EXPORT BentleyStatus ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList = nullptr);
 
     //! Returns the settings manager to subclasses which gives access to the various access tokens
     ECDB_EXPORT SettingsManager const& GetECDbSettingsManager() const;
@@ -292,14 +299,6 @@ public:
     //! @param[in] logSqliteErrors If Yes, then SQLite error messages are logged. Note that some SQLite errors are intentional. Turn this option on only for limited debuging purposes.
     //! @return ::BE_SQLITE_OK in case of success, error code otherwise, e.g. if @p ecdbTempDir does not exist
     ECDB_EXPORT static DbResult Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir = nullptr, BeSQLiteLib::LogErrors logSqliteErrors=BeSQLiteLib::LogErrors::No);
-
-    //! Resets ECDb's ECInstanceId sequence to the current maximum ECInstanceId for the specified BriefcaseId.
-    //! @param[in] briefcaseId BriefcaseId to which the sequence will be reset
-    //! @param[in] ecClassIgnoreList List of ids of ECClasses whose ECInstanceIds should be ignored when
-    //!            computing the maximum ECInstanceId. Subclasses of the specified classes will be ignored as well.
-    //!            If nullptr, no ECClass will be ignored.
-    //! SUCCESS or ERROR
-    ECDB_EXPORT BentleyStatus ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList = nullptr);
 
     //! Check if the ECDb::Initialize() method was successfully called for current process or not.
     //! @return return true if ECDb::Initialize() method was successfully called.

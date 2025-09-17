@@ -385,8 +385,6 @@ BentleyStatus ECDb::Impl::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdS
     if (!briefcaseId.IsValid() || m_ecdb.IsReadonly())
         return ERROR;
 
-    const auto currentId = GetInstanceIdSequence().GetCurrentValue<BeBriefcaseBasedId>();
-
     //ECInstanceId sequence. It has to compute the current max ECInstanceId across all EC data tables
     ECInstanceId maxECInstanceId;
     if (SUCCESS != DetermineMaxInstanceIdForBriefcase(maxECInstanceId, briefcaseId, ecClassIgnoreList))
@@ -395,9 +393,6 @@ BentleyStatus ECDb::Impl::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdS
                    briefcaseId.GetValue());
         return ERROR;
         }
-
-    if (currentId.IsValid() && currentId.GetBriefcaseId() == briefcaseId)
-        maxECInstanceId = ECInstanceId(std::max(currentId.GetValueUnchecked(), maxECInstanceId.GetValueUnchecked()));
 
     if (BE_SQLITE_OK != GetInstanceIdSequence().Reset(maxECInstanceId.GetValueUnchecked()))
         {

@@ -531,18 +531,6 @@ export declare namespace IModelJsNative {
     readonly parentChangesetIndex?: string;
   }
 
-  export interface TxnProps {
-    id: TxnIdString;
-    sessionId: number;
-    nextId?: TxnIdString;
-    prevId?: TxnIdString;
-    props: { description?: string; source?: string, appData: { [key: string]: any } };
-    type: "Data" | "ECSchema" | "Ddl";
-    reversed: boolean;
-    grouped: boolean;
-    timestamp: string; // ISO 8601 format
-  }
-
   type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
   interface IGeometrySource {
     geom?: Uint8Array | GeometryStreamProps;
@@ -708,6 +696,7 @@ export declare namespace IModelJsNative {
     public insertModel(modelProps: ModelProps): Id64String;
     public isChangeCacheAttached(): boolean;
     public isGeometricModelTrackingSupported(): boolean;
+    public isIndirectChanges(): boolean;
     public isLinkTableRelationship(classFullName: string): boolean | undefined;
     public isOpen(): boolean;
     public isProfilerPaused(): boolean;
@@ -742,7 +731,6 @@ export declare namespace IModelJsNative {
     public resetBriefcaseId(idValue: number): void;
     public restartDefaultTxn(): void;
     public restartTxnSession(): void;
-    public currentTxnSessionId(): number;
     public resumeProfiler(): DbResult;
     public reverseAll(): IModelStatus;
     public reverseTo(txnId: TxnIdString): IModelStatus;
@@ -779,23 +767,11 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
+    public pullMergeInProgress(): boolean;
+    public pullMergeBegin(): void;
+    public pullMergeEnd(): void;
+    public pullMergeResume(): void;
 
-    public pullMergeGetStage(): "None" | "Merging" | "Rebasing";
-    public pullMergeRebaseReinstateTxn(): void;
-    public pullMergeRebaseUpdateTxn(): void;
-    public pullMergeRebaseNext(): TxnIdString | undefined;
-    public pullMergeRebaseAbortTxn(): void
-    public pullMergeRebaseBegin(): TxnIdString[];
-    public pullMergeRebaseEnd(): void;
-    public pullMergeReverseLocalChanges(): TxnIdString[];
-    public stashChanges(args: { stashRootDir: string, description: string, iModelId: string, resetBriefcase?: true}): any;
-    public stashRestore(stashFile: string): void;
-    public getPendingTxnsHash(includeReversedTxns: boolean): string;
-    public hasPendingSchemaChanges(): boolean;
-    public discardLocalChanges(): void;
-    public getTxnProps(id: TxnIdString): TxnProps | undefined;
-    public setTxnMode(mode: "direct" | "indirect"): void;
-    public getTxnMode(): "direct" | "indirect";
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
     public static zlibCompress(data: Uint8Array): Uint8Array;
