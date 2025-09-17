@@ -706,7 +706,6 @@ public:
     static int GetBaseDbResult(DbResult val) {return 0xff & val;}
     static bool TestBaseDbResult(DbResult val1, DbResult val2) {return GetBaseDbResult(val1) == GetBaseDbResult(val2);}
     static bool IsConstraintDbResult(DbResult val1) {return GetBaseDbResult(val1) == BE_SQLITE_CONSTRAINT;}
-    BE_SQLITE_EXPORT static bool s_throwExceptionOnUnexpectedAutoCommit;
 
     BE_SQLITE_EXPORT static bool ZlibCompress(bvector<Byte>& compressedBuffer, const bvector<Byte>& sourceBuffer);
     BE_SQLITE_EXPORT static bool ZlibDecompress(bvector<Byte>& uncompressedBuffer, const bvector<Byte>& compressedBuffer, unsigned long uncompressSize);
@@ -892,6 +891,10 @@ public:
     //! Bind a DbValue from a BeSQLite function (1-based)
     BE_SQLITE_EXPORT DbResult BindDbValue(int paramNum, struct DbValue const& dbVal);
 
+    //! @private internal use only
+    //! Bind a DbValue from a BeSQLite function (1-based)
+    BE_SQLITE_EXPORT DbResult BindValueFrom(int col, Statement& fromStmt, int fromCol);
+    
     //! @private internal use only
     //! Set value to NULL but also Bind a pointer. This is used by sql function ro virtual tables.
     BE_SQLITE_EXPORT DbResult BindPointer(int col, void* ptr, const char* name, void (*destroy)(void*));
