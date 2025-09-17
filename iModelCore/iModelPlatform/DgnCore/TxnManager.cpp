@@ -751,10 +751,6 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
                 return OnCommitStatus::NoChanges;
             }
         } else {
-            // if (conf.GetInProgressRebaseTxnId().IsValid()) {
-            //     LOG.error("Abort changes are not allowed when rebasing local changes");
-            //     return OnCommitStatus::RebaseInProgress;                
-            // }
         }
     }
 
