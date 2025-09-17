@@ -572,7 +572,7 @@
             },
             "type": "cppdbg",
             "request": "launch",
-            "program": "${env:OutRoot}MacOSARM64/static/ProductCopy/iModelPlatform-Gtest/iModelPlatformTest",
+            "program": "${env:OutRoot}MacOSX64/Product/iModelPlatform-Gtest/iModelPlatformTest",
             "cwd": "${workspaceFolder}",
             "externalConsole": false,
             "MIMode": "lldb",
@@ -585,7 +585,7 @@
             ],
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=RevisionTestFixture.MoreDataAndSchemaChanges"
+                "--gtest_filter=SchemaVersionTestFixture.*"
             ]
         },
         {

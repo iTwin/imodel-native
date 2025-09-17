@@ -888,7 +888,7 @@ DbResult ChangeStream::ToChangeSet(ChangeSet& changeSet, bool invert) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::ApplyChanges(DbR db, bool invert, bool ignoreNoop, bool fkNoAction) const
+DbResult ChangeStream::ApplyChanges(DbR db, Rebase* rebase, bool invert, bool ignoreNoop, bool fkNoAction) const
     {
     int flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
     if (invert)
@@ -899,7 +899,7 @@ DbResult ChangeStream::ApplyChanges(DbR db, bool invert, bool ignoreNoop, bool f
         flags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
     auto reader = _GetReader();
     DbResult result = (DbResult) sqlite3changeset_apply_v2_strm(db.GetSqlDb(), Changes::Reader::ReadCallback, (void*) reader.get(), FilterTableCallback, ConflictCallback, (void*) this,
-        nullptr,  nullptr, flags);
+        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, flags);
     return result;
     }
 
@@ -925,7 +925,7 @@ DbResult ChangeStream::ApplyChanges(DbR db, ApplyChangesArgs const& args) const
         ApplyChangesArgs::FilterTableCallback,
         ApplyChangesArgs::ConflictCallback,
         (void*) this,
-        nullptr, nullptr,
+        args.GetRebase() ? &(args.GetRebase()->m_data) : nullptr, args.GetRebase() ? &(args.GetRebase()->m_size) : nullptr,
         flags);
 
     m_args = nullptr;
@@ -979,6 +979,21 @@ DbResult ChangeSet::ConcatenateWith(ChangeSet const& second)
     auto saved = std::move(*this);
     return FromConcatenatedChangeStreams(saved, second);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Rebaser::Rebaser() { sqlite3rebaser_create(&m_rebaser); }
+Rebaser::~Rebaser() { sqlite3rebaser_delete(m_rebaser); }
+DbResult Rebaser::AddRebase(Rebase const& rebase) { return (DbResult)sqlite3rebaser_configure(m_rebaser, rebase.GetSize(), rebase.GetData()); }
+DbResult Rebaser::AddRebase(void const* data, int count) { return (DbResult)sqlite3rebaser_configure(m_rebaser, count, data); }
+DbResult Rebaser::DoRebase(ChangeStream const& in, ChangeStream& out) {
+    auto reader = in._GetReader();
+    return (DbResult)sqlite3rebaser_rebase_strm(m_rebaser, Changes::Reader::ReadCallback, reader.get(), out.AppendCallback, &out);
+}
+Rebase::~Rebase() {
+    if (m_data) BeSQLiteLib::FreeMem(m_data);
+}
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod

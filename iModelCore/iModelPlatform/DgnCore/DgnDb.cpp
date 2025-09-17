@@ -434,8 +434,6 @@ DbResult DgnDb::InitializeElementIdSequence()
 //--------------------------------------------------------------------------------------
 DbResult DgnDb::ResetElementIdSequence(BeBriefcaseId briefcaseId)
     {
-    const auto currentId = m_elementIdSequence.GetCurrentValue<BeBriefcaseBasedId>();
-
     BeBriefcaseBasedId firstId(briefcaseId, 0);
     BeBriefcaseBasedId lastId(briefcaseId.GetNextBriefcaseId(), 0);
 
@@ -446,9 +444,6 @@ DbResult DgnDb::ResetElementIdSequence(BeBriefcaseId briefcaseId)
     stmt.Step();
 
     uint64_t minimumId = stmt.IsColumnNull(0) ? firstId.GetValueUnchecked() : stmt.GetValueInt64(0);
-    if (currentId.IsValid() && currentId.GetBriefcaseId() == briefcaseId) {
-        minimumId = std::max(currentId.GetValueUnchecked(), minimumId);
-    }
 
     return m_elementIdSequence.Reset(minimumId);
     }

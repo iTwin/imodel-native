@@ -892,10 +892,6 @@ public:
     BE_SQLITE_EXPORT DbResult BindDbValue(int paramNum, struct DbValue const& dbVal);
 
     //! @private internal use only
-    //! Bind a DbValue from a BeSQLite function (1-based)
-    BE_SQLITE_EXPORT DbResult BindValueFrom(int col, Statement& fromStmt, int fromCol);
-    
-    //! @private internal use only
     //! Set value to NULL but also Bind a pointer. This is used by sql function ro virtual tables.
     BE_SQLITE_EXPORT DbResult BindPointer(int col, void* ptr, const char* name, void (*destroy)(void*));
 
