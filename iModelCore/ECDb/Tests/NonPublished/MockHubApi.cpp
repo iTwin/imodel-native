@@ -1002,7 +1002,7 @@ DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
 //                 return rc;
 //             }
 //         }
-        auto rc = changesetToApply->ApplyChanges(*this, nullptr, false, true);
+        auto rc = changesetToApply->ApplyChanges(*this, false, true);
         if (rc != BE_SQLITE_OK) {
             LOG.errorv("PullAndMergeChangesFrom(): %s", GetLastError().c_str());
 #ifdef TRACE_CS

@@ -571,7 +571,7 @@ DbResult    Statement::BindNull(int col) {return (DbResult)sqlite3_bind_null(m_s
 DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindInt64(col, (int64_t) &intSet);}
 DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) {return (DbResult) sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP());}
 DbResult    Statement::BindPointer(int col, void* ptr, const char* name, void(*destroy)(void*))  {return (DbResult) sqlite3_bind_pointer(m_stmt, col, ptr, name, destroy);}
-
+DbResult    Statement::BindValueFrom(int col, Statement& fromStmt, int fromCol) { return (DbResult) sqlite3_bind_value(m_stmt, col, sqlite3_column_value(fromStmt.m_stmt, fromCol)) ;}
 DbValueType Statement::GetColumnType(int col)   {return (DbValueType) sqlite3_column_type(m_stmt, col);}
 Utf8CP      Statement::GetColumnDeclaredType(int col) { return sqlite3_column_decltype(m_stmt, col); }
 Utf8CP      Statement::GetColumnTableName(int col) { return sqlite3_column_table_name(m_stmt, col); }
