@@ -46,17 +46,17 @@ class MockTxn {
     this.dres.beforeOutputs.push(elId);
   }
   _onAllInputsHandled(_elClassName: string, elId: Id64String): void {
-    assert.isTrue(db.isIndirectChanges());
+    assert.isTrue(db.getTxnMode()==="indirect");
     // console.log(`_onAllInputsHandled ${this.fmtElem(elClassName,elId)}`);
     this.dres.allInputsHandled.push(elId);
   }
   _onRootChanged(props: RelationshipProps): void {
-    assert.isTrue(db.isIndirectChanges());
+    assert.isTrue(db.getTxnMode()==="indirect");
     // console.log(`_onRootChanged ${this.fmtRel(props)}`);
     this.dres.rootChanged.push(props);
   }
   _onDeletedDependency(props: RelationshipProps): void {
-    assert.isTrue(db.isIndirectChanges());
+    assert.isTrue(db.getTxnMode()==="indirect");
     // console.log(`_onDeletedDependency ${this.fmtRel(props)}`);
     this.dres.deletedDependency.push(props);
   }
@@ -69,11 +69,11 @@ class MockTxn {
   //   this.dres.validateOutput.push(props);
   // }
   _onBeginValidate() {
-    assert.isFalse(db.isIndirectChanges());
+    assert.isFalse(db.getTxnMode()==="indirect");
     // console.log(`_onBeginValidate`);
   }
   _onEndValidate() {
-    assert.isFalse(db.isIndirectChanges());
+    assert.isFalse(db.getTxnMode()==="indirect");
     // console.log(`_onEndValidate`);
   }
   _onGeometryChanged(_modelProps: ModelGeometryChangesProps[]) {
@@ -83,11 +83,11 @@ class MockTxn {
     // console.log(`_onGeometryGuidsChanged ${util.inspect(changes)}`);
   }
   _onCommit() {
-    assert.isFalse(db.isIndirectChanges());
+    assert.isFalse(db.getTxnMode()==="indirect");
     // console.log(`_onCommit`);
   }
   _onCommitted() {
-    assert.isFalse(db.isIndirectChanges());
+    assert.isFalse(db.getTxnMode()==="indirect");
     // console.log(`_onCommitted`);
   }
   _onChangesApplied() {
