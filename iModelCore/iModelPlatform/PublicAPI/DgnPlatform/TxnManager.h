@@ -405,6 +405,12 @@ public:
         ~SetandRestoreIndirectChanges() { m_tracker.SetMode(BeSQLite::ChangeTracker::Mode::Direct); }
     };
 
+    enum class PullMergeStage {
+        None,
+        Merging, //! merging incoming changes.
+        Rebasing, //! rebasing local changes on top of incoming changes.
+    };
+
 private:
     bvector<TxnRange> m_reversedTxn;
     BeSQLite::StatementCache m_stmts;
@@ -415,7 +421,6 @@ private:
     bool m_fatalValidationError;
     bool m_initTableHandlers;
     bool m_inProfileUpgrade = false;
-    bool m_indirectChanges = false;
     bool m_trackChangesetHealthStats = false;
     bvector<ECN::ECClassId> m_childPropagatesChangesToParentRels;
     ChangesetPropsPtr m_changesetInProgress;
@@ -443,7 +448,7 @@ private:
     BeSQLite::ZipErrors ReadChanges(BeSQLite::ChangeSet& changeset, TxnId rowId);
     BeSQLite::DbResult ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
-    void ApplyTxnChanges(TxnId, TxnAction);
+    BeSQLite::DbResult ApplyTxnChanges(TxnId, TxnAction, bool skipSchemaChanges = false);
     BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
 
@@ -472,7 +477,11 @@ private:
     BentleyStatus PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8StringCR compoundSQL);
     void NotifyOnCommit();
     void ThrowIfChangesetInProgress();
-    BeSQLite::DbResult UpdateTxn(BeSQLite::ChangeSetCR changeSet, TxnId id);
+    BeSQLite::DbResult PullMergeUpdateTxn(BeSQLite::ChangeSetCR changeSet, TxnId id);
+    void PullMergeSetTxnActive(TxnManager::TxnId txnId);
+    void PullMergeAbortRebase(TxnManager::TxnId id, Utf8String err, BeSQLite::DbResult rc);
+    bool PullMergeEraseTxn(TxnManager::TxnId txnId);
+        
 public:
     void StartNewSession();
     void CallJsTxnManager(Utf8CP methodName) { DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
@@ -502,13 +511,28 @@ public:
 
     //! PullMerge
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> OpenLocalTxn(TxnManager::TxnId id);
+    DGNPLATFORM_EXPORT void PurgeCaches();
     DGNPLATFORM_EXPORT bool PullMergeInProgress() const;
     DGNPLATFORM_EXPORT void PullMergeEraseConf();
     DGNPLATFORM_EXPORT void PullMergeBegin();
     DGNPLATFORM_EXPORT void PullMergeEnd();
     DGNPLATFORM_EXPORT void PullMergeResume();
-
+    DGNPLATFORM_EXPORT TxnId PullMergeRebaseNext();
+    DGNPLATFORM_EXPORT void PullMergeRebaseAbortTxn();
+    DGNPLATFORM_EXPORT void PullMergeRebaseUpdateTxn();
+    DGNPLATFORM_EXPORT void PullMergeRebaseReinstateTxn();
+    DGNPLATFORM_EXPORT void PullMergeRebaseEnd();
+    DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges();
+    DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeRebaseBegin();
+    DGNPLATFORM_EXPORT PullMergeStage PullMergeGetStage() const;
+    DGNPLATFORM_EXPORT void Stash(BeFileNameCR pathname, Utf8StringCR description, Utf8StringCR iModelId, BeJsValue out);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DiscardLocalChanges();
+    DGNPLATFORM_EXPORT BentleyStatus GetPendingTxnsSha256HashString(Utf8StringR hash, bool includeReversedTxns = true) const;
+    DGNPLATFORM_EXPORT bool HasPendingSchemaChanges() const;
+    DGNPLATFORM_EXPORT void StashRestore(BeFileNameCR stashFile);
+    DGNPLATFORM_EXPORT bool GetTxnProps(TxnId id, BeJsValue props) const;
     DGNPLATFORM_EXPORT ChangesetStatus PullMergeApply(ChangesetPropsCR revision);     // for testing
+    
     //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);
     DGNPLATFORM_EXPORT static void DropTxnMonitor(TxnMonitor& monitor);
@@ -527,7 +551,6 @@ public:
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
 
-    bool IsIndirectChanges() { return m_indirectChanges; }
     bool HasFatalError() {return m_fatalValidationError;}
     int NumValidationErrors() {return m_txnErrors;}
     void LogError(bool fatal) { ++m_txnErrors; m_fatalValidationError |= fatal;}
