@@ -6446,11 +6446,8 @@ DbResult Db::QueryCreationDate(DateTime& creationDate) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Db::QueryStandaloneEditFlags(BeJsValue out) const {
     Utf8String val;
-    if (BE_SQLITE_ROW != QueryBriefcaseLocalValue(val, BE_LOCAL_StandaloneEdit)) {
-        // No value found - set to null
-        out.SetNull();
+    if (BE_SQLITE_ROW != QueryBriefcaseLocalValue(val, BE_LOCAL_StandaloneEdit))
         return;
-    }
 
     // Parse JSON only once and handle all cases
     BeJsDocument doc(val);
@@ -6473,8 +6470,6 @@ void Db::QueryStandaloneEditFlags(BeJsValue out) const {
     // Invalid/unsupported value
     if (!val.empty())
         LOG.warningv("QueryStandaloneEditFlags got an unsupported value: '%s' supported value must be either boolean or json object.", val.c_str());
-    
-    out.SetNull();
 }
 
 /*---------------------------------------------------------------------------------**/ /**
