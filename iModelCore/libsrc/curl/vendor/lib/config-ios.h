@@ -1018,9 +1018,6 @@
 /* to enable Windows native SSL/TLS support */
 /* #undef USE_SCHANNEL */
 
-/* enable Secure Transport */
-#define USE_SECTRANSP 1
-
 /* if you want POSIX threaded DNS lookup */
 #define USE_THREADS_POSIX 1
 
