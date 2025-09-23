@@ -773,6 +773,23 @@ void TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChang
     if (!pathname.DoesPathExist())
         m_dgndb.ThrowException("changeset file not created", (int) ChangesetStatus::FileWriteError);
 }
+
+/**
+ * Create changeset from in-memory changes
+ */
+std::unique_ptr<ChangeSet> TxnManager::CreateChangesetFromInMemoryChanges() {
+    DbResult rc;
+    if (!HasDataChanges()) {
+        return nullptr;
+    }
+    ChangeSet inMemChangeSet;
+    rc = inMemChangeSet.FromChangeTrack(*this);
+    if (BE_SQLITE_OK != rc)
+        m_dgndb.ThrowException("fail to add in memory changes", (int) rc);
+
+    return std::make_unique<ChangeSet>(std::move(inMemChangeSet));
+}
+
 /**
  * Create changeset from local changes
 */
