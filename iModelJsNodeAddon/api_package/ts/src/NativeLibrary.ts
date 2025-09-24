@@ -621,6 +621,7 @@ export declare namespace IModelJsNative {
     public createClassViewsInDb(): BentleyStatus;
     public createIModel(fileName: string, props: CreateEmptyStandaloneIModelProps): void;
     public deleteAllTxns(): void;
+    public clearAllTxns(): void;
     public deleteElement(elemIdJson: string): void;
     public deleteElementAspect(aspectIdJson: string): void;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
