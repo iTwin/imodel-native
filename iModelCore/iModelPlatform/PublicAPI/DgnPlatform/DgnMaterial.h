@@ -67,7 +67,6 @@ protected:
 
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext& importer) override;
     DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
 
