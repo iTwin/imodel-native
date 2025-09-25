@@ -380,6 +380,15 @@ CloudResult CloudContainer::PollManifest() {
     return CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_poll(m_cache->m_vfs, m_alias.c_str(), msg); }, "poll");
 }
 
+void CloudUtil::Initialize(BeFileNameCR assetDir) {
+#ifdef __APPLE__
+    BeFileName caFilename = assetDir;
+    caFilename.AppendToPath(L"cacert.pem");
+    // On macOS, use a CA file that is bundled with the native add-on.
+    sqlite3_bcv_global_config(SQLITE_BCVGLOBALCONFIG_CAFILE, caFilename.GetNameUtf8().c_str());
+#endif // __APPLE__
+}
+
 /** close the bcv handle, if open */
 void CloudUtil::Close() {
     if (m_handle) {

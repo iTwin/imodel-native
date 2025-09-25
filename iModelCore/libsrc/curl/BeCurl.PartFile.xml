@@ -10,10 +10,19 @@
 
     <!-- Bind my own VendorAPI into BuildContext/VendorAPI. Note that this part does not cause any sub-part VendorAPI to be bound. I also delivery my license notice. -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="BeCurl.prewire.mke">
+        <SubPart PartName="PublicAPIApple" />
         <Bindings>
             <VendorAPI Domain="curl" />
             <VendorNotices>Delivery/curl-license.txt</VendorNotices>
             <VendorNotices>Delivery/c-ares-license.md</VendorNotices>
+            <Files ProductDirectoryName="Assets">Delivery/cacert.pem</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Download cacert.pem from curl.se and copy it to Assets -->
+    <Part Name="PublicAPIApple" BentleyBuildMakeFile="BeCurl.prewire.apple.mke" OnlyPlatforms="iOS*,MacOS*">
+        <Bindings>
+            <Files ProductDirectoryName="Assets">Delivery/cacert.pem</Files>
         </Bindings>
     </Part>
 
