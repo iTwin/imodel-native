@@ -17,4 +17,7 @@ always:
 $(BuildContext)Delivery/cacert.pem : $(CertDir)/cacert.pem
     $(LinkFirstDepToFirstTarget)
 
+$(BuildContext)Delivery/cacert-license.txt : $(_MakeFilePath)cacert-license.txt
+    $(LinkFirstDepToFirstTarget)
+
 %endif
