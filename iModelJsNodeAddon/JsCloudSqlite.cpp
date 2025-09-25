@@ -414,6 +414,21 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             stmt.ClearBindings();
         }
         stmt.Finalize();
+
+        // Make sure that we can safely convert a 64-bit integer to to a 64-bit JS number with
+        // precision greater than a 32-bit integer would provide. There is a unit test in
+        // itwinjs-core that verifies this.
+        Statement stmt2;
+        auto rc2 = stmt2.Prepare(m_containerDb, "SELECT 3000000000 as big_value");
+        BeAssert (rc2 == BE_SQLITE_OK);
+        UNUSED_VARIABLE(rc2);
+        auto result = stmt2.Step();
+        if (result == BE_SQLITE_ROW) {
+            value["bigValueTest32"] = stmt2.GetValueInt(0);
+            value["bigValueTest64"] = stmt2.GetValueInt64(0);
+        }
+        stmt2.Finalize();
+
         if (addClientInformation) {
             rc = stmt.Prepare(m_containerDb, "SELECT SUM(nclient), SUM(nprefetch), SUM(ntrans) from bcv_database");
 
