@@ -1007,7 +1007,7 @@
 /* #undef USE_OPENLDAP */
 
 /* if OpenSSL is in use */
-/* #undef USE_OPENSSL */
+#define USE_OPENSSL 1
 
 /* if quiche is in use */
 /* #undef USE_QUICHE */
