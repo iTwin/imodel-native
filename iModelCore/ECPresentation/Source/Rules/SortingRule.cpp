@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
@@ -25,54 +24,6 @@ SortingRule::SortingRule(Utf8StringCR condition, int priority, Utf8StringCR sche
     : ConditionalCustomizationRule(condition, priority, false),
     m_schemaName(schemaName), m_className(className), m_propertyName(propertyName), m_sortAscending(sortAscending), m_doNotSort(doNotSort), m_isPolymorphic(isPolymorphic)
     {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP SortingRule::_GetXmlElementName() const
-    {
-    return SORTING_RULE_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SortingRule::_ReadXml(BeXmlNodeP xmlNode)
-    {
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_schemaName, COMMON_XML_ATTRIBUTE_SCHEMANAME))
-        m_schemaName = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_className, COMMON_XML_ATTRIBUTE_CLASSNAME))
-        m_className = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_propertyName, COMMON_XML_ATTRIBUTE_PROPERTYNAME))
-        m_propertyName = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_sortAscending, SORTING_RULE_XML_ATTRIBUTE_SORTASCENDING))
-        m_sortAscending = true;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_doNotSort, SORTING_RULE_XML_ATTRIBUTE_DONOTSORT))
-        m_doNotSort = false;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_isPolymorphic, COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC))
-        m_isPolymorphic = false;
-
-    return ConditionalCustomizationRule::_ReadXml(xmlNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SortingRule::_WriteXml(BeXmlNodeP xmlNode) const
-    {
-    ConditionalCustomizationRule::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_SCHEMANAME, m_schemaName.c_str());
-    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_CLASSNAME, m_className.c_str());
-    xmlNode->AddAttributeStringValue(COMMON_XML_ATTRIBUTE_PROPERTYNAME, m_propertyName.c_str());
-    xmlNode->AddAttributeBooleanValue(SORTING_RULE_XML_ATTRIBUTE_SORTASCENDING, m_sortAscending);
-    xmlNode->AddAttributeBooleanValue(SORTING_RULE_XML_ATTRIBUTE_DONOTSORT, m_doNotSort);
-    xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC, m_isPolymorphic);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -184,9 +135,9 @@ MD5 SortingRule::_ComputeHash() const
     {
     MD5 md5 = T_Super::_ComputeHash();
     if (!m_schemaName.empty())
-        ADD_STR_VALUE_TO_HASH(md5, COMMON_XML_ATTRIBUTE_SCHEMANAME, m_schemaName);
+        ADD_STR_VALUE_TO_HASH(md5, SCHEMA_CLASS_SPECIFICATION_SCHEMANAME, m_schemaName);
     if (!m_className.empty())
-        ADD_STR_VALUE_TO_HASH(md5, COMMON_XML_ATTRIBUTE_CLASSNAME, m_className);
+        ADD_STR_VALUE_TO_HASH(md5, SINGLE_SCHEMA_CLASS_SPECIFICATION_CLASSNAME, m_className);
     if (!m_propertyName.empty())
         ADD_STR_VALUE_TO_HASH(md5, COMMON_JSON_ATTRIBUTE_PROPERTYNAME, m_propertyName);
     if (!m_sortAscending)

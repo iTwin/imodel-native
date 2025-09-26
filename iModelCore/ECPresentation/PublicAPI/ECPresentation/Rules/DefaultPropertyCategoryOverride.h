@@ -21,10 +21,6 @@ private:
     PropertyCategorySpecificationP m_specification;
 
 protected:
-    Utf8CP _GetXmlElementName() const override {return "";}
-    bool _ReadXml(BeXmlNodeP xmlNode) override {return false;}
-    void _WriteXml(BeXmlNodeP xmlNode) const override {}
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;

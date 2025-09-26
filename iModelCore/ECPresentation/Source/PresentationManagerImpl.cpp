@@ -625,8 +625,7 @@ protected:
         NavNodesProviderPtr provider;
         if (parent.IsNull())
             {
-            IRulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);
-            RootNodeRuleSpecificationsList specs = context.GetRulesPreprocessor().GetRootNodeSpecifications(params);
+            RootNodeRuleSpecificationsList specs = context.GetRulesPreprocessor().GetRootNodeSpecifications();
             if (!specs.empty())
                 {
                 DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_INFO, Utf8PrintfString("Creating root nodes provider using %" PRIu64 " specifications.", (uint64_t)specs.size()));
@@ -639,7 +638,7 @@ protected:
             }
         else
             {
-            IRulesPreprocessor::ChildNodeRuleParameters params(*parent, TargetTree_MainTree);
+            IRulesPreprocessor::ChildNodeRuleParameters params(*parent);
             ChildNodeRuleSpecificationsList specs = context.GetRulesPreprocessor().GetChildNodeSpecifications(params);
             if (!specs.empty())
                 {
@@ -704,7 +703,7 @@ protected:
         rulesetVariables->Merge(settings);
 
         // set up the nodes provider context
-        NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, TargetTree_MainTree, parentNode,
+        NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, parentNode,
             std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, *m_manager.m_nodesFactory, cache,
             *m_manager.m_nodesProviderFactory, m_manager.GetLocalState());
         context->SetQueryContext(*m_manager.m_connections, connection, m_manager.m_usedClassesListener.get());

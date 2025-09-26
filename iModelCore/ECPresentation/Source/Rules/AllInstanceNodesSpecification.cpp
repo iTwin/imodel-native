@@ -5,7 +5,6 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 #include <ECPresentation/Rules/SpecificationVisitor.h>
@@ -41,46 +40,6 @@ AllInstanceNodesSpecification::AllInstanceNodesSpecification(int priority, Child
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AllInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP AllInstanceNodesSpecification::_GetXmlElementName () const
-    {
-    return ALL_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool AllInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (!ChildNodeSpecification::_ReadXml(xmlNode))
-        return false;
-
-    // optional:
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByClass, COMMON_XML_ATTRIBUTE_GROUPBYCLASS))
-        m_groupByClass = true;
-
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByLabel, COMMON_XML_ATTRIBUTE_GROUPBYLABEL))
-        m_groupByLabel = true;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_supportedSchemas, COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS))
-        m_supportedSchemas = "";
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void AllInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    ChildNodeSpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
-    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS, m_supportedSchemas.c_str ());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

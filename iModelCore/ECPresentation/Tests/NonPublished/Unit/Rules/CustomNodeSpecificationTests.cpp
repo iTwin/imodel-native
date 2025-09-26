@@ -85,69 +85,6 @@ TEST_F(CustomNodeSpecificationTests, WriteToJson)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomNodeSpecificationTests, LoadsFromXml)
-    {
-    static Utf8CP xmlString = R"(
-        <CustomNode Type="type" Label="label" Description="description" ImageId="imgID"/>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    CustomNodeSpecification spec;
-    EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("type", spec.GetNodeType().c_str());
-    EXPECT_STREQ("label", spec.GetLabel().c_str());
-    EXPECT_STREQ("description", spec.GetDescription().c_str());
-    EXPECT_STREQ("imgID", spec.GetImageId().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomNodeSpecificationTests, LoadsFromXmlWithDefaultValues)
-    {
-    static Utf8CP xmlString = "<CustomNode Type=\"type\" Label=\"label\" />";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    CustomNodeSpecification spec;
-    EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("type", spec.GetNodeType().c_str());
-    EXPECT_STREQ("label", spec.GetLabel().c_str());
-    EXPECT_STREQ("", spec.GetDescription().c_str());
-    EXPECT_STREQ("", spec.GetImageId().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomNodeSpecificationTests, WritesToXml)
-    {
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
-    xml->AddNewElement("Root", nullptr, nullptr);
-
-    CustomNodeSpecification spec;
-    spec.SetNodeType("type");
-    spec.SetLabel("label");
-    spec.SetDescription("description");
-    spec.SetImageId("imgID");
-    spec.WriteXml(xml->GetRootElement());
-
-    static Utf8CP expected = ""
-        "<Root>"
-            R"(<CustomNode Priority="1000" HasChildren="Unknown"
-                HideNodesInHierarchy="false" HideIfNoChildren="false" DoNotSort="false"
-                Type="type" Label="label" Description="description" ImageId="imgID"/>)"
-        "</Root>";
-    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomNodeSpecificationTests, ComputesCorrectHashes)
     {
     Utf8CP DEFAULT_HASH = "e054bcea05d3a00ea1df3807191dd53a";

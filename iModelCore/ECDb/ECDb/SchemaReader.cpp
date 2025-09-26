@@ -1559,7 +1559,11 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryCP& cat, Contex
 BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& schemaEntry, Context& ctx, ECSchemaId schemaId, bool loadSchemaEntities) const
     {
     if (SUCCESS != ReadSchemaStubAndReferences(schemaEntry, ctx, schemaId))
+        {
+        if (schemaEntry != nullptr)
+            schemaEntry->SetKnownBad();
         return ERROR;
+        }
 
     BeAssert(schemaEntry != nullptr);
     if (loadSchemaEntities && !schemaEntry->IsFullyLoaded())
@@ -1581,7 +1585,7 @@ BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEn
     if (schemaEntry = m_cache.Find(schemaId))
         {
         BeAssert(schemaEntry->m_cachedSchema != nullptr);
-        return SUCCESS;
+        return (schemaEntry->IsKnownBad() ? ERROR : SUCCESS);
         }
 
     //Following method is not by itself thread safe as it write to cache but
@@ -1613,11 +1617,20 @@ BentleyStatus SchemaReader::ReadSchemaStubAndReferences(SchemaDbEntry*& schemaEn
         {
         SchemaDbEntry* referenceSchemaKey = nullptr;
         if (SUCCESS != ReadSchemaStubAndReferences(referenceSchemaKey, ctx, referencedSchemaId))
+            {
+            schemaEntry->SetKnownBad();
+            if (referenceSchemaKey != nullptr)
+                referenceSchemaKey->SetKnownBad();
             return ERROR;
+            }
 
         ECObjectsStatus s = schemaEntry->m_cachedSchema->AddReferencedSchema(*referenceSchemaKey->m_cachedSchema);
         if (s != ECObjectsStatus::Success)
+            {
+            schemaEntry->SetKnownBad();
+            referenceSchemaKey->SetKnownBad();
             return ERROR;
+            }
         }
 
     return SUCCESS;
@@ -1710,6 +1723,8 @@ BentleyStatus SchemaReader::ReadSchemaStub(SchemaDbEntry*& schemaEntry, Context&
         schema->SetOriginalECXmlVersion(0, 0); // ECObjects set by default ECVersion as the original version. ECDb must not do that, as profile upgrade logic is based on the original version in case it was not set
 
     schema->SetId(ecSchemaId);
+    Utf8PrintfString origin("ECDb file %s, schemaId %" PRIu64, m_schemaManager.GetECDb().GetDbFileName(), ecSchemaId.GetValue());
+    schema->SetOrigin(origin);
 
     if (!Utf8String::IsNullOrEmpty(displayLabel))
         schema->SetDisplayLabel(displayLabel);

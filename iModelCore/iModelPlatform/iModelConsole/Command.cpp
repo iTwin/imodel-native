@@ -598,7 +598,7 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
     if (it != profileInfos.end())
         IModelConsole::WriteLine("    %s: %s", it->second.m_name.c_str(), it->second.m_version.ToString().c_str());
 
-    for (auto const& profileInfo : profileInfos)
+    for (const auto& profileInfo : profileInfos)
         {
         if (profileInfo.first == SessionFile::ProfileInfo::Type::Unknown)
             IModelConsole::WriteLine("    %s: %s", profileInfo.second.m_name.c_str(), profileInfo.second.m_version.ToString().c_str());
