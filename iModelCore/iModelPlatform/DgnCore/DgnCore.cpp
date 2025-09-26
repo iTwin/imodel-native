@@ -7,6 +7,7 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnECSymbolProvider.h>
 #include <DgnPlatform/Visualization.h>
+#include <BeSQLite/CloudSqlite.h>
 
 BeThreadLocalStorage t_threadId;
 
@@ -270,6 +271,7 @@ void PlatformLib::Host::Initialize()
 
     auto tempDirBase = m_knownLocationsAdmin->GetLocalTempDirectoryBaseName();
     m_bRepGeometryAdmin->_Initialize(assetDir, tempDirBase);
+    CloudUtil::Initialize(assetDir);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -8,6 +8,7 @@
 #include "bcv_int.h"
 #include "sqlite3.h"
 #include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,10 +66,12 @@ typedef void(*bcv_log_cb)(void*, const char *);
 /* BEGIN BENTLEY CHANGES */
 struct BcvGlobalConfig {
   int bRevokeBestEffort;          /* SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT option */
+  char *zCAFile;                  /* SQLITE_BCVGLOBALCONFIG_CAFILE option */
 };
 
 static struct BcvGlobalConfig bcvGlobalConfig = {
-  BCV_DEFAULT_REVOKEBESTEFFORT    /* Default to not revoking best effort */
+  BCV_DEFAULT_REVOKEBESTEFFORT,  /* Default to not revoking best effort */
+  NULL,                          /* Default CA file to NULL */
 };
 /* END BENTLEY CHANGES */
 
@@ -1202,6 +1205,22 @@ int sqlite3_bcv_global_config(int eOp, ...){
     case SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT:
       bcvGlobalConfig.bRevokeBestEffort = va_arg(ap, int);
       break;
+    case SQLITE_BCVGLOBALCONFIG_CAFILE:
+      if( bcvGlobalConfig.zCAFile!=NULL ){
+        free(bcvGlobalConfig.zCAFile);
+      }
+      char *zCAFile = va_arg(ap, const char*);
+      if( zCAFile==NULL || zCAFile[0]==0 ){
+        bcvGlobalConfig.zCAFile = NULL;
+      } else {
+        // using bcvStrdup crashes (probably because it is called too early)
+        char *dup = strdup(zCAFile);
+        bcvGlobalConfig.zCAFile = dup;
+        if( bcvGlobalConfig.zCAFile==0 ){
+          rc = SQLITE_NOMEM;
+        }
+      }
+      break;
     default:
       rc = SQLITE_MISUSE;
       break;
@@ -2333,6 +2352,11 @@ static void configure_curl_ssl_options(CURL *pCurl){
   }
   if ( sslOptions != 0 ){
     curl_easy_setopt(pCurl, CURLOPT_SSL_OPTIONS, sslOptions);
+  }
+  if ( bcvGlobalConfig.zCAFile!=NULL ){
+    curl_easy_setopt(pCurl, CURLOPT_CAINFO, bcvGlobalConfig.zCAFile);
+  } else {
+    curl_easy_setopt(pCurl, CURLOPT_CAINFO, "");    
   }
 }
 /* END BENTLEY CHANGES */

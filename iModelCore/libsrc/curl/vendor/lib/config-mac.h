@@ -99,6 +99,9 @@
 /* Define if you have inet_ntop. */
 #define HAVE_INET_NTOP 1
 
+/* Define to enable OpenSSL support */
+#define USE_OPENSSL             1
+
 /* Define to enable c-ares support */
 #define USE_ARES 1
 

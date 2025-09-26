@@ -10,7 +10,6 @@
     #include "vendor/lib/config-android.h"
 #elif defined (__APPLE__)
     #include <TargetConditionals.h>
-    #define USE_SECTRANSP 1
     #if !defined (TARGET_OS_IPHONE) || 1 != TARGET_OS_IPHONE
         // MacOS
         #define SIZEOF_CURL_OFF_T 8 // copied from config-win32.h, seems reasonable for 64-bit

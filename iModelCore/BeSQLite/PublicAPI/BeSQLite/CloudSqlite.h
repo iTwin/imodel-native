@@ -149,6 +149,7 @@ private:
 public:
     static int ProgressCallback(void* util, uint64_t nDone, uint64_t nTotal) { return (int)((CloudUtil*)util)->_OnProgress(nDone, nTotal); }
     static void LogCallback(void* util, Utf8CP msg) { ((CloudUtil*)util)->_Log(msg); }
+    static void Initialize(BeFileNameCR assetDir);
     virtual int _OnProgress(uint64_t nDone, uint64_t nTotal) { return 0; }
     virtual void _Log(Utf8CP msg) {}
 
