@@ -537,8 +537,10 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
     LINKER_LIBRARIES	    + wldap32.lib
     LINKER_LIBRARIES	    + advapi32.lib
     LINKER_LIBRARIES	    + crypt32.lib
+    LINKER_LIBRARIES	    + secur32.lib
 %elif $(TARGET_PLATFORM) == "WinRT"
     LINKER_LIBRARIES	    + crypt32.lib
+    LINKER_LIBRARIES	    + secur32.lib
 %endif
 
 %include $(sharedMki)linkLibrary.mki
