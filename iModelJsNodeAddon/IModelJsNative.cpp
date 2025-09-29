@@ -5025,7 +5025,7 @@ public:
         if (NativeDgnDb::InstanceOf(dbObj)) {
             NativeDgnDb* addonDgndb = NativeDgnDb::Unwrap(dbObj);
             if (!addonDgndb->IsOpen())
-                return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "Cannot query a closed iModel", Env());
+                return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "Cannot query a closed Db", Env());
 
             ecdb = &addonDgndb->GetDgnDb();
         } else if (NativeECDb::InstanceOf(dbObj)) {
@@ -5033,7 +5033,7 @@ public:
             ecdb = &addonECDb->GetECDb();
 
             if (!ecdb->IsDbOpen())
-                return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "Cannot query a closed iModel", Env());
+                return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "Cannot query a closed Db", Env());
         } else {
             THROW_JS_TYPE_EXCEPTION("ECSqlStatement::Prepare requires first argument to be a NativeDgnDb or NativeECDb object.");
         }
@@ -5350,17 +5350,17 @@ public:
         if (NativeDgnDb::InstanceOf(dbObj)) {
             auto addonDgndb = NativeDgnDb::Unwrap(dbObj);
             if (!addonDgndb || !addonDgndb->IsOpen())
-                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed iModel", IModelJsNativeErrorKey::NotOpen);
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed Db", IModelJsNativeErrorKey::NotOpen);
             db = &addonDgndb->GetDgnDb();
         } else if (SQLiteDb::InstanceOf(dbObj)) {
             auto sqliteDb = SQLiteDb::Unwrap(dbObj);
             if (!sqliteDb || !sqliteDb->GetDb().IsDbOpen())
-                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed iModel", IModelJsNativeErrorKey::NotOpen);
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed Db", IModelJsNativeErrorKey::NotOpen);
             db = &sqliteDb->GetDb();
         } else if (NativeECDb::InstanceOf(dbObj)) {
             auto ecdb = NativeECDb::Unwrap(dbObj);
             if (!ecdb || !ecdb->GetECDb().IsDbOpen())
-                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed iModel", IModelJsNativeErrorKey::NotOpen);
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed Db", IModelJsNativeErrorKey::NotOpen);
             db = &ecdb->GetECDb();
         } else {
             THROW_JS_TYPE_EXCEPTION("invalid database object");
