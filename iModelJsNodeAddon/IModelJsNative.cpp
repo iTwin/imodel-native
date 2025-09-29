@@ -4770,6 +4770,7 @@ public:
           InstanceMethod("openGroup", &NativeChangesetReader::OpenGroup),
           InstanceMethod("writeToFile", &NativeChangesetReader::WriteToFile),
           InstanceMethod("openLocalChanges", &NativeChangesetReader::OpenLocalChanges),
+          InstanceMethod("openInMemoryChanges", &NativeChangesetReader::OpenInMemoryChanges),
           InstanceMethod("openTxn", &NativeChangesetReader::OpenTxn),
           InstanceMethod("reset", &NativeChangesetReader::Reset),
           InstanceMethod("step", &NativeChangesetReader::Step),
@@ -4907,6 +4908,20 @@ public:
 
         m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
         }
+    void OpenInMemoryChanges(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        REQUIRE_ARGUMENT_BOOL(1, invert);
+        NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
+        if (!nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+
+        auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
+        if (changeset == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no in-memory changes", IModelJsNativeErrorKey::ChangesetError);
+
+        m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
+        }        
     void OpenTxn(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
