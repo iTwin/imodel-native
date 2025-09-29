@@ -1,4 +1,5 @@
-cacert.pem is Copyright Mozilla
+cacert.pem is generated from certdata.txt, which is Copyright Mozilla.
+certdata.txt can be found here: https://github.com/mozilla-firefox/firefox/blob/main/security/manager/ssl/tests/unit/test_trust_anchors/certdata.txt
 
 Mozilla Public License Version 2.0
 ==================================
