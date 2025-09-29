@@ -1,5 +1,3 @@
-#ifndef HEADER_CURL_SECTRANSP_H
-#define HEADER_CURL_SECTRANSP_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -7,7 +5,6 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) Nick Zitzmann, <nickzman@gmail.com>.
  * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
@@ -24,11 +21,35 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "../curl_setup.h"
 
-#ifdef USE_SECTRANSP
+/* Unset redefined system symbols. */
 
-extern const struct Curl_ssl Curl_ssl_sectransp;
+#undef strdup
+#undef malloc
+#undef calloc
+#undef realloc
+#undef free
+#undef send
+#undef recv
 
-#endif /* USE_SECTRANSP */
-#endif /* HEADER_CURL_SECTRANSP_H */
+#ifdef _WIN32
+#undef _tcsdup
+#endif
+
+#undef socket
+#ifdef HAVE_ACCEPT4
+#undef accept4
+#endif
+#ifdef HAVE_SOCKETPAIR
+#undef socketpair
+#endif
+
+#undef fopen
+#ifdef CURL_FOPEN
+#define fopen(fname, mode) CURL_FOPEN(fname, mode)
+#endif
+#undef fdopen
+#undef fclose
+
+#undef HEADER_CURL_MEMORY_H
+#undef HEADER_CURL_MEMDEBUG_H
