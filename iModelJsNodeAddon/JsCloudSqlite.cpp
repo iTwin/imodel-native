@@ -403,31 +403,32 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             stmt.BindText(1, statNames[i], Statement::MakeCopy::No);
             auto result = stmt.Step();
             if (result != BE_SQLITE_ROW) {
-                value[jsNames[i]] = -1; 
+                value[jsNames[i]] = Utf8String("SQLITE Error: ") + m_containerDb.GetLastError();
             } else {
-                // The actual values are unsigned 64 bit integers, but trying to assign that to a
-                // BeJsValue leads to a compiler error. The actual JS value is going to be a 64-bit
-                // double precision float, so just read it as Int64 instead of UInt64.
-                value[jsNames[i]] = stmt.GetValueInt64(0); 
+                // The actual values in the database are unsigned 64 bit integers, but there is no
+                // direct way to pass those to JavaScript. So we use BeStringUtilities::FormatUInt64
+                // to convert the integer to a hex string, which we can then pass to JS and let JS
+                // convert to a number (or directly deal with the hex string).
+                // Note: the IdToHex function isn't attached to in the cloud container database.
+                uint64_t intValue = stmt.GetValueUInt64(0);
+                if (intValue == 0) {
+                    // FormatUInt64 intentionally doesn't apply the "0x" prefix when the value is 0.
+                    // So we just special case that here.
+                    value[jsNames[i]] = "0x0";
+                } else {
+                    static const size_t stringBufferLength = 19;
+                    Utf8Char stringBuffer[stringBufferLength];
+                    if (BeStringUtilities::FormatUInt64(stringBuffer, stringBufferLength, intValue, HexFormatOptions::IncludePrefix) != 0) {
+                        value[jsNames[i]] = stringBuffer;
+                    } else {
+                        value[jsNames[i]] = Utf8String("Error converting to hex string");
+                    }
+                }
             }
             stmt.Reset();
             stmt.ClearBindings();
         }
         stmt.Finalize();
-
-        // Make sure that we can safely convert a 64-bit integer to to a 64-bit JS number with
-        // precision greater than a 32-bit integer would provide. There is a unit test in
-        // itwinjs-core that verifies this.
-        Statement stmt2;
-        auto rc2 = stmt2.Prepare(m_containerDb, "SELECT 3000000000 as big_value");
-        BeAssert (rc2 == BE_SQLITE_OK);
-        UNUSED_VARIABLE(rc2);
-        auto result = stmt2.Step();
-        if (result == BE_SQLITE_ROW) {
-            value["bigValueTest32"] = stmt2.GetValueInt(0);
-            value["bigValueTest64"] = stmt2.GetValueInt64(0);
-        }
-        stmt2.Finalize();
 
         if (addClientInformation) {
             rc = stmt.Prepare(m_containerDb, "SELECT SUM(nclient), SUM(nprefetch), SUM(ntrans) from bcv_database");
