@@ -533,13 +533,15 @@ public:
         DbResult status = JsInterop::ImportSchema(m_ecdb, BeFileName(schemaPathName.c_str(), true));
         return Napi::Number::New(Env(), (int)status);
     }
-    void DropSchema(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_STRING(0, schemaName);
-        DropSchemaResult rc = m_ecdb.Schemas().DropSchema(schemaName);
-        if (rc.GetStatus() != DropSchemaResult::Success) {
-            BeNapi::ThrowJsException(info.Env(), rc.GetStatusAsString(), (int)rc.GetStatus(), {"schema-sync", rc.GetStatusAsString()});
-        }
+    
+    void DropSchemas(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaNames);
+        DbResult status = JsInterop::DropSchemas(m_ecdb, schemaNames);
+        if (status != BE_SQLITE_OK) {
+            JsInterop::throwSqlResult("error dropping schema(s)", m_ecdb.GetDbFileName(), status);
+        }   
     }
+
     void SchemaSyncSetDefaultUri(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         LastErrorListener lastError(m_ecdb);
@@ -647,7 +649,7 @@ public:
             InstanceMethod("concurrentQueryShutdown", &NativeECDb::ConcurrentQueryShutdown),
             InstanceMethod("createDb", &NativeECDb::CreateDb),
             InstanceMethod("dispose", &NativeECDb::Dispose),
-            InstanceMethod("dropSchema", &NativeECDb::DropSchema),
+            InstanceMethod("dropSchemas", &NativeECDb::DropSchemas),
             InstanceMethod("getFilePath", &NativeECDb::GetFilePath),
             InstanceMethod("getLastError", &NativeECDb::GetLastError),
             InstanceMethod("getLastInsertRowId", &NativeECDb::GetLastInsertRowId),
@@ -1475,12 +1477,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     Napi::Value GetRedoString(NapiInfoCR info) {return toJsString(Env(), GetOpenedDb(info).Txns().GetRedoString());}
     Napi::Value HasUnsavedChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().HasChanges());}
     Napi::Value HasPendingTxns(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().HasPendingTxns());}
-    Napi::Value IsIndirectChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsIndirectChanges());}
     Napi::Value IsRedoPossible(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsRedoPossible());}
     Napi::Value IsUndoPossible(NapiInfoCR info) {
         return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsUndoPossible());
     }
     void RestartTxnSession(NapiInfoCR info) {GetOpenedDb(info).Txns().Initialize();}
+    Napi::Value CurrentTxnSessionId(NapiInfoCR info) { return Napi::Number::New(Env(), GetOpenedDb(info).Txns().GetCurrentSessionId().GetValue()); }
     Napi::Value ReinstateTxn(NapiInfoCR info) {return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().ReinstateTxn());}
     Napi::Value ReverseAll(NapiInfoCR info) {return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().ReverseAll());}
     Napi::Value ReverseTo(NapiInfoCR info) {
@@ -2071,13 +2073,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return Napi::Number::New(Env(), (int)result);
         }
 
-    void DropSchema(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_STRING(0, schemaName);
-        auto rc = GetOpenedDb(info).DropSchema(schemaName);
+    void DropSchemas(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaNames);
+        auto rc = GetOpenedDb(info).DropSchemas(schemaNames, false);
         if (rc.GetStatus() != DropSchemaResult::Success) {
             BeNapi::ThrowJsException(info.Env(), rc.GetStatusAsString(), (int)rc.GetStatus(), {"schema-sync", "DropSchemaError"});
         }
     }
+
     void SchemaSyncSetDefaultUri(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
@@ -2820,26 +2823,147 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return blob;
     }
 
-    void PullMergeResume(NapiInfoCR info) {
+    Napi::Value PullMergeReverseLocalChanges(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        db.Txns().PullMergeResume();
+        auto txns = db.Txns().PullMergeReverseLocalChanges();
+        auto array = Napi::Array::New(Env(), txns.size());        
+        for (size_t i = 0; i < txns.size(); ++i) {
+            array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
+        }
+        return array;
     }
 
-    void PullMergeBegin(NapiInfoCR info) {
+    Napi::Value PullMergeRebaseBegin(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        db.Txns().PullMergeBegin();
+        auto txns = db.Txns().PullMergeRebaseBegin();
+        auto array = Napi::Array::New(Env(), txns.size());        
+        for (size_t i = 0; i < txns.size(); ++i) {
+            array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
+        }
+        return array;
     }
 
-    void PullMergeEnd(NapiInfoCR info) {
+    void PullMergeRebaseEnd(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        db.Txns().PullMergeEnd();
+        db.Txns().PullMergeRebaseEnd();
     }
 
-    Napi::Value PullMergeInProgress(NapiInfoCR info) {
+    Napi::Value PullMergeRebaseNext(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
-        return Napi::Boolean::New(Env(), db.Txns().PullMergeInProgress());
+        auto txnId = db.Txns().PullMergeRebaseNext();
+        if (txnId.IsValid()){
+            return Napi::String::New(Env(), BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
+        }
+        return info.Env().Undefined();
     }
 
+    void PullMergeRebaseAbortTxn(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeRebaseAbortTxn();
+    }
+    void PullMergeRebaseUpdateTxn(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeRebaseUpdateTxn();
+    }
+    void PullMergeRebaseReinstateTxn(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeRebaseReinstateTxn();
+    }
+    Napi::Value PullMergeGetStage(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        if (db.Txns().PullMergeGetStage() == TxnManager::PullMergeStage::Merging)
+            return Napi::String ::New(Env(), "Merging");
+        if (db.Txns().PullMergeGetStage() == TxnManager::PullMergeStage::Rebasing)
+            return Napi::String ::New(Env(), "Rebasing");
+        return Napi::String ::New(Env(), "None");
+    }
+    void SetTxnMode(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, mode);
+        auto& db = GetWritableDb(info);
+        if (mode == "direct")
+            db.Txns().SetMode(ChangeTracker::Mode::Direct);
+        else if (mode == "indirect")
+            db.Txns().SetMode(ChangeTracker::Mode::Indirect);
+        else
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txn mode", DgnDbStatus::BadArg);
+    }
+    Napi::Value  GetTxnMode(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        switch (db.Txns().GetMode()) {
+            case ChangeTracker::Mode::Direct:
+                return Napi::String::New(info.Env(), "direct");
+            case ChangeTracker::Mode::Indirect:
+                return Napi::String::New(info.Env(), "indirect");
+            default:
+                THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txn mode", DgnDbStatus::BadArg);
+        }
+    }
+    void DiscardLocalChanges(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        auto rc = db.Txns().DiscardLocalChanges();
+        if (rc != BE_SQLITE_OK) {
+            THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "failed to discard all local changes", rc);
+        }
+    }
+    Napi::Value  StashChanges(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, args);
+        auto& db = GetWritableDb(info);
+        BeJsNapiObject stashInfo(info.Env());
+
+        BeFileName stashRootDir;
+        Utf8String description;
+        Utf8String iModelId;
+
+        auto obj = BeJsConst(args);
+        if (obj.isStringMember("stashRootDir"))
+            stashRootDir.AssignUtf8(obj["stashRootDir"].asCString());
+        if (obj.isStringMember("description"))
+            description.assign(obj["description"].asCString());
+        if (obj.isStringMember("iModelId"))
+            iModelId.assign(obj["iModelId"].asCString());
+
+        db.Txns().Stash(
+            stashRootDir,
+            description,
+            iModelId,
+            stashInfo
+        );
+        return stashInfo;
+    }
+    void StashRestore(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, stashFile);
+        auto& db = GetWritableDb(info);
+        db.Txns().StashRestore(BeFileName(stashFile));
+    }
+    Napi::Value GetPendingTxnsHash(NapiInfoCR info) {
+        OPTIONAL_ARGUMENT_BOOL(0, includeReversedTxns, false);
+        auto& db = GetWritableDb(info);
+        Utf8String hash;
+        if (SUCCESS !=db.Txns().GetPendingTxnsSha256HashString(hash, includeReversedTxns)){
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "failed to get pending txns hash", DgnDbStatus::BadArg);
+        }
+        return Napi::String::New(info.Env(), hash);
+    }
+
+    Napi::Value HasPendingSchemaChanges(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        return Napi::Boolean::New(info.Env(), db.Txns().HasPendingSchemaChanges());
+    }
+
+    Napi::Value GetTxnProps(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, txnIdStr);
+        auto& db = GetWritableDb(info);
+        auto id = BeInt64Id::FromString(txnIdStr.c_str());
+        if (!id.IsValid()) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "invalid txnId", DgnDbStatus::BadArg);
+        }
+        BeJsNapiObject props(info.Env());        
+        if (db.Txns().GetTxnProps(TxnManager::TxnId(id.GetValue()), BeJsValue(props)))
+            return props;
+
+        return info.Env().Undefined();
+    }
+    
     static Napi::Value ComputeChangesetId(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, args);
         auto parentId = args.Get("parentId").As<Napi::String>();
@@ -2905,7 +3029,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("deleteLocalValue", &NativeDgnDb::DeleteLocalValue),
             InstanceMethod("deleteModel", &NativeDgnDb::DeleteModel),
             InstanceMethod("detachChangeCache", &NativeDgnDb::DetachChangeCache),
-            InstanceMethod("dropSchema",&NativeDgnDb::DropSchema),
+            InstanceMethod("dropSchemas", &NativeDgnDb::DropSchemas),
             InstanceMethod("dumpChangeset", &NativeDgnDb::DumpChangeSet),
             InstanceMethod("elementGeometryCacheOperation", &NativeDgnDb::ElementGeometryCacheOperation),
             InstanceMethod("embedFile", &NativeDgnDb::EmbedFile),
@@ -2980,7 +3104,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("isGeometricModelTrackingSupported", &NativeDgnDb::IsGeometricModelTrackingSupported),
-            InstanceMethod("isIndirectChanges", &NativeDgnDb::IsIndirectChanges),
             InstanceMethod("isLinkTableRelationship", &NativeDgnDb::IsLinkTableRelationship),
             InstanceMethod("isOpen", &NativeDgnDb::IsDgnDbOpen),
             InstanceMethod("isProfilerPaused", &NativeDgnDb::IsProfilerPaused),
@@ -3013,6 +3136,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("resetBriefcaseId", &NativeDgnDb::ResetBriefcaseId),
             InstanceMethod("restartDefaultTxn", &NativeDgnDb::RestartDefaultTxn),
             InstanceMethod("restartTxnSession", &NativeDgnDb::RestartTxnSession),
+            InstanceMethod("currentTxnSessionId",&NativeDgnDb::CurrentTxnSessionId),
             InstanceMethod("resumeProfiler", &NativeDgnDb::ResumeProfiler),
             InstanceMethod("reverseAll", &NativeDgnDb::ReverseAll),
             InstanceMethod("reverseTo", &NativeDgnDb::ReverseTo),
@@ -3060,10 +3184,22 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
             InstanceMethod("getNoCaseCollation", &NativeDgnDb::GetNoCaseCollation),
             InstanceMethod("setNoCaseCollation", &NativeDgnDb::SetNoCaseCollation),
-            InstanceMethod("pullMergeInProgress", &NativeDgnDb::PullMergeInProgress),
-            InstanceMethod("pullMergeBegin", &NativeDgnDb::PullMergeBegin),
-            InstanceMethod("pullMergeEnd", &NativeDgnDb::PullMergeEnd),
-            InstanceMethod("pullMergeResume", &NativeDgnDb::PullMergeResume),
+            InstanceMethod("pullMergeGetStage", &NativeDgnDb::PullMergeGetStage),
+            InstanceMethod("pullMergeRebaseReinstateTxn", &NativeDgnDb::PullMergeRebaseReinstateTxn),
+            InstanceMethod("pullMergeRebaseUpdateTxn", &NativeDgnDb::PullMergeRebaseUpdateTxn),
+            InstanceMethod("pullMergeRebaseBegin", &NativeDgnDb::PullMergeRebaseBegin),
+            InstanceMethod("pullMergeRebaseEnd", &NativeDgnDb::PullMergeRebaseEnd),
+            InstanceMethod("pullMergeRebaseNext", &NativeDgnDb::PullMergeRebaseNext),
+            InstanceMethod("pullMergeRebaseAbortTxn", &NativeDgnDb::PullMergeRebaseAbortTxn),
+            InstanceMethod("pullMergeReverseLocalChanges", &NativeDgnDb::PullMergeReverseLocalChanges),
+            InstanceMethod("getTxnProps", &NativeDgnDb::GetTxnProps),
+            InstanceMethod("hasPendingSchemaChanges", &NativeDgnDb::HasPendingSchemaChanges),
+            InstanceMethod("setTxnMode", &NativeDgnDb::SetTxnMode),
+            InstanceMethod("getTxnMode", &NativeDgnDb::GetTxnMode),
+            InstanceMethod("getPendingTxnsHash", &NativeDgnDb::GetPendingTxnsHash),
+            InstanceMethod("stashChanges", &NativeDgnDb::StashChanges),
+            InstanceMethod("stashRestore", &NativeDgnDb::StashRestore),
+            InstanceMethod("discardLocalChanges", &NativeDgnDb::DiscardLocalChanges),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
@@ -4643,6 +4779,7 @@ public:
           InstanceMethod("openGroup", &NativeChangesetReader::OpenGroup),
           InstanceMethod("writeToFile", &NativeChangesetReader::WriteToFile),
           InstanceMethod("openLocalChanges", &NativeChangesetReader::OpenLocalChanges),
+          InstanceMethod("openInMemoryChanges", &NativeChangesetReader::OpenInMemoryChanges),
           InstanceMethod("openTxn", &NativeChangesetReader::OpenTxn),
           InstanceMethod("reset", &NativeChangesetReader::Reset),
           InstanceMethod("step", &NativeChangesetReader::Step),
@@ -4780,6 +4917,20 @@ public:
 
         m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
         }
+    void OpenInMemoryChanges(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        REQUIRE_ARGUMENT_BOOL(1, invert);
+        NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
+        if (!nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+
+        auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
+        if (changeset == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no in-memory changes", IModelJsNativeErrorKey::ChangesetError);
+
+        m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
+        }        
     void OpenTxn(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);

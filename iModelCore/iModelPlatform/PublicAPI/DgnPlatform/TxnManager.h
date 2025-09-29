@@ -82,6 +82,7 @@ namespace dgn_TxnTable {
     struct RelationshipLinkTable;
     struct UniqueRelationshipLinkTable;
     struct MultiRelationshipLinkTable;
+    struct DefinitionElement;
 }
 
 //=======================================================================================
@@ -313,32 +314,6 @@ public:
     };
 
     //=======================================================================================
-    // A set of Ids of entities that were affected by a transaction, along with a flag for
-    // each indicating whether any of the changes to the entity originated from a commit
-    // (vs applying a changeset, e.g. undo/redo).
-    // @bsistruct
-    //=======================================================================================
-    template<typename Id> struct ChangedIds
-    {
-        using Map = bmap<Id, bool>;
-    private:
-        Map m_ids;
-    public:
-        void Insert(Id id, bool fromCommit)
-            {
-            auto iter = m_ids.Insert(id, fromCommit);
-            if (fromCommit && !iter.second)
-                iter.first->second = true;
-            }
-
-        bool empty() const { return m_ids.empty(); }
-        typename Map::const_iterator begin() const { return m_ids.begin(); }
-        typename Map::const_iterator end() const { return m_ids.end(); }
-        void erase(Id id) { m_ids.erase(id); }
-        void clear() { m_ids.clear(); }
-    };
-
-    //=======================================================================================
     // Keeps track of changes to models, and optionally to geometric elements within those
     // models. The latter requires a writable DgnDb with BisCore 1.0.11 or newer.
     // @bsistruct
@@ -358,17 +333,24 @@ public:
           Full,
         };
     private:
-        ChangedIds<DgnModelId> m_models;    // the set of models that have changes for the current transaction
-        ChangedIds<DgnModelId> m_geometricModels; // the set of models that have geometric changes for the current transaction
+        enum class State : uint8_t { Idle, Commit, Apply };
+
+        bset<DgnModelId> m_models;    // the set of models that have changes for the current transaction
+        bset<DgnModelId> m_geometricModels; // the set of models that have geometric changes for the current transaction
+        bset<DgnSubCategoryId> m_subCategories; // the set of subcategories whose appearances changed during the current transaction
         bmap<DgnModelId, GeometricElementChanges> m_geometryChanges; // changes to elements within geometric models
         bmap<DgnElementId, DgnModelId> m_modelsForDeletedElements; // maps Id of a deleted element to its model Id
-        ChangedIds<DgnElementId> m_deletedGeometricElements; // Ids of deleted geometric elements
+        bset<DgnElementId> m_deletedGeometricElements; // Ids of deleted geometric elements
         TxnManager& m_mgr;
         Mode m_mode = Mode::Legacy;
         bool m_determinedMode = false;
         bool m_trackGeometry = false; // true if we are currently tracking changes to geometric elements
+        State m_state = State::Idle;
 
         bool IsReadonly() const { return m_determinedMode && m_mode == Mode::Readonly; }
+        bool IsIdle() const { return m_state == State::Idle; }
+        bool IsCommitting() const { return m_state == State::Commit; }
+        bool IsApplying() const { return m_state == State::Apply; }
 
         void Clear(bool preserveGeometryChanges)
             {
@@ -376,6 +358,7 @@ public:
             m_geometricModels.clear();
             m_modelsForDeletedElements.clear();
             m_deletedGeometricElements.clear();
+            m_subCategories.clear();
 
             if (!preserveGeometryChanges)
                 m_geometryChanges.clear();
@@ -385,11 +368,14 @@ public:
     public:
         explicit ModelChanges(TxnManager& mgr);
 
-        void AddModel(DgnModelId modelId, bool fromCommit) { m_models.Insert(modelId, fromCommit); }
-        void AddGeometricElementChange(DgnModelId modelId, DgnElementId elementId, TxnTable::ChangeType type, bool fromCommit);
+        void AddModel(DgnModelId modelId) { m_models.insert(modelId); }
+        void AddGeometricElementChange(DgnModelId modelId, DgnElementId elementId, TxnTable::ChangeType type);
         void AddDeletedElement(DgnElementId elemId, DgnModelId modelId) { m_modelsForDeletedElements.Insert(elemId, modelId); }
-        void AddDeletedGeometricElement(DgnElementId elemId, bool fromCommit) { m_deletedGeometricElements.Insert(elemId, fromCommit); }
+        void AddDeletedGeometricElement(DgnElementId elemId) { m_deletedGeometricElements.insert(elemId); }
+        void AddSubCategoryAppearanceChange(DgnSubCategoryId subCategoryId) { m_subCategories.insert(subCategoryId); }
 
+        void BeginValidate() { BeAssert(IsIdle()); m_state = State::Commit; }
+        void BeginApply() { BeAssert(IsIdle()); m_state = State::Apply; }
         void Process();
         void Notify();
         void ClearAll() { Clear(false); }
@@ -419,6 +405,12 @@ public:
         ~SetandRestoreIndirectChanges() { m_tracker.SetMode(BeSQLite::ChangeTracker::Mode::Direct); }
     };
 
+    enum class PullMergeStage {
+        None,
+        Merging, //! merging incoming changes.
+        Rebasing, //! rebasing local changes on top of incoming changes.
+    };
+
 private:
     bvector<TxnRange> m_reversedTxn;
     BeSQLite::StatementCache m_stmts;
@@ -429,7 +421,6 @@ private:
     bool m_fatalValidationError;
     bool m_initTableHandlers;
     bool m_inProfileUpgrade = false;
-    bool m_indirectChanges = false;
     bool m_trackChangesetHealthStats = false;
     bvector<ECN::ECClassId> m_childPropagatesChangesToParentRels;
     ChangesetPropsPtr m_changesetInProgress;
@@ -457,7 +448,7 @@ private:
     BeSQLite::ZipErrors ReadChanges(BeSQLite::ChangeSet& changeset, TxnId rowId);
     BeSQLite::DbResult ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
-    void ApplyTxnChanges(TxnId, TxnAction);
+    BeSQLite::DbResult ApplyTxnChanges(TxnId, TxnAction, bool skipSchemaChanges = false);
     BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, bool invert = false, bool fastForward = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
 
@@ -486,7 +477,11 @@ private:
     BentleyStatus PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8StringCR compoundSQL);
     void NotifyOnCommit();
     void ThrowIfChangesetInProgress();
-    BeSQLite::DbResult UpdateTxn(BeSQLite::ChangeSetCR changeSet, TxnId id);
+    BeSQLite::DbResult PullMergeUpdateTxn(BeSQLite::ChangeSetCR changeSet, TxnId id);
+    void PullMergeSetTxnActive(TxnManager::TxnId txnId);
+    void PullMergeAbortRebase(TxnManager::TxnId id, Utf8String err, BeSQLite::DbResult rc);
+    bool PullMergeEraseTxn(TxnManager::TxnId txnId);
+        
 public:
     void StartNewSession();
     void CallJsTxnManager(Utf8CP methodName) { DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
@@ -501,6 +496,7 @@ public:
     DGNPLATFORM_EXPORT void RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesets, bool skipSchemaChanges);
     DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision);
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> CreateChangesetFromLocalChanges(bool includeInMemoryChanges);
+    DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> CreateChangesetFromInMemoryChanges();
     DGNPLATFORM_EXPORT void ForEachLocalChange(std::function<void(BeSQLite::EC::ECInstanceKey const&, BeSQLite::DbOpcode)>, bvector<Utf8String> const&, bool includeInMemoryChanges = false);
     void SaveParentChangeset(Utf8StringCR revisionId, int32_t changesetIndex);
     ChangesetPropsPtr CreateChangesetProps(BeFileNameCR pathName);
@@ -516,13 +512,28 @@ public:
 
     //! PullMerge
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> OpenLocalTxn(TxnManager::TxnId id);
+    DGNPLATFORM_EXPORT void PurgeCaches();
     DGNPLATFORM_EXPORT bool PullMergeInProgress() const;
     DGNPLATFORM_EXPORT void PullMergeEraseConf();
     DGNPLATFORM_EXPORT void PullMergeBegin();
     DGNPLATFORM_EXPORT void PullMergeEnd();
     DGNPLATFORM_EXPORT void PullMergeResume();
-
+    DGNPLATFORM_EXPORT TxnId PullMergeRebaseNext();
+    DGNPLATFORM_EXPORT void PullMergeRebaseAbortTxn();
+    DGNPLATFORM_EXPORT void PullMergeRebaseUpdateTxn();
+    DGNPLATFORM_EXPORT void PullMergeRebaseReinstateTxn();
+    DGNPLATFORM_EXPORT void PullMergeRebaseEnd();
+    DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeReverseLocalChanges();
+    DGNPLATFORM_EXPORT std::vector<TxnManager::TxnId> PullMergeRebaseBegin();
+    DGNPLATFORM_EXPORT PullMergeStage PullMergeGetStage() const;
+    DGNPLATFORM_EXPORT void Stash(BeFileNameCR pathname, Utf8StringCR description, Utf8StringCR iModelId, BeJsValue out);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DiscardLocalChanges();
+    DGNPLATFORM_EXPORT BentleyStatus GetPendingTxnsSha256HashString(Utf8StringR hash, bool includeReversedTxns = true) const;
+    DGNPLATFORM_EXPORT bool HasPendingSchemaChanges() const;
+    DGNPLATFORM_EXPORT void StashRestore(BeFileNameCR stashFile);
+    DGNPLATFORM_EXPORT bool GetTxnProps(TxnId id, BeJsValue props) const;
     DGNPLATFORM_EXPORT ChangesetStatus PullMergeApply(ChangesetPropsCR revision);     // for testing
+    
     //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);
     DGNPLATFORM_EXPORT static void DropTxnMonitor(TxnMonitor& monitor);
@@ -542,7 +553,6 @@ public:
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
 
-    bool IsIndirectChanges() { return m_indirectChanges; }
     bool HasFatalError() {return m_fatalValidationError;}
     int NumValidationErrors() {return m_txnErrors;}
     void LogError(bool fatal) { ++m_txnErrors; m_fatalValidationError |= fatal;}
@@ -734,9 +744,9 @@ namespace dgn_TxnTable
 
         void _Initialize() override;
         void _OnValidate() override;
-        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert, true);}
-        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete, true);}
-        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update, true);}
+        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
+        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
         void _OnValidated() override;
         void _OnApply() override;
         void _OnAppliedAdd(BeSQLite::Changes::Change const&) override;
@@ -744,8 +754,8 @@ namespace dgn_TxnTable
         void _OnAppliedUpdate(BeSQLite::Changes::Change const&) override;
         void _OnApplied() override;
 
-        void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType, bool fromCommit);
-        void AddElement(DgnElementId, DgnModelId, ChangeType changeType, DgnClassId, bool fromCommit);
+        void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
+        void AddElement(DgnElementId, DgnModelId, ChangeType changeType, DgnClassId);
 
         //! iterator for elements that are directly changed. Only valid during _PropagateChanges.
         struct Iterator : BeSQLite::DbTableIterator
@@ -791,14 +801,14 @@ namespace dgn_TxnTable
         virtual int32_t _GetLastCol() = 0;
 
         bool HasChangeInColumns(BeSQLite::Changes::Change const& change);
-        void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType, bool fromCommit);
+        void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
 
-        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert, true);}
-        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update, true);}
-        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete, true);}
-        void _OnAppliedAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert, false);}
-        void _OnAppliedUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update, false);}
-        void _OnAppliedDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete, false);}
+        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
+        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
+        void _OnAppliedAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
+        void _OnAppliedUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
+        void _OnAppliedDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
     };
 
     struct Geometric3d : Geometric {
@@ -815,6 +825,21 @@ namespace dgn_TxnTable
         Utf8CP _GetTableName() const override {return MyTableName();}
     };
 
+    struct DefinitionElement : TxnTable {
+    private:
+        int m_subcategoryAppearanceColumnIndex = -1;
+        DgnClassId m_subCategoryClassId;
+
+        void AddChange(BeSQLite::Changes::Change const& change) const;
+
+        Utf8CP _GetTableName() const override { return BIS_TABLE(BIS_CLASS_DefinitionElement); }
+        void _Initialize() override;
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override { AddChange(change); }
+        void _OnAppliedUpdate(BeSQLite::Changes::Change const& change) override  { AddChange(change); }
+    public:
+        DefinitionElement(TxnManager& mgr) : TxnTable(mgr) { }
+    };
+    
     struct Model : TxnTable
     {
     private:
@@ -979,6 +1004,11 @@ namespace dgn_TableHandler {
     struct ElementDep : DgnDomain::TableHandler {
         TABLEHANDLER_DECLARE_MEMBERS(ElementDep, DGNPLATFORM_EXPORT)
         TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ElementDep(mgr);}
+    };
+
+    struct DefinitionElement : DgnDomain::TableHandler {
+        TABLEHANDLER_DECLARE_MEMBERS(DefinitionElement, DGNPLATFORM_EXPORT)
+        TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::DefinitionElement(mgr);}
     };
 };
 
