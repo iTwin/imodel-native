@@ -491,7 +491,7 @@
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
     </Part>
 
-    <Part Name="iModelConsoleExe-Linux" OnlyPlatforms="Linux*,MacOS*" ExcludeLibType="Dynamic" >
+    <Part Name="iModelConsoleExe-Linux" OnlyPlatforms="Linux*" >
         <SubPart PartName="iModelConsoleExe" LibType="Static"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api" LibType="Static"/>
     </Part>
