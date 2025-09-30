@@ -307,7 +307,7 @@ LineStyleStatus LsPointComponent::CreateFromJson(LsPointComponentP*newPoint, Jso
         }
 
     *newPoint = pPoint;
-    return LINESTYLE_STATUS_Success; 
+    return LINESTYLE_STATUS_Success;
     }
 
 
@@ -378,7 +378,7 @@ LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentP*newComp, Js
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeometryPartId const& geomPartId, int32_t flags, double storedScale) 
+void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeometryPartId const& geomPartId, int32_t flags, double storedScale)
     {
     if (base.x != 0)
         result["baseX"] = base.x;
@@ -505,7 +505,7 @@ size_t LineStyleElement::QueryCount(DgnDbR db)
     CachedECSqlStatementPtr select = db.GetPreparedECSqlStatement("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_LineStyle));
     if (!select.IsValid())
         return 0;
-    
+
     if (BE_SQLITE_ROW != select->Step())
         return 0;
 
@@ -521,15 +521,6 @@ LineStyleElement::Iterator LineStyleElement::MakeIterator(DgnDbR db)
     iter.Prepare(db, "SELECT ECInstanceId,[CodeValue],Description,Data FROM " BIS_SCHEMA(BIS_CLASS_LineStyle), 0);
 
     return iter;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-DgnDbStatus LineStyleElement::_OnDelete() const
-    {
-    // can only be deleted through a purge operation
-    return GetDgnDb().IsPurgeOperationActive() ? T_Super::_OnDelete() : DgnDbStatus::DeletionProhibited;
     }
 
 //---------------------------------------------------------------------------------------
@@ -570,7 +561,7 @@ DgnStyleId DgnImportContext::_RemapLineStyleId(DgnStyleId sourceId)
     if (dest.IsValid())
         return dest;
 
-    
+
     dest = LineStyleElement::ImportLineStyle(sourceId, *this);
     AddLineStyleId(sourceId, dest);
 
@@ -605,7 +596,7 @@ void DgnImportContext::AddLineStyleComponentId(LsComponentId sourceId, LsCompone
 DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportContext& importer)
     {
     //  See if we already have a line style with the same code in the destination Db.
-    //  If so, we'll map the source line style to it.  
+    //  If so, we'll map the source line style to it.
     LineStyleElementCPtr srcStyle = LineStyleElement::Get(importer.GetSourceDb(), srcStyleId);
     BeAssert(srcStyle.IsValid());
     if (!srcStyle.IsValid())
@@ -665,7 +656,7 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
     if (!Json::Reader::Parse(srcData, jsonObj))
       return newElem;
     LsComponentId compId = LsDefinition::GetComponentId (jsonObj);
-    
+
     DgnStyleId dstStyleId = QueryId(context.GetDestinationDb(), this->GetName().c_str());
     if (dstStyleId.IsValid())
         {
@@ -690,7 +681,7 @@ DgnElementPtr LineStyleElement::_CloneForImport(DgnDbStatus* status, DgnModelR d
 
     LineStyleElementPtr lsElement = dynamic_cast<LineStyleElement*>(newElem.get());
     lsElement->SetData(data.c_str());
-   
+
     return newElem;
     }
 END_BENTLEY_DGNPLATFORM_NAMESPACE
