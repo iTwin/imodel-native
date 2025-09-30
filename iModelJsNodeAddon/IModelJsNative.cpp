@@ -5023,20 +5023,17 @@ public:
 
         ECDb* ecdb = nullptr;
         if (NativeDgnDb::InstanceOf(dbObj)) {
-            NativeDgnDb* addonDgndb = NativeDgnDb::Unwrap(dbObj);
-            if (!addonDgndb->IsOpen())
-                return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "Cannot query a closed Db", Env());
-
-            ecdb = &addonDgndb->GetDgnDb();
+            if (auto addonDgndb = NativeDgnDb::Unwrap(dbObj); addonDgndb)
+              ecdb = &addonDgndb->GetDgnDb();
         } else if (NativeECDb::InstanceOf(dbObj)) {
-            NativeECDb* addonECDb = NativeECDb::Unwrap(dbObj);
-            ecdb = &addonECDb->GetECDb();
-
-            if (!ecdb->IsDbOpen())
-                return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "Cannot query a closed Db", Env());
+            if (auto addonECDb = NativeECDb::Unwrap(dbObj); addonECDb)
+                ecdb = &addonECDb->GetECDb();
         } else {
             THROW_JS_TYPE_EXCEPTION("ECSqlStatement::Prepare requires first argument to be a NativeDgnDb or NativeECDb object.");
         }
+
+        if (!ecdb || !ecdb->IsDbOpen())
+            return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "Cannot query a closed Db", Env());
 
         REQUIRE_ARGUMENT_STRING(1, ecsql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
@@ -5348,23 +5345,20 @@ public:
         Db* db = nullptr;
 
         if (NativeDgnDb::InstanceOf(dbObj)) {
-            auto addonDgndb = NativeDgnDb::Unwrap(dbObj);
-            if (!addonDgndb || !addonDgndb->IsOpen())
-                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed Db", IModelJsNativeErrorKey::NotOpen);
-            db = &addonDgndb->GetDgnDb();
+            if (auto addonDgndb = NativeDgnDb::Unwrap(dbObj); addonDgndb)
+              db = &addonDgndb->GetDgnDb();
         } else if (SQLiteDb::InstanceOf(dbObj)) {
-            auto sqliteDb = SQLiteDb::Unwrap(dbObj);
-            if (!sqliteDb || !sqliteDb->GetDb().IsDbOpen())
-                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed Db", IModelJsNativeErrorKey::NotOpen);
-            db = &sqliteDb->GetDb();
+            if (auto sqliteDb = SQLiteDb::Unwrap(dbObj); sqliteDb)
+              db = &sqliteDb->GetDb();
         } else if (NativeECDb::InstanceOf(dbObj)) {
-            auto ecdb = NativeECDb::Unwrap(dbObj);
-            if (!ecdb || !ecdb->GetECDb().IsDbOpen())
-                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed Db", IModelJsNativeErrorKey::NotOpen);
-            db = &ecdb->GetECDb();
+            if (auto ecdb = NativeECDb::Unwrap(dbObj); ecdb)
+              db = &ecdb->GetECDb();
         } else {
             THROW_JS_TYPE_EXCEPTION("invalid database object");
         }
+
+        if (!db || !db->IsDbOpen())
+          THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed Db", IModelJsNativeErrorKey::NotOpen);
 
         REQUIRE_ARGUMENT_STRING(1, sql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
