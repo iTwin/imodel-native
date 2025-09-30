@@ -89,24 +89,33 @@ export namespace NativeCloudSqlite {
   /** Returned from 'CloudContainer.queryBcvStats' describing the rows in the bcv_stat table.
    *  Also gathers additional statistics using the other virtual tables bcv_container, bcv_database
    *  such as totalClients, ongoingPrefetches, activeClients and attachedContainers.
+   *  NOTE: All values are returned as hex strings to avoid any possibility of overflow.
    */
   export interface BcvStats {
     /** The total number of cache slots that are currently in use or 'locked' by ongoing client read transactions. In daemonless mode, this value is always 0.
      *  A locked cache slot implies that it is not eligible for eviction in the event of a full cachefile.
     */
-    readonly lockedCacheslots: number;
+    readonly lockedCacheslots: string;
     /** The current number of slots with data in them in the cache. */
-    readonly populatedCacheslots: number;
+    readonly populatedCacheslots: string;
     /** The configured size of the cache, in number of slots. */
-    readonly totalCacheslots: number;
+    readonly totalCacheslots: string;
     /** The total number of clients opened on this cache */
-    readonly totalClients?: number;
+    readonly totalClients?: string;
     /** The total number of ongoing prefetches on this cache */
-    readonly ongoingPrefetches?: number;
+    readonly ongoingPrefetches?: string;
     /** The total number of active clients on this cache. An active client is one which has an open read txn. */
-    readonly activeClients?: number;
+    readonly activeClients?: string;
     /** The total number of attached containers on this cache. */
+<<<<<<< HEAD
     readonly attachedContainers?: number;
+=======
+    readonly attachedContainers?: string;
+    /** The total amount of memory used by sqlite, in bytes. */
+    readonly memoryUsed?: string;
+    /** The maximum value of memoryUsed since high-water mark was last reset, in bytes. */
+    readonly memoryHighwater?: string;
+>>>>>>> 6ff97636 (Fix 32-bit overflow converting bcv stats to JS values (#1220))
   }
 
   /** Properties for accessing a CloudContainer */
