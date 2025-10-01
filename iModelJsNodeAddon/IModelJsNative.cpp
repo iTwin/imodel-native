@@ -5019,14 +5019,14 @@ public:
         if (info.Length() < 2)
             THROW_JS_TYPE_EXCEPTION("ECSqlStatement::Prepare requires two arguments");
 
-        Napi::Object dbObj = info[0].As<Napi::Object>();
+        const auto dbObj = info[0].As<Napi::Object>();
 
         ECDb* ecdb = nullptr;
         if (NativeDgnDb::InstanceOf(dbObj)) {
-            if (auto addonDgndb = NativeDgnDb::Unwrap(dbObj); addonDgndb)
-              ecdb = &addonDgndb->GetDgnDb();
+            if (const auto addonDgndb = NativeDgnDb::Unwrap(dbObj); addonDgndb && addonDgndb->IsOpen())
+                ecdb = &addonDgndb->GetDgnDb();
         } else if (NativeECDb::InstanceOf(dbObj)) {
-            if (auto addonECDb = NativeECDb::Unwrap(dbObj); addonECDb)
+            if (const auto addonECDb = NativeECDb::Unwrap(dbObj); addonECDb)
                 ecdb = &addonECDb->GetECDb();
         } else {
             THROW_JS_TYPE_EXCEPTION("ECSqlStatement::Prepare requires first argument to be a NativeDgnDb or NativeECDb object.");
@@ -5341,18 +5341,18 @@ public:
         if (info.Length() < 2)
             THROW_JS_TYPE_EXCEPTION("SqliteStatement::Prepare requires at least two arguments");
 
-        Napi::Object dbObj = info[0].As<Napi::Object>();
+        const auto dbObj = info[0].As<Napi::Object>();
         Db* db = nullptr;
 
         if (NativeDgnDb::InstanceOf(dbObj)) {
-            if (auto addonDgndb = NativeDgnDb::Unwrap(dbObj); addonDgndb)
-              db = &addonDgndb->GetDgnDb();
+            if (auto addonDgndb = NativeDgnDb::Unwrap(dbObj); addonDgndb && addonDgndb->IsOpen())
+                db = &addonDgndb->GetDgnDb();
         } else if (SQLiteDb::InstanceOf(dbObj)) {
             if (auto sqliteDb = SQLiteDb::Unwrap(dbObj); sqliteDb)
-              db = &sqliteDb->GetDb();
+                db = &sqliteDb->GetDb();
         } else if (NativeECDb::InstanceOf(dbObj)) {
             if (auto ecdb = NativeECDb::Unwrap(dbObj); ecdb)
-              db = &ecdb->GetECDb();
+                db = &ecdb->GetECDb();
         } else {
             THROW_JS_TYPE_EXCEPTION("invalid database object");
         }
