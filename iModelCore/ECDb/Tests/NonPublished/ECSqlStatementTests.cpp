@@ -13386,4 +13386,39 @@ TEST_F(InvalidRelECClassIdTestFixture, SelectWithInvalidRelECClassId_WithPragma)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, IsCoreSelectTests) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("is_core_select_tests.ecdb"));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM IdSet('[1,2,3,4,5]') LIMIT 3 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT * FROM IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') ORDER BY id ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT * FROM IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT * FROM IdSet('[5, 6, 7, 8]') LIMIT 3 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 3);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT * FROM IdSet('[1,2,3,4,5]') UNION SELECT * FROM IdSet('[5, 6, 7, 8]')) LIMIT 3 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 3);
+        }
+}
+
 END_ECDBUNITTESTS_NAMESPACE
