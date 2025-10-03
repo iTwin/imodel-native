@@ -1062,5 +1062,157 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, Testing_casing_of_IdSet) {
     ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetWithCTE) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab.ecdb"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH cte(InstanceId) AS (SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]')) SELECT * FROM cte"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 5);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH cte(InstanceId) AS (SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]')) SELECT InstanceId FROM cte"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 5);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]')) SELECT * FROM cte"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 5);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH cte(InstanceId) AS (SELECT * FROM ECVLib.IdSet('[1,2,3,4,5]')) SELECT * FROM cte"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 5);
+        }
+    ASSERT_TRUE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "WITH cte(InstanceId) AS (SELECT * FROM ECVLib.IdSet('[1,2,3,4,5]') ) SELECT * FROM cte, IdSet('[3,4,5,6,7,8]') WHERE InstanceId = id"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "WITH cte(InstanceId) AS (SELECT * FROM ECVLib.IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES) SELECT * FROM cte, IdSet('[3,4,5,6,7,8]') WHERE InstanceId = id"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH cte(InstanceId) AS (SELECT * FROM ECVLib.IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES ) SELECT * FROM cte, IdSet('[3,4,5,6,7,8]') WHERE InstanceId = id ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+
+        int i = 2;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 5);
+        }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetWithUnion) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab.ecdb"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]') UNION SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]')"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 5);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Id from IdSet('[\"1\"]') UNION SELECT Id from IdSet('[\"1\"]')"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 1);
+        }
+        
+    ASSERT_TRUE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Id from IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT Id from IdSet('[\"1\"]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 5);
+        }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetWithUnionAndCte) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab.ecdb"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH cte (ECInstanceId) AS (SELECT Id from IdSet('[\"1\"]') UNION SELECT Id from IdSet('[\"1\"]')) SELECT * FROM cte"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 1);
+        }   
+    ASSERT_TRUE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH cte (ECInstanceId) AS (SELECT Id from IdSet('[\"1\"]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT Id from IdSet('[\"1\"]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES) SELECT * FROM cte"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 1);
+        }   
+}
+
 
 END_ECDBUNITTESTS_NAMESPACE
