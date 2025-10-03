@@ -354,7 +354,7 @@ void DgnDb::_OnBeforeSetBriefcaseId(BeBriefcaseId newId) {
     T_Super::_OnBeforeSetBriefcaseId(newId);
 
     Txns().EnableTracking(false);
-    Txns().DeleteAllTxns(); // this will delete any reversed txns
+    Txns().ClearAllTxns(); // this will clear any reversed txns
 }
 
 /*---------------------------------------------------------------------------------**/ /**
