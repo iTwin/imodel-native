@@ -475,19 +475,23 @@
     <!-- // iModelConsole                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Product Name="iModelConsole">
+    <Part Name="iModelConsole" PrgOutputDir="iModelConsole">
+        <SubNuGetProduct NuGetProductName="iModelConsoleNuGet"/>
+    </Part>
+
+    <NuGetProduct Name="iModelConsoleNuGet" Description="iModelConsole NuGet" OnlyPlatforms="x64,linuxx64,macosarm64">
         <SubPart PartName="iModelConsoleExe-Windows"/>
         <SubPart PartName="iModelConsoleExe-Linux"/>
         <SubPart PartName="iModelConsoleExe-MacOS"/>
         <Directories DirectoryListName="iModelConsoleDirList" />
-    </Product>
+    </NuGetProduct>
 
     <Part Name="iModelConsoleExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="iModelConsoleExe" LibType="Dynamic"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
     </Part>
 
-    <Part Name="iModelConsoleExe-Linux" OnlyPlatforms="Linux*,MacOS*" ExcludeLibType="Dynamic" >
+    <Part Name="iModelConsoleExe-Linux" OnlyPlatforms="Linux*" >
         <SubPart PartName="iModelConsoleExe" LibType="Static"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api" LibType="Static"/>
     </Part>
