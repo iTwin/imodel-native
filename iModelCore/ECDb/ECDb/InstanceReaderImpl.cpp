@@ -896,7 +896,7 @@ TableView::Ptr TableView::CreateNullTableView(ECDbCR conn, DbTable const& tbl) {
     builder.AppendSpace().Append("LIMIT 0");
 
     tableView->m_id = tbl.GetId();
-    const auto rc = tableView->GetSqliteStmt().Prepare(conn, builder.GetSql().c_str());
+    const auto rc = tableView->GetSqliteStmt().Prepare(conn, builder.GetSql().c_str(), DbPrepareOptions::Persistent);
     if (rc != BE_SQLITE_OK) {
          BeAssert(false && "Failed to prepare statement");
         return nullptr;
@@ -934,7 +934,7 @@ TableView::Ptr TableView::CreateTableView(ECDbCR conn, DbTable const& tbl) {
     builder.Append(" WHERE [ROWID]=?");
 
     tableView->m_id = tbl.GetId();
-    const auto rc = tableView->GetSqliteStmt().Prepare(conn, builder.GetSql().c_str());
+    const auto rc = tableView->GetSqliteStmt().Prepare(conn, builder.GetSql().c_str(), DbPrepareOptions::Persistent);
     if (rc != BE_SQLITE_OK) {
          BeAssert(false && "Failed to prepare statement");
         return nullptr;
@@ -1053,7 +1053,7 @@ TableView::Ptr TableView::CreateLinkTableView(ECDbCR conn, DbTable const& tbl, R
 
     builder.AppendFormatted(" WHERE [%s].[ROWID]=?", tbl.GetName().c_str());
     tableView->m_id = tbl.GetId();
-    const auto rc = tableView->GetSqliteStmt().Prepare(conn, builder.GetSql().c_str());
+    const auto rc = tableView->GetSqliteStmt().Prepare(conn, builder.GetSql().c_str(), DbPrepareOptions::Persistent);
     if (rc != BE_SQLITE_OK) {
          BeAssert(false && "Failed to prepare statement");
         return nullptr;
@@ -1103,7 +1103,7 @@ TableView::Ptr TableView::CreateEntityTableView(ECDbCR conn, DbTable const& tbl,
     builder.Append(" WHERE [ROWID]=?");
 
     tableView->m_id = tbl.GetId();
-    const auto rc = tableView->GetSqliteStmt().Prepare(conn, builder.GetSql().c_str());
+    const auto rc = tableView->GetSqliteStmt().Prepare(conn, builder.GetSql().c_str(), DbPrepareOptions::Persistent);
     if (rc != BE_SQLITE_OK) {
          BeAssert(false && "Failed to prepare statement");
         return nullptr;
