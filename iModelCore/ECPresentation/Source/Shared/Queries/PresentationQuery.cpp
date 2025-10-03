@@ -766,6 +766,16 @@ void ComplexQueryBuilder::InitSelectClause() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsECView(ECClassCR c)
+    {
+    return c.IsEntityClass()
+        && c.GetEntityClassCP()->GetClassModifier() == ECClassModifier::Abstract
+        && c.GetCustomAttribute("ECDbMap", "QueryView") != nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static QueryClauseAndBindings CreateExcludedClassesQueryClause(bvector<SelectClass<ECClass>> const& excludedClasses, Utf8CP alias)
     {
     if (excludedClasses.empty())
@@ -777,7 +787,7 @@ static QueryClauseAndBindings CreateExcludedClassesQueryClause(bvector<SelectCla
         {
         Utf8String singleClassSqlExpression;
 
-        if (!excludeSelectClass.IsSelectPolymorphic())
+        if (!excludeSelectClass.IsSelectPolymorphic() && !IsECView(excludeSelectClass.GetClass()))
             singleClassSqlExpression.append("ONLY ");
 
         singleClassSqlExpression
@@ -811,7 +821,7 @@ static Utf8String CreateClassSelectorClause(SelectClassWithExcludes<ECClass> con
         }
     else
         {
-        if (!select.IsSelectPolymorphic())
+        if (!select.IsSelectPolymorphic() && !IsECView(select.GetClass()))
             clause.append("ONLY ");
         if (select.ShouldDisqualify())
             clause.append("+");
@@ -1096,23 +1106,6 @@ struct JoinInfo
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool IsTargetClassSupported(ECClassCR targetClass, ECRelationshipConstraintCR oppositeConstraint)
-    {
-    if (oppositeConstraint.SupportsClass(targetClass))
-        return true;
-    if (!targetClass.IsEntityClass())
-        return false;
-    for (auto const& constraintClass : oppositeConstraint.GetConstraintClasses())
-        {
-        if (constraintClass->IsMixin() && targetClass.GetEntityClassCP()->CanApply(*constraintClass->GetEntityClassCP()))
-            return true;
-        }
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 static std::unique_ptr<JoinInfo> DetermineJoinTarget(bvector<std::shared_ptr<SelectClassWithExcludes<ECClass>>> const& fromClauses, JoinClassWithRelationshipClause const& joinClause)
     {
     ECRelationshipConstraintCR constraint = joinClause.m_isForward ? joinClause.m_using.GetClass().GetSource() : joinClause.m_using.GetClass().GetTarget();
@@ -1121,11 +1114,7 @@ static std::unique_ptr<JoinInfo> DetermineJoinTarget(bvector<std::shared_ptr<Sel
         {
         auto const& fromClause = *fromClausePtr;
         if (constraint.SupportsClass(fromClause.GetClass()))
-            {
-            DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Default, IsTargetClassSupported(joinClause.m_join.GetClass(), oppositeConstraint), Utf8PrintfString("Expected opposite constraint to support joined class, but it doesn't. "
-                "Relationship: '%s', joined class: '%s'", joinClause.m_using.GetClass().GetFullName(), joinClause.m_join.GetClass().GetFullName()));
             return std::make_unique<JoinInfo>(fromClause.GetClass(), fromClause.GetAlias().empty() ? fromClause.GetClass().GetName() : fromClause.GetAlias(), true);
-            }
         }
     DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Tried to JOIN on a relationship whose neither target nor source exists in the FROM clause"
         "Relationship: '%s'", joinClause.m_using.GetClass().GetFullName()));
