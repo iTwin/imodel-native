@@ -1109,7 +1109,6 @@ struct JoinInfo
 static std::unique_ptr<JoinInfo> DetermineJoinTarget(bvector<std::shared_ptr<SelectClassWithExcludes<ECClass>>> const& fromClauses, JoinClassWithRelationshipClause const& joinClause)
     {
     ECRelationshipConstraintCR constraint = joinClause.m_isForward ? joinClause.m_using.GetClass().GetSource() : joinClause.m_using.GetClass().GetTarget();
-    ECRelationshipConstraintCR oppositeConstraint = joinClause.m_isForward ? joinClause.m_using.GetClass().GetTarget() : joinClause.m_using.GetClass().GetSource();
     for (auto const& fromClausePtr : fromClauses)
         {
         auto const& fromClause = *fromClausePtr;
