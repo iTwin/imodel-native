@@ -6,7 +6,7 @@
 
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
-// ISolidPrimtivePtr is a pointer to a reference counted object that is a carrier for a solid primitive.
+// ISolidPrimitivePtr is a pointer to a reference counted object that is a carrier for a solid primitive.
 //
 // Each solid primitive Xxxxx has a corresponding XxxxDetail and SolidPrimitiveType_Xxxx:
 //      DgnTorusPipe DgnTorusPipeDetail   SolidPrimitiveType_DgnTorusPipe
@@ -1700,7 +1700,7 @@ public:
     //! Query the primitive type.
     GEOMDLLIMPEXP SolidPrimitiveType GetSolidPrimitiveType () const;
 
-    //! Return a new ISolidPrimtive which is a DgnTorusPipe.
+    //! Return a new ISolidPrimitive which is a DgnTorusPipe.
     static GEOMDLLIMPEXP ISolidPrimitivePtr CreateDgnTorusPipe (DgnTorusPipeDetailCR data);
 
     //! Ask if this is a DgnTorusPipe
@@ -1712,7 +1712,7 @@ public:
     bool GEOMDLLIMPEXP TrySetDgnTorusPipeDetail (DgnTorusPipeDetailCR data);
 
 
-    //! Return a new ISolidPrimtive which is a DgnCone.
+    //! Return a new ISolidPrimitive which is a DgnCone.
     static GEOMDLLIMPEXP ISolidPrimitivePtr CreateDgnCone (DgnConeDetailCR data);
 
     //! Ask if this is a DgnCone
@@ -1724,7 +1724,7 @@ public:
     bool GEOMDLLIMPEXP TrySetDgnConeDetail (DgnConeDetailCR data);
 
 
-    //! Return a new ISolidPrimtive which is a DgnBox.
+    //! Return a new ISolidPrimitive which is a DgnBox.
     static GEOMDLLIMPEXP ISolidPrimitivePtr CreateDgnBox (DgnBoxDetailCR data);
 
     //! Ask if this is a DgnBox
@@ -1736,7 +1736,7 @@ public:
     bool GEOMDLLIMPEXP TrySetDgnBoxDetail (DgnBoxDetailCR data);
 
 
-    //! Return a new ISolidPrimtive which is a DgnSphere.
+    //! Return a new ISolidPrimitive which is a DgnSphere.
     static GEOMDLLIMPEXP ISolidPrimitivePtr CreateDgnSphere (DgnSphereDetailCR data);
 
     //! Ask if this is a DgnSphere
@@ -1748,7 +1748,7 @@ public:
     bool GEOMDLLIMPEXP TrySetDgnSphereDetail (DgnSphereDetailCR data);
 
 
-    //! Return a new ISolidPrimtive which is a DgnExtrusion.
+    //! Return a new ISolidPrimitive which is a DgnExtrusion.
     static GEOMDLLIMPEXP ISolidPrimitivePtr CreateDgnExtrusion (DgnExtrusionDetailCR data);
 
     //! Ask if this is a DgnExtrusion
@@ -1762,7 +1762,7 @@ public:
 
 
 
-    //! Return a new ISolidPrimtive which is a DgnRotationalSweep.
+    //! Return a new ISolidPrimitive which is a DgnRotationalSweep.
     static GEOMDLLIMPEXP ISolidPrimitivePtr CreateDgnRotationalSweep (DgnRotationalSweepDetailCR data);
 
     //! Ask if this is a DgnRotationalSweep
@@ -1776,7 +1776,7 @@ public:
 
 
 
-    //! Return a new ISolidPrimtive which is a DgnRuledSweep.
+    //! Return a new ISolidPrimitive which is a DgnRuledSweep.
     static GEOMDLLIMPEXP ISolidPrimitivePtr CreateDgnRuledSweep (DgnRuledSweepDetailCR data);
 
     //! Ask if this is a DgnRuledSweep
