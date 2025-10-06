@@ -87,6 +87,13 @@ nameToDefine = ENGINESDIR=\"\"
 #   Platform-specific settings
 #----------------------------------------------------------------------------------------
 
+%if $(TARGET_PLATFORM) != "Windows" && $(TARGET_PLATFORM) != "WinRT"
+
+    nameToDefine = OPENSSL_NO_WINSTORE
+    %include cdefapnd.mki
+
+%endif
+
 %if $(TARGET_PLATFORM) == "Windows"
 
     nameToDefine = OPENSSL_SYS_WIN32
@@ -217,6 +224,8 @@ $(o)ex_data$(oext) : $(vendorSrc)crypto/ex_data.c ${MultiCompileDepends}
 $(o)getenv$(oext) : $(vendorSrc)crypto/getenv.c ${MultiCompileDepends}
 
 $(o)info$(oext) : $(vendorSrc)crypto/info.c ${MultiCompileDepends}
+
+$(o)init$(oext) : $(vendorSrc)crypto/init.c ${MultiCompileDepends}
 
 $(o)initthread$(oext) : $(vendorSrc)crypto/initthread.c ${MultiCompileDepends}
 
