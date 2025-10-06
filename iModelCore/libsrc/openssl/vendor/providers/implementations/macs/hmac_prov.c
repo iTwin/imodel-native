@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2018-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -20,6 +20,8 @@
 #include <openssl/params.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+
+#include "internal/ssl3_cbc.h"
 
 #include "prov/implementations.h"
 #include "prov/provider_ctx.h"
@@ -59,17 +61,6 @@ struct hmac_data_st {
     size_t tls_mac_out_size;
 };
 
-/* Defined in ssl/s3_cbc.c */
-int ssl3_cbc_digest_record(const EVP_MD *md,
-                           unsigned char *md_out,
-                           size_t *md_out_size,
-                           const unsigned char header[13],
-                           const unsigned char *data,
-                           size_t data_size,
-                           size_t data_plus_mac_plus_padding_size,
-                           const unsigned char *mac_secret,
-                           size_t mac_secret_length, char is_sslv3);
-
 static void *hmac_new(void *provctx)
 {
     struct hmac_data_st *macctx;
@@ -94,7 +85,7 @@ static void hmac_free(void *vmacctx)
     if (macctx != NULL) {
         HMAC_CTX_free(macctx->ctx);
         ossl_prov_digest_reset(&macctx->digest);
-        OPENSSL_secure_clear_free(macctx->key, macctx->keylen);
+        OPENSSL_clear_free(macctx->key, macctx->keylen);
         OPENSSL_free(macctx);
     }
 }
@@ -123,13 +114,13 @@ static void *hmac_dup(void *vsrc)
         return NULL;
     }
     if (src->key != NULL) {
-        /* There is no "secure" OPENSSL_memdup */
-        dst->key = OPENSSL_secure_malloc(src->keylen > 0 ? src->keylen : 1);
+        dst->key = OPENSSL_malloc(src->keylen > 0 ? src->keylen : 1);
         if (dst->key == NULL) {
             hmac_free(dst);
             return 0;
         }
-        memcpy(dst->key, src->key, src->keylen);
+        if (src->keylen > 0)
+            memcpy(dst->key, src->key, src->keylen);
     }
     return dst;
 }
@@ -154,12 +145,14 @@ static int hmac_setkey(struct hmac_data_st *macctx,
     const EVP_MD *digest;
 
     if (macctx->key != NULL)
-        OPENSSL_secure_clear_free(macctx->key, macctx->keylen);
+        OPENSSL_clear_free(macctx->key, macctx->keylen);
     /* Keep a copy of the key in case we need it for TLS HMAC */
-    macctx->key = OPENSSL_secure_malloc(keylen > 0 ? keylen : 1);
+    macctx->key = OPENSSL_malloc(keylen > 0 ? keylen : 1);
     if (macctx->key == NULL)
         return 0;
-    memcpy(macctx->key, key, keylen);
+
+    if (keylen > 0)
+        memcpy(macctx->key, key, keylen);
     macctx->keylen = keylen;
 
     digest = ossl_prov_digest_md(&macctx->digest);
@@ -353,5 +346,5 @@ const OSSL_DISPATCH ossl_hmac_functions[] = {
     { OSSL_FUNC_MAC_SETTABLE_CTX_PARAMS,
       (void (*)(void))hmac_settable_ctx_params },
     { OSSL_FUNC_MAC_SET_CTX_PARAMS, (void (*)(void))hmac_set_ctx_params },
-    { 0, NULL }
+    OSSL_DISPATCH_END
 };
