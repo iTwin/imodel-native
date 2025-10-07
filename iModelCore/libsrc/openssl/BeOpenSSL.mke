@@ -2264,6 +2264,10 @@ $(o)file_store_any2obj$(oext) : $(vendorSrc)providers/implementations/storemgmt/
 
 $(o)file_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/file_store.c ${MultiCompileDepends}
 
+%if $(TARGET_PLATFORM) == "Windows"
+    $(o)winstore_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/winstore_store.c ${MultiCompileDepends}
+%endif
+
 %include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList)
 
@@ -2506,8 +2510,6 @@ objs =% $(MultiCompileObjectList)
     $(o)wp-x86_64$(oext) : $(vendorSrc)/crypto/whrlpool/wp-x86_64.asm ${MultiCompileDepends}
 
     $(o)x86_64cpuid$(oext) : $(vendorSrc)/crypto/x86_64cpuid.asm ${MultiCompileDepends}
-
-    $(o)winstore_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/winstore_store.c ${MultiCompileDepends}
 
     always:
         ~set objs $(objs) $(o)aes-x86_64$(oext) $(o)aesni-mb-x86_64$(oext) $(o)aesni-sha1-x86_64$(oext) $(o)aesni-sha256-x86_64$(oext) $(o)aesni-x86_64$(oext) $(o)bsaes-x86_64$(oext) $(o)vpaes-x86_64$(oext) $(o)rsaz-2k-avx512$(oext) $(o)rsaz-3k-avx512$(oext) $(o)rsaz-4k-avx512$(oext) $(o)rsaz-avx2$(oext) $(o)rsaz-x86_64$(oext) $(o)x86_64-gf2m$(oext) $(o)x86_64-mont$(oext) $(o)x86_64-mont5$(oext) $(o)cmll-x86_64$(oext) $(o)chacha-x86_64$(oext) $(o)ecp_nistz256-x86_64$(oext) $(o)x25519-x86_64$(oext) $(o)md5-x86_64$(oext) $(o)aes-gcm-avx512$(oext) $(o)aesni-gcm-x86_64$(oext) $(o)ghash-x86_64$(oext) $(o)poly1305-x86_64$(oext) $(o)rc4-md5-x86_64$(oext) $(o)rc4-x86_64$(oext) $(o)keccak1600-x86_64$(oext) $(o)sha1-mb-x86_64$(oext) $(o)sha1-x86_64$(oext) $(o)sha256-mb-x86_64$(oext) $(o)sha512-x86_64$(oext) $(o)sha256-x86_64$(oext) $(o)wp-x86_64$(oext) $(o)x86_64cpuid$(oext)
