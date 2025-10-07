@@ -7,6 +7,7 @@ release. For more details please read the CHANGES file.
 OpenSSL Releases
 ----------------
 
+ - [OpenSSL 3.2](#openssl-32)
  - [OpenSSL 3.1](#openssl-31)
  - [OpenSSL 3.0](#openssl-30)
  - [OpenSSL 1.1.1](#openssl-111)
@@ -16,15 +17,42 @@ OpenSSL Releases
  - [OpenSSL 1.0.0](#openssl-100)
  - [OpenSSL 0.9.x](#openssl-09x)
 
-OpenSSL 3.1
+OpenSSL 3.2
 -----------
 
-### Major changes between OpenSSL 3.1.7 and OpenSSL 3.1.8 [11 Feb 2025]
+### Major changes between OpenSSL 3.2.5 and OpenSSL 3.2.6 [30 Sep 2025]
 
-OpenSSL 3.1.8 is a security patch release. The most severe CVE fixed in this
-release is Low.
+OpenSSL 3.2.6 is a security patch release. The most severe CVE fixed in this
+release is Moderate.
 
 This release incorporates the following bug fixes and mitigations:
+
+  * Fix Out-of-bounds read & write in RFC 3211 KEK Unwrap.
+    ([CVE-2025-9230])
+
+  * Fix Timing side-channel in SM2 algorithm on 64 bit ARM.
+    ([CVE-2025-9231])
+
+  * Fix Out-of-bounds read in HTTP client no_proxy handling.
+    ([CVE-2025-9232])
+
+### Major changes between OpenSSL 3.2.4 and OpenSSL 3.2.5 [1 Jul 2025]
+
+OpenSSL 3.2.5 is a bug fix release.
+
+This release incorporates the following bug fixes and mitigations:
+
+  * Miscellaneous minor bug fixes.
+
+### Major changes between OpenSSL 3.2.3 and OpenSSL 3.2.4 [11 Feb 2025]
+
+OpenSSL 3.2.4 is a security patch release. The most severe CVE fixed in this
+release is High.
+
+This release incorporates the following bug fixes and mitigations:
+
+  * Fixed RFC7250 handshakes with unauthenticated servers don't abort as expected.
+    ([CVE-2024-12797])
 
   * Fixed timing side-channel in ECDSA signature computation.
     ([CVE-2024-13176])
@@ -33,9 +61,9 @@ This release incorporates the following bug fixes and mitigations:
     curve parameters.
     ([CVE-2024-9143])
 
-### Major changes between OpenSSL 3.1.6 and OpenSSL 3.1.7 [3 Sep 2024]
+### Major changes between OpenSSL 3.2.2 and OpenSSL 3.2.3 [3 Sep 2024]
 
-OpenSSL 3.1.7 is a security patch release. The most severe CVE fixed in this
+OpenSSL 3.2.3 is a security patch release. The most severe CVE fixed in this
 release is Moderate.
 
 This release incorporates the following bug fixes and mitigations:
@@ -46,7 +74,12 @@ This release incorporates the following bug fixes and mitigations:
   * Fixed possible buffer overread in SSL_select_next_proto()
     ([CVE-2024-5535])
 
-### Major changes between OpenSSL 3.1.5 and OpenSSL 3.1.6 [4 Jun 2024]
+### Major changes between OpenSSL 3.2.1 and OpenSSL 3.2.2 [4 Jun 2024]
+
+OpenSSL 3.2.2 is a security patch release. The most severe CVE fixed in this
+release is Low.
+
+This release incorporates the following bug fixes and mitigations:
 
   * Fixed potential use after free after SSL_free_buffers() is called
     ([CVE-2024-4741])
@@ -58,17 +91,113 @@ This release incorporates the following bug fixes and mitigations:
   * Fixed unbounded memory growth with session handling in TLSv1.3
     ([CVE-2024-2511])
 
-### Major changes between OpenSSL 3.1.4 and OpenSSL 3.1.5 [30 Jan 2024]
+### Major changes between OpenSSL 3.2.0 and OpenSSL 3.2.1 [30 Jan 2024]
+
+OpenSSL 3.2.1 is a security patch release. The most severe CVE fixed in this
+release is Low.
+
+This release incorporates the following bug fixes and mitigations:
 
   * Fixed PKCS12 Decoding crashes
     ([CVE-2024-0727])
-  * Fixed Excessive time spent checking invalid RSA public keys
+  * Fixed excessive time spent checking invalid RSA public keys
     ([CVE-2023-6237])
   * Fixed POLY1305 MAC implementation corrupting vector registers on PowerPC
     CPUs which support PowerISA 2.07
     ([CVE-2023-6129])
-  * Fix excessive time spent in DH check / generation with large Q parameter
-    value ([CVE-2023-5678])
+
+### Major changes between OpenSSL 3.1 and OpenSSL 3.2.0 [23 Nov 2023]
+
+OpenSSL 3.2.0 is a feature release adding significant new functionality to
+OpenSSL.
+
+This release incorporates the following potentially significant or incompatible
+changes:
+
+  * The default SSL/TLS security level has been changed from 1 to 2.
+
+  * The `x509`, `ca`, and `req` apps now always produce X.509v3 certificates.
+
+  * Subject or issuer names in X.509 objects are now displayed as UTF-8 strings
+    by default. Also spaces surrounding `=` in DN output are removed.
+
+This release adds the following new features:
+
+  * Support for client side QUIC, including support for
+    multiple streams (RFC 9000)
+
+  * Support for Ed25519ctx, Ed25519ph and Ed448ph in addition
+    to existing support for Ed25519 and Ed448 (RFC 8032)
+
+  * Support for deterministic ECDSA signatures (RFC 6979)
+
+  * Support for AES-GCM-SIV, a nonce-misuse-resistant AEAD (RFC 8452)
+
+  * Support for the Argon2 KDF, along with supporting thread pool
+    functionality (RFC 9106)
+
+  * Support for Hybrid Public Key Encryption (HPKE) (RFC 9180)
+
+  * Support for SM4-XTS
+
+  * Support for Brainpool curves in TLS 1.3
+
+  * Support for TLS Raw Public Keys (RFC 7250)
+
+  * Support for TCP Fast Open on Linux, macOS and FreeBSD,
+    where enabled and supported (RFC 7413)
+
+  * Support for TLS certificate compression, including library
+    support for zlib, Brotli and zstd (RFC 8879)
+
+  * Support for provider-based pluggable signature algorithms
+    in TLS 1.3 with supporting CMS and X.509 functionality
+
+    With a suitable provider this enables the use of post-quantum/quantum-safe
+    cryptography.
+
+  * Support for using the Windows system certificate store as a source of
+    trusted root certificates
+
+    This is not yet enabled by default and must be activated using an
+    environment variable. This is likely to become enabled by default
+    in a future feature release.
+
+  * Support for using the IANA standard names in TLS ciphersuite configuration
+
+  * Multiple new features and improvements to CMP protocol support
+
+The following known issues are present in this release and will be rectified
+in a future release:
+
+  * Provider-based signature algorithms cannot be configured using the
+    SignatureAlgorithms configuration file parameter (#22761)
+
+This release incorporates the following documentation enhancements:
+
+  * Added multiple tutorials on the OpenSSL library and in particular
+    on writing various clients (using TLS and QUIC protocols) with libssl
+
+    See [OpenSSL Guide].
+
+This release incorporates the following bug fixes and mitigations:
+
+  * Fixed excessive time spent in DH check / generation with large Q parameter
+    value
+    ([CVE-2023-5678])
+
+A more detailed list of changes in this release can be found in the
+[CHANGES.md] file.
+
+Users interested in using the new QUIC functionality are encouraged to read the
+[README file for QUIC][README-QUIC.md], which provides links to relevant
+documentation and example code.
+
+As always, bug reports and issues relating to OpenSSL can be [filed on our issue
+tracker][issue tracker].
+
+OpenSSL 3.1
+-----------
 
 ### Major changes between OpenSSL 3.1.3 and OpenSSL 3.1.4 [24 Oct 2023]
 
@@ -158,7 +287,7 @@ OpenSSL 3.0
   * Fixed a bug where the RC4-MD5 ciphersuite incorrectly used the
     AAD data as the MAC key ([CVE-2022-1434])
   * Fix a bug in the OPENSSL_LH_flush() function that breaks reuse of the memory
-    occuppied by the removed hash table entries ([CVE-2022-1473])
+    occupied by the removed hash table entries ([CVE-2022-1473])
 
 ### Major changes between OpenSSL 3.0.1 and OpenSSL 3.0.2 [15 Mar 2022]
 
@@ -345,7 +474,7 @@ OpenSSL 1.1.1
     * Rewrite of the packet construction code for "safer" packet handling
     * Rewrite of the extension handling code
     For further important information, see the [TLS1.3 page](
-    https://wiki.openssl.org/index.php/TLS1.3) in the OpenSSL Wiki.
+    https://github.com/openssl/openssl/wiki/TLS1.3) in the OpenSSL Wiki.
 
   * Complete rewrite of the OpenSSL random number generator to introduce the
     following capabilities
@@ -1504,7 +1633,7 @@ OpenSSL 0.9.x
   * Overhauled Win32 builds
   * Cleanups and fixes to the Big Number (BN) library
   * Support for ASN.1 GeneralizedTime
-  * Splitted ASN.1 SETs from SEQUENCEs
+  * Split ASN.1 SETs from SEQUENCEs
   * ASN1 and PEM support for Netscape Certificate Sequences
   * Overhauled Perl interface
   * Lots of source tree cleanups.
@@ -1524,8 +1653,11 @@ OpenSSL 0.9.x
   * Support for various new platforms
 
 <!-- Links -->
-
+[CVE-2025-9232]: https://www.openssl.org/news/vulnerabilities.html#CVE-2025-9232
+[CVE-2025-9231]: https://www.openssl.org/news/vulnerabilities.html#CVE-2025-9231
+[CVE-2025-9230]: https://www.openssl.org/news/vulnerabilities.html#CVE-2025-9230
 [CVE-2024-13176]: https://www.openssl.org/news/vulnerabilities.html#CVE-2024-13176
+[CVE-2024-12797]: https://www.openssl.org/news/vulnerabilities.html#CVE-2024-12797
 [CVE-2024-9143]: https://www.openssl.org/news/vulnerabilities.html#CVE-2024-9143
 [CVE-2024-6119]: https://www.openssl.org/news/vulnerabilities.html#CVE-2024-6119
 [CVE-2024-5535]: https://www.openssl.org/news/vulnerabilities.html#CVE-2024-5535
@@ -1700,3 +1832,7 @@ OpenSSL 0.9.x
 [CVE-2006-2940]: https://www.openssl.org/news/vulnerabilities.html#CVE-2006-2940
 [CVE-2006-2937]: https://www.openssl.org/news/vulnerabilities.html#CVE-2006-2937
 [CVE-2005-2969]: https://www.openssl.org/news/vulnerabilities.html#CVE-2005-2969
+[OpenSSL Guide]: https://www.openssl.org/docs/manmaster/man7/ossl-guide-introduction.html
+[CHANGES.md]: ./CHANGES.md
+[README-QUIC.md]: ./README-QUIC.md
+[issue tracker]: https://github.com/openssl/openssl/issues

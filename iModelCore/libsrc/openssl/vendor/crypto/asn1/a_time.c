@@ -295,16 +295,22 @@ ASN1_TIME *ossl_asn1_time_from_tm(ASN1_TIME *s, struct tm *ts, int type)
     tmps->type = type;
     p = (char*)tmps->data;
 
-    if (type == V_ASN1_GENERALIZEDTIME)
+    if (ts->tm_mon > INT_MAX - 1)
+        goto err;
+
+    if (type == V_ASN1_GENERALIZEDTIME) {
+        if (ts->tm_year > INT_MAX - 1900)
+            goto err;
         tmps->length = BIO_snprintf(p, len, "%04d%02d%02d%02d%02d%02dZ",
                                     ts->tm_year + 1900, ts->tm_mon + 1,
                                     ts->tm_mday, ts->tm_hour, ts->tm_min,
                                     ts->tm_sec);
-    else
+    } else {
         tmps->length = BIO_snprintf(p, len, "%02d%02d%02d%02d%02d%02dZ",
                                     ts->tm_year % 100, ts->tm_mon + 1,
                                     ts->tm_mday, ts->tm_hour, ts->tm_min,
                                     ts->tm_sec);
+    }
 
 #ifdef CHARSET_EBCDIC
     ebcdic2ascii(tmps->data, tmps->data, tmps->length);
@@ -420,10 +426,8 @@ int ASN1_TIME_set_string_X509(ASN1_TIME *s, const char *str)
              * new t.data would be freed after ASN1_STRING_copy is done.
              */
             t.data = OPENSSL_zalloc(t.length + 1);
-            if (t.data == NULL) {
-                ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
+            if (t.data == NULL)
                 goto out;
-            }
             memcpy(t.data, str + 2, t.length);
             t.type = V_ASN1_UTCTIME;
         }
@@ -566,7 +570,7 @@ int ASN1_TIME_normalize(ASN1_TIME *t)
 {
     struct tm tm;
 
-    if (!ASN1_TIME_to_tm(t, &tm))
+    if (t == NULL || !ASN1_TIME_to_tm(t, &tm))
         return 0;
 
     return ossl_asn1_time_from_tm(t, &tm, V_ASN1_UNDEF) != NULL;
@@ -583,4 +587,79 @@ int ASN1_TIME_compare(const ASN1_TIME *a, const ASN1_TIME *b)
     if (day < 0 || sec < 0)
         return -1;
     return 0;
+}
+
+/*
+ * tweak for Windows
+ */
+#ifdef WIN32
+# define timezone _timezone
+#endif
+
+#if defined(__FreeBSD__) || defined(__wasi__)
+# define USE_TIMEGM
+#endif
+
+time_t ossl_asn1_string_to_time_t(const char *asn1_string)
+{
+    ASN1_TIME *timestamp_asn1 = NULL;
+    struct tm *timestamp_tm = NULL;
+#if defined(__DJGPP__)
+    char *tz = NULL;
+#elif !defined(USE_TIMEGM)
+    time_t timestamp_local;
+#endif
+    time_t timestamp_utc;
+
+    timestamp_asn1 = ASN1_TIME_new();
+    if (!ASN1_TIME_set_string(timestamp_asn1, asn1_string))
+    {
+        ASN1_TIME_free(timestamp_asn1);
+        return -1;
+    }
+
+    timestamp_tm = OPENSSL_malloc(sizeof(*timestamp_tm));
+    if (timestamp_tm == NULL) {
+        ASN1_TIME_free(timestamp_asn1);
+        return -1;
+    }
+    if (!(ASN1_TIME_to_tm(timestamp_asn1, timestamp_tm))) {
+        OPENSSL_free(timestamp_tm);
+        ASN1_TIME_free(timestamp_asn1);
+        return -1;
+    }
+    ASN1_TIME_free(timestamp_asn1);
+
+#if defined(__DJGPP__)
+    /*
+     * This is NOT thread-safe.  Do not use this method for platforms other
+     * than djgpp.
+     */
+    tz = getenv("TZ");
+    if (tz != NULL) {
+        tz = OPENSSL_strdup(tz);
+        if (tz == NULL) {
+            OPENSSL_free(timestamp_tm);
+            return -1;
+        }
+    }
+    setenv("TZ", "UTC", 1);
+
+    timestamp_utc = mktime(timestamp_tm);
+
+    if (tz != NULL) {
+        setenv("TZ", tz, 1);
+        OPENSSL_free(tz);
+    } else {
+        unsetenv("TZ");
+    }
+#elif defined(USE_TIMEGM)
+    timestamp_utc = timegm(timestamp_tm);
+#else
+    timestamp_local = mktime(timestamp_tm);
+    timestamp_utc = timestamp_local - timezone;
+#endif
+    OPENSSL_free(timestamp_tm);
+
+    return timestamp_utc;
 }
