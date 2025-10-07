@@ -2030,6 +2030,9 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContext
     if (GetIsDisplayLabelDefined())
         schemaOut->SetDisplayLabel(GetInvariantDisplayLabel().c_str());
 
+    Utf8PrintfString origin("Copy of %s", this->GetOrigin().c_str());
+    schemaOut->SetOrigin(origin);
+
     ECSchemaReferenceListCR referencedSchemas = GetReferencedSchemas();
     if(schemaContext == nullptr)
         {
@@ -3283,8 +3286,27 @@ ECSchemaPtr SanitizingSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchTy
     ECSchemaPtr sanitizedSchema;
     LOG.infov("Creating copy of returned schema %s to clean schema graph", innerSchema->GetName().c_str());
     auto status = innerSchema->CopySchema(sanitizedSchema, &schemaContext, false);
-    if(status != ECObjectsStatus::Success || !sanitizedSchema.IsValid() || schemaContext.AddSchema(*sanitizedSchema) == ECObjectsStatus::DuplicateSchema)
+    
+    if(status != ECObjectsStatus::Success)
+        {
+        LOG.errorv("Failed to copy schema %s for sanitization. Status: %d", innerSchema->GetName().c_str(), (int)status);
         return nullptr;
+        }
+    
+    if(!sanitizedSchema.IsValid())
+        {
+        LOG.errorv("Sanitized schema copy is invalid for schema %s", innerSchema->GetName().c_str());
+        return nullptr;
+        }
+    
+    if(schemaContext.AddSchema(*sanitizedSchema) == ECObjectsStatus::DuplicateSchema)
+        {
+        LOG.debugv("Duplicate schema detected when adding sanitized copy of %s to schema context", innerSchema->GetName().c_str());
+        return nullptr;
+        }
+
+    Utf8PrintfString origin("Sanitized copy of %s", innerSchema->GetOrigin().c_str());
+    sanitizedSchema->SetOrigin(origin);
 
     // For unknown reasons, CopySchema does not preserve this. But there is a comment suggesting it does that on purpose. So we do it here outside.
     sanitizedSchema->SetOriginalECXmlVersion(innerSchema->GetOriginalECXmlVersionMajor(), innerSchema->GetOriginalECXmlVersionMinor());
@@ -3397,6 +3419,11 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
+    else
+        {
+        Utf8PrintfString origin("Loaded from file %ls", ecSchemaXmlFile);
+        schemaOut->SetOrigin(origin);
+        }
 
     return status;
     }
@@ -3434,6 +3461,10 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
 
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
+        }
+    else
+        {
+        schemaOut->SetOrigin("Loaded from string");
         }
 
     return status;
@@ -3483,6 +3514,10 @@ POP_DISABLE_DEPRECATION_WARNINGS
 
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
+        }
+    else
+        {
+        schemaOut->SetOrigin("Loaded from string (wchar)");
         }
 
     return status;

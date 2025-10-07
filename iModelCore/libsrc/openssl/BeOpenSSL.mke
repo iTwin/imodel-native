@@ -87,6 +87,13 @@ nameToDefine = ENGINESDIR=\"\"
 #   Platform-specific settings
 #----------------------------------------------------------------------------------------
 
+%if $(TARGET_PLATFORM) != "Windows" && $(TARGET_PLATFORM) != "WinRT"
+
+    nameToDefine = OPENSSL_NO_WINSTORE
+    %include cdefapnd.mki
+
+%endif
+
 %if $(TARGET_PLATFORM) == "Windows"
 
     nameToDefine = OPENSSL_SYS_WIN32
@@ -216,9 +223,9 @@ $(o)ex_data$(oext) : $(vendorSrc)crypto/ex_data.c ${MultiCompileDepends}
 
 $(o)getenv$(oext) : $(vendorSrc)crypto/getenv.c ${MultiCompileDepends}
 
-$(o)init$(oext) : $(vendorSrc)crypto/init.c ${MultiCompileDepends}
-
 $(o)info$(oext) : $(vendorSrc)crypto/info.c ${MultiCompileDepends}
+
+$(o)init$(oext) : $(vendorSrc)crypto/init.c ${MultiCompileDepends}
 
 $(o)initthread$(oext) : $(vendorSrc)crypto/initthread.c ${MultiCompileDepends}
 
@@ -2257,7 +2264,9 @@ $(o)file_store_any2obj$(oext) : $(vendorSrc)providers/implementations/storemgmt/
 
 $(o)file_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/file_store.c ${MultiCompileDepends}
 
-$(o)winstore_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/winstore_store.c ${MultiCompileDepends}
+%if $(TARGET_PLATFORM) == "Windows"
+    $(o)winstore_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/winstore_store.c ${MultiCompileDepends}
+%endif
 
 %include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList)
