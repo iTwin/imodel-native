@@ -28,13 +28,8 @@ extern "C" {
  * These macros express version number MAJOR.MINOR.PATCH exactly
  */
 # define OPENSSL_VERSION_MAJOR  3
-<<<<<<< HEAD
-# define OPENSSL_VERSION_MINOR  1
-# define OPENSSL_VERSION_PATCH  0
-=======
 # define OPENSSL_VERSION_MINOR  2
 # define OPENSSL_VERSION_PATCH  6
->>>>>>> 455bf7fb (Update openssl to 3.2.6 (#1232))
 
 /*
  * Additional version information
@@ -79,34 +74,21 @@ extern "C" {
  * longer variant with OPENSSL_VERSION_PRE_RELEASE_STR and
  * OPENSSL_VERSION_BUILD_METADATA_STR appended.
  */
-<<<<<<< HEAD
-# define OPENSSL_VERSION_STR "3.1.0"
-# define OPENSSL_FULL_VERSION_STR "3.1.0"
-=======
 # define OPENSSL_VERSION_STR "3.2.6"
 # define OPENSSL_FULL_VERSION_STR "3.2.6"
->>>>>>> 455bf7fb (Update openssl to 3.2.6 (#1232))
 
 /*
  * SECTION 3: ADDITIONAL METADATA
  *
  * These strings are defined separately to allow them to be parsable.
  */
-<<<<<<< HEAD
-# define OPENSSL_RELEASE_DATE "14 Mar 2023"
-=======
 # define OPENSSL_RELEASE_DATE "30 Sep 2025"
->>>>>>> 455bf7fb (Update openssl to 3.2.6 (#1232))
 
 /*
  * SECTION 4: BACKWARD COMPATIBILITY
  */
 
-<<<<<<< HEAD
-# define OPENSSL_VERSION_TEXT "OpenSSL 3.1.0 14 Mar 2023"
-=======
 # define OPENSSL_VERSION_TEXT "OpenSSL 3.2.6 30 Sep 2025"
->>>>>>> 455bf7fb (Update openssl to 3.2.6 (#1232))
 
 /* Synthesize OPENSSL_VERSION_NUMBER with the layout 0xMNN00PPSL */
 # ifdef OPENSSL_VERSION_PRE_RELEASE
