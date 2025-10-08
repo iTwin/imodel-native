@@ -2096,4 +2096,26 @@ TEST_F(CommonTableExpTestFixture, Invalid_SQL_Tests) {
     }
 }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, Debug_Tests) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("Debug_Tests.ecdb"));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ) [c1] JOIN ( SELECT 1 AS KEYID, 'Robot' AS Name ) [c2] ON c1.KEYID = c2.KEYID"));
+        std::cout << stmt.GetNativeSql() << std::endl;
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), [cte2] AS ( SELECT 1 AS KEYID, 'Robot' AS Name ) SELECT * FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
+        std::cout << stmt.GetNativeSql() << std::endl;
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH edges AS (SELECT [sif].[ECInstanceId] AS [Id], [sif].[Parent].[Id] AS [ParentId], [sif].[CodeValue], [sif].[UserLabel], [sif].[EntryPriority] FROM [bis].[SheetIndexFolder] [sif] UNION ALL SELECT [si].[ECInstanceId] AS [Id], [si].[Parent].[Id] AS [ParentId], [si].[CodeValue], [si].[UserLabel], -1 AS [EntryPriority] FROM [bis].[SheetIndex] [si]), nodes AS ( SELECT [sr].[ECInstanceId] AS [Id], [sr].[Parent].[Id] AS [ParentId], [sr].[CodeValue], [sr].[UserLabel], [sr].[EntryPriority] FROM [bis].[SheetReference] [sr] ), joinToParent AS ( SELECT p.Id FROM nodes [p] LEFT JOIN edges [c] ON [p].Id = [c].ParentId) SELECT * FROM joinToParent"));
+        std::cout << stmt.GetNativeSql() << std::endl;
+        }
+}
+
 END_ECDBUNITTESTS_NAMESPACE

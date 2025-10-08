@@ -579,6 +579,26 @@ bool PropertyNameExp::IsLhsAssignmentOperandExpression() const
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool PropertyNameExp::IsPropertyFromCommonTableBlockWithColumns() const
+    {
+    if (m_classRefExp == nullptr) {
+        return false;
+    }
+    bool isFromCommonTableBlockName = GetClassRefExp()->GetType() == Exp::Type::CommonTableBlockName;
+    if(!isFromCommonTableBlockName)
+        return false;
+    
+    CommonTableBlockNameExp const& commonTableBlockNameExp = GetClassRefExp()->GetAs<CommonTableBlockNameExp>();
+    CommonTableBlockExp const* commonTableBlockExp = commonTableBlockNameExp.GetBlock();
+    if(commonTableBlockExp == nullptr)
+        return false;
+    
+    return commonTableBlockExp->GetColumns().size() != 0;  // check if the block has columns or not...if it has columns then no issues otherwise if it is a cte without columns we should then treat it as a subquery so the whole flow changes
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PropertyNameExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: PropertyNameExp
@@ -770,7 +790,7 @@ BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List c
 
     m_nativeSqlSnippets.clear();
     Utf8String alias = m_linkedTo.GetColumnAlias();
-    if (alias.empty() || m_linkedTo.OriginateInASubQuery())
+    if (alias.empty() || m_linkedTo.OriginateInASubQuery() || m_linkedTo.OriginateInACommonTableBlockWithNoColumns())
         alias = m_linkedTo.GetNestedAlias();
 
     if (!alias.empty())
