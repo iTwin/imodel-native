@@ -589,8 +589,7 @@ bool PropertyNameExp::IsPropertyFromCommonTableBlockWithColumns() const
     if(!isFromCommonTableBlockName)
         return false;
     
-    CommonTableBlockNameExp const& commonTableBlockNameExp = GetClassRefExp()->GetAs<CommonTableBlockNameExp>();
-    CommonTableBlockExp const* commonTableBlockExp = commonTableBlockNameExp.GetBlock();
+    CommonTableBlockExp const* commonTableBlockExp = GetClassRefExp()->GetAs<CommonTableBlockNameExp>().GetBlock();
     if(commonTableBlockExp == nullptr)
         return false;
     

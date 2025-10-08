@@ -191,9 +191,7 @@ bool DerivedPropertyExp::OriginateInACommonTableBlockWithNoColumns() const {
     if(exp == nullptr)
         return false;
     
-    CommonTableBlockExp const& commonTableBlockExp = exp->GetAs<CommonTableBlockExp>();
-
-    return commonTableBlockExp.GetColumns().size() == 0;
+    return exp->GetAs<CommonTableBlockExp>().GetColumns().size() == 0;
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod

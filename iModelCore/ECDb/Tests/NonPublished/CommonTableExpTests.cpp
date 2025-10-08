@@ -2104,17 +2104,88 @@ TEST_F(CommonTableExpTestFixture, Debug_Tests) {
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ) [c1] JOIN ( SELECT 1 AS KEYID, 'Robot' AS Name ) [c2] ON c1.KEYID = c2.KEYID"));
-        std::cout << stmt.GetNativeSql() << std::endl;
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K0],[K2],[K1],[K3] FROM (SELECT 1 [K0],'BeepBoo' [K2]) [c1] INNER JOIN (SELECT 1 [K1],'Robot' [K3]) [c2] ON [K0]=[K1] ");
+        ASSERT_EQ(4, stmt.GetColumnCount());
+        ASSERT_STREQ("KEYID", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Noise", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("KEYID_1", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Name", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_STREQ("BeepBoo", stmt.GetValueText(1));
+        ASSERT_STREQ("1", stmt.GetValueText(2));
+        ASSERT_STREQ("Robot", stmt.GetValueText(3));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), [cte2] AS ( SELECT 1 AS KEYID, 'Robot' AS Name ) SELECT * FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
-        std::cout << stmt.GetNativeSql() << std::endl;
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte1 AS (SELECT 1 [K0],'BeepBoo' [K1]),cte2 AS (SELECT 1 [K2],'Robot' [K3])\nSELECT [K0],[K1],[K2],[K3] FROM cte1 c1 INNER JOIN cte2 c2 ON [K0]=[K2] ");
+        ASSERT_EQ(4, stmt.GetColumnCount());
+        ASSERT_STREQ("KEYID", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Noise", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("KEYID_1", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Name", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_STREQ("BeepBoo", stmt.GetValueText(1));
+        ASSERT_STREQ("1", stmt.GetValueText(2));
+        ASSERT_STREQ("Robot", stmt.GetValueText(3));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH edges AS (SELECT [sif].[ECInstanceId] AS [Id], [sif].[Parent].[Id] AS [ParentId], [sif].[CodeValue], [sif].[UserLabel], [sif].[EntryPriority] FROM [bis].[SheetIndexFolder] [sif] UNION ALL SELECT [si].[ECInstanceId] AS [Id], [si].[Parent].[Id] AS [ParentId], [si].[CodeValue], [si].[UserLabel], -1 AS [EntryPriority] FROM [bis].[SheetIndex] [si]), nodes AS ( SELECT [sr].[ECInstanceId] AS [Id], [sr].[Parent].[Id] AS [ParentId], [sr].[CodeValue], [sr].[UserLabel], [sr].[EntryPriority] FROM [bis].[SheetReference] [sr] ), joinToParent AS ( SELECT p.Id FROM nodes [p] LEFT JOIN edges [c] ON [p].Id = [c].ParentId) SELECT * FROM joinToParent"));
-        std::cout << stmt.GetNativeSql() << std::endl;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), cte2(KEYID, Name) AS ( SELECT 1, 'Robot' ) SELECT * FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte1 AS (SELECT 1 [K0],'BeepBoo' [K1]),cte2(KEYID,Name) AS (SELECT 1,'Robot')\nSELECT [K0],[K1],c2.KEYID,c2.Name FROM cte1 c1 INNER JOIN cte2 c2 ON [K0]=c2.KEYID ");
+        ASSERT_EQ(4, stmt.GetColumnCount());
+        ASSERT_STREQ("KEYID", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Noise", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("KEYID_1", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Name", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_STREQ("BeepBoo", stmt.GetValueText(1));
+        ASSERT_STREQ("1", stmt.GetValueText(2));
+        ASSERT_STREQ("Robot", stmt.GetValueText(3));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), cte2(KEYID, Name) AS ( SELECT 1, 'Robot' ) SELECT c1.KEYID, Noise, c2.KEYID, Name FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte1 AS (SELECT 1 [K0],'BeepBoo' [K1]),cte2(KEYID,Name) AS (SELECT 1,'Robot')\nSELECT [K0],[K1],c2.KEYID,c2.Name FROM cte1 c1 INNER JOIN cte2 c2 ON [K0]=c2.KEYID ");
+        ASSERT_EQ(4, stmt.GetColumnCount());
+        ASSERT_STREQ("KEYID", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Noise", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("c2__x002E__KEYID", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        EXPECT_STREQ("c2.KEYID", stmt.GetColumnInfo(2).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("Name", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_STREQ("BeepBoo", stmt.GetValueText(1));
+        ASSERT_STREQ("1", stmt.GetValueText(2));
+        ASSERT_STREQ("Robot", stmt.GetValueText(3));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), cte2(KEYID, Name) AS ( SELECT 1, 'Robot' ) SELECT c2.KEYID, Noise, c1.KEYID, Name FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte1 AS (SELECT 1 [K0],'BeepBoo' [K1]),cte2(KEYID,Name) AS (SELECT 1,'Robot')\nSELECT c2.KEYID,[K1],[K0],c2.Name FROM cte1 c1 INNER JOIN cte2 c2 ON [K0]=c2.KEYID ");
+        ASSERT_EQ(4, stmt.GetColumnCount());
+        ASSERT_STREQ("KEYID", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Noise", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("c2__x002E__KEYID", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        EXPECT_STREQ("c2.KEYID", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("Name", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_STREQ("BeepBoo", stmt.GetValueText(1));
+        ASSERT_STREQ("1", stmt.GetValueText(2));
+        ASSERT_STREQ("Robot", stmt.GetValueText(3));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), cte2(KEYID, Name) AS ( SELECT 1, 'Robot' ) SELECT KEYID, Noise, Name FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
         }
 }
 
