@@ -87,6 +87,13 @@ nameToDefine = ENGINESDIR=\"\"
 #   Platform-specific settings
 #----------------------------------------------------------------------------------------
 
+%if $(TARGET_PLATFORM) != "Windows" && $(TARGET_PLATFORM) != "WinRT"
+
+    nameToDefine = OPENSSL_NO_WINSTORE
+    %include cdefapnd.mki
+
+%endif
+
 %if $(TARGET_PLATFORM) == "Windows"
 
     nameToDefine = OPENSSL_SYS_WIN32
@@ -206,6 +213,8 @@ $(o)cversion$(oext) : $(vendorSrc)crypto/cversion.c ${MultiCompileDepends}
 
 $(o)der_writer$(oext) : $(vendorSrc)crypto/der_writer.c ${MultiCompileDepends}
 
+$(o)deterministic_nonce$(oext) : $(vendorSrc)crypto/deterministic_nonce.c ${MultiCompileDepends}
+
 $(o)dllmain$(oext) : $(vendorSrc)crypto/dllmain.c ${MultiCompileDepends}
 
 $(o)ebcdic$(oext) : $(vendorSrc)crypto/ebcdic.c ${MultiCompileDepends}
@@ -214,9 +223,9 @@ $(o)ex_data$(oext) : $(vendorSrc)crypto/ex_data.c ${MultiCompileDepends}
 
 $(o)getenv$(oext) : $(vendorSrc)crypto/getenv.c ${MultiCompileDepends}
 
-$(o)init$(oext) : $(vendorSrc)crypto/init.c ${MultiCompileDepends}
-
 $(o)info$(oext) : $(vendorSrc)crypto/info.c ${MultiCompileDepends}
+
+$(o)init$(oext) : $(vendorSrc)crypto/init.c ${MultiCompileDepends}
 
 $(o)initthread$(oext) : $(vendorSrc)crypto/initthread.c ${MultiCompileDepends}
 
@@ -233,6 +242,8 @@ $(o)param_build$(oext) : $(vendorSrc)crypto/param_build.c ${MultiCompileDepends}
 $(o)params_dup$(oext) : $(vendorSrc)crypto/params_dup.c ${MultiCompileDepends}
 
 $(o)params_from_text$(oext) : $(vendorSrc)crypto/params_from_text.c ${MultiCompileDepends}
+
+$(o)params_idx$(oext) : $(vendorSrc)crypto/params_idx.c ${MultiCompileDepends}
 
 $(o)params$(oext) : $(vendorSrc)crypto/params.c ${MultiCompileDepends}
 
@@ -252,6 +263,8 @@ $(o)punycode$(oext) : $(vendorSrc)crypto/punycode.c ${MultiCompileDepends}
 
 $(o)self_test_core$(oext) : $(vendorSrc)crypto/self_test_core.c ${MultiCompileDepends}
 
+$(o)sleep$(oext) : $(vendorSrc)crypto/sleep.c ${MultiCompileDepends}
+
 $(o)sparse_array$(oext) : $(vendorSrc)crypto/sparse_array.c ${MultiCompileDepends}
 
 $(o)threads_none$(oext) : $(vendorSrc)crypto/threads_none.c ${MultiCompileDepends}
@@ -260,7 +273,11 @@ $(o)threads_pthread$(oext) : $(vendorSrc)crypto/threads_pthread.c ${MultiCompile
 
 $(o)threads_win$(oext) : $(vendorSrc)crypto/threads_win.c ${MultiCompileDepends}
 
+$(o)time$(oext) : $(vendorSrc)crypto/time.c ${MultiCompileDepends}
+
 $(o)trace$(oext) : $(vendorSrc)crypto/trace.c ${MultiCompileDepends}
+
+$(o)quic_vlint$(oext) : $(vendorSrc)crypto/quic_vlint.c ${MultiCompileDepends}
 
 #$(o)aes_cbc$(oext) : $(vendorSrc)crypto/aes/aes_cbc.c ${MultiCompileDepends}
 
@@ -468,6 +485,8 @@ $(o)bss_core$(oext) : $(vendorSrc)crypto/bio/bss_core.c ${MultiCompileDepends}
 
 $(o)bss_dgram$(oext) : $(vendorSrc)crypto/bio/bss_dgram.c ${MultiCompileDepends}
 
+$(o)bss_dgram_pair$(oext) : $(vendorSrc)crypto/bio/bss_dgram_pair.c ${MultiCompileDepends}
+
 $(o)bss_fd$(oext) : $(vendorSrc)crypto/bio/bss_fd.c ${MultiCompileDepends}
 
 $(o)bss_file$(oext) : $(vendorSrc)crypto/bio/bss_file.c ${MultiCompileDepends}
@@ -616,9 +635,35 @@ $(o)comp_err$(oext) : $(vendorSrc)crypto/comp/comp_err.c ${MultiCompileDepends}
 
 $(o)comp_lib$(oext) : $(vendorSrc)crypto/comp/comp_lib.c ${MultiCompileDepends}
 
+$(o)c_brotli$(oext) : $(vendorSrc)crypto/comp/c_brotli.c ${MultiCompileDepends}
+
+$(o)c_zstd$(oext) : $(vendorSrc)crypto/comp/c_zstd.c ${MultiCompileDepends}
+
+$(o)cmp_asn$(oext) : $(vendorSrc)crypto/cmp/cmp_asn.c ${MultiCompileDepends}
+
+$(o)cmp_client$(oext) : $(vendorSrc)crypto/cmp/cmp_client.c ${MultiCompileDepends}
+
+$(o)cmp_ctx$(oext) : $(vendorSrc)crypto/cmp/cmp_ctx.c ${MultiCompileDepends}
+
 $(o)cmp_err$(oext) : $(vendorSrc)crypto/cmp/cmp_err.c ${MultiCompileDepends}
 
+$(o)cmp_genm$(oext) : $(vendorSrc)crypto/cmp/cmp_genm.c ${MultiCompileDepends}
+
+$(o)cmp_hdr$(oext) : $(vendorSrc)crypto/cmp/cmp_hdr.c ${MultiCompileDepends}
+
+$(o)cmp_http$(oext) : $(vendorSrc)crypto/cmp/cmp_http.c ${MultiCompileDepends}
+
+$(o)cmp_msg$(oext) : $(vendorSrc)crypto/cmp/cmp_msg.c ${MultiCompileDepends}
+
+$(o)cmp_protect$(oext) : $(vendorSrc)crypto/cmp/cmp_protect.c ${MultiCompileDepends}
+
+$(o)cmp_server$(oext) : $(vendorSrc)crypto/cmp/cmp_server.c ${MultiCompileDepends}
+
+$(o)cmp_status$(oext) : $(vendorSrc)crypto/cmp/cmp_status.c ${MultiCompileDepends}
+
 $(o)cmp_util$(oext) : $(vendorSrc)crypto/cmp/cmp_util.c ${MultiCompileDepends}
+
+$(o)cmp_vfy$(oext) : $(vendorSrc)crypto/cmp/cmp_vfy.c ${MultiCompileDepends}
 
 $(o)conf_api$(oext) : $(vendorSrc)crypto/conf/conf_api.c ${MultiCompileDepends}
 
@@ -914,7 +959,11 @@ $(o)err_all$(oext) : $(vendorSrc)crypto/err/err_all.c ${MultiCompileDepends}
 
 $(o)err_blocks$(oext) : $(vendorSrc)crypto/err/err_blocks.c ${MultiCompileDepends}
 
+$(o)err_mark$(oext) : $(vendorSrc)crypto/err/err_mark.c ${MultiCompileDepends}
+
 $(o)err_prn$(oext) : $(vendorSrc)crypto/err/err_prn.c ${MultiCompileDepends}
+
+$(o)err_save$(oext) : $(vendorSrc)crypto/err/err_save.c ${MultiCompileDepends}
 
 $(o)ess_asn1$(oext) : $(vendorSrc)crypto/ess/ess_asn1.c ${MultiCompileDepends}
 
@@ -1100,6 +1149,10 @@ $(o)ffc_params$(oext) : $(vendorSrc)crypto/ffc/ffc_params.c ${MultiCompileDepend
 
 $(o)hmac$(oext) : $(vendorSrc)crypto/hmac/hmac.c ${MultiCompileDepends}
 
+$(o)hpke$(oext) : $(vendorSrc)crypto/hpke/hpke.c ${MultiCompileDepends}
+
+$(o)hpke_util$(oext) : $(vendorSrc)crypto/hpke/hpke_util.c ${MultiCompileDepends}
+
 $(o)http_client$(oext) : $(vendorSrc)crypto/http/http_client.c ${MultiCompileDepends}
 
 $(o)http_err$(oext) : $(vendorSrc)crypto/http/http_err.c ${MultiCompileDepends}
@@ -1167,6 +1220,8 @@ $(o)siv128$(oext) : $(vendorSrc)crypto/modes/siv128.c ${MultiCompileDepends}
 $(o)wrap128$(oext) : $(vendorSrc)crypto/modes/wrap128.c ${MultiCompileDepends}
 
 $(o)xts128$(oext) : $(vendorSrc)crypto/modes/xts128.c ${MultiCompileDepends}
+
+$(o)xts128gb.$(oext) : $(vendorSrc)crypto/modes/xts128gb.c ${MultiCompileDepends}
 
 $(o)o_dir$(oext) : $(vendorSrc)crypto/o_dir.c ${MultiCompileDepends}
 
@@ -1306,6 +1361,8 @@ $(o)rand_meth$(oext) : $(vendorSrc)crypto/rand/rand_meth.c ${MultiCompileDepends
 
 $(o)rand_pool$(oext) : $(vendorSrc)crypto/rand/rand_pool.c ${MultiCompileDepends}
 
+$(o)rand_uniform$(oext) : $(vendorSrc)crypto/rand/rand_uniform.c ${MultiCompileDepends}
+
 $(o)rc2_cbc$(oext) : $(vendorSrc)crypto/rc2/rc2_cbc.c ${MultiCompileDepends}
 
 $(o)rc2_ecb$(oext) : $(vendorSrc)crypto/rc2/rc2_ecb.c ${MultiCompileDepends}
@@ -1429,6 +1486,18 @@ $(o)store_strings$(oext) : $(vendorSrc)crypto/store/store_strings.c ${MultiCompi
 
 $(o)store_result$(oext) : $(vendorSrc)crypto/store/store_result.c ${MultiCompileDepends}
 
+$(o)api$(oext) : $(vendorSrc)crypto/thread/api.c ${MultiCompileDepends}
+
+$(o)arch$(oext) : $(vendorSrc)crypto/thread/arch.c ${MultiCompileDepends}
+
+$(o)internal$(oext) : $(vendorSrc)crypto/thread/internal.c ${MultiCompileDepends}
+
+$(o)thread_none$(oext) : $(vendorSrc)crypto/thread/arch/thread_none.c ${MultiCompileDepends}
+
+$(o)thread_posix$(oext) : $(vendorSrc)crypto/thread/arch/thread_posix.c ${MultiCompileDepends}
+
+$(o)thread_win$(oext) : $(vendorSrc)crypto/thread/arch/thread_win.c ${MultiCompileDepends}
+
 $(o)ts_asn1$(oext) : $(vendorSrc)crypto/ts/ts_asn1.c ${MultiCompileDepends}
 
 $(o)ts_conf$(oext) : $(vendorSrc)crypto/ts/ts_conf.c ${MultiCompileDepends}
@@ -1479,6 +1548,18 @@ $(o)t_crl$(oext) : $(vendorSrc)crypto/x509/t_crl.c ${MultiCompileDepends}
 $(o)t_req$(oext) : $(vendorSrc)crypto/x509/t_req.c ${MultiCompileDepends}
 
 $(o)t_x509$(oext) : $(vendorSrc)crypto/x509/t_x509.c ${MultiCompileDepends}
+
+$(o)v3_group_ac$(oext) : $(vendorSrc)crypto/x509/v3_group_ac.c ${MultiCompileDepends}
+
+$(o)v3_ind_iss$(oext) : $(vendorSrc)crypto/x509/v3_ind_iss.c ${MultiCompileDepends}
+
+$(o)v3_no_ass$(oext) : $(vendorSrc)crypto/x509/v3_no_ass.c ${MultiCompileDepends}
+
+$(o)v3_no_rev_avail$(oext) : $(vendorSrc)crypto/x509/v3_no_rev_avail.c ${MultiCompileDepends}
+
+$(o)v3_single_use$(oext) : $(vendorSrc)crypto/x509/v3_single_use.c ${MultiCompileDepends}
+
+$(o)v3_soa_id$(oext) : $(vendorSrc)crypto/x509/v3_soa_id.c ${MultiCompileDepends}
 
 $(o)x509_att$(oext) : $(vendorSrc)crypto/x509/x509_att.c ${MultiCompileDepends}
 
@@ -1652,25 +1733,35 @@ $(o)d1_msg$(oext) : $(vendorSrc)ssl/d1_msg.c ${MultiCompileDepends}
 
 $(o)d1_srtp$(oext) : $(vendorSrc)ssl/d1_srtp.c ${MultiCompileDepends}
 
+$(o)event_queue$(oext) : $(vendorSrc)ssl/event_queue.c ${MultiCompileDepends}
+
 $(o)methods$(oext) : $(vendorSrc)ssl/methods.c ${MultiCompileDepends}
 
 $(o)pqueue$(oext) : $(vendorSrc)ssl/pqueue.c ${MultiCompileDepends}
 
-$(o)dtls1_bitmap$(oext) : $(vendorSrc)ssl/record/dtls1_bitmap.c ${MultiCompileDepends}
+$(o)priority_queue$(oext) : $(vendorSrc)ssl/priority_queue.c ${MultiCompileDepends}
 
 $(o)rec_layer_d1$(oext) : $(vendorSrc)ssl/record/rec_layer_d1.c ${MultiCompileDepends}
 
 $(o)rec_layer_s3$(oext) : $(vendorSrc)ssl/record/rec_layer_s3.c ${MultiCompileDepends}
 
-$(o)ssl3_buffer$(oext) : $(vendorSrc)ssl/record/ssl3_buffer.c ${MultiCompileDepends}
+$(o)dtls_meth$(oext) : $(vendorSrc)ssl/record/methods/dtls_meth.c ${MultiCompileDepends}
 
-$(o)ssl3_record$(oext) : $(vendorSrc)ssl/record/ssl3_record.c ${MultiCompileDepends}
+$(o)ssl3_cbc$(oext) : $(vendorSrc)ssl/record/methods/ssl3_cbc.c ${MultiCompileDepends}
 
-$(o)ssl3_record_tls13$(oext) : $(vendorSrc)ssl/record/ssl3_record_tls13.c ${MultiCompileDepends}
+$(o)ssl3_meth$(oext) : $(vendorSrc)ssl/record/methods/ssl3_meth.c ${MultiCompileDepends}
 
-$(o)tls_pad$(oext) : $(vendorSrc)ssl/record/tls_pad.c ${MultiCompileDepends}
+$(o)tls13_meth$(oext) : $(vendorSrc)ssl/record/methods/tls13_meth.c ${MultiCompileDepends}
 
-$(o)s3_cbc$(oext) : $(vendorSrc)ssl/s3_cbc.c ${MultiCompileDepends}
+$(o)tls1_meth$(oext) : $(vendorSrc)ssl/record/methods/tls1_meth.c ${MultiCompileDepends}
+
+$(o)tls_common$(oext) : $(vendorSrc)ssl/record/methods/tls_common.c ${MultiCompileDepends}
+
+$(o)tls_multib$(oext) : $(vendorSrc)ssl/record/methods/tls_multib.c ${MultiCompileDepends}
+
+$(o)tls_pad$(oext) : $(vendorSrc)ssl/record/methods/tls_pad.c ${MultiCompileDepends}
+
+$(o)tlsany_meth$(oext) : $(vendorSrc)ssl/record/methods/tlsany_meth.c ${MultiCompileDepends}
 
 $(o)s3_enc$(oext) : $(vendorSrc)ssl/s3_enc.c ${MultiCompileDepends}
 
@@ -1681,6 +1772,8 @@ $(o)s3_msg$(oext) : $(vendorSrc)ssl/s3_msg.c ${MultiCompileDepends}
 $(o)ssl_asn1$(oext) : $(vendorSrc)ssl/ssl_asn1.c ${MultiCompileDepends}
 
 $(o)ssl_cert$(oext) : $(vendorSrc)ssl/ssl_cert.c ${MultiCompileDepends}
+
+$(o)ssl_cert_comp$(oext) : $(vendorSrc)ssl/ssl_cert_comp.c ${MultiCompileDepends}
 
 $(o)ssl_ciph$(oext) : $(vendorSrc)ssl/ssl_ciph.c ${MultiCompileDepends}
 
@@ -1733,6 +1826,64 @@ $(o)tls13_enc$(oext) : $(vendorSrc)ssl/tls13_enc.c ${MultiCompileDepends}
 $(o)tls_depr$(oext) : $(vendorSrc)ssl/tls_depr.c ${MultiCompileDepends}
 
 $(o)tls_srp$(oext) : $(vendorSrc)ssl/tls_srp.c ${MultiCompileDepends}
+
+$(o)cc_newreno$(oext) : $(vendorSrc)ssl/quic/cc_newreno.c ${MultiCompileDepends}
+
+$(o)quic_ackm$(oext) : $(vendorSrc)ssl/quic/quic_ackm.c ${MultiCompileDepends}
+
+$(o)quic_cfq$(oext) : $(vendorSrc)ssl/quic/quic_cfq.c ${MultiCompileDepends}
+
+$(o)quic_channel$(oext) : $(vendorSrc)ssl/quic/quic_channel.c ${MultiCompileDepends}
+
+$(o)quic_demux$(oext) : $(vendorSrc)ssl/quic/quic_demux.c ${MultiCompileDepends}
+
+$(o)quic_fc$(oext) : $(vendorSrc)ssl/quic/quic_fc.c ${MultiCompileDepends}
+
+$(o)quic_fifd$(oext) : $(vendorSrc)ssl/quic/quic_fifd.c ${MultiCompileDepends}
+
+$(o)quic_impl$(oext) : $(vendorSrc)ssl/quic/quic_impl.c ${MultiCompileDepends}
+
+$(o)quic_method$(oext) : $(vendorSrc)ssl/quic/quic_method.c ${MultiCompileDepends}
+
+$(o)quic_reactor$(oext) : $(vendorSrc)ssl/quic/quic_reactor.c ${MultiCompileDepends}
+
+$(o)quic_record_rx$(oext) : $(vendorSrc)ssl/quic/quic_record_rx.c ${MultiCompileDepends}
+
+$(o)quic_record_shared$(oext) : $(vendorSrc)ssl/quic/quic_record_shared.c ${MultiCompileDepends}
+
+$(o)quic_record_tx$(oext) : $(vendorSrc)ssl/quic/quic_record_tx.c ${MultiCompileDepends}
+
+$(o)quic_record_util$(oext) : $(vendorSrc)ssl/quic/quic_record_util.c ${MultiCompileDepends}
+
+$(o)quic_rstream$(oext) : $(vendorSrc)ssl/quic/quic_rstream.c ${MultiCompileDepends}
+
+$(o)quic_rx_depack$(oext) : $(vendorSrc)ssl/quic/quic_rx_depack.c ${MultiCompileDepends}
+
+$(o)quic_sf_list$(oext) : $(vendorSrc)ssl/quic/quic_sf_list.c ${MultiCompileDepends}
+
+$(o)quic_sstream$(oext) : $(vendorSrc)ssl/quic/quic_sstream.c ${MultiCompileDepends}
+
+$(o)quic_statm$(oext) : $(vendorSrc)ssl/quic/quic_statm.c ${MultiCompileDepends}
+
+$(o)quic_stream_map$(oext) : $(vendorSrc)ssl/quic/quic_stream_map.c ${MultiCompileDepends}
+
+$(o)quic_thread_assist$(oext) : $(vendorSrc)ssl/quic/quic_thread_assist.c ${MultiCompileDepends}
+
+$(o)quic_tls$(oext) : $(vendorSrc)ssl/quic/quic_tls.c ${MultiCompileDepends}
+
+$(o)quic_trace$(oext) : $(vendorSrc)ssl/quic/quic_trace.c ${MultiCompileDepends}
+
+$(o)quic_tserver$(oext) : $(vendorSrc)ssl/quic/quic_tserver.c ${MultiCompileDepends}
+
+$(o)quic_txp$(oext) : $(vendorSrc)ssl/quic/quic_txp.c ${MultiCompileDepends}
+
+$(o)quic_txpim$(oext) : $(vendorSrc)ssl/quic/quic_txpim.c ${MultiCompileDepends}
+
+$(o)quic_wire$(oext) : $(vendorSrc)ssl/quic/quic_wire.c ${MultiCompileDepends}
+
+$(o)quic_wire_pkt$(oext) : $(vendorSrc)ssl/quic/quic_wire_pkt.c ${MultiCompileDepends}
+
+$(o)uint_set$(oext) : $(vendorSrc)ssl/quic/uint_set.c ${MultiCompileDepends}
 
 #----------------------------------------------------------------------------------------
 # providers
@@ -1812,6 +1963,12 @@ $(o)cipher_aes_ccm$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher
 $(o)cipher_aes_ccm_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_ccm_hw.c ${MultiCompileDepends}
 
 $(o)cipher_aes_gcm_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_gcm_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aes_gcm_siv$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_gcm_siv.c ${MultiCompileDepends}
+
+$(o)cipher_aes_gcm_siv_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_gcm_siv_hw.c ${MultiCompileDepends}
+
+$(o)cipher_aes_gcm_siv_polyval$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_gcm_siv_polyval.c ${MultiCompileDepends}
 
 $(o)cipher_aes_gcm$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_aes_gcm.c ${MultiCompileDepends}
 
@@ -1907,6 +2064,10 @@ $(o)cipher_sm4_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_
 
 $(o)cipher_sm4_gcm_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_sm4_gcm_hw.c ${MultiCompileDepends}
 
+$(o)cipher_sm4_xts$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_sm4_xts.c ${MultiCompileDepends}
+
+$(o)cipher_sm4_xts_hw$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_sm4_xts_hw.c ${MultiCompileDepends}
+
 $(o)cipher_tdes$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_tdes.c ${MultiCompileDepends}
 
 $(o)cipher_tdes_common$(oext) : $(vendorSrc)providers/implementations/ciphers/cipher_tdes_common.c ${MultiCompileDepends}
@@ -1995,7 +2156,11 @@ $(o)ecx_exch$(oext) : $(vendorSrc)providers/implementations/exchange/ecx_exch.c 
 
 $(o)kdf_exch$(oext) : $(vendorSrc)providers/implementations/exchange/kdf_exch.c ${MultiCompileDepends}
 
+$(o)argon2$(oext) : $(vendorSrc)providers/implementations/kdfs/argon2.c ${MultiCompileDepends}
+
 $(o)hkdf$(oext) : $(vendorSrc)providers/implementations/kdfs/hkdf.c ${MultiCompileDepends}
+
+$(o)hmacdrbg_kdf$(oext) : $(vendorSrc)providers/implementations/kdfs/hmacdrbg_kdf.c ${MultiCompileDepends}
 
 $(o)kbkdf$(oext) : $(vendorSrc)providers/implementations/kdfs/kbkdf.c ${MultiCompileDepends}
 
@@ -2009,6 +2174,8 @@ $(o)pbkdf2$(oext) : $(vendorSrc)providers/implementations/kdfs/pbkdf2.c ${MultiC
 
 $(o)pkcs12kdf$(oext) : $(vendorSrc)providers/implementations/kdfs/pkcs12kdf.c ${MultiCompileDepends}
 
+$(o)pvkkdf$(oext) : $(vendorSrc)providers/implementations/kdfs/pvkkdf.c ${MultiCompileDepends}
+
 $(o)scrypt$(oext) : $(vendorSrc)providers/implementations/kdfs/scrypt.c ${MultiCompileDepends}
 
 $(o)sshkdf$(oext) : $(vendorSrc)providers/implementations/kdfs/sshkdf.c ${MultiCompileDepends}
@@ -2020,6 +2187,12 @@ $(o)tls1_prf$(oext) : $(vendorSrc)providers/implementations/kdfs/tls1_prf.c ${Mu
 $(o)x942kdf$(oext) : $(vendorSrc)providers/implementations/kdfs/x942kdf.c ${MultiCompileDepends}
 
 $(o)rsa_kem$(oext) : $(vendorSrc)providers/implementations/kem/rsa_kem.c ${MultiCompileDepends}
+
+$(o)ec_kem$(oext) : $(vendorSrc)providers/implementations/kem/ec_kem.c ${MultiCompileDepends}
+
+$(o)ecx_kem$(oext) : $(vendorSrc)providers/implementations/kem/ecx_kem.c ${MultiCompileDepends}
+
+$(o)kem_util$(oext) : $(vendorSrc)providers/implementations/kem/kem_util.c ${MultiCompileDepends}
 
 $(o)dh_kmgmt$(oext) : $(vendorSrc)providers/implementations/keymgmt/dh_kmgmt.c ${MultiCompileDepends}
 
@@ -2091,6 +2264,10 @@ $(o)file_store_any2obj$(oext) : $(vendorSrc)providers/implementations/storemgmt/
 
 $(o)file_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/file_store.c ${MultiCompileDepends}
 
+%if $(TARGET_PLATFORM) == "Windows"
+    $(o)winstore_store$(oext) : $(vendorSrc)providers/implementations/storemgmt/winstore_store.c ${MultiCompileDepends}
+%endif
+
 %include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList)
 
@@ -2148,7 +2325,7 @@ objs =% $(MultiCompileObjectList)
 
     $(o)aesni-gcm-x86_64$(oext) : $(vendorSrc)/crypto/modes/aesni-gcm-x86_64.s ${MultiCompileDepends}
 
-    $(o)ghash-x86_64$(oext) : $(vendorSrc)/crypto/modes/ghash-x86_64.s ${MultiCompileDepends}
+    $(o)ghash-x86_64$(oext) : $(vendorSrc)/crypto/modes/ghash-x86_64.s ${MultiCompileDepends}    
 
     $(o)poly1305-x86_64$(oext) : $(vendorSrc)/crypto/poly1305/poly1305-x86_64.s ${MultiCompileDepends}
 

@@ -125,7 +125,6 @@ EXPORTS
   ssl_security_cert_chain
   ssl_set_client_disabled
   ssl_set_sig_mask
-  ssl_setup_sig_algs
   tls12_check_peer_sigalg
   tls12_copy_sigalgs
   tls12_get_psigalgs
@@ -168,7 +167,6 @@ EXPORTS
   tls1_final_finish_mac
   tls1_generate_master_secret
   tls1_setup_key_block
-  tls_provider_set_tls_params
   GOST_KX_MESSAGE_free
   GOST_KX_MESSAGE_it
   GOST_KX_MESSAGE_new
@@ -1366,9 +1364,7 @@ EXPORTS
   ossl_blake2b_param_set_salt
   ossl_blake2b_update
   ossl_blake2b512_functions
-  ossl_blake2b512_init
   ossl_blake2s256_functions
-  ossl_blake2s256_init
   ossl_cipher_hw_chunked_cbc
   ossl_cipher_hw_chunked_cfb128
   ossl_cipher_hw_chunked_cfb8
@@ -3514,7 +3510,6 @@ EXPORTS
   ossl_rsa_pss_params_30_saltlen
   ossl_rsa_pss_params_30_set_defaults
   ossl_rsa_pss_params_30_set_hashalg
-  ossl_rsa_pss_params_30_set_maskgenalg
   ossl_rsa_pss_params_30_set_maskgenhashalg
   ossl_rsa_pss_params_30_set_saltlen
   ossl_rsa_pss_params_30_set_trailerfield
@@ -4988,10 +4983,7 @@ EXPORTS
   EVP_PKEY_meth_set_verifyctx
   evp_app_cleanup_int
   evp_pkey_ctx_free_old_ops
-  evp_pkey_ctx_get1_id_len_prov
-  evp_pkey_ctx_get1_id_prov
   evp_pkey_ctx_get_params_strict
-  evp_pkey_ctx_set1_id_prov
   evp_pkey_ctx_set_params_strict
   evp_pkey_ctx_state
   evp_pkey_ctx_use_cached_data
@@ -6102,7 +6094,6 @@ EXPORTS
   OSSL_DECODER_CTX_set_passphrase_cb
   OSSL_DECODER_CTX_set_passphrase_ui
   OSSL_DECODER_CTX_set_pem_password_cb
-  ossl_decoder_ctx_setup_for_pkey
   OSSL_DECODER_CTX_free
   OSSL_DECODER_CTX_new
   OSSL_DECODER_CTX_set_params
@@ -6156,6 +6147,7 @@ EXPORTS
   ossl_ed25519_pkey_method
   ossl_ed448_asn1_meth
   ossl_ed448_pkey_method
+  ossl_ecx_asym_kem_functions
   ossl_ecx_key_allocate_privkey
   ossl_ecx_key_free
   ossl_ecx_key_new
@@ -6543,9 +6535,9 @@ EXPORTS
   ossl_x448_derive_public_key
   ossl_x448_int
   ossl_x448_public_from_private
-  gf_mul
-  gf_mulw_unsigned
-  gf_sqr
+  ossl_gf_mul
+  ossl_gf_mulw_unsigned
+  ossl_gf_sqr
   ossl_ed25519_public_from_private
   ossl_ed25519_sign
   ossl_ed25519_verify
@@ -7761,8 +7753,6 @@ EXPORTS
   ossl_bio_core_globals_free
   ossl_bio_core_globals_new
   ossl_bio_init_core
-  BIO_CONNECT_free
-  BIO_CONNECT_new
   BIO_new_connect
   BIO_s_connect
   BIO_ctrl_get_read_request
@@ -7822,7 +7812,6 @@ EXPORTS
   BIO_meth_set_read_ex
   BIO_meth_set_write
   BIO_meth_set_write_ex
-  bio_type_lock
   bread_conv
   bwrite_conv
   BIO_callback_ctrl
