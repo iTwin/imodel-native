@@ -614,6 +614,30 @@ DbResult DgnDb::DeleteLinkTableRelationships(Utf8CP relClassECSqlName, ECInstanc
     return BE_SQLITE_DONE == stat ? BE_SQLITE_OK : stat;
 }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult DgnDb::DeleteLinkTableRelationships(Utf8StringCR relClassECSqlName, const DgnElementIdSet& relationshipInstanceIds)
+    {
+    if (relationshipInstanceIds.empty() || Utf8String::IsNullOrEmpty(relClassECSqlName.c_str()))
+        return BE_SQLITE_DONE;
+
+    Utf8PrintfString deleteSql("DELETE FROM %s WHERE InVirtualSet(?, ECInstanceId)", relClassECSqlName.c_str());
+
+    const auto stmt = GetNonSelectPreparedECSqlStatement(deleteSql.c_str(), GetECCrudWriteToken());
+    if (stmt.IsNull())
+        {
+        LOG.errorv("Failed to prepare statement to delete relationship instances from ECClass '%s'.", relClassECSqlName.c_str());
+        return BE_SQLITE_ERROR;
+        }
+
+    stmt->BindVirtualSet(1, std::make_shared<DgnElementIdSet>(relationshipInstanceIds));
+
+    if (stmt->Step() != BE_SQLITE_DONE)
+        LOG.errorv("Failed to delete relationship instances from ECClass '%s'.", relClassECSqlName.c_str());
+
+    return BE_SQLITE_DONE;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
