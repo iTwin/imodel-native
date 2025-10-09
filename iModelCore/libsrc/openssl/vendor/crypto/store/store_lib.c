@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -66,6 +66,7 @@ OSSL_STORE_open_ex(const char *uri, OSSL_LIB_CTX *libctx, const char *propq,
                    OSSL_STORE_post_process_info_fn post_process,
                    void *post_process_data)
 {
+    struct ossl_passphrase_data_st pwdata = { 0 };
     const OSSL_STORE_LOADER *loader = NULL;
     OSSL_STORE_LOADER *fetched_loader = NULL;
     OSSL_STORE_LOADER_CTX *loader_ctx = NULL;
@@ -94,13 +95,20 @@ OSSL_STORE_open_ex(const char *uri, OSSL_LIB_CTX *libctx, const char *propq,
     if ((p = strchr(scheme_copy, ':')) != NULL) {
         *p++ = '\0';
         if (OPENSSL_strcasecmp(scheme_copy, "file") != 0) {
-            if (strncmp(p, "//", 2) == 0)
+            if (HAS_PREFIX(p, "//"))
                 schemes_n--;         /* Invalidate the file scheme */
             schemes[schemes_n++] = scheme_copy;
         }
     }
 
     ERR_set_mark();
+
+    if (ui_method != NULL
+        && (!ossl_pw_set_ui_method(&pwdata, ui_method, ui_data)
+            || !ossl_pw_enable_passphrase_caching(&pwdata))) {
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_CRYPTO_LIB);
+        goto err;
+    }
 
     /*
      * Try each scheme until we find one that could open the URI.
@@ -135,17 +143,28 @@ OSSL_STORE_open_ex(const char *uri, OSSL_LIB_CTX *libctx, const char *propq,
             void *provctx = OSSL_PROVIDER_get0_provider_ctx(provider);
 
             no_loader_found = 0;
-            loader_ctx = fetched_loader->p_open(provctx, uri);
+            if (fetched_loader->p_open_ex != NULL) {
+                loader_ctx =
+                    fetched_loader->p_open_ex(provctx, uri, params,
+                                              ossl_pw_passphrase_callback_dec,
+                                              &pwdata);
+            } else {
+                if (fetched_loader->p_open != NULL &&
+                    (loader_ctx = fetched_loader->p_open(provctx, uri)) != NULL &&
+                    !loader_set_params(fetched_loader, loader_ctx,
+                                       params, propq)) {
+                    (void)fetched_loader->p_close(loader_ctx);
+                    loader_ctx = NULL;
+                }
+            }
             if (loader_ctx == NULL) {
-                OSSL_STORE_LOADER_free(fetched_loader);
-                fetched_loader = NULL;
-            } else if(!loader_set_params(fetched_loader, loader_ctx,
-                                         params, propq)) {
-                (void)fetched_loader->p_close(loader_ctx);
                 OSSL_STORE_LOADER_free(fetched_loader);
                 fetched_loader = NULL;
             }
             loader = fetched_loader;
+
+            /* Clear any internally cached passphrase */
+            (void)ossl_pw_clear_passphrase_cache(&pwdata);
         }
     }
 
@@ -168,23 +187,16 @@ OSSL_STORE_open_ex(const char *uri, OSSL_LIB_CTX *libctx, const char *propq,
     OSSL_TRACE2(STORE, "Opened %s => %p\n", uri, (void *)loader_ctx);
 
     if ((propq != NULL && (propq_copy = OPENSSL_strdup(propq)) == NULL)
-        || (ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL) {
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+        || (ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL)
         goto err;
-    }
 
-    if (ui_method != NULL
-        && (!ossl_pw_set_ui_method(&ctx->pwdata, ui_method, ui_data)
-            || !ossl_pw_enable_passphrase_caching(&ctx->pwdata))) {
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_CRYPTO_LIB);
-        goto err;
-    }
     ctx->properties = propq_copy;
     ctx->fetched_loader = fetched_loader;
     ctx->loader = loader;
     ctx->loader_ctx = loader_ctx;
     ctx->post_process = post_process;
     ctx->post_process_data = post_process_data;
+    ctx->pwdata = pwdata;
 
     /*
      * If the attempt to open with the 'file' scheme loader failed and the
@@ -215,6 +227,8 @@ OSSL_STORE_open_ex(const char *uri, OSSL_LIB_CTX *libctx, const char *propq,
          */
         (void)ossl_store_close_it(&tmpctx);
     }
+    /* Coverity false positive, the reference counting is confusing it */
+    /* coverity[pass_freed_arg] */
     OSSL_STORE_LOADER_free(fetched_loader);
     OPENSSL_free(propq_copy);
     OPENSSL_free(ctx);
@@ -336,7 +350,7 @@ int OSSL_STORE_find(OSSL_STORE_CTX *ctx, const OSSL_STORE_SEARCH *search)
         }
 
         if ((bld = OSSL_PARAM_BLD_new()) == NULL) {
-            ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+            ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_CRYPTO_LIB);
             return 0;
         }
 
@@ -414,12 +428,6 @@ OSSL_STORE_INFO *OSSL_STORE_load(OSSL_STORE_CTX *ctx)
     if (ctx->loader != NULL)
         OSSL_TRACE(STORE, "Loading next object\n");
 
-    if (ctx->cached_info != NULL
-        && sk_OSSL_STORE_INFO_num(ctx->cached_info) == 0) {
-        sk_OSSL_STORE_INFO_free(ctx->cached_info);
-        ctx->cached_info = NULL;
-    }
-
     if (ctx->cached_info != NULL) {
         v = sk_OSSL_STORE_INFO_shift(ctx->cached_info);
     } else {
@@ -480,6 +488,53 @@ OSSL_STORE_INFO *OSSL_STORE_load(OSSL_STORE_CTX *ctx)
     return v;
 }
 
+int OSSL_STORE_delete(const char *uri, OSSL_LIB_CTX *libctx, const char *propq,
+                      const UI_METHOD *ui_method, void *ui_data,
+                      const OSSL_PARAM params[])
+{
+    OSSL_STORE_LOADER *fetched_loader = NULL;
+    char scheme[256], *p;
+    int res = 0;
+    struct ossl_passphrase_data_st pwdata = {0};
+
+    OPENSSL_strlcpy(scheme, uri, sizeof(scheme));
+    if ((p = strchr(scheme, ':')) != NULL)
+        *p++ = '\0';
+    else /* We don't work without explicit scheme */
+        return 0;
+
+    if (ui_method != NULL
+        && (!ossl_pw_set_ui_method(&pwdata, ui_method, ui_data)
+            || !ossl_pw_enable_passphrase_caching(&pwdata))) {
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_CRYPTO_LIB);
+        return 0;
+    }
+
+    OSSL_TRACE1(STORE, "Looking up scheme %s\n", scheme);
+    fetched_loader = OSSL_STORE_LOADER_fetch(libctx, scheme, propq);
+
+    if (fetched_loader != NULL && fetched_loader->p_delete != NULL) {
+        const OSSL_PROVIDER *provider =
+            OSSL_STORE_LOADER_get0_provider(fetched_loader);
+        void *provctx = OSSL_PROVIDER_get0_provider_ctx(provider);
+
+        /*
+         * It's assumed that the loader's delete() method reports its own
+         * errors
+         */
+        OSSL_TRACE1(STORE, "Performing URI delete %s\n", uri);
+        res = fetched_loader->p_delete(provctx, uri, params,
+                                       ossl_pw_passphrase_callback_dec,
+                                       &pwdata);
+    }
+    /* Clear any internally cached passphrase */
+    (void)ossl_pw_clear_passphrase_cache(&pwdata);
+
+    OSSL_STORE_LOADER_free(fetched_loader);
+
+    return res;
+}
+
 int OSSL_STORE_error(OSSL_STORE_CTX *ctx)
 {
     int ret = 1;
@@ -495,14 +550,23 @@ int OSSL_STORE_error(OSSL_STORE_CTX *ctx)
 
 int OSSL_STORE_eof(OSSL_STORE_CTX *ctx)
 {
-    int ret = 1;
+    int ret = 0;
 
-    if (ctx->fetched_loader != NULL)
-        ret = ctx->loader->p_eof(ctx->loader_ctx);
+    if (ctx->cached_info != NULL
+        && sk_OSSL_STORE_INFO_num(ctx->cached_info) == 0) {
+        sk_OSSL_STORE_INFO_free(ctx->cached_info);
+        ctx->cached_info = NULL;
+    }
+
+    if (ctx->cached_info == NULL) {
+        ret = 1;
+        if (ctx->fetched_loader != NULL)
+            ret = ctx->loader->p_eof(ctx->loader_ctx);
 #ifndef OPENSSL_NO_DEPRECATED_3_0
-    if (ctx->fetched_loader == NULL)
-        ret = ctx->loader->eof(ctx->loader_ctx);
+        if (ctx->fetched_loader == NULL)
+            ret = ctx->loader->eof(ctx->loader_ctx);
 #endif
+    }
     return ret != 0;
 }
 
@@ -560,7 +624,7 @@ OSSL_STORE_INFO *OSSL_STORE_INFO_new_NAME(char *name)
     OSSL_STORE_INFO *info = OSSL_STORE_INFO_new(OSSL_STORE_INFO_NAME, NULL);
 
     if (info == NULL) {
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_OSSL_STORE_LIB);
         return NULL;
     }
 
@@ -586,7 +650,7 @@ OSSL_STORE_INFO *OSSL_STORE_INFO_new_PARAMS(EVP_PKEY *params)
     OSSL_STORE_INFO *info = OSSL_STORE_INFO_new(OSSL_STORE_INFO_PARAMS, params);
 
     if (info == NULL)
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_OSSL_STORE_LIB);
     return info;
 }
 
@@ -595,7 +659,7 @@ OSSL_STORE_INFO *OSSL_STORE_INFO_new_PUBKEY(EVP_PKEY *pkey)
     OSSL_STORE_INFO *info = OSSL_STORE_INFO_new(OSSL_STORE_INFO_PUBKEY, pkey);
 
     if (info == NULL)
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_OSSL_STORE_LIB);
     return info;
 }
 
@@ -604,7 +668,7 @@ OSSL_STORE_INFO *OSSL_STORE_INFO_new_PKEY(EVP_PKEY *pkey)
     OSSL_STORE_INFO *info = OSSL_STORE_INFO_new(OSSL_STORE_INFO_PKEY, pkey);
 
     if (info == NULL)
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_OSSL_STORE_LIB);
     return info;
 }
 
@@ -613,7 +677,7 @@ OSSL_STORE_INFO *OSSL_STORE_INFO_new_CERT(X509 *x509)
     OSSL_STORE_INFO *info = OSSL_STORE_INFO_new(OSSL_STORE_INFO_CERT, x509);
 
     if (info == NULL)
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_OSSL_STORE_LIB);
     return info;
 }
 
@@ -622,7 +686,7 @@ OSSL_STORE_INFO *OSSL_STORE_INFO_new_CRL(X509_CRL *crl)
     OSSL_STORE_INFO *info = OSSL_STORE_INFO_new(OSSL_STORE_INFO_CRL, crl);
 
     if (info == NULL)
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_OSSL_STORE_LIB);
     return info;
 }
 
@@ -650,13 +714,8 @@ const char *OSSL_STORE_INFO_get0_NAME(const OSSL_STORE_INFO *info)
 
 char *OSSL_STORE_INFO_get1_NAME(const OSSL_STORE_INFO *info)
 {
-    if (info->type == OSSL_STORE_INFO_NAME) {
-        char *ret = OPENSSL_strdup(info->_.name.name);
-
-        if (ret == NULL)
-            ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
-        return ret;
-    }
+    if (info->type == OSSL_STORE_INFO_NAME)
+        return OPENSSL_strdup(info->_.name.name);
     ERR_raise(ERR_LIB_OSSL_STORE, OSSL_STORE_R_NOT_A_NAME);
     return NULL;
 }
@@ -670,14 +729,8 @@ const char *OSSL_STORE_INFO_get0_NAME_description(const OSSL_STORE_INFO *info)
 
 char *OSSL_STORE_INFO_get1_NAME_description(const OSSL_STORE_INFO *info)
 {
-    if (info->type == OSSL_STORE_INFO_NAME) {
-        char *ret = OPENSSL_strdup(info->_.name.desc
-                                   ? info->_.name.desc : "");
-
-        if (ret == NULL)
-            ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
-        return ret;
-    }
+    if (info->type == OSSL_STORE_INFO_NAME)
+        return OPENSSL_strdup(info->_.name.desc ? info->_.name.desc : "");
     ERR_raise(ERR_LIB_OSSL_STORE, OSSL_STORE_R_NOT_A_NAME);
     return NULL;
 }
@@ -856,10 +909,8 @@ OSSL_STORE_SEARCH *OSSL_STORE_SEARCH_by_name(X509_NAME *name)
 {
     OSSL_STORE_SEARCH *search = OPENSSL_zalloc(sizeof(*search));
 
-    if (search == NULL) {
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+    if (search == NULL)
         return NULL;
-    }
 
     search->search_type = OSSL_STORE_SEARCH_BY_NAME;
     search->name = name;
@@ -871,10 +922,8 @@ OSSL_STORE_SEARCH *OSSL_STORE_SEARCH_by_issuer_serial(X509_NAME *name,
 {
     OSSL_STORE_SEARCH *search = OPENSSL_zalloc(sizeof(*search));
 
-    if (search == NULL) {
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+    if (search == NULL)
         return NULL;
-    }
 
     search->search_type = OSSL_STORE_SEARCH_BY_ISSUER_SERIAL;
     search->name = name;
@@ -888,10 +937,8 @@ OSSL_STORE_SEARCH *OSSL_STORE_SEARCH_by_key_fingerprint(const EVP_MD *digest,
 {
     OSSL_STORE_SEARCH *search = OPENSSL_zalloc(sizeof(*search));
 
-    if (search == NULL) {
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+    if (search == NULL)
         return NULL;
-    }
 
     if (digest != NULL && len != (size_t)EVP_MD_get_size(digest)) {
         ERR_raise_data(ERR_LIB_OSSL_STORE,
@@ -913,10 +960,8 @@ OSSL_STORE_SEARCH *OSSL_STORE_SEARCH_by_alias(const char *alias)
 {
     OSSL_STORE_SEARCH *search = OPENSSL_zalloc(sizeof(*search));
 
-    if (search == NULL) {
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
+    if (search == NULL)
         return NULL;
-    }
 
     search->search_type = OSSL_STORE_SEARCH_BY_ALIAS;
     search->string = (const unsigned char *)alias;
@@ -995,6 +1040,7 @@ OSSL_STORE_CTX *OSSL_STORE_attach(BIO *bp, const char *scheme,
         OSSL_CORE_BIO *cbio = ossl_core_bio_new_from_bio(bp);
 
         if (cbio == NULL
+            || fetched_loader->p_attach == NULL
             || (loader_ctx = fetched_loader->p_attach(provctx, cbio)) == NULL) {
             OSSL_STORE_LOADER_free(fetched_loader);
             fetched_loader = NULL;
@@ -1015,7 +1061,6 @@ OSSL_STORE_CTX *OSSL_STORE_attach(BIO *bp, const char *scheme,
 
     if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL) {
         ERR_clear_last_mark();
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -1033,7 +1078,7 @@ OSSL_STORE_CTX *OSSL_STORE_attach(BIO *bp, const char *scheme,
     ctx->post_process_data = post_process_data;
 
     /*
-     * ossl_store_get0_loader_int will raise an error if the loader for the
+     * ossl_store_get0_loader_int will raise an error if the loader for
      * the scheme cannot be retrieved. But if a loader was successfully
      * fetched then we remove this error from the error stack.
      */
