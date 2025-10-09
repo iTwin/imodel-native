@@ -150,6 +150,7 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         recursive_mutex_t m_mutexReq;
         std::unique_ptr<RunnableRequestBase> m_request;
         uint16_t m_id;
+        uint32_t m_primaryFileDataVer = 0;
         QueryAdaptorCache m_adaptorCache;
         QueryRetryHandler::Ptr m_retryHandler;
         void UpdateSqlFunctions(ConnectionAction);

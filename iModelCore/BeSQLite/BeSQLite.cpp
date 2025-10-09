@@ -654,6 +654,14 @@ int BusyRetry::_OnBusy(int count) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DbFile::GetFileDataVersion(uint32_t& version) const {
+    version = 0;
+    return (DbResult)sqlite3_file_control(m_sqlDb, nullptr, SQLITE_FCNTL_DATA_VERSION, &version);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 int DbFile::TraceCallback(unsigned t, void* data, void* p, void* x) {
     auto db = reinterpret_cast<DbFile*>(data);
     if (!db) return 0;
@@ -3892,8 +3900,17 @@ DbResult Db::AbandonChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Db::_OnDbChangedByOtherConnection()
     {
+    ClearDbCache();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void Db::ClearDbCache()
+    {
     m_dbFile->DeleteCachedPropertyMap();
     m_dbFile->m_blvCache.Clear();
+    m_dbFile->m_statements.Empty();
     }
 
 //---------------------------------------------------------------------------------------
