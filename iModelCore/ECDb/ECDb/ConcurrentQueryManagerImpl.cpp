@@ -176,6 +176,18 @@ void CachedConnection::SyncAttachDbs() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)> cb, std::unique_ptr<RunnableRequestBase> request) {
+    if (m_db.IsDbOpen()) {
+        // Check if the primary file data version has changed
+        uint32_t dataVersion;
+        if (BE_SQLITE_OK == GetPrimaryDb().GetFileDataVersion(dataVersion)) {
+            if (dataVersion != m_primaryFileDataVer) {
+                m_db.ClearECDbCache();
+                m_db.ClearDbCache();
+                m_primaryFileDataVer = dataVersion;
+            }
+        }
+    }
+
     SyncAttachDbs();
     SetRequest(std::move(request));
     cb(m_adaptorCache, *m_request);
@@ -289,6 +301,8 @@ std::shared_ptr<CachedConnection> CachedConnection::Make(ConnectionCache& cache,
     if (mmsize > 0) {
         newConn->m_db.ExecuteSql(SqlPrintfString("PRAGMA mmap_size=%" PRIu32, mmsize));
     }
+
+    cache.GetPrimaryDb().GetFileDataVersion(newConn->m_primaryFileDataVer);
     return newConn;
 }
 

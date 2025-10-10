@@ -9,14 +9,14 @@
 
 #include <stdio.h>       /* for sscanf() */
 #include <string.h>
-#ifndef OPENSSL_NO_SOCK
-# include "../bio/bio_local.h" /* for NI_MAXHOST */
-#endif
 #include <openssl/http.h>
 #include <openssl/httperr.h>
 #include <openssl/bio.h> /* for BIO_snprintf() */
 #include <openssl/err.h>
 #include "internal/cryptlib.h" /* for ossl_assert() */
+#ifndef OPENSSL_NO_SOCK
+# include "internal/bio_addr.h" /* for NI_MAXHOST */
+#endif
 #ifndef NI_MAXHOST
 # define NI_MAXHOST 255
 #endif
@@ -267,6 +267,7 @@ static int use_proxy(const char *no_proxy, const char *server)
         /* strip leading '[' and trailing ']' from escaped IPv6 address */
         sl -= 2;
         strncpy(host, server + 1, sl);
+        host[sl] = '\0';
         server = host;
     }
 
