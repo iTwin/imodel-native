@@ -622,7 +622,7 @@ DbResult DgnDb::DeleteLinkTableRelationships(Utf8StringCR relClassECSqlName, con
     if (relationshipInstanceIds.empty() || Utf8String::IsNullOrEmpty(relClassECSqlName.c_str()))
         return BE_SQLITE_DONE;
 
-    Utf8PrintfString deleteSql("DELETE FROM %s WHERE InVirtualSet(?, ECInstanceId)", relClassECSqlName.c_str());
+    Utf8PrintfString deleteSql("DELETE FROM %s WHERE ECInstanceId IN (SELECT id FROM IdSet(?) OPTIONS ENABLE_EXPERIMENTAL_FEATURES)", relClassECSqlName.c_str());
 
     const auto stmt = GetNonSelectPreparedECSqlStatement(deleteSql.c_str(), GetECCrudWriteToken());
     if (stmt.IsNull())
@@ -631,10 +631,21 @@ DbResult DgnDb::DeleteLinkTableRelationships(Utf8StringCR relClassECSqlName, con
         return BE_SQLITE_ERROR;
         }
 
-    stmt->BindVirtualSet(1, std::make_shared<DgnElementIdSet>(relationshipInstanceIds));
+    auto& binder = stmt->GetBinder(1);
+    for (const auto& id : relationshipInstanceIds)
+        {
+        if (ECSqlStatus::Success != binder.AddArrayElement().BindId(id))
+            {
+            LOG.errorv("Failed to bind relationship instance ID for deletion from ECClass '%s'.", relClassECSqlName.c_str());
+            return BE_SQLITE_ERROR;
+            }
+        }
 
     if (stmt->Step() != BE_SQLITE_DONE)
+        {
         LOG.errorv("Failed to delete relationship instances from ECClass '%s'.", relClassECSqlName.c_str());
+        return BE_SQLITE_ERROR;
+        }
 
     return BE_SQLITE_DONE;
     }
