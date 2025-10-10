@@ -97,10 +97,10 @@ ECN::ECPropertyCP PropertyNameExp::GetVirtualProperty() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool PropertyNameExp::IsWildCard() const {
-    if (m_resolvedPropertyPath.Size() == 1)  {
-        return Exp::IsAsteriskToken(m_resolvedPropertyPath[0].GetName());
-    }
-    return false;
+    // checks if the last part of the property path is asterisk or not. If asterisk that means replacement is yet to be done. 
+    // Used in CommonTableBlockExp while expanding derived properties. if wild card that means replacement is yet to be done, 
+    // and all the links to derived properties should be done after replacement
+    return Exp::IsAsteriskToken(m_resolvedPropertyPath.Last().GetName());  
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -579,6 +579,25 @@ bool PropertyNameExp::IsLhsAssignmentOperandExpression() const
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool PropertyNameExp::IsPropertyFromCommonTableBlockWithColumns() const
+    {
+    if (m_classRefExp == nullptr) {
+        return false;
+    }
+    bool isFromCommonTableBlockName = GetClassRefExp()->GetType() == Exp::Type::CommonTableBlockName;
+    if(!isFromCommonTableBlockName)
+        return false;
+    
+    CommonTableBlockExp const* commonTableBlockExp = GetClassRefExp()->GetAs<CommonTableBlockNameExp>().GetBlock();
+    if(commonTableBlockExp == nullptr)
+        return false;
+    
+    return commonTableBlockExp->GetColumns().size() != 0;  // check if the block has columns or not...if it has columns then no issues otherwise if it is a cte without columns we should then treat it as a subquery so the whole flow changes
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void PropertyNameExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: PropertyNameExp
@@ -770,7 +789,7 @@ BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List c
 
     m_nativeSqlSnippets.clear();
     Utf8String alias = m_linkedTo.GetColumnAlias();
-    if (alias.empty() || m_linkedTo.OriginateInASubQuery())
+    if (alias.empty() || m_linkedTo.OriginateInASubQuery() || m_linkedTo.OriginateInACommonTableBlockWithNoColumns())
         alias = m_linkedTo.GetNestedAlias();
 
     if (!alias.empty())

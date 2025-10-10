@@ -81,6 +81,7 @@ struct DerivedPropertyExp final : Exp
         }
         bool IsComputed() const;
         bool OriginateInASubQuery() const { return nullptr != this->FindParent(Exp::Type::Subquery); }
+        bool OriginateInACommonTableBlockWithNoColumns() const;
         bool IsWildCard() const;
         ExtractPropertyValueExp const* TryGetExtractPropExp() const;
     };
