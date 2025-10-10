@@ -726,6 +726,32 @@ int bcvManifestParse(
   return rc;
 }
 
+/*
+** Return the number of bytes allocated for the manifest object, not 
+** including malloc() overhead.
+*/
+i64 bcvManifestSize(Manifest *pMan){
+  int ii;
+  i64 nRet = 0;
+
+  nRet += sizeof(Manifest) + (pMan->nDb+1)*sizeof(ManifestDb);
+  nRet += sqlite3_msize(pMan->pFree);
+  if( pMan->bDelFree ){
+    nRet += sqlite3_msize(pMan->aDelBlk);
+  }
+  for(ii=0; ii<pMan->nDb; ii++){
+    ManifestDb *pManDb = &pMan->aDb[ii];
+    if( pManDb->nBlkLocalAlloc ){
+      nRet += sqlite3_msize(pManDb->aBlkLocal);
+    }
+    if( pManDb->nBlkOrigAlloc ){
+      nRet += sqlite3_msize(pManDb->aBlkOrig);
+    }
+  }
+
+  return nRet;
+}
+
 int bcvManifestParseCopy(
   const u8 *a, int n, 
   const char *zETag, 
