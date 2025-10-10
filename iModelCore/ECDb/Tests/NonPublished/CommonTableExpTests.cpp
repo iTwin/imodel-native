@@ -2289,6 +2289,183 @@ TEST_F(CommonTableExpTestFixture, Invalid_SQL_Tests) {
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
+
+    {
+        auto ecsql = R"(WITH e(a,b) AS (SELECT f.* FROM (select 100, 200) f) SELECT a, b FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(2, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("b", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("100", stmt.GetValueText(0));
+        ASSERT_STREQ("200", stmt.GetValueText(1));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+        auto ecsql = R"(WITH e AS (SELECT f.* FROM (select 100, 200) f) SELECT * FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(2, stmt.GetColumnCount());
+        ASSERT_STREQ("100", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("200", stmt.GetColumnInfo(1).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("100", stmt.GetValueText(0));
+        ASSERT_STREQ("200", stmt.GetValueText(1));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+        auto ecsql = R"(WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id LIMIT 3) FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    {
+        auto ecsql = R"( WITH e AS (SELECT f.* FROM Bis.Element f) SELECT Model.Id FROM e limit 1)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+        auto ecsql = R"( select * from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT Model.Id FROM e limit 1))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+        auto ecsql = R"( WITH e AS (SELECT f.* FROM Bis.Element f limit 1) SELECT Model.Id FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+        auto ecsql = R"( select a.* from (WITH e AS (SELECT f.* FROM Bis.Element f limit 1) SELECT Model.Id FROM e)a)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+        auto ecsql = R"(WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId limit 1)) a FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("76", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    {
+        auto ecsql = R"(select g.* from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId limit 1)) a FROM e) g)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("76", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    {
+        auto ecsql = R"(WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId) limit 1) a FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("76", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    {
+        auto ecsql = R"(select a from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId) limit 1) a FROM e))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("76", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    {
+        auto ecsql = R"(select y.a from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId) limit 1) a FROM e) y)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("76", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    {
+        auto ecsql = R"(select y.* from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId) limit 1) a FROM e) y)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("76", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    }
+    {
+        auto ecsql = R"(WITH e AS (SELECT Model.* FROM Bis.Element f) SELECT Model FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+    {
+        auto ecsql = R"(WITH e AS (SELECT Model.* FROM Bis.Element f) SELECT * FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+    {
+        auto ecsql = R"(WITH e AS (SELECT f.Model.* FROM Bis.Element f) SELECT * FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+    {
+        auto ecsql = R"(WITH e(m) AS (SELECT f.Model FROM Bis.Element f) SELECT * FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+    {
+        auto ecsql = R"(WITH e(m) AS (SELECT f.Model FROM Bis.Element f) SELECT m.Id FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+    {
+        auto ecsql = R"(WITH e(m, n) AS (SELECT f.Model FROM Bis.Element f) SELECT * FROM e)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CommonTableExpTestFixture, Debug_Tests) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("Debug_Tests.ecdb"));
         {
