@@ -1466,6 +1466,25 @@ private:
     PropertyList m_propertyList;
     CachedValue<StandaloneECEnablerPtr> m_defaultStandaloneEnabler;
 
+    //! Finds an available new name for the property by prepending schema name and appending underscores
+    //! @param[in] property The property for which to find an available name
+    //! @param[out] existingProperty If an existing local property is hit which is compatible, it will be returned so it can be used instead.
+    Utf8String FindAvailablePropertyName(ECPropertyCP property, ECPropertyP& existingProperty) const;
+    //! Adds the property to the internal map and vector and raises respective events
+    ECObjectsStatus AddPropertyInternal(ECPropertyP& pProperty, bool resolveConflicts);
+    //! Finds an appropriate name for the pProperty and adds it 
+    ECObjectsStatus AddPropertyResolveConflicts(ECPropertyP& property);
+    //! Checks if property can be added, resolves conflicts and eventually calls AddPropertyInternal
+    //! @param[in] pProperty The property to add
+    //! @param[in] resolveConflicts If true, conflicting properties will be renamed to avoid clashes.
+    //! Renaming follows the following rules:
+    //! - We rename the property by prepending the schema alias and appending an underscore and then check if this still clashes
+    //!   with an existing property.
+    //! - We keep adding underscores until we either find an available name, or hit an existing local property
+    //!   which is compatible, in which case we will delete pProperty and return the existing property instead, and return SUCCESS.
+    //! - For renamed properties, we add the `RenamedPropertiesMapping` custom attribute.
+    //! If the flag is false, handling is more simple, it will just return NamedItemAlreadyExists if a local property already exists,
+    //! and fail if an incompatible base property exists
     ECObjectsStatus AddProperty (ECPropertyP& pProperty, bool resolveConflicts = false);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
     ECObjectsStatus FindPropertyConflicts(ECPropertyCP prop, ECPropertyP &baseProp, Utf8StringR newName, Utf8StringR errorMessage, bool resolveConflicts);
@@ -1508,7 +1527,7 @@ protected:
     ECClass (ECClassType classType, ECSchemaCR schema);
     virtual ~ECClass();
 
-    ECObjectsStatus AddProperty(ECPropertyP pProperty, Utf8StringCR name, bool resolveConflicts = false);
+    ECObjectsStatus AddProperty(ECPropertyP& pProperty, Utf8StringCR name, bool resolveConflicts = false);
     virtual ECObjectsStatus _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true);
     virtual ECObjectsStatus _RemoveBaseClass(ECClassCR baseClass);
 
@@ -1547,6 +1566,9 @@ protected:
     virtual bool _Validate() const = 0;
 
     void InvalidateDefaultStandaloneEnabler() const;
+
+    template<typename TProperty>
+    ECObjectsStatus CreatePropertyInternal(TProperty*& ecProperty, Utf8StringCR name, bool resolveConflicts);
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this class is defined in
     ECSchemaR GetSchemaR() {return const_cast<ECSchemaR>(m_schema);}

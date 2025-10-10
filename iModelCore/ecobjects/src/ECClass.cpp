@@ -600,65 +600,150 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bo
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConflicts)
+ECObjectsStatus ECClass::AddPropertyInternal(ECPropertyP& pProperty, bool resolveConflicts)
     {
-    ECPropertyP baseProperty = nullptr;
-    Utf8String newName, errorMessage;
-    ECObjectsStatus status = FindPropertyConflicts(pProperty, baseProperty, newName, errorMessage, resolveConflicts);
-    switch (status)
-        {
-        case ECObjectsStatus::Success :
-            break;
-        case ECObjectsStatus::NamedItemAlreadyExists :
-            LOG.errorv("Cannot add property '%s' because it already exists in this ECClass (%s:%s)", 
-                pProperty->GetName().c_str(), GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
-            return ECObjectsStatus::NamedItemAlreadyExists;
-        case ECObjectsStatus::DataTypeMismatch :
-        case ECObjectsStatus::InvalidPrimitiveOverrride :
-            if (!Utf8String::IsNullOrEmpty(errorMessage.c_str()))
-                LOG.error(errorMessage.c_str());
-            else
-                {
-                Utf8String propTypeName = pProperty->GetTypeName();
-                LOG.errorv("Could not add property '%s' of type '%s' to '%s:%s' due to a data type mismatch",
-                    pProperty->GetName().c_str(), propTypeName.c_str(), GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
-                }
-            return status;
-        case ECObjectsStatus::CaseCollision :
-            LOG.errorv("Could not add property '%s' to '%s' due to case-collision with %s:%s", 
-                pProperty->GetName().c_str(), GetFullName(), baseProperty->GetClass().GetFullName(), baseProperty->GetName().c_str());
-            return ECObjectsStatus::CaseCollision;
-        default :
-            LOG.errorv("Could not add property '%s' to '%s' due to unknown error", pProperty->GetName().c_str(), GetFullName());
-            return ECObjectsStatus::Error;
-        }
-
-    if (!newName.Equals(pProperty->GetName()))
-        {
-        if (!newName.EqualsIAscii(pProperty->GetName()))
-            AddPropertyMapping(pProperty->GetName().c_str(), newName.c_str());
-        pProperty->SetDisplayLabel(pProperty->GetName());
-        pProperty->SetName(newName);
-        }
-    if (nullptr != baseProperty)
-        pProperty->SetBaseProperty(baseProperty);
-
-
     m_propertyMap.insert (bpair<Utf8CP, ECPropertyP> (pProperty->GetName().c_str(), pProperty));
     m_propertyList.push_back(pProperty);
-
     InvalidateDefaultStandaloneEnabler();
-
     for (ECClassP derivedClass : m_derivedClasses)
-        status = derivedClass->OnBaseClassPropertyAdded (*pProperty, resolveConflicts);
-    
-    if (ECObjectsStatus::Success != status)
         {
-        RemoveProperty(*pProperty);
-        return status;
+        ECObjectsStatus status = derivedClass->OnBaseClassPropertyAdded (*pProperty, resolveConflicts);
+        if (ECObjectsStatus::Success != status)
+            {
+            RemoveProperty(*pProperty);
+            return status;
+            }
         }
 
     return ECObjectsStatus::Success;
+    }
+
+Utf8String ECClass::FindAvailablePropertyName(ECPropertyCP property, ECPropertyP& existingProperty) const
+    {
+    Utf8PrintfString newName("%s_%s_", GetSchema().GetAlias().c_str(), property->GetName().c_str());
+    existingProperty = nullptr;
+    while(true) // TODO: This has been an infinite loop in the old impl as well, but we may want to limit the number of loops
+        {
+        ECPropertyP preExistingProperty = GetPropertyP(newName.c_str(), true);
+        if (preExistingProperty == nullptr)
+            return newName;
+
+        Utf8String errorMsg;
+        if (ECObjectsStatus::Success == CanPropertyBeOverridden(*preExistingProperty, *property, errorMsg))
+            {
+            ECPropertyP localProperty = GetPropertyP(newName.c_str(), false);
+            if(nullptr != localProperty)
+                {
+                // found a local property which is compatible
+                existingProperty = localProperty;
+                return existingProperty->GetName();
+                }
+
+            return newName;
+            }
+
+
+        newName.append("_");
+        }
+    }
+
+ECObjectsStatus ECClass::AddPropertyResolveConflicts(ECPropertyP& property)
+    {
+    ECPropertyP existingProperty;
+    Utf8String name = FindAvailablePropertyName(property, existingProperty);
+
+    if(nullptr != existingProperty)
+        {
+        property = existingProperty;
+        return ECObjectsStatus::Success;
+        }
+
+    ECPropertyP baseProperty = GetBaseClassPropertyP(name.c_str());
+    if(nullptr != baseProperty)
+        {
+        if(!baseProperty->GetName().Equals(property->GetName()))
+            {
+            name = baseProperty->GetName();
+            }
+
+        property->SetBaseProperty(baseProperty);
+        }
+
+    if (!name.Equals(property->GetName()))
+        {
+        if (!name.EqualsIAscii(property->GetName()))
+            AddPropertyMapping(property->GetName().c_str(), name.c_str());
+        property->SetDisplayLabel(property->GetName());
+        property->SetName(name);
+        }
+
+    return AddPropertyInternal(property, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConflicts)
+    {
+    // Step 1: If property does not exist, we can just add it
+    // There is no base property, no potential renaming, no compatibility check
+    if (nullptr == GetPropertyP (pProperty->GetName().c_str(), true))
+        {
+        return AddPropertyInternal(pProperty, resolveConflicts);
+        }
+
+    ECPropertyP localProperty = GetPropertyP(pProperty->GetName().c_str(), false);
+    if(nullptr != localProperty)
+        {
+        Utf8String errorMsg;
+        ECObjectsStatus status = CanPropertyBeOverridden(*localProperty, *pProperty, errorMsg);
+        if(ECObjectsStatus::Success == status) // existing local property is compatible with the incoming one
+            {
+            pProperty = localProperty;
+            return ECObjectsStatus::Success;
+            }
+
+        if(!resolveConflicts)
+            {
+            LOG.errorv("Cannot add property '%s' because it already exists in this ECClass (%s:%s)", 
+                pProperty->GetName().c_str(), GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
+            return ECObjectsStatus::NamedItemAlreadyExists;
+            }
+
+        return AddPropertyResolveConflicts(pProperty);
+        }
+
+    ECPropertyP baseProperty = GetBaseClassPropertyP(pProperty->GetName().c_str());
+    if(nullptr == baseProperty)
+        {
+        LOG.errorv("Unexpected error: This code path should not be reached. Cannot add property '%s' to ECClass (%s:%s). GetBaseClassPropertyP has to return a value at this point.", 
+            pProperty->GetName().c_str(), GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    Utf8String errorMsg;
+    ECObjectsStatus status = CanPropertyBeOverridden(*baseProperty, *pProperty, errorMsg);
+    if(ECObjectsStatus::Success == status) // existing local property is compatible with the incoming one
+        {
+        return AddPropertyInternal(pProperty, resolveConflicts);
+        }
+    if(!resolveConflicts)
+        return status;
+
+    Utf8String nameForRename = pProperty->GetName();
+    if (!baseProperty->GetName().Equals(pProperty->GetName()))
+        {
+        if (!resolveConflicts)
+            {
+            LOG.errorv("Could not add property '%s' to '%s' due to case-collision with %s:%s", 
+                pProperty->GetName().c_str(), GetFullName(), baseProperty->GetClass().GetFullName(), baseProperty->GetName().c_str());
+            return ECObjectsStatus::CaseCollision;
+            }
+
+        nameForRename = baseProperty->GetName();
+        }
+
+    return AddPropertyResolveConflicts(pProperty);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1197,7 +1282,7 @@ ECObjectsStatus ECClass::RemoveProperty (Utf8StringCR name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::AddProperty (ECPropertyP ecProperty, Utf8StringCR name, bool resolveConflicts)
+ECObjectsStatus ECClass::AddProperty (ECPropertyP& ecProperty, Utf8StringCR name, bool resolveConflicts)
     {
     ECObjectsStatus status = ecProperty->SetName (name);
     if (ECObjectsStatus::Success != status)
@@ -1206,21 +1291,51 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP ecProperty, Utf8StringCR name,
     return AddProperty (ecProperty, resolveConflicts);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+template<typename TProperty>
+ECObjectsStatus ECClass::CreatePropertyInternal(TProperty*& ecProperty, Utf8StringCR name, bool resolveConflicts)
+    {
+    ECPropertyP outProperty = ecProperty;
+    ECObjectsStatus status = AddProperty(outProperty, name, resolveConflicts);
+    if (status != ECObjectsStatus::Success)
+        {
+        delete ecProperty;
+        ecProperty = nullptr;
+        return status;
+        }
+
+    if (outProperty != ecProperty)
+        {
+        delete ecProperty;
+        ecProperty = nullptr;
+        ecProperty = dynamic_cast<TProperty*>(outProperty);
+        if (ecProperty == nullptr)
+            {
+            // This should never happen if AddProperty correctly validates compatibility
+            BeAssert(false && "AddProperty returned incompatible property type");
+            return ECObjectsStatus::Error;
+            }
+        }
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProperty, Utf8StringCR name, PrimitiveType primitiveType, bool resolveConflicts)
     {
     ecProperty = new PrimitiveECProperty(*this);
-    ecProperty->SetType(primitiveType);
-    ECObjectsStatus status = AddProperty(ecProperty, name, resolveConflicts);
-    if (status != ECObjectsStatus::Success)
+    ECObjectsStatus status = ecProperty->SetType(primitiveType);
+    if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
         return status;
         }
-    return ECObjectsStatus::Success;
+
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1229,15 +1344,14 @@ ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProper
 ECObjectsStatus ECClass::CreateEnumerationProperty(PrimitiveECPropertyP & ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType)
     {
     ecProperty = new PrimitiveECProperty(*this);
-    ecProperty->SetType(enumerationType);
-    ECObjectsStatus status = AddProperty(ecProperty, name);
-    if (status != ECObjectsStatus::Success)
+    ECObjectsStatus status = ecProperty->SetType(enumerationType);
+    if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
         return status;
         }
-    return ECObjectsStatus::Success;
+    return CreatePropertyInternal(ecProperty, name, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1247,15 +1361,14 @@ ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, Ut
     {
     ecProperty = new StructECProperty(*this);
     ECObjectsStatus status = ecProperty->SetType(structType);
-    if (ECObjectsStatus::Success == status)
-        status = AddProperty(ecProperty, name);
     if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
         return status;
         }
-    return ECObjectsStatus::Success;
+
+    return CreatePropertyInternal(ecProperty, name, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1264,14 +1377,7 @@ ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, Ut
 ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP &ecProperty, Utf8StringCR name)
     {
     ecProperty = new PrimitiveArrayECProperty(*this);
-    ECObjectsStatus status = AddProperty(ecProperty, name);
-    if (status != ECObjectsStatus::Success)
-        {
-        delete ecProperty;
-        ecProperty = NULL;
-        return status;
-        }
-    return ECObjectsStatus::Success;
+    return CreatePropertyInternal(ecProperty, name, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1280,15 +1386,14 @@ ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP
 ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP &ecProperty, Utf8StringCR name, PrimitiveType primitiveType)
     {
     ecProperty = new PrimitiveArrayECProperty(*this);
-    ecProperty->SetPrimitiveElementType (primitiveType);
-    ECObjectsStatus status = AddProperty(ecProperty, name);
-    if (status != ECObjectsStatus::Success)
+    ECObjectsStatus status = ecProperty->SetPrimitiveElementType (primitiveType);
+    if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
         return status;
         }
-    return ECObjectsStatus::Success;
+    return CreatePropertyInternal(ecProperty, name, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1297,15 +1402,14 @@ ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP
 ECObjectsStatus ECClass::CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType)
     {
     ecProperty = new PrimitiveArrayECProperty(*this);
-    ecProperty->SetType(enumerationType);
-    ECObjectsStatus status = AddProperty(ecProperty, name);
-    if (status != ECObjectsStatus::Success)
+    ECObjectsStatus status = ecProperty->SetType(enumerationType);
+    if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
         return status;
         }
-    return ECObjectsStatus::Success;
+    return CreatePropertyInternal(ecProperty, name, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1315,15 +1419,14 @@ ECObjectsStatus ECClass::CreateStructArrayProperty (StructArrayECPropertyP &ecPr
     {
     ecProperty = new StructArrayECProperty(*this);
     ECObjectsStatus status = ecProperty->SetStructElementType(structType);
-    if (ECObjectsStatus::Success == status)
-        status = AddProperty(ecProperty, name);
     if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
         ecProperty = NULL;
         return status;
         }
-    return ECObjectsStatus::Success;
+
+    return CreatePropertyInternal(ecProperty, name, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2425,15 +2528,14 @@ ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& e
     {
     ecProperty = new NavigationECProperty(*this);
     ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
-    if (ECObjectsStatus::Success == status)
-        status = AddProperty(ecProperty, name);
-
     if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
-        ecProperty = nullptr;
+        ecProperty = NULL;
+        return status;
         }
-    return status;
+
+    return CreatePropertyInternal(ecProperty, name, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -4198,15 +4300,14 @@ ECObjectsStatus ECRelationshipClass::CreateNavigationProperty(NavigationECProper
     {
     ecProperty = new NavigationECProperty(*this);
     ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
-    if (ECObjectsStatus::Success == status)
-        status = AddProperty(ecProperty, name);
-
     if (ECObjectsStatus::Success != status)
         {
         delete ecProperty;
-        ecProperty = nullptr;
+        ecProperty = NULL;
+        return status;
         }
-    return status;
+
+    return CreatePropertyInternal(ecProperty, name, false);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
