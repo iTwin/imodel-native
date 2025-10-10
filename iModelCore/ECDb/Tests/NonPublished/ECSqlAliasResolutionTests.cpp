@@ -100,7 +100,9 @@ TEST_F(ECSqlAliasResolutionTestFixture, SubqueryAliasWithCte) {
     ASSERT_ECSQL("WITH e AS (SELECT * FROM Bis.Element) SELECT (SELECT ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id) FROM e");
     ASSERT_ECSQL("WITH e AS (SELECT * FROM Bis.Element) SELECT e.Model.Id FROM e");
     ASSERT_ECSQL("WITH e AS (SELECT * FROM Bis.Element f) SELECT e.Model.Id FROM e");
+    ASSERT_ECSQL("WITH e AS (SELECT f.* FROM Bis.Element f) SELECT e.Model.Id FROM e");
     ASSERT_ECSQL("WITH e AS (SELECT * FROM Bis.Element) SELECT (SELECT ECInstanceId FROM (SELECT m.ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id)) FROM e");
+    ASSERT_ECSQL("WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT m.ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id)) FROM e");
     ASSERT_ECSQL("WITH c(ECInstanceId) AS (SELECT ECInstanceId FROM bis.SpatialCategory) SELECT c.ECInstanceId, m.ECInstanceId FROM c JOIN bis.Model m ON m.ECInstanceId IN (SELECT e.Model.Id FROM bis.GeometricElement3d e WHERE e.Category.Id = c.ECInstanceId)");
     ASSERT_ECSQL("WITH c AS (SELECT ECInstanceId FROM bis.SpatialCategory) SELECT c.ECInstanceId, m.ECInstanceId FROM c JOIN bis.Model m ON m.ECInstanceId IN (SELECT e.Model.Id FROM bis.GeometricElement3d e WHERE e.Category.Id = c.ECInstanceId)");
     ASSERT_ECSQL("WITH c AS (SELECT f.ECInstanceId FROM bis.SpatialCategory f) SELECT c.ECInstanceId, m.ECInstanceId FROM c JOIN bis.Model m ON m.ECInstanceId IN (SELECT e.Model.Id FROM bis.GeometricElement3d e WHERE e.Category.Id = c.ECInstanceId)");
