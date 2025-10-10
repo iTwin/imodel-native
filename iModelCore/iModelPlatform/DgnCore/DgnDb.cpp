@@ -70,10 +70,10 @@ Napi::String DgnDb::GetJsClassName(DgnElementId id) {
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDb::CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args) {
+Napi::Value DgnDb::CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args) {
     VerifyMainThread(); // should never be called except from main thread
     if (obj == nullptr || !IsMainThread())
-        return;
+        return Napi::Value();
 
     auto func = obj.Get(methodName);
     if (!func.IsFunction()) {
@@ -81,7 +81,7 @@ void DgnDb::CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi
         err += methodName;
         BeNapi::ThrowJsException(obj.Env(), err.c_str(), (int) DgnDbStatus::BadArg);
     }
-    func.As<Napi::Function>().Call(obj, args);
+    return func.As<Napi::Function>().Call(obj, args);
 }
 
 /*---------------------------------------------------------------------------------**//**
