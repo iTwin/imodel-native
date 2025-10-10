@@ -3243,7 +3243,16 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
             BeJsGeomUtils::DRange2dFromJson(extentRange, info[0].As<Napi::Object>());
 
         bool includeWorld = ARGUMENT_IS_BOOL(1) ? info[1].As<Napi::Boolean>().Value() : false;
-        bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr, includeWorld );
+        
+        Utf8CP unitFilter = nullptr;
+        Utf8String unitFilterStr;
+        if (ARGUMENT_IS_STRING(2))
+            {
+            unitFilterStr = info[2].As<Napi::String>().Utf8Value();
+            unitFilter = unitFilterStr.c_str();
+            }
+
+        bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr, includeWorld, unitFilter);
 
         uint32_t index = 0;
         auto ret = Napi::Array::New(info.Env(), listOfCRS.size());
@@ -3268,7 +3277,12 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
 
     static Napi::Value GetAvailableCRSUnitNames(NapiInfoCR info)
         {
-        bvector<Utf8String> unitNames = GeoCoordinates::BaseGCS::GetUnitNames();
+       bvector<Utf8String> const* unitNamesPtr = GeoCoordinates::BaseGCS::GetUnitNames();
+        
+        if (unitNamesPtr == nullptr)
+            return Napi::Array::New(info.Env(), 0);
+            
+        bvector<Utf8String> const& unitNames = *unitNamesPtr;
         
         uint32_t index = 0;
         auto ret = Napi::Array::New(info.Env(), unitNames.size());
@@ -3291,7 +3305,6 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         });
 
         exports.Set("GeoServices", t);
-`
         SET_CONSTRUCTOR(t);
         }
     };

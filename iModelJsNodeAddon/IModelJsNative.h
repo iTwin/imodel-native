@@ -640,7 +640,7 @@ struct CRSListResponseProps
 struct GeoServicesInterop
 {
     static BentleyStatus GetGeographicCRSInterpretation(BeJsValue, BeJsConst);
-    static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent, bool includeWorld);
+    static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent, bool includeWorld, Utf8CP unitFilter = nullptr);
 };
 
 //=======================================================================================
