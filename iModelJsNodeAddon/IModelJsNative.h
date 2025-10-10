@@ -634,6 +634,7 @@ struct CRSListResponseProps
     Utf8String m_description;
     bool m_deprecated;
     DRange2d m_crsExtent;
+    Utf8String m_unit;    
     };
 
 struct GeoServicesInterop

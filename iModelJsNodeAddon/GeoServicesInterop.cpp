@@ -100,11 +100,14 @@ bvector<CRSListResponseProps> GeoServicesInterop::GetListOfCRS(DRange2dCP extent
             if (!extentRange.IntersectsWith(crsRange))
                 continue;
             }
-
+        Utf8String unitStr;
+        crs->GetUnits(unitStr);
         props.m_name = Utf8String(crs->GetName());
         props.m_description = Utf8String(crs->GetDescription());
         props.m_deprecated = crs->IsDeprecated();
         props.m_crsExtent = crsRange;
+        props.m_unit = unitStr;
+
         listOfCRS.push_back(props);
         }
     
