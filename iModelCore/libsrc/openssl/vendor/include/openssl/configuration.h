@@ -47,6 +47,9 @@ extern "C" {
 # ifndef OPENSSL_NO_ASAN
 #  define OPENSSL_NO_ASAN
 # endif
+# ifndef OPENSSL_NO_BROTLI
+#  define OPENSSL_NO_BROTLI
+# endif
 # ifndef OPENSSL_NO_CRYPTO_MDEBUG
 #  define OPENSSL_NO_CRYPTO_MDEBUG
 # endif
@@ -110,6 +113,12 @@ extern "C" {
 # ifndef OPENSSL_NO_STATIC_ENGINE
 #  define OPENSSL_NO_STATIC_ENGINE
 # endif
+# ifndef OPENSSL_NO_ZLIB
+#  define OPENSSL_NO_ZLIB
+# endif
+# ifndef OPENSSL_NO_ZSTD
+#  define OPENSSL_NO_ZSTD
+# endif
 
 
 /* Generate 80386 code? */
@@ -132,6 +141,12 @@ extern "C" {
 # endif
 
 # define RC4_INT unsigned int
+
+# if defined(OPENSSL_NO_COMP) || (defined(OPENSSL_NO_BROTLI) && defined(OPENSSL_NO_ZSTD) && defined(OPENSSL_NO_ZLIB))
+#  define OPENSSL_NO_COMP_ALG
+# else
+#  undef  OPENSSL_NO_COMP_ALG
+# endif
 
 # ifdef  __cplusplus
 }
