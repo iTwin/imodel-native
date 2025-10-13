@@ -695,6 +695,13 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
     ECPropertyP localProperty = GetPropertyP(pProperty->GetName().c_str(), false);
     if(nullptr != localProperty)
         {
+        if(!resolveConflicts)
+            { // Even though we may be able to return the found property, if resolveConflicts is false we need to return an error due to contract.
+            LOG.errorv("Cannot add property '%s' because it already exists in this ECClass (%s:%s)", 
+                pProperty->GetName().c_str(), GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
+            return ECObjectsStatus::NamedItemAlreadyExists;
+            }
+
         Utf8String errorMsg;
         ECObjectsStatus status = CanPropertyBeOverridden(*localProperty, *pProperty, errorMsg);
         if(ECObjectsStatus::Success == status) // existing local property is compatible with the incoming one
@@ -703,12 +710,6 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
             return ECObjectsStatus::Success;
             }
 
-        if(!resolveConflicts)
-            {
-            LOG.errorv("Cannot add property '%s' because it already exists in this ECClass (%s:%s)", 
-                pProperty->GetName().c_str(), GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
-            return ECObjectsStatus::NamedItemAlreadyExists;
-            }
 
         return AddPropertyResolveConflicts(pProperty);
         }
@@ -721,6 +722,13 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
         return ECObjectsStatus::Error;
         }
 
+    if (!resolveConflicts && !baseProperty->GetName().Equals(pProperty->GetName()))
+        {
+        LOG.errorv("Could not add property '%s' to '%s' due to case-collision with %s:%s", 
+            pProperty->GetName().c_str(), GetFullName(), baseProperty->GetClass().GetFullName(), baseProperty->GetName().c_str());
+        return ECObjectsStatus::CaseCollision;
+        }
+
     Utf8String errorMsg;
     ECObjectsStatus status = CanPropertyBeOverridden(*baseProperty, *pProperty, errorMsg);
     if(ECObjectsStatus::Success == status) // existing local property is compatible with the incoming one
@@ -728,21 +736,9 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
         pProperty->SetBaseProperty(baseProperty);
         return AddPropertyInternal(pProperty, resolveConflicts);
         }
+
     if(!resolveConflicts)
         return status;
-
-    Utf8String nameForRename = pProperty->GetName();
-    if (!baseProperty->GetName().Equals(pProperty->GetName()))
-        {
-        if (!resolveConflicts)
-            {
-            LOG.errorv("Could not add property '%s' to '%s' due to case-collision with %s:%s", 
-                pProperty->GetName().c_str(), GetFullName(), baseProperty->GetClass().GetFullName(), baseProperty->GetName().c_str());
-            return ECObjectsStatus::CaseCollision;
-            }
-
-        nameForRename = baseProperty->GetName();
-        }
 
     return AddPropertyResolveConflicts(pProperty);
     }
@@ -1342,7 +1338,7 @@ ECObjectsStatus ECClass::CreatePrimitiveProperty (PrimitiveECPropertyP &ecProper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreateEnumerationProperty(PrimitiveECPropertyP & ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType)
+ECObjectsStatus ECClass::CreateEnumerationProperty(PrimitiveECPropertyP & ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType, bool resolveConflicts)
     {
     ecProperty = new PrimitiveECProperty(*this);
     ECObjectsStatus status = ecProperty->SetType(enumerationType);
@@ -1352,13 +1348,13 @@ ECObjectsStatus ECClass::CreateEnumerationProperty(PrimitiveECPropertyP & ecProp
         ecProperty = NULL;
         return status;
         }
-    return CreatePropertyInternal(ecProperty, name, false);
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, Utf8StringCR name, ECStructClassCR structType)
+ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, Utf8StringCR name, ECStructClassCR structType, bool resolveConflicts)
     {
     ecProperty = new StructECProperty(*this);
     ECObjectsStatus status = ecProperty->SetType(structType);
@@ -1369,22 +1365,22 @@ ECObjectsStatus ECClass::CreateStructProperty (StructECPropertyP &ecProperty, Ut
         return status;
         }
 
-    return CreatePropertyInternal(ecProperty, name, false);
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP &ecProperty, Utf8StringCR name)
+ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP &ecProperty, Utf8StringCR name, bool resolveConflicts)
     {
     ecProperty = new PrimitiveArrayECProperty(*this);
-    return CreatePropertyInternal(ecProperty, name, false);
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP &ecProperty, Utf8StringCR name, PrimitiveType primitiveType)
+ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP &ecProperty, Utf8StringCR name, PrimitiveType primitiveType, bool resolveConflicts)
     {
     ecProperty = new PrimitiveArrayECProperty(*this);
     ECObjectsStatus status = ecProperty->SetPrimitiveElementType (primitiveType);
@@ -1394,13 +1390,13 @@ ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP
         ecProperty = NULL;
         return status;
         }
-    return CreatePropertyInternal(ecProperty, name, false);
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType)
+ECObjectsStatus ECClass::CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType, bool resolveConflicts)
     {
     ecProperty = new PrimitiveArrayECProperty(*this);
     ECObjectsStatus status = ecProperty->SetType(enumerationType);
@@ -1410,13 +1406,13 @@ ECObjectsStatus ECClass::CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP&
         ecProperty = NULL;
         return status;
         }
-    return CreatePropertyInternal(ecProperty, name, false);
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::CreateStructArrayProperty (StructArrayECPropertyP &ecProperty, Utf8StringCR name, ECStructClassCR structType)
+ECObjectsStatus ECClass::CreateStructArrayProperty (StructArrayECPropertyP &ecProperty, Utf8StringCR name, ECStructClassCR structType, bool resolveConflicts)
     {
     ecProperty = new StructArrayECProperty(*this);
     ECObjectsStatus status = ecProperty->SetStructElementType(structType);
@@ -1427,7 +1423,7 @@ ECObjectsStatus ECClass::CreateStructArrayProperty (StructArrayECPropertyP &ecPr
         return status;
         }
 
-    return CreatePropertyInternal(ecProperty, name, false);
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2525,7 +2521,7 @@ ECObjectsStatus ECEntityClass::_AddBaseClass(ECClassCR baseClass, bool insertAtB
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify)
+ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify, bool resolveConflicts)
     {
     ecProperty = new NavigationECProperty(*this);
     ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
@@ -2536,7 +2532,7 @@ ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& e
         return status;
         }
 
-    return CreatePropertyInternal(ecProperty, name, false);
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 //---------------------------------------------------------------------------------------
@@ -4297,7 +4293,7 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify)
+ECObjectsStatus ECRelationshipClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify, bool resolveConflicts)
     {
     ecProperty = new NavigationECProperty(*this);
     ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
@@ -4308,7 +4304,7 @@ ECObjectsStatus ECRelationshipClass::CreateNavigationProperty(NavigationECProper
         return status;
         }
 
-    return CreatePropertyInternal(ecProperty, name, false);
+    return CreatePropertyInternal(ecProperty, name, resolveConflicts);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

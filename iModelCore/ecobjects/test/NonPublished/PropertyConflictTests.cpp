@@ -445,8 +445,39 @@ TEST_F(PropertyConflictTest, StructProperty_IncompatibleOverride)
     ASSERT_NE(nullptr, structB);
 
     StructECPropertyP prop;
-    // Try to add struct property with different type - should fail (no resolveConflicts available)
-    ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, classB->CreateStructProperty(prop, "structProp", *structB));
+    // Try to add struct property with different type - should fail without resolveConflicts
+    ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, classB->CreateStructProperty(prop, "structProp", *structB, false));
+    ASSERT_EQ(nullptr, prop);
+
+    // With resolveConflicts, it should rename the property
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreateStructProperty(prop, "structProp", *structB, true));
+    ASSERT_NE(nullptr, prop);
+    ASSERT_STREQ("ts_structProp_", prop->GetName().c_str());
+
+    static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.01" alias="V2ToV3"/>
+        <ECStructClass typeName="StructA"/>
+        <ECStructClass typeName="StructB"/>
+        <ECEntityClass typeName="A">
+            <ECStructProperty propertyName="structProp" typeName="StructA"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECCustomAttributes>
+                <RenamedPropertiesMapping xmlns="ECv3ConversionAttributes.01.00.01">
+                    <PropertyMapping>structProp|ts_structProp_</PropertyMapping>
+                </RenamedPropertiesMapping>
+            </ECCustomAttributes>
+            <ECProperty propertyName="b" typeName="string"/>
+            <ECStructProperty propertyName="ts_structProp_" typeName="StructB" displayLabel="structProp"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="c" typeName="boolean"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    AssertSchemaEquals(schema, expectedSchemaXml);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -462,8 +493,39 @@ TEST_F(PropertyConflictTest, StructProperty_ConflictWithPrimitiveProperty)
     ASSERT_NE(nullptr, structA);
 
     StructECPropertyP structProp;
-    // Try to add a struct property with same name as existing primitive property - should fail
-    ASSERT_EQ(ECObjectsStatus::NamedItemAlreadyExists, classB->CreateStructProperty(structProp, "b", *structA));
+    // Try to add a struct property with same name as existing primitive property - should fail without resolveConflicts
+    ASSERT_EQ(ECObjectsStatus::NamedItemAlreadyExists, classB->CreateStructProperty(structProp, "b", *structA, false));
+    ASSERT_EQ(nullptr, structProp);
+
+    // With resolveConflicts, it should rename the property
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreateStructProperty(structProp, "b", *structA, true));
+    ASSERT_NE(nullptr, structProp);
+    ASSERT_STREQ("ts_b_", structProp->GetName().c_str());
+
+    static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.01" alias="V2ToV3"/>
+        <ECStructClass typeName="StructA"/>
+        <ECStructClass typeName="StructB"/>
+        <ECEntityClass typeName="A">
+            <ECStructProperty propertyName="structProp" typeName="StructA"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECCustomAttributes>
+                <RenamedPropertiesMapping xmlns="ECv3ConversionAttributes.01.00.01">
+                    <PropertyMapping>b|ts_b_</PropertyMapping>
+                </RenamedPropertiesMapping>
+            </ECCustomAttributes>
+            <ECProperty propertyName="b" typeName="string"/>
+            <ECStructProperty propertyName="ts_b_" typeName="StructA" displayLabel="b"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="c" typeName="boolean"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    AssertSchemaEquals(schema, expectedSchemaXml);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -522,8 +584,38 @@ TEST_F(PropertyConflictTest, ArrayProperty_IncompatibleOverride)
     ASSERT_EQ(ECObjectsStatus::Success, classA->CreatePrimitiveArrayProperty(arrayProp, "arrayProp", PRIMITIVETYPE_String));
     ASSERT_NE(nullptr, arrayProp);
 
-    // Now try to add incompatible array property (different type) in class B - should fail (no resolveConflicts)
-    ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, classB->CreatePrimitiveArrayProperty(arrayProp, "arrayProp", PRIMITIVETYPE_Integer));
+    // Now try to add incompatible array property (different type) in class B - should fail without resolveConflicts
+    ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, classB->CreatePrimitiveArrayProperty(arrayProp, "arrayProp", PRIMITIVETYPE_Integer, false));
+    ASSERT_EQ(nullptr, arrayProp);
+
+    // With resolveConflicts, it should rename the property
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveArrayProperty(arrayProp, "arrayProp", PRIMITIVETYPE_Integer, true));
+    ASSERT_NE(nullptr, arrayProp);
+    ASSERT_STREQ("ts_arrayProp_", arrayProp->GetName().c_str());
+
+    static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.01" alias="V2ToV3"/>
+        <ECEntityClass typeName="A">
+            <ECProperty propertyName="a" typeName="double"/>
+            <ECArrayProperty propertyName="arrayProp" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECCustomAttributes>
+                <RenamedPropertiesMapping xmlns="ECv3ConversionAttributes.01.00.01">
+                    <PropertyMapping>arrayProp|ts_arrayProp_</PropertyMapping>
+                </RenamedPropertiesMapping>
+            </ECCustomAttributes>
+            <ECProperty propertyName="b" typeName="string"/>
+            <ECArrayProperty propertyName="ts_arrayProp_" typeName="int" minOccurs="0" maxOccurs="unbounded" displayLabel="arrayProp"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="c" typeName="boolean"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    AssertSchemaEquals(schema, expectedSchemaXml);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -537,8 +629,37 @@ TEST_F(PropertyConflictTest, ArrayProperty_ConflictWithPrimitiveProperty)
     ASSERT_NE(nullptr, classB);
 
     PrimitiveArrayECPropertyP arrayProp;
-    // Try to add array property with same name as existing primitive property - should fail
-    ASSERT_EQ(ECObjectsStatus::NamedItemAlreadyExists, classB->CreatePrimitiveArrayProperty(arrayProp, "b", PRIMITIVETYPE_String));
+    // Try to add array property with same name as existing primitive property - should fail without resolveConflicts
+    ASSERT_EQ(ECObjectsStatus::NamedItemAlreadyExists, classB->CreatePrimitiveArrayProperty(arrayProp, "b", PRIMITIVETYPE_String, false));
+    ASSERT_EQ(nullptr, arrayProp);
+
+    // With resolveConflicts, it should rename the property
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveArrayProperty(arrayProp, "b", PRIMITIVETYPE_String, true));
+    ASSERT_NE(nullptr, arrayProp);
+    ASSERT_STREQ("ts_b_", arrayProp->GetName().c_str());
+
+    static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.01" alias="V2ToV3"/>
+        <ECEntityClass typeName="A">
+            <ECProperty propertyName="a" typeName="double"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECCustomAttributes>
+                <RenamedPropertiesMapping xmlns="ECv3ConversionAttributes.01.00.01">
+                    <PropertyMapping>b|ts_b_</PropertyMapping>
+                </RenamedPropertiesMapping>
+            </ECCustomAttributes>
+            <ECProperty propertyName="b" typeName="string"/>
+            <ECArrayProperty propertyName="ts_b_" typeName="string" minOccurs="0" maxOccurs="unbounded" displayLabel="b"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="c" typeName="boolean"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    AssertSchemaEquals(schema, expectedSchemaXml);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -605,8 +726,40 @@ TEST_F(PropertyConflictTest, StructArrayProperty_IncompatibleOverride)
     ASSERT_EQ(ECObjectsStatus::Success, classA->CreateStructArrayProperty(arrayProp, "structArrayProp", *structA));
     ASSERT_NE(nullptr, arrayProp);
 
-    // Now try to add incompatible struct array property (different struct type) in class B - should fail
-    ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, classB->CreateStructArrayProperty(arrayProp, "structArrayProp", *structB));
+    // Now try to add incompatible struct array property (different struct type) in class B - should fail without resolveConflicts
+    ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, classB->CreateStructArrayProperty(arrayProp, "structArrayProp", *structB, false));
+    ASSERT_EQ(nullptr, arrayProp);
+
+    // With resolveConflicts, it should rename the property
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreateStructArrayProperty(arrayProp, "structArrayProp", *structB, true));
+    ASSERT_NE(nullptr, arrayProp);
+    ASSERT_STREQ("ts_structArrayProp_", arrayProp->GetName().c_str());
+
+    static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.01" alias="V2ToV3"/>
+        <ECStructClass typeName="StructA"/>
+        <ECStructClass typeName="StructB"/>
+        <ECEntityClass typeName="A">
+            <ECStructProperty propertyName="structProp" typeName="StructA"/>
+            <ECStructArrayProperty propertyName="structArrayProp" typeName="StructA" minOccurs="0" maxOccurs="unbounded"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECCustomAttributes>
+                <RenamedPropertiesMapping xmlns="ECv3ConversionAttributes.01.00.01">
+                    <PropertyMapping>structArrayProp|ts_structArrayProp_</PropertyMapping>
+                </RenamedPropertiesMapping>
+            </ECCustomAttributes>
+            <ECProperty propertyName="b" typeName="string"/>
+            <ECStructArrayProperty propertyName="ts_structArrayProp_" typeName="StructB" minOccurs="0" maxOccurs="unbounded" displayLabel="structArrayProp"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="c" typeName="boolean"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    AssertSchemaEquals(schema, expectedSchemaXml);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -622,8 +775,39 @@ TEST_F(PropertyConflictTest, StructArrayProperty_ConflictWithStructProperty)
     ASSERT_NE(nullptr, structA);
 
     StructArrayECPropertyP arrayProp;
-    // Try to add struct array property with same name as existing struct property - should fail
-    ASSERT_EQ(ECObjectsStatus::InvalidPrimitiveOverrride, classB->CreateStructArrayProperty(arrayProp, "structProp", *structA));
+    // Try to add struct array property with same name as existing struct property - should fail without resolveConflicts
+    ASSERT_EQ(ECObjectsStatus::InvalidPrimitiveOverrride, classB->CreateStructArrayProperty(arrayProp, "structProp", *structA, false));
+    ASSERT_EQ(nullptr, arrayProp);
+
+    // With resolveConflicts, it should rename the property
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreateStructArrayProperty(arrayProp, "structProp", *structA, true));
+    ASSERT_NE(nullptr, arrayProp);
+    ASSERT_STREQ("ts_structProp_", arrayProp->GetName().c_str());
+
+    static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.01" alias="V2ToV3"/>
+        <ECStructClass typeName="StructA"/>
+        <ECStructClass typeName="StructB"/>
+        <ECEntityClass typeName="A">
+            <ECStructProperty propertyName="structProp" typeName="StructA"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECCustomAttributes>
+                <RenamedPropertiesMapping xmlns="ECv3ConversionAttributes.01.00.01">
+                    <PropertyMapping>structProp|ts_structProp_</PropertyMapping>
+                </RenamedPropertiesMapping>
+            </ECCustomAttributes>
+            <ECProperty propertyName="b" typeName="string"/>
+            <ECStructArrayProperty propertyName="ts_structProp_" typeName="StructA" minOccurs="0" maxOccurs="unbounded" displayLabel="structProp"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="c" typeName="boolean"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    AssertSchemaEquals(schema, expectedSchemaXml);
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

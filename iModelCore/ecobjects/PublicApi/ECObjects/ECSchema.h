@@ -1677,22 +1677,22 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates a struct property object using the specified class as the struct type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates an array property object using the default type of STRING
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, bool resolveConflicts = false);
 
     //! If the given name is valid, creates an array property object using the specified primitive type as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates an array property object using the specified ECEnumeration as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates a struct array property object using the specified class as the struct array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates a primitive property object with the given enumeration type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerationProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerationProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType, bool resolveConflicts = false);
 
     ECOBJECTS_EXPORT size_t GetPropertyCount(bool includeBaseProperties = true) const; //!< Returns the number of ECProperties in this class
     ECOBJECTS_EXPORT ECPropertyIterable GetProperties() const; //!< Returns an iterable of all the ECProperties defined on this class, including inherited properties.
@@ -1833,7 +1833,7 @@ public:
     // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The multiplicity of the other constraint determiness if the nav prop is a primitive or an array.
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true, bool resolveConflicts = false);
 
     //! Returns true if the provided mixin class can be applied to this class.
     //! @remarks The mixin class can be applied to this class if this class is derived from the AppliesToEntityClass property defined in IsMixin custom attribute.
@@ -2233,7 +2233,7 @@ public:
     // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The multiplicity of the other constraint determiness if the nav prop is a primitive or an array.
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true, bool resolveConflicts = false);
 
     //! Returns true if successfully verifies the relationship, otherwise false.
     ECOBJECTS_EXPORT bool Verify() const;
