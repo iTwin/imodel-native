@@ -84,15 +84,15 @@ TEST_F(PropertyConflictTest, AddNonConflictingProperties)
     ASSERT_NE(nullptr, classC);
 
     PrimitiveECPropertyP prop;
-    EXPECT_EQ(ECObjectsStatus::Success, classA->CreatePrimitiveProperty(prop, "a2", PRIMITIVETYPE_Double, true));
+    ASSERT_EQ(ECObjectsStatus::Success, classA->CreatePrimitiveProperty(prop, "a2", PRIMITIVETYPE_Double, true));
     ASSERT_NE(nullptr, prop);
     ASSERT_STREQ("a2", prop->GetName().c_str());
 
-    EXPECT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveProperty(prop, "b2", PRIMITIVETYPE_String, true));
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveProperty(prop, "b2", PRIMITIVETYPE_String, true));
     ASSERT_NE(nullptr, prop);
     ASSERT_STREQ("b2", prop->GetName().c_str());
 
-    EXPECT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "c2", PRIMITIVETYPE_Boolean, true));
+    ASSERT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "c2", PRIMITIVETYPE_Boolean, true));
     ASSERT_NE(nullptr, prop);
     ASSERT_STREQ("c2", prop->GetName().c_str());
 
@@ -130,11 +130,11 @@ TEST_F(PropertyConflictTest, AddCompatibleAndIncompatibleOverrides)
     ASSERT_NE(nullptr, classC);
 
     PrimitiveECPropertyP prop;
-    EXPECT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Double, true));
+    ASSERT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Double, true));
     ASSERT_NE(nullptr, prop);
     ASSERT_STREQ("a", prop->GetName().c_str());
 
-    EXPECT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "b", PRIMITIVETYPE_Boolean, true));
+    ASSERT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "b", PRIMITIVETYPE_Boolean, true));
     ASSERT_NE(nullptr, prop);
     ASSERT_STREQ("ts_b_", prop->GetName().c_str());
 
@@ -177,13 +177,13 @@ TEST_F(PropertyConflictTest, AddIncompatibleOverridesMultipleTimes)
     ASSERT_NE(nullptr, classC);
 
     PrimitiveECPropertyP prop;
-    EXPECT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Boolean, true));
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Boolean, true));
     ASSERT_NE(nullptr, prop);
     ASSERT_STREQ("ts_a_", prop->GetName().c_str());
-    EXPECT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Boolean, true));
+    ASSERT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Boolean, true));
     ASSERT_NE(nullptr, prop);
     ASSERT_STREQ("ts_a_", prop->GetName().c_str());
-        EXPECT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Boolean, true));
+    ASSERT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Boolean, true));
     ASSERT_NE(nullptr, prop);
     ASSERT_STREQ("ts_a_", prop->GetName().c_str());
 
@@ -232,32 +232,33 @@ TEST_F(PropertyConflictTest, AddCompatiblePropertyMultipleTimes)
     ASSERT_NE(nullptr, classC);
 
     PrimitiveECPropertyP prop;
-    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, classB->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Double, false));
-    ASSERT_EQ(nullptr, prop);
-    EXPECT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Double, true));
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Double, false));
     ASSERT_NE(nullptr, prop);
     ASSERT_STREQ("a", prop->GetName().c_str());
-    EXPECT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Double, true));
+    ASSERT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Double, true));
     ASSERT_NE(nullptr, prop);
     ASSERT_STREQ("a", prop->GetName().c_str());
-    EXPECT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Double, true));
+    ASSERT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Double, true));
+    ASSERT_NE(nullptr, prop);
+    ASSERT_STREQ("a", prop->GetName().c_str());
+    ASSERT_EQ(ECObjectsStatus::Success, classC->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Double, true));
     ASSERT_NE(nullptr, prop);
     ASSERT_STREQ("a", prop->GetName().c_str());
 
     static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.01" alias="V2ToV3"/>
         <ECEntityClass typeName="A">
             <ECProperty propertyName="a" typeName="double"/>
         </ECEntityClass>
         <ECEntityClass typeName="B">
             <BaseClass>A</BaseClass>
             <ECProperty propertyName="b" typeName="string"/>
+            <ECProperty propertyName="a" typeName="double"/>
         </ECEntityClass>
         <ECEntityClass typeName="C">
             <BaseClass>B</BaseClass>
             <ECProperty propertyName="c" typeName="boolean"/>
-            <ECProperty propertyName="a" typeName="double" displayLabel="a"/>
+            <ECProperty propertyName="a" typeName="double"/>
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
@@ -277,9 +278,10 @@ TEST_F(PropertyConflictTest, AddBasePropertyWhichIntroducesConflict)
     ASSERT_NE(nullptr, classC);
 
     PrimitiveECPropertyP prop;
-    EXPECT_EQ(ECObjectsStatus::InvalidPrimitiveOverrride, classB->CreatePrimitiveProperty(prop, "c", PRIMITIVETYPE_Double, true));
-    ASSERT_EQ(nullptr, prop);
-
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveProperty(prop, "c", PRIMITIVETYPE_Double, true));
+    ASSERT_NE(nullptr, prop);
+    ASSERT_STREQ("c", prop->GetName().c_str());
+    
     static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.01" alias="V2ToV3"/>
@@ -289,10 +291,16 @@ TEST_F(PropertyConflictTest, AddBasePropertyWhichIntroducesConflict)
         <ECEntityClass typeName="B">
             <BaseClass>A</BaseClass>
             <ECProperty propertyName="b" typeName="string"/>
+            <ECProperty propertyName="c" typeName="double"/>
         </ECEntityClass>
         <ECEntityClass typeName="C">
             <BaseClass>B</BaseClass>
-            <ECProperty propertyName="c" typeName="boolean"/>
+            <ECCustomAttributes>
+                <RenamedPropertiesMapping xmlns="ECv3ConversionAttributes.01.00.01">
+                    <PropertyMapping>c|ts_c_</PropertyMapping>
+                </RenamedPropertiesMapping>
+            </ECCustomAttributes>
+            <ECProperty propertyName="ts_c_" typeName="boolean" displayLabel="c"/>
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);

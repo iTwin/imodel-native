@@ -725,6 +725,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
     ECObjectsStatus status = CanPropertyBeOverridden(*baseProperty, *pProperty, errorMsg);
     if(ECObjectsStatus::Success == status) // existing local property is compatible with the incoming one
         {
+        pProperty->SetBaseProperty(baseProperty);
         return AddPropertyInternal(pProperty, resolveConflicts);
         }
     if(!resolveConflicts)
