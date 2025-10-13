@@ -306,4 +306,69 @@ TEST_F(PropertyConflictTest, AddBasePropertyWhichIntroducesConflict)
     AssertSchemaEquals(schema, expectedSchemaXml);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, ResolveConflictsFalse_ReturnsErrorOnConflict)
+    {
+    ECSchemaPtr schema = LoadTestSchema();
+    auto* classB = schema->GetClassP("B");
+    ASSERT_NE(nullptr, classB);
+
+    PrimitiveECPropertyP prop;
+    // Attempt to create property with same name as base class property, but resolveConflicts=false
+    ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, classB->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Boolean, false));
+    ASSERT_EQ(nullptr, prop);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, ConflictWithRenamedProperty)
+    {
+    ECSchemaPtr schema = LoadTestSchema();
+    auto* classB = schema->GetClassP("B");
+    ASSERT_NE(nullptr, classB);
+
+    PrimitiveECPropertyP prop;
+    // First, add a property that will be renamed to ts_a_
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Boolean, true));
+    ASSERT_NE(nullptr, prop);
+    ASSERT_STREQ("ts_a_", prop->GetName().c_str());
+
+    // Now try to add a property literally named "ts_a_" with compatible type
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveProperty(prop, "ts_a_", PRIMITIVETYPE_Boolean, true));
+    ASSERT_NE(nullptr, prop);
+    ASSERT_STREQ("ts_a_", prop->GetName().c_str()); // Should reuse the existing property
+
+    // Now try to add a property literally named "ts_a_" with incompatible type
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveProperty(prop, "ts_a_", PRIMITIVETYPE_String, true));
+    ASSERT_NE(nullptr, prop);
+    ASSERT_STREQ("ts_ts_a__", prop->GetName().c_str()); // Should add underscore
+
+    static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.01" alias="V2ToV3"/>
+        <ECEntityClass typeName="A">
+            <ECProperty propertyName="a" typeName="double"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECCustomAttributes>
+                <RenamedPropertiesMapping xmlns="ECv3ConversionAttributes.01.00.01">
+                    <PropertyMapping>a|ts_ts_a__</PropertyMapping>
+                </RenamedPropertiesMapping>
+            </ECCustomAttributes>
+            <ECProperty propertyName="b" typeName="string"/>
+            <ECProperty propertyName="ts_a_" typeName="boolean" displayLabel="a"/>
+            <ECProperty propertyName="ts_ts_a__" typeName="string" displayLabel="ts_a_"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="c" typeName="boolean"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    AssertSchemaEquals(schema, expectedSchemaXml);
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
