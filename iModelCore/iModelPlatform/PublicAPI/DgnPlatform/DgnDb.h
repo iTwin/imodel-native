@@ -284,7 +284,7 @@ public:
     Napi::String ToJsString(BeInt64Id id) { return ToJsString(id.ToHexStr()); }
     Napi::String GetJsClassName(DgnElementId id);
     DGNPLATFORM_EXPORT void CallJsHandlerMethod(DgnClassId classId, Utf8CP methodName, Napi::Object arg);
-    static Napi::Value CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args);
+    static void CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args);
     [[noreturn]] void ThrowException(Utf8CP message, int errNum) const;
     BeSQLite::DbResult DisqualifyTypeIndexForBisCoreExternalSourceAspect();
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetGeometricModelUpdateStatement();

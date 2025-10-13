@@ -875,8 +875,7 @@ void Graph::InvokeHandlersInTopologicalOrder_OneGraph(Edge const& edge, bvector<
         {
         if (color == EdgeColor::Gray)
             {
-            // m_txnMgr.ReportError(true, "cycle", FmtCyclePath(edge, pathToSupplier).c_str());
-            // callJsEdgeFunc(*this, edge,  "_onCycle");
+            EDGLOGGER.errorv("EDE: Cycle detected: %s", FmtCyclePath(edge, pathToSupplier).c_str());
             SetFailedEdgeStatusInDb(edge, true); // mark at least this edge as failed. maybe we should mark the entire cycle??
             }
         return;
