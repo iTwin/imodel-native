@@ -3029,6 +3029,36 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
     }
     {
         ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT PStructProp.p2d FROM (SELECT PStructProp.p2d FROM ecsql.PSA WHERE ECInstanceId=?)"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(1, selStmt.GetColumnCount());
+        ASSERT_STREQ("p2d", selStmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        ASSERT_EQ(DPoint2d::From(3.0, 5.0), selStmt.GetValuePoint2d(0));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp.p2d FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp.p2d FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(1, selStmt.GetColumnCount());
+        ASSERT_STREQ("p2d", selStmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        ASSERT_EQ(DPoint2d::From(3.0, 5.0), selStmt.GetValuePoint2d(0));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "SELECT PStructProp.p2d.X FROM (SELECT PStructProp.p2d FROM ecsql.PSA WHERE ECInstanceId=?)"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp.p2d FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp.p2d.X FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp.p3d FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp.p3d.X, PStructProp.p3d.Y, PStructProp.p3d.Z FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
         ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp FROM cte"));
         ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
