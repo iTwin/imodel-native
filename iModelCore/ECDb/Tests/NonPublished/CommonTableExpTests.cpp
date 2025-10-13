@@ -3047,15 +3047,15 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
     }
     {
         ECSqlStatement selStmt;
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "SELECT PStructProp.p2d.X FROM (SELECT PStructProp.p2d FROM ecsql.PSA WHERE ECInstanceId=?)"));
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "SELECT PStructProp.p2d.X FROM (SELECT PStructProp.p2d FROM ecsql.PSA WHERE ECInstanceId=?)")); // TODO: Should be supported
     }
     {
         ECSqlStatement selStmt;
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp.p2d FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp.p2d.X FROM cte"));
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp.p2d FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp.p2d.X FROM cte")); // TODO: Should be supported
     }
     {
         ECSqlStatement selStmt;
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp.p3d FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp.p3d.X, PStructProp.p3d.Y, PStructProp.p3d.Z FROM cte"));
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp.p3d FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp.p3d.X, PStructProp.p3d.Y, PStructProp.p3d.Z FROM cte")); // TODO: Should be supported
     }
     {
         ECSqlStatement selStmt;
@@ -3083,6 +3083,22 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
     {
         ECSqlStatement selStmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT c.str FROM cte c"));
+    }
+    if("binder_change_test_with_columns"){
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte(Id) AS(SELECT ECInstanceId FROM ecsql.PSA) SELECT * FROM cte c WHERE Id = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        ASSERT_STREQ("281", selStmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, selStmt.Step());
+    }
+    if("binder_change_test_without_columns"){
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT ECInstanceId FROM ecsql.PSA) SELECT * FROM cte c WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        ASSERT_STREQ("281", selStmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, selStmt.Step());
     }
     
     }
@@ -3158,6 +3174,26 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
     }
     {
         ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "SELECT SAStructProp.p2d FROM (SELECT SAStructProp.p2d FROM ecsql.SA WHERE ECInstanceId=?)")); // TODO: Should be supported
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp.p2d FROM ecsql.SA WHERE ECInstanceId=?) SELECT SAStructProp.p2d FROM cte")); // TODO: Should be supported
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "SELECT SAStructProp.p2d.X FROM (SELECT SAStructProp.p2d FROM ecsql.SA WHERE ECInstanceId=?)")); // TODO: Should be supported
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp.p2d FROM ecsql.SA WHERE ECInstanceId=?) SELECT SAStructProp.p2d.X FROM cte")); // TODO: Should be supported
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp.p3d FROM ecsql.PSA WHERE ECInstanceId=?) SELECT SAStructProp.p3d.X, SAStructProp.p3d.Y, SAStructProp.p3d.Z FROM cte")); // TODO: Should be supported
+    }
+    {
+        ECSqlStatement selStmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT * FROM cte"));
     }
     {
@@ -3171,6 +3207,22 @@ TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
     {
         ECSqlStatement selStmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT c.str FROM cte c"));
+    }
+    if("binder_change_test_with_columns"){
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte(Id) AS(SELECT ECInstanceId FROM ecsql.SA) SELECT * FROM cte c WHERE Id = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        ASSERT_STREQ("282", selStmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, selStmt.Step());
+    }
+    if("binder_change_test_without_columns"){
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT ECInstanceId FROM ecsql.SA) SELECT * FROM cte c WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        ASSERT_STREQ("282", selStmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, selStmt.Step());
     }
     
     }
