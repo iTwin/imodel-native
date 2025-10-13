@@ -41,9 +41,32 @@ struct PropertyConflictTest : ECTestFixture {
         </ECEntityClass>
     </ECSchema>)xml";
 
+    static constexpr Utf8CP s_testSchemaWithStructsXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0"
+        xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECStructClass typeName="StructA" />
+        <ECStructClass typeName="StructB" />
+        <ECEntityClass typeName="A">
+            <ECStructProperty propertyName="structProp" typeName="StructA" />
+        </ECEntityClass>
+        <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="b" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="c" typeName="bool" />
+        </ECEntityClass>
+    </ECSchema>)xml";
+
     static ECSchemaPtr LoadTestSchema()
         {
         return LoadSchemaFromString(s_testSchemaXml);
+        }
+
+    static ECSchemaPtr LoadTestSchemaWithStructs()
+        {
+        return LoadSchemaFromString(s_testSchemaWithStructsXml);
         }
 
     void AssertSchemaEquals(ECSchemaPtr schema, Utf8CP expectedSchemaXml)
@@ -369,6 +392,238 @@ TEST_F(PropertyConflictTest, ConflictWithRenamedProperty)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that struct properties can have same type as base - compatible override
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, StructProperty_CompatibleOverride)
+    {
+    ECSchemaPtr schema = LoadTestSchemaWithStructs();
+    auto* classB = schema->GetClassP("B");
+    auto* structA = schema->GetClassCP("StructA")->GetStructClassCP();
+    ASSERT_NE(nullptr, classB);
+    ASSERT_NE(nullptr, structA);
+
+    StructECPropertyP prop;
+    // Try to add compatible struct property with same type - should succeed
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreateStructProperty(prop, "structProp", *structA));
+    ASSERT_NE(nullptr, prop);
+    ASSERT_STREQ("structProp", prop->GetName().c_str());
+
+    static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECStructClass typeName="StructA"/>
+        <ECStructClass typeName="StructB"/>
+        <ECEntityClass typeName="A">
+            <ECStructProperty propertyName="structProp" typeName="StructA"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="b" typeName="string"/>
+            <ECStructProperty propertyName="structProp" typeName="StructA"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="c" typeName="boolean"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    AssertSchemaEquals(schema, expectedSchemaXml);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that struct properties with different types conflict
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, StructProperty_IncompatibleOverride)
+    {
+    ECSchemaPtr schema = LoadTestSchemaWithStructs();
+    auto* classB = schema->GetClassP("B");
+    auto* structB = schema->GetClassCP("StructB")->GetStructClassCP();
+    ASSERT_NE(nullptr, classB);
+    ASSERT_NE(nullptr, structB);
+
+    StructECPropertyP prop;
+    // Try to add struct property with different type - should fail (no resolveConflicts available)
+    ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, classB->CreateStructProperty(prop, "structProp", *structB));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that struct property conflicts with primitive property
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, StructProperty_ConflictWithPrimitiveProperty)
+    {
+    ECSchemaPtr schema = LoadTestSchemaWithStructs();
+    auto* classB = schema->GetClassP("B");
+    auto* structA = schema->GetClassCP("StructA")->GetStructClassCP();
+    ASSERT_NE(nullptr, classB);
+    ASSERT_NE(nullptr, structA);
+
+    StructECPropertyP structProp;
+    // Try to add a struct property with same name as existing primitive property - should fail
+    ASSERT_EQ(ECObjectsStatus::NamedItemAlreadyExists, classB->CreateStructProperty(structProp, "b", *structA));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that array properties can have same type as base - compatible override
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, ArrayProperty_CompatibleOverride)
+    {
+    ECSchemaPtr schema = LoadTestSchema();
+    auto* classB = schema->GetClassP("B");
+    ASSERT_NE(nullptr, classB);
+
+    PrimitiveArrayECPropertyP arrayProp;
+    // First add an array property to class A
+    auto* classA = schema->GetClassP("A");
+    ASSERT_EQ(ECObjectsStatus::Success, classA->CreatePrimitiveArrayProperty(arrayProp, "arrayProp", PRIMITIVETYPE_String));
+    ASSERT_NE(nullptr, arrayProp);
+
+    // Now try to add compatible array property (same type) in class B - should succeed
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveArrayProperty(arrayProp, "arrayProp", PRIMITIVETYPE_String));
+    ASSERT_NE(nullptr, arrayProp);
+    ASSERT_STREQ("arrayProp", arrayProp->GetName().c_str());
+
+    static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECEntityClass typeName="A">
+            <ECProperty propertyName="a" typeName="double"/>
+            <ECArrayProperty propertyName="arrayProp" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="b" typeName="string"/>
+            <ECArrayProperty propertyName="arrayProp" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="c" typeName="boolean"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    AssertSchemaEquals(schema, expectedSchemaXml);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that array properties with different types conflict
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, ArrayProperty_IncompatibleOverride)
+    {
+    ECSchemaPtr schema = LoadTestSchema();
+    auto* classB = schema->GetClassP("B");
+    ASSERT_NE(nullptr, classB);
+
+    PrimitiveArrayECPropertyP arrayProp;
+    // First add an array property to class A
+    auto* classA = schema->GetClassP("A");
+    ASSERT_EQ(ECObjectsStatus::Success, classA->CreatePrimitiveArrayProperty(arrayProp, "arrayProp", PRIMITIVETYPE_String));
+    ASSERT_NE(nullptr, arrayProp);
+
+    // Now try to add incompatible array property (different type) in class B - should fail (no resolveConflicts)
+    ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, classB->CreatePrimitiveArrayProperty(arrayProp, "arrayProp", PRIMITIVETYPE_Integer));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that array property conflicts with primitive property
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, ArrayProperty_ConflictWithPrimitiveProperty)
+    {
+    ECSchemaPtr schema = LoadTestSchema();
+    auto* classB = schema->GetClassP("B");
+    ASSERT_NE(nullptr, classB);
+
+    PrimitiveArrayECPropertyP arrayProp;
+    // Try to add array property with same name as existing primitive property - should fail
+    ASSERT_EQ(ECObjectsStatus::NamedItemAlreadyExists, classB->CreatePrimitiveArrayProperty(arrayProp, "b", PRIMITIVETYPE_String));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that struct array properties can have same type as base - compatible override
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, StructArrayProperty_CompatibleOverride)
+    {
+    ECSchemaPtr schema = LoadTestSchemaWithStructs();
+    auto* classB = schema->GetClassP("B");
+    auto* structA = schema->GetClassCP("StructA")->GetStructClassCP();
+    ASSERT_NE(nullptr, classB);
+    ASSERT_NE(nullptr, structA);
+
+    StructArrayECPropertyP arrayProp;
+    // First add a struct array property to class A
+    auto* classA = schema->GetClassP("A");
+    ASSERT_EQ(ECObjectsStatus::Success, classA->CreateStructArrayProperty(arrayProp, "structArrayProp", *structA));
+    ASSERT_NE(nullptr, arrayProp);
+
+    // Now try to add compatible struct array property (same type) in class B - should succeed
+    ASSERT_EQ(ECObjectsStatus::Success, classB->CreateStructArrayProperty(arrayProp, "structArrayProp", *structA));
+    ASSERT_NE(nullptr, arrayProp);
+    ASSERT_STREQ("structArrayProp", arrayProp->GetName().c_str());
+
+    static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECStructClass typeName="StructA"/>
+        <ECStructClass typeName="StructB"/>
+        <ECEntityClass typeName="A">
+            <ECStructProperty propertyName="structProp" typeName="StructA"/>
+            <ECStructArrayProperty propertyName="structArrayProp" typeName="StructA" minOccurs="0" maxOccurs="unbounded"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="b" typeName="string"/>
+            <ECStructArrayProperty propertyName="structArrayProp" typeName="StructA" minOccurs="0" maxOccurs="unbounded"/>
+        </ECEntityClass>
+        <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="c" typeName="boolean"/>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    AssertSchemaEquals(schema, expectedSchemaXml);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that struct array properties with different types conflict
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, StructArrayProperty_IncompatibleOverride)
+    {
+    ECSchemaPtr schema = LoadTestSchemaWithStructs();
+    auto* classB = schema->GetClassP("B");
+    auto* structA = schema->GetClassCP("StructA")->GetStructClassCP();
+    auto* structB = schema->GetClassCP("StructB")->GetStructClassCP();
+    ASSERT_NE(nullptr, classB);
+    ASSERT_NE(nullptr, structA);
+    ASSERT_NE(nullptr, structB);
+
+    StructArrayECPropertyP arrayProp;
+    // First add a struct array property to class A
+    auto* classA = schema->GetClassP("A");
+    ASSERT_EQ(ECObjectsStatus::Success, classA->CreateStructArrayProperty(arrayProp, "structArrayProp", *structA));
+    ASSERT_NE(nullptr, arrayProp);
+
+    // Now try to add incompatible struct array property (different struct type) in class B - should fail
+    ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, classB->CreateStructArrayProperty(arrayProp, "structArrayProp", *structB));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that struct array property conflicts with struct property
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, StructArrayProperty_ConflictWithStructProperty)
+    {
+    ECSchemaPtr schema = LoadTestSchemaWithStructs();
+    auto* classB = schema->GetClassP("B");
+    auto* structA = schema->GetClassCP("StructA")->GetStructClassCP();
+    ASSERT_NE(nullptr, classB);
+    ASSERT_NE(nullptr, structA);
+
+    StructArrayECPropertyP arrayProp;
+    // Try to add struct array property with same name as existing struct property - should fail
+    ASSERT_EQ(ECObjectsStatus::InvalidPrimitiveOverrride, classB->CreateStructArrayProperty(arrayProp, "structProp", *structA));
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
