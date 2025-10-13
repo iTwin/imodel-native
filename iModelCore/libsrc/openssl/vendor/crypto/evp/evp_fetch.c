@@ -17,6 +17,7 @@
 #include "internal/core.h"
 #include "internal/provider.h"
 #include "internal/namemap.h"
+#include "crypto/decoder.h"
 #include "crypto/evp.h"    /* evp_local.h needs it */
 #include "evp_local.h"
 
@@ -435,6 +436,7 @@ static int evp_set_parsed_default_properties(OSSL_LIB_CTX *libctx,
     OSSL_PROPERTY_LIST **plp = ossl_ctx_global_properties(libctx, loadconfig);
 
     if (plp != NULL && store != NULL) {
+        int ret;
 #ifndef FIPS_MODULE
         char *propstr = NULL;
         size_t strsz;
@@ -468,8 +470,12 @@ static int evp_set_parsed_default_properties(OSSL_LIB_CTX *libctx,
 #endif
         ossl_property_free(*plp);
         *plp = def_prop;
-        if (store != NULL)
-            return ossl_method_store_cache_flush_all(store);
+
+        ret = ossl_method_store_cache_flush_all(store);
+#ifndef FIPS_MODULE
+        ossl_decoder_cache_flush(libctx);
+#endif
+        return ret;
     }
     ERR_raise(ERR_LIB_EVP, ERR_R_INTERNAL_ERROR);
     return 0;
@@ -513,7 +519,7 @@ static int evp_default_properties_merge(OSSL_LIB_CTX *libctx, const char *propq,
     pl2 = ossl_property_merge(pl1, *plp);
     ossl_property_free(pl1);
     if (pl2 == NULL) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_EVP, ERR_R_CRYPTO_LIB);
         return 0;
     }
     if (!evp_set_parsed_default_properties(libctx, pl2, 0, 0)) {
@@ -565,10 +571,8 @@ char *evp_get_global_properties_str(OSSL_LIB_CTX *libctx, int loadconfig)
     }
 
     propstr = OPENSSL_malloc(sz);
-    if (propstr == NULL) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+    if (propstr == NULL)
         return NULL;
-    }
     if (ossl_property_list_to_string(libctx, *plp, propstr, sz) == 0) {
         ERR_raise(ERR_LIB_EVP, ERR_R_INTERNAL_ERROR);
         OPENSSL_free(propstr);

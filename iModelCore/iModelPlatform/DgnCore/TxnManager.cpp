@@ -3774,7 +3774,6 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeRebaseBegin() {
     auto conf = PullMergeConf::Load(m_dgndb);
     if (!conf.InProgress()) {
         m_dgndb.ThrowException("PullMergeRebaseBegin(): pull merge not in progress.", BE_SQLITE_ERROR);
-        return {};
     }
 
     if (!conf.IsRebasingLocalChanges()) {
