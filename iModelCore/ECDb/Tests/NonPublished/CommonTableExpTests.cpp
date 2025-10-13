@@ -2466,8 +2466,8 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(CommonTableExpTestFixture, Debug_Tests) {
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("Debug_Tests.ecdb"));
+TEST_F(CommonTableExpTestFixture, MultiplesCTEsWithoutSubColumns) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("MultiplesCTEsWithoutSubColumns.ecdb"));
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ) [c1] JOIN ( SELECT 1 AS KEYID, 'Robot' AS Name ) [c2] ON c1.KEYID = c2.KEYID"));
@@ -2498,6 +2498,33 @@ TEST_F(CommonTableExpTestFixture, Debug_Tests) {
         ASSERT_STREQ("BeepBoo", stmt.GetValueText(1));
         ASSERT_STREQ("1", stmt.GetValueText(2));
         ASSERT_STREQ("Robot", stmt.GetValueText(3));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), [cte2] AS ( SELECT 1 AS KEYID, 'Robot' AS Name ) SELECT c1.KEYID, c1.Noise ,c2.KEYID, c2.Name FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte1 AS (SELECT 1 [K0],'BeepBoo' [K2]),cte2 AS (SELECT 1 [K1],'Robot' [K3])\nSELECT [K0],[K2],[K1],[K3] FROM cte1 c1 INNER JOIN cte2 c2 ON [K0]=[K1] ");
+        ASSERT_EQ(4, stmt.GetColumnCount());
+        ASSERT_STREQ("KEYID", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Noise", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("KEYID_1", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Name", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_STREQ("BeepBoo", stmt.GetValueText(1));
+        ASSERT_STREQ("1", stmt.GetValueText(2));
+        ASSERT_STREQ("Robot", stmt.GetValueText(3));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), [cte2] AS ( SELECT 2 AS KEYID, 'Robot' AS Name ) SELECT c1.KEYID, c1.Noise ,c2.KEYID, c2.Name FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH cte1 AS (SELECT 1 [K0],'BeepBoo' [K2]),cte2 AS (SELECT 2 [K1],'Robot' [K3])\nSELECT [K0],[K2],[K1],[K3] FROM cte1 c1 INNER JOIN cte2 c2 ON [K0]=[K1] ");
+        ASSERT_EQ(4, stmt.GetColumnCount());
+        ASSERT_STREQ("KEYID", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Noise", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("KEYID_1", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Name", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
         {
@@ -2649,6 +2676,473 @@ TEST_F(CommonTableExpTestFixture, SubQueryBlock_With_cte_with_no_columns) {
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
         ASSERT_STREQ(SqlPrintfString("WITH models AS (SELECT [r].[ECInstanceId] [K0],[r].[ECClassId] [K1],[r].[SourceECInstanceId] [K2],[r].[SourceECClassId] [K3],[r].[TargetECInstanceId] [K4],[r].[TargetECClassId] [K5] FROM (SELECT [ts_Rel].[Id] [ECInstanceId],[ts_Rel].[ECClassId],[ts_Rel].[SourceId] [SourceECInstanceId],90 [SourceECClassId],[ts_Rel].[TargetId] [TargetECInstanceId],88 [TargetECClassId] FROM [main].[ts_Rel]) [r])\nSELECT [K0],[K1],[K2],[K3],[K4],[K5] FROM models m WHERE [K0]=:_ecdb_sqlparam_ix1_col1 AND [K1]=:_ecdb_sqlparam_ix2_col1 AND [K2]=:_ecdb_sqlparam_ix3_col1 AND [K3]=:_ecdb_sqlparam_ix4_col1 AND [K4]=:_ecdb_sqlparam_ix5_col1 AND [K5]=:_ecdb_sqlparam_ix6_col1 AND [K0] IN (:_ecdb_sqlparam_ix7_col1) AND [K1] IN (:_ecdb_sqlparam_ix8_col1) AND [K2] IN (:_ecdb_sqlparam_ix9_col1) AND [K3] IN (:_ecdb_sqlparam_ix10_col1) AND [K4] IN (:_ecdb_sqlparam_ix11_col1) AND [K5] IN (:_ecdb_sqlparam_ix12_col1)",
                     parentClassId.ToString().c_str(), childClassId.ToString().c_str()), stmt.GetNativeSql());
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_SubColumns) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("FindingCompoundDataProperty_For_CTE_Without_SubColumns.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema' alias='ts' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='Element' >
+            <ECProperty propertyName="p2d" typeName="point2d"/>
+            <ECProperty propertyName="p3d" typeName="point3d"/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+    ECSqlStatementCache cache(5);
+    std::vector<std::vector<double>> pointList = {{200.0,-440.0,345.6}, {300.0,-240.0,120.0}, {220.0,-180.0,330.6}, {270.0,-450.0,340.7}, {200.0,-230.0,220.5} };
+
+    auto addElement = [&](DPoint2d point2d, DPoint3d point3d) {
+        auto stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.Element(p2d, p3d) VALUES(?, ?)");
+        stmt->BindPoint2d(1, point2d);
+
+        stmt->BindPoint3d(2, point3d);
+        ECInstanceKey key;
+        if (stmt->Step(key) != BE_SQLITE_DONE) {
+            return BeInt64Id(0);
+        }
+
+        return (BeInt64Id)key.GetInstanceId();
+    };
+    for(std::vector<double> vec: pointList)
+    {
+        addElement(DPoint2d::From(vec[0], vec[1]), DPoint3d::From(vec[0], vec[1], vec[2]));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT * FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("p2d", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[0][0], pointList[0][1]), stmt.GetValuePoint2d(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[1][0], pointList[1][1]), stmt.GetValuePoint2d(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[2][0], pointList[2][1]), stmt.GetValuePoint2d(0));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT cte.p2d FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("p2d", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[0][0], pointList[0][1]), stmt.GetValuePoint2d(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[1][0], pointList[1][1]), stmt.GetValuePoint2d(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[2][0], pointList[2][1]), stmt.GetValuePoint2d(0));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT c.p2d FROM cte c"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("p2d", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[0][0], pointList[0][1]), stmt.GetValuePoint2d(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[1][0], pointList[1][1]), stmt.GetValuePoint2d(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(DPoint2d::From(pointList[2][0], pointList[2][1]), stmt.GetValuePoint2d(0));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT p2d.X FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT cte.p2d.X FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d.X FROM ts.Element) SELECT cte.p2d.X FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT c.p2d.X FROM cte c"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT p2d.Y FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-440.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-240.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-180.0", stmt.GetValueText(0));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT cte.p2d.Y FROM cte"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-440.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-240.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-180.0", stmt.GetValueText(0));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT c.p2d.Y FROM cte c"));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-440.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-240.0", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("-180.0", stmt.GetValueText(0));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d FROM ts.Element) SELECT p3d.X, p3d.Y, p3d.Z FROM cte"));
+        ASSERT_EQ(3, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Z", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-440.0", stmt.GetValueText(1));
+        ASSERT_STREQ("345.6", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-240.0", stmt.GetValueText(1));
+        ASSERT_STREQ("120.0", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-180.0", stmt.GetValueText(1));
+        ASSERT_STREQ("330.6", stmt.GetValueText(2));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d FROM ts.Element) SELECT cte.p3d.X, cte.p3d.Y, cte.p3d.Z FROM cte"));
+        ASSERT_EQ(3, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Z", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-440.0", stmt.GetValueText(1));
+        ASSERT_STREQ("345.6", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-240.0", stmt.GetValueText(1));
+        ASSERT_STREQ("120.0", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-180.0", stmt.GetValueText(1));
+        ASSERT_STREQ("330.6", stmt.GetValueText(2));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d FROM ts.Element) SELECT c.p3d.X, c.p3d.Y, c.p3d.Z FROM cte c"));
+        ASSERT_EQ(3, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Z", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-440.0", stmt.GetValueText(1));
+        ASSERT_STREQ("345.6", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-240.0", stmt.GetValueText(1));
+        ASSERT_STREQ("120.0", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-180.0", stmt.GetValueText(1));
+        ASSERT_STREQ("330.6", stmt.GetValueText(2));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d.X, p3d.Y, p3d.Z FROM ts.Element) SELECT p3d.X, p3d.Y, p3d.Z FROM cte"));
+        ASSERT_EQ(3, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Z", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-440.0", stmt.GetValueText(1));
+        ASSERT_STREQ("345.6", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-240.0", stmt.GetValueText(1));
+        ASSERT_STREQ("120.0", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-180.0", stmt.GetValueText(1));
+        ASSERT_STREQ("330.6", stmt.GetValueText(2));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d.X, p3d.Y, p3d.Z FROM ts.Element) SELECT cte.p3d.X, cte.p3d.Y, cte.p3d.Z FROM cte"));
+        ASSERT_EQ(3, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Z", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-440.0", stmt.GetValueText(1));
+        ASSERT_STREQ("345.6", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-240.0", stmt.GetValueText(1));
+        ASSERT_STREQ("120.0", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-180.0", stmt.GetValueText(1));
+        ASSERT_STREQ("330.6", stmt.GetValueText(2));
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d.X, p3d.Y, p3d.Z FROM ts.Element) SELECT c.p3d.X, c.p3d.Y, c.p3d.Z FROM cte c"));
+        ASSERT_EQ(3, stmt.GetColumnCount());
+        ASSERT_STREQ("X", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Y", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Z", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("200.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-440.0", stmt.GetValueText(1));
+        ASSERT_STREQ("345.6", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("300.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-240.0", stmt.GetValueText(1));
+        ASSERT_STREQ("120.0", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("220.0", stmt.GetValueText(0));
+        ASSERT_STREQ("-180.0", stmt.GetValueText(1));
+        ASSERT_STREQ("330.6", stmt.GetValueText(2));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, CTEWithStructBinding)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertWithStructBinding.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, PopulateECDb(10));
+
+    ECClassCP pStructClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PStruct");
+    ASSERT_TRUE(pStructClass != nullptr && pStructClass->IsStructClass());
+
+    //**** Test 1 *****
+    {
+    Json::Value expectedJson;
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson,R"json(
+         { "b" : true,
+         "d" : 3.0,
+         "dt" : "2014-03-27T12:00:00.000",
+         "dtUtc" : "2014-03-27T12:00:00.000Z",
+         "i" : 44444,
+         "l" : 444444444,
+         "s" : "Hello, world",
+         "p2d" : { "x" : 3.0, "y" : 5.0 },
+        "p3d" : { "x" : 3.0, "y" : 5.0, "z" : -6.0}
+        })json"));
+
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ecsql.PSA (I, PStructProp) VALUES (?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(2), expectedJson, *pStructClass->GetStructClassCP())) << insertStmt.GetECSql();
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(key)) << insertStmt.GetECSql();
+    insertStmt.Finalize();
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT * FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("PStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("PStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT cte.PStructProp FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("PStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT c.PStructProp FROM cte c"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("PStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT PStructProp FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("PStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT * FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT str FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT cte.str FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT PStructProp FROM ecsql.PSA WHERE ECInstanceId=?) SELECT c.str FROM cte c"));
+    }
+    
+    }
+
+    //**** Test 2 *****
+    {
+    Json::Value expectedJson;
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json(
+        { "PStructProp" :
+        { "b" : true,
+         "d" : 3.0,
+         "dt" : "2014-03-27T12:00:00.000",
+         "dtUtc" : "2014-03-27T12:00:00.000Z",
+         "i" : 44444,
+         "l" : 444444444,
+         "s" : "Hello, world",
+         "p2d" : { "x" : 3.0, "y" : 5.0 },
+        "p3d" : { "x" : 3.0, "y" : 5.0, "z" : -6.0}
+        }})json"));
+    ECClassCP saStructClass = m_ecdb.Schemas().GetClass("ECSqlTest", "SAStruct");
+    ASSERT_TRUE(saStructClass != nullptr && saStructClass->IsStructClass());
+
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ecsql.SA(SAStructProp) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, JsonECSqlBinder::BindStructValue(insertStmt.GetBinder(1), expectedJson, *saStructClass->GetStructClassCP())) << insertStmt.GetECSql();
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(key)) << insertStmt.GetECSql();
+    insertStmt.Finalize();
+    
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT * FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("SAStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT SAStructProp FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("SAStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT cte.SAStructProp FROM cte"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("SAStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "WITH cte AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT c.SAStructProp FROM cte c"));
+        ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId())) << selStmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+        JsonECSqlSelectAdapter jsonAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+        Json::Value actualJson;
+        ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
+        ASSERT_TRUE(actualJson.isMember("SAStructProp"));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT * FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT str FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT cte.str FROM cte"));
+    }
+    {
+        ECSqlStatement selStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selStmt.Prepare(m_ecdb, "WITH cte(str) AS(SELECT SAStructProp FROM ecsql.SA WHERE ECInstanceId=?) SELECT c.str FROM cte c"));
+    }
+    
     }
 }
 
