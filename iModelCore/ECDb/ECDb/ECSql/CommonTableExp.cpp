@@ -48,7 +48,7 @@ CommonTableBlockExp::CommonTableBlockExp(Utf8CP name, std::unique_ptr<SelectStat
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool CommonTableBlockExp::ExpandDerivedProperties(ECSqlParseContext& ctx) const {
     if(m_columnList.size() == 0)
-        return ExpandDerivedPropertiesForEmptyColumnList(ctx);
+        return true;  // If there are no columns we actually donot need expanding these derived properties...because in _FindProperty we just cascade the finding to the inside select statement
     // when we encounter wild card we will leave it deferred.
     if (!m_deferredExpand) {
         return true;
@@ -68,32 +68,6 @@ bool CommonTableBlockExp::ExpandDerivedProperties(ECSqlParseContext& ctx) const 
         });
         const_cast<CommonTableBlockExp*>(this)->AddChild(std::make_unique<DerivedPropertyExp>(std::move(property), nullptr));
     }
-    m_deferredExpand = false;
-    return !m_deferredExpand;
-}
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool CommonTableBlockExp::ExpandDerivedPropertiesForEmptyColumnList(ECSqlParseContext& ctx) const {
-    // when we encounter wild card we will leave it deferred.
-    if (!m_deferredExpand) {
-        return true;
-    }
-    auto query = GetQuery();
-    auto cols = query->GetSelection()->GetChildrenCount();
-    for (auto i = 0; i < cols; ++i) {
-        auto target = query->GetSelection()->GetChildren().Get<DerivedPropertyExp>(i);
-        if (target->IsWildCard()) {
-            return false;
-        }
-    }
-    for (Exp const* expr : GetQuery()->GetSelection()->GetChildren())
-        {
-        DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
-        std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp); // we here set the clasref as CommonTableBlockExp
-        const_cast<CommonTableBlockExp*>(this)->AddChild(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
-        }
     m_deferredExpand = false;
     return !m_deferredExpand;
 }
@@ -211,37 +185,40 @@ Utf8StringCR CommonTableBlockExp::_GetId() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 void CommonTableBlockExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const {
+    
+    auto ctb = [&]() -> CommonTableBlockNameExp const* {
+        if (ctx.CurrentArg()->GetType() != ECSqlParseContext::ParseArg::Type::RangeClass)
+            return nullptr;
+        auto rangeClasses = dynamic_cast<ECSqlParseContext::RangeClassArg const*>(ctx.CurrentArg());
+        if (rangeClasses == nullptr)
+            return nullptr;
+        for(auto& rangeClass : rangeClasses->GetRangeClassInfos()) {
+            if (rangeClass.GetExp().GetType() != Exp::Type::CommonTableBlockName)
+                continue;
+            auto cur = rangeClass.GetExp().GetAsCP<CommonTableBlockNameExp>();
+            if (cur->GetName().EqualsIAscii(GetName())) {
+                return cur;
+            }
+        }
+        return nullptr;
+    }();
+
+    BeAssert(ctb != nullptr);
+    if (ctb == nullptr) {
+        return;
+    }
+    
+    
     if(m_columnList.size() == 0){
         for (Exp const* expr : GetQuery()->GetSelection()->GetChildren())
         {
         DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
-        std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp); // we here set the clasref as CommonTableBlockExp
+        std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *ctb, selectClauseItemExp);
         expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
         }
     }
     else
     {
-        auto ctb = [&]() -> CommonTableBlockNameExp const* {
-            if (ctx.CurrentArg()->GetType() != ECSqlParseContext::ParseArg::Type::RangeClass)
-                return nullptr;
-            auto rangeClasses = dynamic_cast<ECSqlParseContext::RangeClassArg const*>(ctx.CurrentArg());
-            if (rangeClasses == nullptr)
-                return nullptr;
-            for(auto& rangeClass : rangeClasses->GetRangeClassInfos()) {
-                if (rangeClass.GetExp().GetType() != Exp::Type::CommonTableBlockName)
-                    continue;
-                auto cur = rangeClass.GetExp().GetAsCP<CommonTableBlockNameExp>();
-                if (cur->GetName().EqualsIAscii(GetName())) {
-                    return cur;
-                }
-            }
-            return nullptr;
-        }();
-
-        BeAssert(ctb != nullptr);
-        if (ctb == nullptr) {
-            return;
-        }
         auto selection = GetQuery()->GetSelection();
         auto nCols = std::max(m_columnList.size(), selection->GetChildrenCount());
         for (auto i = 0; i < nCols; ++i) {
