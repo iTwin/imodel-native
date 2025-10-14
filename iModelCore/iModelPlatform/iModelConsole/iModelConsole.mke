@@ -41,6 +41,10 @@ $(o)main$(oext) : $(SrcDir)main.cpp ${AllHeaders}  ${MultiCompileDepends}
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList) 
 
+%if $(TARGET_PLATFORM) != "Windows"
+    EXE_NO_SIGN = 1
+%endif
+
 EXE_DEST    = $(o)
 EXE_NAME    = $(appName)
 EXE_OBJS    = $(MultiCompileObjectList)
