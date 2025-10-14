@@ -73,7 +73,7 @@ Napi::String DgnDb::GetJsClassName(DgnElementId id) {
 void DgnDb::CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args) {
     VerifyMainThread(); // should never be called except from main thread
     if (obj == nullptr || !IsMainThread())
-        return Napi::Value();
+        return;
 
     auto func = obj.Get(methodName);
     if (!func.IsFunction()) {
