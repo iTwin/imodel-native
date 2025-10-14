@@ -17,9 +17,18 @@
         </Bindings>
     </Part>
 
+    <!-- Download cacert.pem from curl.se and copy it to Assets -->
+    <Part Name="PublicAPIApple" BentleyBuildMakeFile="BeCurl.prewire.apple.mke" OnlyPlatforms="iOS*,MacOS*">
+        <Bindings>
+            <VendorNotices>Delivery/cacert-license.txt</VendorNotices>
+            <Files ProductDirectoryName="Assets">Delivery/cacert.pem</Files>
+        </Bindings>
+    </Part>
+
     <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
     <Part Name="Library" BentleyBuildMakeFile="BeCurl.mke">
         <SubPart PartName="PublicAPI" />
+        <SubPart PartName="PublicAPIApple" />
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
         <SubPart PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
         <Bindings>
