@@ -2579,6 +2579,104 @@ TEST_F(CommonTableExpTestFixture, MultiplesCTEsWithoutSubColumns) {
         }
         {
         ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, " WITH edges AS ( SELECT 1 AS [Id], 2 AS [ParentId], 'Hi' UNION ALL SELECT 3 AS [Id], 4 AS [ParentId], 'Hello'), nodes AS ( SELECT 3 AS [Id], 2 AS [ParentId], 'A'), joinToParent AS (SELECT p.Id FROM nodes [p] LEFT JOIN edges [c] ON [p].Id = [c].ParentId) SELECT * FROM joinToParent"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH edges AS (SELECT 1,2 [K1],'Hi' UNION ALL SELECT 3,4,'Hello'),nodes AS (SELECT 3 [K0],2,'A'),joinToParent AS (SELECT [K0] [K2] FROM nodes p LEFT OUTER JOIN edges c ON [K0]=[K1] )\nSELECT [K2] FROM joinToParent");
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("3", stmt.GetValueText(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, " WITH edges AS ( SELECT 1 AS [Id], 2 AS [ParentId], 'Hi' UNION ALL SELECT 3 AS [Id], 4 AS [ParentId], 'Hello'), nodes AS ( SELECT 3 AS [Id], 2 AS [ParentId], 'A'), joinToParent AS (SELECT * FROM nodes [p] LEFT JOIN edges [c] ON [p].Id = [c].ParentId) SELECT * FROM joinToParent"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH edges AS (SELECT 1 [K4],2 [K1],'Hi' [K5] UNION ALL SELECT 3,4,'Hello'),nodes AS (SELECT 3 [K0],2 [K2],'A' [K3]),joinToParent AS (SELECT [K0] [K6],[K2] [K7],[K3] [K8],[K4] [K9],[K1] [K10],[K5] [K11] FROM nodes p LEFT OUTER JOIN edges c ON [K0]=[K1] )\nSELECT [K6],[K7],[K8],[K9],[K10],[K11] FROM joinToParent");
+        ASSERT_EQ(6, stmt.GetColumnCount());
+        ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("ParentId", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("'A'", stmt.GetColumnInfo(2).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("Id_1", stmt.GetColumnInfo(3).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("ParentId_1", stmt.GetColumnInfo(4).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("'Hi'", stmt.GetColumnInfo(5).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("3", stmt.GetValueText(0));
+        ASSERT_STREQ("2", stmt.GetValueText(1));
+        ASSERT_STREQ("A", stmt.GetValueText(2));
+        ASSERT_EQ(true, stmt.IsValueNull(3));
+        ASSERT_EQ(true, stmt.IsValueNull(4));
+        ASSERT_EQ(true, stmt.IsValueNull(5));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, " WITH edges AS ( SELECT 1 AS [Id], 2 AS [ParentId], 'Hi' UNION ALL SELECT 3 AS [Id], 4 AS [ParentId], 'Hello'), nodes AS ( SELECT 3 AS [Id], 2 AS [ParentId], 'A'), joinToParent AS (SELECT p.* FROM nodes [p] LEFT JOIN edges [c] ON [p].Id = [c].ParentId) SELECT * FROM joinToParent"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH edges AS (SELECT 1,2 [K1],'Hi' UNION ALL SELECT 3,4,'Hello'),nodes AS (SELECT 3 [K0],2 [K2],'A' [K3]),joinToParent AS (SELECT [K0] [K4],[K2] [K5],[K3] [K6] FROM nodes p LEFT OUTER JOIN edges c ON [K0]=[K1] )\nSELECT [K4],[K5],[K6] FROM joinToParent");
+        ASSERT_EQ(3, stmt.GetColumnCount());
+        ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("ParentId", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("'A'", stmt.GetColumnInfo(2).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("3", stmt.GetValueText(0));
+        ASSERT_STREQ("2", stmt.GetValueText(1));
+        ASSERT_STREQ("A", stmt.GetValueText(2));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, " WITH edges AS ( SELECT 1 AS [Id], 2 AS [ParentId], 'Hi' UNION ALL SELECT 3 AS [Id], 4 AS [ParentId], 'Hello'), nodes AS ( SELECT 3 AS [Id], 2 AS [ParentId], 'A'), joinToParent AS (SELECT * FROM edges [c] LEFT JOIN nodes [p] ON [c].ParentId = [p].Id) SELECT * FROM joinToParent"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH edges AS (SELECT 1 [K2],2 [K0],'Hi' [K3] UNION ALL SELECT 3,4,'Hello'),nodes AS (SELECT 3 [K1],2 [K4],'A' [K5]),joinToParent AS (SELECT [K2] [K6],[K0] [K7],[K3] [K8],[K1] [K9],[K4] [K10],[K5] [K11] FROM edges c LEFT OUTER JOIN nodes p ON [K0]=[K1] )\nSELECT [K6],[K7],[K8],[K9],[K10],[K11] FROM joinToParent");
+        ASSERT_EQ(6, stmt.GetColumnCount());
+        ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("ParentId", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("'Hi'", stmt.GetColumnInfo(2).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("Id_1", stmt.GetColumnInfo(3).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("ParentId_1", stmt.GetColumnInfo(4).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("'A'", stmt.GetColumnInfo(5).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_STREQ("2", stmt.GetValueText(1));
+        ASSERT_STREQ("Hi", stmt.GetValueText(2));
+        ASSERT_EQ(true, stmt.IsValueNull(3));
+        ASSERT_EQ(true, stmt.IsValueNull(4));
+        ASSERT_EQ(true, stmt.IsValueNull(5));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("3", stmt.GetValueText(0));
+        ASSERT_STREQ("4", stmt.GetValueText(1));
+        ASSERT_STREQ("Hello", stmt.GetValueText(2));
+        ASSERT_EQ(true, stmt.IsValueNull(3));
+        ASSERT_EQ(true, stmt.IsValueNull(4));
+        ASSERT_EQ(true, stmt.IsValueNull(5));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, " WITH edges AS ( SELECT 1 AS [Id], 2 AS [ParentId], 'Hi' UNION ALL SELECT 3 AS [Id], 4 AS [ParentId], 'Hello'), nodes AS ( SELECT 4 AS [Id], 2 AS [ParentId], 'A'), joinToParent AS (SELECT * FROM edges [c] LEFT JOIN nodes [p] ON [c].ParentId = [p].Id) SELECT * FROM joinToParent"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "WITH edges AS (SELECT 1 [K2],2 [K0],'Hi' [K3] UNION ALL SELECT 3,4,'Hello'),nodes AS (SELECT 4 [K1],2 [K4],'A' [K5]),joinToParent AS (SELECT [K2] [K6],[K0] [K7],[K3] [K8],[K1] [K9],[K4] [K10],[K5] [K11] FROM edges c LEFT OUTER JOIN nodes p ON [K0]=[K1] )\nSELECT [K6],[K7],[K8],[K9],[K10],[K11] FROM joinToParent");
+        ASSERT_EQ(6, stmt.GetColumnCount());
+        ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("ParentId", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("'Hi'", stmt.GetColumnInfo(2).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("Id_1", stmt.GetColumnInfo(3).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("ParentId_1", stmt.GetColumnInfo(4).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_STREQ("'A'", stmt.GetColumnInfo(5).GetProperty()->GetDisplayLabel().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("1", stmt.GetValueText(0));
+        ASSERT_STREQ("2", stmt.GetValueText(1));
+        ASSERT_STREQ("Hi", stmt.GetValueText(2));
+        ASSERT_EQ(true, stmt.IsValueNull(3));
+        ASSERT_EQ(true, stmt.IsValueNull(4));
+        ASSERT_EQ(true, stmt.IsValueNull(5));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("3", stmt.GetValueText(0));
+        ASSERT_STREQ("4", stmt.GetValueText(1));
+        ASSERT_STREQ("Hello", stmt.GetValueText(2));
+        ASSERT_STREQ("4", stmt.GetValueText(3));
+        ASSERT_STREQ("2", stmt.GetValueText(4));
+        ASSERT_STREQ("A", stmt.GetValueText(5));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+        {
+        ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "WITH [cte1] AS ( SELECT 1 AS KEYID, 'BeepBoo' AS Noise ), cte2(KEYID, Name) AS ( SELECT 1, 'Robot' ) SELECT KEYID, Noise, Name FROM cte1 [c1] JOIN cte2 [c2] ON c1.KEYID = c2.KEYID"));
         }
 }
