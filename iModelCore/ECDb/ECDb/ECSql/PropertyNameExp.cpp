@@ -98,7 +98,7 @@ ECN::ECPropertyCP PropertyNameExp::GetVirtualProperty() const {
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool PropertyNameExp::IsWildCard() const {
     // checks if the last part of the property path is asterisk or not. If asterisk that means replacement is yet to be done. 
-    // Used in CommonTableBlockExp while expanding derived properties. if wild card that means replacement is yet to be done, 
+    // Used only in CommonTableBlockExp while expanding derived properties. if wild card that means replacement is yet to be done, 
     // and all the links to derived properties should be done after replacement
     return Exp::IsAsteriskToken(m_resolvedPropertyPath.Last().GetName());  
 }
