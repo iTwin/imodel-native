@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -14,6 +14,7 @@
 #include "internal/core.h"
 #include "internal/bio.h"
 #include "internal/provider.h"
+#include "crypto/decoder.h"
 #include "crypto/context.h"
 
 struct ossl_lib_ctx_st {
@@ -33,9 +34,13 @@ struct ossl_lib_ctx_st {
     void *bio_core;
     void *child_provider;
     OSSL_METHOD_STORE *decoder_store;
+    void *decoder_cache;
     OSSL_METHOD_STORE *encoder_store;
     OSSL_METHOD_STORE *store_loader_store;
     void *self_test_cb;
+#endif
+#if defined(OPENSSL_THREADS)
+    void *threads;
 #endif
     void *rand_crngt;
 #ifdef FIPS_MODULE
@@ -48,17 +53,23 @@ struct ossl_lib_ctx_st {
 
 int ossl_lib_ctx_write_lock(OSSL_LIB_CTX *ctx)
 {
-    return CRYPTO_THREAD_write_lock(ossl_lib_ctx_get_concrete(ctx)->lock);
+    if ((ctx = ossl_lib_ctx_get_concrete(ctx)) == NULL)
+        return 0;
+    return CRYPTO_THREAD_write_lock(ctx->lock);
 }
 
 int ossl_lib_ctx_read_lock(OSSL_LIB_CTX *ctx)
 {
-    return CRYPTO_THREAD_read_lock(ossl_lib_ctx_get_concrete(ctx)->lock);
+    if ((ctx = ossl_lib_ctx_get_concrete(ctx)) == NULL)
+        return 0;
+    return CRYPTO_THREAD_read_lock(ctx->lock);
 }
 
 int ossl_lib_ctx_unlock(OSSL_LIB_CTX *ctx)
 {
-    return CRYPTO_THREAD_unlock(ossl_lib_ctx_get_concrete(ctx)->lock);
+    if ((ctx = ossl_lib_ctx_get_concrete(ctx)) == NULL)
+        return 0;
+    return CRYPTO_THREAD_unlock(ctx->lock);
 }
 
 int ossl_lib_ctx_is_child(OSSL_LIB_CTX *ctx)
@@ -107,9 +118,15 @@ static int context_init(OSSL_LIB_CTX *ctx)
         goto err;
 
 #ifndef FIPS_MODULE
-    /* P2. We want decoder_store to be cleaned up before the provider store */
+    /*
+     * P2. We want decoder_store/decoder_cache to be cleaned up before the
+     * provider store
+     */
     ctx->decoder_store = ossl_method_store_new(ctx);
     if (ctx->decoder_store == NULL)
+        goto err;
+    ctx->decoder_cache = ossl_decoder_cache_new(ctx);
+    if (ctx->decoder_cache == NULL)
         goto err;
 
     /* P2. We want encoder_store to be cleaned up before the provider store */
@@ -171,6 +188,12 @@ static int context_init(OSSL_LIB_CTX *ctx)
         goto err;
 #endif
 
+#ifndef OPENSSL_NO_THREAD_POOL
+    ctx->threads = ossl_threads_ctx_new(ctx);
+    if (ctx->threads == NULL)
+        goto err;
+#endif
+
     /* Low priority. */
 #ifndef FIPS_MODULE
     ctx->child_provider = ossl_child_prov_ctx_new(ctx);
@@ -217,11 +240,19 @@ static void context_deinit_objs(OSSL_LIB_CTX *ctx)
         ctx->provider_conf = NULL;
     }
 
-    /* P2. We want decoder_store to be cleaned up before the provider store */
+    /*
+     * P2. We want decoder_store/decoder_cache to be cleaned up before the
+     * provider store
+     */
     if (ctx->decoder_store != NULL) {
         ossl_method_store_free(ctx->decoder_store);
         ctx->decoder_store = NULL;
     }
+    if (ctx->decoder_cache != NULL) {
+        ossl_decoder_cache_free(ctx->decoder_cache);
+        ctx->decoder_cache = NULL;
+    }
+
 
     /* P2. We want encoder_store to be cleaned up before the provider store */
     if (ctx->encoder_store != NULL) {
@@ -299,6 +330,13 @@ static void context_deinit_objs(OSSL_LIB_CTX *ctx)
     }
 #endif
 
+#ifndef OPENSSL_NO_THREAD_POOL
+    if (ctx->threads != NULL) {
+        ossl_threads_ctx_free(ctx->threads);
+        ctx->threads = NULL;
+    }
+#endif
+
     /* Low priority. */
 #ifndef FIPS_MODULE
     if (ctx->child_provider != NULL) {
@@ -372,7 +410,7 @@ static OSSL_LIB_CTX *get_default_context(void)
 {
     OSSL_LIB_CTX *current_defctx = get_thread_default_context();
 
-    if (current_defctx == NULL)
+    if (current_defctx == NULL && default_context_inited)
         current_defctx = &default_context_int;
     return current_defctx;
 }
@@ -543,12 +581,18 @@ void *ossl_lib_ctx_get_data(OSSL_LIB_CTX *ctx, int index)
         return ctx->child_provider;
     case OSSL_LIB_CTX_DECODER_STORE_INDEX:
         return ctx->decoder_store;
+    case OSSL_LIB_CTX_DECODER_CACHE_INDEX:
+        return ctx->decoder_cache;
     case OSSL_LIB_CTX_ENCODER_STORE_INDEX:
         return ctx->encoder_store;
     case OSSL_LIB_CTX_STORE_LOADER_STORE_INDEX:
         return ctx->store_loader_store;
     case OSSL_LIB_CTX_SELF_TEST_CB_INDEX:
         return ctx->self_test_cb;
+#endif
+#ifndef OPENSSL_NO_THREAD_POOL
+    case OSSL_LIB_CTX_THREAD_INDEX:
+        return ctx->threads;
 #endif
 
     case OSSL_LIB_CTX_RAND_CRNGT_INDEX: {

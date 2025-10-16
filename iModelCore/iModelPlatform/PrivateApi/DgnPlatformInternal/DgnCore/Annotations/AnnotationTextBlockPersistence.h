@@ -9,6 +9,25 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+namespace FB
+    {
+    typedef bvector<AnnotationTextBlockSetter> AnnotationTextBlockSetters;
+    typedef flatbuffers::Vector<AnnotationTextBlockSetter const*> AnnotationTextBlockSetterVector;
+    typedef flatbuffers::Offset<AnnotationTextBlockSetterVector> AnnotationTextBlockSetterVectorOffset;
+
+    typedef flatbuffers::Offset<AnnotationTextBlockRun> AnnotationTextBlockRunOffset;
+    typedef bvector<AnnotationTextBlockRunOffset> AnnotationTextBlockRunOffsets;
+
+    typedef flatbuffers::Vector<AnnotationTextBlockRunOffset> AnnotationTextBlockRunOffsetVector;
+    typedef flatbuffers::Offset<AnnotationTextBlockRunOffsetVector> AnnotationTextBlockRunOffsetVectorOffset;
+
+    typedef flatbuffers::Offset<AnnotationTextBlockParagraph> AnnotationTextBlockParagraphOffset;
+    typedef bvector<AnnotationTextBlockParagraphOffset> AnnotationTextBlockParagraphOffsets;
+
+    typedef flatbuffers::Vector<AnnotationTextBlockParagraphOffset> AnnotationTextBlockParagraphOffsetVector;
+    typedef flatbuffers::Offset<AnnotationTextBlockParagraphOffsetVector> AnnotationTextBlockParagraphOffsetVectorOffset;
+    }
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================

@@ -223,7 +223,7 @@ void dgn_TxnTable::Element::_OnApplied() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::_OnAppliedAdd(BeSQLite::Changes::Change const& change) {
     if (!m_txnMgr.IsInAbandon())
-        AddChange(change, ChangeType::Insert, false);
+        AddChange(change, ChangeType::Insert);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -231,7 +231,7 @@ void dgn_TxnTable::Element::_OnAppliedAdd(BeSQLite::Changes::Change const& chang
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::_OnAppliedDelete(BeSQLite::Changes::Change const& change) {
     if (!m_txnMgr.IsInAbandon())
-        AddChange(change, ChangeType::Delete, false);
+        AddChange(change, ChangeType::Delete);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -239,7 +239,7 @@ void dgn_TxnTable::Element::_OnAppliedDelete(BeSQLite::Changes::Change const& ch
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::_OnAppliedUpdate(BeSQLite::Changes::Change const& change) {
     if (!m_txnMgr.IsInAbandon())
-        AddChange(change, ChangeType::Update, false);
+        AddChange(change, ChangeType::Update);
 }
 
 /*---------------------------------------------------------------------------------**/ /**

@@ -11,23 +11,25 @@
 #include <random>
 #include <chrono>
 
-#define DEFAULT_QUERY_DELAY_MAX_TIME                std::chrono::seconds(10)
-#define DEFAULT_QUOTA_MAX_TIME                      std::chrono::seconds(60)
-#define DEFAULT_QUOTA_MAX_MEM                       0x800000
-#define DEFAULT_REQUEST_QUERY_SIZE                  2000
-#define DEFAULT_IGNORE_PRIORITY                     false
-#define DEFAULT_IGNORE_DELAY                        true
 #define DEFAULT_DONOT_USE_PRIMARY_CONN_TO_PREPARE   false
+#define DEFAULT_IGNORE_DELAY                        true
+#define DEFAULT_IGNORE_PRIORITY                     false
+#define DEFAULT_MONITOR_POLL_INTERVAL               5000 // ms
+#define DEFAULT_PROGRESS_OP_COUNT                   5000
+#define DEFAULT_QUERY_DELAY_MAX_TIME                std::chrono::seconds(10)
+#define DEFAULT_QUOTA_MAX_MEM                       0x800000
+#define DEFAULT_QUOTA_MAX_TIME                      std::chrono::seconds(60)
+#define DEFAULT_REQUEST_QUERY_SIZE                  2000
 #define DEFAULT_SHUTDOWN_WHEN_IDLE_FOR_SECONDS      60*30
-#define DEFAULT_MONITOR_POLL_INTERVAL               1000 // ms
-#define DEFAULT_WORKER_THREAD_COUNT                 std::min(4u, std::thread::hardware_concurrency())
 #define DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER     40
+#define DEFAULT_WORKER_THREAD_COUNT                 std::min(4u, std::thread::hardware_concurrency())
+#define MAX_PROGRESS_OP_COUNT                       50000
 #define MAX_REQUEST_QUERY_SIZE                      4000
-#define MIN_WORKER_THREAD_COUNT                     1
-#define QUERY_WORKER_RESULT_RESERVE_BYTES           1024*4  // 4Kb and its cached buffer on for each thread.
 #define MAX_STATEMENT_CACHE_SIZE_PER_WORKER         100
 #define MIN_MONITOR_POLL_INTERVAL                   1000
-
+#define MIN_PROGRESS_OP_COUNT                       500
+#define MIN_WORKER_THREAD_COUNT                     1
+#define QUERY_WORKER_RESULT_RESERVE_BYTES           1024*4  // 4Kb and its cached buffer on for each thread.
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
 
@@ -146,9 +148,9 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         ConnectionCache& m_cache;
         ECDb m_db;
         recursive_mutex_t m_mutexReq;
-        bool m_isChangeSummaryCacheAttached;
         std::unique_ptr<RunnableRequestBase> m_request;
         uint16_t m_id;
+        uint32_t m_primaryFileDataVer = 0;
         QueryAdaptorCache m_adaptorCache;
         QueryRetryHandler::Ptr m_retryHandler;
         void UpdateSqlFunctions(ConnectionAction);
@@ -159,14 +161,11 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         std::vector<FunctionInfo> GetPrimaryDbSqlFunctions() const;
         void SetRequest(std::unique_ptr<RunnableRequestBase> request);
         void ClearRequest();
-        std::atomic_bool m_canBeInterrupted;
     public:
-        CachedConnection(ConnectionCache& cache, uint16_t id):m_cache(cache), m_id(id), m_adaptorCache(*this),m_isChangeSummaryCacheAttached(false),m_retryHandler(QueryRetryHandler::Create(60s)){}
+        CachedConnection(ConnectionCache& cache, uint16_t id):m_cache(cache), m_id(id), m_adaptorCache(*this),m_retryHandler(QueryRetryHandler::Create(60s)){}
         recursive_mutex_t& GetMutex() { return m_mutexReq; }
         ~CachedConnection();
-        void Interrupt() const {m_db.Interrupt();}
-        bool CanBeInterrupted() const { return m_canBeInterrupted.load(); }
-        void SetCanBeInterrupted(bool val) { return m_canBeInterrupted.store(val); }
+        void SyncAttachDbs();
         void Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)>, std::unique_ptr<RunnableRequestBase>);
         void Reset(bool detachDbs);
         void InterruptIf(std::function<bool(RunnableRequestBase const&)>,bool cancel);
@@ -190,7 +189,7 @@ struct ConnectionCache final {
         ECDb const& m_primaryDb;
         recursive_mutex_t m_mutex;
         uint32_t m_poolSize;
-
+        uint64_t m_primaryAttachFileHash = 0;
     public:
         ConnectionCache(ECDb const& primaryDb, uint32_t pool_size);
         ECDb const& GetPrimaryDb() const { return m_primaryDb; }
@@ -198,8 +197,8 @@ struct ConnectionCache final {
         CachedConnection& GetSyncConnection();
         void Interrupt(bool reset_conn, bool detachDbs);
         void InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel);
-        void SetCacheStatementsPerWork(uint32_t);
         void SetMaxPoolSize(uint32_t newSize)  {m_poolSize = newSize; }
+        void SyncAttachDbs();
 };
 
 struct RunnableRequestQueue;
@@ -237,7 +236,7 @@ struct RunnableRequestBase {
         void Cancel() { m_cancelled.store(true); }
         bool IsReady() const { return GetTotalTime() >= m_request->GetDelay(); }
         bool IsCancelled () const {return m_cancelled.load(); }
-        bool IsTimeExceeded() const { return m_quota.MaxTimeAllowed() == 0s ? false : std::chrono::duration_cast<std::chrono::seconds>(GetTotalTime()) >  m_quota.MaxTimeAllowed();}
+        bool IsTimeExceeded() const { return m_quota.MaxTimeAllowed() == 0s ? false : GetTotalTime() >  std::chrono::duration_cast<std::chrono::milliseconds>(m_quota.MaxTimeAllowed());}
         bool IsMemoryExceeded(std::string const& result) const { return m_quota.MaxMemoryAllowed() == 0 ? false : result.size() > m_quota.MaxMemoryAllowed(); }
         bool IsTimeOrMemoryExceeded(std::string const& result) const { return IsTimeExceeded() || IsMemoryExceeded(result);}
         void Interrupt(CachedConnection& conn);
@@ -319,10 +318,6 @@ struct RunnableRequestQueue final {
         explicit RunnableRequestQueue(ECDbCR ecdb);
         ~RunnableRequestQueue() { Stop();}
         bool CancelRequest(uint32_t id);
-        void SetRequestQueueMaxSize(uint32_t size);
-        void SetMaxQuota(QueryQuota const&);
-        bool Suspend();
-        bool Resume();
         ECDbCR GetECDb() const { return m_ecdb; }
         void RemoveIf (std::function<bool(RunnableRequestBase&)> predicate);
         State GetState() const { return m_state.load(); }
@@ -346,7 +341,6 @@ struct QueryExecutor final {
     public:
         QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint32_t pool_size = 0);
         ~QueryExecutor();
-        void SetWorkerPoolSize(uint32_t);
         ConnectionCache& GetConnectionCache() {return m_connCache; }
 };
 
@@ -360,7 +354,6 @@ struct QueryHelper final {
         static ECSqlRowProperty::List GetMetaInfo(CachedQueryAdaptor&,bool);
         static void Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& request);
         static void ReadBlob(ECDbCR conn, RunnableRequestBase& request);
-        static void ExecutePing(Json::Value const& pingJson, RunnableRequestBase& runnableRequest);
     public:
         static void Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& request);
 };
@@ -390,8 +383,7 @@ struct QueryMonitor {
         RunnableRequestQueue& m_queue;
         QueryExecutor& m_executor;
         std::chrono::milliseconds m_pollInterval;
-        bool m_allowTestingArgs;
-        cancel_callback_type m_cancelBeforeSchemaChanges;
+
     public:
         QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor);
         ~QueryMonitor();
@@ -400,27 +392,17 @@ struct QueryMonitor {
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-struct ConcurrentQueryMgr::Impl : ECDb::IECDbCacheClearListener {
+struct ConcurrentQueryMgr::Impl  {
     private:
         RunnableRequestQueue m_queue;
         QueryExecutor m_executor;
         QueryMonitor m_monitor;
-        cancel_callback_type m_removeEventHandlers;
-        void _OnBeforeClearECDbCache() override;
-        void _OnAfterClearECDbCache() override;
     public:
         Impl(ECDbCR ecdb);
         ~Impl();
         QueryResponse::Future Enqueue(QueryRequest::Ptr request) { return m_queue.Enqueue(m_executor.GetConnectionCache(), std::move(request)); }
         void Enqueue(QueryRequest::Ptr request, OnCompletion completion) { m_queue.Enqueue(m_executor.GetConnectionCache(), std::move(request), completion); }
-        bool Suspend(ClearCacheOption clearCache, DetachAttachDbs detachDbs);
-        bool Resume() {return m_queue.Resume();}
-        bool IsSuspended() const { return m_queue.GetState() == RunnableRequestQueue::State::Paused;}
-        // change config
-        void SetWorkerPoolSize(uint32_t newSize) { m_executor.SetWorkerPoolSize(newSize); }
-        void SetRequestQueueMaxSize(uint32_t newSize) { m_queue.SetRequestQueueMaxSize(newSize); }
-        void SetCacheStatementsPerWork(uint32_t newSize) { m_executor.GetConnectionCache().SetCacheStatementsPerWork(newSize); }
-        void SetMaxQuota(QueryQuota const& newQuota) {m_queue.SetMaxQuota(newQuota); }
+
 };
 
 //=======================================================================================

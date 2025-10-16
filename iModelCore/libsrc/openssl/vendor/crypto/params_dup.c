@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2021-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -37,11 +37,8 @@ static int ossl_param_buf_alloc(OSSL_PARAM_BUF *out, size_t extra_blocks,
     size_t sz = OSSL_PARAM_ALIGN_SIZE * (extra_blocks + out->blocks);
 
     out->alloc = is_secure ? OPENSSL_secure_zalloc(sz) : OPENSSL_zalloc(sz);
-    if (out->alloc == NULL) {
-        ERR_raise(ERR_LIB_CRYPTO, is_secure ? CRYPTO_R_SECURE_MALLOC_FAILURE
-                                            : ERR_R_MALLOC_FAILURE);
+    if (out->alloc == NULL)
         return 0;
-    }
     out->alloc_sz = sz;
     out->cur = out->alloc + extra_blocks;
     return 1;
@@ -185,28 +182,26 @@ OSSL_PARAM *OSSL_PARAM_merge(const OSSL_PARAM *p1, const OSSL_PARAM *p2)
 
    /* Allocate enough space to store the merged parameters */
     params = OPENSSL_zalloc((list1_sz + list2_sz + 1) * sizeof(*p1));
-    if (params == NULL) {
-        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+    if (params == NULL)
         return NULL;
-    }
     dst = params;
     p1cur = list1;
     p2cur = list2;
     while (1) {
         /* If list1 is finished just tack list2 onto the end */
         if (*p1cur == NULL) {
-            do {
+            while (*p2cur != NULL) {
                 *dst++ = **p2cur;
                 p2cur++;
-            } while (*p2cur != NULL);
+            }
             break;
         }
         /* If list2 is finished just tack list1 onto the end */
         if (*p2cur == NULL) {
-            do {
+            while (*p1cur != NULL) {
                 *dst++ = **p1cur;
                 p1cur++;
-            } while (*p1cur != NULL);
+            }
             break;
         }
         /* consume the list element with the smaller key */

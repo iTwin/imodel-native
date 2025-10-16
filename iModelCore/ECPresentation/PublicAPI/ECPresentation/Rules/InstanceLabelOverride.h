@@ -26,10 +26,6 @@ private:
     bvector<InstanceLabelOverrideValueSpecification*> m_valueSpecifications;
 
 protected:
-    ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
-    ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
-    ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;
-
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
     ECPRESENTATION_EXPORT bool _ReadJson(BeJsConst json) override;
     ECPRESENTATION_EXPORT void _WriteJson(BeJsValue json) const override;
@@ -94,9 +90,9 @@ protected:
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct InstanceLabelOverrideValueSpecification : NoXmlSupport<PresentationKey>
+struct InstanceLabelOverrideValueSpecification : PresentationKey
 {
-    DEFINE_T_SUPER(NoXmlSupport<PresentationKey>)
+    DEFINE_T_SUPER(PresentationKey)
 
 protected:
     virtual void _Accept(InstanceLabelOverrideValueSpecificationVisitor&) const = 0;
@@ -119,9 +115,9 @@ struct InstanceLabelOverrideCompositeValueSpecification : InstanceLabelOverrideV
 {
     DEFINE_T_SUPER(InstanceLabelOverrideValueSpecification)
 
-    struct Part : NoXmlSupport<PresentationKey>
+    struct Part : PresentationKey
     {
-        DEFINE_T_SUPER(NoXmlSupport<PresentationKey>)
+        DEFINE_T_SUPER(PresentationKey)
     private:
         InstanceLabelOverrideValueSpecification* m_specification;
         bool m_isRequired;

@@ -3273,3 +3273,39 @@ TEST(CurveVector, TunnelProfileInOutOnXY)
         }
     Check::ClearGeometry("CurveVector.TunnelProfileInOutOnXY");
     }
+
+TEST(CurveVector, CentroidAreaXY)
+    {
+    BeFileName path0;
+    BeTest::GetHost().GetDocumentsRoot(path0);
+    path0.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"loop-concave-lineseg-cw.imjs");
+
+    BeFileName path1;
+    BeTest::GetHost().GetDocumentsRoot(path1);
+    path1.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"loop-concave-linestring-ccw.imjs");
+
+    bvector<IGeometryPtr> geometry;
+    CurveVectorPtr curve0, curve1;  // these regions only differ by constant z
+    if (Check::True(GTestFileOps::JsonFileToGeometry(path0, geometry), "File0 read") &&
+        Check::True(geometry.size() >= 1, "Extracted at least one geometry from file0") &&
+        Check::True((curve0 = geometry[0]->GetAsCurveVector()).IsValid(), "Extracted curve from file0") &&
+        Check::True(GTestFileOps::JsonFileToGeometry(path1, geometry), "File1 read") &&
+        Check::True(geometry.size() >= 1, "Extracted at least one geometry from file1") &&
+        Check::True((curve1 = geometry[0]->GetAsCurveVector()).IsValid(), "Extracted curve from file1"))
+        {
+        DPoint3d centroid0, centroid1;
+        double area0, area1;
+        curve0->CentroidAreaXY(centroid0, area0);
+        curve1->CentroidAreaXY(centroid1, area1);
+        if (Check::Near(centroid0, centroid1, "Centroids match"))
+            {
+            Check::Near(centroid0.x, 438.32029287952099, "Centroids have expected x-coordinate");
+            Check::Near(centroid0.y, 215.51318735062446, "Centroids have expected y-coordinate");
+            Check::Near(centroid0.z, 0.0, "Centroids have expected z-coordinate"); // technically irrelevant
+            }
+        Check::True(area0 < 0, "Area of clockwise loop is negative");
+        Check::True(area1 > 0, "Area of counterclockwise loop is positive");
+        if (Check::Near(fabs(area0), fabs(area1), "Absolute areas match"))
+            Check::Near(fabs(area0), 8.3397282162556685, "Regions have expected area");
+        }
+    }

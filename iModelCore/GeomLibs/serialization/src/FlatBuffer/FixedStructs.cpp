@@ -25,7 +25,7 @@ GEOMLIBS_SERIALIZATION_EXPORT GeometryValidatorPtr BentleyGeometryFlatBuffer__Se
     return oldValidator;
     }
 
-// move blocks of 8 doubles between the flat array  FacetFaceData structure arrays.
+// move blocks of 8 doubles from the flat array to the FacetFaceData array.
 // (The flat array is memory compatible for PolyfaceQueryCarrier)
 bool unpackFaceData
 (
@@ -220,22 +220,26 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
     if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
         {
         DSegment3d segment;
-        parent.TryGetLine (segment);
-        BGFB::DSegment3d fbSegment = FBDSegment3d (segment);
-        //return CreateLineSegment (m_fbb, &dataA, &dataB);
-        auto dataC = BGFB::CreateLineSegment (m_fbb, &fbSegment);
-        return CreateVariantGeometry (m_fbb,
-                BGFB::VariantGeometryUnion_LineSegment, dataC.Union (), WriteVariantGeometryTag (parent.GetId ()));
+        if (parent.TryGetLine (segment))
+            {
+            BGFB::DSegment3d fbSegment = FBDSegment3d (segment);
+            //return CreateLineSegment (m_fbb, &dataA, &dataB);
+            auto dataC = BGFB::CreateLineSegment (m_fbb, &fbSegment);
+            return CreateVariantGeometry (m_fbb,
+                    BGFB::VariantGeometryUnion_LineSegment, dataC.Union (), WriteVariantGeometryTag (parent.GetId ()));
+            }
         }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc)
         {
         DEllipse3d arc;
-        parent.TryGetArc (arc);
-        BGFB::DEllipse3d fbArc = FBDEllipse3d (arc);
-        //return CreateLineEllipse (m_fbb, &dataA, &dataB);
-        auto dataC = BGFB::CreateEllipticArc (m_fbb, &fbArc);
-        return CreateVariantGeometry (m_fbb,
-                BGFB::VariantGeometryUnion_EllipticArc, dataC.Union (), WriteVariantGeometryTag (parent.GetId ()));
+        if (parent.TryGetArc (arc))
+            {
+            BGFB::DEllipse3d fbArc = FBDEllipse3d (arc);
+            //return CreateLineEllipse (m_fbb, &dataA, &dataB);
+            auto dataC = BGFB::CreateEllipticArc (m_fbb, &fbArc);
+            return CreateVariantGeometry (m_fbb,
+                    BGFB::VariantGeometryUnion_EllipticArc, dataC.Union (), WriteVariantGeometryTag (parent.GetId ()));
+            }
         }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve)
         {
@@ -355,7 +359,7 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
             knots.push_back (source->knots[i]);
         auto fbKnots = m_fbb.CreateVector (knots);
 
-        auto fbStartTangent = FBDPoint3d (source->startTangent);
+        auto fbStartTangent = FBDVector3d (DVec3d::From (source->startTangent));
         auto fbEndTangent = FBDVector3d (DVec3d::From (source->endTangent));
 
         BGFB::InterpolationCurveBuilder builder (m_fbb);
@@ -422,7 +426,7 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
                     placement->spiral->GetTransitionTypeCode (),
                     0);
 
-            auto fbCurve = BGFB::CreateTransitionSpiral (m_fbb, &detail);
+            auto fbCurve = BGFB::CreateTransitionSpiral (m_fbb, &detail); // ignored: extraData, directSpiralDetail
 
             return CreateVariantGeometry (m_fbb,
                     BGFB::VariantGeometryUnion_TransitionSpiral,
@@ -432,28 +436,30 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Catenary)
         {
         DCatenary3dPlacement placement;
-        parent.TryGetCatenary (placement);
-        double a;
-        DPoint3dDVec3dDVec3d basis;
-        DSegment1d xLimits;
-        placement.Get (a, basis, xLimits);
-        auto fbOrigin = FBDPoint3d (basis.origin);
-        auto fbVectorU = FBDVector3d (basis.vectorU);
-        auto fbVectorV = FBDVector3d (basis.vectorV);
-        auto fbCurve = BGFB::CreateCatenaryCurve
-            (
-            m_fbb,
-            a,
-            &fbOrigin,
-            &fbVectorU,
-            &fbVectorV,
-            xLimits.GetStart (),
-            xLimits.GetEnd ()
-            );
+        if (parent.TryGetCatenary (placement))
+            {
+            double a;
+            DPoint3dDVec3dDVec3d basis;
+            DSegment1d xLimits;
+            placement.Get (a, basis, xLimits);
+            auto fbOrigin = FBDPoint3d (basis.origin);
+            auto fbVectorU = FBDVector3d (basis.vectorU);
+            auto fbVectorV = FBDVector3d (basis.vectorV);
+            auto fbCurve = BGFB::CreateCatenaryCurve
+                (
+                m_fbb,
+                a,
+                &fbOrigin,
+                &fbVectorU,
+                &fbVectorV,
+                xLimits.GetStart (),
+                xLimits.GetEnd ()
+                );
 
-        return CreateVariantGeometry (m_fbb,
-                BGFB::VariantGeometryUnion_CatenaryCurve,
-                fbCurve.Union (), WriteVariantGeometryTag (parent.GetId ()));
+            return CreateVariantGeometry (m_fbb,
+                    BGFB::VariantGeometryUnion_CatenaryCurve,
+                    fbCurve.Union (), WriteVariantGeometryTag (parent.GetId ()));
+            }
        }
     else if (parent.GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PartialCurve)
         {
@@ -471,8 +477,6 @@ public: flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ICu
         }
     return 0;
     }
-
-
 
 flatbuffers::Offset<BGFB::CurveVector> WriteAsFBCurveVector (CurveVectorCP parent)
     {
@@ -517,102 +521,116 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
         case SolidPrimitiveType_DgnBox:
             {
             DgnBoxDetail detail;
-            parent.TryGetDgnBoxDetail (detail);
-            auto fbData = BGFB::CreateDgnBox (m_fbb, (BGFB::DgnBoxDetail*)&detail); // YES -- hard case of compatible structure layouts
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnBox,
-                fbData.Union ()
-                );
+            if (parent.TryGetDgnBoxDetail (detail))
+                {
+                auto fbData = BGFB::CreateDgnBox (m_fbb, (BGFB::DgnBoxDetail*)&detail); // YES -- hard case of compatible structure layouts
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnBox,
+                    fbData.Union ()
+                    );
+                }
             }
         case SolidPrimitiveType_DgnCone:
             {
             DgnConeDetail detail;
-            parent.TryGetDgnConeDetail (detail);
-            auto fbData = BGFB::CreateDgnCone (m_fbb, (BGFB::DgnConeDetail*)&detail); // YES -- hard case of compatible structure layouts
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnCone,
-                fbData.Union ()
-                );
+            if (parent.TryGetDgnConeDetail (detail))
+                {
+                auto fbData = BGFB::CreateDgnCone (m_fbb, (BGFB::DgnConeDetail*)&detail); // YES -- hard case of compatible structure layouts
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnCone,
+                    fbData.Union ()
+                    );
+                }
             }
         case SolidPrimitiveType_DgnTorusPipe:
             {
             DgnTorusPipeDetail detail;
-            parent.TryGetDgnTorusPipeDetail (detail);
-            auto fbData = BGFB::CreateDgnTorusPipe (m_fbb, (BGFB::DgnTorusPipeDetail*)&detail); // YES -- hard case of compatible structure layouts
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnTorusPipe,
-                fbData.Union ()
-                );
+            if (parent.TryGetDgnTorusPipeDetail (detail))
+                {
+                auto fbData = BGFB::CreateDgnTorusPipe (m_fbb, (BGFB::DgnTorusPipeDetail*)&detail); // YES -- hard case of compatible structure layouts
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnTorusPipe,
+                    fbData.Union ()
+                    );
+                }
             }
         case SolidPrimitiveType_DgnSphere:
             {
             DgnSphereDetail detail;
-            parent.TryGetDgnSphereDetail (detail);
-            auto fbData = BGFB::CreateDgnSphere (m_fbb, (BGFB::DgnSphereDetail*)&detail); // YES -- hard case of compatible structure layouts
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnSphere,
-                fbData.Union ()
-                );
+            if (parent.TryGetDgnSphereDetail (detail))
+                {
+                auto fbData = BGFB::CreateDgnSphere (m_fbb, (BGFB::DgnSphereDetail*)&detail); // YES -- hard case of compatible structure layouts
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnSphere,
+                    fbData.Union ()
+                    );
+                }
             }
         case SolidPrimitiveType_DgnExtrusion:
             {
             DgnExtrusionDetail detail;
-            parent.TryGetDgnExtrusionDetail (detail);
-            auto fbData = BGFB::CreateDgnExtrusion (m_fbb,
-                            WriteAsFBCurveVector (detail.m_baseCurve.get ()),
-                            (BGFB::DVector3d*)&detail.m_extrusionVector,
-                            detail.m_capped);
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnExtrusion,
-                fbData.Union ()
-                );
+            if (parent.TryGetDgnExtrusionDetail (detail))
+                {
+                auto fbData = BGFB::CreateDgnExtrusion (m_fbb,
+                                WriteAsFBCurveVector (detail.m_baseCurve.get ()),
+                                (BGFB::DVector3d*)&detail.m_extrusionVector,
+                                detail.m_capped);
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnExtrusion,
+                    fbData.Union ()
+                    );
+                }
             }
         case SolidPrimitiveType_DgnRotationalSweep:
             {
             DgnRotationalSweepDetail detail;
-            parent.TryGetDgnRotationalSweepDetail (detail);
-            auto fbData = BGFB::CreateDgnRotationalSweep (m_fbb,
-                            WriteAsFBCurveVector (detail.m_baseCurve.get ()),
-                            (BGFB::DRay3d*)&detail.m_axisOfRotation,
-                            detail.m_sweepAngle,
-                            (int32_t)detail.m_numVRules,
-                            detail.m_capped);
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnRotationalSweep,
-                fbData.Union ()
-                );
+            if (parent.TryGetDgnRotationalSweepDetail (detail))
+                {
+                auto fbData = BGFB::CreateDgnRotationalSweep (m_fbb,
+                                WriteAsFBCurveVector (detail.m_baseCurve.get ()),
+                                (BGFB::DRay3d*)&detail.m_axisOfRotation,
+                                detail.m_sweepAngle,
+                                (int32_t)detail.m_numVRules,
+                                detail.m_capped);
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnRotationalSweep,
+                    fbData.Union ()
+                    );
+                }
             }
         case SolidPrimitiveType_DgnRuledSweep:
             {
             DgnRuledSweepDetail detail;
-            parent.TryGetDgnRuledSweepDetail (detail);
-            bvector<flatbuffers::Offset<BGFB::CurveVector>> fbCurves;
-            for (size_t i = 0; i < detail.m_sectionCurves.size (); i++)
+            if (parent.TryGetDgnRuledSweepDetail (detail))
                 {
-                fbCurves.push_back (WriteAsFBCurveVector (detail.m_sectionCurves[i].get ()));
+                bvector<flatbuffers::Offset<BGFB::CurveVector>> fbCurves;
+                for (size_t i = 0; i < detail.m_sectionCurves.size (); i++)
+                    {
+                    fbCurves.push_back (WriteAsFBCurveVector (detail.m_sectionCurves[i].get ()));
+                    }
+                auto fbChildren = m_fbb.CreateVector (fbCurves);
+                auto fbData = BGFB::CreateDgnRuledSweep (m_fbb,
+                                fbChildren,
+                                detail.m_capped);
+                return BGFB::CreateVariantGeometry
+                    (
+                    m_fbb,
+                    BGFB::VariantGeometryUnion_DgnRuledSweep,
+                    fbData.Union ()
+                    );
                 }
-            auto fbChildren = m_fbb.CreateVector (fbCurves);
-            auto fbData = BGFB::CreateDgnRuledSweep (m_fbb,
-                            fbChildren,
-                            detail.m_capped);
-            return BGFB::CreateVariantGeometry
-                (
-                m_fbb,
-                BGFB::VariantGeometryUnion_DgnRuledSweep,
-                fbData.Union ()
-                );
             }
         }
     return 0;
@@ -746,7 +764,7 @@ flatbuffers::Offset<BGFB::PolyfaceAuxData> WriteAsFBPolyfaceAuxData (PolyfaceAux
 +---------------+---------------+---------------+---------------+---------------+------*/
 const flatbuffers::Offset<BGFB::TaggedNumericData> WriteFBTaggedNumericData(TaggedNumericData const &data)
     {
-    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> intDataOffset  = WriteOptionalVector<int, int, 1>(data.m_intData);
+    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> intDataOffset  = WriteOptionalVector<int32_t, int32_t, 1>(data.m_intData);
     const flatbuffers::Offset<flatbuffers::Vector<double>> doubleDataOffset = WriteOptionalVector<double, double, 1>(data.m_doubleData);
 
     BGFB::TaggedNumericDataBuilder builder(m_fbb);
@@ -767,11 +785,11 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyfaceDirect(PolyfaceQueryCR pare
     int32_t meshStyle = parent.GetMeshStyle ();
     if (meshStyle != MESH_ELM_STYLE_INDEXED_FACE_LOOPS)
         {
-        // FB mesh index format is 1-based, 0-terminated/padded, variable/fixed-size face loops
+        // FB mesh index format is signed, 1-based, 0-terminated/padded, variable/fixed-size face loops
         auto indexedMesh = parent.CloneAsVariableSizeIndexed();
-        if (indexedMesh.IsValid())
-            return WriteAsFBPolyfaceDirect(*indexedMesh);
-        return 0;
+        if (!indexedMesh.IsValid())
+            return 0;
+        return WriteAsFBPolyfaceDirect(*indexedMesh);
         }
 
     int32_t numPerFace = parent.GetNumPerFace ();
@@ -783,18 +801,22 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyfaceDirect(PolyfaceQueryCR pare
     const flatbuffers::Offset<flatbuffers::Vector<double>> point = WriteOptionalVector<DPoint3d, double, 3>(parent.GetPointCP (), parent.GetPointCount ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> param = WriteOptionalVector<DPoint2d, double, 2>(parent.GetParamCP (), parent.GetParamCount ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> normal = WriteOptionalVector<DVec3d, double, 3>(parent.GetNormalCP (), parent.GetNormalCount ());
+    const flatbuffers::Offset<flatbuffers::Vector<uint32_t>> intColor = WriteOptionalVector<uint32_t, uint32_t, 1>(parent.GetIntColorCP (), parent.GetColorCount ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> faceData = WriteOptionalVector<FacetFaceData, double, 8>(parent.GetFaceDataCP (), parent.GetFaceCount ());
-    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> pointIndex = WriteOptionalVector<int, int, 1>(parent.GetPointIndexCP (), parent.GetPointIndexCount ());
-    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> paramIndex = WriteOptionalVector<int, int, 1>(parent.GetParamIndexCP (), parent.GetPointIndexCount ());
-    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> normalIndex = WriteOptionalVector<int, int, 1>(parent.GetNormalIndexCP (), parent.GetPointIndexCount ());
-    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> colorIndex = WriteOptionalVector<int, int, 1>(parent.GetColorIndexCP (), parent.GetPointIndexCount ());
-    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> faceIndex = WriteOptionalVector<int, int, 1>(parent.GetFaceIndexCP (), parent.GetPointIndexCount ());
-    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> intColor = WriteOptionalVector<uint32_t, int, 1>(parent.GetIntColorCP (), parent.GetColorCount ());
-    const flatbuffers::Offset<BGFB::PolyfaceAuxData>        auxData = WriteAsFBPolyfaceAuxData(parent.GetAuxDataCP().get());
+
+    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> pointIndex = WriteOptionalVector<int32_t, int32_t, 1>(parent.GetPointIndexCP (), parent.GetPointIndexCount ());
+    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> paramIndex = WriteOptionalVector<int32_t, int32_t, 1>(parent.GetParamIndexCP (), parent.GetPointIndexCount ());
+    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> normalIndex = WriteOptionalVector<int32_t, int32_t, 1>(parent.GetNormalIndexCP (), parent.GetPointIndexCount ());
+    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> colorIndex = WriteOptionalVector<int32_t, int32_t, 1>(parent.GetColorIndexCP (), parent.GetPointIndexCount ());
+    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> faceIndex = WriteOptionalVector<int32_t, int32_t, 1>(parent.GetFaceIndexCP (), parent.GetPointIndexCount ());
+
+    const flatbuffers::Offset<BGFB::PolyfaceAuxData> auxData = WriteAsFBPolyfaceAuxData(parent.GetAuxDataCP().get());
 
     auto numericTags = parent.GetNumericTagsCP ();
     const flatbuffers::Offset<BGFB::TaggedNumericData>
         taggedNumericData = (numericTags == nullptr || numericTags->IsZero()) ? 0 : WriteFBTaggedNumericData(*numericTags);
+
+    // imodel-native geomlibs does not currently support edgeMateIndex
 
     BGFB::PolyfaceBuilder builder (m_fbb);
     builder.add_numPerFace (numPerFace);
@@ -823,7 +845,7 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyfaceDirect(PolyfaceQueryCR pare
         builder.add_faceIndex (faceIndex);
     if (IsWritten (faceData))
         builder.add_faceData (faceData);
-    if (0 != auxData.o)
+    if (IsWritten(auxData))
         builder.add_auxData(auxData);
     if (IsWritten(taggedNumericData))
         builder.add_taggedNumericData(taggedNumericData);
@@ -899,7 +921,8 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (IGeometryCR
 void FinishAndGetBuffer (flatbuffers::Offset<BGFB::VariantGeometry> g, bvector<Byte> &buffer)
     {
     m_fbb.Finish (g);
-    buffer = bvector<Byte>(std::begin(s_prefixBuffer), std::end(s_prefixBuffer));
+    buffer.clear();
+    buffer.insert(buffer.end(), std::begin(s_prefixBuffer), std::end(s_prefixBuffer));
     buffer.resize(buffer.size () + m_fbb.GetSize());
     Byte *fbDest = GetFBStart (buffer);
     if (nullptr != fbDest)
@@ -1337,7 +1360,6 @@ static PolyfaceHeaderPtr ReadPolyfaceHeaderDirect (const BGFB::Polyface *fbPolyf
                 );
         }
 
-
     if (fbPolyface->has_pointIndex ())
         {
         auto fbData = fbPolyface->pointIndex ();
@@ -1377,6 +1399,7 @@ static PolyfaceHeaderPtr ReadPolyfaceHeaderDirect (const BGFB::Polyface *fbPolyf
                 (size_t)fbData->Length ()
                 );
         }
+
     if (fbPolyface->has_faceIndex ())
         {
         auto fbData = fbPolyface->faceIndex ();
@@ -1416,6 +1439,8 @@ static PolyfaceHeaderPtr ReadPolyfaceHeaderDirect (const BGFB::Polyface *fbPolyf
         ReadTaggedNumericData (fbPolyface->taggedNumericData (), numericTags);
         polyface->SetNumericTags (numericTags);
         }
+
+    // imodel-native geomlibs does not currently support edgeMateIndex
     return polyface;
     }
 
@@ -1542,6 +1567,7 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
 
     carrier.SetFacetFaceData (pFaceData, numFace);
     carrier.SetFaceIndex (pFaceIndex);
+
     if (fbPolyface->has_auxData())
         {
         PolyfaceAuxDataCPtr  auxData = ReadPolyfaceAuxData(fbPolyface, fbPolyface->auxData());
@@ -1555,10 +1581,9 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
         carrier.SetNumericTags(numericTags);
         }
 
+    // imodel-native geomlibs does not currently support edgeMateIndex
     return true;
     }
-
-
 
 static ICurvePrimitivePtr ReadCurvePrimitive (const BGFB::VariantGeometry * fbGeometry)
     {
@@ -1637,7 +1662,7 @@ static ICurvePrimitivePtr ReadCurvePrimitive (const BGFB::VariantGeometry * fbGe
                 = reinterpret_cast <const BGFB::PointString *> (fbGeometry->geometry ());
             if (!fbPointString)
                 return nullptr;
-            auto fbPoints = fbPointString->points ();
+            auto fbPoints = fbPointString->points();
             if (!fbPoints)
                 return nullptr;
             size_t numDoubles = (size_t)fbPoints->Length ();
@@ -1663,14 +1688,14 @@ static ICurvePrimitivePtr ReadCurvePrimitive (const BGFB::VariantGeometry * fbGe
             int numPoles = fbPoles->Length() / 3;
             DPoint3dCP pPoles = numPoles > 0 ? (DPoint3dCP)fbPoles->GetStructFromOffset(0) : nullptr;
 
-            int numKnots = fbKnots->Length ();
+            int numKnots = fbKnots->Length();
             double const * pKnots = numKnots > 0 ? (double const*)fbKnots->GetStructFromOffset(0) : nullptr;
 
             int numWeights = fbWeights ? fbWeights->Length () : 0;
             double const * pWeights = numWeights > 0 ? (double const*)fbWeights->GetStructFromOffset(0) : nullptr;
 
             MSBsplineCurve curve;
-            if (curve.Populate (pPoles, pWeights, numPoles, pKnots, numKnots, order, closed, true) != MSB_SUCCESS)
+            if (curve.Populate(pPoles, pWeights, numPoles, pKnots, numKnots, order, closed, true) != MSB_SUCCESS)
                 return nullptr;
             return ICurvePrimitive::CreateBsplineCurveSwapFromSource (curve);
             }
@@ -1727,14 +1752,13 @@ static ICurvePrimitivePtr ReadCurvePrimitive (const BGFB::VariantGeometry * fbGe
                 = reinterpret_cast <const BGFB::AkimaCurve *> (fbGeometry->geometry ());
             if (!fbAkimaCurve)
                 return nullptr;
-            auto fbPoints = fbAkimaCurve->points ();
+            auto fbPoints = fbAkimaCurve->points();
             if (!fbPoints)
                 return nullptr;
-            int numPoles = fbPoints->Length () / 3;
+            int numPoles = fbPoints->Length() / 3;
             DPoint3dCP pPoints = numPoles > 0 ? (DPoint3dCP)fbPoints->GetStructFromOffset(0) : nullptr;
             return ICurvePrimitive::CreateAkimaCurve (pPoints, numPoles);
             }
-
 
         case BGFB::VariantGeometryUnion_TransitionSpiral:
             {
@@ -1742,7 +1766,7 @@ static ICurvePrimitivePtr ReadCurvePrimitive (const BGFB::VariantGeometry * fbGe
                 = reinterpret_cast <const BGFB::TransitionSpiral *> (fbGeometry->geometry ());
             if (!fbTransitionSpiral)
                 return nullptr;
-            BGFB::TransitionSpiralDetail const *detail = fbTransitionSpiral->detail ();
+            BGFB::TransitionSpiralDetail const *detail = fbTransitionSpiral->detail();
             if (!detail)
                 return nullptr;
             Transform frame = *(Transform const*)&detail->transform ();
@@ -1823,7 +1847,7 @@ static MSBsplineSurfacePtr ReadMSBsplineSurface (const BGFB::VariantGeometry * f
             if (!fbPoles || !fbKnotsU || !fbKnotsV)
                 return nullptr;
 
-            int numPoles = fbPoles->Length () / 3;
+            int numPoles = fbPoles->Length() / 3;
             bvector<DPoint3d> poles;
             if (numPoles > 0)
                 {
@@ -1848,7 +1872,6 @@ static MSBsplineSurfacePtr ReadMSBsplineSurface (const BGFB::VariantGeometry * f
                 for (int i = 0; i < numKnotsV; i++)
                     knotsV.push_back (pData[i]);
                 }
-
 
             int numWeights = (fbWeights  == nullptr) ? 0 : fbWeights->Length ();
             if (numWeights > 0)
@@ -1893,7 +1916,7 @@ static ISolidPrimitivePtr ReadSolidPrimitive (const BGFB::VariantGeometry * fbGe
                 = reinterpret_cast <const BGFB::DgnBox *> (fbGeometry->geometry ());
             if (!fbDgnBox)
                 return nullptr;
-            BGFB::DgnBoxDetail const *fbDetail = fbDgnBox->detail ();
+            BGFB::DgnBoxDetail const *fbDetail = fbDgnBox->detail();
             if (!fbDetail)
                 return nullptr;
             return ISolidPrimitive::CreateDgnBox (*(DgnBoxDetail const*)fbDetail);
@@ -1904,7 +1927,7 @@ static ISolidPrimitivePtr ReadSolidPrimitive (const BGFB::VariantGeometry * fbGe
                 = reinterpret_cast <const BGFB::DgnCone *> (fbGeometry->geometry ());
             if (!fbDgnCone)
                 return nullptr;
-            BGFB::DgnConeDetail const *fbDetail = fbDgnCone->detail ();
+            BGFB::DgnConeDetail const *fbDetail = fbDgnCone->detail();
             if (!fbDetail)
                 return nullptr;
             return ISolidPrimitive::CreateDgnCone (*(DgnConeDetail const*)fbDetail);
@@ -1915,7 +1938,7 @@ static ISolidPrimitivePtr ReadSolidPrimitive (const BGFB::VariantGeometry * fbGe
                 = reinterpret_cast <const BGFB::DgnSphere *> (fbGeometry->geometry ());
             if (!fbDgnSphere)
                 return nullptr;
-            BGFB::DgnSphereDetail const *fbDetail = fbDgnSphere->detail ();
+            BGFB::DgnSphereDetail const *fbDetail = fbDgnSphere->detail();
             if (!fbDetail)
                 return nullptr;
             return ISolidPrimitive::CreateDgnSphere (*(DgnSphereDetail const*)fbDetail);
@@ -1926,7 +1949,7 @@ static ISolidPrimitivePtr ReadSolidPrimitive (const BGFB::VariantGeometry * fbGe
                 = reinterpret_cast <const BGFB::DgnTorusPipe *> (fbGeometry->geometry ());
             if (!fbDgnTorusPipe)
                 return nullptr;
-            BGFB::DgnTorusPipeDetail const *fbDetail = fbDgnTorusPipe->detail ();
+            BGFB::DgnTorusPipeDetail const *fbDetail = fbDgnTorusPipe->detail();
             if (!fbDetail)
                 return nullptr;
             return ISolidPrimitive::CreateDgnTorusPipe (*(DgnTorusPipeDetail const*)fbDetail);
@@ -1937,7 +1960,7 @@ static ISolidPrimitivePtr ReadSolidPrimitive (const BGFB::VariantGeometry * fbGe
                 = reinterpret_cast <const BGFB::DgnExtrusion *> (fbGeometry->geometry ());
             if (!fbDgnExtrusion)
                 return nullptr;
-            CurveVectorPtr baseCurve = ReadCurveVectorDirect (fbDgnExtrusion->baseCurve ());
+            CurveVectorPtr baseCurve = ReadCurveVectorDirect(fbDgnExtrusion->baseCurve());
             if (baseCurve.IsNull())
                 return nullptr;
             DgnExtrusionDetail detail (baseCurve,
@@ -1952,7 +1975,7 @@ static ISolidPrimitivePtr ReadSolidPrimitive (const BGFB::VariantGeometry * fbGe
                 = reinterpret_cast <const BGFB::DgnRotationalSweep *> (fbGeometry->geometry ());
             if (!fbDgnRotationalSweep)
                 return nullptr;
-            CurveVectorPtr baseCurve = ReadCurveVectorDirect (fbDgnRotationalSweep->baseCurve ());
+            CurveVectorPtr baseCurve = ReadCurveVectorDirect(fbDgnRotationalSweep->baseCurve());
             if (baseCurve.IsNull())
                 return nullptr;
             DRay3d axis = *(DRay3dCP)fbDgnRotationalSweep->axis ();
@@ -1971,7 +1994,7 @@ static ISolidPrimitivePtr ReadSolidPrimitive (const BGFB::VariantGeometry * fbGe
                 = reinterpret_cast <const BGFB::DgnRuledSweep *> (fbGeometry->geometry ());
             if (!fbDgnRuledSweep)
                 return nullptr;
-            auto fbChildren = fbDgnRuledSweep->curves ();
+            auto fbChildren = fbDgnRuledSweep->curves();
             if (!fbChildren)
                 return nullptr;
             int numCurves = fbChildren->Length ();
@@ -2081,6 +2104,7 @@ static IGeometryPtr ReadGeometry (const BGFB::VariantGeometry * fbGeometry)
         }
     return nullptr;
     }
+
 static void ReadVariantGeometry(const BGFB::VariantGeometry * fbGeometry, bvector<IGeometryPtr> &dest)
     {
     if (fbGeometry == nullptr)
@@ -2182,10 +2206,10 @@ MSBsplineSurfacePtr BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe(Byte 
 
 bool BentleyGeometryFlatBuffer::BytesToVectorOfGeometrySafe
 (
-    bvector<Byte> &buffer,
-    bvector<IGeometryPtr> &dest,
-    bool applyValidation,
-    bvector<IGeometryPtr> *invalidGeometry
+bvector<Byte> &buffer,
+bvector<IGeometryPtr> &dest,
+bool applyValidation,
+bvector<IGeometryPtr> *invalidGeometry
 )
     {
     if (buffer.size() == 0)
@@ -2214,10 +2238,10 @@ bool BentleyGeometryFlatBuffer::BytesToVectorOfGeometrySafe
 
 bool BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe
 (
-    Byte const *buffer,
-    size_t bufferSize,
-    PolyfaceQueryCarrier &carrier,
-    bool applyValidation
+Byte const *buffer,
+size_t bufferSize,
+PolyfaceQueryCarrier &carrier,
+bool applyValidation
 )
     {
     if (nullptr == buffer)
@@ -2235,7 +2259,7 @@ bool BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe
         {
         if (BGFB::VariantGeometryUnion_Polyface != fbRoot->geometry_type())
             return false;
-        auto result = FBReader::ReadPolyfaceQueryCarrierDirect (
+        auto result = FBReader::ReadPolyfaceQueryCarrierDirect(
                     reinterpret_cast <const BGFB::Polyface*>(fbRoot->geometry ()),
                     carrier);
         if (result && (!applyValidation || carrier.IsValidGeometry(s_readValidator)))

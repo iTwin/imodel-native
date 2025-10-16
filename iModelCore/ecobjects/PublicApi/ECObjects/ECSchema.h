@@ -2085,8 +2085,9 @@ public:
     //! @remarks If the abstract constraint is not explicitly defined locally, it will be inherited from its base constraint, if one exists.
     //! If one does not exist and there is only one constraint class, that constraint class will be returned. If fail to find a valid class
     //! nullptr will be returned.
+    //! @param[in] autoDetermine If true and abstract constraint is unset, will attempt to determine the abstract constraint based on the constraint classes.
     //! @return The abstract constraint, an ECEntityClass or ECRelationshipClass, if one is defined, if one cannot be found nullptr is returned.
-    ECOBJECTS_EXPORT ECClassCP const GetAbstractConstraint() const;
+    ECOBJECTS_EXPORT ECClassCP const GetAbstractConstraint(bool autoDetermine = true) const;
 
     //! Determine whether the abstract constraint is set in this constraint.
     bool IsAbstractConstraintDefined() const {return nullptr != m_abstractConstraint;}
@@ -2467,6 +2468,7 @@ struct SchemaKeyLessThan
 
 typedef bmap<SchemaKey , ECSchemaPtr> SchemaMap;
 typedef std::function<bool(SchemaKeyCR)> SchemaKeyMatchCallback;
+typedef std::function<void(ECSchemaCP)> SchemaCallback;
 
 //=======================================================================================
 // @bsistruct
@@ -2838,6 +2840,10 @@ public:
     //! @param[in] schemaContext    Contains the information of where to look for referenced schemas
     //! @returns A valid ECSchemaPtr if the schema was located
     ECSchemaPtr LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) {return _LocateSchema(key, matchType, schemaContext);}
+
+    //! Abstract method to get a description of the schema locater.
+    //! This should include internal information like lookup paths, cached schemas etc.
+    virtual Utf8String GetDescription() const = 0;
 };
 
 typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
@@ -2886,6 +2892,15 @@ public:
     //! @returns The first matching ECSchema if it is contained in the cache; otherwise nullptr.
     ECOBJECTS_EXPORT ECSchemaP FindSchema(const SchemaKeyMatchCallback& predicate) const;
 
+    Utf8String GetDescription() const override {
+        return Utf8PrintfString("ECSchemaCache with %d schemas", m_schemas.size()).c_str();
+    }
+
+    //! Iterates through all schemas in the cache and applies the provided callback function to each schema.
+    //! Unlike GetSchemas() this method does not have to make a copy of the internal list, so it is more efficient.
+    //! @param callback A function or callable object that will be invoked for each schema in the cache.
+    ECOBJECTS_EXPORT void WalkSchemas(const SchemaCallback& callback) const;
+
     //! Get a requested schema from this cache by case-insensitive name.
     //! @param[in] schemaName    Schema name to match against cached schemas.
     //! @returns The first matching ECSchema if it is contained in the cache; otherwise nullptr.
@@ -2896,6 +2911,7 @@ public:
     int GetCount() const {return (int)m_schemas.size();} //!< Returns the number of schemas currently in the cache
     void Clear() {m_schemas.clear();}; //!< Removes all schemas from the cache
     IECSchemaLocater& GetSchemaLocater() {return *this;} //!< Returns the SchemaCache as an IECSchemaLocater
+    void CheckCleanSchemaGraph(ECSchemaP schema) const; //!< Checks the schema graph for extra schemas of the same name and logs them
     ECOBJECTS_EXPORT bvector<ECSchemaCP> GetSchemas() const;
     ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaP>& schemas) const;
     ECOBJECTS_EXPORT void GetSupplementalSchemasFor(Utf8CP schemaName, bvector<ECSchemaP>& supplementalSchemas) const;
@@ -2938,6 +2954,15 @@ public:
     bvector<WString>const& GetSearchPath() const {return m_searchPaths;}
     //! Create a new SearchPathSchemaFileLocater using the input paths as schema search paths
     ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt=false);
+
+    Utf8String GetDescription() const override {
+        Utf8String searchPaths;
+        for (auto const& path : m_searchPaths) {
+              Utf8PrintfString str("\n    %S", path.c_str());
+              searchPaths.append(str);
+            }
+        return Utf8PrintfString("SearchPathSchemaFileLocater with %d search paths:%s", m_searchPaths.size(), searchPaths.c_str());
+    };
 };
 
 //=======================================================================================
@@ -2951,6 +2976,10 @@ protected:
     ECOBJECTS_EXPORT ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 public:
     ECOBJECTS_EXPORT void AddSchemaString(SchemaKeyCR schemaKey, Utf8StringCR schemaXml) {m_schemaStrings[schemaKey] = schemaXml;}
+
+    Utf8String GetDescription() const override {
+        return Utf8PrintfString("StringSchemaLocater with %d schemas", m_schemaStrings.size()).c_str();
+    }
 };
 
 struct SupplementalSchemaInfo;
@@ -2968,6 +2997,30 @@ enum class ECSchemaElementType
     InvertedUnit,
     Constant,
     Format
+};
+
+//=======================================================================================
+//! Wraps another schema locater and returns copies of its located schemas.
+//! Intended purpose is to clean a schema graph. For example ecdb always loads
+//! referenced schemas from its internal cache, when we may want to use the read context
+//! to resolve those.
+//! Schemas returned by this locater should always be clean.
+//! The lifetime of the wrapped locater needs to be managed by the caller.
+//! @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SanitizingSchemaLocater : IECSchemaLocater, NonCopyableClass
+{
+private:
+    IECSchemaLocater& m_innerLocater;
+protected:
+    ECOBJECTS_EXPORT ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
+public:
+    IECSchemaLocater& GetInnerLocater() const {return m_innerLocater;} //!< Returns the inner locater
+    SanitizingSchemaLocater(IECSchemaLocater& innerLocater) : m_innerLocater(innerLocater) {}
+
+    Utf8String GetDescription() const override {
+        return Utf8PrintfString("SanitizingSchemaLocater. Inner locater: %s", m_innerLocater.GetDescription().c_str());
+    }
 };
 
 //=======================================================================================
@@ -3156,6 +3209,7 @@ private:
 
     uint32_t                m_originalECXmlVersionMajor;
     uint32_t                m_originalECXmlVersionMinor;
+    Utf8String              m_schemaOrigin;
 
     // maps class name -> class pointer
     ClassMap                    m_classMap;
@@ -3174,7 +3228,7 @@ private:
 
     ECSchema() : m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
         m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap),
-        m_propertyCategoryContainer(m_propertyCategoryMap), m_formatContainer(m_formatMap), m_unitsContext(*this)
+        m_propertyCategoryContainer(m_propertyCategoryMap), m_formatContainer(m_formatMap), m_unitsContext(*this), m_schemaOrigin()
         { }
     virtual ~ECSchema();
 
@@ -3263,6 +3317,10 @@ public:
 
     SchemaKeyCR GetSchemaKey() const {return m_key;} //!< Returns a SchemaKey fully describing this schema
     ECOBJECTS_EXPORT void DebugDump() const; //!< Prints out detailed information about this ECSchema, and then calls Dump() on each ECClass.
+    //! Gets information about the schema origin (where the schema was loaded/constructed from)
+    Utf8StringCR GetOrigin() const { return m_schemaOrigin; }
+    //! Adds information about the schema origin.
+    void SetOrigin(Utf8StringCR value) { m_schemaOrigin = value; };
 
     //! Return a transient dictionary use to store app data. This is not serialized with the schema xml.
     ECOBJECTS_EXPORT ECAppData& GetAppData() const;
@@ -3831,7 +3889,8 @@ public:
     //! @param[in]  sourceClass The class to copy
     //! @param[in]  copyReferences If true the method will copy types from the source schema into the target schema, if they do not already exist. If false, there will be a schema reference created to the source schema if necessary.
     //! @param[in]  newName  If not nullptr, this name will be used as the new name instead of the original name
-    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences = false, Utf8CP newName = nullptr);
+    //! @param[in]  skipValidation If true, the method will skip validation of the copied class
+    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences = false, Utf8CP newName = nullptr, bool skipValidation = false);
 
     //! Gets the needed referenced schema item from this schema or it's references, copies it, or adds the reference.  The end result is that the output refForCopy is
     //! the correct object reference needed for a copy operation.
@@ -3846,7 +3905,7 @@ public:
     ECObjectsStatus GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), ECObjectsStatus(ECSchema::*copyItem)(RefItem *&, const RefItem &, bool, Utf8CP));
 
     // Specializations because they are used often or are referenced outside of ECSchema
-    ECObjectsStatus GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences);
+    ECObjectsStatus GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation = false);
     ECObjectsStatus GetOrCopyReferencedEnumerationForCopy(ECClassCR classWithRef, ECEnumerationP& refForCopy, ECEnumerationCP startingRef, bool copyReferences);
     ECObjectsStatus GetOrCopyReferencedKindOfQuantityForCopy(ECClassCR classWithRef, KindOfQuantityP& refForCopy, KindOfQuantityCP startingRef, bool copyReferences);
     ECObjectsStatus GetOrCopyReferencedPropertyCategoryForCopy(ECClassCR classWithRef, PropertyCategoryP& refForCopy, PropertyCategoryCP startingRef, bool copyReferences);
@@ -3902,8 +3961,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceFormat, bool copyReferences, Utf8CP newName = nullptr);
 
     //! Copies this schema
+    //! @param schemaOut If successful, will contain a copy of this schema
+    //! @param schemaContext If not nullptr, will be used to locate referenced schemas of the schema.  If nullptr, references will not be copied
     //! @param[out] schemaOut   If successful, will contain a copy of this schema
-    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater = nullptr) const;
+    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext = nullptr, bool skipValidation = false) const;
 
     //! Get the IECCustomAttributeContainer holding this schema's custom attributes
     IECCustomAttributeContainer& GetCustomAttributeContainer() {return *this;}

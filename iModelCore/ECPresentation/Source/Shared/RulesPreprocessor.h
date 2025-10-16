@@ -20,7 +20,6 @@ struct RulesPreprocessor : IRulesPreprocessor
         {
         private:
             ECDbCR m_ecdb;
-            RuleTargetTree m_targetTree;
             ECExpressionsCache& m_expressionsCache;
             Utf8CP m_specificationHash;
             bool m_requestedSpecification;
@@ -29,14 +28,13 @@ struct RulesPreprocessor : IRulesPreprocessor
 
 
         public:
-            SpecificationsLookupContext(ECDbCR ecdb, RuleTargetTree targetTree, ECExpressionsCache& expressionsCache, Utf8CP specificationHash, bool requestedSpecification, 
+            SpecificationsLookupContext(ECDbCR ecdb, ECExpressionsCache& expressionsCache, Utf8CP specificationHash, bool requestedSpecification,
                 OptimizedExpressionsParameters const* optimizedExpressionsParams, std::function<ExpressionContextPtr()> expressionContextPreparer)
-                : m_ecdb(ecdb), m_targetTree(targetTree), m_expressionsCache(expressionsCache), m_specificationHash(specificationHash), m_requestedSpecification(requestedSpecification),
+                : m_ecdb(ecdb), m_expressionsCache(expressionsCache), m_specificationHash(specificationHash), m_requestedSpecification(requestedSpecification),
                 m_optimizedExpressionsParams(optimizedExpressionsParams),m_expressionContextPreparer(expressionContextPreparer)
                 {}
 
             ECDbCR GetECDb() const {return m_ecdb;}
-            RuleTargetTree GetRuleTargetTree() const {return m_targetTree;}
             ECExpressionsCache& GetECExpressionsCahce() const {return m_expressionsCache;}
             Utf8CP GetSpecificationHash() const {return m_specificationHash;}
             bool IsRequestedSpecification() const {return m_requestedSpecification;}
@@ -62,7 +60,7 @@ private:
 
 protected:
     // IRulesPreprocesssor: Navigation rules
-    ECPRESENTATION_EXPORT RootNodeRuleSpecificationsList _GetRootNodeSpecifications(RootNodeRuleParametersCR params) override;
+    ECPRESENTATION_EXPORT RootNodeRuleSpecificationsList _GetRootNodeSpecifications() override;
     ECPRESENTATION_EXPORT ChildNodeRuleSpecificationsList _GetChildNodeSpecifications(ChildNodeRuleParametersCR params) override;
     ECPRESENTATION_EXPORT ChildNodeSpecificationCP _FindChildNodeSpecification(Utf8StringCR specificationHash) override;
 

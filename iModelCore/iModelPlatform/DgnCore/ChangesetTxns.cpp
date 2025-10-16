@@ -18,6 +18,8 @@ USING_NAMESPACE_BENTLEY_SQLITE
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #define THROW_JS_TYPE_EXCEPTION(str) BeNapi::ThrowJsTypeException(info.Env(), str);
+#define THROW_JS_DGN_DB_EXCEPTION(env, str, status) BeNapi::ThrowJsException(env, str, (int)status, DgnDbStatusHelper::GetITwinError(status));
+
 #define ARGUMENT_IS_PRESENT(i) (info.Length() > (i))
 #define ARGUMENT_IS_NUMBER(i) (ARGUMENT_IS_PRESENT(i) && info[i].IsNumber())
 #define ARGUMENT_IS_NOT_NUMBER(i) !ARGUMENT_IS_NUMBER(i)
@@ -41,7 +43,7 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
     const auto onRebaseLocalTxnConflict = m_dgndb.GetJsTxns().Get("_onRebaseLocalTxnConflict").As<Napi::Function>();
 
     if (!onRebaseLocalTxnConflict.IsFunction()) {
-        BeNapi::ThrowJsException(jsDgnDb.Env(), "_onRebaseLocalTxnConflict() does not exists", (int) DgnDbStatus::BadArg);
+        THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "_onRebaseLocalTxnConflict() does not exists", DgnDbStatus::BadArg);
     }
     auto arg = Napi::Object::New(env);
     arg.Set("cause", Napi::Number::New(env, (int)cause));
@@ -185,26 +187,25 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
     }));
     arg.Set("setLastError", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> void {
         if (info.Length() != 1)
-            BeNapi::ThrowJsException(jsDgnDb.Env(), "setLastError() Expect a string type arg");
+            THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
 
         auto val = info[0];
         if (!val.IsString())
-            BeNapi::ThrowJsException(jsDgnDb.Env(), "setLastError() Expect a string type arg");
+            THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
 
         m_lastErrorMessage = val.As<Napi::String>().Utf8Value();
     }));
 
     const auto resJsVal = onRebaseLocalTxnConflict.Call(m_dgndb.GetJsTxns(), {arg});
-    if (resJsVal.IsUndefined()) {
-         BeNapi::ThrowJsException(jsDgnDb.Env(), "_onRebaseLocalTxnConflict must return a resolution", (int) DgnDbStatus::BadArg);
-    }
+    if (resJsVal.IsUndefined())
+        THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "_onRebaseLocalTxnConflict must return a resolution", DgnDbStatus::BadArg);
 
     if (!resJsVal.IsNumber())
-        BeNapi::ThrowJsException(jsDgnDb.Env(), "_onRebaseLocalTxnConflict did not return a number", (int) DgnDbStatus::BadArg);
+        THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "_onRebaseLocalTxnConflict did not return a number", DgnDbStatus::BadArg);
 
     const auto resolution = (ChangeSet::ConflictResolution)resJsVal.As<Napi::Number>().Int32Value();
     if (resolution != ChangeSet::ConflictResolution::Abort  && resolution != ChangeSet::ConflictResolution::Replace && resolution != ChangeSet::ConflictResolution::Skip )
-        BeNapi::ThrowJsException(jsDgnDb.Env(), "_onRebaseLocalTxnConflict returned unsupported value for conflict resolution", (int) DgnDbStatus::BadArg);
+        THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "_onRebaseLocalTxnConflict returned unsupported value for conflict resolution", DgnDbStatus::BadArg);
 
     return resolution;
 }
@@ -352,11 +353,11 @@ const auto jsIModelDb = m_dgndb->GetJsIModelDb();
             }));
             arg.Set("setLastError", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> void {
                 if (info.Length() != 1)
-                    BeNapi::ThrowJsException(jsDgnDb.Env(), "setLastError() Expect a string type arg");
+                    THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
 
                 auto val = info[0];
                 if (!val.IsString())
-                    BeNapi::ThrowJsException(jsDgnDb.Env(), "setLastError() Expect a string type arg");
+                    THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "setLastError() Expect a string type arg", DgnDbStatus::BadArg);
 
                 m_lastErrorMessage = val.As<Napi::String>().Utf8Value();
             }));
@@ -366,11 +367,11 @@ const auto jsIModelDb = m_dgndb->GetJsIModelDb();
             // if handler return undefined we revert to native handler.
             if (!resolutionJsVal.IsUndefined()) {
                 if (!resolutionJsVal.IsNumber())
-                    BeNapi::ThrowJsException(jsDgnDb.Env(), "onChangesetConflict did not return a number", (int) DgnDbStatus::BadArg);
+                    THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "onChangesetConflict did not return a number", DgnDbStatus::BadArg);
 
                 const auto resolution = (ChangeSet::ConflictResolution)resolutionJsVal.As<Napi::Number>().Int32Value();
                 if (resolution != ChangeSet::ConflictResolution::Abort  && resolution != ChangeSet::ConflictResolution::Replace && resolution != ChangeSet::ConflictResolution::Skip )
-                    BeNapi::ThrowJsException(jsDgnDb.Env(), "onChangesetConflict returned unsupported value for conflict resolution", (int) DgnDbStatus::BadArg);
+                    THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "onChangesetConflict returned unsupported value for conflict resolution", DgnDbStatus::BadArg);
 
                 return resolution;
             }
@@ -567,27 +568,63 @@ public:
     // @bsimethod
     //---------------------------------------------------------------------------------------
     static Utf8String GenerateId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, DgnDbR dgndb) {
-        ChangesetFileReader fs(changesetFile, &dgndb);
+        return GenerateId(parentRevId, changesetFile, dgndb.m_private_iModelDbJs.Env());
+    }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod
+    //---------------------------------------------------------------------------------------
+    static Utf8String GenerateId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env) {
+        auto throwError = [&env](const char* message, ChangesetStatus status) {
+            if(env== nullptr) {
+                throw std::runtime_error(message);
+            }
+            BeNapi::ThrowJsException(env, message, (int)status);
+        };
+
+        if (parentRevId.length() != SHA1::HashBytes * 2 && !parentRevId.empty()) {
+            throwError("Invalid parent changeset id. Expect empty or SHA1 hash", ChangesetStatus::BadVersionId);
+        }
+
+        if (!changesetFile.DoesPathExist()) {
+            throwError("Invalid changeset file. File not not found.", ChangesetStatus::FileNotFound);
+        }
 
         ChangesetIdGenerator idGen;
         idGen.AddStringToHash(parentRevId);
 
+        ChangesetFileReader fs(changesetFile, nullptr);
         auto reader = fs.MakeReader();
+
         DbResult result;
         Utf8StringCR prefix = reader->GetPrefix(result);
-        if (BE_SQLITE_OK != result)
-            dgndb.ThrowException(result == BE_SQLITE_ERROR_InvalidChangeSetVersion ? "invalid changeset version" : "corrupted changeset header", result);
+        if (BE_SQLITE_OK != result) {
+            if (result == BE_SQLITE_ERROR_InvalidChangeSetVersion) {
+                throwError("Unsupported changeset persistence file version", ChangesetStatus::InvalidVersion);
+            } else {
+                throwError("Corrupted changeset file", ChangesetStatus::CorruptedChangeStream);
+            }
+        }
 
-        if (!prefix.empty())
+        if (!prefix.empty()) {
             idGen._Append((Byte const*)prefix.c_str(), (int)prefix.SizeInBytes());
+        }
 
         result = idGen.ReadFrom(*reader);
         if (BE_SQLITE_OK != result)
-            dgndb.ThrowException("corrupted changeset", result);
+            throwError("Corrupted changeset file", ChangesetStatus::CorruptedChangeStream);
 
         return idGen.m_hash.GetHashString();
     }
 };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8String ChangesetProps::ComputeChangesetId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, Napi::Env env){
+    return ChangesetIdGenerator::GenerateId(parentRevId, changesetFile, env);
+}
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -630,8 +667,10 @@ void ChangesetProps::ValidateContent(DgnDbR dgndb) const {
     if (!m_fileName.DoesPathExist())
         dgndb.ThrowException("changeset file does not exist", (int) ChangesetStatus::FileNotFound);
 
+    const auto startMs = BeTimeUtilities::QueryMillisecondsCounterUInt32();
     if (m_id != ChangesetIdGenerator::GenerateId(m_parentId, m_fileName, dgndb))
       dgndb.ThrowException("incorrect id for changeset", (int) ChangesetStatus::CorruptedChangeStream);
+    SetSha1ValidationTime(BeTimeUtilities::QueryMillisecondsCounterUInt32() - startMs);
 }
 
 /**
@@ -734,6 +773,23 @@ void TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChang
     if (!pathname.DoesPathExist())
         m_dgndb.ThrowException("changeset file not created", (int) ChangesetStatus::FileWriteError);
 }
+
+/**
+ * Create changeset from in-memory changes
+ */
+std::unique_ptr<ChangeSet> TxnManager::CreateChangesetFromInMemoryChanges() {
+    DbResult rc;
+    if (!HasDataChanges()) {
+        return nullptr;
+    }
+    ChangeSet inMemChangeSet;
+    rc = inMemChangeSet.FromChangeTrack(*this);
+    if (BE_SQLITE_OK != rc)
+        m_dgndb.ThrowException("fail to add in memory changes", (int) rc);
+
+    return std::make_unique<ChangeSet>(std::move(inMemChangeSet));
+}
+
 /**
  * Create changeset from local changes
 */
@@ -994,6 +1050,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
 
     DdlChanges ddlChangeGroup;
     ChangeGroup dataChangeGroup(m_dgndb);
+    size_t uncompressedSize = 0;
     for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
         auto txnType = GetTxnType(currTxnId);
         if (txnType == TxnType::EcSchema) // if we have EcSchema changes, set the flag on the change group
@@ -1007,6 +1064,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
             for(auto& ddl : ddlChange.GetDDLs())
                 ddlChangeGroup.AddDDL(ddl.c_str());
 
+            uncompressedSize = ddlChange.m_data.m_size;
         } else {
             ChangeSet sqlChangeSet;
             if (BE_SQLITE_OK != ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None))
@@ -1015,6 +1073,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
             DbResult result = sqlChangeSet.AddToChangeGroup(dataChangeGroup);
             if (BE_SQLITE_OK != result)
                 m_dgndb.ThrowException("add to changes failed", (int) result);
+            uncompressedSize = sqlChangeSet.m_data.m_size;
         }
     }
 
@@ -1032,6 +1091,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
 
     m_changesetInProgress = new ChangesetProps(revId, -1, parentRevId, dbGuid, changesetFileName, changesetType);
     m_changesetInProgress->m_endTxnId = endTxnId;
+    m_changesetInProgress->SetUncompressedSize(uncompressedSize);
 
     // clean this cruft up from older versions.
     m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
@@ -1115,7 +1175,6 @@ ChangesetStatus TxnManager::ProcessRevisions(bvector<ChangesetPropsCP> const &re
         for (ChangesetPropsCP revision : revisions) {
             ReverseChangeset(*revision);
         }
-        PullMergeEnd();
         break;
     default:
         BeAssert(false && "Invalid revision process option");

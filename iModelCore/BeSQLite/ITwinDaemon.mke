@@ -20,7 +20,11 @@ always:
     !~@mkdir $(o)
 
 CCompFpOpts=precise
-cDefs + -DCURL_STATICLIB=1
+cDefs + -DCURL_STATICLIB=1 -DSQLITE_BCV_CUSTOM_INIT=besqlite_custom_init_function
+
+%if $(BUILD_TOOLSET) == "APPLE_CLANG"
+    LLVMCommonCompOpts + -Wno-implicit-function-declaration # Needed for SQLITE_BCV_CUSTOM_INIT to compile
+%endif
 
 # Third-party section of this library.
 %include $(sharedmki)PushThirdPartyIgnores.mki
@@ -29,6 +33,8 @@ MultiCompileDepends =$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
 bcvheaders = $(SQLiteDir)bcvutil.h $(SQLiteDir)bcvmodule.h $(SQLiteDir)bcv_int.h
+
+$(o)BeSQLiteCustomInit$(oext) : $(baseDir)BeSQLiteCustomInit.c ${MultiCompileDepends} ${bcvheaders}
 
 $(o)simplexml$(oext): $(SQLiteDir)simplexml.c ${MultiCompileDepends} ${bcvheaders}
 
@@ -54,7 +60,7 @@ EXE_OBJS            = $(MultiCompileObjectList)
 EXE_LOPT1           = -entry:mainCRTStartup
 
 %if $(TARGET_PLATFORM)=="Windows"
-        LINKER_LIBRARIES + wsock32.lib ws2_32.lib Advapi32.lib Wldap32.lib Crypt32.lib
+        LINKER_LIBRARIES + wsock32.lib ws2_32.lib Advapi32.lib Wldap32.lib Crypt32.lib Secur32.lib
         BENTLEY_WIN32_LINK_CommonOptions + -Ignore:4099
 %endif
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinCurl$(stlibext)

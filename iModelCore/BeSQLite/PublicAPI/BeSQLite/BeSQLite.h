@@ -393,6 +393,21 @@ enum class WalCheckpointMode {
     Truncate=3, /* Like RESTART but also truncate WAL */
 };
 
+enum class AttachFileType {
+    Unknown,
+    Main,
+    Temp,
+    SchemaSync,
+    ECChangeCache
+};
+
+struct AttachFileInfo final {
+public:
+    Utf8String m_fileName;
+    Utf8String m_alias;
+    AttachFileType m_type;
+};
+
 //=======================================================================================
 //! A 4-digit number that specifies the version of the "profile" (schema) of a Db
 // @bsiclass
@@ -595,6 +610,7 @@ enum DbResult
     BE_SQLITE_ERROR_DataTransformRequired       = (BE_SQLITE_IOERR | (23<<24)), //!< Schema update need to update data.
 
     BE_SQLITE_ERROR_NOTOPEN                     = (BE_SQLITE_ERROR | (1<<24)),  //!< Db not open
+    BE_SQLITE_ERROR_PropagateChangesFailed      = (BE_SQLITE_ERROR | (2<<24)),  //!< Error propagating changes during commit
 };
 
 //=======================================================================================
@@ -691,7 +707,6 @@ public:
     static int GetBaseDbResult(DbResult val) {return 0xff & val;}
     static bool TestBaseDbResult(DbResult val1, DbResult val2) {return GetBaseDbResult(val1) == GetBaseDbResult(val2);}
     static bool IsConstraintDbResult(DbResult val1) {return GetBaseDbResult(val1) == BE_SQLITE_CONSTRAINT;}
-    BE_SQLITE_EXPORT static bool s_throwExceptionOnUnexpectedAutoCommit;
 
     BE_SQLITE_EXPORT static bool ZlibCompress(bvector<Byte>& compressedBuffer, const bvector<Byte>& sourceBuffer);
     BE_SQLITE_EXPORT static bool ZlibDecompress(bvector<Byte>& uncompressedBuffer, const bvector<Byte>& compressedBuffer, unsigned long uncompressSize);
@@ -877,6 +892,10 @@ public:
     //! Bind a DbValue from a BeSQLite function (1-based)
     BE_SQLITE_EXPORT DbResult BindDbValue(int paramNum, struct DbValue const& dbVal);
 
+    //! @private internal use only
+    //! Bind a DbValue from a BeSQLite function (1-based)
+    BE_SQLITE_EXPORT DbResult BindValueFrom(int col, Statement& fromStmt, int fromCol);
+    
     //! @private internal use only
     //! Set value to NULL but also Bind a pointer. This is used by sql function ro virtual tables.
     BE_SQLITE_EXPORT DbResult BindPointer(int col, void* ptr, const char* name, void (*destroy)(void*));
@@ -2359,6 +2378,14 @@ struct ProfileState final
     };
 
 //=======================================================================================
+// @bsiclass
+//=======================================================================================
+enum class DbProgressAction {
+    Continue = 0,
+    Interrupt = 1,
+};
+
+//=======================================================================================
 //! A physical Db file.
 // @bsiclass
 //=======================================================================================
@@ -2398,6 +2425,7 @@ protected:
     BeBriefcaseId m_briefcaseId;
     StatementCache m_statements;
     NoCaseCollation m_noCaseCollation;
+    mutable std::function<DbProgressAction()> m_progressHandler;
     DbTxns m_txns;
     std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc, m_base36Func;
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout);
@@ -2421,6 +2449,8 @@ protected:
     void SaveCachedBlvs(bool isCommit);
     DbResult SetNoCaseCollation(NoCaseCollation col);
     NoCaseCollation GetNoCaseCollation() const { return m_noCaseCollation; }
+    BE_SQLITE_EXPORT DbResult GetFileDataVersion(uint32_t& version) const;
+    BE_SQLITE_EXPORT void SetProgressHandler(std::function<DbProgressAction()>, int) const;
     BE_SQLITE_EXPORT DbResult SaveProperty(PropertySpecCR spec, Utf8CP strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT bool HasProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
     BE_SQLITE_EXPORT DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
@@ -2772,6 +2802,7 @@ public:
     BE_SQLITE_EXPORT virtual ~Db();
     DbFile* GetDbFile() {return m_dbFile;}
 
+    
     //! SQLite supports the concept of an "implicit" transaction. That is, if no explicit transaction is active when you execute an SQL statement,
     //! SQLite will create an implicit transaction whose scope is the execution of the statement. However, it is rarely a good idea to rely on that behavior,
     //! since the overhead of starting/stopping a transaction can be very large, often much larger than the execution of the statement itself.
@@ -2782,7 +2813,7 @@ public:
 
     //! Get the StatementCache for this Db.
     StatementCache& GetStatementCache() const {return const_cast<StatementCache&>(m_statements);}
-
+    void SetProgressHandler(std::function<DbProgressAction()> cb, int n = 500) const { m_dbFile->SetProgressHandler(cb, n); }
     //! Get a CachedStatement for this Db. If the SQL string has already been prepared and a CachedStatement exists for it in the cache, it will
     //! be Reset (see Statement::Reset) and returned without the need to re-Prepare it. If, however, the SQL string has not been used before (or maybe just
     //! not recently) then a new CachedStatement will be created and Prepared.
@@ -2820,6 +2851,8 @@ public:
     BE_SQLITE_EXPORT TraceProfileEvent& GetTraceProfileEvent() const;
     BE_SQLITE_EXPORT TraceCloseEvent& GetTraceCloseEvent() const;
 
+    DbResult GetFileDataVersion(uint32_t& version) const { return m_dbFile->GetFileDataVersion(version); }
+    BE_SQLITE_EXPORT void ClearDbCache();
     //! Determine whether there is an active transaction against this Db.
     bool IsTransactionActive() const {return 0 < GetCurrentSavepointDepth();}
 
@@ -2937,6 +2970,7 @@ public:
     //! Detach a previously attached database. This method is necessary for the same reason AttachDb is necessary.
     //! @param[in] alias The alias by which the database was attached.
     BE_SQLITE_EXPORT DbResult DetachDb(Utf8CP alias) const;
+    BE_SQLITE_EXPORT std::vector<AttachFileInfo> GetAttachedDbs() const;
 
     //! Execute a single SQL statement on this Db.
     //! This merely binds, steps, and finalizes the statement. It is no more efficient than performing those steps individually,
@@ -3412,6 +3446,7 @@ public:
     //! change the size of a blob.
     //! @see sqlite3_blob_open, sqlite3_blob_write, sqlite3_blob_close
     BE_SQLITE_EXPORT DbResult SaveToRow(BlobIO& blobIO);
+    BE_SQLITE_EXPORT void SaveTo(ByteStream& buffer);
 
     //! Obtain a thread-local SnappyToBlob. The returned object is deleted when the calling thread exits and should never be shared between threads.
     BE_SQLITE_EXPORT static SnappyToBlob& GetForThread();
@@ -3434,22 +3469,24 @@ struct SnappyReader
 //! Utility to read Snappy-compressed data from memory, typically from an image of a blob.
 // @bsiclass
 //=======================================================================================
-struct SnappyFromMemory : SnappyReader
+struct SnappyFromMemory final: SnappyReader
 {
 private:
-    Byte*   m_uncompressed;
-    Byte*   m_uncompressCurr;
+    Byte*    m_uncompressed;
+    Byte*    m_uncompressCurr;
     uint16_t m_uncompressAvail;
     uint16_t m_uncompressSize;
-    Byte*   m_blobData;
+    Byte*    m_blobData;
     uint32_t m_blobOffset;
     uint32_t m_blobBytesLeft;
-
+    bool     m_ownsUncompressedBuffer;
     ZipErrors ReadNextChunk();
     ZipErrors TransferFromBlob(void* data, uint32_t numBytes, int offset);
 
 public:
     BE_SQLITE_EXPORT SnappyFromMemory(void* uncompressedBuffer, uint32_t uncompressedBufferSize);
+    BE_SQLITE_EXPORT SnappyFromMemory();
+    BE_SQLITE_EXPORT ~SnappyFromMemory();
     BE_SQLITE_EXPORT void Init(void* blobBuffer, uint32_t blobBufferSize);
     BE_SQLITE_EXPORT virtual ZipErrors _Read(Byte* data, uint32_t size, uint32_t& actuallyRead) override;
 
@@ -3461,13 +3498,13 @@ public:
 //! Utility to read Snappy-compressed data from a blob in a database.
 // @bsiclass
 //=======================================================================================
-struct SnappyFromBlob : SnappyReader
+struct SnappyFromBlob final: SnappyReader
 {
 private:
-    Byte*   m_uncompressed;
-    Byte*   m_uncompressCurr;
-    Byte*   m_blobData;
-    BlobIO  m_blobIO;
+    Byte*    m_uncompressed;
+    Byte*    m_uncompressCurr;
+    Byte*    m_blobData;
+    BlobIO   m_blobIO;
     uint32_t m_blobBufferSize;
     uint32_t m_blobOffset;
     uint32_t m_blobBytesLeft;

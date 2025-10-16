@@ -259,6 +259,28 @@ TEST_F(ECSqlStatementTestFixture, MultilineStringLiteralOrName) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, NestedQueriesWithoutAlias)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NestedQueriesWithoutAlias.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2" schemaName="AllProperties" alias="aps" version="01.00.00">
+                        <ECEntityClass typeName="TestElement" modifier="None">
+                            <BaseClass>IPrimitive</BaseClass>
+                        </ECEntityClass>
+                        <ECEntityClass typeName="IPrimitive" modifier="Abstract">
+                            <ECProperty propertyName="p2d" typeName="point2d"/>
+                        </ECEntityClass>
+                </ECSchema>)xml")));
+
+    ECSqlStatement stmt;
+    //Nested queries with multiple levels of subqueries without aliases are currently not supported and will fail to prepare.
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT p2d.X FROM (SELECT * FROM (SELECT * FROM aps.TestElement))"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select p2d.X from (with tmp as (SELECT e.p2d FROM aps.TestElement e LIMIT 1) select p2d from tmp)"));
+
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, SelectBitwiseOperators)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("bitwise.ecdb"));
@@ -12987,6 +13009,416 @@ TEST_F(ECSqlStatementTestFixture, Testing_Table_Valued_Functions_without_schemaN
         }
     }
 
+class InvalidRelECClassIdTestFixture : public ECSqlStatementTestFixture
+    {
+    public:
+    Utf8String m_schemaXml;
 
+    InvalidRelECClassIdTestFixture() : ECSqlStatementTestFixture()
+        {
+        m_schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
+
+                <ECEntityClass typeName="Element">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.2.0">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECNavigationProperty propertyName="OwnsChildElements" relationshipName="ElementOwnsChildElements" direction="Backward" />
+                    <ECNavigationProperty propertyName="RefersToElements" relationshipName="ElementRefersToElements" direction="Backward" />
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+
+                <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+                    <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                        <Class class="Element"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                        <Class class="Element"/>
+                    </Target>
+                </ECRelationshipClass>
+
+                <ECRelationshipClass typeName="ElementOwnsChildElementsDerived" strength="embedding" modifier="None">
+                    <BaseClass>ElementOwnsChildElements</BaseClass>
+                    <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                        <Class class="Element"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                        <Class class="Element"/>
+                    </Target>
+                </ECRelationshipClass>
+
+                <ECRelationshipClass typeName="ElementOwnsChildElementsGrandDerived" strength="embedding" modifier="None">
+                    <BaseClass>ElementOwnsChildElementsDerived</BaseClass>
+                    <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                        <Class class="Element"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                        <Class class="Element"/>
+                    </Target>
+                </ECRelationshipClass>
+
+                <ECRelationshipClass typeName="ElementRefersToElements" strength="embedding" modifier="None">
+                    <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                        <Class class="Element"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                        <Class class="Element"/>
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
+        }
+
+        void setPragma(const unsigned int testCaseNumber, const bool pragmaValue)
+            {
+            ECSqlStatement stmt;
+            EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("PRAGMA validate_ecsql_writes=%s", pragmaValue ? "true" : "false"))) << "Test case " << testCaseNumber << " failed to call PRAGMA.";
+            EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
+            EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
+            stmt.Finalize();
+            ASSERT_EQ(pragmaValue, m_ecdb.GetECSqlConfig().IsWriteValueValidationEnabled()) << "Test case " << testCaseNumber << " failed to set PRAGMA.";
+            }
+
+        void testInsert(const unsigned int testCaseNumber, Utf8StringCR sqlStmt, const ECSqlStatus expectedResult)
+            {
+            ECSqlStatement stmt;
+            EXPECT_EQ(expectedResult, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed to prepare statement.";
+            if (expectedResult == ECSqlStatus::Success)
+                EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed.";
+            stmt.Finalize();
+            m_ecdb.AbandonChanges();
+            }
+
+        struct TestCase
+            {
+            unsigned int m_testCaseNumber;
+            bool m_pragmaValue;
+            Utf8String m_sqlStmt;
+            Utf8String m_firstNavPropValue;
+            Utf8String m_secondNavPropValue;
+            ECSqlStatus m_expectedResult;
+
+            TestCase(unsigned int testCaseNumber, bool pragmaValue, Utf8String sqlStmt, Utf8String firstNavPropValue, Utf8String secondNavPropValue, ECSqlStatus expectedResult)
+                : m_testCaseNumber(testCaseNumber), m_pragmaValue(pragmaValue), m_sqlStmt(sqlStmt), m_firstNavPropValue(firstNavPropValue), m_secondNavPropValue(secondNavPropValue), m_expectedResult(expectedResult)
+                {}
+            };
+
+        void getClassIdStrFromName(Utf8StringCR className, Utf8StringR& classId)
+            {
+            const auto elementOwnsChildElements = m_ecdb.Schemas().FindClass(className.c_str());
+            ASSERT_NE(elementOwnsChildElements, nullptr);
+            classId = elementOwnsChildElements->GetId().ToString();
+            }
+        };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(InvalidRelECClassIdTestFixture, InsertWithInvalidRelECClassId_WithPragma)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertWithInvalidRelECClassId.ecdb", SchemaItem(m_schemaXml)));
+    m_ecdb.SaveChanges();
+
+    Utf8String elementOwnsChildElementsId, elementOwnsChildElementDerivedId, elementOwnsChildElementGrandDerivedId, elementRefersToElementsId;
+    getClassIdStrFromName("ts.ElementOwnsChildElements", elementOwnsChildElementsId);
+    getClassIdStrFromName("ts.ElementOwnsChildElementsDerived", elementOwnsChildElementDerivedId);
+    getClassIdStrFromName("ts.ElementOwnsChildElementsGrandDerived", elementOwnsChildElementGrandDerivedId);
+    getClassIdStrFromName("ts.ElementRefersToElements", elementRefersToElementsId);
+
+    const auto sqlErrorStatus = ECSqlStatus(BE_SQLITE_ERROR);
+
+    // Test with hardcoded values in ecsql statements without binders
+    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, firstNavPropValue, secondNavPropValue, expectedResult] : std::vector<TestCase> {
+        {  1, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(1, %s)", "9999", "",ECSqlStatus::Success },
+        {  2, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(2, %s)", "0", "", ECSqlStatus::Success },
+        {  3, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(3, %s)", "-1", "", ECSqlStatus::Success },
+        {  4, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(4, %s)", "NULL", "", ECSqlStatus::Success },
+
+        {  5, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(5, %s)", elementOwnsChildElementsId, "",ECSqlStatus::Success },
+        {  6, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(6, %s)", elementOwnsChildElementDerivedId, "",ECSqlStatus::Success },
+        {  7, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(7, %s)", elementOwnsChildElementGrandDerivedId, "",ECSqlStatus::Success },
+        {  8, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(8, %s)", elementRefersToElementsId, "",ECSqlStatus::Success },
+
+        {  9, false, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(9, %s)", elementOwnsChildElementsId, "",ECSqlStatus::Success },
+        { 10, false, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(10, %s)", elementOwnsChildElementDerivedId, "",ECSqlStatus::Success },
+        { 11, false, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(11, %s)", elementOwnsChildElementGrandDerivedId, "",ECSqlStatus::Success },
+        { 12, false, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(12, %s)", elementRefersToElementsId, "",ECSqlStatus::Success },
+
+        { 13, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(13, %s, 14, %s)", elementRefersToElementsId, elementOwnsChildElementDerivedId,ECSqlStatus::Success },
+        { 14, false, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(15, %s, 16, %s)", elementOwnsChildElementDerivedId, elementRefersToElementsId, ECSqlStatus::Success },
+        
+        { 15, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(17, %s)", "9999", "",sqlErrorStatus },
+        { 16, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(18, %s)", "0", "",sqlErrorStatus },
+        { 17, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(19, %s)", "-1", "",sqlErrorStatus },
+        { 18, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(20, %s)", "null", "",ECSqlStatus::Success },
+
+        { 19, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(21, %s)", elementOwnsChildElementsId, "",ECSqlStatus::Success },
+        { 20, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(22, %s)", elementOwnsChildElementDerivedId, "",ECSqlStatus::Success },
+        { 21, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(23, %s)", elementOwnsChildElementGrandDerivedId, "",ECSqlStatus::Success },
+        { 22, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId) VALUES(24, %s)", elementRefersToElementsId, "",sqlErrorStatus },
+
+        { 23, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(25, %s)", elementOwnsChildElementsId, "",sqlErrorStatus },
+        { 24, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(26, %s)", elementOwnsChildElementDerivedId, "",sqlErrorStatus },
+        { 25, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(27, %s)", elementOwnsChildElementGrandDerivedId, "",sqlErrorStatus },
+        { 26, true, "INSERT INTO ts.Element(RefersToElements.Id, RefersToElements.RelECClassId) VALUES(28, %s)", elementRefersToElementsId, "",ECSqlStatus::Success },
+
+        { 27, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(29, %s, 30, %s)", elementRefersToElementsId, elementOwnsChildElementDerivedId,sqlErrorStatus },
+        { 28, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(31, %s, 32, %s)", elementOwnsChildElementDerivedId, elementRefersToElementsId, ECSqlStatus::Success },
+
+        { 29, true, "INSERT INTO ts.Element(OwnsChildElements.Id, OwnsChildElements.RelECClassId, RefersToElements.Id, RefersToElements.RelECClassId) VALUES(31, %s, 32, %s)", elementOwnsChildElementDerivedId, elementRefersToElementsId, ECSqlStatus::Success },
+    })  {
+        setPragma(testCaseNumber, pragmaValue);
+        testInsert(testCaseNumber, SqlPrintfString(sqlStmt.c_str(), firstNavPropValue.c_str(), secondNavPropValue.c_str()).GetUtf8CP(), expectedResult);
+        }
+
+    // Test with binders
+    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, firstNavPropValue, secondNavPropValue, expectedBindingResult] : std::vector<TestCase> {
+        { 30, false, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementsId, "", ECSqlStatus::Success },
+        { 31, false, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementDerivedId, "", ECSqlStatus::Success },
+        { 32, false, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementGrandDerivedId, "", ECSqlStatus::Success },
+        { 33, false, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementRefersToElementsId, "", ECSqlStatus::Success },
+        { 34, false, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", "9999", "", ECSqlStatus::Success },
+
+        { 35, false, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementsId, "", ECSqlStatus::Success },
+        { 36, false, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementDerivedId, "", ECSqlStatus::Success },
+        { 37, false, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementGrandDerivedId, "", ECSqlStatus::Success },
+        { 38, false, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementRefersToElementsId, "", ECSqlStatus::Success },
+        { 39, false, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", "9999", "", ECSqlStatus::Success },
+
+        { 40, false, "INSERT INTO ts.Element(OwnsChildElements, RefersToElements) VALUES(?, ?)", elementOwnsChildElementsId, elementRefersToElementsId, ECSqlStatus::Success },
+        { 41, false, "INSERT INTO ts.Element(RefersToElements, OwnsChildElements) VALUES(?, ?)", elementOwnsChildElementsId, elementRefersToElementsId, ECSqlStatus::Success },
+
+        { 42, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementsId, "", ECSqlStatus::Success },
+        { 43, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementDerivedId, "", ECSqlStatus::Success },
+        { 44, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementOwnsChildElementGrandDerivedId, "", ECSqlStatus::Success },
+        { 45, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", elementRefersToElementsId, "", sqlErrorStatus},
+        { 46, true, "INSERT INTO ts.Element(OwnsChildElements) VALUES(?)", "9999", "", sqlErrorStatus },
+
+        { 47, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementsId, "", sqlErrorStatus },
+        { 48, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementDerivedId, "", sqlErrorStatus },
+        { 49, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementOwnsChildElementGrandDerivedId, "", sqlErrorStatus },
+        { 50, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", elementRefersToElementsId, "", ECSqlStatus::Success},
+        { 51, true, "INSERT INTO ts.Element(RefersToElements) VALUES(?)", "9999", "", sqlErrorStatus },
+
+        { 52, true, "INSERT INTO ts.Element(OwnsChildElements, RefersToElements) VALUES(?, ?)", elementOwnsChildElementsId, elementRefersToElementsId, ECSqlStatus::Success },
+        { 53, true, "INSERT INTO ts.Element(RefersToElements, OwnsChildElements) VALUES(?, ?)", elementOwnsChildElementsId, elementRefersToElementsId, sqlErrorStatus },
+    }) {
+        setPragma(testCaseNumber, pragmaValue);
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed.";
+
+        ECClassId firstNavPropRelClassId;
+        ECClassId::FromString(firstNavPropRelClassId, firstNavPropValue.c_str());
+        EXPECT_EQ(expectedBindingResult, stmt.BindNavigationValue(1, BeInt64Id(testCaseNumber), firstNavPropRelClassId)) << "Test case " << testCaseNumber << " failed to bind value.";
+
+        if (!Utf8String::IsNullOrEmpty(secondNavPropValue.c_str()))
+            {
+            ECClassId secondNavPropRelClassId;
+            ECClassId::FromString(secondNavPropRelClassId, secondNavPropValue.c_str());
+            EXPECT_EQ(expectedBindingResult, stmt.BindNavigationValue(2, BeInt64Id(testCaseNumber), secondNavPropRelClassId)) << "Test case " << testCaseNumber << " failed to bind second value.";
+            }
+
+        if (expectedBindingResult == ECSqlStatus::Success)
+            EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed to step.";
+    
+        stmt.Finalize();
+        m_ecdb.AbandonChanges();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(InvalidRelECClassIdTestFixture, UpdateWithInvalidRelECClassId_WithPragma)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updateWithInvalidRelECClassId.ecdb", SchemaItem(m_schemaXml)));
+
+    Utf8String elementOwnsChildElementsIdStr, elementOwnsChildElementDerivedIdStr, elementOwnsChildElementGrandDerivedIdStr, elementRefersToElementsIdStr;
+    getClassIdStrFromName("ts.ElementOwnsChildElements", elementOwnsChildElementsIdStr);
+    getClassIdStrFromName("ts.ElementOwnsChildElementsDerived", elementOwnsChildElementDerivedIdStr);
+    getClassIdStrFromName("ts.ElementOwnsChildElementsGrandDerived", elementOwnsChildElementGrandDerivedIdStr);
+    getClassIdStrFromName("ts.ElementRefersToElements", elementRefersToElementsIdStr);
+
+    ECClassId elementOwnsChildElementsId, elementRefersToElementsId;
+    ASSERT_EQ(BentleyStatus::SUCCESS, ECClassId::FromString(elementOwnsChildElementsId, elementOwnsChildElementsIdStr.c_str()));
+    ASSERT_EQ(BentleyStatus::SUCCESS, ECClassId::FromString(elementRefersToElementsId, elementRefersToElementsIdStr.c_str()));
+
+    // Insert a few values to be updated
+    ECSqlStatement insertStmt;
+    EXPECT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.Element(OwnsChildElements, RefersToElements) VALUES(?, ?)"));
+    insertStmt.BindNavigationValue(1, BeInt64Id(1), elementOwnsChildElementsId);
+    insertStmt.BindNavigationValue(2, BeInt64Id(2), elementRefersToElementsId);
+    EXPECT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Finalize();
+
+    m_ecdb.SaveChanges();
+
+    const auto sqlErrorStatus = ECSqlStatus(BE_SQLITE_ERROR);
+
+    // Test with hardcoded values in ecsql statements without binders
+    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, firstNavPropValue, secondNavPropValue, expectedResult] : std::vector<TestCase> {
+        {  1, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "9999", "", ECSqlStatus::Success },
+        {  2, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "0", "", ECSqlStatus::Success },
+        {  3, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "-1", "", ECSqlStatus::Success },
+        {  4, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "null", "", ECSqlStatus::Success },
+
+        {  5, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
+        {  6, false, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+
+        {  7, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+        {  8, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
+        {  9, false, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
+        { 10, false, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+        { 11, false, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
+        { 12, false, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
+        { 13, false, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
+
+        { 14, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "9999", "", sqlErrorStatus },
+        { 15, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "0", "", sqlErrorStatus },
+        { 16, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "-1", "", sqlErrorStatus },
+        { 17, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", "null", "", ECSqlStatus::Success },
+
+        { 18, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementRefersToElementsIdStr, "", sqlErrorStatus },
+        { 19, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", sqlErrorStatus },
+
+        { 20, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+        { 21, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
+        { 22, true, "update ts.Element set OwnsChildElements.RelECClassId=%s where OwnsChildElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
+        { 23, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", sqlErrorStatus },
+        { 24, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementDerivedIdStr, "", sqlErrorStatus },
+        { 25, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", sqlErrorStatus },
+        { 26, true, "update ts.Element set RefersToElements.RelECClassId=%s where RefersToElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
+        { 27, true, "update ts.Element set OwnsChildElements.RelECClassId=%s, RefersToElements.RelECClassId=%s", elementOwnsChildElementsIdStr, elementRefersToElementsIdStr, ECSqlStatus::Success },
+        { 28, true, "update ts.Element set OwnsChildElements.RelECClassId=%s, RefersToElements.RelECClassId=%s", elementRefersToElementsIdStr, elementOwnsChildElementsIdStr, sqlErrorStatus },
+    })
+        {
+        setPragma(testCaseNumber, pragmaValue);
+        testInsert(testCaseNumber, SqlPrintfString(sqlStmt.c_str(), firstNavPropValue.c_str(), secondNavPropValue.c_str()).GetUtf8CP(), expectedResult);
+        }
+
+    // Test with binders
+    for (const auto& [testCaseNumber, pragmaValue, sqlStmt, firstNavPropValue, secondNavPropValue, expectedResult] : std::vector<TestCase> {
+        { 29, false, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", "9999", "", ECSqlStatus::Success },
+        { 30, false, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+        { 31, false, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
+        { 32, false, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
+        { 33, false, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
+
+        { 34, false, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+        { 35, false, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
+        { 36, false, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
+        { 37, false, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
+
+        { 38, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", "9999", "", sqlErrorStatus },
+        { 39, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementsIdStr, "", ECSqlStatus::Success },
+        { 40, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementDerivedIdStr, "", ECSqlStatus::Success },
+        { 41, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", ECSqlStatus::Success },
+        { 42, true, "update ts.Element set OwnsChildElements=? where OwnsChildElements.Id=1", elementRefersToElementsIdStr, "", sqlErrorStatus },
+
+        { 43, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementsIdStr, "", sqlErrorStatus },
+        { 44, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementDerivedIdStr, "", sqlErrorStatus },
+        { 45, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementOwnsChildElementGrandDerivedIdStr, "", sqlErrorStatus },
+        { 46, true, "update ts.Element set RefersToElements=? where RefersToElements.Id=1", elementRefersToElementsIdStr, "", ECSqlStatus::Success },
+        { 47, true, "update ts.Element set OwnsChildElements=?, RefersToElements=?", elementOwnsChildElementsIdStr, elementRefersToElementsIdStr, ECSqlStatus::Success },
+        { 48, true, "update ts.Element set OwnsChildElements=?, RefersToElements=?", elementRefersToElementsIdStr, elementOwnsChildElementsIdStr, sqlErrorStatus },
+    })
+        {
+        setPragma(testCaseNumber, pragmaValue);
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sqlStmt.c_str())) << "Test case " << testCaseNumber << " failed to prepare statement.";
+        ECClassId relClassId;
+        ECClassId::FromString(relClassId, firstNavPropValue.c_str());
+        EXPECT_EQ(expectedResult, stmt.BindNavigationValue(1, BeInt64Id(1), relClassId)) << "Test case " << testCaseNumber << " failed to bind value.";
+        if (!Utf8String::IsNullOrEmpty(secondNavPropValue.c_str()))
+            {
+            ECClassId secondRelClassId;
+            ECClassId::FromString(secondRelClassId, secondNavPropValue.c_str());
+            EXPECT_EQ(expectedResult, stmt.BindNavigationValue(2, BeInt64Id(1), secondRelClassId)) << "Test case " << testCaseNumber << " failed to bind second value.";
+            }
+        if (expectedResult == ECSqlStatus::Success)
+            EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed to step.";
+        stmt.Finalize();
+        m_ecdb.AbandonChanges();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(InvalidRelECClassIdTestFixture, SelectWithInvalidRelECClassId_WithPragma)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("selectWithInvalidRelECClassId.ecdb", SchemaItem(m_schemaXml)));
+    m_ecdb.SaveChanges();
+
+    Utf8String elementOwnsChildElementsId, elementRefersToElementsId;
+    getClassIdStrFromName("ts.ElementOwnsChildElements", elementOwnsChildElementsId);
+    getClassIdStrFromName("ts.ElementRefersToElements", elementRefersToElementsId);
+
+    // Make sure the pragma only works for insert statements
+    for (const auto& [testCaseNumber, pragmaValue, relClassIdStr] : std::vector<std::tuple<unsigned int, bool, Utf8String>> {
+        { 1, false, "9999" },
+        { 2, false, elementOwnsChildElementsId },
+        { 3, false, elementRefersToElementsId },
+
+        { 4, true, "9999" },
+        { 5, true, elementOwnsChildElementsId },
+        { 6, true, elementRefersToElementsId }
+    })
+        {
+        setPragma(testCaseNumber, pragmaValue);
+
+        ECClassId relClassId;
+        ASSERT_EQ(BentleyStatus::SUCCESS, ECClassId::FromString(relClassId, relClassIdStr.c_str())) << "Test case " << testCaseNumber << " failed to convert class id.";
+
+        // Test with hardcoded values in ecsql statements without binders
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT * FROM ts.Element where OwnsChildElements.RelECClassId=%s", relClassIdStr.c_str()))) << "Test case " << testCaseNumber << " failed to prepare statement.";
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.Finalize();
+
+        // Test with binders
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Element where OwnsChildElements=?")) << "Test case " << testCaseNumber << " failed to prepare statement.";
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(9999ull), relClassId)) << "Test case " << testCaseNumber << " failed to bind value.";
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.Finalize();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, IsCoreSelectTests) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("is_core_select_tests.ecdb"));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM IdSet('[1,2,3,4,5]') LIMIT 3 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT * FROM IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') ORDER BY id ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT * FROM IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT * FROM IdSet('[5, 6, 7, 8]') LIMIT 3 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 3);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT * FROM IdSet('[1,2,3,4,5]') UNION SELECT * FROM IdSet('[5, 6, 7, 8]')) LIMIT 3 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 3);
+        }
+}
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -141,6 +141,7 @@ public:
     ECDB_EXPORT Status Push(SyncDbUri const&);
     ECDB_EXPORT static DbResult ScanForSchemaChanges(ChangeStream& stream, bool&, bool&, bool&);
     static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
+    ECDB_EXPORT static Utf8String GetStatusAsString(Status status);
 };
 //=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager
@@ -399,7 +400,6 @@ struct DropSchemaResult {
 struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
     {
     public:
-
         //! Schema import options. Not needed by regular callers. They are specific to certain
         //! exceptional workflows and therefore only used by them.
         enum class SchemaImportOptions
@@ -439,7 +439,8 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 #endif
 
         ECDB_EXPORT SchemaSync& GetSchemaSync() const;
-
+        ECDB_EXPORT bool IsSubClassOf(Utf8StringCR subClassECSqlName, Utf8StringCR parentClassECSqlName, Utf8CP tableSpace = nullptr) const;
+        ECDB_EXPORT bool IsSubClassOf(ECN::ECClassId subClassId, ECN::ECClassId parentClassId, Utf8CP tableSpace = nullptr) const;
         //! Drop a leaf schema from ecdb as long as it has no instances
         //! @param[in] name  name of schema to be dropped.
         //! @param [in] token Token required to perform ECSchema imports if the
@@ -671,6 +672,10 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 
         //! Called after any schema changes are applied or if apply process failed
         ECDB_EXPORT SchemaChangeEvent& OnAfterSchemaChanges() const;
+
+        Utf8String GetDescription() const override {
+            return Utf8PrintfString("ECDb");
+        }
 
 #if !defined (DOCUMENTATION_GENERATOR)
         //! Truncates and repopulates ECDb's cache tables.

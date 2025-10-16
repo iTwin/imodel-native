@@ -425,7 +425,7 @@ void Check::Near (DConic4dCR a, DConic4dCR b, char const*pString, double refValu
     Check::Near (a.start, b.start, pString, refValue);
     }
 
-bool Check::NearPeriodic (double thetaA, double thetaB, char const*pString)
+bool Check::NearPeriodicRadians (double thetaA, double thetaB, char const*pString)
     {
 
     if (Angle::NearlyEqualAllowPeriodShift (thetaA, thetaB))
@@ -436,7 +436,7 @@ bool Check::NearPeriodic (double thetaA, double thetaB, char const*pString)
 
 bool Check::NearPeriodic (Angle thetaA, Angle thetaB, char const*pString)
     {
-    return Check::NearPeriodic (thetaA.Radians (), thetaB.Radians (), pString);
+    return Check::NearPeriodicRadians (thetaA.Radians (), thetaB.Radians (), pString);
     }
 
 bool Check::Near (Angle thetaA, Angle thetaB, char const*pString)

@@ -50,6 +50,31 @@ extern "C" {
 
 typedef struct sqlite3_bcv sqlite3_bcv;
 
+/* BEGIN BENTLEY CHANGES */
+
+/*
+** Configure the bcv globally.
+*/
+int sqlite3_bcv_global_config(int eOp, ...);
+/*
+** SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT:
+**   This option requires a single argument of type int, interpreted
+**   as a Boolean. If set to true, then the library will ignore certificate
+**   revocation checks in case of missing or offline distribution points.
+**   If set to false (the default), then this won't happen. This is only
+**   supported for Schannel-based builds of CURL.
+** SQLITE_BCVGLOBALCONFIG_CAFILE:
+**   This option requires a single argument of type (char*). If set to
+**   a non-NULL value, this string is used as the path to the Certificate
+**   Authority file to use for HTTPS connections. This does not have any effect
+**   on Schannel-based builds of CURL, which use the Windows certificate
+**   store instead.
+*/
+#define SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT    1      /* (int) */
+#define SQLITE_BCVGLOBALCONFIG_CAFILE              2      /* (char*) */
+
+/* END BENTLEY CHANGES */
+
 /*
 ** Allocate a new sqlite3_bcv handle. 
 **

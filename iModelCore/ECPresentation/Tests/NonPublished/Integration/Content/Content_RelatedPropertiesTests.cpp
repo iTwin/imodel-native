@@ -1608,7 +1608,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         childClass2->GetId().ToString().c_str(), child3->GetInstanceId().c_str(),
         FIELD_NAME(childClass2, "Parent"), parent->GetClass().GetId().ToString().c_str(),  parent->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
         FIELD_NAME(childClass2, "Parent"), CommonStrings::LABEL_NOTSPECIFIED).c_str());
-        
+
         EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -2971,7 +2971,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyToManyRelatedNe
             }]
         })",
         NESTED_CONTENT_FIELD_NAME(classA, classB),
-        
+
         classB->GetName().c_str(), classB->GetName().c_str(),
         classB->GetId().ToString().c_str(), b1->GetInstanceId().c_str(),
         FIELD_NAME(classB, "PropB"),
@@ -2985,7 +2985,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyToManyRelatedNe
         FIELD_NAME(classB, "PropB"),
         NESTED_CONTENT_FIELD_NAME(classB, classC),
         FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
-        
+
         classB->GetName().c_str(), classB->GetName().c_str(),
         classB->GetId().ToString().c_str(), b2->GetInstanceId().c_str(),
         FIELD_NAME(classB, "PropB"),
@@ -2993,7 +2993,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyToManyRelatedNe
         classC->GetName().c_str(), classC->GetName().c_str(),
         classC->GetId().ToString().c_str(), c21->GetInstanceId().c_str(),
         FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
-        classC->GetName().c_str(), classC->GetName().c_str(),   
+        classC->GetName().c_str(), classC->GetName().c_str(),
         classC->GetId().ToString().c_str(), c22->GetInstanceId().c_str(),
         FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
         FIELD_NAME(classB, "PropB"),
@@ -3323,7 +3323,7 @@ DEFINE_SCHEMA(LoadsXToManyRelatedContentForInstancesOfDifferentClasses, R"*(
     <ECEntityClass typeName="A" />
     <ECEntityClass typeName="B" />
     <ECEntityClass typeName="R">
-        <ECProperty propertyName="PropR" typeName="int" />        
+        <ECProperty propertyName="PropR" typeName="int" />
     </ECEntityClass>
     <ECRelationshipClass typeName="A_R" strength="referencing" strengthDirection="forward" modifier="Sealed">
         <Source multiplicity="(0..1)" roleLabel="AR" polymorphic="True">
@@ -3341,7 +3341,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedContentF
     ECClassCP classB = GetClass("B");
     ECClassCP classR = GetClass("R");
     ECRelationshipClassCP relAR = GetClass("A_R")->GetRelationshipClassCP();
-    
+
     IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
     IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
     IECInstancePtr r1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classR, [](IECInstanceR instance)
@@ -3689,9 +3689,13 @@ DEFINE_SCHEMA(LoadsPolymorphicallyBackwardRelatedPropertiesForInstancesOfSpecifi
             <Class class="ElementUniqueAspect"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="MyElement">
+    <ECEntityClass typeName="MyElement1">
         <BaseClass>Element</BaseClass>
-        <ECProperty propertyName="ElementName" typeName="string" />
+        <ECProperty propertyName="ElementName1" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyElement2">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="ElementName2" typeName="string" />
     </ECEntityClass>
     <ECEntityClass typeName="MyAspect">
         <BaseClass>ElementUniqueAspect</BaseClass>
@@ -3702,13 +3706,17 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyBackwar
     {
     // set up data set
     ECClassCP baseElementClass = GetClass("Element");
-    ECClassCP elementClass = GetClass("MyElement");
+    ECClassCP elementClass1 = GetClass("MyElement1");
+    ECClassCP elementClass2 = GetClass("MyElement2");
     ECClassCP baseAspectClass = GetClass("ElementUniqueAspect");
     ECClassCP aspectClass = GetClass("MyAspect");
     ECRelationshipClassCP elementOwnsUniqueAspectRelationship = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
-    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("my element"));});
+
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass1, [](IECInstanceR instance){instance.SetValue("ElementName1", ECValue("my element 1"));});
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass2, [](IECInstanceR instance){instance.SetValue("ElementName2", ECValue("my element 2"));});
     IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass, [](IECInstanceR instance){instance.SetValue("AspectName", ECValue("my aspect"));});
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element, *aspect);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element1, *aspect);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element2, *aspect);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
@@ -3726,7 +3734,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyBackwar
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-    ASSERT_EQ(1, descriptor->GetVisibleFields().size()); // rel_ElementUniqueAspect_MyElement_ElementName
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // rel_ElementUniqueAspect_MyElement1, rel_ElementUniqueAspect_MyElement2
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -3747,17 +3755,35 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyBackwar
             },
             "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}],
             "Values": {
-                "%s": "my element"
+                "%s": "my element 1"
             },
             "DisplayValues": {
-                "%s": "my element"
+                "%s": "my element 1"
+            },
+            "MergedFieldNames": []
+        }],
+        "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
+            "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}],
+            "Values": {
+                "%s": "my element 2"
+            },
+            "DisplayValues": {
+                "%s": "my element 2"
             },
             "MergedFieldNames": []
         }]
     })",
-        NESTED_CONTENT_FIELD_NAME(baseAspectClass, elementClass),
-        elementClass->GetId().ToString().c_str(), element->GetInstanceId().c_str(),
-        FIELD_NAME(elementClass, "ElementName"), FIELD_NAME(elementClass, "ElementName")
+        NESTED_CONTENT_FIELD_NAME(baseAspectClass, elementClass1),
+        elementClass1->GetId().ToString().c_str(), element1->GetInstanceId().c_str(),
+        FIELD_NAME(elementClass1, "ElementName1"), FIELD_NAME(elementClass1, "ElementName1"),
+        NESTED_CONTENT_FIELD_NAME(baseAspectClass, elementClass2),
+        elementClass2->GetId().ToString().c_str(), element2->GetInstanceId().c_str(),
+        FIELD_NAME(elementClass2, "ElementName2"), FIELD_NAME(elementClass2, "ElementName2")
     ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -11265,6 +11291,254 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForDifferentR
         classB->GetId().ToString().c_str(), b2->GetInstanceId().c_str(),
         FIELD_NAME_C(classB, "test", 2), FIELD_NAME_C(classB, "test_2", 2),
         FIELD_NAME_C(classB, "test", 2), FIELD_NAME_C(classB, "test_2", 2)).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CreatesContentForRelatedViewProperties, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="Length" typeName="double" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B_View" modifier="Abstract">
+        <ECCustomAttributes>
+            <QueryView xmlns="ECDbMap.02.00.04">
+                <Query>
+                    SELECT
+                        b.ECInstanceId,
+                        ec_classid('{SCHEMA_NAME}', 'B_View') [ECClassId],
+                        SUM(c.Length) [TotalLength]
+                    FROM {SCHEMA_NAME}.B b
+                    JOIN {SCHEMA_NAME}.B_C rel ON rel.SourceECInstanceId = b.ECInstanceId
+                    JOIN {SCHEMA_NAME}.C c ON c.ECInstanceId = rel.TargetECInstanceId
+                    GROUP BY b.ECInstanceId
+                </Query>
+            </QueryView>
+        </ECCustomAttributes>
+        <ECProperty propertyName="TotalLength" typeName="double" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="references" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_C" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="references" polymorphic="True">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForRelatedViewProperties)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classBView = GetClass("B_View");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relAB = GetClass("A_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetClass("B_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b);
+
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance)
+        {
+        instance.SetValue("Length", ECValue(1.2));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b, *c1);
+
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance)
+        {
+        instance.SetValue("Length", ECValue(3.4));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b, *c2);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    auto* spec = new SelectedNodeInstancesSpecification();
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward, classBView->GetFullName())
+        }), { new PropertySpecification("TotalLength") }, RelationshipMeaning::RelatedInstance, false));
+    rule->AddSpecification(*spec);
+    rules->AddPresentationRule(*rule);
+
+    auto keys = KeySet::Create(bvector<IECInstancePtr>{ a });
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *keys)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // validate content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+    "%s": [{
+        "DisplayLabel": {
+            "DisplayValue": "@Presentation:label.notSpecified@",
+            "TypeName": "string",
+            "RawValue": "@Presentation:label.notSpecified@"
+        },
+        "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+        "Values": {
+            "%s": 4.6
+            },
+        "DisplayValues": {
+            "%s": "4.60"
+            },
+        "MergedFieldNames": []
+        }]
+    })",
+        NESTED_CONTENT_FIELD_NAME(classA, classBView),
+        classBView->GetId().ToString().c_str(), b->GetInstanceId().c_str(),
+        FIELD_NAME(classBView, "TotalLength"),
+        FIELD_NAME(classBView, "TotalLength")
+    ).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CreatesContentForPolymorphicallyRelatedViewProperties, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="Length" typeName="double" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B_View" modifier="Abstract">
+        <ECCustomAttributes>
+            <QueryView xmlns="ECDbMap.02.00.04">
+                <Query>
+                    SELECT
+                        b.ECInstanceId,
+                        ec_classid('{SCHEMA_NAME}', 'B_View') [ECClassId],
+                        SUM(c.Length) [TotalLength]
+                    FROM {SCHEMA_NAME}.B b
+                    JOIN {SCHEMA_NAME}.B_C rel ON rel.SourceECInstanceId = b.ECInstanceId
+                    JOIN {SCHEMA_NAME}.C c ON c.ECInstanceId = rel.TargetECInstanceId
+                    GROUP BY b.ECInstanceId
+                </Query>
+            </QueryView>
+        </ECCustomAttributes>
+        <ECProperty propertyName="TotalLength" typeName="double" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="references" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_C" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="references" polymorphic="True">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForPolymorphicallyRelatedViewProperties)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classBView = GetClass("B_View");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relAB = GetClass("A_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetClass("B_C")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b);
+
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance)
+        {
+        instance.SetValue("Length", ECValue(1.2));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b, *c1);
+
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance)
+        {
+        instance.SetValue("Length", ECValue(3.4));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b, *c2);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    auto* spec = new SelectedNodeInstancesSpecification();
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward, classBView->GetFullName())
+        }), { new PropertySpecification("TotalLength") }, RelationshipMeaning::RelatedInstance, true));
+    rule->AddSpecification(*spec);
+    rules->AddPresentationRule(*rule);
+
+    auto keys = KeySet::Create(bvector<IECInstancePtr>{ a });
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *keys)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // validate content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+    "%s": [{
+        "DisplayLabel": {
+            "DisplayValue": "@Presentation:label.notSpecified@",
+            "TypeName": "string",
+            "RawValue": "@Presentation:label.notSpecified@"
+        },
+        "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+        "Values": {
+            "%s": 4.6
+            },
+        "DisplayValues": {
+            "%s": "4.60"
+            },
+        "MergedFieldNames": []
+        }]
+    })",
+        NESTED_CONTENT_FIELD_NAME(classA, classBView),
+        classBView->GetId().ToString().c_str(), b->GetInstanceId().c_str(),
+        FIELD_NAME(classBView, "TotalLength"),
+        FIELD_NAME(classBView, "TotalLength")
+    ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);

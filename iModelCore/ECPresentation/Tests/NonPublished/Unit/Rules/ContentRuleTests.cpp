@@ -89,66 +89,6 @@ TEST_F(ContentRuleTests, WriteToJson)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentRuleTests, LoadsFromXml)
-    {
-    static Utf8CP xmlString = R"(
-        <ContentRule CustomControl="customControl">
-            <ContentInstancesOfSpecificClasses ClassNames="TestSchema:ClassA"/>
-            <ContentRelatedInstances/>
-            <SelectedNodeInstances/>
-        </ContentRule>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    ContentRule rule;
-    EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("customControl", rule.GetCustomControl().c_str());
-    EXPECT_EQ(3, rule.GetSpecifications().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentRuleTests, LoadsFromXmlWithDefaultValues)
-    {
-    static Utf8CP xmlString = "<ContentRule/>";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-
-    ContentRule rule;
-    EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("", rule.GetCustomControl().c_str());
-    EXPECT_EQ(0, rule.GetSpecifications().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentRuleTests, WriteToXml)
-    {
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
-    xml->AddNewElement("Root", nullptr, nullptr);
-
-    ContentRule rule;
-    rule.SetCustomControl("customControl");
-    rule.AddSpecification(*new ContentRelatedInstancesSpecification());
-    rule.WriteXml(xml->GetRootElement());
-    static Utf8CP expected = ""
-        "<Root>"
-            R"(<ContentRule Priority="1000" OnlyIfNotHandled="false" Condition="" CustomControl="customControl">)"
-                R"(<ContentRelatedInstances Priority="1000" ShowImages="false" OnlyIfNotHandled="false" SkipRelatedLevel="0" IsRecursive="false" InstanceFilter="" RelationshipClassNames="" RelatedClassNames="" RequiredDirection="Both"/>)"
-            R"(</ContentRule>)"
-        "</Root>";
-    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentRuleTests, ComputesCorrectHashes)
     {
     Utf8CP DEFAULT_HASH = "f15c1cae7882448b3fb0404682e17e61";
