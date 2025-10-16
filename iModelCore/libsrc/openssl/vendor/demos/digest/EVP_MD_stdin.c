@@ -35,7 +35,7 @@ int demonstrate_digest(BIO *input)
 {
     OSSL_LIB_CTX *library_context = NULL;
     int ret = 0;
-    const char * option_properties = NULL;
+    const char *option_properties = NULL;
     EVP_MD *message_digest = NULL;
     EVP_MD_CTX *digest_context = NULL;
     int digest_length;
@@ -124,7 +124,7 @@ cleanup:
 int main(void)
 {
     int ret = EXIT_FAILURE;
-    BIO *input = BIO_new_fd( fileno(stdin), 1 );
+    BIO *input = BIO_new_fd(fileno(stdin), 1);
 
     if (input != NULL) {
         ret = (demonstrate_digest(input) ? EXIT_SUCCESS : EXIT_FAILURE);

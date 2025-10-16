@@ -124,6 +124,7 @@ struct InstanceReader::Impl final {
         using Ptr = std::unique_ptr<Class> ;
         struct Factory final {
             private:
+                static DateTime::Info GetDateTimeInfo(PropertyMap const& propertyMap);
                 static ECSqlPropertyPath GetPropertyPath (PropertyMap const&);
                 static std::unique_ptr<ECSqlField> CreatePrimitiveField(ECSqlSelectPreparedStatement&, PropertyMap const&, TableView const&);
                 static std::unique_ptr<ECSqlField> CreateSystemField(ECSqlSelectPreparedStatement&, PropertyMap const&, TableView const&);
@@ -172,15 +173,16 @@ struct InstanceReader::Impl final {
             mutable Document m_cachedJsonDoc;
             mutable ECInstanceKey m_instanceKey;
             mutable Utf8String m_accessString;
-            mutable InstanceReader::JsonParams m_jsonParam;
+            mutable JsReadOptions m_jsonParam;
             Document& ClearAndGetCachedJsonDocument() const;
 
         public:
             RowRender(ECDbCR conn):m_conn(conn), m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator){
                 m_cachedJsonDoc.SetObject();
             }
-            BeJsValue GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, InstanceReader::JsonParams const& param = InstanceReader::JsonParams()) const;
-            BeJsValue GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8StringCR accessString, IECSqlValue const& ecsqlValue, InstanceReader::JsonParams const& param = InstanceReader::JsonParams()) const;
+            BeJsValue GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, JsReadOptions const& param = JsReadOptions()) const;
+            BeJsValue GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8StringCR accessString, IECSqlValue const& ecsqlValue, JsReadOptions const& param = JsReadOptions()) const;
+            void Reset();
     };
 
     //=======================================================================================
@@ -219,7 +221,7 @@ struct InstanceReader::Impl final {
             void Reset() const;
             void Reset(Class const& queryClass, Property const& queryProp, Utf8CP accessString) const;
             void Reset(Class const& queryClass) const;
-            virtual BeJsValue GetJson(InstanceReader::JsonParams const& param = InstanceReader::JsonParams()) const override;
+            virtual BeJsValue GetJson(JsReadOptions const& param = JsReadOptions()) const override;
     };
 
     //=======================================================================================
@@ -252,6 +254,7 @@ struct InstanceReader::Impl final {
             ~Reader() { }
             void Clear() const;
             bool Seek(InstanceReader::Position const& position, InstanceReader::RowCallback callback, InstanceReader::Options const& options) const;
+            void InvalidateSeekPos(ECInstanceKey const& key);
     };
 
     private:
@@ -265,5 +268,6 @@ struct InstanceReader::Impl final {
             return m_reader.Seek(position, callback, options);
         }
         void Reset() { m_reader.Clear(); }
+        void InvalidateSeekPos(ECInstanceKey const& key) { m_reader.InvalidateSeekPos(key); }
 };
 END_BENTLEY_SQLITE_EC_NAMESPACE

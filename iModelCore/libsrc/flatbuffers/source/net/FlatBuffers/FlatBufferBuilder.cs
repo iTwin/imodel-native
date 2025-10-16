@@ -776,6 +776,21 @@ namespace FlatBuffers
             return _bb.ToSizedArray();
         }
 
+#if !EXCLUDE_BENTLEY_MODIFICATIONS
+        /// <summary>
+        /// Utility function for combining the bytes with caller-supplied prefix.
+        /// </summary>
+        public byte[] SizedByteArray(byte[] prefix)
+            {
+            var newBuffer = new ByteBuffer(SizedByteArray());
+            newBuffer.GrowFront(prefix.Length + newBuffer.Length);
+            var newArray = newBuffer.ToSizedArray();
+            for (int i = 0; i < prefix.Length; i++)
+                newArray[i] = prefix[i];
+            return newArray;
+            }
+#endif
+
         /// <summary>
         /// Finalize a buffer, pointing to the given `rootTable`.
         /// </summary>

@@ -28,6 +28,143 @@ struct SchemaRemapTestFixture : public ECDbTestFixture
                                                                     if (PREPARESTATUS == ECSqlStatus::Success)\
                                                                         ASSERT_EQ(STEPSTATUS, stmt.Step());\
                                                                    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, StructPropertyRemap) {
+   SchemaItem schema1(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema
+          schemaName="TestSchema"
+          alias="ts"
+          version="01.00.00"
+          xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECStructClass typeName="S1" modifier="None">
+            <ECProperty propertyName="i0" typeName="int" />
+            <ECProperty propertyName="i1" typeName="int" />
+            <ECProperty propertyName="i2" typeName="int" />
+            <ECProperty propertyName="i3" typeName="int" />
+
+          </ECStructClass>
+          <ECStructClass typeName="S2" modifier="None">
+            <ECProperty propertyName="i0" typeName="int" />
+            <ECProperty propertyName="i1" typeName="int" />
+            <ECProperty propertyName="i2" typeName="int" />
+            <ECProperty propertyName="i3" typeName="int" />
+          </ECStructClass>
+          <ECEntityClass typeName="Element">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECStructProperty propertyName="p0" typeName="S1"/>
+            <ECStructProperty propertyName="p1" typeName="S1"/>
+            <ECStructProperty propertyName="pF" typeName="S2"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="Foo">
+            <BaseClass>Element</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StructPropertyRemap.ecdb", schema1));
+
+    SchemaItem schema2(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema
+          schemaName="TestSchema"
+          alias="ts"
+          version="02.00.00"
+          xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECStructClass typeName="S1" modifier="None">
+            <ECProperty propertyName="i0" typeName="int" />
+            <ECProperty propertyName="i1" typeName="int" />
+            <ECProperty propertyName="i2" typeName="int" />
+            <ECProperty propertyName="i3" typeName="int" />
+          </ECStructClass>
+          <ECStructClass typeName="S2" modifier="None">
+            <ECProperty propertyName="i0" typeName="int" />
+            <ECProperty propertyName="i1" typeName="int" />
+            <ECProperty propertyName="i2" typeName="int" />
+            <ECProperty propertyName="i3" typeName="int" />
+          </ECStructClass>
+          <ECEntityClass typeName="Element">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECStructProperty propertyName="p1" typeName="S1"/>
+            <ECStructProperty propertyName="pF" typeName="S2"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="Foo">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="pV" typeName="int"/>
+            <ECProperty propertyName="pX" typeName="int"/>
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2,
+      SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade
+    ));
+
+    SchemaItem schema3(R"xml(
+        <?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema
+          schemaName="TestSchema"
+          alias="ts"
+          version="03.00.00"
+          xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECStructClass typeName="S1" modifier="None">
+            <ECProperty propertyName="i0" typeName="int" />
+            <ECProperty propertyName="i1" typeName="int" />
+            <ECProperty propertyName="i2" typeName="int" />
+            <ECProperty propertyName="i3" typeName="int" />
+          </ECStructClass>
+          <ECStructClass typeName="S2" modifier="None">
+            <ECProperty propertyName="i0" typeName="int" />
+            <ECProperty propertyName="i1" typeName="int" />
+            <ECProperty propertyName="i2" typeName="int" />
+            <ECProperty propertyName="i3" typeName="int" />
+            <ECProperty propertyName="i4" typeName="int" />
+          </ECStructClass>
+          <ECEntityClass typeName="Element">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                </ShareColumns>
+            </ECCustomAttributes>
+            <ECStructProperty propertyName="p1" typeName="S1"/>
+            <ECStructProperty propertyName="pF" typeName="S2"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="Foo">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="pV" typeName="int"/>
+          </ECEntityClass>
+        </ECSchema>
+    )xml");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema3,
+                           SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade));
+    m_ecdb.SaveChanges();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -4134,7 +4271,7 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21)
 BentleyStatus SchemaRemapTestFixture::ImportSchemaFromFile(BeFileName const& fileName)
     {
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext(false, true);
-    
+
     ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
     BeFileName directory = fileName.GetDirectoryName();
     ctx->AddSchemaPath(directory);
@@ -6821,7 +6958,7 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenario)
     </ECEntityClass>
 </ECSchema>
         )schema";
-        
+
     Utf8PrintfString schemaV1Xml(schemaBaseline, "01.00.00", "CompositeElement");
     SchemaItem schemaV1(schemaV1Xml);
 

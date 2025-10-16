@@ -6,7 +6,7 @@
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <Bentley/BeNumerical.h>
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
-
+static int s_noisySpirals = 0;
 void ShowFrame (DPoint3dCR origin, double bearingRadians, double sizeX, double sizeY)
     {
     if (sizeY != 0.0)
@@ -833,7 +833,8 @@ TEST(Spiral,DocCheck)
             double stationStep = L / (double)radiusAndCount.stepCount;
             DPoint3d xyz;
             DVec3d   tangent;
-            printf ("\n\n **** SPIRAL TYPE %d (%s) *********\n", spiralType, typeName.c_str ());
+            if (s_noisySpirals)
+                printf ("\n\n **** SPIRAL TYPE %d (%s) *********\n", spiralType, typeName.c_str ());
             bvector<DPoint3d> strokes;
             double c0, c1;
             DoubleOps::SafeDivide (c0, 1.0, R0, 0.0);
@@ -851,10 +852,13 @@ TEST(Spiral,DocCheck)
                 double curvature, torsion;
                 curve1->FractionToFrenetFrame (f, frame, curvature, torsion);
                 strokes.push_back (xyz);
-                printf ("    %10.4lf   (kFraction %10.2le)  %20.4f   %20.4lf    %20.5lf\n", stationDistance,
-                    (curvature - c0) / (c1 - c0),
-                    xyz.x, xyz.y,
-                    Angle::RadiansToDegrees (atan2 (tangent.y, tangent.x)));
+                if (s_noisySpirals)
+                    {
+                    printf ("    %10.4lf   (kFraction %10.2le)  %20.4f   %20.4lf    %20.5lf\n", stationDistance,
+                        (curvature - c0) / (c1 - c0),
+                        xyz.x, xyz.y,
+                        Angle::RadiansToDegrees (atan2 (tangent.y, tangent.x)));
+                    }
                 }
              Check::SaveTransformed (strokes);
              }
@@ -1344,12 +1348,14 @@ void Claude_DoCubicParabolaSpiralCheck(int type, int ctorSelect, double startBea
     Utf8String typeName;
     DSpiral2dBase::TransitionTypeToString (type, typeName);
 
-    printf (" *** SPIRAL TYPE %s\n", typeName.c_str ());
-
-    printf ("  Entrance Bearing:(requested)                 %.6lg\n", startBearing);
-    printf ("  Entrance Radius:(requested)                 %.3lf\n", startRadius);
-    printf ("      Exit Radius:(requested)                 %.3lf\n", endRadius);
-    printf ("   nominal length:                            %.3lf\n", length);
+    if (s_noisySpirals)
+        {
+        printf (" *** SPIRAL TYPE %s\n", typeName.c_str ());
+        printf ("  Entrance Bearing:(requested)                 %.6lg\n", startBearing);
+        printf ("  Entrance Radius:(requested)                 %.3lf\n", startRadius);
+        printf ("      Exit Radius:(requested)                 %.3lf\n", endRadius);
+        printf ("   nominal length:                            %.3lf\n", length);
+        }
     double startCurvature, endCurvature;
     DoubleOps::SafeDivide (startCurvature, 1.0, startRadius, 0.0);
     DoubleOps::SafeDivide (endCurvature, 1.0, endRadius, 0.0);
@@ -1367,26 +1373,32 @@ void Claude_DoCubicParabolaSpiralCheck(int type, int ctorSelect, double startBea
     DVec3d chordABLocal = chordAB * localAxes;
     double evaluatedLength;
     spiral->Length (evaluatedLength);
-    printf ("    Start Bearing:(on CurvePrimitive)                    %s\n", stringA1.c_str ());
-    printf ("      End Bearing:(on CurvePrimitive)                    %s\n", stringB1.c_str());
-    printf ("       Turn Angle:(on CurvePrimitive)                    %s\n", stringAB1.c_str());
-    printf ("           Length:(on CurvePrimitive)                    %.6lg\n", evaluatedLength);
-    printf ("  Start X,Y (on CurvePrimitive)   (%.8lg,%.8lg)\n", pointA.x, pointA.y);
-    printf ("  Final X,Y (on CurvePrimitive)   (%.8lg,%.8lg)\n", pointB.x, pointB.y);
-    printf ("  Local chord (on CurvePrimitive)   (%.8lg,%.8lg)\n", chordABLocal.x, chordABLocal.y);
-
+    if (s_noisySpirals)
+        {
+        printf ("    Start Bearing:(on CurvePrimitive)                    %s\n", stringA1.c_str ());
+        printf ("      End Bearing:(on CurvePrimitive)                    %s\n", stringB1.c_str());
+        printf ("       Turn Angle:(on CurvePrimitive)                    %s\n", stringAB1.c_str());
+        printf ("           Length:(on CurvePrimitive)                    %.6lg\n", evaluatedLength);
+        printf ("  Start X,Y (on CurvePrimitive)   (%.8lg,%.8lg)\n", pointA.x, pointA.y);
+        printf ("  Final X,Y (on CurvePrimitive)   (%.8lg,%.8lg)\n", pointB.x, pointB.y);
+        printf ("  Local chord (on CurvePrimitive)   (%.8lg,%.8lg)\n", chordABLocal.x, chordABLocal.y);
+        }
     double bearingChangeAB = bearingB - bearingA;
 
-    printf ("   Long and Short Tangents with angle from CurvePrimitive (arctan of actual bearing) %s\n", stringAB1.c_str());
-    PrintTangents (chordAB, bearingChangeAB, startCurvature, endCurvature);
-    printf ("    chord length    %.6lg\n", chordAB.Magnitude ());
+    if (s_noisySpirals)
+        {
+        printf ("   Long and Short Tangents with angle from CurvePrimitive (arctan of actual bearing) %s\n", stringAB1.c_str());
+        PrintTangents (chordAB, bearingChangeAB, startCurvature, endCurvature);
+        printf ("    chord length    %.6lg\n", chordAB.Magnitude ());
+        }
     double radiusA1, radiusB1, curvatureA1, torsionA1, curvatureB1, torsionB1;
     Transform frameA1, frameB1;
     spiral->FractionToFrenetFrame (0.0, frameA1, curvatureA1, torsionA1);
     spiral->FractionToFrenetFrame (1.0, frameB1, curvatureB1, torsionB1);
     DoubleOps::SafeDivide (radiusA1, 1.0, curvatureA1, 0.0);
     DoubleOps::SafeDivide (radiusB1, 1.0, curvatureB1, 0.0);
-    printf ("  Start and end radii: (on CurvePrimitive)      %.4lg   %.4lg\n", radiusA1, radiusB1);
+    if (s_noisySpirals)
+        printf ("  Start and end radii: (on CurvePrimitive)      %.4lg   %.4lg\n", radiusA1, radiusB1);
 
     CurveLocationDetail curveLocationC;
     spiral->PointAtSignedDistanceFromFraction (0.0, length, true, curveLocationC);
@@ -1395,11 +1407,13 @@ void Claude_DoCubicParabolaSpiralCheck(int type, int ctorSelect, double startBea
     spiral->FractionToPoint (curveLocationC.fraction, pointC, tangentC);
     double bearingC = atan2 (tangentC.y, tangentC.x);
     RadiansToDMSString (bearingC- bearingA, stringAC1);
-    printf ("  fraction to nominal length %lf     tangent at nominal length %s\n", curveLocationC.fraction,stringAC1.c_str());
+    if (s_noisySpirals)
+        printf ("  fraction to nominal length %lf     tangent at nominal length %s\n", curveLocationC.fraction,stringAC1.c_str());
 
     if (startRadius == 0.0 && type == DSpiral2dBase::TransitionType_WesternAustralian)
         {
-        printf ("  Final X,Y (evaluated)        %.6lf, %.6lf\n", pointB.x, pointB.y);
+        if (s_noisySpirals)
+            printf ("  Final X,Y (evaluated)        %.6lf, %.6lf\n", pointB.x, pointB.y);
         double Lt = length;
         double Lt2 = Lt * Lt;
         double Lt5 = Lt2 * Lt2 * Lt;
@@ -1410,15 +1424,19 @@ void Claude_DoCubicParabolaSpiralCheck(int type, int ctorSelect, double startBea
         double formulaPerpDerivative = 3.0 * Lt2 / perpDenominator;
         double formulaTangentDerivative = 1.0 - 5.0 * Lt2 * Lt2 / tangentDenominator;
         double finalRadiansFromDerivative = atan2 (formulaPerpDerivative, formulaTangentDerivative);
-        printf ("  Final X,Y (final point formulas)        %.6lg, %.6lg\n", formulaTangentCoordinate, formulaPerpCoordinate);
+        if (s_noisySpirals)
+            printf ("  Final X,Y (final point formulas)        %.6lg, %.6lg\n", formulaTangentCoordinate, formulaPerpCoordinate);
         double formulaFinalRadians = Lt * Lt / (2.0 * endRadius * Lt);
         Utf8String formulaFinalRadiansDMS, formulaFinalRadiansFromDerivativesDMS;
         RadiansToDMSString (formulaFinalRadians, formulaFinalRadiansDMS);
         RadiansToDMSString (finalRadiansFromDerivative, formulaFinalRadiansFromDerivativesDMS);
-        printf ("   final point radian approximation formula   %s\n", formulaFinalRadiansDMS.c_str());
-        printf ("   final point radian by arctan from perp, tangent derivatives %s\n", formulaFinalRadiansFromDerivativesDMS.c_str());
-        printf ("   Long and Short Tangents with angle approximation bearignChange %s\n", formulaFinalRadiansDMS.c_str());
-        PrintTangents (chordAB, formulaFinalRadians, startCurvature, endCurvature);
+        if (s_noisySpirals)
+            {
+            printf ("   final point radian approximation formula   %s\n", formulaFinalRadiansDMS.c_str());
+            printf ("   final point radian by arctan from perp, tangent derivatives %s\n", formulaFinalRadiansFromDerivativesDMS.c_str());
+            printf ("   Long and Short Tangents with angle approximation bearignChange %s\n", formulaFinalRadiansDMS.c_str());
+            PrintTangents (chordAB, formulaFinalRadians, startCurvature, endCurvature);
+            }
         }
 
     if (startRadius == 0.0
@@ -1437,13 +1455,17 @@ void Claude_DoCubicParabolaSpiralCheck(int type, int ctorSelect, double startBea
 
         if (type == DSpiral2dBase::TransitionType_AustralianRailCorp)
             {
-            printf (" RailCorp explicit PHI %s\n", phiDMS.c_str());
-            printf (" ?? Tangents with clothoid angle (L/(2R)) (clothoid) and RailCorp final XY\n");
-            PrintTangents (chordAB, clothoidRadians, startCurvature, endCurvature);
+            if (s_noisySpirals)
+                {
+                printf (" RailCorp explicit PHI %s\n", phiDMS.c_str());
+                printf (" ?? Tangents with clothoid angle (L/(2R)) (clothoid) and RailCorp final XY\n");
+                PrintTangents (chordAB, clothoidRadians, startCurvature, endCurvature);
+                }
             }
         else
             {
-            printf ("  Clothoid sweep %s  (%.10g)\n", clothoidDMS.c_str(), clothoidRadians);
+            if (s_noisySpirals)
+                printf ("  Clothoid sweep %s  (%.10g)\n", clothoidDMS.c_str(), clothoidRadians);
             }
         }
 
@@ -1475,7 +1497,8 @@ void Claude_DoCubicParabolaSpiralCheck(int type, int ctorSelect, double startBea
     spiral->AddStrokes(strokeA, *opt, 0, 1);
 
     spiral->AddStrokes (strokeB, *opt, true, 0.0, 1.0);
-    printf ("   (AddStrokes counts %d %d\n", (int)strokeA.m_xyz.size (), (int)strokeB.size ());
+    if (s_noisySpirals)
+        printf ("   (AddStrokes counts %d %d\n", (int)strokeA.m_xyz.size (), (int)strokeB.size ());
 
     double dy = 20;
     Check::Shift (0, -dy,0);
@@ -1499,16 +1522,20 @@ TEST(Spiral,IntermdediateCurvature)
             DSpiral2dBase::TransitionType_MXCubicAlongArc,
             DSpiral2dBase::TransitionType_Clothoid})
         {
-        printf ("\n\n\n");
+        if (s_noisySpirals)
+            printf ("\n\n\n");
         SaveAndRestoreCheckTransform shifter (1000,0,0);
-        printf ("\n\n (Paul Cusack tests)\n");
+        if (s_noisySpirals)
+            printf ("\n\n (Paul Cusack tests)\n");
         Claude_DoCubicParabolaSpiralCheck (type, 1, 0.0, 0, 300, 60);
         Claude_DoCubicParabolaSpiralCheck (type, 1, 0.0, 0, 300, 60);
         Claude_DoCubicParabolaSpiralCheck (type, 1, 0.0, 0, 400, 50.424);
-        printf ("\n\n (Claude G tests)\n");
+        if (s_noisySpirals)
+            printf ("\n\n (Claude G tests)\n");
         Claude_DoCubicParabolaSpiralCheck (type, 1, 0.0, 500, 0, 100);
         Claude_DoCubicParabolaSpiralCheck (type, 1, 0.0, 400, 0, 100);
-        printf ("\n\n\n");
+        if (s_noisySpirals)
+            printf ("\n\n\n");
         }
     Check::ClearGeometry ("Spiral.IntermdediateCurvature");
     }
@@ -1564,14 +1591,16 @@ TEST(Spiral,PartialCubics)
     spiral->FractionToPoint (0.0, xyz0, tangent0);
     spiral->FractionToPoint (1.0, xyz1, tangent1);
     double radians01 = tangent0.AngleToXY (tangent1);
-    printf (" partial cubic (nominal length %.8g) (actual %.8g) (SS4 angle %.8g) (actual angle %.8g) (angleDelta %.8g)\n",
+    if (s_noisySpirals)
+        {
+        printf (" partial cubic (nominal length %.8g) (actual %.8g) (SS4 angle %.8g) (actual angle %.8g) (angleDelta %.8g)\n",
                         length,
                         actualLength,
                         angleSS4,
                         radians01, radians01 - angleSS4
                         );
-
-    printf ("        angle at nominal length %.8g (delta %.8g)\n", angleAtNominalLength, angleAtNominalLength - angleSS4);
+        printf ("        angle at nominal length %.8g (delta %.8g)\n", angleAtNominalLength, angleAtNominalLength - angleSS4);
+        }
 //    ASSERT_TRUE((angle >= angleSS4 - tolerance && angle <= angleSS4 + tolerance)) << "Angle is not correct";
 
     Check::ClearGeometry ("Spiral.PartialCubics");
@@ -1914,7 +1943,6 @@ void ShowProps(char const * name, ICurvePrimitiveR curve, double fraction, DPoin
 TEST(Spiral, MXCubicExample)
     {
     const double length = 20;
-    // const double startDirection = 3.397200148;
     double  endRadius = 160.0;
     double  startRadius = 0.0;
     Check::Print (length, "\nNominal Length");
@@ -1958,7 +1986,6 @@ TEST(Spiral, DirectSpiralWithViewingTransform)
     {
     auto oldVolume = Check::SetMaxVolume (100);
     const double length = 20;
-    // const double startDirection = 3.397200148;
     double  endRadius = 160.0;
     double  startRadius = 0.0;
     double startBearingRadians = 0.0;
@@ -2219,57 +2246,79 @@ TEST(Spiral, CreateInterpolatingSpiralsPointBearingCurvaturePointBearing)
 
 TEST(Spiral, IFCExample)
     {
-    DPoint3d startPoint = DPoint3d::From(451581.55191480799, 4538983.4705996597, 0.0);
-    double startRadians = 6.2280619453155204;
-    double startRadius = -288.0;
-    double targetLength = 84.185;
-    double endRadius = 0.0;
+    struct IfcSpiralData {
+        DPoint3d startPoint;
+        double startRadians;
+        double startRadius;
+        double targetLength;
+        double endRadius;
+    };
+    bvector<IfcSpiralData> spirals;
+    spirals.push_back({ DPoint3d::From(45.158155191480799, 453.89834705996597, 0.0), 6.2280619453155204, -288.0, 84.185, 0.0 });
+    spirals.push_back({ DPoint3d::From(45.166468005000002, 453.89706885000002, 0.0), -3.1583359873833818, -288.0, 84.185, 0.0 });
+    spirals.push_back({ DPoint3d::From(45.158112267000001, 453.89802714999998, 0.0), Angle::FromDegrees(179.04067763864862).Radians(), -288.0, 84.185, 0.0 });
+    spirals.push_back({ DPoint3d::From(45.149770078000001, 453.89909698999999, 0.0), Angle::FromDegrees(178.27518985685947).Radians(), -288.0, 84.185, 0.0 });
+    spirals.push_back({ DPoint3d::From(45.144496272000001, 453.90564859999996, 0.0), Angle::FromDegrees(134.41597069150998).Radians(), -288.0, 84.185, 0.0 });
+    spirals.push_back({ DPoint3d::From(45.138458033999999, 453.91150319999997, 0.0), Angle::FromDegrees(141.46781977769137).Radians(), -288.0, 84.185, 0.0 });
+    spirals.push_back({ DPoint3d::From(45.130047531000001, 453.91151409, 0.0), Angle::FromDegrees(-174.49098982092858).Radians(), -288.0, 84.185, 0.0 });
+    spirals.push_back({ DPoint3d::From(45.131965288000001, 453.91970303999996, 0.0), Angle::FromDegrees(82.402720200584724).Radians(), -288.0, 84.185, 0.0 });
+    spirals.push_back({ DPoint3d::From(45.138791476999997, 453.92461627000002, 0.0), Angle::FromDegrees(41.328087890916969).Radians(), -288.0, 84.185, 0.0 });
+    spirals.push_back({ DPoint3d::From(45.131012322000001, 453.92141917000003, 0.0), Angle::FromDegrees(-152.07498850473402).Radians(), -288.0, 84.185, 0.0 });
+    spirals.push_back({ DPoint3d::From(45.132640429999999, 453.91316775000002, 0.0), Angle::FromDegrees(-73.255010821769091).Radians(), -288.0, 84.185, 0.0 });
 
-    ICurvePrimitivePtr curve = ICurvePrimitive::CreatePseudolSpiralWithTrueRadiusLengthRadius(DSpiral2dBase::TransitionType_Clothoid, startPoint, startRadians, startRadius, targetLength, endRadius);
-    Check::SaveTransformed(*curve);
-    Check::True(curve.IsValid());
-
-    auto placement = curve->GetSpiralPlacementCP();
-    Check::True(placement != nullptr);
-    Check::True(placement->spiral != nullptr);
-
-    // When fracA < fracB, the local spiral defines a segment of the spiral starting at the
-    // origin and extending into the first quadrant (or 4th if negative (CW) curvature).
-    // When fracA > fracB, not only is the curve reversed, but the local spiral sits in
-    // quadrant 3 (or 2) of the full spiral, which is obtained by rotating the half in
-    // quadrant 1 (or 4) 180 degrees about the origin.
-    bool rotateAndReverse = placement->fractionA > placement->fractionB;
-
-    DPoint3d myStartPoint = placement->frame.Origin();
-    DPoint3d myEndPoint; curve->FractionToPoint(rotateAndReverse ? 0.0 : 1.0, myEndPoint);
-    double myTargetLength = placement->spiral->mLength;
-    double myStartRadius = DoubleOps::ValidatedDivideDistance(1.0, placement->spiral->mCurvature0, 0.0);
-    double myEndRadius = DoubleOps::ValidatedDivideDistance(1.0, placement->spiral->mCurvature1, 0.0);
-
-    DVec3d myStartTangent = DVec3d::FromXYAngleAndMagnitude(placement->spiral->mTheta0, 1.0);
-    if (rotateAndReverse)
-        myStartTangent.Scale(-1.0);
-    placement->frame.MultiplyMatrixOnly(myStartTangent);
-    double myStartRadians = myStartTangent.AngleXY();
-
-    DVec3d myEndTangent = DVec3d::FromXYAngleAndMagnitude(placement->spiral->mTheta1, 1.0);
-    if (rotateAndReverse)
-        myEndTangent.Scale(-1.0);
-    placement->frame.MultiplyMatrixOnly(myEndTangent);
-    double myEndRadians = myEndTangent.AngleXY();
-
-    if (rotateAndReverse)
+    for (size_t i = 0; i < spirals.size(); i++)
         {
-        std::swap(myStartRadius, myEndRadius);
-        std::swap(myStartRadians, myEndRadians);
-        std::swap(myStartPoint, myEndPoint);
+        auto const& spiral = spirals[i];
+        ICurvePrimitivePtr curve = ICurvePrimitive::CreatePseudolSpiralWithTrueRadiusLengthRadius(DSpiral2dBase::TransitionType_Clothoid, spiral.startPoint, spiral.startRadians, spiral.startRadius, spiral.targetLength, spiral.endRadius);
+        if (!Check::True(curve.IsValid()))
+            continue;
+        Check::SaveTransformed(*curve);
+
+        // IFC exporter needs to reverse-engineer the spiral inputs given the output curve.
+        auto placement = curve->GetSpiralPlacementCP();
+        Check::True(placement != nullptr);
+        Check::True(placement->spiral != nullptr);
+
+        // When fracA < fracB, the local spiral defines a segment of the spiral starting at the
+        // origin and extending into the first quadrant (or 4th if negative (CW) curvature).
+        // When fracA > fracB, not only is the curve reversed, but the local spiral sits in
+        // quadrant 3 (or 2) of the full spiral, which is obtained by rotating the half in
+        // quadrant 1 (or 4) 180 degrees about the origin.
+        bool rotateAndReverse = placement->fractionA > placement->fractionB;
+
+        DPoint3d myStartPoint; curve->FractionToPoint(rotateAndReverse ? placement->fractionB : placement->fractionA, myStartPoint);
+        DPoint3d myEndPoint; curve->FractionToPoint(rotateAndReverse ? placement->fractionA : placement->fractionB, myEndPoint);
+        Check::ExactDouble(placement->fractionA, rotateAndReverse ? 1.0 : 0.0);
+        Check::ExactDouble(placement->fractionB, rotateAndReverse ? 0.0 : 1.0);
+
+        double myTargetLength = placement->spiral->mLength;
+        double myStartRadius = DoubleOps::ValidatedDivideDistance(1.0, placement->spiral->mCurvature0, 0.0);
+        double myEndRadius = DoubleOps::ValidatedDivideDistance(1.0, placement->spiral->mCurvature1, 0.0);
+
+        DVec3d myStartTangent = DVec3d::FromXYAngleAndMagnitude(placement->spiral->mTheta0, 1.0);
+        if (rotateAndReverse)
+            myStartTangent.Scale(-1.0);
+        placement->frame.MultiplyMatrixOnly(myStartTangent);
+        double myStartRadians = myStartTangent.AngleXY();
+
+        DVec3d myEndTangent = DVec3d::FromXYAngleAndMagnitude(placement->spiral->mTheta1, 1.0);
+        if (rotateAndReverse)
+            myEndTangent.Scale(-1.0);
+        placement->frame.MultiplyMatrixOnly(myEndTangent);
+        double myEndRadians = myEndTangent.AngleXY();
+
+        if (rotateAndReverse)
+            {
+            std::swap(myStartRadius, myEndRadius);
+            std::swap(myStartRadians, myEndRadians);
+            }
+
+        Check::Near(myStartPoint, spiral.startPoint);
+        Check::NearPeriodicRadians(myStartRadians, spiral.startRadians);
+        Check::Near(myStartRadius, spiral.startRadius);
+        Check::Near(myTargetLength, spiral.targetLength);
+        Check::Near(myEndRadius, spiral.endRadius);
         }
 
-    Check::Near(startPoint, myStartPoint);
-    Check::NearPeriodic(myStartRadians, startRadians);
-    Check::Near(myStartRadius, startRadius);
-    Check::Near(targetLength, myTargetLength);
-    Check::Near(myEndRadius, endRadius);
-    
     Check::ClearGeometry ("Spiral.IFCExample");
     }

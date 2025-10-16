@@ -69,6 +69,7 @@
 #include "IntegrityChecker.h"
 #include "BuiltInVTabs.h"
 #include "ClassViews.h"
+#include "InstanceWriterImpl.h"
 #include "ECSql/NativeSqlBuilder.h"
 #include "ECSql/Parser/SqlScan.h"
 #include "ECSql/Parser/SqlNode.h"

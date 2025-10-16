@@ -8,6 +8,7 @@
 #include "bcv_int.h"
 #include "sqlite3.h"
 #include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,6 +62,18 @@
 
 typedef int(*bcv_progress_cb)(void*, sqlite3_int64, sqlite3_int64);
 typedef void(*bcv_log_cb)(void*, const char *);
+
+/* BEGIN BENTLEY CHANGES */
+struct BcvGlobalConfig {
+  int bRevokeBestEffort;          /* SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT option */
+  char *zCAFile;                  /* SQLITE_BCVGLOBALCONFIG_CAFILE option */
+};
+
+static struct BcvGlobalConfig bcvGlobalConfig = {
+  BCV_DEFAULT_REVOKEBESTEFFORT,  /* Default to not revoking best effort */
+  NULL,                          /* Default CA file to NULL */
+};
+/* END BENTLEY CHANGES */
 
 struct sqlite3_bcv {
   BcvContainer *pCont;            /* Cloud module instance */
@@ -713,6 +726,32 @@ int bcvManifestParse(
   return rc;
 }
 
+/*
+** Return the number of bytes allocated for the manifest object, not 
+** including malloc() overhead.
+*/
+i64 bcvManifestSize(Manifest *pMan){
+  int ii;
+  i64 nRet = 0;
+
+  nRet += sizeof(Manifest) + (pMan->nDb+1)*sizeof(ManifestDb);
+  nRet += sqlite3_msize(pMan->pFree);
+  if( pMan->bDelFree ){
+    nRet += sqlite3_msize(pMan->aDelBlk);
+  }
+  for(ii=0; ii<pMan->nDb; ii++){
+    ManifestDb *pManDb = &pMan->aDb[ii];
+    if( pManDb->nBlkLocalAlloc ){
+      nRet += sqlite3_msize(pManDb->aBlkLocal);
+    }
+    if( pManDb->nBlkOrigAlloc ){
+      nRet += sqlite3_msize(pManDb->aBlkOrig);
+    }
+  }
+
+  return nRet;
+}
+
 int bcvManifestParseCopy(
   const u8 *a, int n, 
   const char *zETag, 
@@ -1181,6 +1220,42 @@ static void bcvLogWrapper(void *pApp, int bRetry, const char *zMsg){
     p->xBcvLog(p->pBcvLogCtx, zMsg);
   }
 }
+
+/* BEGIN BENTLEY CHANGES */
+int sqlite3_bcv_global_config(int eOp, ...){
+  int rc = SQLITE_OK;
+  va_list ap;
+  va_start(ap, eOp);
+
+  switch( eOp ){
+    case SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT:
+      bcvGlobalConfig.bRevokeBestEffort = va_arg(ap, int);
+      break;
+    case SQLITE_BCVGLOBALCONFIG_CAFILE:
+      if( bcvGlobalConfig.zCAFile!=NULL ){
+        free(bcvGlobalConfig.zCAFile);
+      }
+      char *zCAFile = va_arg(ap, const char*);
+      if( zCAFile==NULL || zCAFile[0]==0 ){
+        bcvGlobalConfig.zCAFile = NULL;
+      } else {
+        // using bcvStrdup crashes (probably because it is called too early)
+        char *dup = strdup(zCAFile);
+        bcvGlobalConfig.zCAFile = dup;
+        if( bcvGlobalConfig.zCAFile==0 ){
+          rc = SQLITE_NOMEM;
+        }
+      }
+      break;
+    default:
+      rc = SQLITE_MISUSE;
+      break;
+  }
+
+  va_end(ap);
+  return rc;
+}
+/* END BENTLEY CHANGES */
 
 int sqlite3_bcv_config(sqlite3_bcv *p, int eOp, ...){
   int rc = SQLITE_OK;
@@ -2295,6 +2370,23 @@ int sqlite3_bcv_create(sqlite3_bcv *p, int szName, int szBlock){
   return p->errCode;
 }
 
+/* BEGIN BENTLEY CHANGES */
+static void configure_curl_ssl_options(CURL *pCurl){
+  int sslOptions = 0;
+  if ( bcvGlobalConfig.bRevokeBestEffort ){
+    sslOptions = sslOptions | CURLSSLOPT_REVOKE_BEST_EFFORT;
+  }
+  if ( sslOptions != 0 ){
+    curl_easy_setopt(pCurl, CURLOPT_SSL_OPTIONS, sslOptions);
+  }
+  if ( bcvGlobalConfig.zCAFile!=NULL ){
+    curl_easy_setopt(pCurl, CURLOPT_CAINFO, bcvGlobalConfig.zCAFile);
+  } else {
+    curl_easy_setopt(pCurl, CURLOPT_CAINFO, "");    
+  }
+}
+/* END BENTLEY CHANGES */
+
 sqlite3_bcv_request *sqlite3_bcv_job_request(
   sqlite3_bcv_job *pJob,          /* Call contex */
   void *pApp,                     /* 3rd argument for xCallback */
@@ -2310,6 +2402,7 @@ sqlite3_bcv_request *sqlite3_bcv_job_request(
     pNew->pJob = pJob;
     pNew->pCurl = curl_easy_init();
     pJob->pPending = pNew;
+    configure_curl_ssl_options(pNew->pCurl); /* BENTLEY CHANGE */
   }
   return pNew;
 }

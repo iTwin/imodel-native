@@ -15,7 +15,74 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define LOG (ECDbLogger::Get())
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct GeomBlobHeader {
+    enum {Signature = 0x0600,}; // DgnDb06
+    uint32_t m_signature;    // write this so we can detect errors on read
+    uint32_t m_size;
+    GeomBlobHeader(ByteStream const& geom) {m_signature = Signature; m_size=geom.GetSize();}
+    GeomBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
+    static BentleyStatus Decompress(void const* pData, uint32_t nSize, SnappyFromMemory& reader, ByteStreamR out) {
+        if (nSize == 0 || pData == nullptr) return SUCCESS;
 
+        reader.Init(const_cast<void*>(pData), nSize);
+        GeomBlobHeader header(reader);
+        if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size) {
+            BeAssert(false);
+            return ERROR;
+        }
+
+        out.Resize(header.m_size);
+        uint32_t actuallyRead;
+        auto readStatus = reader._Read(out.GetDataP(), out.GetSize(), actuallyRead);
+        if (ZIP_SUCCESS != readStatus || actuallyRead != out.GetSize()) {
+            BeAssert(false);
+            return ERROR;
+        }
+        return SUCCESS;
+    }
+    static BentleyStatus Decompress(const IECSqlValue& val, SnappyFromMemory& reader, ByteStreamR out) {
+        auto const& colInfo = val.GetColumnInfo().GetDataType();
+        if (!colInfo.IsPrimitive() || colInfo.GetPrimitiveType() != ECN::PrimitiveType::PRIMITIVETYPE_Binary) {
+            BeAssert(false);
+            return ERROR;
+        }
+
+        if (val.IsNull() && colInfo.IsPrimitive() ){
+            return SUCCESS;
+        }
+
+        int nSize = 0;
+        const void* pData = val.GetBlob(&nSize);
+        return Decompress(pData, nSize, reader, out);
+
+    }
+    static BentleyStatus Decompress(ByteStreamCR in, SnappyFromMemory& reader, ByteStreamR out) {
+        return Decompress(in.GetDataP(), in.GetSize(), reader, out);
+    }
+    static BentleyStatus Compress(void const* pData, uint32_t nSize, SnappyToBlob& writer, ByteStreamR out) {
+        if (nSize == 0 || pData == nullptr) return SUCCESS;
+
+        writer.Init();
+        GeomBlobHeader header(out);
+        writer.Write((Byte const*)&header, sizeof(header));
+        writer.Write((Byte const*) pData, nSize);
+        writer.SaveTo(out);
+        return SUCCESS;
+    }
+    static BentleyStatus Compress(void const* pData, uint32_t nSize, SnappyToBlob& writer, IECSqlBinder& binder) {
+        ByteStream bs;
+        auto status = Compress(pData, nSize, writer, bs);
+        if (status != SUCCESS) return status;
+        auto rc = binder.BindBlob((const void*)bs.GetData(), (int)bs.GetSize(), IECSqlBinder::MakeCopy::Yes);
+        return rc == ECSqlStatus::Success ? SUCCESS : ERROR;
+    }
+    static BentleyStatus Compress(ByteStreamCR in, SnappyToBlob& writer, ByteStreamR out) {
+        return Compress(in.GetDataP(), in.GetSize(), writer, out);
+    }
+};
 
 //=======================================================================================
 //! ECSQL statement types

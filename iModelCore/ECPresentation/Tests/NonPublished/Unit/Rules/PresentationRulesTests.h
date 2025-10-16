@@ -13,15 +13,6 @@ BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PresentationRulesTests : ECPresentationTest
     {
-    static Utf8String ToPrettyString(BeXmlDomCR xml)
-        {
-        static uint64_t options = BeXmlDom::ToStringOption::TO_STRING_OPTION_Formatted
-            | BeXmlDom::ToStringOption::TO_STRING_OPTION_Indent
-            | BeXmlDom::ToStringOption::TO_STRING_OPTION_OmitXmlDeclaration;
-        Utf8String str;
-        xml.ToString(str, (BeXmlDom::ToStringOption)options);
-        return str;
-        }
     };
 
 END_ECPRESENTATIONTESTS_NAMESPACE

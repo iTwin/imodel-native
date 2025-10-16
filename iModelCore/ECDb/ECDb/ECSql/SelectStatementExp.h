@@ -378,7 +378,7 @@ struct SingleSelectStatementExp final : QueryExp
             }
 
 
-        bool IsCoreSelect() const { return m_limitOffsetClauseIndex == UNSET_CHILDINDEX && m_optionsClauseIndex == UNSET_CHILDINDEX; }
+        bool IsCoreSelect() const { return m_orderByClauseIndex == UNSET_CHILDINDEX && m_limitOffsetClauseIndex == UNSET_CHILDINDEX; }
     };
 
 

@@ -88,6 +88,10 @@ typedef unsigned short u16;
 #define BCV_DEFAULT_BLOCKSIZE        (4*1024*1024)
 #define BCV_DEFAULT_HTTPTIMEOUT 600  
 
+/* BEGIN BENTLEY CHANGES */
+#define BCV_DEFAULT_REVOKEBESTEFFORT 0
+/* END BENTLEY CHANGES */
+
 /* Size of local encryption keys in bytes. */
 #define BCV_LOCAL_KEYSIZE        16
 
@@ -354,6 +358,7 @@ int bcvManifestParseCopy(
   Manifest **ppOut, 
   char **pz
 );
+i64 bcvManifestSize(Manifest*);
 
 u8 *bcvManifestCompose(Manifest *p, int *pnOut);
 void bcvManifestFree(Manifest *p);

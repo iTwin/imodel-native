@@ -97,10 +97,11 @@ ECN::ECPropertyCP PropertyNameExp::GetVirtualProperty() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool PropertyNameExp::IsWildCard() const {
-    if (m_resolvedPropertyPath.Size() == 1)  {
-        return Exp::IsAsteriskToken(m_resolvedPropertyPath[0].GetName());
-    }
-    return false;
+    // checks if the last part of the property path is asterisk or not. If asterisk that means replacement is yet to be done. 
+    
+    // Used only in CommonTableBlockExp while expanding derived properties. if wild card that means replacement is yet to be done, 
+    // and all the links between the derived props of the internal select statement of a CommonTableBlockExp and the derived properties of the CommonTableBlockExp should be done after replacement
+    return Exp::IsAsteriskToken(m_resolvedPropertyPath.Last().GetName());  
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -402,7 +403,16 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
 
     const auto local = countLocalRefs(matchProps);
     const auto inherited = matchProps.size() - local;
+
     if (!(local == 1 || inherited == 1)) {
+        auto parent = this->GetParent();
+        if (parent != nullptr && parent->GetType() == Exp::Type::ExtractProperty){
+            Utf8String targetPath = parent->GetAs<ExtractPropertyValueExp>().GetTargetPath().ToString();
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0739,
+                "In expression '$->%s', $ is ambiguous", targetPath.c_str());
+            return ERROR;
+        }
+
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0566,
             "Expression '%s' in ECSQL statement is ambiguous.", m_resolvedPropertyPath.ToString().c_str());
         return ERROR;
@@ -421,7 +431,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         m_resolvedPropertyPath = match.ResolvedPath();
         if (!GetPropertyRef()->IsComputedExp() && GetPropertyRef()->TryGetVirtualProperty() == nullptr) {
             if ( !GetPropertyRef()->TryResolvePath(m_resolvedPropertyPath)) {
-                BeAssert(false && "Programmer Error: Unable to resolve path");
+                return ERROR;
             }
         }
     } else {
@@ -632,8 +642,11 @@ bool PropertyNameExp::PropertyRef::TryResolvePath(PropertyPath &path) const
     PropertyMap const *propertyMap = TryGetPropertyMap(path);
     if (propertyMap == nullptr)
         return false;
-
     PropertyMap::Path resolvePath = propertyMap->GetPath();
+    if (resolvePath.size() < path.Size())
+        {
+        return false;
+        }
     int n = static_cast<int>(std::min(resolvePath.size(), path.Size()));
     if (n == 0)
         {

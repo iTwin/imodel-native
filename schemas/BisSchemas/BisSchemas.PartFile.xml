@@ -87,10 +87,9 @@
 
     <Part Name="BisCore" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/BisCore.ecschema.xml -dSCHEMA_PATTERN=BisCore.*ecschema.xml"/>
     <Part Name="Generic" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Generic.ecschema.xml -dSCHEMA_PATTERN=Generic.*ecschema.xml"/>
-    <Part Name="Functional" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Functional.ecschema.xml -dSCHEMA_PATTERN=Functional.01.00.03.ecschema.xml"/>
-    <Part Name="PhysicalMaterial" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/PhysicalMaterial.ecschema.xml -dSCHEMA_PATTERN=PhysicalMaterial.01.00.01.ecschema.xml"/>
+    <Part Name="Functional" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Functional.ecschema.xml -dSCHEMA_PATTERN=Functional.*ecschema.xml"/>
+    <Part Name="PhysicalMaterial" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/PhysicalMaterial.ecschema.xml -dSCHEMA_PATTERN=PhysicalMaterial.*ecschema.xml"/>
     <Part Name="Analytical" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Analytical.ecschema.xml -dSCHEMA_PATTERN=Analytical.*ecschema.xml"/>
-    <Part Name="Asset" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Asset.ecschema.xml -dSCHEMA_PATTERN=Asset.*ecschema.xml"/>
     <Part Name="LinearReferencing" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/LinearReferencing.ecschema.xml -dSCHEMA_PATTERN=LinearReferencing.*ecschema.xml"/>
 
     <Part Name="Core">
@@ -100,7 +99,6 @@
         <SubPart PartName="Functional"/>
         <SubPart PartName="PhysicalMaterial"/>
         <SubPart PartName="Analytical"/>
-        <SubPart PartName="Asset"/>
         <SubPart PartName="LinearReferencing"/>
         <SubPart PartName="StandardSchemas"/>
         <SubPart PartName="PublicAPI" PartFile="iModelCore/ECDb/ECDb" />
@@ -111,7 +109,6 @@
             </Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Analytical.ecschema.xml
-                ECSchemas/Asset.ecschema.xml
                 ECSchemas/Functional.ecschema.xml
                 ECSchemas/LinearReferencing.ecschema.xml
                 ECSchemas/PhysicalMaterial.ecschema.xml
@@ -603,7 +600,7 @@
     <Part Name="CoreCustomAttributes" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/CoreCustomAttributes.01.00.04.ecschema.xml -dSCHEMA_PATTERN=CoreCustomAttributes.*ecschema.xml"/>
     <Part Name="BisCustomAttributes" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/BisCustomAttributes.01.00.00.ecschema.xml -dSCHEMA_PATTERN=BisCustomAttributes.*ecschema.xml"/>
     <Part Name="SchemaLocalizationCustomAttributes" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/SchemaLocalizationCustomAttributes.01.00.00.ecschema.xml -dSCHEMA_PATTERN=SchemaLocalizationCustomAttributes.*ecschema.xml"/>
-	  <Part Name="Units" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/Units.01.00.08.ecschema.xml -dSCHEMA_PATTERN=Units.*ecschema.xml"/>
+    <Part Name="Units" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/Units.01.00.09.ecschema.xml -dSCHEMA_PATTERN=Units.*ecschema.xml"/>
     <Part Name="Formats" BentleyBuildMakeFile="findSchemaPath.mki" BentleyBuildMakeOptions="-dSYMLINK_OUT=$(BuildContext)ECSchemas/Standard/Formats.01.00.00.ecschema.xml -dSCHEMA_PATTERN=Formats.*ecschema.xml"/>
     
     <Part Name="StandardSchemas">

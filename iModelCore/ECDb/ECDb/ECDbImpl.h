@@ -153,7 +153,6 @@ private:
     SettingsManager m_settingsManager;
     StatementCache m_sqliteStatementCache;
     mutable std::unique_ptr<InstanceReader> m_instanceReader;
-    mutable std::unique_ptr<RelatedInstanceFinder> m_relatedInstanceFinder;
     BeBriefcaseBasedIdSequenceManager m_idSequenceManager;
     static const uint32_t s_instanceIdSequenceKey = 0;
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
@@ -171,6 +170,8 @@ private:
     mutable EC::ECSqlConfig m_ecSqlConfig;
     mutable bool m_disableDDLTracking;
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
+    mutable SnappyFromMemory m_snappyReader;
+    mutable SnappyToBlob m_snappyWriter;
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl(ECDbR ecdb);
 
@@ -235,6 +236,18 @@ public:
     IdFactory& GetIdFactory() const;
     DbResult ExecuteDDL(Utf8CP) const;
     PragmaManager& GetPragmaManager() const;
+
+    template<typename T>
+    T WithSnappyReader(std::function<T(SnappyFromMemory&)> func) const {
+        BeMutexHolder holder(m_mutex);
+        return func(m_snappyReader);
+    }
+    template<typename T>
+    T WithSnappyWriter(std::function<T(SnappyToBlob&)> func) const {
+        BeMutexHolder holder(m_mutex);
+        m_snappyWriter.Init();
+        return func(m_snappyWriter);
+    }
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.
     //! E.g. Any existing ECSqlStatement would be invalid after ClearECDbCache and would return
@@ -248,15 +261,6 @@ public:
             }
         }
         return *m_instanceReader;
-    }
-    RelatedInstanceFinder const& GetRelatedInstanceFinder() const {
-        if (m_relatedInstanceFinder == nullptr) {
-            BeMutexHolder holder(m_mutex);
-            if (m_relatedInstanceFinder == nullptr) {
-                m_relatedInstanceFinder = std::make_unique<RelatedInstanceFinder>(m_ecdb);
-            }
-        }
-        return *m_relatedInstanceFinder;
     }
     IssueDataSource const& Issues() const { return m_issueReporter; }
     ProfileVersion const& RefreshProfileVersion() const {

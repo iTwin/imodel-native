@@ -13,10 +13,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct SchemaManager;
 struct InstanceReader;
+struct InstanceWriter;
 struct ECCrudWriteToken;
 struct SchemaImportToken;
-struct RelatedInstanceFinder;
 
+enum class PropertyHandlerResult {
+    Continue,
+    Handled,
+};
 //=======================================================================================
 //! Enum which mirrors the ECEnumeration OpCode in the ECDbChange ECSchema.
 //! The enum can be used when programmatically binding values to the OpCode in an ECSQL
@@ -119,10 +123,11 @@ struct ECSqlConfig {
     private:
         DisableSqlFunctions m_disabledFunctions;
         bool m_experimentalFeaturesEnabled;
+        bool m_validateWriteValues;
         mutable std::unordered_map<OptimizationOptions, bool> m_optimisationOptionsMap;
         bool m_ignorePolymorphicFlagOnRelationshipConstraint = true;
     public:
-        ECSqlConfig(): m_experimentalFeaturesEnabled(false) {
+        ECSqlConfig(): m_experimentalFeaturesEnabled(false), m_validateWriteValues(false) {
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForClassIds] = true;
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForNestedSelectQuery] = true;
         }
@@ -133,8 +138,6 @@ struct ECSqlConfig {
         void SetOptimizationOption(OptimizationOptions option, bool flag) {m_optimisationOptionsMap[option] = flag;}
         bool GetExperimentalFeaturesEnabled() const { return m_experimentalFeaturesEnabled; }
         void SetExperimentalFeaturesEnabled(bool v)  { m_experimentalFeaturesEnabled = v; }
-        bool GetIgnorePolymorphicFlagOnRelationshipConstraint() const { return m_ignorePolymorphicFlagOnRelationshipConstraint; }
-        void SetIgnorePolymorphicFlagOnRelationshipConstraint(bool v)  { m_ignorePolymorphicFlagOnRelationshipConstraint = v; }
 };
 
 
@@ -253,13 +256,6 @@ protected:
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
     ECDB_EXPORT virtual DbResult _AfterSchemaChangeSetApplied() const;
     ECDB_EXPORT virtual DbResult _AfterDataChangeSetApplied(bool schemaChanged);
-    //! Resets ECDb's ECInstanceId sequence to the current maximum ECInstanceId for the specified BriefcaseId.
-    //! @param[in] briefcaseId BriefcaseId to which the sequence will be reset
-    //! @param[in] ecClassIgnoreList List of ids of ECClasses whose ECInstanceIds should be ignored when
-    //!            computing the maximum ECInstanceId. Subclasses of the specified classes will be ignored as well.
-    //!            If nullptr, no ECClass will be ignored.
-    //! SUCCESS or ERROR
-    ECDB_EXPORT BentleyStatus ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList = nullptr);
 
     //! Returns the settings manager to subclasses which gives access to the various access tokens
     ECDB_EXPORT SettingsManager const& GetECDbSettingsManager() const;
@@ -285,6 +281,14 @@ public:
     //! @param[in] logSqliteErrors If Yes, then SQLite error messages are logged. Note that some SQLite errors are intentional. Turn this option on only for limited debuging purposes.
     //! @return ::BE_SQLITE_OK in case of success, error code otherwise, e.g. if @p ecdbTempDir does not exist
     ECDB_EXPORT static DbResult Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir = nullptr, BeSQLiteLib::LogErrors logSqliteErrors=BeSQLiteLib::LogErrors::No);
+
+    //! Resets ECDb's ECInstanceId sequence to the current maximum ECInstanceId for the specified BriefcaseId.
+    //! @param[in] briefcaseId BriefcaseId to which the sequence will be reset
+    //! @param[in] ecClassIgnoreList List of ids of ECClasses whose ECInstanceIds should be ignored when
+    //!            computing the maximum ECInstanceId. Subclasses of the specified classes will be ignored as well.
+    //!            If nullptr, no ECClass will be ignored.
+    //! SUCCESS or ERROR
+    ECDB_EXPORT BentleyStatus ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList = nullptr);
 
     //! Check if the ECDb::Initialize() method was successfully called for current process or not.
     //! @return return true if ECDb::Initialize() method was successfully called.
@@ -513,9 +517,6 @@ public:
 
     //! Instance reader is bare metal to access full instance without requiring to prepare ECSqlStatement
     ECDB_EXPORT InstanceReader& GetInstanceReader() const;
-
-    //! Related instance finder
-    ECDB_EXPORT RelatedInstanceFinder const& GetRelatedInstanceFinder() const;
 
     //! When ECDb::ClearECDbCache is called, these listeners get notified before the actual caches are cleared.
     //! This gives users of ECDb the opportunity to free anything that relies on its caches, e.g.

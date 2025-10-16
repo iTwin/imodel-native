@@ -1689,8 +1689,8 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
     //! replace "Phenom" with other xml tags
     //! the units count includes inverted and constants
     const int standardUnitSystemCount = 12;
-    const int standardPhenCount = 79;
-    const int standardUnitCount = 519;
+    const int standardPhenCount = 80;
+    const int standardUnitCount = 521;
     const int standardFormatCount = 10;
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "No schema elements are expected to be loaded at this point");
@@ -3220,7 +3220,17 @@ TEST_F(SchemaManagerTests, SchemaWithChangesButSameVersionTest)
     ECSchemaReadContextPtr readContext2 = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(changedSchema, changedSchemaXml, *readContext2));
     ASSERT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext2->GetCache().GetSchemas()));
-    ASSERT_STREQ("ECSchema import has failed. Schema std has new changes, but the schema version is not incremented.", logger.GetLastMessage(NativeLogging::LOG_ERROR)->second.c_str());
+    ASSERT_STREQ("Schema 'std' has changes but its version was not incremented. Proceeding with import, but this may lead to unexpected behavior.", logger.GetLastMessage(NativeLogging::LOG_WARNING)->second.c_str());
+
+    ReopenECDb();
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("std");
+    ASSERT_TRUE(schema != nullptr);
+    ECClassCP foo = schema->GetClassCP("Foo");
+    ASSERT_TRUE(foo != nullptr);
+    ECPropertyCP test1 = foo->GetPropertyP("Test1");
+    ASSERT_TRUE(test1 != nullptr);
+    ECPropertyCP test2 = foo->GetPropertyP("Test2");
+    ASSERT_TRUE(test2 != nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -31,10 +31,6 @@ private:
     Utf8String                             m_supplementationPurpose;
     Version                                m_schemaVersion;
     Nullable<Version>                      m_rulesetVersion;
-    Utf8String                             m_preferredImage;
-    bool                                   m_isSearchEnabled;
-    Utf8String                             m_extendedData;
-    Utf8String                             m_searchClasses;
 
     RootNodeRuleList                       m_rootNodesRules;
     ChildNodeRuleList                      m_childNodesRules;
@@ -56,12 +52,6 @@ private:
 private:
     //! The generic implementation of GetRules. See below for function specializations
     template<typename RuleType> bvector<RuleType*>* GetRules() { BeAssert(false); return nullptr; }
-
-    //Reads PresentationRuleSet from XML. Returns false if it is not able to load it.
-    bool ReadXml (BeXmlDomR xmlDom);
-
-    //Writes PresentationRuleSet to XML.
-    void WriteXml (BeXmlDomR xmlDom) const;
 
     //Reads PresentationRuleSet from Json. Returns false if it is not able to load it.
     bool ReadJson(BeJsConst json);
@@ -119,18 +109,6 @@ public:
             }
         }
 
-    //! Reads PresentationRuleSet from XmlString.
-    ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromXmlString (Utf8CP xmlString);
-
-    //! Reads PresentationRuleSet from XmlFile.
-    ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromXmlFile (BeFileNameCR xmlFilePath);
-
-    //! Writes PresentationRuleSet to XmlString.
-    ECPRESENTATION_EXPORT Utf8String                     WriteToXmlString () const;
-
-    //! Writes PresentationRuleSet to XmlFile.
-    ECPRESENTATION_EXPORT bool                           WriteToXmlFile (BeFileNameCR xmlFilePath) const;
-
     // !Reads PresentationRuleSet from BeJsConst.
     ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromJsonValue(BeJsConst json);
 
@@ -178,24 +156,6 @@ public:
     RequiredSchemaSpecificationsList const& GetRequiredSchemaSpecifications() const {return m_requiredSchemas;}
     ECPRESENTATION_EXPORT void ClearRequiredSchemaSpecifications();
     ECPRESENTATION_EXPORT void AddRequiredSchemaSpecification(RequiredSchemaSpecificationR spec);
-
-    //! Preferred ImageId for the tree that is configured using this presentation rule set.
-    ECPRESENTATION_EXPORT Utf8StringCR                   GetPreferredImage (void) const;
-
-    //! Returns true if search should be enabled for the tree that uses this presentation rule set.
-    ECPRESENTATION_EXPORT bool                           GetIsSearchEnabled (void) const;
-
-    //! Allowed classes for the search.
-    ECPRESENTATION_EXPORT Utf8StringCR                   GetSearchClasses (void) const;
-
-    //! Set allowed classes for the search.
-    ECPRESENTATION_EXPORT void                           SetSearchClasses (Utf8StringCR searchClasses);
-
-    //! Extended data of a rule set.
-    ECPRESENTATION_EXPORT Utf8StringCR                   GetExtendedData (void) const;
-
-    //! Set extended data of a rule set.
-    ECPRESENTATION_EXPORT void                           SetExtendedData (Utf8StringCR extendedData);
 
     //! Collection of rules, which should be used when root nodes needs to be populated.
     ECPRESENTATION_EXPORT RootNodeRuleList const&        GetRootNodesRules (void) const;

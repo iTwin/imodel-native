@@ -473,6 +473,36 @@ ECClassCP SchemaManager::Dispatcher::GetClass(Utf8StringCR schemaNameOrAlias, Ut
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaManager::Dispatcher::IsSubClassOf(ECN::ECClassId subClassId, ECN::ECClassId parentClassId, Utf8CP tableSpace) {
+    CachedStatementPtr stmt;
+    if( tableSpace == nullptr || DbTableSpace::IsMain(tableSpace) ) {
+        stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT 1 FROM [main].[ec_cache_ClassHierarchy] WHERE [ClassId] = ? AND [BaseClassId] = ?");
+    } else {
+        stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(SqlPrintfString("SELECT 1 FROM [%s].[ec_cache_ClassHierarchy] WHERE [ClassId] = ? AND [BaseClassId] = ?", tableSpace));
+    }
+    if (stmt == nullptr) {
+        return false;
+    }
+
+    stmt->BindId(1, subClassId);
+    stmt->BindId(2, parentClassId);
+    return stmt->Step() == BE_SQLITE_ROW;
+}
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaManager::Dispatcher::IsSubClassOf(Utf8StringCR subClassECSqlName, Utf8StringCR parentClassECSqlName, Utf8CP tableSpace) {
+    ECClassCP subClass = FindClass(subClassECSqlName, tableSpace);
+    ECClassCP parentClass = FindClass(parentClassECSqlName, tableSpace);
+    if (subClass == nullptr || parentClass == nullptr) {
+        return false;
+    }
+    return IsSubClassOf(subClass->GetId(), parentClass->GetId(), tableSpace);
+}
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 ECClassCP SchemaManager::Dispatcher::GetClass(ECN::ECClassId classId, Utf8CP tableSpace) const
     {
     Iterable iterable = GetIterable(tableSpace);
@@ -487,7 +517,7 @@ ECClassCP SchemaManager::Dispatcher::GetClass(ECN::ECClassId classId, Utf8CP tab
         }
 
     return nullptr;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
@@ -826,8 +856,8 @@ bool SchemaManager::Dispatcher::IsClassUnsupported(ECClassId classId) const
 
             while (expandClassIdsStmt.Step() == BE_SQLITE_ROW)
                 {
-                auto classId = expandClassIdsStmt.GetValueId<ECClassId>(0);
-                m_unsupportedClassIdCache.insert(classId);
+                auto classIdInsert = expandClassIdsStmt.GetValueId<ECClassId>(0);
+                m_unsupportedClassIdCache.insert(classIdInsert);
                 }
             }
         }
@@ -869,7 +899,7 @@ ECSchemaPtr TableSpaceSchemaManager::LocateSchema(ECN::SchemaKeyR key, ECN::Sche
         return nullptr;
 
     ECSchemaP schemaP = const_cast<ECSchemaP> (schema);
-    ctx.GetCache().AddSchema(*schemaP);
+    ctx.GetCache().AddSchema(*schemaP); // TODO: Adding to cache directly and always returning the schema despite the status code is nonstandard behavior. This should be fixed in the future.
     return schemaP;
     }
 

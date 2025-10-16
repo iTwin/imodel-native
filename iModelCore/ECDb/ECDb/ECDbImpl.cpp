@@ -264,6 +264,7 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaParseTree::Create());
     GetPragmaManager().Register(PragmaPurgeOrphanRelationships::Create());
     GetPragmaManager().Register(PragmaDbList::Create());
+    GetPragmaManager().Register(PragmaCheckECSqlWriteValues::Create());
     }
 
 //--------------------------------------------------------------------------------------
@@ -384,6 +385,8 @@ BentleyStatus ECDb::Impl::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdS
     if (!briefcaseId.IsValid() || m_ecdb.IsReadonly())
         return ERROR;
 
+    const auto currentId = GetInstanceIdSequence().GetCurrentValue<BeBriefcaseBasedId>();
+
     //ECInstanceId sequence. It has to compute the current max ECInstanceId across all EC data tables
     ECInstanceId maxECInstanceId;
     if (SUCCESS != DetermineMaxInstanceIdForBriefcase(maxECInstanceId, briefcaseId, ecClassIgnoreList))
@@ -392,6 +395,9 @@ BentleyStatus ECDb::Impl::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdS
                    briefcaseId.GetValue());
         return ERROR;
         }
+
+    if (currentId.IsValid() && currentId.GetBriefcaseId() == briefcaseId)
+        maxECInstanceId = ECInstanceId(std::max(currentId.GetValueUnchecked(), maxECInstanceId.GetValueUnchecked()));
 
     if (BE_SQLITE_OK != GetInstanceIdSequence().Reset(maxECInstanceId.GetValueUnchecked()))
         {
@@ -526,6 +532,7 @@ CachedStatementPtr ECDb::Impl::GetCachedSqliteStatement(Utf8CP sql) const
 void ECDb::Impl::ClearECDbCache() const
     {
     BeMutexHolder lock(m_mutex);
+    ConcurrentQueryMgr::Shutdown(m_ecdb);
 
     // this event allows consuming code to free anything that relies on the ECDb cache (like ECSchemas, ECSqlStatements etc)
     for (auto listener : m_ecdbCacheClearListeners)
@@ -539,6 +546,9 @@ void ECDb::Impl::ClearECDbCache() const
     if (m_instanceReader != nullptr)
         m_instanceReader->Reset();
 
+    if (m_instanceWriter != nullptr)
+        m_instanceWriter->Reset();
+
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache();
 
@@ -548,7 +558,6 @@ void ECDb::Impl::ClearECDbCache() const
     //increment the counter. This allows code (e.g. ECSqlStatement) that depends on objects in the cache to invalidate itself
     //after the cache was cleared.
     m_clearCacheCounter.Increment();
-
     for (auto listener : m_ecdbCacheClearListeners)
         listener->_OnAfterClearECDbCache();
 

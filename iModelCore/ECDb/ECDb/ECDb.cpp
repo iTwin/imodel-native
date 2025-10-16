@@ -21,8 +21,17 @@ InstanceReader& ECDb::GetInstanceReader() const { return m_pimpl->GetInstanceRea
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+InstanceWriter& ECDb::GetInstanceWriter()  const { return m_pimpl->GetInstanceWriter(); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 RelatedInstanceFinder const& ECDb::GetRelatedInstanceFinder() const { return m_pimpl->GetRelatedInstanceFinder(); }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+InstanceRepository& ECDb::GetInstanceRepository() const { return m_pimpl->GetInstanceRepository(); }
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
@@ -437,5 +446,18 @@ ECDb::Settings::Settings() {}
 //---------------------------------------------------------------------------------------
 ECDb::Settings::Settings(bool requiresECCrudWriteToken, bool requiresECSchemaImportToken) : m_requiresECCrudWriteToken(requiresECCrudWriteToken), m_requiresECSchemaImportToken(requiresECSchemaImportToken) {}
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+bool AsciiCaseInsensitiveCompare::operator()(Utf8StringCR lhs, Utf8StringCR rhs) const{
+    return BeStringUtilities::StricmpAscii(lhs.c_str(), rhs.c_str()) < 0;
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+bool AsciiCaseInsensitiveCompare::operator()(Utf8CP lhs, Utf8CP rhs) const{
+    return BeStringUtilities::StricmpAscii(lhs, rhs) < 0;
+}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

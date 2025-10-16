@@ -6617,5 +6617,108 @@ TEST_F(SchemaMergerTests, UncleanSchemaGraphMergedWithReferences)
     issues.CompareIssues(expectedIssues);
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, SchemaAlphabeticalSortIssue)
+    {
+    // There was a bug where we internally stored differencing schemas in a bset with ascii comparator which put them into alphabetical order instead of dependency order.
+    // This test reproduces the issue and ensures it no longer happens
+
+    Utf8CP leftRefXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="ZRefSchema" alias="refSch" version="01.00.00" displayLabel="Raised Floor" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00.04" alias="CoreCA"/>
+        <ECCustomAttributes>
+            <DynamicSchema xmlns="CoreCustomAttributes.01.00.04"/>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="PlateElementAspect" displayLabel="Base Plate">
+        </ECEntityClass>
+    </ECSchema>)xml";
+
+    Utf8CP leftXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="testSchema" version="01.00.00" displayLabel="Raised Floor (Parametric Modeling)" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00.04" alias="CoreCA"/>
+        <ECSchemaReference name="ZRefSchema" version="01.00.00" alias="refSch"/>
+        <ECCustomAttributes>
+            <DynamicSchema xmlns="CoreCustomAttributes.01.00.04"/>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="Plate_DgnActiveParametersElementAspect" displayLabel="Base Plate">
+            <BaseClass>refSch:PlateElementAspect</BaseClass>
+        </ECEntityClass>
+    </ECSchema>)xml";
+
+    BentleyApi::bvector<BentleyApi::WString> schemaDirs;
+    BentleyApi::BeFileName assetsDir;
+    BentleyApi::BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsDir);
+    assetsDir = assetsDir.AppendToPath(L"ECSchemas");
+    schemaDirs.push_back(assetsDir.AppendToPath(L"Standard"));
+    SearchPathSchemaFileLocaterPtr locater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(schemaDirs, true);
+
+    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(*locater);
+    schemaContext->SetSkipValidation(true);
+
+    BentleyApi::bvector<ECSchemaCP> existingSchemas, incomingSchemas;
+    ECSchemaPtr refSchema;
+    ECSchema::ReadFromXmlString(refSchema, leftRefXml, *schemaContext);
+    existingSchemas.push_back(refSchema.get());
+    ECSchemaPtr ecSchema;
+    ECSchema::ReadFromXmlString(ecSchema, leftXml, *schemaContext);
+    existingSchemas.push_back(ecSchema.get());
+
+    Utf8CP rightRefXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="ZRefSchema" alias="refSch" version="01.00.00" displayLabel="Raised Floor" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.04" alias="CoreCA"/>
+            <ECCustomAttributes>
+                <DynamicSchema xmlns="CoreCustomAttributes.01.00.04"/>
+            </ECCustomAttributes>
+            <ECEntityClass typeName="Plate" displayLabel="Base Plate">
+            </ECEntityClass>
+            <ECEntityClass typeName="PlateElementAspect" displayLabel="Base Plate">
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    Utf8CP rightXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="testSchema" version="01.00.00" displayLabel="Raised Floor (Parametric Modeling)" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.04" alias="CoreCA"/>
+            <ECSchemaReference name="ZRefSchema" version="01.00.00" alias="refSch"/>
+            <ECCustomAttributes>
+                <DynamicSchema xmlns="CoreCustomAttributes.01.00.04"/>
+            </ECCustomAttributes>
+            <ECEntityClass typeName="Plate_DgnActiveParameters" displayLabel="Base Plate">
+                <BaseClass>refSch:Plate</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="Plate_DgnActiveParametersElementAspect" displayLabel="Base Plate">
+                <BaseClass>refSch:PlateElementAspect</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaReadContextPtr  schemaContext2 = ECSchemaReadContext::CreateContext();
+    SearchPathSchemaFileLocaterPtr locater2 = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(schemaDirs, true);
+
+    schemaContext2->AddSchemaLocater(*locater2);
+    schemaContext2->SetSkipValidation(true);
+    ECSchemaPtr refSchema2;
+    ECSchema::ReadFromXmlString(refSchema2, rightRefXml, *schemaContext2);
+    incomingSchemas.push_back(refSchema2.get());
+    ECSchemaPtr ecSchema2;
+    ECSchema::ReadFromXmlString(ecSchema2, rightXml, *schemaContext2);
+    incomingSchemas.push_back(ecSchema2.get());
+
+    SchemaMergeResult result;
+    SchemaMergeOptions options;
+    options.SetKeepVersion(true);
+    options.SetRenamePropertyOnConflict(true);
+    options.SetRenameSchemaItemOnConflict(true);
+    options.SetMergeOnlyDynamicSchemas(true);
+    options.SetIgnoreIncompatiblePropertyTypeChanges(true);
+
+    ECSchema::SortSchemasInDependencyOrder(existingSchemas);
+    ECSchema::SortSchemasInDependencyOrder(incomingSchemas);
+
+    auto mergeStatus = SchemaMerger::MergeSchemas(result, existingSchemas, incomingSchemas, options);
+    EXPECT_EQ(ECObjectsStatus::Success, mergeStatus);
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
 

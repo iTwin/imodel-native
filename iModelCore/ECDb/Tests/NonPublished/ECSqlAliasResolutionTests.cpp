@@ -73,5 +73,20 @@ TEST_F(ECSqlAliasResolutionTestFixture, ColumnAliasesWithClauses) {
     EXPECT_ECSQL("select (select 1) a from meta.ECClassDef where a <> 1")
 }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlAliasResolutionTestFixture, Cte_derived_property_expanding_asterisk) {
+    ASSERT_OPEN_TEST_BIM;
+    ASSERT_ECSQL("WITH e AS (SELECT f.* FROM Bis.Element f) SELECT e.Model.Id FROM e");
+    ASSERT_ECSQL("WITH e(a,b) AS (SELECT f.* FROM (select 100, 200) f) SELECT a, b FROM e");
+    ASSERT_ECSQL("WITH e(a,b) AS (SELECT f.* FROM (select 100, 200) f) SELECT e.a, e.b FROM e");
+    ASSERT_ECSQL("WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id) FROM e");
+    ASSERT_ECSQL("WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT m.ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id)) FROM e");
+    INVALID("WITH e AS (SELECT f.Model.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id) FROM e");
+    INVALID("WITH e AS (SELECT Model.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id) FROM e");
+    INVALID("WITH e AS (SELECT f.Model.* FROM Bis.Element) SELECT (SELECT ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id) FROM e");
+}
+
 
 END_ECDBUNITTESTS_NAMESPACE

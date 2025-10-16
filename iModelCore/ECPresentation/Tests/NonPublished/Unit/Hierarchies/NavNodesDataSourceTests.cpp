@@ -36,7 +36,7 @@ struct NavNodesDataSourceTests : ECPresentationTest, IECExpressionsCacheProvider
         ECPresentationTest::SetUp();
         m_ruleset = PresentationRuleSet::CreateInstance("NavNodesDataSourceTests");
         m_nodesCache = std::make_shared<TestNodesCache>();
-        m_context = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, nullptr,
+        m_context = NavNodesProviderContext::Create(*m_ruleset, nullptr,
             std::make_unique<RulesetVariables>(), m_expressionsCache, m_relatedPathsCache,
             s_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
         m_provider = TestNodesProvider::Create(*m_context);
