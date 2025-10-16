@@ -347,7 +347,7 @@ Napi::Value JsInterop::ResolveInstanceKey(DgnDbR dgndb, NapiInfoCR info) {
         }
 
         ECInstanceKey resolvedKey;
-       auto pos = InstanceReader::Position(id, baseClassName.c_str());
+        auto pos = InstanceReader::Position(id, baseClassName.c_str());
         if (!dgndb.GetInstanceReader().Seek(pos,
             [&](InstanceReader::IRowContext const& row, auto _) {
                 resolvedKey = ECInstanceKey(row.GetValue(1).GetId<ECClassId>(), id);
