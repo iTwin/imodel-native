@@ -2292,7 +2292,7 @@ TEST_F(CommonTableExpTestFixture, Invalid_SQL_Tests) {
 TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, OpenECDbTestDataFile("test.bim"));
 
-    {
+    if("using table alias while asterisk resolution for cte with sub columns"){
         auto ecsql = R"(WITH e(a,b) AS (SELECT f.* FROM (select 100, 200) f) SELECT a, b FROM e)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -2304,7 +2304,7 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
         ASSERT_STREQ("200", stmt.GetValueText(1));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
-    {
+    if("using table alias while asterisk resolution for cte without sub columns"){
         auto ecsql = R"(WITH e AS (SELECT f.* FROM (select 100, 200) f) SELECT * FROM e)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -2316,7 +2316,7 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
         ASSERT_STREQ("200", stmt.GetValueText(1));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
-    {
+    if("using table alias while asterisk resolution and selecting SELECT statements"){
         auto ecsql = R"(WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id LIMIT 3) FROM e)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -2329,7 +2329,7 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
         ASSERT_STREQ("1", stmt.GetValueText(0));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
-    {
+    if("using table alias while asterisk resolution for cte without sub columns and selecting compound prop with limit outside"){
         auto ecsql = R"( WITH e AS (SELECT f.* FROM Bis.Element f) SELECT Model.Id FROM e limit 1)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -2338,7 +2338,7 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
         ASSERT_STREQ("1", stmt.GetValueText(0));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
-    {
+    if("using table alias while asterisk resolution for cte without sub columns subquery and selecting compound prop"){
         auto ecsql = R"( select * from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT Model.Id FROM e limit 1))";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -2347,7 +2347,7 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
         ASSERT_STREQ("1", stmt.GetValueText(0));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
-    {
+    if("using table alias while asterisk resolution for cte without sub columns subquery and selecting compound prop with limit inside"){
         auto ecsql = R"( WITH e AS (SELECT f.* FROM Bis.Element f limit 1) SELECT Model.Id FROM e)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -2356,7 +2356,7 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
         ASSERT_STREQ("1", stmt.GetValueText(0));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
-    {
+    if("using table alias while asterisk resolution for cte without sub columns aliased subquery"){
         auto ecsql = R"( select a.* from (WITH e AS (SELECT f.* FROM Bis.Element f limit 1) SELECT Model.Id FROM e)a)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -2365,7 +2365,7 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
         ASSERT_STREQ("1", stmt.GetValueText(0));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
-    {
+    if("using table alias while asterisk resolution for cte without sub columns subquery and selecting SELECT value exps for aliased ctes"){
         auto ecsql = R"(WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId limit 1)) a FROM e)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -2376,7 +2376,7 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
         ASSERT_STREQ("76", stmt.GetValueText(0));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
-    {
+    if("using table alias while asterisk resolution for cte without sub columns subquery and selecting SELECT value exps for aliased ctes with limit inside"){
         auto ecsql = R"(select g.* from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId limit 1)) a FROM e) g)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -2387,7 +2387,7 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
         ASSERT_STREQ("76", stmt.GetValueText(0));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
-    {
+    if("using table alias while asterisk resolution for cte without sub columns selecting SELECT value exps for aliased ctes with limit outside"){
         auto ecsql = R"(WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId) limit 1) a FROM e)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -2398,7 +2398,7 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
         ASSERT_STREQ("76", stmt.GetValueText(0));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
-    {
+    if("using table alias while asterisk resolution for cte without sub columns subquery and selecting SELECT value exps for aliased ctes with limit aliased"){
         auto ecsql = R"(select a from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId) limit 1) a FROM e))";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -2409,7 +2409,7 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
         ASSERT_STREQ("76", stmt.GetValueText(0));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
-    {
+    if("using table alias while asterisk resolution for cte without sub columns subquery and aliasing the subquery and also the CTE select query"){
         auto ecsql = R"(select y.a from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId) limit 1) a FROM e) y)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -2420,7 +2420,7 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
         ASSERT_STREQ("76", stmt.GetValueText(0));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
-    {
+    if("using table alias while asterisk resolution for cte without sub columns subquery and aliasing the subquery and also the CTE select query and selecting asterisk with alias outside"){
         auto ecsql = R"(select y.* from (WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId) limit 1) a FROM e) y)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -2431,32 +2431,32 @@ TEST_F(CommonTableExpTestFixture, asterisk_resolution_in_cte) {
         ASSERT_STREQ("76", stmt.GetValueText(0));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
-    {
+    if("using asterisk with nav props should fail"){
         auto ecsql = R"(WITH e AS (SELECT Model.* FROM Bis.Element f) SELECT Model FROM e)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
     }
-    {
+    if("using asterisk with nav props should fail"){
         auto ecsql = R"(WITH e AS (SELECT Model.* FROM Bis.Element f) SELECT * FROM e)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
     }
-    {
+    if("using asterisk with nav props and aliased class should fail"){
         auto ecsql = R"(WITH e AS (SELECT f.Model.* FROM Bis.Element f) SELECT * FROM e)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
     }
-    {
+    if("using nav props with cte with sub columns should fail"){
         auto ecsql = R"(WITH e(m) AS (SELECT f.Model FROM Bis.Element f) SELECT * FROM e)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
     }
-    {
+    if("using nav props with cte with one sub column should fail"){
         auto ecsql = R"(WITH e(m) AS (SELECT f.Model FROM Bis.Element f) SELECT m.Id FROM e)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
     }
-    {
+    if("using nav props with cte with two sub columns should fail"){
         auto ecsql = R"(WITH e(m, n) AS (SELECT f.Model FROM Bis.Element f) SELECT * FROM e)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
@@ -2807,7 +2807,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
     {
         addElement(DPoint2d::From(vec[0], vec[1]), DPoint3d::From(vec[0], vec[1], vec[2]));
     }
-    {
+    if("selecting point2d from inside cte"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT * FROM cte"));
         ASSERT_EQ(1, stmt.GetColumnCount());
@@ -2819,7 +2819,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(DPoint2d::From(pointList[2][0], pointList[2][1]), stmt.GetValuePoint2d(0));
     }
-    {
+    if("selecting point2d from inside cte and aliasing it outside"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT cte.p2d FROM cte"));
         ASSERT_EQ(1, stmt.GetColumnCount());
@@ -2831,7 +2831,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(DPoint2d::From(pointList[2][0], pointList[2][1]), stmt.GetValuePoint2d(0));
     }
-    {
+    if("selecting point2d from inside cte and aliasing it outside with class aliased"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT c.p2d FROM cte c"));
         ASSERT_EQ(1, stmt.GetColumnCount());
@@ -2843,7 +2843,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(DPoint2d::From(pointList[2][0], pointList[2][1]), stmt.GetValuePoint2d(0));
     }
-    {
+    if("selecting point2d from inside cte and selecting point2d X prop outside"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT p2d.X FROM cte"));
         ASSERT_EQ(1, stmt.GetColumnCount());
@@ -2855,7 +2855,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_STREQ("220.0", stmt.GetValueText(0));
     }
-    {
+    if("selecting point2d from inside cte and selecting point2d X prop outside with class"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT cte.p2d.X FROM cte"));
         ASSERT_EQ(1, stmt.GetColumnCount());
@@ -2867,7 +2867,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_STREQ("220.0", stmt.GetValueText(0));
     }
-    {
+    if("selecting point2d X prop from inside cte and selecting same outside"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d.X FROM ts.Element) SELECT cte.p2d.X FROM cte"));
         ASSERT_EQ(1, stmt.GetColumnCount());
@@ -2879,7 +2879,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_STREQ("220.0", stmt.GetValueText(0));
     }
-    {
+    if("selecting point2d from inside cte and selecting point2d X prop outside with aliased class"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT c.p2d.X FROM cte c"));
         ASSERT_EQ(1, stmt.GetColumnCount());
@@ -2891,7 +2891,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_STREQ("220.0", stmt.GetValueText(0));
     }
-    {
+    if("selecting point2d from inside cte and selecting point2d Y prop outside"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT p2d.Y FROM cte"));
         ASSERT_EQ(1, stmt.GetColumnCount());
@@ -2903,7 +2903,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_STREQ("-180.0", stmt.GetValueText(0));
     }
-    {
+    if("selecting point2d from inside cte and selecting point2d Y prop outside with class"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT cte.p2d.Y FROM cte"));
         ASSERT_EQ(1, stmt.GetColumnCount());
@@ -2915,7 +2915,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_STREQ("-180.0", stmt.GetValueText(0));
     }
-    {
+    if("selecting point2d from inside cte and selecting point2d Y prop outside with aliased class"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p2d FROM ts.Element) SELECT c.p2d.Y FROM cte c"));
         ASSERT_EQ(1, stmt.GetColumnCount());
@@ -2927,7 +2927,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_STREQ("-180.0", stmt.GetValueText(0));
     }
-    {
+    if("selecting point3d from inside cte and selecting point3d all prop outside"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d FROM ts.Element) SELECT p3d.X, p3d.Y, p3d.Z FROM cte"));
         ASSERT_EQ(3, stmt.GetColumnCount());
@@ -2947,7 +2947,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_STREQ("-180.0", stmt.GetValueText(1));
         ASSERT_STREQ("330.6", stmt.GetValueText(2));
     }
-    {
+    if("selecting point3d from inside cte and selecting point3d all prop outside with class"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d FROM ts.Element) SELECT cte.p3d.X, cte.p3d.Y, cte.p3d.Z FROM cte"));
         ASSERT_EQ(3, stmt.GetColumnCount());
@@ -2967,7 +2967,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_STREQ("-180.0", stmt.GetValueText(1));
         ASSERT_STREQ("330.6", stmt.GetValueText(2));
     }
-    {
+    if("selecting point3d from inside cte and selecting point3d all prop outside with aliased class"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d FROM ts.Element) SELECT c.p3d.X, c.p3d.Y, c.p3d.Z FROM cte c"));
         ASSERT_EQ(3, stmt.GetColumnCount());
@@ -2987,7 +2987,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_STREQ("-180.0", stmt.GetValueText(1));
         ASSERT_STREQ("330.6", stmt.GetValueText(2));
     }
-    {
+    if("selecting point3d all props from inside cte and selecting same outside"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d.X, p3d.Y, p3d.Z FROM ts.Element) SELECT p3d.X, p3d.Y, p3d.Z FROM cte"));
         ASSERT_EQ(3, stmt.GetColumnCount());
@@ -3007,7 +3007,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_STREQ("-180.0", stmt.GetValueText(1));
         ASSERT_STREQ("330.6", stmt.GetValueText(2));
     }
-    {
+    if("selecting point3d all props from inside cte and selecting same outside with class"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d.X, p3d.Y, p3d.Z FROM ts.Element) SELECT cte.p3d.X, cte.p3d.Y, cte.p3d.Z FROM cte"));
         ASSERT_EQ(3, stmt.GetColumnCount());
@@ -3027,7 +3027,7 @@ TEST_F(CommonTableExpTestFixture, FindingCompoundDataProperty_For_CTE_Without_Su
         ASSERT_STREQ("-180.0", stmt.GetValueText(1));
         ASSERT_STREQ("330.6", stmt.GetValueText(2));
     }
-    {
+    if("selecting point3d all props from inside cte and selecting same outside with aliased class"){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus:: Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT p3d.X, p3d.Y, p3d.Z FROM ts.Element) SELECT c.p3d.X, c.p3d.Y, c.p3d.Z FROM cte c"));
         ASSERT_EQ(3, stmt.GetColumnCount());
