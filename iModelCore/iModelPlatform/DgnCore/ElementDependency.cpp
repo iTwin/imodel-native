@@ -606,10 +606,11 @@ BentleyStatus Graph::CheckDirection(Edge const& edge)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ElementDep::_PropagateChanges()
+DbResult dgn_TxnTable::ElementDep::_PropagateChanges()
     {
     Graph graph(m_txnMgr);
     graph.InvokeAffectedDependencyHandlers();
+    return m_txnMgr.ElementDependencies().GetFailedTargets().empty() ? BE_SQLITE_OK : BE_SQLITE_ERROR_PropagateChangesFailed;    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -874,7 +875,7 @@ void Graph::InvokeHandlersInTopologicalOrder_OneGraph(Edge const& edge, bvector<
         {
         if (color == EdgeColor::Gray)
             {
-            m_txnMgr.ReportError(true, "cycle", FmtCyclePath(edge, pathToSupplier).c_str());
+            EDGLOGGER.errorv("EDE: Cycle detected: %s", FmtCyclePath(edge, pathToSupplier).c_str());
             SetFailedEdgeStatusInDb(edge, true); // mark at least this edge as failed. maybe we should mark the entire cycle??
             }
         return;
