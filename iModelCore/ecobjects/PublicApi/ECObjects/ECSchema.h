@@ -1466,6 +1466,25 @@ private:
     PropertyList m_propertyList;
     CachedValue<StandaloneECEnablerPtr> m_defaultStandaloneEnabler;
 
+    //! Finds an available new name for the property by prepending schema name and appending underscores
+    //! @param[in] property The property for which to find an available name
+    //! @param[out] existingProperty If an existing local property is hit which is compatible, it will be returned so it can be used instead.
+    Utf8String FindAvailablePropertyName(ECPropertyCP property, ECPropertyP& existingProperty) const;
+    //! Adds the property to the internal map and vector and raises respective events
+    ECObjectsStatus AddPropertyInternal(ECPropertyP& pProperty, bool resolveConflicts);
+    //! Finds an appropriate name for the pProperty and adds it 
+    ECObjectsStatus AddPropertyResolveConflicts(ECPropertyP& property);
+    //! Checks if property can be added, resolves conflicts and eventually calls AddPropertyInternal
+    //! @param[in] pProperty The property to add
+    //! @param[in] resolveConflicts If true, conflicting properties will be renamed to avoid clashes.
+    //! Renaming follows the following rules:
+    //! - We rename the property by prepending the schema alias and appending an underscore and then check if this still clashes
+    //!   with an existing property.
+    //! - We keep adding underscores until we either find an available name, or hit an existing local property
+    //!   which is compatible, in which case we will delete pProperty and return the existing property instead, and return SUCCESS.
+    //! - For renamed properties, we add the `RenamedPropertiesMapping` custom attribute.
+    //! If the flag is false, handling is more simple, it will just return NamedItemAlreadyExists if a local property already exists,
+    //! and fail if an incompatible base property exists
     ECObjectsStatus AddProperty (ECPropertyP& pProperty, bool resolveConflicts = false);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
     ECObjectsStatus FindPropertyConflicts(ECPropertyCP prop, ECPropertyP &baseProp, Utf8StringR newName, Utf8StringR errorMessage, bool resolveConflicts);
@@ -1508,7 +1527,7 @@ protected:
     ECClass (ECClassType classType, ECSchemaCR schema);
     virtual ~ECClass();
 
-    ECObjectsStatus AddProperty(ECPropertyP pProperty, Utf8StringCR name, bool resolveConflicts = false);
+    ECObjectsStatus AddProperty(ECPropertyP& pProperty, Utf8StringCR name, bool resolveConflicts = false);
     virtual ECObjectsStatus _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true);
     virtual ECObjectsStatus _RemoveBaseClass(ECClassCR baseClass);
 
@@ -1547,6 +1566,9 @@ protected:
     virtual bool _Validate() const = 0;
 
     void InvalidateDefaultStandaloneEnabler() const;
+
+    template<typename TProperty>
+    ECObjectsStatus CreatePropertyInternal(TProperty*& ecProperty, Utf8StringCR name, bool resolveConflicts);
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this class is defined in
     ECSchemaR GetSchemaR() {return const_cast<ECSchemaR>(m_schema);}
@@ -1655,22 +1677,22 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates a struct property object using the specified class as the struct type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates an array property object using the default type of STRING
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, bool resolveConflicts = false);
 
     //! If the given name is valid, creates an array property object using the specified primitive type as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates an array property object using the specified ECEnumeration as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates a struct array property object using the specified class as the struct array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType, bool resolveConflicts = false);
 
     //! If the given name is valid, creates a primitive property object with the given enumeration type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerationProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerationProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType, bool resolveConflicts = false);
 
     ECOBJECTS_EXPORT size_t GetPropertyCount(bool includeBaseProperties = true) const; //!< Returns the number of ECProperties in this class
     ECOBJECTS_EXPORT ECPropertyIterable GetProperties() const; //!< Returns an iterable of all the ECProperties defined on this class, including inherited properties.
@@ -1811,7 +1833,7 @@ public:
     // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The multiplicity of the other constraint determiness if the nav prop is a primitive or an array.
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true, bool resolveConflicts = false);
 
     //! Returns true if the provided mixin class can be applied to this class.
     //! @remarks The mixin class can be applied to this class if this class is derived from the AppliesToEntityClass property defined in IsMixin custom attribute.
@@ -2211,7 +2233,7 @@ public:
     // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The multiplicity of the other constraint determiness if the nav prop is a primitive or an array.
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true, bool resolveConflicts = false);
 
     //! Returns true if successfully verifies the relationship, otherwise false.
     ECOBJECTS_EXPORT bool Verify() const;
