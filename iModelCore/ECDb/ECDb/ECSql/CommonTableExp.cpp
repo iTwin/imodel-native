@@ -46,7 +46,7 @@ CommonTableBlockExp::CommonTableBlockExp(Utf8CP name, std::unique_ptr<SelectStat
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool CommonTableBlockExp::ExpandDerivedProperties(ECSqlParseContext& ctx) const {
+bool CommonTableBlockExp::ExpandDerivedProperties() const {
     if(m_columnList.size() == 0)
         return true;  // If there are no columns we actually donot need expanding these derived properties...because in _FindProperty we just cascade the finding to the inside select statement
     // when we encounter wild card we will leave it deferred.
@@ -76,7 +76,7 @@ bool CommonTableBlockExp::ExpandDerivedProperties(ECSqlParseContext& ctx) const 
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus CommonTableBlockExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) {
-    ExpandDerivedProperties(ctx);
+    ExpandDerivedProperties();
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
@@ -236,7 +236,7 @@ void CommonTableBlockExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Deri
 //+---------------+---------------+---------------+---------------+---------------+--------
 PropertyMatchResult CommonTableBlockExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const {
     // First Expansion
-    if (!ExpandDerivedProperties(ctx)) {
+    if (!ExpandDerivedProperties()) {
         return PropertyMatchResult::NotFound();
     }
     // Then Property Finding
