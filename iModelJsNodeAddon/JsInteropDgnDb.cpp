@@ -391,10 +391,13 @@ Napi::Value JsInterop::ResolveInstanceKey(DgnDbR dgndb, NapiInfoCR info) {
             THROW_JS_DGN_DB_EXCEPTION(info.Env(),"missing value", DgnDbStatus::BadArg);
         }
 
-        auto codeValue = codeJson["value"].asString();
-        auto stmt = codeValue.empty() ?
-            dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [CodeSpec].[Id]=? AND [CodeScope].[Id]=? AND ([CodeValue] IS NULL OR  [CodeValue] = '')") :
-            dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [CodeSpec].[Id]=? AND [CodeScope].[Id]=? AND [CodeValue]=?");
+        auto codeValue = codeJson["value"].asString().TrimUtf8();
+
+        if (codeValue.empty()) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"failed to resolve element from code: code value empty string", DgnDbStatus::NotFound);
+        }
+
+        auto stmt = dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [CodeSpec].[Id]=? AND [CodeScope].[Id]=? AND [CodeValue]=?");
 
         if (!stmt.IsValid()) {
             THROW_JS_DGN_DB_EXCEPTION(info.Env(),"failed to prepare statement", DgnDbStatus::BadArg);
@@ -402,9 +405,7 @@ Napi::Value JsInterop::ResolveInstanceKey(DgnDbR dgndb, NapiInfoCR info) {
 
         stmt->BindId(1, specId);
         stmt->BindId(2, scopeId);
-        if (!codeValue.empty()) {
-            stmt->BindText(3, codeValue.c_str(), IECSqlBinder::MakeCopy::No);
-        }
+        stmt->BindText(3, codeValue.c_str(), IECSqlBinder::MakeCopy::No);
 
         if (stmt->Step() != BE_SQLITE_ROW) {
             THROW_JS_DGN_DB_EXCEPTION(info.Env(),"failed to resolve element from code", DgnDbStatus::NotFound);

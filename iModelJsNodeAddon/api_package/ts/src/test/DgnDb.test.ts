@@ -45,6 +45,7 @@ describe("basic tests", () => {
     assert.isFalse(iModelDb.isSubClassOf("BisCore:GeometricModel", "BisCore:GeometricModel3d"));
   });
   it("resolveInstanceKey", () => {
+    // Test resolving by partialKey
     const r0 = dgndb.resolveInstanceKey({
       partialKey: {
         id: "0x1b",
@@ -53,6 +54,124 @@ describe("basic tests", () => {
     });
     assert.equal(r0.id, "0x1b", "id should be 0x1b");
     assert.equal(r0.classFullName, "BisCore:Subject", "className should be BisCore:Subject");
+
+    expect(() => dgndb.resolveInstanceKey({
+      partialKey: {
+        baseClassName: "BisCore:Element"
+      } as any // missing id
+    } as any)).to.throw("missing id");
+
+    expect(() => dgndb.resolveInstanceKey({
+      partialKey: {
+        id: "0x1b"
+      } as any // missing baseClassName
+    } as any)).to.throw("missing baseClassName");
+
+    expect(() => dgndb.resolveInstanceKey({
+      partialKey: {
+        id: "invalid",
+        baseClassName: "BisCore:Element"
+      }
+    })).to.throw("invalid id");
+
+    expect(() => dgndb.resolveInstanceKey({
+      partialKey: {
+        id: "0x1b",
+        baseClassName: ""
+      }
+    })).to.throw("invalid baseClassName");
+
+    expect(() => dgndb.resolveInstanceKey({
+      partialKey: {
+        id: "0x999999",
+        baseClassName: "BisCore:Element"
+      }
+    })).to.throw("failed to resolve instance key");
+
+    // Test resolving by federationGuid
+    const elemStmt = new iModelJsNative.ECSqlStatement();
+    elemStmt.prepare(dgndb, "SELECT ECInstanceId, FederationGuid FROM bis.Element WHERE FederationGuid IS NOT NULL LIMIT 1");
+    if (elemStmt.step() === DbResult.BE_SQLITE_ROW) {
+      const elementId = elemStmt.getValue(0).getId();
+      const federationGuid = elemStmt.getValue(1).getGuid();
+      
+      const r2 = dgndb.resolveInstanceKey({
+        federationGuid
+      });
+      assert.equal(r2.id, elementId, "resolved element should match federation GUID query");
+      assert.isString(r2.classFullName, "classFullName should be a string");
+    }
+    elemStmt.dispose();
+
+    expect(() => dgndb.resolveInstanceKey({
+      federationGuid: "invalid-guid"
+    })).to.throw("failed to resolve element from federationGuid");
+
+    expect(() => dgndb.resolveInstanceKey({
+      federationGuid: "00000000-0000-0000-0000-000000000000"
+    })).to.throw("failed to resolve element from federationGuid");
+
+    // Test resolving by code
+    const codeStmt = new iModelJsNative.ECSqlStatement();
+    codeStmt.prepare(dgndb, "SELECT ECInstanceId, CodeSpec.Id, CodeScope.Id, CodeValue FROM bis.Element WHERE CodeValue IS NOT NULL AND CodeValue != '' LIMIT 1");
+    if (codeStmt.step() === DbResult.BE_SQLITE_ROW) {
+      const elementId = codeStmt.getValue(0).getId();
+      const specId = codeStmt.getValue(1).getId();
+      const scopeId = codeStmt.getValue(2).getId();
+      const codeValue = codeStmt.getValue(3).getString();
+      
+      const r3 = dgndb.resolveInstanceKey({
+        code: {
+          spec: specId,
+          scope: scopeId,
+          value: codeValue
+        }
+      });
+      assert.equal(r3.id, elementId, "resolved element should match code query");
+      assert.isString(r3.classFullName, "classFullName should be a string");
+    }
+    codeStmt.dispose();
+
+    expect(() => dgndb.resolveInstanceKey({
+      code: {
+        scope: "0x1",
+        value: "test"
+      } as any // missing spec
+    } as any)).to.throw("missing spec");
+
+    expect(() => dgndb.resolveInstanceKey({
+      code: {
+        spec: "0x1",
+        value: "test"
+      } as any // missing scope
+    } as any)).to.throw("missing type");
+
+    expect(() => dgndb.resolveInstanceKey({
+      code: {
+        spec: "0x1",
+        scope: "0x1"
+      } as any // missing value
+    } as any)).to.throw("missing value");
+
+    expect(() => dgndb.resolveInstanceKey({
+      code: {
+        spec: "0x1",
+        scope: "0x1",
+        value: ""
+      } // empty code
+    })).to.throw("failed to resolve element from code: code value empty string");
+
+    expect(() => dgndb.resolveInstanceKey({
+      code: {
+        spec: "0x999999",
+        scope: "0x1",
+        value: "badvalue"
+      }
+    })).to.throw("failed to resolve element from code");
+
+    expect(() => dgndb.resolveInstanceKey(null as any)).to.throw("invalid input");
+
+    expect(() => dgndb.resolveInstanceKey({} as any)).to.throw("must provide partialKey, federationGuid or");
   });
   it("compress/decompress", () => {
     const assertCompressAndThenDecompress = (sourceData: Uint8Array) => {
