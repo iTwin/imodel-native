@@ -186,6 +186,16 @@ ExtractPropertyValueExp const* DerivedPropertyExp::TryGetExtractPropExp() const 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+bool DerivedPropertyExp::OriginateInACommonTableBlockWithNoColumns() const {
+    Exp const* exp = this->FindParent(Exp::Type::CommonTableBlock);
+    if(exp == nullptr)
+        return false;
+    
+    return exp->GetAs<CommonTableBlockExp>().GetColumns().size() == 0;
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 bool DerivedPropertyExp::IsWildCard() const {
     if (GetExpression()->GetType() == Exp::Type::PropertyName) {
         return GetExpression()->GetAsCP<PropertyNameExp>()->IsWildCard();
@@ -919,7 +929,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                 if (propertyNameExp->GetResolvedPropertyPath().First().GetName().EqualsIAscii(effectivePath.First().GetName())) {
                     if (effectivePath.Size() == 1) {
                         return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
-                    } else if (!propertyNameExp->IsPropertyFromCommonTableBlock() && propertyNameExp->GetPropertyMap() != nullptr) {
+                    } else if (!propertyNameExp->IsPropertyFromCommonTableBlockWithColumns() && propertyNameExp->GetPropertyMap() != nullptr) {
                         if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(propertyNameExp->GetPropertyMap())) {
                             PropertyPath restOfAccessString = effectivePath.Skip(1);
                             auto endMap = compoundProp->Find(restOfAccessString.ToString().c_str());

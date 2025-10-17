@@ -389,7 +389,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                 break;
                 }
             default: {
-                if (exp.IsPropertyFromCommonTableBlock()) {
+                if (exp.IsPropertyFromCommonTableBlockWithColumns()) {
                     NativeSqlBuilder sqlSnippet;
                     auto& ctb = exp.GetClassRefExp()->GetAs<CommonTableBlockNameExp>();
                     if (!ctb.GetAlias().empty()) {
@@ -403,7 +403,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                 } else {
                     //Here we presume any primitive value expression which must have a alias.
                     Utf8String alias = referencedDerivedPropertyExp.GetColumnAlias();
-                    if (alias.empty() || referencedDerivedPropertyExp.OriginateInASubQuery())
+                    if (alias.empty() || referencedDerivedPropertyExp.OriginateInASubQuery() || referencedDerivedPropertyExp.OriginateInACommonTableBlockWithNoColumns())
                         alias = referencedDerivedPropertyExp.GetNestedAlias();
 
                     if (alias.empty())
