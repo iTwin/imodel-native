@@ -2025,6 +2025,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         JsInterop::DeleteLinkTableRelationship(GetOpenedDb(info), props);
     }
 
+    void DeleteLinkTableRelationships(NapiInfoCR info) {
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray()) {
+            THROW_JS_TYPE_EXCEPTION("Argument must be an array of relationship instance objects.");
+        }
+        JsInterop::DeleteLinkTableRelationships(GetOpenedDb(info), info[0].As<Napi::Array>());
+    }
+
     Napi::Value InsertCodeSpec(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, name);
         REQUIRE_ARGUMENT_ANY_OBJ(1, jsonProperties);
@@ -3017,6 +3024,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
+            InstanceMethod("deleteLinkTableRelationships", &NativeDgnDb::DeleteLinkTableRelationships),
             InstanceMethod("deleteLocalValue", &NativeDgnDb::DeleteLocalValue),
             InstanceMethod("deleteModel", &NativeDgnDb::DeleteModel),
             InstanceMethod("detachChangeCache", &NativeDgnDb::DetachChangeCache),
@@ -4770,6 +4778,7 @@ public:
           InstanceMethod("openGroup", &NativeChangesetReader::OpenGroup),
           InstanceMethod("writeToFile", &NativeChangesetReader::WriteToFile),
           InstanceMethod("openLocalChanges", &NativeChangesetReader::OpenLocalChanges),
+          InstanceMethod("openInMemoryChanges", &NativeChangesetReader::OpenInMemoryChanges),
           InstanceMethod("openTxn", &NativeChangesetReader::OpenTxn),
           InstanceMethod("reset", &NativeChangesetReader::Reset),
           InstanceMethod("step", &NativeChangesetReader::Step),
@@ -4907,6 +4916,20 @@ public:
 
         m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
         }
+    void OpenInMemoryChanges(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        REQUIRE_ARGUMENT_BOOL(1, invert);
+        NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
+        if (!nativeDgnDb->IsOpen())
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Provided db is not open", DgnDbStatus::NotOpen);
+
+        auto changeset = nativeDgnDb->GetDgnDb().Txns().CreateChangesetFromInMemoryChanges();
+        if (changeset == nullptr)
+            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "no in-memory changes", IModelJsNativeErrorKey::ChangesetError);
+
+        m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
+        }        
     void OpenTxn(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
@@ -5004,24 +5027,21 @@ public:
         if (info.Length() < 2)
             THROW_JS_TYPE_EXCEPTION("ECSqlStatement::Prepare requires two arguments");
 
-        Napi::Object dbObj = info[0].As<Napi::Object>();
+        const auto dbObj = info[0].As<Napi::Object>();
 
         ECDb* ecdb = nullptr;
         if (NativeDgnDb::InstanceOf(dbObj)) {
-            NativeDgnDb* addonDgndb = NativeDgnDb::Unwrap(dbObj);
-            if (!addonDgndb->IsOpen())
-                return CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());
-
-            ecdb = &addonDgndb->GetDgnDb();
+            if (const auto addonDgndb = NativeDgnDb::Unwrap(dbObj); addonDgndb && addonDgndb->IsOpen())
+                ecdb = &addonDgndb->GetDgnDb();
         } else if (NativeECDb::InstanceOf(dbObj)) {
-            NativeECDb* addonECDb = NativeECDb::Unwrap(dbObj);
-            ecdb = &addonECDb->GetECDb();
-
-            if (!ecdb->IsDbOpen())
-                return CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());
+            if (const auto addonECDb = NativeECDb::Unwrap(dbObj); addonECDb)
+                ecdb = &addonECDb->GetECDb();
         } else {
             THROW_JS_TYPE_EXCEPTION("ECSqlStatement::Prepare requires first argument to be a NativeDgnDb or NativeECDb object.");
         }
+
+        if (!ecdb || !ecdb->IsDbOpen())
+            return CreateErrorObject0(BE_SQLITE_ERROR_NOTOPEN, "Cannot query a closed Db", Env());
 
         REQUIRE_ARGUMENT_STRING(1, ecsql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
@@ -5326,19 +5346,27 @@ public:
     }
 
     void Prepare(NapiInfoCR info) {
-        Napi::Object dbObj = info[0].As<Napi::Object>();
+        if (info.Length() < 2)
+            THROW_JS_TYPE_EXCEPTION("SqliteStatement::Prepare requires at least two arguments");
+
+        const auto dbObj = info[0].As<Napi::Object>();
         Db* db = nullptr;
+
         if (NativeDgnDb::InstanceOf(dbObj)) {
-            db = &NativeDgnDb::Unwrap(dbObj)->GetDgnDb();
+            if (auto addonDgndb = NativeDgnDb::Unwrap(dbObj); addonDgndb && addonDgndb->IsOpen())
+                db = &addonDgndb->GetDgnDb();
         } else if (SQLiteDb::InstanceOf(dbObj)) {
-            db = &SQLiteDb::Unwrap(dbObj)->GetDb();
+            if (auto sqliteDb = SQLiteDb::Unwrap(dbObj); sqliteDb)
+                db = &sqliteDb->GetDb();
         } else if (NativeECDb::InstanceOf(dbObj)) {
-            db = &NativeECDb::Unwrap(dbObj)->GetECDb();
+            if (auto ecdb = NativeECDb::Unwrap(dbObj); ecdb)
+                db = &ecdb->GetECDb();
         } else {
             THROW_JS_TYPE_EXCEPTION("invalid database object");
         }
-        if (!db->IsDbOpen())
-            THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Prepare requires an open database", IModelJsNativeErrorKey::NotOpen);
+
+        if (!db || !db->IsDbOpen())
+          THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Cannot query a closed Db", IModelJsNativeErrorKey::NotOpen);
 
         REQUIRE_ARGUMENT_STRING(1, sql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);

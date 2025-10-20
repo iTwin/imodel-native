@@ -522,17 +522,16 @@ TxnManager::TxnId TxnManager::GetMultiTxnOperationStart()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker) {    
+DbResult TxnManager::DoPropagateChanges(ChangeTracker& tracker) {    
     SetandRestoreIndirectChanges _v(tracker);
     for (auto table : m_tables) {
-        table->_PropagateChanges();
-        if (HasFatalError()) {
+        const auto rc = table->_PropagateChanges();
+        if (rc != BE_SQLITE_OK) {
             LOG.error("fatal propagation error");
-            break;
+            return rc;
         }
     }
-
-    return HasFatalError() ? BSIERROR : BSISUCCESS;
+    return BE_SQLITE_OK;
 }
 
 #define TABLE_NAME_STARTS_WITH(NAME) (0==strncmp(NAME, tableName, sizeof(NAME)-1))
@@ -842,10 +841,9 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         OnBeginValidate();
         OnValidateChanges(dataChanges);
 
-        BentleyStatus status = PropagateChanges();   // Propagate to generate indirect changes
-        if (SUCCESS != status) {
-            LOG.error("propagate changes failed");
-            return OnCommitStatus::Abort;
+        const auto status = PropagateChanges();   // Propagate to generate indirect changes
+        if (BE_SQLITE_OK != status) {
+            return OnCommitStatus::PropagateChangesFailed;
         }
 
         // This loop is due to the fact that when we propagate changes, we can dirty models.
@@ -3711,7 +3709,7 @@ void TxnManager::PullMergeRebaseUpdateTxn() {
     if (!mergeNeeded) {
         OnBeginValidate();
         OnValidateChanges(rebasedChangeset);
-        if (SUCCESS != PropagateChanges()) {
+        if (BE_SQLITE_OK != PropagateChanges()) {
             PullMergeAbortRebase(txnId, SqlPrintfString("failed to propagate changes (id: %s)", idStr.c_str()).GetUtf8CP(), rc);
         }
 
@@ -3759,7 +3757,6 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeRebaseBegin() {
     auto conf = PullMergeConf::Load(m_dgndb);
     if (!conf.InProgress()) {
         m_dgndb.ThrowException("PullMergeRebaseBegin(): pull merge not in progress.", BE_SQLITE_ERROR);
-        return {};
     }
 
     if (!conf.IsRebasingLocalChanges()) {

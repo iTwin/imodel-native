@@ -154,7 +154,7 @@
     </Part>
 
     <Part Name="IModelNativeConsole" OnlyPlatforms="x64">
-        <SubProduct ProductName="iModelConsole" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
+        <SubNuGetProduct NuGetProductName="iModelConsoleNuGet" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
     </Part>
 
     <Part Name="iModelNativeImport">

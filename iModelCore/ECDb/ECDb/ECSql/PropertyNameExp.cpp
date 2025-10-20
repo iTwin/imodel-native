@@ -97,10 +97,11 @@ ECN::ECPropertyCP PropertyNameExp::GetVirtualProperty() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool PropertyNameExp::IsWildCard() const {
-    if (m_resolvedPropertyPath.Size() == 1)  {
-        return Exp::IsAsteriskToken(m_resolvedPropertyPath[0].GetName());
-    }
-    return false;
+    // checks if the last part of the property path is asterisk or not. If asterisk that means replacement is yet to be done. 
+    
+    // Used only in CommonTableBlockExp while expanding derived properties. if wild card that means replacement is yet to be done, 
+    // and all the links between the derived props of the internal select statement of a CommonTableBlockExp and the derived properties of the CommonTableBlockExp should be done after replacement
+    return Exp::IsAsteriskToken(m_resolvedPropertyPath.Last().GetName());  
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
