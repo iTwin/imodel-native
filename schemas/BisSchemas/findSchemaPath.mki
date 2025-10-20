@@ -32,16 +32,11 @@ BisSchemasDir = $(SrcRoot)BisSchemas/
 
   searchStr = $(BBPYTHONCMD) -c "print ('$(SCHEMA_PATTERN)'.split('.')[0] if '*' in '$(SCHEMA_PATTERN)' else '$(SCHEMA_PATTERN)')"
 
-  data = $(BBPYTHONCMD) -c "import json; inventoryJson = json.load(open(r'$(BisSchemasDir)SchemaInventory.json'));\
-       print([sd for sd in inventoryJson['$(SCHEMA_PATTERN)'.split('.')[0]]]);
-
-  status = $(BBPYTHONCMD) -c "dic=$[@readstdout $(data)]; print('true' if True in [obj['released'] for obj in dic if 'released' in obj and 'path' in obj] else 'false')"
-
-  postfix = $(BBPYTHONCMD) -c "dic=$[@readstdout $(data)];\
-       print ([(obj['path']) for obj in dic if ('path' in obj and '$[@readstdout $(searchStr)]' in obj['path'] and str(obj['released']).lower() == '$[@readstdout $(status)]')])"
-
-  relativePath = $(BBPYTHONCMD) -c "import os;\
-       print ('pathNotFound' if not $[@readstdout $(postfix)] else os.path.join(os.path.dirname($[@readstdout $(postfix)][0]), '$(SCHEMA_PATTERN)'))"
+  relativePath = $(BBPYTHONCMD) -c "import os; import json; inventoryJson = json.load(open(r'$(BisSchemasDir)SchemaInventory.json')); \
+        dic = [sd for sd in inventoryJson['$(SCHEMA_PATTERN)'.split('.')[0]]]; \
+        status = 'true' if True in [obj['released'] for obj in dic if 'released' in obj and 'path' in obj] else 'false'; \
+        postfix = [(obj['path']) for obj in dic if ('path' in obj and '$[@readstdout $(searchStr)]' in obj['path'] and str(obj['released']).lower() == status)]; \
+        print ('pathNotFound' if not postfix else os.path.join(os.path.dirname(postfix[0]), '$(SCHEMA_PATTERN)'))"
 
   normalizedPath = $(BBPYTHONCMD) -c "import os; normalizedPath = r'$(BisSchemasDir)$[@readstdout $(relativePath)]';\
                 normalizedPath = os.path.normpath(normalizedPath);\
