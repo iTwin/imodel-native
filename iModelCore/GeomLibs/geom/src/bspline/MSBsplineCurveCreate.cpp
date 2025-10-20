@@ -566,7 +566,7 @@ MSBsplineSurfacePtr MSBsplineSurface::CreateCapture ()
 MSBsplineCurvePtr MSBsplineCurve::CreateCopy () const
     {
     MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
-    if (SUCCESS == bspcurv_copyCurve(result.get(), const_cast <MSBsplineCurveP>(this)))
+    if (SUCCESS == bspcurv_copyCurve(result.get(), this))
         return result;
     return nullptr;
     }
@@ -574,7 +574,7 @@ MSBsplineCurvePtr MSBsplineCurve::CreateCopy () const
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyOpenAtFraction (double fraction) const
     {
     MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
-    if (SUCCESS == bspcurv_openCurve(result.get(), const_cast <MSBsplineCurveP>(this), fraction))
+    if (SUCCESS == bspcurv_openCurve(result.get(), this, fraction))
         return result;
     return nullptr;
     }
@@ -582,7 +582,7 @@ MSBsplineCurvePtr MSBsplineCurve::CreateCopyOpenAtFraction (double fraction) con
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyOpenAtKnot (double knot) const
     {
     MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
-    if (SUCCESS == bspcurv_openCurve(result.get(), const_cast <MSBsplineCurveP>(this), this->KnotToFraction(knot)))
+    if (SUCCESS == bspcurv_openCurve(result.get(), this, this->KnotToFraction(knot)))
         return result;
     return nullptr;
     }
@@ -590,7 +590,7 @@ MSBsplineCurvePtr MSBsplineCurve::CreateCopyOpenAtKnot (double knot) const
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyClosed () const
     {
     MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
-    if (SUCCESS == bspcurv_closeCurve(result.get(), const_cast <MSBsplineCurveP>(this)))
+    if (SUCCESS == bspcurv_closeCurve(result.get(), this))
         return result;
     return nullptr;
     }
@@ -606,7 +606,7 @@ MSBsplineCurvePtr MSBsplineCurve::CreateCopyBetweenFractions (double fraction0, 
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyBetweenKnots (double knot0, double knot1) const
     {
     MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
-    if (SUCCESS == bspcurv_segmentCurve(result.get(), const_cast <MSBsplineCurveP>(this), this->KnotToFraction(knot0), this->KnotToFraction(knot1)))
+    if (SUCCESS == bspcurv_segmentCurve(result.get(), this, this->KnotToFraction(knot0), this->KnotToFraction(knot1)))
         return result;
     return nullptr;
     }
@@ -614,7 +614,7 @@ MSBsplineCurvePtr MSBsplineCurve::CreateCopyBetweenKnots (double knot0, double k
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyReversed () const
     {
     MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr();
-    if (SUCCESS == bspcurv_reverseCurve(const_cast <MSBsplineCurveP>(this), result.get()))
+    if (SUCCESS == bspcurv_reverseCurve(this, result.get()))
         return result;
     return nullptr;
     }
