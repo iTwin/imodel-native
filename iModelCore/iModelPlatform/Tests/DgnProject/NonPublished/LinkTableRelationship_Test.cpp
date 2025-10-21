@@ -126,3 +126,69 @@ TEST_F(LinkTableRelationshipTests, TestBisCore17WithUpdatedSystemIndex)
         }
     EXPECT_EQ(rowCount, expectedMemberPriorityValues.size());
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(LinkTableRelationshipTests, DeleteLinkTableRelationships)
+    {
+    SetupSeedProject();
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_db->Schemas().CreateClassViewsInDb());
+
+    const auto relationshipClass = m_db->Schemas().GetClass(BIS_ECSCHEMA_NAME, "CategorySelectorRefersToCategories")->GetRelationshipClassCP();
+    ASSERT_NE(relationshipClass, nullptr);
+
+    CategorySelectorPtr categorySelector = new CategorySelector(m_db->GetDictionaryModel(), "TestCategorySelector");
+    ASSERT_TRUE(categorySelector.IsValid());
+    ASSERT_TRUE(categorySelector->Insert().IsValid());
+
+    // Create multiple categories and relationships
+    const auto numRelationships = 8;
+    DgnCategoryId categoryIds[numRelationships];
+    ECInstanceKey instanceKeys[numRelationships];
+
+    for (int i = 0; i < numRelationships; i++)
+        {
+        Utf8PrintfString categoryName("TestCategory%d", i);
+        categoryIds[i] = DgnDbTestUtils::InsertSpatialCategory(*m_db, categoryName.c_str());
+        ASSERT_TRUE(categoryIds[i].IsValid());
+        
+        ASSERT_EQ(BE_SQLITE_OK, m_db->InsertLinkTableRelationship(instanceKeys[i], *relationshipClass, categorySelector->GetElementId(), categoryIds[i]));
+        ASSERT_TRUE(instanceKeys[i].IsValid());
+        }
+
+    // Verify all relationships were inserted
+    ASSERT_EQ(numRelationships, DgnDbTestUtils::SelectCountFromECClass(*m_db, BIS_SCHEMA("CategorySelectorRefersToCategories")));
+
+    // Delete the odd indexed relationships
+    DgnElementIdSet relationshipIdsToDelete;
+    relationshipIdsToDelete.insert(DgnElementId(instanceKeys[1].GetInstanceId().GetValue()));
+    relationshipIdsToDelete.insert(DgnElementId(instanceKeys[3].GetInstanceId().GetValue())); 
+    relationshipIdsToDelete.insert(DgnElementId(instanceKeys[5].GetInstanceId().GetValue()));
+    relationshipIdsToDelete.insert(DgnElementId(instanceKeys[7].GetInstanceId().GetValue()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->DeleteLinkTableRelationships(BIS_SCHEMA("CategorySelectorRefersToCategories"), relationshipIdsToDelete));
+
+    // Verify that correct relationships remain
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT ECInstanceId FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " ORDER BY ECInstanceId"));
+    
+    bvector<ECInstanceId> remainingIds;
+    while (BE_SQLITE_ROW == statement.Step())
+        remainingIds.push_back(statement.GetValueId<ECInstanceId>(0));
+    
+    ASSERT_EQ(4, remainingIds.size());
+    EXPECT_EQ(instanceKeys[0].GetInstanceId(), remainingIds[0]);
+    EXPECT_EQ(instanceKeys[2].GetInstanceId(), remainingIds[1]);
+    EXPECT_EQ(instanceKeys[4].GetInstanceId(), remainingIds[2]);
+    EXPECT_EQ(instanceKeys[6].GetInstanceId(), remainingIds[3]);
+
+    DgnElementIdSet remainingRelationshipIds;
+    for (const auto& id : remainingIds)
+        remainingRelationshipIds.insert(DgnElementId(id.GetValue()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->DeleteLinkTableRelationships(BIS_SCHEMA("CategorySelectorRefersToCategories"), remainingRelationshipIds));
+
+    // Verify all relationships are deleted
+    ASSERT_EQ(0, DgnDbTestUtils::SelectCountFromECClass(*m_db, BIS_SCHEMA("CategorySelectorRefersToCategories")));
+    }
