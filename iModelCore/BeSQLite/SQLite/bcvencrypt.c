@@ -29,6 +29,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <openssl/evp.h>
 
 typedef struct BcvEncryptionKey BcvEncryptionKey;
 typedef unsigned char u8;
@@ -542,20 +543,21 @@ static void bcvXorBuffers(u8 *out, u8 *a, u8 *b, int nByte){
 
 
 
-#define BCV_KEY_SCHED_SZ 44
+#define BCV_KEY_SCHED_SZ 44 // 44 because rijndael128 has 11 round keys each of which are 4 32 bit ints in size. 
 
 struct BcvEncryptionKey {
-  u32 aKeySchedule[BCV_KEY_SCHED_SZ];
+  u8 aKey[BCV_KEY_SIZE]; // u8 aKey[BCV_LOCAL_KEYSIZE];     /* Encryption key to use */
   u8 *aMask;                      /* Buffer to assemble mask in */
   int nMask;                      /* Size of buffer nMask in bytes */
 };
 
 BcvEncryptionKey *bcvEncryptionKeyNew(const unsigned char *aKey){
+  /* Now we can set key and IV */
   BcvEncryptionKey *pNew;
   pNew = (BcvEncryptionKey*)sqlite3_malloc(sizeof(BcvEncryptionKey));
-  if( pNew ){
+  if( pNew ) {
     memset(pNew, 0, sizeof(BcvEncryptionKey));
-    bcvRijndaelKeySetupEnc128(pNew->aKeySchedule, aKey);
+    memcpy(pNew->aKey, aKey, BCV_KEY_SIZE);
   }
   return pNew;
 }
@@ -575,27 +577,32 @@ int bcvEncrypt(
   const u8 *aNonce,               /* 16 byte nonce value */
   unsigned char *aData, int nData /* Buffer to encrypt */
 ){
-  int ii;
-  u8 *aMask;
-
   assert( (nData % 16)==0 );
   assert( ((aNonce - (u8*)0) % 4)==0 );
 
-  if( nData>pKey->nMask ){
-    sqlite3_free(pKey->aMask);
-    pKey->nMask = 0;
-    pKey->aMask = sqlite3_malloc(nData);
-    if( pKey->aMask==0 ) return SQLITE_NOMEM;
-    pKey->nMask = nData;
-  }
-  aMask = pKey->aMask;
+  int outlen = 0;
 
-  bcvRijndaelEncrypt128(pKey->aKeySchedule, aNonce, aMask);
-  for(ii=16; ii<nData; ii+=16){
-    bcvRijndaelEncrypt128(pKey->aKeySchedule, &aMask[ii-16], &aMask[ii]);
+  static EVP_CIPHER_CTX *ctx = NULL;
+  if (ctx == NULL) {
+    ctx = EVP_CIPHER_CTX_new();
+    EVP_CipherInit_ex(ctx, EVP_aes_128_ctr(), NULL, NULL, NULL, 1); // pass 1 to say we are encrypting (not decrypting)
+    OPENSSL_assert(EVP_CIPHER_CTX_key_length(ctx) == 16);
+    OPENSSL_assert(EVP_CIPHER_CTX_iv_length(ctx) == 16);
   }
-
-  bcvXorBuffers(aData, aData, aMask, nData);
+  /* Now we can set key and IV */
+  EVP_CipherInit_ex(ctx, NULL, NULL, pKey->aKey, aNonce, 1); // pass 1 to say we are encrypting (not decrypting)
+  if (!EVP_CipherUpdate(ctx, aData, &outlen, aData, nData))
+  {
+      /* Error */
+      EVP_CIPHER_CTX_free(ctx);
+      return SQLITE_ERROR;
+  } 
+  if (!EVP_CipherFinal_ex(ctx, aData, &outlen))
+  {
+      /* Error */
+      EVP_CIPHER_CTX_free(ctx);
+      return SQLITE_ERROR;
+  }
   return SQLITE_OK;
 }
 
@@ -609,7 +616,31 @@ int bcvDecrypt(
   const u8 *aNonce,               /* 16 byte nonce value */
   unsigned char *aData, int nData /* Buffer to decrypt */
 ){
-  return bcvEncrypt(pKey, aNonce, aData, nData);
+  static EVP_CIPHER_CTX *ctx = NULL;
+  if (ctx == NULL) {
+    ctx = EVP_CIPHER_CTX_new();
+    EVP_CipherInit_ex(ctx, EVP_aes_128_ctr(), NULL, NULL, NULL, 0); // pass 0 to say we are decrypting (not encrypting)
+    OPENSSL_assert(EVP_CIPHER_CTX_key_length(ctx) == 16);
+    OPENSSL_assert(EVP_CIPHER_CTX_iv_length(ctx) == 16);
+  }
+
+  int outlen = 0;
+  /* Now we can set key and IV */
+  EVP_CipherInit_ex(ctx, NULL, NULL, pKey->aKey, aNonce, 0); // pass 0 to say we are decrypting (not encrypting)
+  if (!EVP_CipherUpdate(ctx, aData, &outlen, aData, nData))
+  {
+      /* Error */
+      EVP_CIPHER_CTX_free(ctx);
+      return SQLITE_ERROR;
+  }
+  if (!EVP_CipherFinal_ex(ctx, aData, &outlen))
+  {
+      /* Error */
+      EVP_CIPHER_CTX_free(ctx);
+      return SQLITE_ERROR;
+  }
+  // memcpy(aData, pKey->aMask, outlen); // Alternatively I can also potentially just skip aMask altogether and use aData as the outbbuffer in 620 and 614.
+  return SQLITE_OK;
 }
 
 
