@@ -34,6 +34,18 @@ ECSchemaReadContextPtr InitializeReadContextWithAllSchemas(bvector<Utf8CP> const
     return readContext;
     }
 
+void LogDiffs(ECChangeArray<SchemaChange> const& changes)
+    {
+    printf("================================================================================\n");
+    printf("=Merged schema did not match expected result. Differences will be listed below.=\n");
+    printf("================================================================================\n");
+    for(auto change : changes)
+        {
+        auto changeStr = change->ToString();
+        printf("%s\n", changeStr.c_str());
+        }
+    }
+
 void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult& actualResult, bool dumpFullSchemaOnError = false, ECVersion ecXmlVersion = ECVersion::Latest, bool skipValidation = false)
     {
     bvector<ECSchemaCP> expectedSchemas;
@@ -46,32 +58,24 @@ void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult
     auto changes = diff.Changes();
     if(changes.IsChanged())
         {
-        LOG.error("================================================================================");
-        LOG.error("=Merged schema did not match expected result. Differences will be listed below.=");
-        LOG.error("================================================================================");
-        for(auto change : changes)
-            {
-            auto changeStr = change->ToString();
-            LOG.error(changeStr.c_str());
-            }
+        LogDiffs(changes);
 
         if (dumpFullSchemaOnError)
             {
-            LOG.error("================================================================================");
-            LOG.error("=Actual Schemas as XML:                                                        =");
-            LOG.error("================================================================================");
+            printf("================================================================================\n");
+            printf("=Actual Schemas as XML:                                                        =\n");
+            printf("================================================================================\n");
             for(auto result : actualResult.GetResults())
               {
               Utf8String schemaXml;
               result->WriteToXmlString(schemaXml, ecXmlVersion);
-              LOG.error(schemaXml.c_str());
+              printf("%s\n", schemaXml.c_str());
               }
             }
         }
 
     ASSERT_EQ(false, changes.IsChanged()) << "Actual schemas did not match expected result";
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
@@ -6719,6 +6723,112 @@ TEST_F(SchemaMergerTests, SchemaAlphabeticalSortIssue)
     auto mergeStatus = SchemaMerger::MergeSchemas(result, existingSchemas, incomingSchemas, options);
     EXPECT_EQ(ECObjectsStatus::Success, mergeStatus);
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, AddReferenceDoNotMergeReferences)
+    {
+    /*
+    There was a bug with the DoNotMergeReferences option when adding a schema reference. The code would only try
+    To find that reference in the result schemas and not add it if not found. It was no error, but the reference was
+    not added to the result schema.
+    */
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Foo">
+            <ECProperty propertyName="Bar" typeName="string"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MyBaseSchema" alias="mybs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="BaseEntity">
+            <ECProperty propertyName="A" typeName="string"/>
+            <ECProperty propertyName="B" typeName="int"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="MyBaseSchema" version="01.00.00" alias="mybs"/>
+          <ECEntityClass typeName="DerivedEntity">
+            <BaseClass>mybs:BaseEntity</BaseClass>
+            <ECProperty propertyName="C" typeName="string"/>
+            <ECProperty propertyName="D" typeName="int"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    SchemaKey mySchemaKey("MySchema", 1, 0, 0);
+    ECSchemaPtr newRightSchema = rightContext->LocateSchema(mySchemaKey, SchemaMatchType::LatestReadCompatible);
+    EXPECT_TRUE(newRightSchema.IsValid());
+    bvector<ECN::ECSchemaCP> rightSchemas{newRightSchema.get()};
+    
+    //merge the schemas
+    SchemaMergeResult result;
+    SchemaMergeOptions options;
+    options.SetKeepVersion(true);
+    options.SetRenamePropertyOnConflict(true);
+    options.SetRenameSchemaItemOnConflict(true);
+    options.SetMergeOnlyDynamicSchemas(false);
+    options.SetIgnoreIncompatiblePropertyTypeChanges(true);
+    options.SetDoNotMergeReferences(true);
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+
+    Utf8CP referencedSchemaXml = R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MyBaseSchema" alias="mybs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="BaseEntity">
+            <ECProperty propertyName="A" typeName="string"/>
+            <ECProperty propertyName="B" typeName="int"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema";
+
+    // Compare result
+    bvector<Utf8CP> expectedSchemasXml {
+      referencedSchemaXml,
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="MyBaseSchema" version="01.00.00" alias="mybs"/>
+          <ECEntityClass typeName="Foo">
+            <ECProperty propertyName="Bar" typeName="string"/>
+          </ECEntityClass>
+          <ECEntityClass typeName="DerivedEntity">
+            <BaseClass>mybs:BaseEntity</BaseClass>
+            <ECProperty propertyName="C" typeName="string"/>
+            <ECProperty propertyName="D" typeName="int"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    ECSchemaReadContextPtr expectedResultsContext = InitializeReadContextWithAllSchemas(expectedSchemasXml);
+    ECSchemaPtr expectedSchema = expectedResultsContext->LocateSchema(mySchemaKey, SchemaMatchType::LatestReadCompatible);
+    EXPECT_TRUE(expectedSchema.IsValid());
+    bvector<ECSchemaCP> expectedSchemas { expectedSchema.get() };
+    bvector<ECSchemaCP> actualSchemas = { result.GetSchema("MySchema") };
+
+    SchemaComparer comparer;
+    SchemaComparer::Options cOptions = SchemaComparer::Options(SchemaComparer::DetailLevel::NoSchemaElements, SchemaComparer::DetailLevel::NoSchemaElements);
+    SchemaDiff diff;
+    ASSERT_EQ(BentleyStatus::SUCCESS, comparer.Compare(diff, expectedSchemas, actualSchemas, cOptions)) << "Failed to compare expected schemas to actual schemas";
+    auto changes = diff.Changes();
+    if(changes.IsChanged())
+        {
+        LogDiffs(changes);
+        ADD_FAILURE() << "Schemas do not match expected schemas. Differences will be listed above.";
+        }
+  }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
 
