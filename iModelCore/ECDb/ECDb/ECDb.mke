@@ -33,7 +33,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ConcurrentQueryManager.h \
                 $(publicApiDir)InstanceReader.h \
                 $(publicApiDir)ECDbVirtualTab.h \
-                $(publicApiDir)ECDbExpressionSymbolContext.h
+                $(publicApiDir)ECDbExpressionSymbolContext.h \
                 $(publicApiDir)RelatedInstanceFinder.h \
                 $(publicApiDir)InstanceWriter.h \
                 $(publicApiDir)InstanceRepository.h
@@ -404,11 +404,11 @@ $(o)BuiltInVTabs$(oext):                   $(baseDir)BuiltInVTabs.cpp $(ECDbAllH
 
 $(o)RelatedInstanceFinder$(oext):          $(baseDir)RelatedInstanceFinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ClassViews$(oext):                                        $(baseDir)ClassViews.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ClassViews$(oext):                     $(baseDir)ClassViews.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)InstanceWriterImpl$(oext):                                $(baseDir)InstanceWriterImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)InstanceWriterImpl$(oext):             $(baseDir)InstanceWriterImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)InstanceRepository$(oext):                                $(baseDir)InstanceRepository.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)InstanceRepository$(oext):             $(baseDir)InstanceRepository.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

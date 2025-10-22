@@ -16,6 +16,8 @@ struct InstanceReader;
 struct InstanceWriter;
 struct ECCrudWriteToken;
 struct SchemaImportToken;
+struct InstanceRepository;
+struct RelatedInstanceFinder;
 
 enum class PropertyHandlerResult {
     Continue,
@@ -138,8 +140,20 @@ struct ECSqlConfig {
         void SetOptimizationOption(OptimizationOptions option, bool flag) {m_optimisationOptionsMap[option] = flag;}
         bool GetExperimentalFeaturesEnabled() const { return m_experimentalFeaturesEnabled; }
         void SetExperimentalFeaturesEnabled(bool v)  { m_experimentalFeaturesEnabled = v; }
+        bool GetIgnorePolymorphicFlagOnRelationshipConstraint() const { return m_ignorePolymorphicFlagOnRelationshipConstraint; }
+        void SetIgnorePolymorphicFlagOnRelationshipConstraint(bool v) { m_ignorePolymorphicFlagOnRelationshipConstraint = v; }
+
+        bool IsWriteValueValidationEnabled() const { return m_validateWriteValues; }
+        void SetWriteValueValidation(const bool v) { m_validateWriteValues = v; }
 };
 
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct AsciiCaseInsensitiveCompare {
+    ECDB_EXPORT bool operator()(Utf8StringCR lhs, Utf8StringCR rhs) const;
+    ECDB_EXPORT bool operator()(Utf8CP lhs, Utf8CP rhs) const;
+};
 
 //=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".
@@ -518,6 +532,12 @@ public:
     //! Instance reader is bare metal to access full instance without requiring to prepare ECSqlStatement
     ECDB_EXPORT InstanceReader& GetInstanceReader() const;
 
+    //! Allow insert, update & delete a instance in ECDb
+    ECDB_EXPORT InstanceWriter& GetInstanceWriter() const;
+
+    ECDB_EXPORT InstanceRepository& GetInstanceRepository() const;
+
+    ECDB_EXPORT RelatedInstanceFinder const& GetRelatedInstanceFinder() const;
     //! When ECDb::ClearECDbCache is called, these listeners get notified before the actual caches are cleared.
     //! This gives users of ECDb the opportunity to free anything that relies on its caches, e.g.
     //! ECSqlStatements or ECObjects entities.

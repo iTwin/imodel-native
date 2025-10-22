@@ -182,7 +182,6 @@ ECSqlStatus ECSqlExpPreparer::InsertSubquery(ECSqlPrepareContext& ctx, AllOrAnyE
         {
         case SqlCompareListType::All:
             {
-
             for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
                 {
                 if (!isFirstItem)

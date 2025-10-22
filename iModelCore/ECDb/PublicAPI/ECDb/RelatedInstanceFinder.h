@@ -12,8 +12,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct RelatedInstanceFinder final {
     friend struct StandaloneIterator;
     enum class DirectionFilter {
-        Forward = ECN::ECRelatedInstanceDirection::Forward,
-        Backward = ECN::ECRelatedInstanceDirection::Backward,
+        Forward = (int)ECN::ECRelatedInstanceDirection::Forward,
+        Backward = (int)ECN::ECRelatedInstanceDirection::Backward,
         Both = (int)Forward | (int)Backward,
     };
 

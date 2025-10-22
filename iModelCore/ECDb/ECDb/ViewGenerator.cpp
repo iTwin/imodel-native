@@ -932,7 +932,6 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         {
         const bool isSelf = partition->GetSourceECClassIdColumn()->GetId() == partition->GetTargetECClassIdColumn()->GetId();
         const bool appendAlias = unionList.empty();
-
         NativeSqlBuilder unionQuerySql("SELECT ");
         //ECInstanceId
         toSql(unionQuerySql, partition->GetECInstanceIdColumn());
