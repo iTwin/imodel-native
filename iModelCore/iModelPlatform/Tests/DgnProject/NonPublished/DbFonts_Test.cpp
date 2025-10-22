@@ -135,6 +135,31 @@ TEST_F(FontTests, EmbedTTFont) {
     ASSERT_TRUE(dneId == dneId2);
 }
 
+TEST_F(FontTests, LazyCache) {
+  SetupSeedProject();
+
+  auto& dbFonts = m_db->Fonts();
+  auto& fbFont = FontManager::GetFallbackFont(FontType::TrueType);
+  auto invalidId = dbFonts.FindId(FontType::TrueType, "Karla");
+  EXPECT_FALSE(invalidId.IsValid());
+  EXPECT_EQ(&dbFonts.FindFont(invalidId), &fbFont);
+
+  BeFileName ttfFontPath;
+  ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::FindTestData(ttfFontPath, L"Fonts\\Karla-Regular.ttf", __FILE__));
+  TrueTypeFile ttFile(ttfFontPath.GetNameUtf8().c_str(), true);
+  ASSERT_TRUE(ttFile.Embed(dbFonts.m_fontDb));
+
+  EXPECT_FALSE(dbFonts.FindId(FontType::TrueType, "Karla").IsValid());
+  EXPECT_EQ(&dbFonts.FindFont(invalidId), &fbFont);
+
+  dbFonts.Invalidate();
+
+  auto fontId = dbFonts.FindId(FontType::TrueType, "Karla");
+  EXPECT_TRUE(fontId.IsValid());
+  EXPECT_EQ(&fbFont, &FontManager::GetFallbackFont(FontType::TrueType));
+  EXPECT_NE(&fbFont, &dbFonts.FindFont(fontId));
+}
+
 /**
  * test embedding SHX fonts
  */
