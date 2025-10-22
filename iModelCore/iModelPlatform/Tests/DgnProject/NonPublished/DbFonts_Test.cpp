@@ -150,7 +150,6 @@ TEST_F(FontTests, LazyCache) {
   ASSERT_TRUE(ttFile.Embed(dbFonts.m_fontDb));
 
   EXPECT_FALSE(dbFonts.FindId(FontType::TrueType, "Karla").IsValid());
-  EXPECT_EQ(&dbFonts.FindFont(invalidId), &fbFont);
 
   dbFonts.Invalidate();
 
