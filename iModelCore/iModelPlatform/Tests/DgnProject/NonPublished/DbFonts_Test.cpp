@@ -156,22 +156,17 @@ TEST_F(FontTests, LazyCache) {
   // The core-backend API does both by default.
   EXPECT_FALSE(dbFonts.FindId(FontType::TrueType, "Karla").IsValid());
   // GetId (unlike FindId) will allocate a new FontId in the dgn_Font table if one doesn't already exist.
+  // If it allocates a FontId, it also invalidates the font cache.
   auto fontId = dbFonts.GetId(FontType::TrueType, "Karla");
   EXPECT_TRUE(fontId.IsValid());
   EXPECT_EQ(fontId.GetValue(), dbFonts.FindId(FontType::TrueType, "Karla").GetValue());
-  // The font cache was populated before we embedded this font, so an attempt to look it up will return the fallback font.
-  EXPECT_EQ(&fbFont, &dbFonts.FindFont(fontId));
 
-  // Invalidate the cache - now we should find our newly-embedded font.
-  EXPECT_TRUE(false);
-  BeMutexHolder lock(FontManager::GetMutex());
-  EXPECT_TRUE(false);
-  dbFonts.Invalidate();
-  EXPECT_TRUE(false);
-
+  // The font cache was invalidated when we allocated a Font Id. It should now find our newly-embedded font.
   EXPECT_NE(&fbFont, &dbFonts.FindFont(fontId));
-  EXPECT_TRUE(false);
+
+  // The fallback font should remain the same after invalidating the cache.
   EXPECT_EQ(&fbFont, &FontManager::GetFallbackFont(FontType::TrueType));
+
   EXPECT_TRUE(false);
 }
 
