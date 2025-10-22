@@ -139,6 +139,8 @@ TEST_F(FontTests, LazyCache) {
   SetupSeedProject();
 
   auto& dbFonts = m_db->Fonts();
+  EXPECT_EQ(&dbFonts.m_fontDb.m_db, m_db.get());
+
   auto& fbFont = FontManager::GetFallbackFont(FontType::TrueType);
   auto invalidId = dbFonts.FindId(FontType::TrueType, "Karla");
   EXPECT_FALSE(invalidId.IsValid());
@@ -148,8 +150,16 @@ TEST_F(FontTests, LazyCache) {
   ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::FindTestData(ttfFontPath, L"Fonts\\Karla-Regular.ttf", __FILE__));
   TrueTypeFile ttFile(ttfFontPath.GetNameUtf8().c_str(), true);
   ASSERT_TRUE(ttFile.Embed(dbFonts.m_fontDb));
+  EXPECT_TRUE(DbResult::BE_SQLITE_OK == m_db->SaveChanges("Font embedded"));
 
   EXPECT_FALSE(dbFonts.FindId(FontType::TrueType, "Karla").IsValid());
+
+  BeSQLite::Statement stmt;
+  stmt.Prepare(*m_db, "SELECT Id,Name FROM dgn_Font");
+  EXPECT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());
+  auto fontIdInt = stmt.GetValueUInt64(0);
+  EXPECT_NE(fontIdInt, 0);
+  EXPECT_EQ(stmt.GetValueText(1), "Karla");
 
   dbFonts.Invalidate();
 
