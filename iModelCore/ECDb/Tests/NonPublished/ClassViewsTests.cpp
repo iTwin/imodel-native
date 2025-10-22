@@ -482,6 +482,198 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassViewsFixture, cte_in_query_view) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("test.ecdb"));
+    TestIssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+
+    if ("view and query prop matches with cte") {
+        auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema
+                schemaName="test_schema"
+                alias="ts"
+                version="1.0.0"
+                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name='ECDbMap' version='02.00.04' alias='ecdbmap' />
+            <ECEntityClass typeName="P" modifier="Sealed">
+                <ECProperty propertyName="intProp" typeName="int"/>
+                <ECProperty propertyName="longProp" typeName="long"/>
+                <ECProperty propertyName="doubleProp" typeName="double"/>
+                <ECProperty propertyName="stringProp" typeName="string"/>
+                <ECProperty propertyName="dateTimeProp" typeName="dateTime"/>
+                <ECProperty propertyName="binaryProp" typeName="binary"/>
+                <ECProperty propertyName="booleanProp" typeName="boolean"/>
+                <ECProperty propertyName="point2dProp" typeName="point2d"/>
+                <ECProperty propertyName="point3dProp" typeName="point3d"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
+                <ECCustomAttributes>
+                    <QueryView>xmlns="ECDbMap.02.00.04">
+                        <Query>WITH cte AS (SELECT * FROM ts.P) SELECT * FROM cte</Query>
+                    </QueryView>
+                </ECCustomAttributes>
+                <ECProperty propertyName="intProp" typeName="int"/>
+                <ECProperty propertyName="longProp" typeName="long"/>
+                <ECProperty propertyName="doubleProp" typeName="double"/>
+                <ECProperty propertyName="stringProp" typeName="string"/>
+                <ECProperty propertyName="dateTimeProp" typeName="dateTime"/>
+                <ECProperty propertyName="binaryProp" typeName="binary"/>
+                <ECProperty propertyName="booleanProp" typeName="boolean"/>
+                <ECProperty propertyName="point2dProp" typeName="point2d"/>
+                <ECProperty propertyName="point3dProp" typeName="point3d"/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+        listener.ClearIssues();
+        ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.P_View"));
+        ASSERT_EQ(stmt.GetColumnCount(), 11);
+        ASSERT_TRUE(listener.IsEmpty());
+        m_ecdb.AbandonChanges();
+    }
+    if ("view class has property missing in view query in cte") {
+        auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema
+                schemaName="test_schema"
+                alias="ts"
+                version="1.0.0"
+                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name='ECDbMap' version='02.00.04' alias='ecdbmap' />
+            <ECEntityClass typeName="P" modifier="Sealed">
+                <ECProperty propertyName="intProp" typeName="int"/>
+                <ECProperty propertyName="longProp" typeName="long"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
+                <ECCustomAttributes>
+                    <QueryView>xmlns="ECDbMap.02.00.04">
+                        <Query>WITH cte(intProp, longProp, ECInstanceId, ECClassId) AS (SELECT intProp, longProp, ECInstanceId, ECClassId FROM ts.P) SELECT * from cte</Query>
+                    </QueryView>
+                </ECCustomAttributes>
+                <ECProperty propertyName="intProp" typeName="int"/>
+                <ECProperty propertyName="longProp" typeName="long"/>
+                <ECProperty propertyName="doubleProp" typeName="double"/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+        listener.ClearIssues();
+        ASSERT_EQ(ERROR, ImportSchema(testSchema));
+
+        bvector<Utf8String> expectedIssues {
+          "Invalid view class 'test_schema:P_View'. View class has property 'doubleProp' which is not returned by view query.",
+          "Total of 4 view classes were checked and 1 were found to be invalid.",
+        };
+        listener.CompareIssues(expectedIssues);
+        m_ecdb.AbandonChanges();
+    }
+    if ("view class has property that has different type then returned by query in cte") {
+        auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema
+                schemaName="test_schema"
+                alias="ts"
+                version="1.0.0"
+                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name='ECDbMap' version='02.00.04' alias='ecdbmap' />
+            <ECEntityClass typeName="P" modifier="Sealed">
+                <ECProperty propertyName="intProp" typeName="int"/>
+                <ECProperty propertyName="longProp" typeName="long"/>
+                <ECProperty propertyName="doubleProp" typeName="double"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
+                <ECCustomAttributes>
+                    <QueryView>xmlns="ECDbMap.02.00.04">
+                        <Query>WITH cte(intProp, longProp, doubleProp, ECInstanceId, ECClassId) AS (SELECT intProp, longProp, doubleProp, ECInstanceId, ECClassId FROM ts.P) SELECT * FROM cte</Query>
+                    </QueryView>
+                </ECCustomAttributes>
+                <ECProperty propertyName="intProp" typeName="int"/>
+                <ECProperty propertyName="longProp" typeName="long"/>
+                <ECProperty propertyName="doubleProp" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+        listener.ClearIssues();
+        ASSERT_EQ(ERROR, ImportSchema(testSchema));
+
+        bvector<Utf8String> expectedIssues {
+          "Invalid view class 'test_schema:P_View'. View class property 'doubleProp' type does not match the type returned by view query ('string' <> 'double').",
+          "Total of 4 view classes were checked and 1 were found to be invalid.",
+        };
+        listener.CompareIssues(expectedIssues);
+        m_ecdb.AbandonChanges();
+    }
+    if ("query return data property that is not present in view class") {
+        auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema
+                schemaName="test_schema"
+                alias="ts"
+                version="1.0.0"
+                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name='ECDbMap' version='02.00.04' alias='ecdbmap' />
+            <ECEntityClass typeName="P" modifier="Sealed">
+                <ECProperty propertyName="intProp" typeName="int"/>
+                <ECProperty propertyName="longProp" typeName="long"/>
+                <ECProperty propertyName="doubleProp" typeName="double"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
+                <ECCustomAttributes>
+                    <QueryView>xmlns="ECDbMap.02.00.04">
+                        <Query>WITH cte(intProp, longProp, doubleProp, ECInstanceId, ECClassId) AS (SELECT intProp, longProp, doubleProp, ECInstanceId, ECClassId FROM ts.P) SELECT * FROM cte</Query>
+                    </QueryView>
+                </ECCustomAttributes>
+                <ECProperty propertyName="intProp" typeName="int"/>
+                <ECProperty propertyName="longProp" typeName="long"/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+        listener.ClearIssues();
+        ASSERT_EQ(ERROR, ImportSchema(testSchema));
+
+        bvector<Utf8String> expectedIssues {
+          "Invalid view class 'test_schema:P_View'. View query returns property 'doubleProp' which not defined in view class or is a invalid system property.",
+          "Total of 4 view classes were checked and 1 were found to be invalid.",
+        };
+        listener.CompareIssues(expectedIssues);
+        m_ecdb.AbandonChanges();
+    }
+    if ("system properties must be returned by view query for entity class") {
+        auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema
+                schemaName="test_schema"
+                alias="ts"
+                version="1.0.0"
+                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name='ECDbMap' version='02.00.04' alias='ecdbmap' />
+            <ECEntityClass typeName="P" modifier="Sealed">
+                <ECProperty propertyName="intProp" typeName="int"/>
+                <ECProperty propertyName="longProp" typeName="long"/>
+                <ECProperty propertyName="doubleProp" typeName="double"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
+                <ECCustomAttributes>
+                    <QueryView>xmlns="ECDbMap.02.00.04">
+                        <Query>WITH cte(ECInstanceId, ECClassId, intProp, longProp, doubleProp) AS (SELECT ECInstanceId, ECClassId, intProp, longProp, doubleProp FROM ts.P) SELECT * FROM cte</Query>
+                    </QueryView>
+                </ECCustomAttributes>
+                <ECProperty propertyName="intProp" typeName="int"/>
+                <ECProperty propertyName="longProp" typeName="long"/>
+                <ECProperty propertyName="doubleProp" typeName="double"/>
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+        listener.ClearIssues();
+        ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM ts.P_View"));
+        ASSERT_EQ(stmt.GetColumnCount(), 2);
+        m_ecdb.AbandonChanges();
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassViewsFixture, complex_data) {
     ASSERT_EQ(SUCCESS, SetupECDb("complex_data.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
