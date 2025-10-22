@@ -152,21 +152,27 @@ TEST_F(FontTests, LazyCache) {
   ASSERT_TRUE(ttFile.Embed(dbFonts.m_fontDb));
   EXPECT_TRUE(DbResult::BE_SQLITE_OK == m_db->SaveChanges("Font embedded"));
 
+  // Embedding a font only writes to the be_Props table - it doesn't allocate a FontId in the dgn_Font table.
+  // The core-backend API does both by default.
   EXPECT_FALSE(dbFonts.FindId(FontType::TrueType, "Karla").IsValid());
-
-  BeSQLite::Statement stmt;
-  stmt.Prepare(*m_db, "SELECT Id,Name FROM dgn_Font");
-  EXPECT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());
-  auto fontIdInt = stmt.GetValueUInt64(0);
-  EXPECT_NE(fontIdInt, 0);
-  EXPECT_EQ(stmt.GetValueText(1), "Karla");
-
-  dbFonts.Invalidate();
-
-  auto fontId = dbFonts.FindId(FontType::TrueType, "Karla");
+  // GetId (unlike FindId) will allocate a new FontId in the dgn_Font table if one doesn't already exist.
+  auto fontId = dbFonts.GetId(FontType::TrueType, "Karla");
   EXPECT_TRUE(fontId.IsValid());
-  EXPECT_EQ(&fbFont, &FontManager::GetFallbackFont(FontType::TrueType));
+  EXPECT_EQ(fontId.GetValue(), dbFonts.FindId(FontType::TrueType, "Karla").GetValue());
+  // The font cache was populated before we embedded this font, so an attempt to look it up will return the fallback font.
+  EXPECT_EQ(&fbFont, &dbFonts.FindFont(fontId));
+
+  // Invalidate the cache - now we should find our newly-embedded font.
+  EXPECT_TRUE(false);
+  BeMutexHolder lock(FontManager::GetMutex());
+  EXPECT_TRUE(false);
+  dbFonts.Invalidate();
+  EXPECT_TRUE(false);
+
   EXPECT_NE(&fbFont, &dbFonts.FindFont(fontId));
+  EXPECT_TRUE(false);
+  EXPECT_EQ(&fbFont, &FontManager::GetFallbackFont(FontType::TrueType));
+  EXPECT_TRUE(false);
 }
 
 /**
