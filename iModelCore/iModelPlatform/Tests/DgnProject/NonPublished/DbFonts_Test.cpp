@@ -166,8 +166,6 @@ TEST_F(FontTests, LazyCache) {
 
   // The fallback font should remain the same after invalidating the cache.
   EXPECT_EQ(&fbFont, &FontManager::GetFallbackFont(FontType::TrueType));
-
-  EXPECT_TRUE(false);
 }
 
 /**
