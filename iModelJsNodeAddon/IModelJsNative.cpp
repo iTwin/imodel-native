@@ -2025,6 +2025,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         JsInterop::DeleteLinkTableRelationship(GetOpenedDb(info), props);
     }
 
+    void DeleteLinkTableRelationships(NapiInfoCR info) {
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray()) {
+            THROW_JS_TYPE_EXCEPTION("Argument must be an array of relationship instance objects.");
+        }
+        JsInterop::DeleteLinkTableRelationships(GetOpenedDb(info), info[0].As<Napi::Array>());
+    }
+
     Napi::Value InsertCodeSpec(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, name);
         REQUIRE_ARGUMENT_ANY_OBJ(1, jsonProperties);
@@ -3017,6 +3024,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
+            InstanceMethod("deleteLinkTableRelationships", &NativeDgnDb::DeleteLinkTableRelationships),
             InstanceMethod("deleteLocalValue", &NativeDgnDb::DeleteLocalValue),
             InstanceMethod("deleteModel", &NativeDgnDb::DeleteModel),
             InstanceMethod("detachChangeCache", &NativeDgnDb::DetachChangeCache),
