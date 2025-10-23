@@ -610,6 +610,7 @@ enum DbResult
     BE_SQLITE_ERROR_DataTransformRequired       = (BE_SQLITE_IOERR | (23<<24)), //!< Schema update need to update data.
 
     BE_SQLITE_ERROR_NOTOPEN                     = (BE_SQLITE_ERROR | (1<<24)),  //!< Db not open
+    BE_SQLITE_ERROR_PropagateChangesFailed      = (BE_SQLITE_ERROR | (2<<24)),  //!< Error propagating changes during commit
 };
 
 //=======================================================================================
@@ -2448,6 +2449,7 @@ protected:
     void SaveCachedBlvs(bool isCommit);
     DbResult SetNoCaseCollation(NoCaseCollation col);
     NoCaseCollation GetNoCaseCollation() const { return m_noCaseCollation; }
+    BE_SQLITE_EXPORT DbResult GetFileDataVersion(uint32_t& version) const;
     BE_SQLITE_EXPORT void SetProgressHandler(std::function<DbProgressAction()>, int) const;
     BE_SQLITE_EXPORT DbResult SaveProperty(PropertySpecCR spec, Utf8CP strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT bool HasProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
@@ -2798,6 +2800,7 @@ public:
     BE_SQLITE_EXPORT virtual ~Db();
     DbFile* GetDbFile() {return m_dbFile;}
 
+    
     //! SQLite supports the concept of an "implicit" transaction. That is, if no explicit transaction is active when you execute an SQL statement,
     //! SQLite will create an implicit transaction whose scope is the execution of the statement. However, it is rarely a good idea to rely on that behavior,
     //! since the overhead of starting/stopping a transaction can be very large, often much larger than the execution of the statement itself.
@@ -2846,6 +2849,8 @@ public:
     BE_SQLITE_EXPORT TraceProfileEvent& GetTraceProfileEvent() const;
     BE_SQLITE_EXPORT TraceCloseEvent& GetTraceCloseEvent() const;
 
+    DbResult GetFileDataVersion(uint32_t& version) const { return m_dbFile->GetFileDataVersion(version); }
+    BE_SQLITE_EXPORT void ClearDbCache();
     //! Determine whether there is an active transaction against this Db.
     bool IsTransactionActive() const {return 0 < GetCurrentSavepointDepth();}
 

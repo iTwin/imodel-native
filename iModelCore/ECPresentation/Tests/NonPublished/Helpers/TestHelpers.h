@@ -59,6 +59,7 @@ template<typename TRegistry> struct RegisterSchemaHelper
         } \
     void registry::RegisterSchemaXml(Utf8String name, Utf8String schemaXml) \
         { \
+        schemaXml.ReplaceAll("{SCHEMA_NAME}", name.c_str()); \
         GetRegisteredSchemaXmls().push_back(bpair<Utf8String, Utf8String>(name, CreateValidSchemaString(name, schemaXml))); \
         } \
     void registry::RegisterMultipleSchemasXml(Utf8StringCR name, bvector<Utf8String> const& schemasXml) \

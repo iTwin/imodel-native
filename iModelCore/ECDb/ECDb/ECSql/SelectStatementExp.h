@@ -81,6 +81,7 @@ struct DerivedPropertyExp final : Exp
         }
         bool IsComputed() const;
         bool OriginateInASubQuery() const { return nullptr != this->FindParent(Exp::Type::Subquery); }
+        bool OriginateInACommonTableBlockWithNoColumns() const;
         bool IsWildCard() const;
         ExtractPropertyValueExp const* TryGetExtractPropExp() const;
     };
@@ -378,7 +379,7 @@ struct SingleSelectStatementExp final : QueryExp
             }
 
 
-        bool IsCoreSelect() const { return m_limitOffsetClauseIndex == UNSET_CHILDINDEX && m_optionsClauseIndex == UNSET_CHILDINDEX; }
+        bool IsCoreSelect() const { return m_orderByClauseIndex == UNSET_CHILDINDEX && m_limitOffsetClauseIndex == UNSET_CHILDINDEX; }
     };
 
 

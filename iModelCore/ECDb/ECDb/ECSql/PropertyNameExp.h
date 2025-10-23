@@ -88,12 +88,7 @@ struct PropertyNameExp final : ValueExp
         PropertyRef const* GetPropertyRef() const { return m_propertyRef.get(); }
         PropertyRef* GetPropertyRefP() { return m_propertyRef.get(); }
         bool IsPropertyRef() const { return m_propertyRef != nullptr; }
-        bool IsPropertyFromCommonTableBlock() const {
-            if (m_classRefExp == nullptr) {
-                return false;
-            }
-            return GetClassRefExp()->GetType() == Exp::Type::CommonTableBlockName;
-        }
+        bool IsPropertyFromCommonTableBlockWithColumns() const;
         ECSqlSystemPropertyInfo const& GetSystemPropertyInfo() const { BeAssert(m_sysPropInfo != nullptr); return *m_sysPropInfo; }
         bool IsLhsAssignmentOperandExpression() const;
         bool OriginateInASubQuery() const { return nullptr != this->FindParent(Exp::Type::Subquery); }

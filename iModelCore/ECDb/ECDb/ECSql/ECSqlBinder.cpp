@@ -70,7 +70,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
         PropertyNameExp const& propNameExp = targetExp->GetAs<PropertyNameExp>();
         ECSqlSystemPropertyInfo const& sysPropInfo = propNameExp.GetSystemPropertyInfo();
         if (sysPropInfo.IsId() || propNameExp.GetTypeInfo().IsId())
-            if (propNameExp.GetClassRefExp()->GetType() == Exp::Type::CommonTableBlockName)
+            if (propNameExp.IsPropertyFromCommonTableBlockWithColumns())
                 {
                 CommonTableBlockNameExp const& commonTableBlockNameExp = propNameExp.GetClassRefExp()->GetAs<CommonTableBlockNameExp>();
                 CommonTableBlockExp const* blockExp = commonTableBlockNameExp.GetBlock();

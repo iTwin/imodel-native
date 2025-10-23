@@ -654,6 +654,14 @@ int BusyRetry::_OnBusy(int count) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DbFile::GetFileDataVersion(uint32_t& version) const {
+    version = 0;
+    return (DbResult)sqlite3_file_control(m_sqlDb, nullptr, SQLITE_FCNTL_DATA_VERSION, &version);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 int DbFile::TraceCallback(unsigned t, void* data, void* p, void* x) {
     auto db = reinterpret_cast<DbFile*>(data);
     if (!db) return 0;
@@ -1738,7 +1746,9 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
     if (trackerStatus == ChangeTracker::OnCommitStatus::RebaseInProgress) {
         return BE_SQLITE_ERROR;
     }
-
+    if (trackerStatus == ChangeTracker::OnCommitStatus::PropagateChangesFailed) {
+        return BE_SQLITE_ERROR_PropagateChangesFailed;
+    }
     if (trackerStatus == ChangeTracker::OnCommitStatus::Abort) {
         // Abort is considered fatal and application must quit.
         // We do not allocate memory or attempt to log as this is only happens when sqlite returns NOMEM.
@@ -1871,7 +1881,7 @@ DbResult Savepoint::Commit(Utf8CP operation) {return _Commit(operation);}
 DbResult Savepoint::Save(Utf8CP operation)
     {
     DbResult res = Commit(operation);
-    if (BE_SQLITE_BUSY == res) {
+    if (BE_SQLITE_OK != res) {
         return res;
     }
     return Begin();
@@ -3892,8 +3902,17 @@ DbResult Db::AbandonChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Db::_OnDbChangedByOtherConnection()
     {
+    ClearDbCache();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void Db::ClearDbCache()
+    {
     m_dbFile->DeleteCachedPropertyMap();
     m_dbFile->m_blvCache.Clear();
+    m_dbFile->m_statements.Empty();
     }
 
 //---------------------------------------------------------------------------------------
