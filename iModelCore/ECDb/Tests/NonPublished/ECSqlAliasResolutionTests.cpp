@@ -88,5 +88,27 @@ TEST_F(ECSqlAliasResolutionTestFixture, Cte_derived_property_expanding_asterisk)
     INVALID("WITH e AS (SELECT f.Model.* FROM Bis.Element) SELECT (SELECT ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id) FROM e");
 }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlAliasResolutionTestFixture, SubqueryAliasWithCte) {
+    ASSERT_OPEN_TEST_BIM;
+    ASSERT_ECSQL("with cte0 as ( select 100 a,200 b) select * from (select * from cte0 c0 where c0.a=100 and c0.b=200)");
+    INVALID("SELECT * FROM (SELECT N FROM meta.ECClassDef)");
+    ASSERT_ECSQL("WITH e AS (SELECT * FROM Bis.Element) SELECT e.* FROM e JOIN Bis.Model m ON m.ECInstanceId = e.Model.Id");
+    ASSERT_ECSQL("WITH e AS (SELECT * FROM Bis.Element) SELECT e.* FROM e WHERE e.Model.Id IN (SELECT m.ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id)");
+    ASSERT_ECSQL("WITH e AS (SELECT * FROM Bis.Element) SELECT (SELECT ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id) FROM e");
+    ASSERT_ECSQL("WITH e AS (SELECT * FROM Bis.Element) SELECT e.Model.Id FROM e");
+    ASSERT_ECSQL("WITH e AS (SELECT * FROM Bis.Element f) SELECT e.Model.Id FROM e");
+    ASSERT_ECSQL("WITH e AS (SELECT f.* FROM Bis.Element f) SELECT e.Model.Id FROM e");
+    ASSERT_ECSQL("WITH e AS (SELECT * FROM Bis.Element) SELECT (SELECT ECInstanceId FROM (SELECT m.ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id)) FROM e");
+    ASSERT_ECSQL("WITH e AS (SELECT f.* FROM Bis.Element f) SELECT (SELECT ECInstanceId FROM (SELECT m.ECInstanceId FROM Bis.Model m WHERE m.ECInstanceId = e.Model.Id)) FROM e");
+    ASSERT_ECSQL("WITH c(ECInstanceId) AS (SELECT ECInstanceId FROM bis.SpatialCategory) SELECT c.ECInstanceId, m.ECInstanceId FROM c JOIN bis.Model m ON m.ECInstanceId IN (SELECT e.Model.Id FROM bis.GeometricElement3d e WHERE e.Category.Id = c.ECInstanceId)");
+    ASSERT_ECSQL("WITH c AS (SELECT ECInstanceId FROM bis.SpatialCategory) SELECT c.ECInstanceId, m.ECInstanceId FROM c JOIN bis.Model m ON m.ECInstanceId IN (SELECT e.Model.Id FROM bis.GeometricElement3d e WHERE e.Category.Id = c.ECInstanceId)");
+    ASSERT_ECSQL("WITH c AS (SELECT f.ECInstanceId FROM bis.SpatialCategory f) SELECT c.ECInstanceId, m.ECInstanceId FROM c JOIN bis.Model m ON m.ECInstanceId IN (SELECT e.Model.Id FROM bis.GeometricElement3d e WHERE e.Category.Id = c.ECInstanceId)");
+    ASSERT_ECSQL("WITH E AS (SELECT * FROM Bis.Element) SELECT (SELECT ECInstanceId FROM (SELECT C.ECInstanceId FROM Meta.ECClassDef C WHERE C.ECInstanceId = E.ECClassId)) FROM E")
+    ASSERT_ECSQL("WITH E AS (SELECT * FROM Bis.Element) SELECT (SELECT ECInstanceId FROM (SELECT ECInstanceId FROM Meta.ECClassDef WHERE ECInstanceId = E.ECClassId)) FROM E")
+}
+
 
 END_ECDBUNITTESTS_NAMESPACE
