@@ -20,11 +20,7 @@ always:
     !~@mkdir $(o)
 
 CCompFpOpts=precise
-cDefs + -DCURL_STATICLIB=1 -DSQLITE_BCV_CUSTOM_INIT=besqlite_custom_init_function
-
-%if $(BUILD_TOOLSET) == "APPLE_CLANG"
-    LLVMCommonCompOpts + -Wno-implicit-function-declaration # Needed for SQLITE_BCV_CUSTOM_INIT to compile
-%endif
+cDefs + -DCURL_STATICLIB=1 -DSQLITE_BCV_CURL_HANDLE_CONFIG=besqlite_bcv_curl_handle_config
 
 # Third-party section of this library.
 %include $(sharedmki)PushThirdPartyIgnores.mki
@@ -34,7 +30,7 @@ MultiCompileDepends =$(_MakeFileSpec)
 
 bcvheaders = $(SQLiteDir)bcvutil.h $(SQLiteDir)bcvmodule.h $(SQLiteDir)bcv_int.h
 
-$(o)BeSQLiteCustomInit$(oext) : $(baseDir)BeSQLiteCustomInit.c ${MultiCompileDepends} ${bcvheaders}
+$(o)BeSQLiteCurlHandleConfig$(oext) : $(baseDir)BeSQLiteCurlHandleConfig.cpp ${MultiCompileDepends} ${bcvheaders}
 
 $(o)simplexml$(oext): $(SQLiteDir)simplexml.c ${MultiCompileDepends} ${bcvheaders}
 
