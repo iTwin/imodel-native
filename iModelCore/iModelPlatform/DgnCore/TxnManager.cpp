@@ -1416,6 +1416,7 @@ void TxnManager::SetChangesetHealthStatistics(ChangesetPropsCR revision) {
 
     auto stats = scope->GetDetailedSqlStats();
     stats["changeset_id"] = revision.GetChangesetId();
+    stats["changeset_index"] = revision.GetChangesetIndex();
     stats["uncompressed_size_bytes"] = static_cast<int64_t>(revision.GetUncompressedSize());
     stats["sha1_validation_time_ms"] = static_cast<int64_t>(revision.GetSha1ValidationTime());
     m_changesetHealthStatistics[revision.GetChangesetId()] = stats.Stringify();
@@ -1427,8 +1428,23 @@ void TxnManager::SetChangesetHealthStatistics(ChangesetPropsCR revision) {
 BeJsDocument TxnManager::GetAllChangesetHealthStatistics() const {
     BeJsDocument stats;
     auto changesets = stats["changesets"];
-    for (const auto& [changesetId, stat] : m_changesetHealthStatistics)
-        changesets.appendObject().From(stat);
+    
+    // Create a vector of pairs to sort by changeset_index
+    std::vector<std::pair<int32_t, BeJsDocument>> sortedStats;
+    sortedStats.reserve(m_changesetHealthStatistics.size());
+    
+    for (const auto& [changesetId, stat] : m_changesetHealthStatistics) {
+        BeJsDocument doc(stat.Stringify());
+        sortedStats.emplace_back(doc["changeset_index"].asInt(), std::move(doc));
+    }
+    
+    // Sort by changeset_index in ascending order
+    std::sort(sortedStats.begin(), sortedStats.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+    
+    // Add sorted changesets to the output array
+    for (const auto& [index, doc] : sortedStats)
+        changesets.appendObject().From(doc);
+    
     return stats;
 }
 
