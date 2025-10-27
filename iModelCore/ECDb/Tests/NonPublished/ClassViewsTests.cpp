@@ -2622,7 +2622,7 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTestsWithCte) {
           <ECEntityClass typeName="NestedView" modifier="Abstract">
               <ECCustomAttributes>
                   <QueryView>xmlns="ECDbMap.02.00.04"><Query>
-                      WITH tmp(ECInstanceId, ECClassId, MyName, MyName2) AS (SELECT sdv.*, sdv.MyName from ts.StaticDataView sdv) SELECT * FROM tmp
+                      WITH tmp(ECInstanceId, ECClassId, MyName, MyName2) AS (SELECT sdv.*, sdv.MyName from ts.StaticDataView sdv) SELECT ECInstanceId, ECClassId, MyName, MyName2 FROM tmp
                   </Query></QueryView>
               </ECCustomAttributes>
               <ECProperty propertyName="MyName" typeName="string" />
@@ -2687,25 +2687,25 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTestsWithCte) {
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     verifyColumnInfo(stmt.GetColumnInfo(0),
-        true, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
-        "ECInstanceId", "DynamicECSqlSelectClause", //Property
-        nullptr, nullptr, //OriginProperty
-        "ECInstanceId", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+        "ECInstanceId", "ClassECSqlSystemProperties", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECInstanceId", "DirectView"); //PropertyPath, RootClass
 
     verifyColumnInfo(stmt.GetColumnInfo(1),
-        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
-        "ECClassId", "DynamicECSqlSelectClause", //Property
-        nullptr, nullptr, //OriginProperty
-        "ECClassId", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+        "ECClassId", "ClassECSqlSystemProperties", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECClassId", "DirectView"); //PropertyPath, RootClass
 
     verifyColumnInfo(stmt.GetColumnInfo(2),
-        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
-        "MyName", "DynamicECSqlSelectClause", //Property
-        nullptr, nullptr, //OriginProperty
-        "MyName", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+        "MyName", "DirectView", //Property
+        "MyName", "DirectView", //OriginProperty
+        "MyName", "DirectView"); //PropertyPath, RootClass
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
@@ -2719,8 +2719,8 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTestsWithCte) {
         true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
         "TheName", "DynamicECSqlSelectClause", //Property
-        nullptr, nullptr, //OriginProperty
-        "TheName", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+        "MyName", "DirectView", //OriginProperty
+        "TheName", "DirectView"); //PropertyPath, RootClass
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
@@ -2740,15 +2740,15 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTestsWithCte) {
     verifyColumnInfo(stmt.GetColumnInfo(1),
         false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
-        "ECClassId", "DynamicECSqlSelectClause", //Property
-        "ECClassId", "DynamicECSqlSelectClause", //OriginProperty
+        "ECClassId", "ClassECSqlSystemProperties", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
         "ECClassId", "StaticDataView"); //PropertyPath, RootClass
 
     verifyColumnInfo(stmt.GetColumnInfo(2),
         false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
-        "MyName", "DynamicECSqlSelectClause", //Property
-        "ECClassId", "DynamicECSqlSelectClause", //OriginProperty
+        "MyName", "StaticDataView", //Property
+        "MyName", "StaticDataView", //OriginProperty
         "MyName", "StaticDataView"); //PropertyPath, RootClass
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -2762,30 +2762,30 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTestsWithCte) {
     verifyColumnInfo(stmt.GetColumnInfo(0),
         false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
-        "ECInstanceId", "DynamicECSqlSelectClause", //Property
-        nullptr, nullptr, //OriginProperty
-        "ECInstanceId", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+        "ECInstanceId", "ClassECSqlSystemProperties", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECInstanceId", "NestedView"); //PropertyPath, RootClass
 
     verifyColumnInfo(stmt.GetColumnInfo(1),
         false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
-        "ECClassId", "DynamicECSqlSelectClause", //Property
-        nullptr, nullptr, //OriginProperty
-        "ECClassId", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+        "ECClassId", "ClassECSqlSystemProperties", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECClassId", "NestedView"); //PropertyPath, RootClass
 
     verifyColumnInfo(stmt.GetColumnInfo(2),
         false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
-        "MyName", "DynamicECSqlSelectClause", //Property
-        nullptr, nullptr, //OriginProperty
-        "MyName", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+        "MyName", "NestedView", //Property
+        "MyName", "NestedView", //OriginProperty
+        "MyName", "NestedView"); //PropertyPath, RootClass
 
     verifyColumnInfo(stmt.GetColumnInfo(3),
         false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
-        "MyName2", "DynamicECSqlSelectClause", //Property
-        nullptr, nullptr, //OriginProperty
-        "MyName2", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+        "MyName2", "NestedView", //Property
+        "MyName2", "NestedView", //OriginProperty
+        "MyName2", "NestedView"); //PropertyPath, RootClass
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
