@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <type_traits>
 #include <cstddef>
 #include "../ECDbInternalTypes.h"
 #include <stack>
@@ -320,34 +321,6 @@ struct Exp
                     return static_cast<TExp const*> (child);
                     }
 
-
-                template <typename TExp>
-                bool Replace(Exp const& replacee, std::vector<std::unique_ptr<TExp>>& replaceWith)
-                    {
-                    std::vector<std::unique_ptr<Exp>> copiedCollection = std::move(m_collection);
-                    BeAssert(m_collection.empty());
-
-                    bool found = false;
-                    for (std::unique_ptr<Exp>& exp : copiedCollection)
-                        {
-                        if (exp.get() != &replacee)
-                            {
-                            m_collection.push_back(std::move(exp));
-                            continue;
-                            }
-
-                        // found a matching expr to be replaced
-                        for (std::unique_ptr<TExp>& replacementExp : replaceWith)
-                            {
-                            m_collection.push_back(std::move(replacementExp));
-                            }
-
-                        found = true;
-                        }
-
-                    return found;
-                    }
-
                 const_iterator<Exp const*> begin() const { return const_iterator<Exp const*>(m_collection.begin()); }
                 const_iterator<Exp*> begin() { return const_iterator<Exp*>(m_collection.begin()); }
                 const_iterator<Exp const*> end() const { return const_iterator<Exp const*>(m_collection.end()); }
@@ -452,6 +425,9 @@ struct Exp
             }
 
         size_t AddChild(std::unique_ptr<Exp> child);
+
+        template <typename TExp>
+        bool ReplaceChild(Exp const& replacee, std::vector<std::unique_ptr<TExp>>& replaceWith); 
 
     public:
         virtual ~Exp() {}

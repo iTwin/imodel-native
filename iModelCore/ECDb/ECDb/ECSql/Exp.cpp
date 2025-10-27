@@ -74,6 +74,36 @@ void Exp::Find(std::vector<Exp const*>& expList, Exp::Type candidateType, bool r
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
+template <typename TExp>
+bool Exp::ReplaceChild(Exp const& replacee, std::vector<std::unique_ptr<TExp>>& replaceWith)
+    {
+    std::vector<std::unique_ptr<Exp>> copiedCollection = std::move(m_children.m_collection);
+    BeAssert(m_children.m_collection.empty());
+
+    bool found = false;
+    for (std::unique_ptr<Exp>& exp : copiedCollection)
+        {
+        if (exp.get() != &replacee)
+            {
+            m_children.m_collection.push_back(std::move(exp));
+            continue;
+            }
+
+        // found a matching expr to be replaced
+        for (std::unique_ptr<TExp>& replacementExp : replaceWith)
+            {
+            AddChild(std::move(replacementExp));
+            }
+
+        found = true;
+        }
+
+    return found;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 size_t Exp::AddChild(std::unique_ptr<Exp> child)
     {
     BeAssert(child != nullptr);

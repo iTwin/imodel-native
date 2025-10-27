@@ -775,7 +775,7 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(ECSqlParseContext const
     for (RangeClassInfo const& classRef : rangeClassRefs)
         classRef.GetExp().ExpandSelectAsterisk(derivedPropExpList, ctx);
 
-    if (!GetChildrenR().Replace(asteriskExp, derivedPropExpList))
+    if (!ReplaceChild(asteriskExp, derivedPropExpList))
         {
         BeAssert(false && "SelectClauseExp::ReplaceAsteriskExpression did not find an asterisk expression unexpectedly.");
         return ERROR;
