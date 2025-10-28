@@ -2903,6 +2903,41 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTestsWithCte) {
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
+    { //Direct query from NestedView
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId a, ECClassId b, MyName, MyName2 FROM ts.NestedViewAsterisk"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    verifyColumnInfo(stmt.GetColumnInfo(0),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "a", "DynamicECSqlSelectClause", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "a", "NestedViewAsterisk"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(1),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "b", "DynamicECSqlSelectClause", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "b", "NestedViewAsterisk"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(2),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName", "NestedViewAsterisk", //Property
+        "MyName", "NestedViewAsterisk", //OriginProperty
+        "MyName", "NestedViewAsterisk"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(3),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName2", "NestedViewAsterisk", //Property
+        "MyName2", "NestedViewAsterisk", //OriginProperty
+        "MyName2", "NestedViewAsterisk"); //PropertyPath, RootClass
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
 }
 
 
