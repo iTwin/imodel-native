@@ -2591,6 +2591,41 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTests) {
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
+    { //Direct query from NestedView
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId a, ECClassId b, MyName, MyName2 FROM ts.NestedView"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    verifyColumnInfo(stmt.GetColumnInfo(0),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "a", "DynamicECSqlSelectClause", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "a", "NestedView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(1),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "b", "DynamicECSqlSelectClause", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "b", "NestedView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(2),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName", "NestedView", //Property
+        "MyName", "NestedView", //OriginProperty
+        "MyName", "NestedView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(3),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName2", "NestedView", //Property
+        "MyName2", "NestedView", //OriginProperty
+        "MyName2", "NestedView"); //PropertyPath, RootClass
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2772,6 +2807,41 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTestsWithCte) {
         "ECClassId", "ClassECSqlSystemProperties", //Property
         "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
         "ECClassId", "NestedView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(2),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName", "NestedView", //Property
+        "MyName", "NestedView", //OriginProperty
+        "MyName", "NestedView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(3),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName2", "NestedView", //Property
+        "MyName2", "NestedView", //OriginProperty
+        "MyName2", "NestedView"); //PropertyPath, RootClass
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    { //Direct query from NestedView
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId a, ECClassId b, MyName, MyName2 FROM ts.NestedView"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    verifyColumnInfo(stmt.GetColumnInfo(0),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "a", "DynamicECSqlSelectClause", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "a", "NestedView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(1),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "b", "DynamicECSqlSelectClause", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "b", "NestedView"); //PropertyPath, RootClass
 
     verifyColumnInfo(stmt.GetColumnInfo(2),
         false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
