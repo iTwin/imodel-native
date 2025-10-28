@@ -426,8 +426,7 @@ struct Exp
 
         size_t AddChild(std::unique_ptr<Exp> child);
 
-        template <typename TExp>
-        bool ReplaceChild(Exp const& replacee, std::vector<std::unique_ptr<TExp>>& replaceWith); 
+        bool ReplaceChild(Exp const& replacee, std::vector<std::unique_ptr<Exp>>& replaceWith); 
 
     public:
         virtual ~Exp() {}
