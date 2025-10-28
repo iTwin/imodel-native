@@ -2809,28 +2809,28 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTestsWithCte) {
         PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
         "ECInstanceId", "ClassECSqlSystemProperties", //Property
         "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
-        "ECInstanceId", "NestedView"); //PropertyPath, RootClass
+        "ECInstanceId", "NestedViewAsterisk"); //PropertyPath, RootClass
 
     verifyColumnInfo(stmt.GetColumnInfo(1),
         false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
         "ECClassId", "ClassECSqlSystemProperties", //Property
         "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
-        "ECClassId", "NestedView"); //PropertyPath, RootClass
+        "ECClassId", "NestedViewAsterisk"); //PropertyPath, RootClass
 
     verifyColumnInfo(stmt.GetColumnInfo(2),
         false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
-        "MyName", "NestedView", //Property
-        "MyName", "NestedView", //OriginProperty
-        "MyName", "NestedView"); //PropertyPath, RootClass
+        "MyName", "NestedViewAsterisk", //Property
+        "MyName", "NestedViewAsterisk", //OriginProperty
+        "MyName", "NestedViewAsterisk"); //PropertyPath, RootClass
 
     verifyColumnInfo(stmt.GetColumnInfo(3),
         false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
-        "MyName2", "NestedView", //Property
-        "MyName2", "NestedView", //OriginProperty
-        "MyName2", "NestedView"); //PropertyPath, RootClass
+        "MyName2", "NestedViewAsterisk", //Property
+        "MyName2", "NestedViewAsterisk", //OriginProperty
+        "MyName2", "NestedViewAsterisk"); //PropertyPath, RootClass
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
