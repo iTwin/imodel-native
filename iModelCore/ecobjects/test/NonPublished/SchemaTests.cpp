@@ -1571,9 +1571,12 @@ TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
         bpair<Utf8String, Utf8CP>const& entry = *it;
 
         SchemaKey key(entry.first.c_str(), 1, 0);
-        EXPECT_TRUE(ECSchema::ParseVersionString(key.m_versionRead, key.m_versionMinor, entry.second) == ECObjectsStatus::Success);
-        EXPECT_EQ(key.m_versionRead, atoi(entry.second));
-        EXPECT_EQ(key.m_versionMinor, atoi(strchr(entry.second, '.') + 1));
+        uint32_t vRead, vMinor;
+        EXPECT_TRUE(ECSchema::ParseVersionString(vRead, vMinor, entry.second) == ECObjectsStatus::Success);
+        key.SetVersionRead(vRead);
+        key.SetVersionMinor(vMinor);
+        EXPECT_EQ(key.GetVersionRead(), atoi(entry.second));
+        EXPECT_EQ(key.GetVersionMinor(), atoi(strchr(entry.second, '.') + 1));
         schema = ECSchema::LocateSchema(key, *schemaContext);
         EXPECT_TRUE(schema.IsValid());
         EXPECT_TRUE(schema->IsStandardSchema());
@@ -2710,6 +2713,31 @@ TEST_F(SchemaVersionTest, CreateECVersionTest)
     EXPECT_EQ(ECVersion::Latest, ecVersion32) << "ECVersion Latest should be equal to 3.2, therefore the comparsion should succeed.";
 
     EXPECT_STREQ("3.2", ECSchema::GetECVersionString(ECVersion::Latest)) << "ECVersion Latest should be equal to 3.2, therefore the string of it should be equal to 3.2.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, UpdateVersionUpdatesFullName)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    EXPECT_EQ(5, schema->GetVersionRead());
+    EXPECT_EQ(0, schema->GetVersionWrite());
+    EXPECT_EQ(5, schema->GetVersionMinor());
+    EXPECT_STREQ("TestSchema.05.00.05", schema->GetFullSchemaName().c_str());
+
+    schema->SetVersionRead(12);
+    EXPECT_EQ(12, schema->GetVersionRead());
+    EXPECT_STREQ("TestSchema.12.00.05", schema->GetFullSchemaName().c_str());
+
+    schema->SetVersionWrite(3);
+    EXPECT_EQ(3, schema->GetVersionWrite());
+    EXPECT_STREQ("TestSchema.12.03.05", schema->GetFullSchemaName().c_str());
+
+    schema->SetVersionMinor(9);
+    EXPECT_EQ(9, schema->GetVersionMinor());
+    EXPECT_STREQ("TestSchema.12.03.09", schema->GetFullSchemaName().c_str());
     }
 
 //---------------------------------------------------------------------------------------
