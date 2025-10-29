@@ -1429,21 +1429,17 @@ BeJsDocument TxnManager::GetAllChangesetHealthStatistics() const {
     BeJsDocument stats;
     auto changesets = stats["changesets"];
     
-    // Create a vector of pairs to sort by changeset_index
-    std::vector<std::pair<int32_t, BeJsDocument>> sortedStats;
+    // Sort the changesets by their changeset_index
+    std::vector<const BeJsDocument*> sortedStats;
     sortedStats.reserve(m_changesetHealthStatistics.size());
     
-    for (const auto& [changesetId, stat] : m_changesetHealthStatistics) {
-        BeJsDocument doc(stat.Stringify());
-        sortedStats.emplace_back(doc["changeset_index"].asInt(), std::move(doc));
-    }
+    for (const auto& [changesetId, stat] : m_changesetHealthStatistics)
+        sortedStats.push_back(&stat);
     
-    // Sort by changeset_index in ascending order
-    std::sort(sortedStats.begin(), sortedStats.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
-    
-    // Add sorted changesets to the output array
-    for (const auto& [index, doc] : sortedStats)
-        changesets.appendObject().From(doc);
+    std::sort(sortedStats.begin(), sortedStats.end(), [](const BeJsDocument* a, const BeJsDocument* b) { return (*a)["changeset_index"].asInt() < (*b)["changeset_index"].asInt(); });
+
+    for (const auto* doc : sortedStats)
+        changesets.appendObject().From(*doc);
     
     return stats;
 }
