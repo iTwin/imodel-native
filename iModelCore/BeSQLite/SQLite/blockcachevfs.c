@@ -6773,11 +6773,21 @@ static int bcvReadonlyVtabFilter(
       }
     }else{
       pCur->iVersion = BCV_VTAB_VERSION;
+<<<<<<< HEAD
       pCur->data.aData = bcvDatabaseVtabData(&rc, &pFile->pFs->c, 
           pTab->zMod, zCont, zDb, 
           bcvLocalClientCount,
           colUsed, &pCur->data.nData, &pCur->iVersion
       );
+=======
+      ENTER_VFS_MUTEX; {
+        pCur->data.aData = bcvDatabaseVtabData(&rc, &pFs->c, 
+            pTab->zMod, zCont, zDb, 
+            bcvLocalClientCount,
+            colUsed, &pCur->data.nData, &pCur->iVersion
+        );
+      } LEAVE_VFS_MUTEX;
+>>>>>>> 5fb35768 (Incorporate blockcache changes from cloud sqlite trunk (#1247))
       pCur->pFreeData = (void*)pCur->data.aData;
     }
     if( rc==SQLITE_OK ){

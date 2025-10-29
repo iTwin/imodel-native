@@ -88,10 +88,6 @@ typedef unsigned short u16;
 #define BCV_DEFAULT_BLOCKSIZE        (4*1024*1024)
 #define BCV_DEFAULT_HTTPTIMEOUT 600  
 
-/* BEGIN BENTLEY CHANGES */
-#define BCV_DEFAULT_REVOKEBESTEFFORT 0
-/* END BENTLEY CHANGES */
-
 /* Size of local encryption keys in bytes. */
 #define BCV_LOCAL_KEYSIZE        16
 
@@ -425,11 +421,24 @@ int bcvInstallBuiltinModules(void);
 
 /************************************************************************/
 
+/*
+** bRevokeBestEffort:
+**   This is set, based on the value of the CLOUDSQLITE_REVOKE_BEST_EFFORT
+**   environment variable, when the container is created.
+**
+** zCainfo:
+**   This is set, based on the value of the CLOUDSQLITE_CAINFO environment 
+**   variable, when the container is created. If it is not NULL, it must
+**   be freed using sqlite3_free() when the BcvContainer object is freed.
+*/
 struct BcvContainer {
   sqlite3_bcv_container *pCont;
   sqlite3_bcv_module *pMod;
   int nContRef;
   int nMaxResults;                /* Value of maxresults= parameter */
+
+  int bRevokeBestEffort;       
+  char *zCainfo;
 };
 
 int bcvDispatchNew(BcvDispatch**);

@@ -8,7 +8,6 @@
 #include "bcv_int.h"
 #include "sqlite3.h"
 #include <string.h>
-#include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,6 +21,40 @@
 #endif
 
 #include <openssl/md5.h>
+
+/*
+** If SQLITE_BCV_CURL_HANDLE_CONFIG is defined, it must be set to the name
+** of a function linked against this file with the following signature.
+** Before each HTTPS request is made, the function is invoked with three
+** arguments:
+**
+**  *  The (CURL*) handle that will be used to make the request.
+**
+**  *  An integer indicating the type of HTTPS request that will be issued.
+**     This is one of the SQLITE_BCV_METHOD_XXX values defined in header
+**     file bcvmodule.h - 1==GET, 2==PUT, 3==DELETE, 4==HEAD.
+**
+**  *  A nul-terminated string set to the URI that will be requested. This
+**     URI includes all parameters, possibly including parameters containing
+**     authentication information.
+**
+** The function may configure the CURL handle as required. It is anticipated
+** that this will be used to configure proxy information for the curl
+** request (using e.g. CURLOPT_PROXY).
+**
+** The function must return an SQLite error code. If the return value is
+** SQLITE_OK, then the operation proceeds. Or, if an error is returned, that
+** error is propagated up to the caller.
+*/
+#ifdef SQLITE_BCV_CURL_HANDLE_CONFIG
+int SQLITE_BCV_CURL_HANDLE_CONFIG (CURL*, int, const char*);
+#endif
+
+/*
+** The two supported environment variables.
+*/
+#define CLOUDSQLITE_REVOKE_BEST_EFFORT "CLOUDSQLITE_REVOKE_BEST_EFFORT"
+#define CLOUDSQLITE_CAINFO "CLOUDSQLITE_CAINFO"
 
 #define BCV_MIMETYPE_HDR    "Content-Type:application/octet-stream"
 #define BCV_MIMETYPE_HDR_LC "content-type:application/octet-stream"
@@ -62,18 +95,6 @@
 
 typedef int(*bcv_progress_cb)(void*, sqlite3_int64, sqlite3_int64);
 typedef void(*bcv_log_cb)(void*, const char *);
-
-/* BEGIN BENTLEY CHANGES */
-struct BcvGlobalConfig {
-  int bRevokeBestEffort;          /* SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT option */
-  char *zCAFile;                  /* SQLITE_BCVGLOBALCONFIG_CAFILE option */
-};
-
-static struct BcvGlobalConfig bcvGlobalConfig = {
-  BCV_DEFAULT_REVOKEBESTEFFORT,  /* Default to not revoking best effort */
-  NULL,                          /* Default CA file to NULL */
-};
-/* END BENTLEY CHANGES */
 
 struct sqlite3_bcv {
   BcvContainer *pCont;            /* Cloud module instance */
@@ -1195,42 +1216,6 @@ static void bcvLogWrapper(void *pApp, int bRetry, const char *zMsg){
   }
 }
 
-/* BEGIN BENTLEY CHANGES */
-int sqlite3_bcv_global_config(int eOp, ...){
-  int rc = SQLITE_OK;
-  va_list ap;
-  va_start(ap, eOp);
-
-  switch( eOp ){
-    case SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT:
-      bcvGlobalConfig.bRevokeBestEffort = va_arg(ap, int);
-      break;
-    case SQLITE_BCVGLOBALCONFIG_CAFILE:
-      if( bcvGlobalConfig.zCAFile!=NULL ){
-        free(bcvGlobalConfig.zCAFile);
-      }
-      char *zCAFile = va_arg(ap, const char*);
-      if( zCAFile==NULL || zCAFile[0]==0 ){
-        bcvGlobalConfig.zCAFile = NULL;
-      } else {
-        // using bcvStrdup crashes (probably because it is called too early)
-        char *dup = strdup(zCAFile);
-        bcvGlobalConfig.zCAFile = dup;
-        if( bcvGlobalConfig.zCAFile==0 ){
-          rc = SQLITE_NOMEM;
-        }
-      }
-      break;
-    default:
-      rc = SQLITE_MISUSE;
-      break;
-  }
-
-  va_end(ap);
-  return rc;
-}
-/* END BENTLEY CHANGES */
-
 int sqlite3_bcv_config(sqlite3_bcv *p, int eOp, ...){
   int rc = SQLITE_OK;
   va_list ap;
@@ -1417,6 +1402,23 @@ static void bcvUploadOneBlock(BcvUploadJob *pJob){
 }
 
 /*
+** Buffer zRemote (nRemote bytes in size) contains a proposed name for a new
+** cloud database. This function checks that the database name is acceptable.
+** If so, SQLITE_OK is returned. Otherwise, an SQLite error code is returned
+** and error message left in bcv handle p.
+*/
+static int bcvCheckDbname(sqlite3_bcv *p, const char *zRemote){
+  int nRemote = bcvStrlen(zRemote);
+  if( nRemote>=BCV_DBNAME_SIZE ){
+    return bcvApiError(p, SQLITE_ERROR, 
+        "database name \"%s\" is too long (max = %d bytes)",
+        zRemote, BCV_DBNAME_SIZE-1
+    );
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Upload a database to cloud storage.
 */
 int sqlite3_bcv_upload(
@@ -1442,13 +1444,10 @@ int sqlite3_bcv_upload(
   bcvApiErrorClear(p);
 
   /* Check that the database name is not too long for the manifest format */
-  nRemote = bcvStrlen(zRemote);
-  if( nRemote>=BCV_DBNAME_SIZE ){
-    return bcvApiError(p, SQLITE_ERROR, 
-        "database name \"%s\" is too long (max = %d bytes)",
-        zRemote, BCV_DBNAME_SIZE-1
-    );
+  if( bcvCheckDbname(p, zRemote)!=SQLITE_OK ){
+    return p->errCode;
   }
+  nRemote = bcvStrlen(zRemote);
 
   /* Download the manifest file. */
   if( bcvManifestFetchParsed(p, &pMan) ){
@@ -1592,6 +1591,9 @@ int sqlite3_bcv_copy(
   if( p->pCont==0 ) return p->errCode;
 
   bcvApiErrorClear(p);
+  if( bcvCheckDbname(p, zTo) ){
+    return p->errCode;
+  }
 
   /* Download the manifest file. */
   if( bcvManifestFetchParsed(p, &pMan) ){
@@ -2344,23 +2346,6 @@ int sqlite3_bcv_create(sqlite3_bcv *p, int szName, int szBlock){
   return p->errCode;
 }
 
-/* BEGIN BENTLEY CHANGES */
-static void configure_curl_ssl_options(CURL *pCurl){
-  int sslOptions = 0;
-  if ( bcvGlobalConfig.bRevokeBestEffort ){
-    sslOptions = sslOptions | CURLSSLOPT_REVOKE_BEST_EFFORT;
-  }
-  if ( sslOptions != 0 ){
-    curl_easy_setopt(pCurl, CURLOPT_SSL_OPTIONS, sslOptions);
-  }
-  if ( bcvGlobalConfig.zCAFile!=NULL ){
-    curl_easy_setopt(pCurl, CURLOPT_CAINFO, bcvGlobalConfig.zCAFile);
-  } else {
-    curl_easy_setopt(pCurl, CURLOPT_CAINFO, "");    
-  }
-}
-/* END BENTLEY CHANGES */
-
 sqlite3_bcv_request *sqlite3_bcv_job_request(
   sqlite3_bcv_job *pJob,          /* Call contex */
   void *pApp,                     /* 3rd argument for xCallback */
@@ -2369,6 +2354,7 @@ sqlite3_bcv_request *sqlite3_bcv_job_request(
   BcvDispatchReq *pNew = 0;
   pNew = bcvMallocRc(&pJob->rc, sizeof(BcvDispatchReq));
   if( pNew ){
+    BcvContainer *pCont = pJob->pCont;
     pNew->eMethod = SQLITE_BCV_METHOD_GET;
     pNew->xCallback = xCallback;
     pNew->pApp = pApp;
@@ -2376,7 +2362,15 @@ sqlite3_bcv_request *sqlite3_bcv_job_request(
     pNew->pJob = pJob;
     pNew->pCurl = curl_easy_init();
     pJob->pPending = pNew;
-    configure_curl_ssl_options(pNew->pCurl); /* BENTLEY CHANGE */
+
+    if( pCont->bRevokeBestEffort ){
+      curl_easy_setopt(
+          pNew->pCurl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_REVOKE_BEST_EFFORT
+      );
+    }
+    if( pCont->zCainfo ){
+      curl_easy_setopt(pNew->pCurl, CURLOPT_CAINFO, pCont->zCainfo);
+    }
   }
   return pNew;
 }
@@ -2685,6 +2679,7 @@ void bcvContainerDeref(BcvContainer *p){
   p->nContRef--;
   if( p->nContRef==0 ){
     p->pMod->xClose(p->pCont);
+    sqlite3_free(p->zCainfo);
     sqlite3_free(p);
   }
 }
@@ -2759,10 +2754,28 @@ int bcvContainerOpen(
           }
         }
       }
+
+      if( rc==SQLITE_OK ){
+        char *zRevokeBestEffort = getenv(CLOUDSQLITE_REVOKE_BEST_EFFORT);
+        char *zCainfo = getenv(CLOUDSQLITE_CAINFO);
+        if( zRevokeBestEffort ){
+          pNew->bRevokeBestEffort = (0!=strtol(zRevokeBestEffort, 0, 0));
+        }
+        if( zCainfo ){
+          pNew->zCainfo = sqlite3_mprintf("%s", zCainfo);
+          if( pNew->zCainfo==0 ){
+            bcvContainerClose(pNew);
+            *ppCont = pNew = 0;
+            rc = SQLITE_NOMEM;
+          }
+        }
+      }
+
     }else if( rc==SQLITE_OK ){
       rc = SQLITE_ERROR;
       *pzErr = sqlite3_mprintf("no such module: %s", azField[0]);
     }
+
   }
   sqlite3_free(azField);
   return rc;
@@ -3025,6 +3038,12 @@ static void bcvDispatchJobUpdate(BcvDispatchJob *pJob){
     /* Remove pReq from the pPending list. */
     *ppReq = pReq->pNext;
     pReq->pNext = 0;
+
+#ifdef SQLITE_BCV_CURL_HANDLE_CONFIG
+    if( pJob->rc==SQLITE_OK ){
+      pJob->rc = SQLITE_BCV_CURL_HANDLE_CONFIG(pCurl,pReq->eMethod,pReq->zUri);
+    }
+#endif
 
     /* If an error has already occurred, do not issue the request. Instead
     ** just have it fail immediately.  */
