@@ -610,6 +610,7 @@ enum DbResult
     BE_SQLITE_ERROR_DataTransformRequired       = (BE_SQLITE_IOERR | (23<<24)), //!< Schema update need to update data.
 
     BE_SQLITE_ERROR_NOTOPEN                     = (BE_SQLITE_ERROR | (1<<24)),  //!< Db not open
+    BE_SQLITE_ERROR_PropagateChangesFailed      = (BE_SQLITE_ERROR | (2<<24)),  //!< Error propagating changes during commit
 };
 
 //=======================================================================================

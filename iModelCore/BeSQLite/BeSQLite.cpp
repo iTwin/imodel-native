@@ -1746,7 +1746,9 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
     if (trackerStatus == ChangeTracker::OnCommitStatus::RebaseInProgress) {
         return BE_SQLITE_ERROR;
     }
-
+    if (trackerStatus == ChangeTracker::OnCommitStatus::PropagateChangesFailed) {
+        return BE_SQLITE_ERROR_PropagateChangesFailed;
+    }
     if (trackerStatus == ChangeTracker::OnCommitStatus::Abort) {
         // Abort is considered fatal and application must quit.
         // We do not allocate memory or attempt to log as this is only happens when sqlite returns NOMEM.
@@ -1879,7 +1881,7 @@ DbResult Savepoint::Commit(Utf8CP operation) {return _Commit(operation);}
 DbResult Savepoint::Save(Utf8CP operation)
     {
     DbResult res = Commit(operation);
-    if (BE_SQLITE_BUSY == res) {
+    if (BE_SQLITE_OK != res) {
         return res;
     }
     return Begin();
