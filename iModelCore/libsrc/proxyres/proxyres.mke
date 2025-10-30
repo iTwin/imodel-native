@@ -1,0 +1,32 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+o = $(OutputRootDir)build/proxyres/
+vendorSrc = $(_MakeFilePath)vendor/
+
+always:
+    !~@mkdir $(o)
+
+$(o)$(libprefix)proxyres$(libext) :
+    ~chdir $(vendorSrc)
+    %if defined (DEBUG)
+        cmake -S . -B $(o) -D CMAKE_BUILD_TYPE=Debug
+        cmake --build $(o) --config Debug
+    %else
+        cmake -S . -B $(o)
+        cmake --build $(o)
+    %endif
+
+# Vendor API
+always:
+    ~linkdir "$(BuildContext)VendorAPI/proxyres=$(vendorSrc)/include/proxyres"
+
+$(BuildContext)Delivery/$(stlibprefix)proxyres$(stlibext) : $(o)$(stlibprefix)proxyres$(stlibext)
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/proxyres-license.txt : $(vendorSrc)LICENSE.md
+    $(LinkFirstDepToFirstTarget)
