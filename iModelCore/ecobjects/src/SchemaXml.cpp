@@ -922,7 +922,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, SchemaKey&
 
     // If checksum comparison is enabled on context then use the original context
     if (m_schemaContext.GetCalculateChecksum() && nullptr != checksum)
-        schemaOut->m_key.m_checksum = checksum;
+        schemaOut->m_key.SetChecksum(checksum);
 
     // Handle conversion of encoded ECName to name + display label for legacy schemas
     if (schemaOut->OriginalECXmlVersionLessThan(ECVersion::V3_1))

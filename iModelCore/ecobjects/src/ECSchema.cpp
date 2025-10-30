@@ -3370,8 +3370,8 @@ Utf8String ECSchema::ComputeCheckSum()
         return "";
 
     SHA1 sha1;
-    m_key.m_checksum = sha1((Byte const*)xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length());
-    return m_key.m_checksum;
+    m_key.SetChecksum(sha1((Byte const*)xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length()));
+    return m_key.GetChecksum();
     }
 
 void ReportFailedSchema(SchemaKeyCR key, Utf8StringCR additionalInfo, SchemaReadStatus status, ECSchemaReadContextR schemaContext)

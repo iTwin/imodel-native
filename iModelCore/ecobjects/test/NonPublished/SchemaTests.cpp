@@ -2133,7 +2133,7 @@ struct SchemaKeyComparisonTest : ECTestFixture
 
     void SetUp() override {
         key1WithChecksum = SchemaKey("SchemaTest", 1, 0, 0);
-        key1WithChecksum.m_checksum = "aBcD";
+        key1WithChecksum.SetChecksum("aBcD");
 
         key1_0_0 = SchemaKey("SchemaTest", 1, 0, 0);
         // key1_0_0.m_checksum = "aBcD";
@@ -2145,7 +2145,7 @@ struct SchemaKeyComparisonTest : ECTestFixture
         // key2_0_0.m_checksum = "aBcD";
 
         diffChecksumKey = SchemaKey("SchemaTest", 1, 0, 0);
-        diffChecksumKey.m_checksum = "aBc";
+        diffChecksumKey.SetChecksum("aBc");
         diffNameKey = SchemaKey("SchemaNotTest", 1, 0, 0);
         // diffNameKey.m_checksum = "aB";
     }
