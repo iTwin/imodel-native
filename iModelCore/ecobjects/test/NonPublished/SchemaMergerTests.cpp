@@ -29,7 +29,7 @@ ECSchemaReadContextPtr InitializeReadContextWithAllSchemas(bvector<Utf8CP> const
     for (auto schemaXml : schemasXml)
         {
         ECSchemaPtr schema;
-        //Problem: with broken schemas, ther EXPECT_EQ will not immediately fail the test probably running into null pointer dereference later
+        //Problem: with broken schemas, the EXPECT_EQ will not immediately fail the test probably running into null pointer dereference later
         EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *readContext));
         if(loadedSchemas != nullptr)
             loadedSchemas->push_back(schema.get());
