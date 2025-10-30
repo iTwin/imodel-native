@@ -81,7 +81,7 @@ void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult
     ASSERT_EQ(false, changes.IsChanged()) << "Actual schemas did not match expected result";
     }
 
-// #define ENABLE_TROUBLESHOOT_MERGE_TEST
+#define ENABLE_TROUBLESHOOT_MERGE_TEST
 #ifdef ENABLE_TROUBLESHOOT_MERGE_TEST
 
 BentleyStatus LoadSchemasFromDirectory(BeFileNameCR directoryPath, ECSchemaReadContextR readContext, bvector<ECN::ECSchemaCP>& outSchemas, Utf8CP side)
@@ -143,6 +143,7 @@ TEST_F(SchemaMergerTests, TroubleshootMergeFromDump)
     BeFileName leftSchemaPath(L"/mnt/wdblack-data/data/25-10-30_schemas/Left");
     BeFileName rightSchemaPath(L"/mnt/wdblack-data/data/25-10-30_schemas/Right");
     BeFileName dumpResultTo(L"/mnt/wdblack-data/data/schemaMerge/");
+    bvector<Utf8String> schemasToInclude = { "OpenPlant_3D" }; // Filter input schemas to just these names, use empty vector to include all
 
     NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
     NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
@@ -157,6 +158,51 @@ TEST_F(SchemaMergerTests, TroubleshootMergeFromDump)
     ASSERT_EQ(SUCCESS, LoadSchemasFromDirectory(leftSchemaPath, *leftContext, leftSchemas, "left")) << "Failed to load schemas from left directory";
     bvector<ECN::ECSchemaCP> rightSchemas;
     ASSERT_EQ(SUCCESS, LoadSchemasFromDirectory(rightSchemaPath, *rightContext, rightSchemas, "right")) << "Failed to load schemas from right directory";
+
+    if(!schemasToInclude.empty())
+        {
+        Utf8String schemasToIncludeStr;
+        for (size_t i = 0; i < schemasToInclude.size(); i++)
+          {
+          schemasToIncludeStr.append(schemasToInclude[i]);
+          if (i < schemasToInclude.size() - 1)
+          schemasToIncludeStr.append(", ");
+          }
+
+        // (optional step) filter to only include specific schemas
+        printf("******* Filtering schemas to only include: %s *******\n", schemasToIncludeStr.c_str());
+        
+        
+        auto filterSchemas = [&schemasToInclude](bvector<ECN::ECSchemaCP>& schemas) {
+          bvector<ECN::ECSchemaCP> filtered;
+          for (auto schema : schemas)
+          {
+          Utf8String schemaName = schema->GetName();
+          if (std::find(schemasToInclude.begin(), schemasToInclude.end(), schemaName) != schemasToInclude.end())
+            {
+            filtered.push_back(schema);
+            printf("Including schema: %s\n", schemaName.c_str());
+            }
+          else
+            {
+            printf("Excluding schema: %s\n", schemaName.c_str());
+            }
+          }
+          schemas = filtered;
+        };
+          
+        filterSchemas(leftSchemas);
+        filterSchemas(rightSchemas);
+        printf("******* Filtered to %zu left schemas and %zu right schemas *******\n", leftSchemas.size(), rightSchemas.size());
+        }
+
+    printf("******* Left schemas *******\n");
+      for (auto schema : leftSchemas)
+          printf("Schema: %s, Version: %s\n", schema->GetName().c_str(), schema->GetSchemaKey().GetVersionString().c_str());
+      
+    printf("******* Right schemas *******\n");
+      for (auto schema : rightSchemas)
+          printf("Schema: %s, Version: %s\n", schema->GetName().c_str(), schema->GetSchemaKey().GetVersionString().c_str());
 
     //merge the schemas
     SchemaMergeResult result;
@@ -173,6 +219,7 @@ TEST_F(SchemaMergerTests, TroubleshootMergeFromDump)
     options.SetRenameSchemaItemOnConflict(true);
     options.SetMergeOnlyDynamicSchemas(true);
     options.SetIgnoreIncompatiblePropertyTypeChanges(true);
+    options.SetDoNotMergeReferences(true);
     printf("******* Performing merge *******\n");
     EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas,  rightSchemas, options));
     

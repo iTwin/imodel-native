@@ -2363,7 +2363,7 @@ public:
     void SetVersionWrite(uint32_t versionWrite) { m_versionWrite = versionWrite; m_schemaFullName.Invalidate(); m_checksum.clear(); }
 
     //! Sets the least significant version number that increments with read/write compatible additions.
-    void SetVersionMinor(uint32_t versionMinor) { m_versionMinor = versionMinor; /*m_schemaFullName.Invalidate();*/ m_checksum.clear(); } // !!! TODO: This has been disabled to test the reverted behavior, Uncomment before merge!!!
+    void SetVersionMinor(uint32_t versionMinor) { m_versionMinor = versionMinor; m_schemaFullName.Invalidate(); m_checksum.clear(); }
 
     //! Sets the schema name.
     void SetName(Utf8StringCR name) { m_schemaName = name; m_schemaFullName.Invalidate(); m_checksum.clear(); }
