@@ -96,13 +96,13 @@ static const std::string& getEnvProxy() {
 static const std::string& getProxyForUrl(const std::string& url) {
     const std::string& envProxy = getEnvProxy();
     if (!envProxy.empty()) {
-        printf("\nUsing proxy from environment: <%s>\n", envProxy.c_str());
+        // printf("\nUsing proxy from environment: <%s>\n", envProxy.c_str());
         return envProxy;
     }
     auto schemeEnd = url.find("://");
     if (schemeEnd == std::string::npos) {
         logTrace("\nCannot determine proxy: invalid URL: %s\n", url.c_str());
-        printf("\nInvalid URL: %s\n", url.c_str());
+        // printf("\nInvalid URL: %s\n", url.c_str());
         return s_empty;
     }
     auto hostEnd = url.find('/', schemeEnd + 3);
@@ -113,13 +113,13 @@ static const std::string& getProxyForUrl(const std::string& url) {
         if (now - it->second.first > 3600) { // cache for 1 hour
             s_proxyMap.erase(it);
         } else {
-            printf("\nUsing cached proxy for key %s: <%s>\n", key.c_str(), it->second.second.c_str());
+            // printf("\nUsing cached proxy for key %s: <%s>\n", key.c_str(), it->second.second.c_str());
             return it->second.second;
         }
     }
     void* pProxy = proxy_resolver_create();
     if (nullptr == pProxy) {
-        printf("\nFailed to create proxy resolver!\n");
+        // printf("\nFailed to create proxy resolver!\n");
         return s_empty;
     }
     proxy_resolver_get_proxies_for_url(pProxy, url.c_str());
@@ -142,7 +142,7 @@ static const std::string& getProxyForUrl(const std::string& url) {
     if (!proxy.empty()) {
         logTrace("Resolved proxy for URL %s: <%s>\n", url.c_str(), proxy.c_str());
     }
-    printf("\nCaching proxy for key %s: <%s>\n", key.c_str(), proxy.c_str());
+    // printf("\nCaching proxy for key %s: <%s>\n", key.c_str(), proxy.c_str());
     s_proxyMap[key] = std::make_pair(now, proxy);
     return s_proxyMap[key].second;
 }
@@ -156,15 +156,15 @@ int besqlite_bcv_curl_handle_config(CURL * pCurl, int /*eMethod*/, const char * 
     if (!s_initialized) {
         proxy_resolver_global_init();
         proxy_config_global_init();
-        proxy_config_set_auto_config_url_override("http://localhost:3001/pac.js"); // for testing
+        // proxy_config_set_auto_config_url_override("http://localhost:3001/pac.js"); // for testing
         s_initialized = 1;
     }
     const std::string& proxy = getProxyForUrl(zUri);
     if (!proxy.empty()) {
-        printf("Setting proxy to %s for %s\n", proxy.c_str(), zUri);
+        // printf("Setting proxy to %s for %s\n", proxy.c_str(), zUri);
         curl_easy_setopt(pCurl, CURLOPT_PROXY, proxy.c_str());
     } else {
-        printf("No proxy for %s\n", zUri);
+        // printf("No proxy for %s\n", zUri);
         curl_easy_setopt(pCurl, CURLOPT_PROXY, NULL);
     }
     curl_easy_setopt(pCurl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_REVOKE_BEST_EFFORT);
