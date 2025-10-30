@@ -17,6 +17,9 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 struct SchemaMergerTests : ECTestFixture
     {};
 
+// Uncomment the following line to enable the TroubleshootMergeFromDump test
+// #define ENABLE_TROUBLESHOOT_MERGE_TEST
+
 ECSchemaReadContextPtr InitializeReadContextWithAllSchemas(bvector<Utf8CP> const& schemasXml, bvector<ECSchemaCP>* loadedSchemas = nullptr, bool skipValidation = false)
     {
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
@@ -77,6 +80,123 @@ void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult
 
     ASSERT_EQ(false, changes.IsChanged()) << "Actual schemas did not match expected result";
     }
+
+// #define ENABLE_TROUBLESHOOT_MERGE_TEST
+#ifdef ENABLE_TROUBLESHOOT_MERGE_TEST
+
+BentleyStatus LoadSchemasFromDirectory(BeFileNameCR directoryPath, ECSchemaReadContextR readContext, bvector<ECN::ECSchemaCP>& outSchemas, Utf8CP side)
+    {
+    bvector<BeFileName> schemaPaths;
+    BeDirectoryIterator::WalkDirsAndMatch(schemaPaths, directoryPath, L"*.ecschema.xml", false);
+
+    if (schemaPaths.empty())
+        return BentleyStatus::ERROR;
+
+    for (BeFileName const& schemaPath : schemaPaths)
+        {
+        ECSchemaPtr schema;
+        auto status = ECSchema::ReadFromXmlFile(schema, schemaPath.GetName(), readContext, false);
+        if (status == SchemaReadStatus::Success)
+          {
+            printf("Successfully loaded %s schema: %s\n", side, schema->GetName().c_str());
+            outSchemas.push_back(schema.get());
+          }
+        else if (status == SchemaReadStatus::DuplicateSchema)
+          {
+            // schema pointer is null in DuplicateSchema case, need to locate it
+            // Parse schema name from filename (name until first dot)
+            WString fileName = schemaPath.GetFileNameWithoutExtension();
+            Utf8String fileNameUtf8 = Utf8String(fileName.c_str());
+            size_t dotPos = fileNameUtf8.find('.');
+            Utf8String schemaName = (dotPos != Utf8String::npos) ? fileNameUtf8.substr(0, dotPos) : fileNameUtf8;
+            
+            SchemaKey key(schemaName.c_str(), 1, 0, 0);
+            schema = readContext.LocateSchema(key, SchemaMatchType::Latest);
+            if (schema.IsValid())
+              {
+                printf("Duplicate %s schema found (already loaded): %s\n", side, schema->GetName().c_str());
+                outSchemas.push_back(schema.get());
+              }
+            else
+              {
+                printf("Failed to locate duplicate %s schema: %s\n", side, schemaName.c_str());
+                return ERROR;
+              }
+          }
+        else
+          {
+            printf("Failed to load %s schema from: %s (status: %d)\n", side, schemaPath.GetNameUtf8().c_str(), (int)status);
+            return ERROR;
+          }
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
+* Takes schemas that were dumped from a real scenario where merging was failing and
+* uses those dumps as inputs for a new merge with troubleshooting enabled
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, TroubleshootMergeFromDump)
+    {
+    BeFileName leftSchemaPath(L"/mnt/wdblack-data/data/25-10-30_schemas/Left");
+    BeFileName rightSchemaPath(L"/mnt/wdblack-data/data/25-10-30_schemas/Right");
+    BeFileName dumpResultTo(L"/mnt/wdblack-data/data/schemaMerge/");
+
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+
+    ECSchemaReadContextPtr leftContext = ECSchemaReadContext::CreateContext(false, true);
+    leftContext->AddSchemaPath(leftSchemaPath.c_str(), true);
+    ECSchemaReadContextPtr rightContext = ECSchemaReadContext::CreateContext(false, true);
+    rightContext->AddSchemaPath(rightSchemaPath.c_str(), true);
+
+    bvector<ECN::ECSchemaCP> leftSchemas;
+    ASSERT_EQ(SUCCESS, LoadSchemasFromDirectory(leftSchemaPath, *leftContext, leftSchemas, "left")) << "Failed to load schemas from left directory";
+    bvector<ECN::ECSchemaCP> rightSchemas;
+    ASSERT_EQ(SUCCESS, LoadSchemasFromDirectory(rightSchemaPath, *rightContext, rightSchemas, "right")) << "Failed to load schemas from right directory";
+
+    //merge the schemas
+    SchemaMergeResult result;
+    TestIssueListener issues;
+    result.AddIssueListener(issues);
+
+    SchemaMergeOptions options;
+    //options.SetDoNotMergeReferences(true);
+    options.SetDumpSchemas(dumpResultTo.GetNameUtf8());
+
+    // DgnDbSync uses these options by default
+    options.SetKeepVersion(true);
+    options.SetRenamePropertyOnConflict(true);
+    options.SetRenameSchemaItemOnConflict(true);
+    options.SetMergeOnlyDynamicSchemas(true);
+    options.SetIgnoreIncompatiblePropertyTypeChanges(true);
+    printf("******* Performing merge *******\n");
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas,  rightSchemas, options));
+    
+    if(!issues.m_issues.empty())
+      {
+      printf("******* Issues reported during schema merge: *******\n");
+      for (auto& issue : issues.m_issues)
+        {
+        printf("- Severity: %d, Category: %s, Type: %s, Id: %s, Message: %s\n",
+            static_cast<int>(issue.severity),
+            static_cast<const char*>(issue.category),
+            static_cast<const char*>(issue.type),
+            static_cast<const char*>(issue.id),
+            issue.message.c_str());
+        }
+      }
+
+    printf("Merged Schemas:\n");
+    for (auto schema : result.GetResults())
+      {
+      printf("Schema: %s, Version: %s\n", schema->GetName().c_str(), schema->GetSchemaKey().GetVersionString().c_str());
+      }
+    }
+#endif // ENABLE_TROUBLESHOOT_MERGE_TEST
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
