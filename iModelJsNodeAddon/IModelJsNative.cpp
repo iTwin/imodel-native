@@ -1554,6 +1554,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
             // Map top-level fields
             jsObj.Set("changesetId", Napi::String::New(env, changeset["changeset_id"].asString().c_str()));
+            jsObj.Set("changesetIndex", Napi::Number::New(env, changeset["changeset_index"].asUInt()));
             jsObj.Set("uncompressedSizeBytes", Napi::Number::New(env, changeset["uncompressed_size_bytes"].asUInt()));
             jsObj.Set("sha1ValidationTimeMs", Napi::Number::New(env, changeset["sha1_validation_time_ms"].asUInt()));
             jsObj.Set("insertedRows", Napi::Number::New(env, changeset["inserted_rows"].asUInt()));
