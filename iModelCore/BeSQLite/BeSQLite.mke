@@ -109,6 +109,7 @@ objs +% $(o)bentley-sqlite$(oext) $(o)bcvutil$(oext) $(o)bcvmodule$(oext) $(o)si
 BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)proxyres$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinBentley$(libext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinCurl$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
