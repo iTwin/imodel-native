@@ -473,7 +473,7 @@ struct SubqueryRefExp final : RangeClassRefExp
                 view->SetAlias(GetAlias());
             }
         }
-        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
+        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;

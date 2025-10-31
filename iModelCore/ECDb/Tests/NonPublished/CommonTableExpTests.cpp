@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <set>
 #include <BeRapidJson/BeRapidJson.h>
-#include "iostream"
 
 #define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
 
