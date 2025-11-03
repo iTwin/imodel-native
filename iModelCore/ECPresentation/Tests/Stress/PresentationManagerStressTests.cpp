@@ -73,6 +73,8 @@ struct PresentationManagerStressTests : ECPresentationTest
         BeFileName assetsDirectory, temporaryDirectory;
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsDirectory);
         BeTest::GetHost().GetTempDir(temporaryDirectory);
+
+        BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory);
         ECSchemaReadContext::Initialize(assetsDirectory);
 
         ECPresentationManager::Params params(ECPresentationManager::Paths(assetsDirectory, temporaryDirectory));
@@ -90,6 +92,9 @@ struct PresentationManagerStressTests : ECPresentationTest
         SetupRulesets();
         SetupProjects();
         SetupRequests();
+
+        NativeLogging::ConsoleLogger::GetLogger().SetSeverity(LOGGER_NAMESPACE, NativeLogging::LOG_INFO);
+        NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
         }
 
     void OpenProject(ECDbR project, BeFileNameCR projectPath)
@@ -99,7 +104,7 @@ struct PresentationManagerStressTests : ECPresentationTest
             BeAssert(false);
             return;
             }
-        if (BeSQLite::DbResult::BE_SQLITE_OK != project.OpenBeSQLiteDb(projectPath, BeSQLite::Db::OpenParams(BeSQLite::Db::OpenMode::Readonly)))
+        if (BeSQLite::DbResult::BE_SQLITE_OK != project.OpenBeSQLiteDb(projectPath, BeSQLite::Db::OpenParams(BeSQLite::Db::OpenMode::ReadWrite)))
             {
             BeAssert(false);
             return;
@@ -352,6 +357,46 @@ struct PresentationManagerStressTests : ECPresentationTest
                 m_nodesPath2Items = paths[1];
                 });
             });
+
+        // [25]
+        m_functions.push_back([this]()
+            {
+            PresentationManagerStressTests::ImportSchema(m_project1);
+            return folly::makeFuture();
+            });
+        // [26]
+        m_functions.push_back([this]()
+            {
+            PresentationManagerStressTests::ImportSchema(m_project2);
+            return folly::makeFuture();
+            });
+        }
+
+    static void ImportSchema(ECDbR ecdb)
+        {
+        auto schemaId = BeGuid(true).ToString();
+        schemaId.ReplaceAll("-", "_");
+
+        ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
+        schemaReadContext->AddSchemaLocater(ecdb.GetSchemaLocater());
+
+        Utf8PrintfString schemaXml(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            "<ECSchema schemaName=\"schema_%s\" alias=\"alias_%s\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+            "  <ECSchemaReference name=\"BisCore\" version=\"01.00.00\" alias=\"bis\" />"
+            "  <ECEntityClass typeName=\"X\">"
+            "    <BaseClass>bis:PhysicalElement</BaseClass>"
+            "  </ECEntityClass>"
+            "</ECSchema>",
+            schemaId.c_str(), schemaId.c_str()
+        );
+
+        ECSchemaPtr schema;
+        ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaReadContext);
+        EXPECT_TRUE(schema.IsValid());
+
+        ecdb.Schemas().ImportSchemas(bvector<ECSchemaCP>{ schema.get() });
+        ecdb.SaveChanges();
         }
 };
 
@@ -366,7 +411,21 @@ static folly::Future<folly::Unit> RunFuture(std::function<folly::Future<folly::U
         })
     .onError([requestId](folly::exception_wrapper const& e)
         {
-        NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Future %d finished with exception: %s", requestId, e.class_name().c_str());
+        if (!e)
+            FAIL() << "Invalid exception";
+        try
+            {
+            e.throwException();
+            }
+        catch (CancellationException const&)
+            {
+            // Ignore cancellation exceptions
+            }
+        catch (...)
+            {
+            NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Future %d finished with exception: %s", requestId, e.class_name().c_str());
+            FAIL();
+            }
         });
     }
 
