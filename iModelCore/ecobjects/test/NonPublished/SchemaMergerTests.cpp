@@ -143,7 +143,10 @@ TEST_F(SchemaMergerTests, TroubleshootMergeFromDump)
     BeFileName leftSchemaPath(L"/mnt/wdblack-data/data/25-10-30_schemas/Left");
     BeFileName rightSchemaPath(L"/mnt/wdblack-data/data/25-10-30_schemas/Right");
     BeFileName dumpResultTo(L"/mnt/wdblack-data/data/schemaMerge/");
-    bvector<Utf8String> schemasToInclude = { "OpenPlant_3D" }; // Filter input schemas to just these names, use empty vector to include all
+    // Filter input schemas to just these names, use empty vector to include all
+    bvector<Utf8String> schemasToInclude = { "OpenPlant_3D", "BentleyBase",
+      "BisCore", "BusinessKey", "CoreCustomAttributes", "DesignSync",
+      "IntegratedStructuralModel", "OpenPlant", "OpenPlant_CustomAttributes" };
 
     NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
     NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
