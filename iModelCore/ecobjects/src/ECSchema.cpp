@@ -2497,6 +2497,7 @@ ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR 
         {
         LOG.warningv("Schema %s is adding a reference to %s while it already references %s. For compatibility this is currently permitted but probably indicates a problem.",
             this->GetFullSchemaName().c_str(), refSchema.GetFullSchemaName().c_str(), iter->second->GetFullSchemaName().c_str());
+        BeAssert(false && "Schema is adding a reference to a schema it already references under a different version. This is probably a problem.");
         }
 
     m_refSchemaList[refSchemaKey] = &refSchema;
