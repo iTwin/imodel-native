@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <type_traits>
 #include <cstddef>
 #include "../ECDbInternalTypes.h"
 #include <stack>
