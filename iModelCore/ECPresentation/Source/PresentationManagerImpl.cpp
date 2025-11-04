@@ -206,6 +206,7 @@ protected:
     virtual std::shared_ptr<NodesCache> _FindCache(Utf8StringCR connectionId) const = 0;
     virtual void _OnConnectionOpened(IConnectionCR connection) {}
     virtual void _OnConnectionClosed(IConnectionCR connection) {}
+    virtual void _OnConnectionSuspended(IConnectionCR connection) {}
 
 protected:
     NodesCacheManager(BeFileNameCR tempDirectory, NavNodesFactoryCR nodeFactory, INodesProviderContextFactoryCR nodeProviderContextFactory, INodesProviderFactoryCR nodeProvidersFactory,
@@ -245,6 +246,10 @@ protected:
             auto scope = Diagnostics::Scope::Create("NodesCacheManager: Connection closed");
             m_initializedCaches.erase(event.GetConnection().GetId());
             _OnConnectionClosed(event.GetConnection());
+            }
+        else if (event.GetEventType() == ConnectionEventType::Suspended)
+            {
+            _OnConnectionSuspended(event.GetConnection());
             }
         }
 
@@ -289,6 +294,13 @@ protected:
     void _OnConnectionClosed(IConnectionCR connection) override
         {
         m_caches.erase(connection.GetId());
+        }
+
+    void _OnConnectionSuspended(IConnectionCR connection) override
+        {
+        auto cache = _FindCache(connection.GetId());
+        if (cache)
+            cache->RemoveQuick([](auto const&){return true;});
         }
 
     std::shared_ptr<NodesCache> _FindCache(Utf8StringCR connectionId) const override
@@ -342,6 +354,17 @@ protected:
         BeMutexHolder lock(GetMutex());
         for (auto caches : m_allCaches)
             caches->erase(connection.GetId());
+        }
+
+    void _OnConnectionSuspended(IConnectionCR connection) override
+        {
+        BeMutexHolder lock(GetMutex());
+        for (auto caches : m_allCaches)
+            {
+            auto iter = caches->find(connection.GetId());
+            if (caches->end() != iter)
+                iter->second->RemoveQuick([](auto const&){return true;});
+            }
         }
 
     std::shared_ptr<NodesCache> _FindCache(Utf8StringCR connectionId) const override
