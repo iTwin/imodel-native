@@ -929,24 +929,35 @@ NavNodesProviderContextPtr RulesDrivenECPresentationManagerImpl::CreateNodesProv
     {
     auto scope = Diagnostics::Scope::Create("Create nodes provider context");
 
-    // locate the parent node if it's passed by key
     NavNodeCPtr parentNode = params.GetParentNode();
-    if (parentNode.IsNull() && params.GetParentNodeKey())
+    NavNodeKeyCPtr parentNodeKey = params.GetParentNodeKey() ? params.GetParentNodeKey() : params.GetParentNode() ? params.GetParentNode()->GetKey() : nullptr;
+
+    auto ensureNodesCache = [this, &params, &cache](NavNodeCP parentNodeP)
         {
-        parentNode = NavNodeLocater(*this, RequestWithRulesetImplParams::Create(params)).LocateNode(*params.GetParentNodeKey());
+        if (nullptr == cache)
+            cache = m_nodesCachesManager->GetCache(params.GetConnection().GetId(), parentNodeP ? parentNodeP->GetNodeId() : BeGuid());
+        if (nullptr == cache)
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, Utf8PrintfString("Failed to find the hierarchy cache for given connection: '%s'.", params.GetConnection().GetId().c_str()));
+        return cache;
+        };
+
+    // is we got a parent node, need to ensure it's valid and exists in cache - otherwise we take its key
+    // and locate it, possibly re-creating the hierarchy up to it
+    if (parentNode.IsValid() && ensureNodesCache(nullptr)->GetNode(parentNode->GetNodeId()).IsNull())
+        {
+        parentNode = nullptr;
+        }
+    // locate the parent node if it's passed by key
+    if (parentNode.IsNull() && parentNodeKey.IsValid())
+        {
+        parentNode = NavNodeLocater(*this, RequestWithRulesetImplParams::Create(params)).LocateNode(*parentNodeKey);
         if (parentNode.IsNull())
             throw InvalidArgumentException("Node for given parent node key does not exist");
         }
 
-    // get the nodes cache
-    if (nullptr == cache)
-        cache = m_nodesCachesManager->GetCache(params.GetConnection().GetId(), parentNode.IsValid() ? parentNode->GetNodeId() : BeGuid());
-    if (nullptr == cache)
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, Utf8PrintfString("Failed to find the hierarchy cache for given connection: '%s'.", params.GetConnection().GetId().c_str()));
-
     // create the nodes provider context
     NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(params.GetConnection(), params.GetRulesetId().c_str(),
-        parentNode.get(), cache, params.GetCancellationToken(), params.GetRulesetVariables());
+        parentNode.get(), ensureNodesCache(parentNode.get()), params.GetCancellationToken(), params.GetRulesetVariables());
     if (context.IsValid())
         {
         context->SetInstanceFilter(params.GetInstanceFilter());
