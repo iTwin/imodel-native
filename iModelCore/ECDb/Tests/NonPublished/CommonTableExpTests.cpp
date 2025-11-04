@@ -1354,6 +1354,7 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte_within_subquery) {
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("100", stmt.GetValueText(0));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     }
     if ("simple_wild_nested_with_unmatched_values") {
         auto query = R"(select a from(
