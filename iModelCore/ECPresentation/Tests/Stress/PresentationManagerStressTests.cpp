@@ -58,12 +58,6 @@ struct PresentationManagerStressTests : ECPresentationTest
     std::shared_ptr<TestUpdateRecordsHandler> m_updateRecordsHandler = std::make_shared<TestUpdateRecordsHandler>();
     std::shared_ptr<TestHierarchyChangeRecordsHandler> m_changeRecordsHandler = std::make_shared<TestHierarchyChangeRecordsHandler>();
 
-    // Data
-    bvector<ECClassInstanceKey> m_project1GeometricElementKeys;
-    bvector<ECClassInstanceKey> m_project2GeometricElementKeys;
-    bvector<NavNodeCPtr> m_nodesPath1Items;
-    bvector<NavNodeCPtr> m_nodesPath2Items;
-
     PresentationManagerStressTests() {}
 
     void SetUp() override
@@ -178,69 +172,62 @@ struct PresentationManagerStressTests : ECPresentationTest
 
     void SetupRequests()
         {
-        // Preparation
-        m_project1GeometricElementKeys = PresentationManagerTestsHelper::GetGeometricElementKeys(m_project1);
-        m_project2GeometricElementKeys = PresentationManagerTestsHelper::GetGeometricElementKeys(m_project2);
-
         // Functions population
         // Content:
         // [0]
         m_functions.push_back([this]()
             {
-            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project1, ITEMS_RULESET, nullptr, *KeySet::Create(m_project1GeometricElementKeys), ContentDisplayType::List);
+            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project1, ITEMS_RULESET, nullptr, *KeySet::Create(PresentationManagerTestsHelper::GetGeometricElementKeys(m_project1)), ContentDisplayType::List);
             });
         // [1]
         m_functions.push_back([this]()
             {
             SelectionInfoCPtr selection = SelectionInfo::Create("ProviderName", false);
-            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project1, ITEMS_RULESET, selection.get(), *KeySet::Create(m_project1GeometricElementKeys), ContentDisplayType::List);
+            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project1, ITEMS_RULESET, selection.get(), *KeySet::Create(PresentationManagerTestsHelper::GetGeometricElementKeys(m_project1)), ContentDisplayType::List);
             });
         // [2]
         m_functions.push_back([this]()
             {
-            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project1, CUSTOM_RULESET, nullptr, *KeySet::Create(m_project1GeometricElementKeys), ContentDisplayType::List);
+            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project1, CUSTOM_RULESET, nullptr, *KeySet::Create(PresentationManagerTestsHelper::GetGeometricElementKeys(m_project1)), ContentDisplayType::List);
             });
 
         // [3]
         m_functions.push_back([this]()
             {
-            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project1, ITEMS_RULESET, nullptr, *KeySet::Create(m_project1GeometricElementKeys), ContentDisplayType::PropertyPane);
+            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project1, ITEMS_RULESET, nullptr, *KeySet::Create(PresentationManagerTestsHelper::GetGeometricElementKeys(m_project1)), ContentDisplayType::PropertyPane);
             });
 
         // [4]
         m_functions.push_back([this]()
             {
-            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project2, ITEMS_RULESET, nullptr, *KeySet::Create(m_project2GeometricElementKeys), ContentDisplayType::Graphics);
+            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project2, ITEMS_RULESET, nullptr, *KeySet::Create(PresentationManagerTestsHelper::GetGeometricElementKeys(m_project2)), ContentDisplayType::Graphics);
             });
         // [5]
         m_functions.push_back([this]()
             {
             SelectionInfoCPtr selection = SelectionInfo::Create("ProviderName1", false);
-            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project2, ITEMS_RULESET, selection.get(), *KeySet::Create(m_project2GeometricElementKeys), ContentDisplayType::Graphics);
+            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project2, ITEMS_RULESET, selection.get(), *KeySet::Create(PresentationManagerTestsHelper::GetGeometricElementKeys(m_project2)), ContentDisplayType::Graphics);
             });
         // [6]
         m_functions.push_back([this]()
             {
-            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project2, CUSTOM_RULESET, nullptr, *KeySet::Create(m_project2GeometricElementKeys), ContentDisplayType::Graphics);
+            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project2, CUSTOM_RULESET, nullptr, *KeySet::Create(PresentationManagerTestsHelper::GetGeometricElementKeys(m_project2)), ContentDisplayType::Graphics);
             });
 
         // [7]
         m_functions.push_back([this]()
             {
-            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project2, ITEMS_RULESET, nullptr, *KeySet::Create(m_project2GeometricElementKeys), ContentDisplayType::Grid);
+            return PresentationManagerTestsHelper::GetContent(*m_manager, m_project2, ITEMS_RULESET, nullptr, *KeySet::Create(PresentationManagerTestsHelper::GetGeometricElementKeys(m_project2)), ContentDisplayType::Grid);
             });
         // [8]
         m_functions.push_back([this](){return PresentationManagerTestsHelper::GetContentClassesForGeometricElement(*m_manager, m_project1, ITEMS_RULESET, ContentDisplayType::Grid);});
         // [9]
         m_functions.push_back([this]()
             {
-            return PresentationManagerTestsHelper::GetContentSetSize(*m_manager, m_project1, ITEMS_RULESET, nullptr, *KeySet::Create(m_project1GeometricElementKeys), ContentDisplayType::List);
+            return PresentationManagerTestsHelper::GetContentSetSize(*m_manager, m_project1, ITEMS_RULESET, nullptr, *KeySet::Create(PresentationManagerTestsHelper::GetGeometricElementKeys(m_project1)), ContentDisplayType::List);
             });
 
         // Navigation:
-        m_nodesPath1Items = PresentationManagerTestsHelper::GetNodesPath(*m_manager, m_project1, ITEMS_RULESET, 7).get();
-        m_nodesPath2Items = PresentationManagerTestsHelper::GetNodesPath(*m_manager, m_project2, ITEMS_RULESET, 7).get();
-
         // [10]
         m_functions.push_back([this]()
             {
@@ -265,13 +252,15 @@ struct PresentationManagerStressTests : ECPresentationTest
         // [14]
         m_functions.push_back([this]()
             {
-            return PresentationManagerTestsHelper::GetNodesCount(*m_manager, m_project1, m_nodesPath1Items, ITEMS_RULESET);
+            auto nodesPathItems = PresentationManagerTestsHelper::GetNodesPath(*m_manager, m_project1, ITEMS_RULESET, 7).get();
+            return PresentationManagerTestsHelper::GetNodesCount(*m_manager, m_project1, nodesPathItems, ITEMS_RULESET);
             });
 
         // [15]
         m_functions.push_back([this]()
             {
-            return PresentationManagerTestsHelper::GetNodesCount(*m_manager, m_project2, m_nodesPath2Items, ITEMS_RULESET);
+            auto nodesPathItems = PresentationManagerTestsHelper::GetNodesPath(*m_manager, m_project2, ITEMS_RULESET, 7).get();
+            return PresentationManagerTestsHelper::GetNodesCount(*m_manager, m_project2, nodesPathItems, ITEMS_RULESET);
             });
 
         // [16]
@@ -295,17 +284,15 @@ struct PresentationManagerStressTests : ECPresentationTest
         // [18]
         m_functions.push_back([this]()
             {
-            ECInstanceId instanceId = m_project1GeometricElementKeys[0].GetId();
-            ECClassCP ecClass = m_project1GeometricElementKeys[0].GetClass();
-            m_eventsSource->NotifyECInstanceUpdated(m_project1, ECClassInstanceKey(*ecClass, instanceId));
+            auto geometricElementKeys = PresentationManagerTestsHelper::GetGeometricElementKeys(m_project1);
+            m_eventsSource->NotifyECInstanceUpdated(m_project1, geometricElementKeys[0]);
             return folly::makeFuture();
             });
         // [19]
         m_functions.push_back([this]()
             {
-            ECInstanceId instanceId = m_project2GeometricElementKeys[0].GetId();
-            ECClassCP ecClass = m_project2GeometricElementKeys[0].GetClass();
-            m_eventsSource->NotifyECInstanceUpdated(m_project2, ECClassInstanceKey(*ecClass, instanceId));
+            auto geometricElementKeys = PresentationManagerTestsHelper::GetGeometricElementKeys(m_project2);
+            m_eventsSource->NotifyECInstanceUpdated(m_project2, geometricElementKeys[0]);
             return folly::makeFuture();
             });
 
@@ -327,17 +314,14 @@ struct PresentationManagerStressTests : ECPresentationTest
             {
             m_project1.CloseDb();
             OpenFirstProject();
-            m_project1GeometricElementKeys = PresentationManagerTestsHelper::GetGeometricElementKeys(m_project1);
-            return PresentationManagerTestsHelper::GetNodesPath(*m_manager, m_project1, ITEMS_RULESET, 7).then([&](bvector<NavNodeCPtr> path){m_nodesPath1Items = path;});
+            return folly::makeFuture();
             });
         // [23]
         m_functions.push_back([this]()
             {
             m_project2.CloseDb();
-
             OpenSecondProject();
-            m_project2GeometricElementKeys = PresentationManagerTestsHelper::GetGeometricElementKeys(m_project2);
-            return PresentationManagerTestsHelper::GetNodesPath(*m_manager, m_project2, ITEMS_RULESET, 7).then([&](bvector<NavNodeCPtr> path){m_nodesPath2Items = path;});
+            return folly::makeFuture();
             });
 
         // [24]
@@ -345,17 +329,7 @@ struct PresentationManagerStressTests : ECPresentationTest
             {
             m_locater->Clear();
             SetupRulesets();
-            m_project1GeometricElementKeys = PresentationManagerTestsHelper::GetGeometricElementKeys(m_project1);
-            m_project2GeometricElementKeys = PresentationManagerTestsHelper::GetGeometricElementKeys(m_project2);
-            std::vector<folly::Future<bvector<NavNodeCPtr>>> futures;
-            futures.push_back(PresentationManagerTestsHelper::GetNodesPath(*m_manager, m_project1, ITEMS_RULESET, 7));
-            futures.push_back(PresentationManagerTestsHelper::GetNodesPath(*m_manager, m_project2, ITEMS_RULESET, 7));
-            return folly::collect(futures)
-                .then([&](std::vector<bvector<NavNodeCPtr>> paths)
-                {
-                m_nodesPath1Items = paths[0];
-                m_nodesPath2Items = paths[1];
-                });
+            return folly::makeFuture();
             });
 
         // [25]
@@ -403,13 +377,18 @@ struct PresentationManagerStressTests : ECPresentationTest
 /*---------------------------------------------------------------------------------**//**
 * @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
-static folly::Future<folly::Unit> RunFuture(std::function<folly::Future<folly::Unit>()>& function, int requestId)
+static folly::Future<folly::Unit> RunFuture
+(
+    int requestId,
+    std::function<folly::Future<folly::Unit>()> function,
+    std::function<void(std::function<folly::Future<folly::Unit>()>)> onRestart
+)
     {
     return function().then([requestId]()
         {
         NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Future %d finished successfully", requestId);
         })
-    .onError([requestId](folly::exception_wrapper const& e)
+    .onError([requestId, function, onRestart](folly::exception_wrapper const& e)
         {
         if (!e)
             FAIL() << "Invalid exception";
@@ -417,9 +396,21 @@ static folly::Future<folly::Unit> RunFuture(std::function<folly::Future<folly::U
             {
             e.throwException();
             }
-        catch (CancellationException const&)
+        catch (CancellationException const& cancellation)
             {
-            // Ignore cancellation exceptions
+            if (cancellation.IsRestartRequested())
+                {
+                NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Future %d was cancelled with request to restart", requestId);
+                onRestart([requestId, function, onRestart]()
+                    {
+                    NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Future %d re-scheduled.", requestId);
+                    return RunFuture(requestId, function, onRestart);
+                    });
+                }
+            else
+                {
+                NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Future %d was cancelled.", requestId);
+                }
             }
         catch (...)
             {
@@ -485,12 +476,30 @@ TEST_F(PresentationManagerStressTests, ExecutingMultipleRequests)
         }
     PrintStrategy(functionIndexes);
 
+    BeMutex m;
     bvector<folly::Future<folly::Unit>> futures;
+    bvector<std::function<folly::Future<folly::Unit>()>> futureRestarts;
     for (size_t i = 0; i < functionIndexes.size(); ++i)
         {
         int functionIndex = functionIndexes[i];
         NativeLogging::CategoryLogger(LOGGER_NAMESPACE).infov("Future %d (function index %d) scheduled.", i, functionIndex);
-        futures.push_back(RunFuture(m_functions[functionIndex], i));
+        futures.push_back(RunFuture(i, m_functions[functionIndex], [&futureRestarts, &m](auto futureRestartFunc)
+            {
+            BeMutexHolder lock(m);
+            futureRestarts.push_back(futureRestartFunc);
+            }));
         }
-    PresentationManagerTestsHelper::WaitForAllFutures(futures, false);
+
+    while (!futures.empty())
+        {
+        PresentationManagerTestsHelper::WaitForAllFutures(futures, false);
+
+        BeMutexHolder lock(m);
+        futures.clear();
+        for (size_t i = 0; i < futureRestarts.size(); ++i)
+            futures.push_back(futureRestarts[i]());
+        futureRestarts.clear();
+        }
+
+    NativeLogging::CategoryLogger(LOGGER_NAMESPACE).info("All futures completed.");
     }
