@@ -1350,7 +1350,21 @@ TEST_F(CommonTableExpTestFixture, alias_to_cte_within_subquery) {
         ))";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [a] FROM (WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT [K2] [a],[K3] FROM (SELECT c0.a K2,c0.b K3 FROM cte0 c0 WHERE c0.a=100 AND c0.b=200))");
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K4] FROM (WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT [K2] [K4],[K3] FROM (SELECT c0.a K2,c0.b K3 FROM cte0 c0 WHERE c0.a=100 AND c0.b=200))");
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("a", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("100", stmt.GetValueText(0));
+    }
+    if ("simple_wild_nested_with_unmatched_values") {
+        auto query = R"(select a from(
+            with recursive
+                cte0 (a,b) as ( select 100,200)
+            select * from (select * from cte0 c0 where c0.a=300 and c0.b=400)
+        ))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K4] FROM (WITH RECURSIVE cte0(a,b) AS (SELECT 100,200)\nSELECT [K2] [K4],[K3] FROM (SELECT c0.a K2,c0.b K3 FROM cte0 c0 WHERE c0.a=300 AND c0.b=400))");
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     }
 
     if ("simple_wild") {
