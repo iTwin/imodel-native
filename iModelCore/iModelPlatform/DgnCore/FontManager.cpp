@@ -246,7 +246,7 @@ BentleyStatus FontDb::EmbedFont(uint32_t id, bvector<FontFace> const& faces, Byt
         return ERROR;
     }
 
-    auto reader = new FontDbReader(m_db, rowId, rowId, data.GetSize(), compress);
+    auto reader = new FontDbReader(m_db, rowId, id, data.GetSize(), compress);
     for (auto& face : faces)
         reader->m_faces.push_back(face);
 

@@ -391,10 +391,13 @@ Napi::Value JsInterop::ResolveInstanceKey(DgnDbR dgndb, NapiInfoCR info) {
             THROW_JS_DGN_DB_EXCEPTION(info.Env(),"missing value", DgnDbStatus::BadArg);
         }
 
-        auto codeValue = codeJson["value"].asString();
-        auto stmt = codeValue.empty() ?
-            dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [CodeSpec].[Id]=? AND [CodeScope].[Id]=? AND ([CodeValue] IS NULL OR  [CodeValue] = '')") :
-            dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [CodeSpec].[Id]=? AND [CodeScope].[Id]=? AND [CodeValue]=?");
+        auto codeValue = codeJson["value"].asString().TrimUtf8();
+
+        if (codeValue.empty()) {
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(),"failed to resolve element from code: code value empty string", DgnDbStatus::NotFound);
+        }
+
+        auto stmt = dgndb.GetPreparedECSqlStatement("SELECT [ECInstanceId], [ECClassId] FROM [bis].[Element] WHERE [CodeSpec].[Id]=? AND [CodeScope].[Id]=? AND [CodeValue]=?");
 
         if (!stmt.IsValid()) {
             THROW_JS_DGN_DB_EXCEPTION(info.Env(),"failed to prepare statement", DgnDbStatus::BadArg);
@@ -402,9 +405,7 @@ Napi::Value JsInterop::ResolveInstanceKey(DgnDbR dgndb, NapiInfoCR info) {
 
         stmt->BindId(1, specId);
         stmt->BindId(2, scopeId);
-        if (!codeValue.empty()) {
-            stmt->BindText(3, codeValue.c_str(), IECSqlBinder::MakeCopy::No);
-        }
+        stmt->BindText(3, codeValue.c_str(), IECSqlBinder::MakeCopy::No);
 
         if (stmt->Step() != BE_SQLITE_ROW) {
             THROW_JS_DGN_DB_EXCEPTION(info.Env(),"failed to resolve element from code", DgnDbStatus::NotFound);
@@ -1023,6 +1024,45 @@ void JsInterop::DeleteLinkTableRelationship(DgnDbR dgndb, Napi::Object inJson)
     auto stat = dgndb.DeleteLinkTableRelationship(relKey);
     if (stat != BE_SQLITE_DONE)
         THROW_JS_BE_SQLITE_EXCEPTION(Env(), "error deleting relationship", stat);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::DeleteLinkTableRelationships(DgnDbR dgndb, Napi::Array propsArray)
+    {
+    if (propsArray.IsEmpty())
+        return;
+
+    std::unordered_map<Utf8String, DgnElementIdSet> relClassAndIdsMap;
+
+    for (auto i = 0U; i < propsArray.Length(); ++i)
+        {
+        Napi::Value arrayItem = propsArray[i];
+        if (!arrayItem.IsObject())
+            continue;
+
+        const auto inJson = BeJsConst(arrayItem.As<Napi::Object>());
+        const auto relClassName = inJson[DgnElement::json_classFullName()];
+
+        // Make sure the relationship class is valid
+        auto relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(relClassName, dgndb.GetClassLocater());
+        if (!relClassId.IsValid()) {
+            GetNativeLogger().errorv("Invalid relationship class `%s` given to delete relationship instances.", relClassName.ToUtf8CP());
+            continue;
+        }
+
+        DgnElementId relId;
+        relId.FromJson(inJson[DgnElement::json_id()]);
+
+        relClassAndIdsMap[relClassName.ToUtf8CP()].insert(std::move(relId));
+        }
+
+    if (relClassAndIdsMap.empty())
+        return; // Nothing to delete
+    
+    // Delete relationships grouped by class name
+    std::for_each(relClassAndIdsMap.begin(), relClassAndIdsMap.end(), [&dgndb](const std::pair<Utf8String, DgnElementIdSet>& classAndIdList) { dgndb.DeleteLinkTableRelationships(classAndIdList.first, classAndIdList.second); });
     }
 
 /*---------------------------------------------------------------------------------**//**

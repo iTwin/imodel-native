@@ -1554,6 +1554,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
             // Map top-level fields
             jsObj.Set("changesetId", Napi::String::New(env, changeset["changeset_id"].asString().c_str()));
+            jsObj.Set("changesetIndex", Napi::Number::New(env, changeset["changeset_index"].asUInt()));
             jsObj.Set("uncompressedSizeBytes", Napi::Number::New(env, changeset["uncompressed_size_bytes"].asUInt()));
             jsObj.Set("sha1ValidationTimeMs", Napi::Number::New(env, changeset["sha1_validation_time_ms"].asUInt()));
             jsObj.Set("insertedRows", Napi::Number::New(env, changeset["inserted_rows"].asUInt()));
@@ -2023,6 +2024,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     void DeleteLinkTableRelationship(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, props);
         JsInterop::DeleteLinkTableRelationship(GetOpenedDb(info), props);
+    }
+
+    void DeleteLinkTableRelationships(NapiInfoCR info) {
+        if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray()) {
+            THROW_JS_TYPE_EXCEPTION("Argument must be an array of relationship instance objects.");
+        }
+        JsInterop::DeleteLinkTableRelationships(GetOpenedDb(info), info[0].As<Napi::Array>());
     }
 
     Napi::Value InsertCodeSpec(NapiInfoCR info) {
@@ -3017,6 +3025,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
+            InstanceMethod("deleteLinkTableRelationships", &NativeDgnDb::DeleteLinkTableRelationships),
             InstanceMethod("deleteLocalValue", &NativeDgnDb::DeleteLocalValue),
             InstanceMethod("deleteModel", &NativeDgnDb::DeleteModel),
             InstanceMethod("detachChangeCache", &NativeDgnDb::DetachChangeCache),
