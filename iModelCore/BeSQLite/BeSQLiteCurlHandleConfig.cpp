@@ -2,6 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
+#define _CRT_SECURE_NO_WARNINGS
 #include "SQLite/sqlite3.h"
 #include <curl/curl.h>
 #include <proxyres/proxyres.h>

@@ -434,6 +434,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(lib
                             $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(stlibext) \
                             $(ContextSubPartsStaticLibs)$(libprefix)BePng$(stlibext) \
                             $(ContextSubPartsStaticLibs)$(libprefix)BeLibJpegTurbo$(stlibext) \
+                            $(ContextSubPartsStaticLibs)$(libprefix)proxyres$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinJpeg$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext) \
                             $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
@@ -446,8 +447,12 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(lib
                             $(ContextSubpartsLibs)$(libprefix)iTwinFreetype2$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinFolly$(libext) \
                             $(ContextSubPartsLibs)$(libprefix)iTwinECPresentation$(libext) \
-                            $(ContextSubPartsLibs)$(libprefix)proxyres$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinNapi$(libext)
+
+%if $(TARGET_PLATFORM)=="Windows"
+    LINKER_LIBRARIES + iphlpapi.lib
+    LINKER_LIBRARIES + winhttp.lib
+%endif
 
 %ifndef CREATE_STATIC_LIBRARIES
     %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT

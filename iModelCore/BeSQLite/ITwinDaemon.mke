@@ -53,7 +53,7 @@ $(o)bcvencrypt$(oext) : $(SQLiteDir)bcvencrypt.c ${MultiCompileDepends} ${bcvhea
 EXE_DEST            = $(o)
 EXE_NAME            = $(appName)
 EXE_OBJS            = $(MultiCompileObjectList)
-EXE_LOPT1           = -entry:mainCRTStartup
+EXE_LOPT1           = -entry:mainCRTStartup -NODEFAULTLIB:msvcrtd.lib
 
 %if $(TARGET_PLATFORM)=="Windows"
         LINKER_LIBRARIES + wsock32.lib ws2_32.lib Advapi32.lib Wldap32.lib Crypt32.lib Secur32.lib
@@ -67,5 +67,10 @@ LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinOpenSSL$(stlib
 LINKER_LIBRARIES + $(CLibs)
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)proxyres$(stlibext)
+
+%if $(TARGET_PLATFORM)=="Windows"
+    LINKER_LIBRARIES + iphlpapi.lib
+    LINKER_LIBRARIES + winhttp.lib
+%endif
 
 %include $(SharedMki)linktool.mki

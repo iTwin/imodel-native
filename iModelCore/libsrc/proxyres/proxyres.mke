@@ -8,6 +8,16 @@
 o = $(OutputRootDir)build/proxyres/
 vendorSrc = $(_MakeFilePath)vendor/
 
+%if $(TARGET_PLATFORM)=="Windows"
+    %if defined (DEBUG)
+        configDir=Debug/
+    %else
+        configDir=Release/
+    %endif
+%else
+    configDir=
+%endif
+
 always:
     !~@mkdir $(o)
 
@@ -18,14 +28,14 @@ $(o)$(libprefix)proxyres$(libext) :
         cmake --build $(o) --config Debug
     %else
         cmake -S . -B $(o)
-        cmake --build $(o)
+        cmake --build $(o) --config Release
     %endif
 
 # Vendor API
 always:
     ~linkdir "$(BuildContext)VendorAPI/proxyres=$(vendorSrc)/include/proxyres"
 
-$(BuildContext)Delivery/$(stlibprefix)proxyres$(stlibext) : $(o)$(stlibprefix)proxyres$(stlibext)
+$(BuildContext)Delivery/$(stlibprefix)proxyres$(stlibext) : $(o)$(configDir)$(stlibprefix)proxyres$(stlibext)
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)Delivery/proxyres-license.txt : $(vendorSrc)LICENSE.md

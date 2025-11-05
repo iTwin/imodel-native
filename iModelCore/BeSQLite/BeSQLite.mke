@@ -116,6 +116,12 @@ BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinOpenSSL$(stlibex
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinIcu4c$(libext)
 
+%if $(TARGET_PLATFORM)=="Windows"
+    BeSQLiteRequiredLibs + iphlpapi.lib
+    BeSQLiteRequiredLibs + winhttp.lib
+    DLM_SPECIAL_LINKOPT = -NODEFAULTLIB:msvcrtd.lib
+%endif
+
 DLM_OBJECT_FILES    = $(objs)
 DLM_NAME            = $(appName)
 DLM_DEST            = $(o)
