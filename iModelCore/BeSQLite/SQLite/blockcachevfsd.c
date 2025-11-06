@@ -2245,6 +2245,7 @@ static void bdPollCb(
   DClient *pClient = bdFetchClient(pDLCtx);
   Container *pCont = pDLCtx->pCont;
   DaemonCtx *p = pDLCtx->pCtx;
+  DClient *pIter = 0;
   char *zErr = 0;                 /* Error message (from sqlite3_malloc) */
   int rc = errCode;               /* Error code */
   Manifest *pMan = 0;             /* Parsed manifest object */
@@ -2260,6 +2261,34 @@ static void bdPollCb(
   }
   pCont->eState = CONTAINER_STATE_NONE;
 
+  /* Search for clients that currently have an open transaction on this
+  ** container. If possible (if the db they have open has not changed),
+  ** upgrade such clients to the new manifest object. */
+  for(pIter=p->pClientList; pIter; pIter=pIter->pNext){
+    if( pIter->pMan && pIter->pCont==pCont ){
+      ManifestDb *pOldDb = pIter->pManDb;
+      int iOff = pOldDb - pIter->pMan->aDb;
+      ManifestDb *pNewDb = 0;
+
+      if( iOff<pMan->nDb ){
+        pNewDb = &pMan->aDb[iOff];
+        if( pNewDb->iDbId!=pOldDb->iDbId ) pNewDb = 0;
+      }
+      if( pNewDb==0 ){
+        pNewDb = bcvManifestDbidToDb(pMan, pOldDb->iDbId);
+      }
+      if( pNewDb && pNewDb->iVersion==pOldDb->iVersion ){
+        assert( pNewDb->nBlkOrig==pOldDb->nBlkOrig );
+        assert( 0==memcmp(
+            pNewDb->aBlkOrig, pOldDb->aBlkOrig, NAMEBYTES(pMan)*pOldDb->nBlkOrig
+        ));
+        bcvManifestDeref(pIter->pMan);
+        pIter->pMan = pMan;
+        pIter->pManDb = pNewDb;
+        bcvManifestRef(pMan);
+      }
+    }
+  }
 
   if( pClient ){
     BcvMessage reply;
