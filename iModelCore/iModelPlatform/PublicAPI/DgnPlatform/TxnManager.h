@@ -134,7 +134,7 @@ struct TxnTable : RefCountedBase {
 
     //! Called after all added/deleted/updated rows have been sent to the _OnValidatexxx methods to propagate changes to dependents.
     //! This is the only method on TxnTable that may make changes to the database.
-    virtual void _PropagateChanges() {}
+    virtual BeSQLite::DbResult _PropagateChanges() { return BeSQLite::DbResult::BE_SQLITE_OK; }
 
     //! Called after validation is complete. TxnTables that create temporary tables can empty them in this method.
     virtual void _OnValidated() {}
@@ -424,7 +424,7 @@ private:
     bool m_trackChangesetHealthStats = false;
     bvector<ECN::ECClassId> m_childPropagatesChangesToParentRels;
     ChangesetPropsPtr m_changesetInProgress;
-    std::map<Utf8String, BeJsDocument> m_changesetHealthStatistics;
+    std::unordered_map<Utf8String, BeJsDocument> m_changesetHealthStatistics;
 
 public:
     ModelChanges m_modelChanges;
@@ -457,8 +457,8 @@ private:
     void OnChangeSetApplied(BeSQLite::ChangeStreamCR changeset, bool invert);
     void OnGeometricModelChanges();
 
-    BentleyStatus PropagateChanges() {return DoPropagateChanges(*this);}
-    BentleyStatus DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
+    BeSQLite::DbResult PropagateChanges() {return DoPropagateChanges(*this);}
+    BeSQLite::DbResult DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
     void ReverseTxnRange(TxnRange const& txnRange);
     DgnDbStatus ReverseActions(TxnRange const& txnRange);
     void ReinstateTxn(TxnRange const&);
@@ -927,7 +927,7 @@ namespace dgn_TxnTable
         void _OnValidateAdd(BeSQLite::Changes::Change const& change) override { UpdateSummary(change, TxnTable::ChangeType::Insert); }
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override { UpdateSummary(change, TxnTable::ChangeType::Delete); }
         void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override { UpdateSummary(change, TxnTable::ChangeType::Update); }
-        void _PropagateChanges() override;
+        BeSQLite::DbResult _PropagateChanges() override;
         void _OnValidated() override;
 
         void UpdateSummary(BeSQLite::Changes::Change change, ChangeType changeType);
@@ -954,7 +954,7 @@ namespace dgn_TxnTable
         void _OnValidateAdd(BeSQLite::Changes::Change const& change) override {_UpdateSummary(change, TxnTable::ChangeType::Insert);}
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {_UpdateSummary(change, TxnTable::ChangeType::Delete);}
         void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {_UpdateSummary(change, TxnTable::ChangeType::Update);}
-        void _PropagateChanges() override {}
+        BeSQLite::DbResult _PropagateChanges() override { return BeSQLite::DbResult::BE_SQLITE_OK; }
         void _OnValidated() override;
 
         BeSQLite::DbResult QueryTargets(DgnElementId& srcelemid, DgnElementId& tgtelemid, BeSQLite::EC::ECInstanceId relid);

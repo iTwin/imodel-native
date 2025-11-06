@@ -81,6 +81,7 @@ struct DerivedPropertyExp final : Exp
         }
         bool IsComputed() const;
         bool OriginateInASubQuery() const { return nullptr != this->FindParent(Exp::Type::Subquery); }
+        bool OriginateInACommonTableBlockWithNoColumns() const;
         bool IsWildCard() const;
         ExtractPropertyValueExp const* TryGetExtractPropExp() const;
     };
@@ -378,7 +379,7 @@ struct SingleSelectStatementExp final : QueryExp
             }
 
 
-        bool IsCoreSelect() const { return m_limitOffsetClauseIndex == UNSET_CHILDINDEX && m_optionsClauseIndex == UNSET_CHILDINDEX; }
+        bool IsCoreSelect() const { return m_orderByClauseIndex == UNSET_CHILDINDEX && m_limitOffsetClauseIndex == UNSET_CHILDINDEX; }
     };
 
 
@@ -472,7 +473,7 @@ struct SubqueryRefExp final : RangeClassRefExp
                 view->SetAlias(GetAlias());
             }
         }
-        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
+        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;

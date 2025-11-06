@@ -393,8 +393,9 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         }
 
         Statement stmt;
-        Utf8CP statNames [5] = { "nlock", "ncache", "cachesize", "memory_used", "memory_highwater" };
-        Utf8CP jsNames [5] = { "lockedCacheslots", "populatedCacheslots", "totalCacheslots", "memoryUsed", "memoryHighwater" };
+        Utf8CP statNames[] = { "nlock", "ncache", "cachesize", "memory_used", "memory_highwater", "memory_manifest", "memory_client_array", "memory_client_manifest" };
+        Utf8CP jsNames[] = { "lockedCacheslots", "populatedCacheslots", "totalCacheslots", "memoryUsed", "memoryHighwater", "memoryManifest", "memoryClientArray", "memoryClientManifest" };
+        BeAssert (sizeof(statNames) == sizeof(jsNames));
         auto rc = stmt.Prepare(m_containerDb, "SELECT value FROM bcv_stat where name = ?");
         BeAssert (rc == BE_SQLITE_OK);
         UNUSED_VARIABLE(rc);
@@ -403,7 +404,12 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             stmt.BindText(1, statNames[i], Statement::MakeCopy::No);
             auto result = stmt.Step();
             if (result != BE_SQLITE_ROW) {
-                value[jsNames[i]] = Utf8String("SQLITE Error: ") + m_containerDb.GetLastError();
+                std::string statName = statNames[i];
+                // The following two stats are only present in daemon mode. So if they do not exist,
+                // do not include them in the output.
+                if (statName != "memory_client_array" && statName != "memory_client_manifest") {
+                    value[jsNames[i]] = Utf8String("SQLITE Error: ") + m_containerDb.GetLastError();
+                }
             } else {
                 // The actual values in the database are unsigned 64 bit integers, but there is no
                 // direct way to pass those to JavaScript. So we use BeStringUtilities::FormatUInt64

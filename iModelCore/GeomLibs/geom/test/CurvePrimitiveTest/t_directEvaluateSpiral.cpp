@@ -2254,8 +2254,8 @@ TEST(Spiral, IFCExample)
         double endRadius;
     };
     bvector<IfcSpiralData> spirals;
-    spirals.push_back({ DPoint3d::From(45.158155191480799, 453.89834705996597, 0.0), 6.2280619453155204, -288.0, 84.185, 0.0 });
-    spirals.push_back({ DPoint3d::From(45.166468005000002, 453.89706885000002, 0.0), -3.1583359873833818, -288.0, 84.185, 0.0 });
+    spirals.push_back({ DPoint3d::From(45.1581551914808, 453.898347059966, 0.0), 6.2280619453155204, -288.0, 84.185, 0.0 }); // in
+    spirals.push_back({ DPoint3d::From(45.158155190999998, 453.89834705999997, 0.0), -3.1583359873833818, -288.0, 84.185, 0.0 }); // out
     spirals.push_back({ DPoint3d::From(45.158112267000001, 453.89802714999998, 0.0), Angle::FromDegrees(179.04067763864862).Radians(), -288.0, 84.185, 0.0 });
     spirals.push_back({ DPoint3d::From(45.149770078000001, 453.89909698999999, 0.0), Angle::FromDegrees(178.27518985685947).Radians(), -288.0, 84.185, 0.0 });
     spirals.push_back({ DPoint3d::From(45.144496272000001, 453.90564859999996, 0.0), Angle::FromDegrees(134.41597069150998).Radians(), -288.0, 84.185, 0.0 });
@@ -2279,39 +2279,34 @@ TEST(Spiral, IFCExample)
         Check::True(placement != nullptr);
         Check::True(placement->spiral != nullptr);
 
-        // When fracA < fracB, the local spiral defines a segment of the spiral starting at the
-        // origin and extending into the first quadrant (or 4th if negative (CW) curvature).
-        // When fracA > fracB, not only is the curve reversed, but the local spiral sits in
-        // quadrant 3 (or 2) of the full spiral, which is obtained by rotating the half in
-        // quadrant 1 (or 4) 180 degrees about the origin.
-        bool rotateAndReverse = placement->fractionA > placement->fractionB;
+        // Base coordinates (clothoid):
+        // * DSpiral2dBase stores the spiral definition in these coordinates
+        // * the clothoid inflection point lies at the origin
+        // * the curve is just a portion of the full clothoid
+        // * the curve starts in quadrant 1 (or 4 if curvature < 0) at parameter fractionA, and ends at parameter fractionB
+        // * the curve "active" interval I = [fractionA, fractionB] might be reversed wrt to the clothoid parameterization
+        // * the interval is determined by length and start/end curvatures only
+        // Local coordinates (curve):
+        // * curve start point is local origin
+        // * curve start tangent is local x-axis
+        // * curve start tangent's CCW perp vector is local y-axis, unless I is reversed, then CW
+        // * this means that the curve normal is 001, unless I is reversed, then 00-1
+        // World coordinates (as placed):
+        // * determined by the placement->frame, which converts from base to world coords
+        // * this frame is the product of two rigid (det>0) transforms: [local->world][base->local]
+        // * local->world is user-specified by:
+        //   * start point (origin), and
+        //   * signed start tangent angle from world x-axis (rotation about 001).
 
-        DPoint3d myStartPoint; curve->FractionToPoint(rotateAndReverse ? placement->fractionB : placement->fractionA, myStartPoint);
-        DPoint3d myEndPoint; curve->FractionToPoint(rotateAndReverse ? placement->fractionA : placement->fractionB, myEndPoint);
-        Check::ExactDouble(placement->fractionA, rotateAndReverse ? 1.0 : 0.0);
-        Check::ExactDouble(placement->fractionB, rotateAndReverse ? 0.0 : 1.0);
-
-        double myTargetLength = placement->spiral->mLength;
+        DPoint3d myStartPoint;
+        DVec3d myStartTangent;
+        curve->FractionToPoint(0.0, myStartPoint, myStartTangent);
+        double myStartRadians = myStartTangent.AngleXY();
+        double myTargetLength = placement->spiral->mLength; 
         double myStartRadius = DoubleOps::ValidatedDivideDistance(1.0, placement->spiral->mCurvature0, 0.0);
         double myEndRadius = DoubleOps::ValidatedDivideDistance(1.0, placement->spiral->mCurvature1, 0.0);
-
-        DVec3d myStartTangent = DVec3d::FromXYAngleAndMagnitude(placement->spiral->mTheta0, 1.0);
-        if (rotateAndReverse)
-            myStartTangent.Scale(-1.0);
-        placement->frame.MultiplyMatrixOnly(myStartTangent);
-        double myStartRadians = myStartTangent.AngleXY();
-
-        DVec3d myEndTangent = DVec3d::FromXYAngleAndMagnitude(placement->spiral->mTheta1, 1.0);
-        if (rotateAndReverse)
-            myEndTangent.Scale(-1.0);
-        placement->frame.MultiplyMatrixOnly(myEndTangent);
-        double myEndRadians = myEndTangent.AngleXY();
-
-        if (rotateAndReverse)
-            {
+        if (placement->fractionA > placement->fractionB)
             std::swap(myStartRadius, myEndRadius);
-            std::swap(myStartRadians, myEndRadians);
-            }
 
         Check::Near(myStartPoint, spiral.startPoint);
         Check::NearPeriodicRadians(myStartRadians, spiral.startRadians);

@@ -522,17 +522,16 @@ TxnManager::TxnId TxnManager::GetMultiTxnOperationStart()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker) {    
+DbResult TxnManager::DoPropagateChanges(ChangeTracker& tracker) {    
     SetandRestoreIndirectChanges _v(tracker);
     for (auto table : m_tables) {
-        table->_PropagateChanges();
-        if (HasFatalError()) {
+        const auto rc = table->_PropagateChanges();
+        if (rc != BE_SQLITE_OK) {
             LOG.error("fatal propagation error");
-            break;
+            return rc;
         }
     }
-
-    return HasFatalError() ? BSIERROR : BSISUCCESS;
+    return BE_SQLITE_OK;
 }
 
 #define TABLE_NAME_STARTS_WITH(NAME) (0==strncmp(NAME, tableName, sizeof(NAME)-1))
@@ -842,10 +841,9 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         OnBeginValidate();
         OnValidateChanges(dataChanges);
 
-        BentleyStatus status = PropagateChanges();   // Propagate to generate indirect changes
-        if (SUCCESS != status) {
-            LOG.error("propagate changes failed");
-            return OnCommitStatus::Abort;
+        const auto status = PropagateChanges();   // Propagate to generate indirect changes
+        if (BE_SQLITE_OK != status) {
+            return OnCommitStatus::PropagateChangesFailed;
         }
 
         // This loop is due to the fact that when we propagate changes, we can dirty models.
@@ -1418,6 +1416,7 @@ void TxnManager::SetChangesetHealthStatistics(ChangesetPropsCR revision) {
 
     auto stats = scope->GetDetailedSqlStats();
     stats["changeset_id"] = revision.GetChangesetId();
+    stats["changeset_index"] = revision.GetChangesetIndex();
     stats["uncompressed_size_bytes"] = static_cast<int64_t>(revision.GetUncompressedSize());
     stats["sha1_validation_time_ms"] = static_cast<int64_t>(revision.GetSha1ValidationTime());
     m_changesetHealthStatistics[revision.GetChangesetId()] = stats.Stringify();
@@ -1429,8 +1428,19 @@ void TxnManager::SetChangesetHealthStatistics(ChangesetPropsCR revision) {
 BeJsDocument TxnManager::GetAllChangesetHealthStatistics() const {
     BeJsDocument stats;
     auto changesets = stats["changesets"];
+    
+    // Sort the changesets by their changeset_index
+    std::vector<const BeJsDocument*> sortedStats;
+    sortedStats.reserve(m_changesetHealthStatistics.size());
+    
     for (const auto& [changesetId, stat] : m_changesetHealthStatistics)
-        changesets.appendObject().From(stat);
+        sortedStats.push_back(&stat);
+    
+    std::sort(sortedStats.begin(), sortedStats.end(), [](const BeJsDocument* a, const BeJsDocument* b) { return (*a)["changeset_index"].asInt() < (*b)["changeset_index"].asInt(); });
+
+    for (const auto* doc : sortedStats)
+        changesets.appendObject().From(*doc);
+    
     return stats;
 }
 
@@ -3711,7 +3721,7 @@ void TxnManager::PullMergeRebaseUpdateTxn() {
     if (!mergeNeeded) {
         OnBeginValidate();
         OnValidateChanges(rebasedChangeset);
-        if (SUCCESS != PropagateChanges()) {
+        if (BE_SQLITE_OK != PropagateChanges()) {
             PullMergeAbortRebase(txnId, SqlPrintfString("failed to propagate changes (id: %s)", idStr.c_str()).GetUtf8CP(), rc);
         }
 
