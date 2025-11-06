@@ -309,6 +309,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
         didGetCancelled = true;
         EXPECT_TRUE(e.IsRestartRequested());
         }
+    EXPECT_TRUE(didGetCancelled);
     }
 
 /*---------------------------------------------------------------------------------**//**
