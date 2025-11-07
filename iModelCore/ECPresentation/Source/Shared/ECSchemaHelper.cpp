@@ -2061,14 +2061,15 @@ static PresentationQueryContractFieldPtr CreateTargetClassIdGroupingField(Select
 +---------------+---------------+---------------+---------------+---------------+------*/
 static UnionQueryBuilderPtr CreateRelationshipPathsWithTargetInstancesQuery(ECSchemaHelper const& helper, SelectClass<ECClass> const& sourceClass,
     RelationshipPathSpecification const& pathSpecification, InstanceFilteringParams const* sourceInstanceFilter, bvector<RelatedClassPath> const& relatedInstancePaths,
-    bvector<bool> const& stepTargetsPolymorphism, bool countTargets, bvector<Utf8String> const& stepInstanceFilters)
+    bvector<bool> const& stepTargetsPolymorphism, bool countTargets, bvector<Utf8String> const& stepInstanceFilters, ECClassUseCounter& sourceClassCounter)
     {
     ECClassCP requestedTargetClass = (!pathSpecification.GetSteps().empty() && !pathSpecification.GetSteps().back()->GetTargetClassName().empty())
         ? helper.GetECClass(pathSpecification.GetSteps().back()->GetTargetClassName().c_str()) : nullptr;
 
     auto unionQuery = UnionQueryBuilder::Create({});
 
-    auto paths = helper.BuildRelationshipPathsFromStepSpecifications(sourceClass.GetClass(), pathSpecification.GetSteps(), stepInstanceFilters, false);
+    ECClassUseCounter classCounter(sourceClassCounter);
+    auto paths = ::BuildRelationshipPathsFromStepSpecifications(helper, sourceClass.GetClass(), 0, pathSpecification.GetSteps(), stepInstanceFilters, classCounter, false);
 
     SelectClassWithExcludes<ECClass> selectClass(sourceClass);
     if (selectClass.GetAlias().empty())
@@ -2221,7 +2222,10 @@ Nullable<uint64_t> ECSchemaHelper::QueryTargetsCount(RelatedClassPathCR path, In
     DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Default, txn.IsActive(), "Failed to start a transaction");
     CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), possibleTargetsCountQuery->GetQuery()->GetQueryString().c_str());
     if (!stmt.IsValid())
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare a statement: '%s'", possibleTargetsCountQuery->GetQuery()->GetQueryString().c_str()));
+        {
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare a statement: '%s'. Error: '%s'.",
+            possibleTargetsCountQuery->GetQuery()->GetQueryString().c_str(), m_connection.GetDb().GetLastError().c_str()));
+        }
 
     possibleTargetsCountQuery->GetQuery()->BindValues(*stmt);
 
@@ -2348,7 +2352,7 @@ ECSchemaHelper::RelationshipPathsResponse ECSchemaHelper::GetRelationshipPaths(R
     for (auto const& pathSpecEntry : *params.m_paths)
         {
         UnionQueryBuilderPtr specQuery = pathSpecEntry.m_applyTargetInstancesCheck
-            ? CreateRelationshipPathsWithTargetInstancesQuery(*this, params.m_source, *pathSpecEntry.m_specification, params.m_sourceInstanceFilter, params.m_relatedInstancePaths, pathSpecEntry.m_stepTargetsPolymorphism, params.m_countTargets, pathSpecEntry.m_stepInstanceFilters)
+            ? CreateRelationshipPathsWithTargetInstancesQuery(*this, params.m_source, *pathSpecEntry.m_specification, params.m_sourceInstanceFilter, params.m_relatedInstancePaths, pathSpecEntry.m_stepTargetsPolymorphism, params.m_countTargets, pathSpecEntry.m_stepInstanceFilters, params.m_relationshipsUseCounter)
             : CreateRelationshipPathQuery(*this, params.m_source, *pathSpecEntry.m_specification, pathSpecEntry.m_stepTargetsPolymorphism.back());
         if (specQuery.IsValid())
             {
