@@ -1,4 +1,15 @@
 -----------------------------------------------------------------------------------------------------------------------------------------------------
+Version 78.1 7 November 2025
+
+Follow instructions below for how to update.
+
+Needed changes specific for this version:
+1. Update mke files to build with C20 as starting on verson 75.1 C17 or greater was required.
+2. Remove some txt files from data mke file (check diff for specific files)
+
+Additonally, updated BeIcu4cLibrary.Partfile.xml to point to new .dat file, but this necessary for all future updates
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
 ICU4C (International Components for Unicode for C)
 https://icu.unicode.org/
 
@@ -18,10 +29,10 @@ The default downloadable data file was deemed too big. Jeff set it up so that we
 
 1. Start by downloading the data zip file from the server and put it in imodel-native\iModelCore\libsrc\icu4c\vendor\source\data. 
 2. Change DataFileBaseName in BeIcu4cCommon.mki
-3. Run the build using the command above
+3. Run the build using the command above. Upon a successful build it should tell you the path to the new .dat file in your output dir.
 4. Once you create the data file, copy it into iModelCore\libsrc\icu4c, change ExistingDataDir at the top of BeIcu4cData.mke, and tmr the data again. 
 This way it will use the data file that was just created. It's a simple test, but it if doesn't work we expect there will be problems later.
-5. Finally add the data newly created data file to the repo
+5. Finally add the newly created data file to iModelCore\libsrc\icu4c\vendor\source\data\in\
 
 
 
