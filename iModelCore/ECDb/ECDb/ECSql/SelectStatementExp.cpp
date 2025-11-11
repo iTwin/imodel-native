@@ -771,11 +771,11 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(ECSqlParseContext cons
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(ECSqlParseContext const& ctx, DerivedPropertyExp const& asteriskExp, std::vector<RangeClassInfo> const& rangeClassRefs)
     {
-    std::vector<std::unique_ptr<DerivedPropertyExp>> derivedPropExpList;
+    std::vector<std::unique_ptr<Exp>> derivedPropExpList;
     for (RangeClassInfo const& classRef : rangeClassRefs)
         classRef.GetExp().ExpandSelectAsterisk(derivedPropExpList, ctx);
 
-    if (!GetChildrenR().Replace(asteriskExp, derivedPropExpList))
+    if (!ReplaceChild(asteriskExp, derivedPropExpList))
         {
         BeAssert(false && "SelectClauseExp::ReplaceAsteriskExpression did not find an asterisk expression unexpectedly.");
         return ERROR;
@@ -1219,7 +1219,7 @@ SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8CP ali
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
+void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
     {
     for (Exp const* expr : GetSubquery()->GetSelection()->GetChildren())
         {

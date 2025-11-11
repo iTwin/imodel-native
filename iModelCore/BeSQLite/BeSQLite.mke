@@ -31,6 +31,8 @@ cDefs +% -D__BE_SQLITE_HOST_DLL__
     cDefs + -D__BE_SQLITE_WINRT__
 %endif
 
+cDefs + -DSQLITE_BCV_CURL_HANDLE_CONFIG=besqlite_bcv_curl_handle_config
+
 baseDir = $(_MakeFilePath)
 SQLiteDir = $(baseDir)SQLite/
 SubpartLibs = $(BuildContext)SubParts/Libs/
@@ -53,8 +55,12 @@ always:
 # Generate build version header (so we can embed as a property for diagnostic purposes).
 %include $(SharedMki)CreateBuildVersionHeader.mki
 
+bcvheaders = $(SQLiteDir)bcvutil.h $(SQLiteDir)bcvmodule.h $(SQLiteDir)bcv_int.h $(SQLiteDir)blockcachevfs.c $(SQLiteDir)blockcachevfs.h
+
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
+
+$(o)BeSQLiteCurlHandleConfig$(oext) : $(baseDir)BeSQLiteCurlHandleConfig.cpp ${MultiCompileDepends} ${bcvheaders}
 
 $(o)BeSQLite$(oext) : $(baseDir)BeSQLite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
 
@@ -81,8 +87,6 @@ objs +% $(MultiCompileObjectList)
 
 CCompFpOpts=precise
 %include $(sharedmki)PushThirdPartyIgnores.mki
-
-bcvheaders = $(SQLiteDir)bcvutil.h $(SQLiteDir)bcvmodule.h $(SQLiteDir)bcv_int.h $(SQLiteDir)blockcachevfs.c $(SQLiteDir)blockcachevfs.h
 
 $(o)bentley-sqlite$(oext) : $(SQLiteDir)bentley-sqlite.c ${MultiCompileDepends} ${bcvheaders}
 

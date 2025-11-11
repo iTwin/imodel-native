@@ -1811,6 +1811,50 @@ static void bcvProxyClientCount(
 }
 
 /*
+** This function is used to populate the daemon-specific part of a
+** BCV_MESSAGE_VTAB_REPLY message for a query on the "bcv_stat" virtual
+** table. Specifically, this adds two rows to the returned data:
+**
+**   memory_client_manifest:
+**     Total byte of memory used by manifests that are kept in memory only 
+**     for clients use - not the newest manifest available held by the 
+**     container object.
+**
+**   memory_client_array:
+**     Memory used for arrays of block references held in the daemon on 
+**     behalf of clients.
+**  
+*/
+static u8 *bdExtraVtabData(int *pRc, DaemonCtx *p, u8 *aData, int *pnData){
+  i64 nManifest = 0;
+  i64 nArray = 0;
+  DClient *pClient = 0;
+
+  BcvBuffer buf;
+  buf.aData = aData;
+  buf.nData = buf.nAlloc = *pnData;
+
+  for(pClient = p->pClientList; pClient; pClient=pClient->pNext){
+    if( pClient->pMan && pClient->pMan!=pClient->pCont->pMan ){
+      assert( pClient->pMan->nRef>=1 );
+      nManifest += bcvManifestSize(pClient->pMan) / pClient->pMan->nRef;
+    }
+    if( pClient->apRef ){
+      assert( pClient->pManDb );
+      nArray += (pClient->pManDb->nBlkLocal * sizeof(CacheEntry*));
+    }
+  }
+
+  bcvBufferMsgString(pRc, &buf, "memory_client_manifest");
+  bcvBufferAppendU64(pRc, &buf, (u64)nManifest);
+  bcvBufferMsgString(pRc, &buf, "memory_client_array");
+  bcvBufferAppendU64(pRc, &buf, (u64)nArray);
+
+  *pnData = buf.nData;
+  return buf.aData;
+}
+
+/*
 ** Handle a message of type BCV_MESSAGE_VTAB from client pClient.
 */
 static void bdHandleVtab(
@@ -1835,6 +1879,9 @@ static void bdHandleVtab(
   aData = bcvDatabaseVtabData(&rc, &p->c, 
       zTab, zCont, zDb, bcvProxyClientCount, colUsed, &nData, &iVersion
   );
+  if( 0==bcvStrcmp(zTab, "bcv_stat") ){
+    aData = bdExtraVtabData(&rc, p, aData, &nData);
+  }
 
   reply.u.vtab_r.aData = aData;
   reply.u.vtab_r.nData = nData;
@@ -2198,6 +2245,7 @@ static void bdPollCb(
   DClient *pClient = bdFetchClient(pDLCtx);
   Container *pCont = pDLCtx->pCont;
   DaemonCtx *p = pDLCtx->pCtx;
+  DClient *pIter = 0;
   char *zErr = 0;                 /* Error message (from sqlite3_malloc) */
   int rc = errCode;               /* Error code */
   Manifest *pMan = 0;             /* Parsed manifest object */
@@ -2213,6 +2261,34 @@ static void bdPollCb(
   }
   pCont->eState = CONTAINER_STATE_NONE;
 
+  /* Search for clients that currently have an open transaction on this
+  ** container. If possible (if the db they have open has not changed),
+  ** upgrade such clients to the new manifest object. */
+  for(pIter=p->pClientList; pIter; pIter=pIter->pNext){
+    if( pIter->pMan && pIter->pCont==pCont ){
+      ManifestDb *pOldDb = pIter->pManDb;
+      int iOff = pOldDb - pIter->pMan->aDb;
+      ManifestDb *pNewDb = 0;
+
+      if( iOff<pMan->nDb ){
+        pNewDb = &pMan->aDb[iOff];
+        if( pNewDb->iDbId!=pOldDb->iDbId ) pNewDb = 0;
+      }
+      if( pNewDb==0 ){
+        pNewDb = bcvManifestDbidToDb(pMan, pOldDb->iDbId);
+      }
+      if( pNewDb && pNewDb->iVersion==pOldDb->iVersion ){
+        assert( pNewDb->nBlkOrig==pOldDb->nBlkOrig );
+        assert( 0==memcmp(
+            pNewDb->aBlkOrig, pOldDb->aBlkOrig, NAMEBYTES(pMan)*pOldDb->nBlkOrig
+        ));
+        bcvManifestDeref(pIter->pMan);
+        pIter->pMan = pMan;
+        pIter->pManDb = pNewDb;
+        bcvManifestRef(pMan);
+      }
+    }
+  }
 
   if( pClient ){
     BcvMessage reply;
