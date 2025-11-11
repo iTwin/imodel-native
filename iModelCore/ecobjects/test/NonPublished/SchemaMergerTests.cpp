@@ -7704,6 +7704,85 @@ TEST_F(SchemaMergerTests, AddReferenceToRightNotProvidedButReferencedOnLeft)
     ASSERT_EQ(baseResult, baseInTest1.get());
   }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, SchemaMergeTakesInDuplicateReferenceOrSearchesClassInWrongSchema)
+    {
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version="1.0" encoding="UTF-8"?>
+              <ECSchema schemaName="Dummy_CustomAttributes" alias="Dca" version="01.00.01" displayLabel="Dummy_CustomAttributes" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                  <ECCustomAttributeClass typeName="Display_Class" description="Dummy Description" displayLabel="Dummy class">
+                      <ECProperty propertyName="Custom_Property_1" typeName="int" description="Dummy Description for custom prop 1" displayLabel="Dummy Label for custom prop 1"/>
+                      <ECProperty propertyName="Custom_Property_2" typeName="int" description="Dummy Description for custom prop 1" displayLabel="Dummy Label for custom prop 2"/>
+                  </ECCustomAttributeClass>
+                  <ECCustomAttributeClass typeName="Display_Class_Two" description="Dummy Description 2" displayLabel="Dummy class 2">
+                      <ECProperty propertyName="Custom_Property_3" typeName="int" description="Dummy Description for custom prop 3" displayLabel="Dummy Label for custom prop 3"/>
+                      <ECProperty propertyName="Custom_Property_4" typeName="int" description="Dummy Description for custom prop 4" displayLabel="Dummy Label for custom prop 4"/>
+                  </ECCustomAttributeClass>
+              </ECSchema>
+      )schema", // reference schema
+      R"schema(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Debug_Test_Schema" alias="op3d" version="01.00.01" displayLabel="DTS" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Dummy_CustomAttributes" version="01.00.01" alias="Dca"/>
+            <ECEntityClass typeName="Debug_Class" description="Class For Debugging" displayLabel="Class For Debugging">
+                <ECProperty propertyName="A" typeName="string" description="Property A" displayLabel="Property A">
+                    <ECCustomAttributes>
+                        <Display_Class xmlns="Dummy_CustomAttributes.01.00.01">
+                            <Custom_Property_1>1</Custom_Property_1>
+                            <Custom_Property_2>1</Custom_Property_2>
+                        </Display_Class>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECProperty propertyName="B" typeName="string" description="Property B" displayLabel="Property B">
+                    <ECCustomAttributes>
+                        <Display_Class_Two xmlns="Dummy_CustomAttributes.01.00.01">
+                            <Custom_Property_3>1</Custom_Property_3>
+                            <Custom_Property_4>1</Custom_Property_4>
+                        </Display_Class_Two>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECEntityClass>
+        </ECSchema>
+        )schema" // main schema
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version="1.0" encoding="UTF-8"?>
+              <ECSchema schemaName="Dummy_CustomAttributes" alias="Dca" version="01.00.00" displayLabel="Dummy_CustomAttributes" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                  <ECCustomAttributeClass typeName="Display_Class" description="Dummy Description" displayLabel="Dummy class">
+                      <ECProperty propertyName="Custom_Property_1" typeName="int" description="Dummy Description for custom prop 1" displayLabel="Dummy Label for custom prop 1"/>
+                      <ECProperty propertyName="Custom_Property_2" typeName="int" description="Dummy Description for custom prop 1" displayLabel="Dummy Label for custom prop 2"/>
+                  </ECCustomAttributeClass>
+              </ECSchema>
+      )schema", // reference schema
+      R"schema(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Debug_Test_Schema" alias="op3d" version="01.00.00" displayLabel="DTS" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="Dummy_CustomAttributes" version="01.00.00" alias="Dca"/>
+        
+        <ECEntityClass typeName="Debug_Class" description="Class For Debugging" displayLabel="Class 	For Debugging">
+            <ECProperty propertyName="C" typeName="string" description="Property C" 	displayLabel="Property C">
+                <ECCustomAttributes>
+                    <Display_Class xmlns="Dummy_CustomAttributes.01.00.00">
+                        <Custom_Property_1>1</Custom_Property_1>
+                        <Custom_Property_2>1</Custom_Property_2>
+                    </Display_Class>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECEntityClass>
+      </ECSchema>
+        )schema" // main schema
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+    
+    //merge the schemas
+    SchemaMergeResult result;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    }
+
 
 END_BENTLEY_ECN_TEST_NAMESPACE
 
