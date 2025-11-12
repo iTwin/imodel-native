@@ -1,6 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
 // License & terms of use: http://www.unicode.org/copyright.html
-// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
+// Generated using tools/cldr/cldr-to-icu/
 zh_Hant{
     %%Parent{"root"}
     Countries{
@@ -86,6 +86,7 @@ zh_Hant{
         CN{"中國"}
         CO{"哥倫比亞"}
         CP{"克里派頓島"}
+        CQ{"薩克島"}
         CR{"哥斯大黎加"}
         CU{"古巴"}
         CV{"維德角"}
@@ -298,6 +299,9 @@ zh_Hant{
         ZM{"尚比亞"}
         ZW{"辛巴威"}
         ZZ{"未知區域"}
+    }
+    Countries%chagos{
+        IO{"查哥斯群島"}
     }
     Countries%short{
         HK{"香港"}
