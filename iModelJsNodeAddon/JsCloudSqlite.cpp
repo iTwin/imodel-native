@@ -404,7 +404,12 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             stmt.BindText(1, statNames[i], Statement::MakeCopy::No);
             auto result = stmt.Step();
             if (result != BE_SQLITE_ROW) {
-                value[jsNames[i]] = Utf8String("SQLITE Error: ") + m_containerDb.GetLastError();
+                std::string statName = statNames[i];
+                // The following two stats are only present in daemon mode. So if they do not exist,
+                // do not include them in the output.
+                if (statName != "memory_client_array" && statName != "memory_client_manifest") {
+                    value[jsNames[i]] = Utf8String("SQLITE Error: ") + m_containerDb.GetLastError();
+                }
             } else {
                 // The actual values in the database are unsigned 64 bit integers, but there is no
                 // direct way to pass those to JavaScript. So we use BeStringUtilities::FormatUInt64
