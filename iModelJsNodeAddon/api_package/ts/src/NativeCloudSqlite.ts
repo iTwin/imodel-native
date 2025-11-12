@@ -89,6 +89,7 @@ export namespace NativeCloudSqlite {
   /** Returned from 'CloudContainer.queryBcvStats' describing the rows in the bcv_stat table.
    *  Also gathers additional statistics using the other virtual tables bcv_container, bcv_database
    *  such as totalClients, ongoingPrefetches, activeClients and attachedContainers.
+   *  NOTE: All values are returned as hex strings to avoid any possibility of overflow.
    */
   export interface BcvStats {
     /** The total number of cache slots that are currently in use or 'locked' by ongoing client read transactions. In daemonless mode, this value is always 0.
