@@ -354,6 +354,7 @@ int bcvManifestParseCopy(
   Manifest **ppOut, 
   char **pz
 );
+i64 bcvManifestSize(Manifest*);
 
 u8 *bcvManifestCompose(Manifest *p, int *pnOut);
 void bcvManifestFree(Manifest *p);

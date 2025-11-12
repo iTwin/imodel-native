@@ -6345,7 +6345,9 @@ u8 *bcvDatabaseVtabData(
   }else if( bcvStrcmp(zName, "bcv_http_log")==0 ){
     rc = bcvLogGetData(pCommon->pLog, &buf);
   }else if( bcvStrcmp(zName, "bcv_stat")==0 ){
+    Container *pCont = 0;
     int nLock = 0;
+    i64 nMemoryManifest = 0;
     bcvBufferMsgString(&rc, &buf, "nlock");
     if( pCommon->bDaemon ){
       CacheEntry *p;
@@ -6362,6 +6364,12 @@ u8 *bcvDatabaseVtabData(
     bcvBufferAppendU64(&rc, &buf, (u64)sqlite3_memory_used());
     bcvBufferMsgString(&rc, &buf, "memory_highwater");
     bcvBufferAppendU64(&rc, &buf, (u64)sqlite3_memory_highwater(0));
+
+    for(pCont=pCommon->pCList; pCont; pCont=pCont->pNext){
+      nMemoryManifest += bcvManifestSize(pCont->pMan);
+    }
+    bcvBufferMsgString(&rc, &buf, "memory_manifest");
+    bcvBufferAppendU64(&rc, &buf, (u64)nMemoryManifest);
   }
 
   if( rc!=SQLITE_OK ){
@@ -6760,7 +6768,8 @@ static int bcvReadonlyVtabFilter(
 
   sqlite3_file_control(pTab->db, "main", BCV_FCNTL_FD, (void*)&pFile);
   if( pFile ){
-    if( pFile->pFs->zPortnumber ){
+    sqlite3_bcvfs *pFs = pFile->pFs;
+    if( pFs->zPortnumber ){
       BcvMessage *pMsg = 0;
       pMsg = bcvVtabFetchData(
           &rc, pFile, pTab->zMod, zCont, zDb, colUsed
