@@ -393,8 +393,13 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         }
 
         Statement stmt;
+<<<<<<< HEAD
         Utf8CP statNames[] = { "nlock", "ncache", "cachesize", "memory_used", "memory_highwater", "memory_manifest" };
         Utf8CP jsNames[] = { "lockedCacheslots", "populatedCacheslots", "totalCacheslots", "memoryUsed", "memoryHighwater", "memoryManifest" };
+=======
+        Utf8CP statNames[] = { "nlock", "ncache", "cachesize", "memory_used", "memory_highwater", "memory_manifest", "memory_client_array", "memory_client_manifest" };
+        Utf8CP jsNames[] = { "lockedCacheslots", "populatedCacheslots", "totalCacheslots", "memoryUsed", "memoryHighwater", "memoryManifest", "memoryClientArray", "memoryClientManifest" };
+>>>>>>> 56890233 (Incorporate blockcache changes from cloud sqlite trunk (backport #1247) [release/5.2.x] (#1271))
         BeAssert (sizeof(statNames) == sizeof(jsNames));
         auto rc = stmt.Prepare(m_containerDb, "SELECT value FROM bcv_stat where name = ?");
         BeAssert (rc == BE_SQLITE_OK);
@@ -404,7 +409,16 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             stmt.BindText(1, statNames[i], Statement::MakeCopy::No);
             auto result = stmt.Step();
             if (result != BE_SQLITE_ROW) {
+<<<<<<< HEAD
                 value[jsNames[i]] = Utf8String("SQLITE Error: ") + m_containerDb.GetLastError();
+=======
+                std::string statName = statNames[i];
+                // The following two stats are only present in daemon mode. So if they do not exist,
+                // do not include them in the output.
+                if (statName != "memory_client_array" && statName != "memory_client_manifest") {
+                    value[jsNames[i]] = Utf8String("SQLITE Error: ") + m_containerDb.GetLastError();
+                }
+>>>>>>> 56890233 (Incorporate blockcache changes from cloud sqlite trunk (backport #1247) [release/5.2.x] (#1271))
             } else {
                 // The actual values in the database are unsigned 64 bit integers, but there is no
                 // direct way to pass those to JavaScript. So we use BeStringUtilities::FormatUInt64

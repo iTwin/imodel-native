@@ -6783,7 +6783,11 @@ static int bcvReadonlyVtabFilter(
     }else{
       pCur->iVersion = BCV_VTAB_VERSION;
       ENTER_VFS_MUTEX; {
+<<<<<<< HEAD
         pCur->data.aData = bcvDatabaseVtabData(&rc, &pFile->pFs->c, 
+=======
+        pCur->data.aData = bcvDatabaseVtabData(&rc, &pFs->c, 
+>>>>>>> 56890233 (Incorporate blockcache changes from cloud sqlite trunk (backport #1247) [release/5.2.x] (#1271))
             pTab->zMod, zCont, zDb, 
             bcvLocalClientCount,
             colUsed, &pCur->data.nData, &pCur->iVersion
