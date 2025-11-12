@@ -2356,7 +2356,7 @@ static void configure_curl_ssl_options(CURL *pCurl){
   if ( bcvGlobalConfig.zCAFile!=NULL ){
     curl_easy_setopt(pCurl, CURLOPT_CAINFO, bcvGlobalConfig.zCAFile);
   } else {
-    curl_easy_setopt(pCurl, CURLOPT_CAINFO, "");    
+    curl_easy_setopt(pCurl, CURLOPT_CAINFO, NULL);    
   }
 }
 /* END BENTLEY CHANGES */
