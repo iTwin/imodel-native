@@ -725,6 +725,108 @@ void TxnManager::OnRollback(ChangeStreamCR changeSet) {
     OnChangeSetApplied(changeSet, true);
     NotifyModelChanges();
 }
+ChangeTracker::OnCommitStatus TxnManager::_OnBeginCommit(bool isCommit) {
+  auto conf = PullMergeConf::Load(m_dgndb);
+
+    // During PullMergeEnd() we donot allow COMMIT but we do let be_Local which is untracked to be saved.
+    if (conf.IsRebasingLocalChanges()) {
+        if (isCommit) {
+            if (HasDataChanges()) {
+                LOG.error("Saving changes are not allowed when rebasing local changes");
+                return OnCommitStatus::RebaseInProgress;
+            } else {
+                return OnCommitStatus::NoChanges;
+            }
+        } else {
+        }
+    }
+
+    ModelChangesScope v_v_v_(*this);
+    DdlChanges ddlChanges = std::move(m_ddlChanges);
+
+    UndoChangeSet currentChanges;
+    if (HasDataChanges()) {
+        DbResult result = currentChanges.FromChangeTrack(*this);
+
+        Restart();  // Clear the change tracker since we copied any changes to currentChanges
+
+        if (BE_SQLITE_OK != result) {
+            LOG.errorv("failed to create a data Changeset: %s", BeSQLiteLib::GetErrorName(result));
+            BeAssert(false && "currentChanges.FromChangeTrack failed");
+            return OnCommitStatus::Abort;
+        }
+    }
+
+    if (s_onCommitCallback != nullptr) { // allow a test to inject a failure
+        if (CallbackOnCommitStatus::Continue != s_onCommitCallback(*this, isCommit, "", currentChanges, ddlChanges))
+            return OnCommitStatus::Abort;
+    }
+
+    if (currentChanges._IsEmpty() && ddlChanges._IsEmpty())
+        return OnCommitStatus::NoChanges;
+
+    if (!isCommit) { // this is a call to AbandonChanges, perform the rollback and notify table handlers
+        DbResult rc = m_dgndb.ExecuteSql("ROLLBACK");
+        if (rc != BE_SQLITE_OK)
+            return OnCommitStatus::Abort;
+
+        if (!currentChanges._IsEmpty())
+            OnRollback(currentChanges);
+
+        return OnCommitStatus::Completed; // we've already done the rollback, tell BeSQLite not to try to do it
+    }
+
+    // NOTE: you can't delete reversed Txns before this line, because on rollback and they come back! That's OK,
+    // just leave them reversed and they'll get thrown away on the next commit (or reinstated.)
+    DeleteReversedTxns(); // these Txns are no longer reachable.
+
+    // Following is a function to free memory as soon as possible after we separate changes
+    auto separateDataAndSchemaChanges = [](
+        ChangeSet& in,
+        ChangeStream& outData,
+        ChangeStream& outSchema) {
+
+        ChangeGroup dataChangeGroup;
+        ChangeGroup schemaChangeGroup;
+        auto rc = ChangeGroup::FilterIfElse(in,
+            [&](Changes::Change const& change) {
+            auto const& tbl = change.GetTableName();
+            return tbl.StartsWithIAscii("ec_") || tbl.StartsWithIAscii("be_Props");
+        }, schemaChangeGroup, dataChangeGroup);
+
+        in.Clear();
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("failed to filter changeset out into schema & data: %s", BeSQLiteLib::GetErrorName(rc));
+            return rc;
+        }
+
+        rc = outData.FromChangeGroup(dataChangeGroup);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("failed to read changes from data change group: %s", BeSQLiteLib::GetErrorName(rc));
+            return rc;
+        }
+
+        rc = outSchema.FromChangeGroup(schemaChangeGroup);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("failed to read changes from schema change group: %s", BeSQLiteLib::GetErrorName(rc));
+            return rc;
+        }
+        return rc;
+    };
+
+    //! We need to preciously separate out data and schema changeset as it require by rebase.
+    //! when we reverse changes schema changes are also reversed.
+    ChangeSet dataChanges;
+    ChangeSet schemaChanges;
+    auto rc = separateDataAndSchemaChanges(currentChanges, dataChanges, schemaChanges);
+    if (rc != BE_SQLITE_OK) {
+        return OnCommitStatus::Abort;
+    }
+    return OnCommitStatus::Commit;
+}
+
+DbResult TxnManager::_OnEndCommit(ChangeTracker::OnCommitStatus status, Utf8CP operation) {
+}
 
 /*---------------------------------------------------------------------------------**//**
 * Called from Db::SaveChanges or Db::AbandonChanges when the TxnManager change tracker has changes.

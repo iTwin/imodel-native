@@ -1730,6 +1730,108 @@ void DbFile::DeactivateSavepoints(DbTxnIter pos, bool isCommit) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DbFile::BeginStopSavepoint(Savepoint& txn, bool isCommit) {
+    if (m_trackerStatus.has_value()) {
+        BeAssert(false && "BeginStopSavepoint() was already called");
+        LOG.error("BeginStopSavepoint() was already called");
+        return BE_SQLITE_ERROR;
+    }
+
+    DbTxnIter thisPos = FindSavepointPosition(m_txns, txn);
+    if (thisPos == m_txns.end())
+        return BE_SQLITE_ERROR;
+
+    SaveCachedProperties(isCommit);
+    SaveCachedBlvs(isCommit);
+
+    m_inCommit = true;
+
+    // Don't check m_tracker->HasChanges - may have dynamic changes to rollback
+    m_trackerStatus = (m_tracker.IsValid()) ? m_tracker->_OnBeginCommit(isCommit) : ChangeTracker::OnCommitStatus::Commit;
+
+    if (m_trackerStatus == ChangeTracker::OnCommitStatus::RebaseInProgress) {
+        return BE_SQLITE_ERROR;
+    }
+    if (m_trackerStatus == ChangeTracker::OnCommitStatus::PropagateChangesFailed) {
+        return BE_SQLITE_ERROR_PropagateChangesFailed;
+    }
+    if (m_trackerStatus == ChangeTracker::OnCommitStatus::Abort) {
+        // Abort is considered fatal and application must quit.
+        // We do not allocate memory or attempt to log as this is only happens when sqlite returns NOMEM.
+        m_inCommit = false;
+        if (m_tracker.IsValid()) {
+            m_tracker->EndTracking();
+            m_tracker = nullptr;
+        }
+        if (0 != m_txns.size()) {
+            m_txns[0]->Cancel();
+            m_txns.clear();
+        }
+        throw std::runtime_error("commit error");
+    }
+
+    // save briefcase local values again after _OnCommit. It can cause additional changes
+    SaveCachedBlvs(isCommit);
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DbFile::EndStopSavepoint(Savepoint& txn, Utf8CP operation) {
+    if (!m_trackerStatus.has_value()) {
+        BeAssert(false && "BeginStopSavepoint() was not called");
+        LOG.error("BeginStopSavepoint() was not called");
+        return BE_SQLITE_ERROR;
+    }
+
+    DbResult rc = BE_SQLITE_OK;
+    if (m_trackerStatus == ChangeTracker::OnCommitStatus::Commit || m_trackerStatus == ChangeTracker::OnCommitStatus::NoChanges) {
+        rc = m_tracker->_OnEndCommit(m_trackerStatus.value(), operation);
+        if (rc != BE_SQLITE_OK) {
+            LOG.error("Failed to end stop savepoint");
+            return rc;
+        }
+
+        if (0 == txn.GetDepth()) {
+            rc = (DbResult)sqlite3_exec(m_sqlDb, m_inCommit ? "COMMIT" : "ROLLBACK", nullptr, nullptr, nullptr);
+        } else {
+            Utf8String sql;
+            if (!m_inCommit) // to cancel a nested transaction, we need to roll it back and then release it.
+                sql.append(SqlPrintfString("ROLLBACK TO \"%s\";", txn.GetName()));
+
+            sql.append(SqlPrintfString("RELEASE \"%s\"", txn.GetName()));
+            rc = (DbResult)sqlite3_exec(m_sqlDb, sql.c_str(), nullptr, nullptr, nullptr);
+        }
+    }
+
+    m_inCommit = false;
+    m_trackerStatus = std::nullopt;
+
+    // BE_SQLITE_INTERRUPT means the transaction was cancelled. Anything other than BE_SQLITE_OK means the transaction is still open.
+    if (rc != BE_SQLITE_OK && rc != BE_SQLITE_INTERRUPT) {
+        BeAssert(BE_SQLITE_OK == checkNoActiveStatements(m_sqlDb)); // a common problem is to try to commit while statements are active. Help find that error.
+        return rc;
+    }
+
+    if (rc == BE_SQLITE_INTERRUPT) {
+        if (isCommit)
+            isCommit = false; // we tried to commit this savepoint, but it was rolled back externally
+        else
+            rc = BE_SQLITE_OK; // we were trying to cancel anyway. This is not an error.
+    }
+
+    DeactivateSavepoints(thisPos, isCommit);
+
+    if (m_tracker.IsValid() && trackerStatus == ChangeTracker::OnCommitStatus::Commit) // notify trackers that commit/cancel operation finished
+        m_tracker->_OnCommitted(isCommit, operation);
+
+    return rc; // either BE_SQLITE_OK or BE_SQLITE_INTERRUPT    
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) {
     DbTxnIter thisPos = FindSavepointPosition(m_txns, txn);
     if (thisPos == m_txns.end())
@@ -1792,7 +1894,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
 
     if (rc == BE_SQLITE_INTERRUPT) {
         if (isCommit)
-            isCommit = false; // we tried to commit this savepoint, but it was rollled back externally
+            isCommit = false; // we tried to commit this savepoint, but it was rolled back externally
         else
             rc = BE_SQLITE_OK; // we were trying to cancel anyway. This is not an error.
     }
@@ -1878,6 +1980,44 @@ DbResult Savepoint::_Cancel() {return m_dbFile ? m_dbFile->StopSavepoint(*this, 
 DbResult Savepoint::_Commit(Utf8CP operation) {return m_dbFile ? m_dbFile->StopSavepoint(*this, true, operation) : BE_SQLITE_ERROR;}
 DbResult Savepoint::Begin(BeSQLiteTxnMode mode)  {return _Begin(mode);}
 DbResult Savepoint::Commit(Utf8CP operation) {return _Commit(operation);}
+DbResult Savepoint::_BeginCommit(Utf8CP operation) {return m_dbFile ? m_dbFile->BeginStopSavepoint(*this, operation) : BE_SQLITE_ERROR;}
+DbResult Savepoint::_EndCommit() {return m_dbFile ? m_dbFile->EndStopSavepoint(*this) : BE_SQLITE_ERROR;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Savepoint::BeginCommit(Utf8CP operation) {
+    if (m_commitInProgress) {
+        BeAssert(false && "Commit already in progress");
+        LOG.errorv("Commit already in progress");
+        return BE_SQLITE_ERROR;
+    }
+
+    m_commitInProgress = true;
+    auto rc = _BeginCommit(operation);
+    if (rc != BE_SQLITE_OK) {
+        m_commitInProgress = false;
+    }
+    return rc;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Savepoint::EndCommit() {
+    if (!m_commitInProgress) {
+        BeAssert(false && "No commit in progress");
+        LOG.errorv("No commit in progress");
+        return BE_SQLITE_ERROR;
+    }
+
+    m_commitInProgress = false;
+    return _EndCommit();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Savepoint::Save(Utf8CP operation)
     {
     DbResult res = Commit(operation);
@@ -1886,6 +2026,25 @@ DbResult Savepoint::Save(Utf8CP operation)
     }
     return Begin();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Savepoint::BeginSave(Utf8CP operation){
+    return BeginCommit(operation);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Savepoint::EndSave() {
+    auto rc = EndCommit();
+    if (rc != BE_SQLITE_OK) {
+        return rc;
+    }
+    return Begin();
+}
+
 DbResult Savepoint::Cancel() {return _Cancel();}
 
 /*---------------------------------------------------------------------------------**//**
@@ -3875,6 +4034,12 @@ bool Db::IsExpired() const
     return DateTime::Compare(DateTime::GetCurrentTimeUtc(), expirationDate) != DateTime::CompareResult::EarlierThan;
     }
 
+ChangeSetCR Db::BeginSaveChanges(Utf8CP changesetName=nullptr) {
+
+}
+DbResult Db::EndSaveChanges(){
+    return BE_SQLITE_OK;
+}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

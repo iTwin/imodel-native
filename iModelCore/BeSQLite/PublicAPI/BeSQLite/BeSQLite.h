@@ -2013,6 +2013,7 @@ enum class DefaultTxn : int
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE Savepoint : NonCopyableClass
 {
+
 #if !defined (DOCUMENTATION_GENERATOR)
 protected:
     friend struct DbFile;
@@ -2021,10 +2022,14 @@ protected:
     int32_t     m_depth;
     BeSQLiteTxnMode  m_txnMode;
     Utf8String  m_name;
-
+    bool m_commitInProgress = false;
     virtual void _OnDeactivate(bool isCommit) {m_depth=-1;}
     BE_SQLITE_EXPORT virtual DbResult _Begin(BeSQLiteTxnMode);
+
     BE_SQLITE_EXPORT virtual DbResult _Commit(Utf8CP operation);
+    BE_SQLITE_EXPORT virtual DbResult _BeginCommit(Utf8CP operation);
+    BE_SQLITE_EXPORT virtual DbResult _EndCommit();
+
     BE_SQLITE_EXPORT virtual DbResult _Cancel();
 
     Savepoint(DbFile& db, Utf8CP name, BeSQLiteTxnMode txnMode) : m_dbFile(&db), m_name(name), m_txnMode(txnMode) {m_db=nullptr; m_depth = -1;}
@@ -2071,10 +2076,14 @@ public:
     //! @note After Commit, the Savepoint is not active. If you mean to save your changes but leave this Savepoint open, call Save.
     //! @note If a Savepoint is active when it is destroyed, it is automatically committed.
     BE_SQLITE_EXPORT DbResult Commit(Utf8CP operation=nullptr);
-
+    BE_SQLITE_EXPORT DbResult BeginCommit(Utf8CP operation=nullptr);
+    BE_SQLITE_EXPORT DbResult EndCommit();
     //! Commit this transaction and then restart it. If this is the outermost Savepoint, this will save changes to disk but leave
     //! a new transaction active.
     BE_SQLITE_EXPORT DbResult Save(Utf8CP operation);
+    BE_SQLITE_EXPORT DbResult BeginSave(Utf8CP operation);
+    BE_SQLITE_EXPORT DbResult EndSave();
+
 
     //! Cancel this transaction. Executes the SQLite "ROLLBACK" command if the Savepoint is active.
     BE_SQLITE_EXPORT DbResult Cancel();
@@ -2413,6 +2422,7 @@ protected:
     TraceEvents& GetTraceEvents() const;
     bool m_allowImplicitTxns;
     bool m_inCommit;
+    std::optional<ChangeTracker::OnCommitStatus> m_trackerStatus;
     mutable bool m_readonly;
     uint64_t m_dataVersion; // for detecting changes from another process
     SqlDbP m_sqlDb;
@@ -2434,6 +2444,12 @@ protected:
     DbResult SetBusyTimeout(int ms);
     DbResult StartSavepoint(Savepoint&, BeSQLiteTxnMode);
     DbResult StopSavepoint(Savepoint&, bool isCommit, Utf8CP operation);
+
+    DbResult BeginStopSavepoint(Savepoint&, bool isCommit);
+    DbResult EndStopSavepoint(Savepoint&, Utf8CP operation);
+    
+
+
     void DeactivateSavepoint(Savepoint&);
     void DeactivateSavepoints(DbTxnIter, bool isCommit);
     DbResult CreatePropertyTable(Utf8CP tablename, Utf8CP ddl);
@@ -3179,6 +3195,9 @@ public:
     BE_SQLITE_EXPORT DbResult SaveChanges(Utf8CP changesetName=nullptr);
     DbResult SaveChanges(Utf8StringCR changesetName) {return SaveChanges(changesetName.c_str());}
 
+    BE_SQLITE_EXPORT ChangeSetCR BeginSaveChanges(Utf8CP changesetName=nullptr);
+    BE_SQLITE_EXPORT DbResult EndSaveChanges();
+    
     //! Abandon (cancel) the outermost transaction, discarding all changes since last save. Then, restart the transaction.
     //! @note, this will cancel any nested transactions.
     BE_SQLITE_EXPORT DbResult AbandonChanges();

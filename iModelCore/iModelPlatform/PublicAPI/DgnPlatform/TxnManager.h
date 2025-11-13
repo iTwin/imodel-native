@@ -435,6 +435,9 @@ public:
     DGNPLATFORM_EXPORT void Initialize();
 private:
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
+    OnCommitStatus _OnBeginCommit(bool isCommit);
+    BeSQLite::DbResult _OnEndCommit(OnCommitStatus status, Utf8CP operation);
+
     void _OnCommitted(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
     void CallMonitors(std::function<void (TxnMonitor&)>);

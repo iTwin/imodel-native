@@ -1957,6 +1957,7 @@ struct MyChangeTracker : ChangeTracker
     {
     MyChangeTracker(DbR db) : ChangeTracker("Test") { SetDb(&db); }
     virtual OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override { BeAssert(false); return OnCommitStatus::Abort; }
+    
     };
 
 struct MyChangeSet : ChangeSet
