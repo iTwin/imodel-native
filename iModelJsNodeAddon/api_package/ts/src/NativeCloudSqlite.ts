@@ -114,8 +114,6 @@ export namespace NativeCloudSqlite {
     readonly memoryHighwater?: string;
     /** The total amount of memory used for the manifests for each attached container, in bytes. */
     readonly memoryManifest?: string;
-<<<<<<< HEAD
-=======
     /** Memory used for arrays of block references held in the daemon on behalf of clients, in bytes.
      *  @note this value is only present when running in daemon mode.
      */
@@ -125,7 +123,6 @@ export namespace NativeCloudSqlite {
      * @note this value is only present when running in daemon mode.
      */
     readonly memoryClientManifest?: string;
->>>>>>> 56890233 (Incorporate blockcache changes from cloud sqlite trunk (backport #1247) [release/5.2.x] (#1271))
   }
 
   /** Properties for accessing a CloudContainer */
