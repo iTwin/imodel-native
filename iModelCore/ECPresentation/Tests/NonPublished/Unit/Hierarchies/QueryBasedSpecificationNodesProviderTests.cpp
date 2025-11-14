@@ -942,7 +942,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
 
     IECInstancePtr g = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classG);
     IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classGHasD, *d, *g);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classGHasD, *g, *d);
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
@@ -974,7 +974,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
 
     IECInstancePtr g = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classG);
     IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classGHasD, *d, *g);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classGHasD, *g, *d);
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
@@ -1006,7 +1006,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
 
     IECInstancePtr g = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classG);
     IECInstancePtr d = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classGHasD, *d, *g);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classGHasD, *g, *d);
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, false);
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
