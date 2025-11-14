@@ -53,6 +53,8 @@ $(BuildDir)filteredbrk$(oext) : $(SourceDir)common/filteredbrk.cpp ${MultiCompil
 
 $(BuildDir)filterednormalizer2$(oext) : $(SourceDir)common/filterednormalizer2.cpp ${MultiCompileDepends}
 
+$(BuildDir)fixedstring$(oext) : $(SourceDir)common/fixedstring.cpp ${MultiCompileDepends}
+
 $(BuildDir)icudataver$(oext) : $(SourceDir)common/icudataver.cpp ${MultiCompileDepends}
 
 $(BuildDir)icuplug$(oext) : $(SourceDir)common/icuplug.cpp ${MultiCompileDepends}
@@ -280,6 +282,10 @@ $(BuildDir)uiter$(oext) : $(SourceDir)common/uiter.cpp ${MultiCompileDepends}
 $(BuildDir)ulist$(oext) : $(SourceDir)common/ulist.cpp ${MultiCompileDepends}
 
 $(BuildDir)uloc$(oext) : $(SourceDir)common/uloc.cpp ${MultiCompileDepends}
+
+$(BuildDir)ulocale$(oext) : $(SourceDir)common/ulocale.cpp ${MultiCompileDepends}
+
+$(BuildDir)ulocbuilder$(oext) : $(SourceDir)common/ulocbuilder.cpp ${MultiCompileDepends}
 
 $(BuildDir)uloc_keytype$(oext) : $(SourceDir)common/uloc_keytype.cpp ${MultiCompileDepends}
 
@@ -590,6 +596,28 @@ $(BuildDir)measunit$(oext) : $(SourceDir)i18n/measunit.cpp ${MultiCompileDepends
 $(BuildDir)measunit_extra$(oext) : $(SourceDir)i18n/measunit_extra.cpp ${MultiCompileDepends}
 
 $(BuildDir)measure$(oext) : $(SourceDir)i18n/measure.cpp ${MultiCompileDepends}
+
+$(BuildDir)messageformat2$(oext) : $(SourceDir)i18n/messageformat2.cpp ${MultiCompileDepends}
+
+$(BuildDir)messageformat2_arguments$(oext) : $(SourceDir)i18n/messageformat2_arguments.cpp ${MultiCompileDepends}
+
+$(BuildDir)messageformat2_checker$(oext) : $(SourceDir)i18n/messageformat2_checker.cpp ${MultiCompileDepends}
+
+$(BuildDir)messageformat2_data_model$(oext) : $(SourceDir)i18n/messageformat2_data_model.cpp ${MultiCompileDepends}
+
+$(BuildDir)messageformat2_errors$(oext) : $(SourceDir)i18n/messageformat2_errors.cpp ${MultiCompileDepends}
+
+$(BuildDir)messageformat2_evaluation$(oext) : $(SourceDir)i18n/messageformat2_evaluation.cpp ${MultiCompileDepends}
+
+$(BuildDir)messageformat2_formattable$(oext) : $(SourceDir)i18n/messageformat2_formattable.cpp ${MultiCompileDepends}
+
+$(BuildDir)messageformat2_formatter$(oext) : $(SourceDir)i18n/messageformat2_formatter.cpp ${MultiCompileDepends}
+
+$(BuildDir)messageformat2_function_registry$(oext) : $(SourceDir)i18n/messageformat2_function_registry.cpp ${MultiCompileDepends}
+
+$(BuildDir)messageformat2_parser$(oext) : $(SourceDir)i18n/messageformat2_parser.cpp ${MultiCompileDepends}
+
+$(BuildDir)messageformat2_serializer$(oext) : $(SourceDir)i18n/messageformat2_serializer.cpp ${MultiCompileDepends}
 
 $(BuildDir)msgfmt$(oext) : $(SourceDir)i18n/msgfmt.cpp ${MultiCompileDepends}
 
