@@ -10,7 +10,11 @@ This is a **multi-layered C++ codebase** exposed to TypeScript via N-API:
 - **Node Addon** (`iModelJsNodeAddon/`) - N-API bindings exposing C++ to TypeScript via `IModelJsNative.cpp`
 - **TypeScript API** (`iModelJsNodeAddon/api_package/ts/`) - Public TypeScript interface consumed by iTwin.js
 
-**Data flow**: TypeScript → N-API glue (`IModelJsNative.cpp`) → iModelPlatform/ECDb → ecobjects → SQLite
+## ECDb Overview
+
+- Uses ECSql, a custom SQL dialect which gets translated into native sqlite after processing
+- Tables/Columns in ECSql are actually classes/properties in ECSchemas which are mapped to sqlite tables/columns in a non-straightforward way
+- Mapping is a process that happens during schema import, we use shared columns, overflow tables etc. to optimize storage and performance
 
 ## Coding Conventions
 - Follow existing code style and patterns in each layer
