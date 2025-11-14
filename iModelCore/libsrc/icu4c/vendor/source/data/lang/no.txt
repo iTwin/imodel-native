@@ -1,6 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
 // License & terms of use: http://www.unicode.org/copyright.html
-// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
+// Generated using tools/cldr/cldr-to-icu/
 no{
     Keys{
         calendar{"kalender"}
@@ -14,10 +14,13 @@ no{
         colStrength{"Sorteringsstyrke"}
         collation{"sorteringsrekkefølge"}
         currency{"valuta"}
+        em{"emojivisning"}
         hc{"timesyklus (12 eller 24)"}
         lb{"linjeskiftstil"}
+        lw{"linjeskift innenfor ord"}
         ms{"målesystem"}
         numbers{"tall"}
+        ss{"Ny setning etter fork."}
         timezone{"tidssone"}
         va{"språkvariant"}
         x{"privat bruk"}
@@ -75,7 +78,7 @@ no{
         bax{"bamun"}
         bbc{"batak toba"}
         bbj{"ghomala"}
-        be{"hviterussisk"}
+        be{"belarusisk"}
         bej{"beja"}
         bem{"bemba"}
         bew{"betawi"}
@@ -83,6 +86,7 @@ no{
         bfd{"bafut"}
         bfq{"badaga"}
         bg{"bulgarsk"}
+        bgc{"haryanvi"}
         bgn{"vestbalutsji"}
         bho{"bhojpuri"}
         bi{"bislama"}
@@ -91,6 +95,7 @@ no{
         bjn{"banjar"}
         bkm{"kom"}
         bla{"siksika"}
+        blo{"anii"}
         bm{"bambara"}
         bn{"bengali"}
         bo{"tibetansk"}
@@ -126,6 +131,7 @@ no{
         chp{"chipewiansk"}
         chr{"cherokesisk"}
         chy{"cheyenne"}
+        cic{"chickasaw"}
         ckb{"sentralkurdisk"}
         clc{"chilcotin"}
         co{"korsikansk"}
@@ -218,7 +224,6 @@ no{
         gmh{"mellomhøytysk"}
         gn{"guarani"}
         goh{"gammelhøytysk"}
-        gom{"goansk konkani"}
         gon{"gondi"}
         gor{"gorontalo"}
         got{"gotisk"}
@@ -328,6 +333,7 @@ no{
         kv{"komi"}
         kw{"kornisk"}
         kwk{"kwak̓wala"}
+        kxv{"kuvi"}
         ky{"kirgisisk"}
         la{"latin"}
         lad{"ladinsk"}
@@ -357,7 +363,6 @@ no{
         lua{"luba-lulua"}
         lui{"luiseno"}
         lun{"lunda"}
-        luo{"luo"}
         lus{"mizo"}
         luy{"luhya"}
         lv{"latvisk"}
@@ -615,13 +620,13 @@ no{
         und{"ukjent språk"}
         ur{"urdu"}
         uz{"usbekisk"}
-        vai{"vai"}
         ve{"venda"}
         vec{"venetiansk"}
         vep{"vepsisk"}
         vi{"vietnamesisk"}
         vls{"vestflamsk"}
         vmf{"Main-frankisk"}
+        vmw{"makhuwa"}
         vo{"volapyk"}
         vot{"votisk"}
         vro{"sørestisk"}
@@ -637,6 +642,7 @@ no{
         xal{"kalmukkisk"}
         xh{"xhosa"}
         xmf{"mingrelsk"}
+        xnr{"kangri"}
         xog{"soga"}
         yao{"yao"}
         yap{"yapesisk"}
@@ -660,6 +666,12 @@ no{
         zxx{"uten språklig innhold"}
         zza{"zazaisk"}
     }
+    Languages%core{
+        ku{"kurdisk"}
+    }
+    Languages%extension{
+        ku{"kurmanji"}
+    }
     Languages%long{
         zh_Hans{"forenklet mandarinkinesisk"}
         zh_Hant{"tradisjonell mandarinkinesisk"}
@@ -674,6 +686,7 @@ no{
         az{"azeri"}
     }
     Languages%variant{
+        ckb{"kurdisk (sorani)"}
         hi_Latn{"hinglish"}
         ps{"pushto"}
     }
@@ -871,19 +884,39 @@ no{
             gregorian{"gregoriansk kalender"}
             hebrew{"hebraisk kalender"}
             indian{"indisk nasjonalkalender"}
-            islamic{"islamsk kalender"}
-            islamic-civil{"islamsk kalender (tabell, sivil)"}
+            islamic{"hijrikalender"}
+            islamic-civil{"hijrikalender (tabell, sivil)"}
             islamic-rgsa{"islamsk kalender (Saudi-Arabia, observasjon)"}
             islamic-tbla{"islamsk kalender (tabell, astronomisk)"}
-            islamic-umalqura{"islamsk kalender (Umm al-Qura)"}
+            islamic-umalqura{"hijrikalender (Umm al-Qura)"}
             iso8601{"ISO 8601-kalender"}
             japanese{"japansk kalender"}
             persian{"persisk kalender"}
             roc{"minguo-kalender"}
         }
+        calendar%core{
+            buddhist{"buddhistisk"}
+            chinese{"kinesisk"}
+            coptic{"koptisk"}
+            dangi{"dangisk"}
+            ethiopic{"etiopisk"}
+            ethiopic-amete-alem{"etiopisk amete-alem"}
+            gregorian{"gregoriansk"}
+            hebrew{"hebraisk"}
+            islamic{"hijri"}
+            islamic-civil{"hijri (tabell, sivil)"}
+            islamic-umalqura{"hijri (Umm al-Qura)"}
+            japanese{"japansk"}
+            persian{"persisk"}
+            roc{"minguo"}
+        }
         cf{
             account{"valutaformat for regnskapsføring"}
             standard{"standard valutaformat"}
+        }
+        cf%core{
+            account{"regnskapsføring"}
+            standard{"standard"}
         }
         colAlternate{
             non-ignorable{"sortér symboler"}
@@ -918,17 +951,14 @@ no{
             tertiary{"Sortér aksenttegn / små og store bokstaver / bredde"}
         }
         collation{
-            big5han{"tradisjonell kinesisk sortering - Big 5"}
             compat{"forrige sorteringsrekkefølge (for kompatibilitet)"}
             dictionary{"ordlistesortering"}
             ducet{"standard Unicode-sorteringsrekkefølge"}
             emoji{"emoji-sorteringsrekkefølge"}
             eor{"sorteringsrekkefølge for flerspråklige europeiske dokumenter"}
-            gb2312han{"forenklet kinesisk sortering - GB2312"}
             phonebook{"telefonkatalogsortering"}
             phonetic{"fonetisk sortering"}
             pinyin{"pinyinsortering"}
-            reformed{"reformert sortering"}
             search{"generelt søk"}
             searchjl{"Søk etter første konsonant i hangul"}
             standard{"standard sorteringsrekkefølge"}
@@ -937,10 +967,29 @@ no{
             unihan{"radikal-strek-sortering"}
             zhuyin{"zhuyin-sortering"}
         }
+        collation%core{
+            compat{"kompatibilitet"}
+            dictionary{"ordliste"}
+            ducet{"standard Unicode"}
+            phonebook{"telefonkatalog"}
+            phonetic{"fonetisk"}
+            pinyin{"pinyin"}
+            search{"søk"}
+            standard{"standard"}
+            stroke{"strek"}
+            traditional{"tradisjonell"}
+            unihan{"radikal-strek"}
+            zhuyin{"zhuyin"}
+        }
         d0{
             fwidth{"full bredde"}
             hwidth{"halv bredde"}
             npinyin{"Numerisk"}
+        }
+        em%core{
+            default{"standard"}
+            emoji{"emoji"}
+            text{"tekst"}
         }
         hc{
             h11{"12-timers system (0–11)"}
@@ -948,10 +997,27 @@ no{
             h23{"24-timers system (0–23)"}
             h24{"24-timers system (1–24)"}
         }
+        hc%core{
+            h11{"12 (0–11)"}
+            h12{"12 (1–12)"}
+            h23{"24 (0–23)"}
+            h24{"24 (1–24)"}
+        }
         lb{
             loose{"løs linjeskiftstil"}
             normal{"normal linjeskiftstil"}
             strict{"streng linjeskiftstil"}
+        }
+        lb%core{
+            loose{"løs"}
+            normal{"normal"}
+            strict{"streng"}
+        }
+        lw%core{
+            breakall{"bryt alle"}
+            keepall{"behold alle"}
+            normal{"normal"}
+            phrase{"behold i fraser"}
         }
         m0{
             bgn{"USBGN-translitterasjon"}
@@ -961,6 +1027,11 @@ no{
             metric{"metrisk system"}
             uksystem{"britisk målesystem"}
             ussystem{"amerikansk målesystem"}
+        }
+        ms%core{
+            metric{"metrisk"}
+            uksystem{"britisk"}
+            ussystem{"amerikansk"}
         }
         numbers{
             arab{"arabisk-indiske sifre"}
@@ -972,6 +1043,7 @@ no{
             brah{"brahmiske tall"}
             cakm{"chakma-sifre"}
             cham{"cham-tall"}
+            cyrl{"kyrilliske tall"}
             deva{"devanagari-sifre"}
             ethi{"etiopiske tall"}
             finance{"Finansielle tall"}
@@ -991,6 +1063,7 @@ no{
             jpan{"japanske tall"}
             jpanfin{"japanske finanstall"}
             kali{"kayah li-tall"}
+            kawi{"kawi-sifre"}
             khmr{"khmer-sifre"}
             knda{"kannada-sifre"}
             lana{"thai tham hora-tall"}
@@ -1022,8 +1095,14 @@ no{
             telu{"telugu-sifre"}
             thai{"thailandske sifre"}
             tibt{"tibetanske sifre"}
+            tirh{"tirhuta-sifre"}
+            tnsa{"tangsa-sifre"}
             traditional{"Tradisjonelle tall"}
             vaii{"vai-sifre"}
+        }
+        ss%core{
+            none{"av"}
+            standard{"på"}
         }
     }
     Variants{
@@ -1053,6 +1132,7 @@ no{
         FONXSAMP{"fonxsamp"}
         HEPBURN{"Hepburn-romanisering"}
         HOGNORSK{"høgnorsk"}
+        HSISTEMO{"h-systemet"}
         IJEKAVSK{"serbisk med ijekavisk uttale"}
         ITIHASA{"itihasa"}
         JAUER{"jauer"}
@@ -1093,13 +1173,15 @@ no{
         VALENCIA{"valensiansk"}
         VALLADER{"vallader"}
         WADEGILE{"Wade-Giles-romanisering"}
+        XSISTEMO{"x-systemet"}
     }
     characterLabelPattern{
         all{"{0} – alt"}
-        category-list{"{0}: {1}"}
         compatibility{"{0} – kompatibilitet"}
         enclosed{"{0} – omsluttet"}
         extended{"{0} – utvidet"}
+        facing-left{"{0} vendt mot venstre"}
+        facing-right{"{0} vendt mot høyre"}
         historic{"{0} – historisk"}
         miscellaneous{"{0} – diverse"}
         other{"{0} – annet"}
@@ -1115,10 +1197,5 @@ no{
         language{"Språk: {0}"}
         script{"Skrift: {0}"}
         territory{"Område: {0}"}
-    }
-    localeDisplayPattern{
-        keyTypePattern{"{0}: {1}"}
-        pattern{"{0} ({1})"}
-        separator{"{0}, {1}"}
     }
 }
