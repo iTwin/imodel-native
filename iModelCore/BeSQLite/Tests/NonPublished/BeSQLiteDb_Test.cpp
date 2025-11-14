@@ -2226,6 +2226,17 @@ TEST_F(BeSQLiteDbTests, InsertMismatchedColumns)
     EXPECT_TRUE(result == BE_SQLITE_OK); // SQLite should ideally fail here - we have reported this to them 8/31/2017
     m_db.SaveChanges();
     }
+
+namespace {
+    void CloneDb(Utf8StringCR seedFileName, DbR from, DbR out, Utf8StringCR name) {
+        ASSERT_EQ (BE_SQLITE_OK, from.SaveChanges());
+        Utf8String fileName = from.GetDbFileName();
+        fileName.ReplaceAll(seedFileName.c_str(), name.c_str());
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(BeFileName(from.GetDbFileName(), true), BeFileName(fileName.c_str(), true)));
+        ASSERT_EQ(BE_SQLITE_OK, out.OpenBeSQLiteDb(fileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    };
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -2235,19 +2246,11 @@ TEST_F (BeSQLiteDbTests, ChangeSetApply_IgnoreNoop)
     SetupDb (WString(kMainFile, true).c_str());
     EXPECT_TRUE (m_db.IsDbOpen ());
 
-    auto cloneDb = [&](DbR from, DbR out, Utf8CP name) {
-        ASSERT_EQ (BE_SQLITE_OK, from.SaveChanges());
-        Utf8String fileName = from.GetDbFileName();
-        fileName.ReplaceAll(kMainFile, name);
-        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(BeFileName(m_db.GetDbFileName(), true), BeFileName(fileName.c_str(), true)));
-        ASSERT_EQ(BE_SQLITE_OK, out.OpenBeSQLiteDb(fileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
-    };
-
     ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("t1", "id integer primary key")) << "Creating table T1 failed.";
     ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("t2", "id integer primary key, t1_id integer not null references t1(id) on delete cascade")) << "Creating table T2 failed.";
 
     Db beforeDb;
-    cloneDb(m_db, beforeDb, "before.db");
+    CloneDb(kMainFile, m_db, beforeDb, "before.db");
 
     // Make a changeset
     MyChangeTracker changeTracker(m_db);
@@ -2262,7 +2265,7 @@ TEST_F (BeSQLiteDbTests, ChangeSetApply_IgnoreNoop)
     changeTracker.EndTracking();
 
     Db afterDb;
-    cloneDb(m_db, afterDb, "after.db");
+    CloneDb(kMainFile, m_db, afterDb, "after.db");
 
     BeTest::SetFailOnAssert(false);
     // Apply changeset to db that not have the data and should not cause conflicts
@@ -2281,6 +2284,65 @@ TEST_F (BeSQLiteDbTests, ChangeSetApply_IgnoreNoop)
     afterDb.SaveChanges();
 }
 
+TEST_F(BeSQLiteDbTests, ChangeSetApply_IgnoreNoopShouldNotSupressConflict)
+{
+    const auto kMainFile = "test1.db";
+    SetupDb(WString(kMainFile, true).c_str());
+    ASSERT_TRUE(m_db.IsDbOpen());
+
+    // Data setup with a table and some data
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable("t1", "id integer primary key, val int"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("insert into t1 values(1, 10)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("insert into t1 values(2, 20)"));
+    m_db.SaveChanges();
+
+    Db firstBriefcaseDb, secondBriefcaseDb;
+    CloneDb(kMainFile, m_db, firstBriefcaseDb, "firstBriefcase.db");
+    CloneDb(kMainFile, m_db, secondBriefcaseDb, "secondBriefcase.db");
+    m_db.CloseDb();
+
+    // Delete a row from the main db and create a changeset
+    MyChangeTracker changeTracker(firstBriefcaseDb);
+    changeTracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, firstBriefcaseDb.ExecuteSql("delete from t1 where id=2"));
+
+    MyChangeSet changeSet;
+    changeSet.FromChangeTrack(changeTracker);
+    ASSERT_GT(changeSet.GetSize(), 0);
+    changeTracker.EndTracking();
+    firstBriefcaseDb.SaveChanges();
+
+    // Update the value in the first briefcase db
+    ASSERT_EQ(BE_SQLITE_OK, secondBriefcaseDb.ExecuteSql("update t1 set val=500 where id=2"));
+    secondBriefcaseDb.SaveChanges();
+
+    {
+        // Make sure the row is deleted from the first briefcase
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(firstBriefcaseDb, "SELECT val from t1 where id=2"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.Finalize();
+    }
+    {
+        // Make sure the row is updated in the second briefcase
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(secondBriefcaseDb, "SELECT val from t1 where id=2"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(500, stmt.GetValueDouble(0));
+        stmt.Finalize();
+    }
+
+    BeTest::SetFailOnAssert(false);
+    // This is not a no-op and should trigger a conflict: trying to delete a row that was updated in secondBriefcaseDb.
+    ASSERT_EQ(BE_SQLITE_ABORT, changeSet.ApplyChanges(secondBriefcaseDb, false, /*ignoreNoop=*/true));
+    BeTest::SetFailOnAssert(true);
+
+    firstBriefcaseDb.SaveChanges();
+    secondBriefcaseDb.SaveChanges();
+
+    firstBriefcaseDb.CloseDb();
+    secondBriefcaseDb.CloseDb();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
