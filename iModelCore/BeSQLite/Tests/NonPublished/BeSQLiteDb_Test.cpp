@@ -2301,7 +2301,7 @@ TEST_F(BeSQLiteDbTests, ChangeSetApply_IgnoreNoopShouldNotSupressConflict)
     CloneDb(kMainFile, m_db, secondBriefcaseDb, "secondBriefcase.db");
     m_db.CloseDb();
 
-    // Delete a row from the main db and create a changeset
+    // Delete a row from the first briefcase and create a changeset
     MyChangeTracker changeTracker(firstBriefcaseDb);
     changeTracker.EnableTracking(true);
     ASSERT_EQ(BE_SQLITE_OK, firstBriefcaseDb.ExecuteSql("delete from t1 where id=2"));
@@ -2312,7 +2312,7 @@ TEST_F(BeSQLiteDbTests, ChangeSetApply_IgnoreNoopShouldNotSupressConflict)
     changeTracker.EndTracking();
     firstBriefcaseDb.SaveChanges();
 
-    // Update the value in the first briefcase db
+    // Update the value in the second briefcase
     ASSERT_EQ(BE_SQLITE_OK, secondBriefcaseDb.ExecuteSql("update t1 set val=500 where id=2"));
     secondBriefcaseDb.SaveChanges();
 
@@ -2333,7 +2333,7 @@ TEST_F(BeSQLiteDbTests, ChangeSetApply_IgnoreNoopShouldNotSupressConflict)
     }
 
     BeTest::SetFailOnAssert(false);
-    // This is not a no-op and should trigger a conflict: trying to delete a row that was updated in secondBriefcaseDb.
+    // This is not a no-op and should trigger a conflict: Trying to delete a row that was updated in secondBriefcaseDb.
     ASSERT_EQ(BE_SQLITE_ABORT, changeSet.ApplyChanges(secondBriefcaseDb, false, /*ignoreNoop=*/true));
     BeTest::SetFailOnAssert(true);
 
