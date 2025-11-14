@@ -137,7 +137,7 @@ ECSqlStatus SingleECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         }
 
     //don't let BeSQLite log and assert on error (therefore use TryPrepare instead of Prepare)
-    const DbResult nativeSqlStat = m_sqliteStatement.TryPrepare(ctx.GetDataSourceConnection(), nativeSql.c_str());
+    const DbResult nativeSqlStat = m_sqliteStatement.TryPrepare(ctx.GetDataSourceConnection(), nativeSql.c_str(), ctx.GetPrepareOptions());
 
     if (nativeSqlStat != BE_SQLITE_OK)
         {
