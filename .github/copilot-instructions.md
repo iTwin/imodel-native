@@ -36,6 +36,7 @@ This is a **multi-layered C++ codebase** exposed to TypeScript via N-API:
 - `iModelCore/ecobjects/PublicApi/ECObjects/ECSchema.h` - huge header containing most of the ecobjects public API
 - `iModelCore/ECDb/PublicAPI/ECDb/ECDb.h` - ECDb public API
 - `iModelCore/iModelPlatform/PublicAPI/DgnPlatform/TxnManager.h` - Transaction management (changesets)
+- `iModelJsNodeAddon/api_package/ts/src/NativeLibrary.ts` - TypeScript interface to native addon
 - `iModelJsNodeAddon/IModelJsNative.h` - N-API macro definitions and type aliases
-- `iModelJsNodeAddon/IModelJsNative.cpp` - Main N-API entrypoint
-
+- `iModelJsNodeAddon/IModelJsNative.cpp` - Main N-API glue code to calling into C++ codebase
+- `iModelJsNodeAddon/JsInterop.cpp` - Additional N-API helper functions
