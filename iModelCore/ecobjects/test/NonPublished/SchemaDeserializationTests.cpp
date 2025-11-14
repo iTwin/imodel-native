@@ -1453,7 +1453,7 @@ TEST_F(SchemaDeserializationTest, ChecksumIsCalculatedFromContext)
     DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
 
     ASSERT_TRUE(testSchema.IsValid());
-    EXPECT_FALSE(testSchema->GetSchemaKey().m_checksum.empty()) << "Expect the checksum of the schema to be valid when the calculate checksum flag is set to true on the ECSchemaReadContext.";
+    EXPECT_FALSE(testSchema->GetSchemaKey().GetChecksum().empty()) << "Expect the checksum of the schema to be valid when the calculate checksum flag is set to true on the ECSchemaReadContext.";
     }
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -1461,7 +1461,7 @@ TEST_F(SchemaDeserializationTest, ChecksumIsCalculatedFromContext)
     ECSchemaPtr testSchema;
     DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
     ASSERT_TRUE(testSchema.IsValid());
-    EXPECT_TRUE(testSchema->GetSchemaKey().m_checksum.empty()) << "Expect the checksum of the schema to be empty when the calculate checksum flag is false on the ECSchemaReadContext.";
+    EXPECT_TRUE(testSchema->GetSchemaKey().GetChecksum().empty()) << "Expect the checksum of the schema to be empty when the calculate checksum flag is false on the ECSchemaReadContext.";
     }
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -1472,7 +1472,7 @@ TEST_F(SchemaDeserializationTest, ChecksumIsCalculatedFromContext)
     DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
 
     ASSERT_TRUE(testSchema.IsValid());
-    EXPECT_FALSE(testSchema->GetSchemaKey().m_checksum.empty()) << "Expect the checksum of the schema to be valid when the calculate checksum and skip validation flags are set to true on the ECSchemaReadContext.";
+    EXPECT_FALSE(testSchema->GetSchemaKey().GetChecksum().empty()) << "Expect the checksum of the schema to be valid when the calculate checksum and skip validation flags are set to true on the ECSchemaReadContext.";
     }
     }
 
