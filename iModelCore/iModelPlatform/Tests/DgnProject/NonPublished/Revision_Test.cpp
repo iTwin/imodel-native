@@ -882,6 +882,62 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, SchemaChangesAfterDataChanges)
+    {
+    // Setup baseline
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SchemaChangesAfterDataChanges.bim");
+    m_db->CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    m_db->SaveChanges("Created Initial Model");
+    ChangesetPropsPtr initialRevision = CreateRevision("-cs1");
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    /* Create revision with schema changes */
+    ASSERT_EQ(m_db->AddColumnToTable("TestTable", "Column2", "INTEGER"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->CreateIndex("idx_TestTable_Column1", "TestTable", false, "Column1"), BE_SQLITE_OK);
+
+    ASSERT_FALSE(m_db->Txns().HasDataChanges());
+    ASSERT_TRUE(m_db->Txns().HasDdlChanges());
+
+    m_db->SaveChanges("Schema changes");
+    ChangesetPropsPtr schemaChangesRevision = CreateRevision("-cs2");
+    ASSERT_TRUE(schemaChangesRevision.IsValid());
+
+    ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id,Column1,Column2) VALUES(1,1,1)"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id,Column1,Column2) VALUES(2,2,2)"), BE_SQLITE_OK);
+
+    ASSERT_TRUE(m_db->Txns().HasDataChanges());
+    ASSERT_FALSE(m_db->Txns().HasDdlChanges());
+
+    m_db->SaveChanges("Data changes");
+
+    ChangesetPropsPtr dataChangesRevision = CreateRevision("-cs3");
+    ASSERT_TRUE(dataChangesRevision.IsValid());
+    
+    BackupTestFile();
+    
+    ASSERT_EQ(m_db->ExecuteDdl("DROP INDEX idx_TestTable_Column1"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->CreateIndex("idx_TestTable_Column2", "TestTable", false, "Column2"), BE_SQLITE_OK);
+
+    ASSERT_FALSE(m_db->Txns().HasDataChanges());
+    ASSERT_TRUE(m_db->Txns().HasDdlChanges());
+
+    m_db->SaveChanges("Schema changes again");
+
+    ChangesetPropsPtr secondSchemaChangesRevision = CreateRevision("-cs4");
+    ASSERT_TRUE(secondSchemaChangesRevision.IsValid());
+
+    /* Restore baseline, make data changes, and merge revision with schema changes */
+    RestoreTestFile();
+
+    MergeSchemaRevision(*secondSchemaChangesRevision);
+
+    CloseDgnDb();
+    
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 int GetColumnCount(DgnDb const& dgndb, Utf8CP tableName)
     {
     Statement statement;
