@@ -1375,18 +1375,16 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     if (status == ChangesetStatus::Success) {
         SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());
 
-        if (status == ChangesetStatus::Success) {
-            if (PullMergeConf::Load(m_dgndb).InProgress()) {
-                result = m_dgndb.SaveChanges();
-            }
-            // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one.
-            // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
-            // the merged changes are lost after this routine and cannot be used for change propagation anymore.
-            if (BE_SQLITE_OK != result) {
-                LOG.fatalv("MergeDataChanges failed to save: %s", BeSQLiteLib::GetErrorName(result));
-                BeAssert(false);
-                status = ChangesetStatus::SQLiteError;
-            }
+        if (PullMergeConf::Load(m_dgndb).InProgress()) {
+            result = m_dgndb.SaveChanges();
+        }
+        // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one.
+        // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
+        // the merged changes are lost after this routine and cannot be used for change propagation anymore.
+        if (BE_SQLITE_OK != result) {
+            LOG.fatalv("MergeDataChanges failed to save: %s", BeSQLiteLib::GetErrorName(result));
+            BeAssert(false);
+            status = ChangesetStatus::SQLiteError;
         }
     }
     if (status != ChangesetStatus::Success) {

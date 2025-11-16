@@ -27,7 +27,7 @@ BuildToolsBuildDir = $(OutBuildDir)BeIcu4cDataTools/
 BuildToolsLibName = BeIcu4cDataToolsLib
 BuildToolsLibPath = $(BuildToolsBuildDir)$(libprefix)$(BuildToolsLibName)$(libext)
 
-DataFileBaseName = icudt73l
+DataFileBaseName = icudt78l
 DataFileName = $(DataFileBaseName).dat
 DataBuildDir = $(OutBuildDir)BeIcu4cData/$(DataFileBaseName)/
 DataBuildFilePath = $(DataBuildDir)$(DataFileName)
