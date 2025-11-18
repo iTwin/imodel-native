@@ -276,6 +276,37 @@ public:
 
     //! - For use when the caller is deserializing custom attributes and has the container schema for the current instance
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContextForCA(ECSchemaCR containerSchema, ECSchemaReadContextR schemaContext);
+
+    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateGeneralContext(SchemaLookUpParamsCR schemaLookUpParams, SchemaContextLookUpParamsCR schemaContextLookUpParams, ECSchemaCR fallbackSchema);
+
+    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateGeneralContext(SchemaLookUpParamsCR schemaLookUpParams, ECSchemaCR fallbackSchema);
+
 };
+
+struct SchemaLookUpParams
+    {
+    ECSchemaCP m_schema;
+    bool m_lookInReferences;
+    
+    public:
+        SchemaLookUpParams(ECSchemaCP schema, bool lookInReferences): m_schema(schema), m_lookInReferences(lookInReferences)
+        {}
+
+        ECSchemaCP GetSchema() const { return m_schema; }
+        bool LookInReferences() const { return m_lookInReferences; }
+    };
+
+struct SchemaContextLookUpParams
+    {
+    ECSchemaReadContextP m_schemaContext;
+    bool m_checkForPruning;
+    
+    public:
+        SchemaContextLookUpParams(ECSchemaReadContextP schemaContext, bool checkForPruning): m_schemaContext(schemaContext), m_checkForPruning(checkForPruning)
+        {}
+
+        ECSchemaReadContextP GetSchemaContext() const { return m_schemaContext; }
+        bool CheckForPruning() const { return m_checkForPruning; }
+    };
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE

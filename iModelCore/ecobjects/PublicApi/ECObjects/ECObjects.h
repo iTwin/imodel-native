@@ -111,6 +111,9 @@ EC_TYPEDEFS(IECSchemaRemapper);
 
 EC_TYPEDEFS(SchemaNameClassNamePair);
 
+EC_TYPEDEFS(SchemaLookUpParams);
+EC_TYPEDEFS(SchemaContextLookUpParams)
+
 #ifndef DOCUMENTATION_GENERATOR
 EC_TYPEDEFS (AdHocPropertyMetadata);
 EC_TYPEDEFS (AdHocPropertyQuery);

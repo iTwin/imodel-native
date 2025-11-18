@@ -439,6 +439,9 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (pug
             {
             if(customAttributeClassNode.type() != pugi::xml_node_type::node_element)
                 continue;
+            
+            ECSchemaReadContext schemaContextWithContainerSchemaLocators;
+            
             ECInstanceReadContextPtr context = ECInstanceReadContext::CreateContextForCA (containerSchema, schemaContext);
 
             IECInstancePtr  customAttributeInstance;

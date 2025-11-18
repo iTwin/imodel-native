@@ -757,8 +757,9 @@ void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         }
 
     Utf8CP caXml = xmlValue.GetValueText();
-
-    ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateContext(caClass->GetSchema());
+    
+    SchemaLookUpParams params(&(caClass->GetSchema()), false);
+    ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateGeneralContext(params, caClass->GetSchema());
     IECInstancePtr deserializedCa = nullptr;
     if (InstanceReadStatus::Success != IECInstance::ReadFromXmlString(deserializedCa, caXml, *readContext))
         {

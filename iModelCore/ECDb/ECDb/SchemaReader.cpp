@@ -2568,7 +2568,8 @@ BentleyStatus SchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR caCon
             return ERROR;
 
         Utf8CP caXml = stmt->GetValueText(1);
-        ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateContext(caClass->GetSchema());
+        SchemaLookUpParams params(&(caClass->GetSchema()), false);
+        ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateGeneralContext(params, caClass->GetSchema());
         IECInstancePtr deserializedCa = nullptr;
         if (InstanceReadStatus::Success != IECInstance::ReadFromXmlString(deserializedCa, caXml, *readContext))
             return ERROR;

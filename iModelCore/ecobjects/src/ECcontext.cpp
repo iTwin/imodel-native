@@ -488,6 +488,103 @@ ECInstanceReadContextPtr ECInstanceReadContext::CreateContextForCA(ECSchemaCR co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+struct GeneralInstanceReadContext: public ECInstanceReadContext
+{
+private:
+    SchemaLookUpParamsCR  m_schemaLookUpParams;
+    SchemaContextLookUpParamsCR  m_schemaContextLookUpParams;
+
+    ECObjectsStatus FindSchemaBackedSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema, ECSchemaCP schemaToLookIn, bool lookInReferences) const
+        {
+        if (schemaToLookIn->GetSchemaKey().Matches(key, matchType))
+            {
+            schema = schemaToLookIn;
+            return ECObjectsStatus::Success;
+            }
+
+        if(lookInReferences)
+            {
+            auto& references = schemaToLookIn->GetReferencedSchemas();
+            auto it = references.Find(key, matchType);
+            if (it != references.end())
+                {
+                schema = it->second.get();
+                return ECObjectsStatus::Success;
+                }
+            }
+
+        return ECObjectsStatus::SchemaNotFound;
+        }
+
+    ECObjectsStatus FindSchemaContextBackedSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema, ECSchemaReadContextP schemaContextToUse, bool checkForPruning) const
+        {
+        if (checkForPruning && schemaContextToUse->GetSchemasToPrune().end() != std::find(schemaContextToUse->GetSchemasToPrune().begin(), schemaContextToUse->GetSchemasToPrune().end(), key.GetName()))
+            {
+            LOG.debugv("Skipping loading of the custom attribute because its schema %s is being pruned.", key.GetFullSchemaName().c_str());
+            return ECObjectsStatus::SchemaIsPruned;
+            }
+
+        SchemaKey nonConstKey(key);
+        ECSchemaPtr schemaFromContext = schemaContextToUse->LocateSchema (nonConstKey, matchType);
+        if(schemaFromContext.IsValid())
+            {
+            schema = schemaFromContext.get();
+            return ECObjectsStatus::Success;
+            }
+
+        return ECObjectsStatus::SchemaNotFound;
+        }
+public:
+    GeneralInstanceReadContext(SchemaLookUpParamsCR schemaLookUpParams, SchemaContextLookUpParamsCR schemaContextLookUpParams, ECSchemaCR fallbackSchema)
+        : m_schemaLookUpParams(schemaLookUpParams), m_schemaContextLookUpParams(schemaContextLookUpParams), ECInstanceReadContext(m_schemaContextLookUpParams.GetSchemaContext() == nullptr ? nullptr : schemaContextLookUpParams.GetSchemaContext().GetStandaloneEnablerLocater(), fallbackSchema, nullptr)
+        { }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual ECObjectsStatus _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const
+        {
+        ECObjectsStatus status = ECObjectsStatus::Success;
+        ECSchemaCP schemaToLookIn = m_schemaLookUpParams.GetSchema();
+        if(schemaToLookIn != nullptr)
+            {
+            status = FindSchemaBackedSchemaCP(key, matchType, schema, schemaToLookIn, m_schemaLookUpParams.LookInReferences());
+            if(status == ECObjectsStatus::Success)
+                return status;
+            }
+
+        ECSchemaReadContextP schemaContextToLookIn = m_schemaContextLookUpParams.GetSchemaContext();   
+        if(schemaContextToLookIn != nullptr)
+            {
+            status = FindSchemaContextBackedSchemaCP(key, matchType, schema, schemaContextToLookIn, m_schemaContextLookUpParams.CheckForPruning());
+            if(status == ECObjectsStatus::Success)
+                return status;   
+            }        
+
+        return status;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceReadContextPtr ECInstanceReadContext::CreateGeneralContext(SchemaLookUpParamsCR schemaLookUpParams, SchemaContextLookUpParamsCR schemaContextLookUpParams, ECSchemaCR fallbackSchema)
+    {
+    return new GeneralInstanceReadContext(schemaLookUpParams, schemaContextLookUpParams, fallbackSchema);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceReadContextPtr ECInstanceReadContext::CreateGeneralContext(SchemaLookUpParamsCR schemaLookUpParams, ECSchemaCR fallbackSchema)
+    {
+    SchemaContextLookUpParams params(nullptr, false);
+    return new GeneralInstanceReadContext(schemaLookUpParams, params, fallbackSchema);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr ECInstanceReadContext::_CreateStandaloneInstance(ECClassCR ecClass)
     {
     if (nullptr != ecClass.GetRelationshipClassCP())
