@@ -1907,127 +1907,6 @@ TEST_F(RevisionTestFixture, DeleteClassConstraintViolationInCacheTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(RevisionTestFixture, DeletingClassAfterDataEntry)
-    {
-    auto checkTestClassExists = [&](const bool shouldExist)
-        {
-        // Check class existence in schema and cache table in one place
-        ASSERT_EQ(shouldExist, nullptr != m_db->Schemas().GetClass("TestSchema", "TestClass"));
-
-        Statement stmt;
-        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db,
-            "SELECT 1 FROM ec_cache_ClassHierarchy ch "
-            "JOIN ec_Class c ON ch.classId = c.Id WHERE c.Name = 'TestClass'"));
-        ASSERT_EQ(shouldExist, stmt.Step() == BE_SQLITE_ROW);
-        stmt.Finalize();
-        };
-
-    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"DeletingClassAfterDataEntry.bim");
-    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
-
-    auto context = ECN::ECSchemaReadContext::CreateContext();
-    context->AddSchemaLocater(m_db->GetSchemaLocater());
-
-    BeFileName searchDirs[2];
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDirs[0]);
-    searchDirs[0].AppendToPath(L"ECSchemas");
-    searchDirs[1] = searchDirs[0];
-
-    context->AddFirstSchemaPaths({ searchDirs[0].AppendToPath(L"Dgn"), searchDirs[1].AppendToPath(L"Standard") });
-
-    // Set up a base dynamic schema with a class
-    const auto schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
-            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
-
-            <ECCustomAttributes>
-                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
-            </ECCustomAttributes>
-
-            <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:PhysicalElement</BaseClass>
-            </ECEntityClass>
-        </ECSchema>)xml";
-
-    ECSchemaPtr initialSchema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(initialSchema, schemaXml, *context));
-    m_db->ImportSchemas({ initialSchema.get() }, true);
-    m_db->SaveChanges("Created Test Schema");
-
-    // Create a revision and a backup point
-    const auto initialRevision = CreateRevision("-initialize");
-    ASSERT_TRUE(initialRevision.IsValid());
-
-    DgnElementId testElementId;
-    ChangesetPropsCPtr revision;
-    {
-        // Insert element
-        PhysicalModelPtr model = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
-        ASSERT_TRUE(model.IsValid());
-        GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
-        builder->Append(*ICurvePrimitive::CreateArc(DEllipse3d::From(1, 2, 3, 0, 0, 2, 0, 3, 0, 0.0, Angle::TwoPi())));
-
-        GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(*model, m_defaultCategoryId);
-        ASSERT_EQ(SUCCESS, builder->Finish(*testElement));
-
-        DgnDbStatus statusInsert;
-        testElement->Insert(&statusInsert);
-        ASSERT_EQ(DgnDbStatus::Success, statusInsert);
-
-        testElementId = testElement->GetElementId();
-        ASSERT_TRUE(testElementId.IsValid());
-        ASSERT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
-        m_db->SaveChanges("Inserted Element");
-
-        revision = CreateRevision("-insertElement");
-        ASSERT_TRUE(revision.IsValid());
-    }
-
-    BackupTestFile();
-
-    // Check if class exists
-    checkTestClassExists(true);
-
-    // Create a changeset to delete the class
-    // Perform a major schema update that deletes the class
-    const auto updatedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
-
-            <ECCustomAttributes>
-                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
-            </ECCustomAttributes>
-        </ECSchema>)xml";
-
-    ECSchemaPtr updatedSchema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(updatedSchema, updatedSchemaXml, *context));
-    m_db->ImportSchemas({ updatedSchema.get() }, true);
-    m_db->SaveChanges("Updated Test Schema");
-
-    const auto updatedRevision = CreateRevision("-schemaMajorUpdate");
-    ASSERT_TRUE(updatedRevision.IsValid());
-
-    // Class should be deleted
-    checkTestClassExists(false);
-
-    // Now that we have a changeset with a major schema update that deletes the class, restore the imodel to the backup state
-    RestoreTestFile();
-
-    // Make sure class still exists
-    checkTestClassExists(true);
-
-    // Apply the changeset with the major schema update that deletes the class
-    EXPECT_EQ(m_db->Txns().PullMergeApply(*updatedRevision), ChangesetStatus::Success);
-    // Class should be deleted
-    checkTestClassExists(false);
-
-    CloseDgnDb();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
 TEST_F(RevisionTestFixture, UpdatingClassAfterDataEntry)
     {
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"UpdatingClassAfterDataEntry.bim");
@@ -2097,7 +1976,7 @@ TEST_F(RevisionTestFixture, UpdatingClassAfterDataEntry)
     BackupTestFile();
 
     // Create a changeset to delete the class
-    // Perform a major schema update that deletes the class
+    // Perform a major schema update that adds a class property
     const auto updatedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
@@ -2108,6 +1987,7 @@ TEST_F(RevisionTestFixture, UpdatingClassAfterDataEntry)
             </ECCustomAttributes>
             <ECEntityClass typeName="TestClass">
                 <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty1" typeName="string" />
                 <ECProperty propertyName="TestProperty2" typeName="int" />
             </ECEntityClass>
         </ECSchema>)xml";
@@ -2117,7 +1997,7 @@ TEST_F(RevisionTestFixture, UpdatingClassAfterDataEntry)
     m_db->ImportSchemas({ updatedSchema.get() }, true);
     m_db->SaveChanges("Updated Test Schema");
 
-    const auto updatedRevision = CreateRevision("-schemaMajorUpdate");
+    const auto updatedRevision = CreateRevision("-schemaUpdate");
     ASSERT_TRUE(updatedRevision.IsValid());
 
     // Now that we have a changeset with a major schema update that deletes the class, restore the imodel to the backup state
