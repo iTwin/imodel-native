@@ -882,6 +882,62 @@ TEST_F(RevisionTestFixture, MergeSchemaChanges)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, SchemaChangesAfterDataChanges)
+    {
+    // Setup baseline
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SchemaChangesAfterDataChanges.bim");
+    m_db->CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    m_db->SaveChanges("Created Initial Model");
+    ChangesetPropsPtr initialRevision = CreateRevision("-cs1");
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    /* Create revision with schema changes */
+    ASSERT_EQ(m_db->AddColumnToTable("TestTable", "Column2", "INTEGER"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->CreateIndex("idx_TestTable_Column1", "TestTable", false, "Column1"), BE_SQLITE_OK);
+
+    ASSERT_FALSE(m_db->Txns().HasDataChanges());
+    ASSERT_TRUE(m_db->Txns().HasDdlChanges());
+
+    m_db->SaveChanges("Schema changes");
+    ChangesetPropsPtr schemaChangesRevision = CreateRevision("-cs2");
+    ASSERT_TRUE(schemaChangesRevision.IsValid());
+
+    ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id,Column1,Column2) VALUES(1,1,1)"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id,Column1,Column2) VALUES(2,2,2)"), BE_SQLITE_OK);
+
+    ASSERT_TRUE(m_db->Txns().HasDataChanges());
+    ASSERT_FALSE(m_db->Txns().HasDdlChanges());
+
+    m_db->SaveChanges("Data changes");
+
+    ChangesetPropsPtr dataChangesRevision = CreateRevision("-cs3");
+    ASSERT_TRUE(dataChangesRevision.IsValid());
+    
+    BackupTestFile();
+    
+    ASSERT_EQ(m_db->ExecuteDdl("DROP INDEX idx_TestTable_Column1"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->CreateIndex("idx_TestTable_Column2", "TestTable", false, "Column2"), BE_SQLITE_OK);
+
+    ASSERT_FALSE(m_db->Txns().HasDataChanges());
+    ASSERT_TRUE(m_db->Txns().HasDdlChanges());
+
+    m_db->SaveChanges("Schema changes again");
+
+    ChangesetPropsPtr secondSchemaChangesRevision = CreateRevision("-cs4");
+    ASSERT_TRUE(secondSchemaChangesRevision.IsValid());
+
+    /* Restore baseline, make data changes, and merge revision with schema changes */
+    RestoreTestFile();
+
+    MergeSchemaRevision(*secondSchemaChangesRevision);
+
+    CloseDgnDb();
+    
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 int GetColumnCount(DgnDb const& dgndb, Utf8CP tableName)
     {
     Statement statement;
@@ -1846,6 +1902,111 @@ TEST_F(RevisionTestFixture, DeleteClassConstraintViolationInCacheTable)
 
     // Class should be deleted
     checkTestClassExists(false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, UpdatingClassAfterDataEntry)
+    {
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"UpdatingClassAfterDataEntry.bim");
+    EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges("Initialized db"));
+
+    auto context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+
+    BeFileName searchDirs[2];
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDirs[0]);
+    searchDirs[0].AppendToPath(L"ECSchemas");
+    searchDirs[1] = searchDirs[0];
+
+    context->AddFirstSchemaPaths({ searchDirs[0].AppendToPath(L"Dgn"), searchDirs[1].AppendToPath(L"Standard") });
+
+    // Set up a base dynamic schema with a class
+    const auto schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty1" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr initialSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(initialSchema, schemaXml, *context));
+    m_db->ImportSchemas({ initialSchema.get() }, true);
+    m_db->SaveChanges("Created Test Schema");
+
+    // Create a revision and a backup point
+    const auto initialRevision = CreateRevision("-initialize");
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    DgnElementId testElementId;
+    ChangesetPropsCPtr revision;
+    {
+        // Insert element
+        PhysicalModelPtr model = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
+        ASSERT_TRUE(model.IsValid());
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
+        builder->Append(*ICurvePrimitive::CreateArc(DEllipse3d::From(1, 2, 3, 0, 0, 2, 0, 3, 0, 0.0, Angle::TwoPi())));
+
+        GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(*model, m_defaultCategoryId);
+        ASSERT_EQ(SUCCESS, builder->Finish(*testElement));
+
+        testElement->SetPropertyValue("TestProperty1", ECValue("InitialValue"));
+        DgnDbStatus statusInsert;
+        testElement->Insert(&statusInsert);
+        ASSERT_EQ(DgnDbStatus::Success, statusInsert);
+
+        testElementId = testElement->GetElementId();
+        ASSERT_TRUE(testElementId.IsValid());
+        ASSERT_TRUE(m_db->Elements().GetElement(testElementId).IsValid());
+        m_db->SaveChanges("Inserted Element");
+
+        revision = CreateRevision("-insertElement");
+        ASSERT_TRUE(revision.IsValid());
+    }
+
+    BackupTestFile();
+
+    // Create a changeset to delete the class
+    // Perform a major schema update that adds a class property
+    const auto updatedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA" />
+
+            <ECCustomAttributes>
+                <DynamicSchema xmlns = 'CoreCustomAttributes.1.0.0' />
+            </ECCustomAttributes>
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="TestProperty1" typeName="string" />
+                <ECProperty propertyName="TestProperty2" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr updatedSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(updatedSchema, updatedSchemaXml, *context));
+    m_db->ImportSchemas({ updatedSchema.get() }, true);
+    m_db->SaveChanges("Updated Test Schema");
+
+    const auto updatedRevision = CreateRevision("-schemaUpdate");
+    ASSERT_TRUE(updatedRevision.IsValid());
+
+    // Now that we have a changeset with a major schema update that deletes the class, restore the imodel to the backup state
+    RestoreTestFile();
+
+    // Apply the changeset with the major schema update that deletes the class
+    EXPECT_EQ(m_db->Txns().PullMergeApply(*updatedRevision), ChangesetStatus::Success);
+
+    CloseDgnDb();
     }
 
 //---------------------------------------------------------------------------------------
