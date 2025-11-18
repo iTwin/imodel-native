@@ -944,6 +944,18 @@ QueryResponse::Future& QueryResponse::Future::operator =(Future&& rhs) {
     }
     return *this;
 }
+namespace {
+    Utf8String RemoveCommentsFromECSql(Utf8String const& query) {
+        // Remove SQL comments while preserving string literals
+        std::string result = query.c_str();
+        std::regex blockCommentRx("/\\*.*?\\*/", std::regex_constants::ECMAScript);
+        result = std::regex_replace(result, blockCommentRx, "");
+        std::regex lineCommentRx("(--|//).*?(?=\n|$)", std::regex_constants::ECMAScript);
+        result = std::regex_replace(result, lineCommentRx, "");
+        
+        return Utf8String(result.c_str());
+    }
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -954,6 +966,7 @@ std::string QueryHelper::FormatQuery(const char* query) {
     while (!trimmedECSql.empty() && (c = trimmedECSql[trimmedECSql.size() - 1])  && (c == ';' || isspace(c)))
         trimmedECSql.erase(trimmedECSql.size() - 1);
     if (trimmedECSql.StartsWithIAscii("with")) {
+        trimmedECSql = RemoveCommentsFromECSql(trimmedECSql);
         std::regex rx("\\)\\s*select", std::regex_constants::ECMAScript | std::regex_constants::icase);
         std::match_results<Utf8String::const_iterator> matches;
         if (std::regex_search<Utf8String::const_iterator>(trimmedECSql.begin(), trimmedECSql.end(), matches, rx)) {

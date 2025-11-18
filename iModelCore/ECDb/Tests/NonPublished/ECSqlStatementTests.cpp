@@ -114,6 +114,67 @@ TEST_F(ECSqlStatementTestFixture, CTECrash) {
         ASSERT_STREQ( stmt.GetNativeSql(), "WITH RECURSIVE F(A) AS (SELECT 1),S(A) AS (SELECT F.A FROM F UNION SELECT 1 FROM S WHERE S.A=1)\nSELECT S.A FROM S");
     }
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, CTEWithAComment) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("test1234.ecdb"));
+
+    for (const auto& [testCaseNumber, ecSqlQuery] : std::vector<std::pair<int, std::string>>{
+        std::make_pair(1, R"(
+            WITH ce(ECInstanceId) AS (
+                -- comment)
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(2, R"(
+            WITH ce(ECInstanceId) AS (
+                -- multi
+                -- line
+                -- comment
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(3, R"(
+            WITH ce(ECInstanceId) AS (
+                -- multi
+                -- line
+                -- comment()
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(4, R"(
+            WITH ce(ECInstanceId) AS (
+                /* comment) */
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(5, R"(
+            WITH ce(ECInstanceId) AS (
+                // calling function()
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(6, R"(
+            WITH ce(ECInstanceId) AS (
+                -- calling function()
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(7, R"(
+            WITH ce(ECInstanceId) AS (
+                /* comment */
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(8, R"(
+            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId FROM meta.ECClassDef -- comment)
+            ) SELECT * FROM ce)"),
+        std::make_pair(9, R"(
+            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId FROM meta.ECClassDef /* comment) */
+            ) SELECT * FROM ce)")
+    }) {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecSqlQuery.c_str())) << "Test case number: " << testCaseNumber << " failed.";
+    }
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

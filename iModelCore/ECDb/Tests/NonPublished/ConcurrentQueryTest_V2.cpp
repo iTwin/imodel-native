@@ -355,6 +355,71 @@ TEST_F(ConcurrentQueryFixture, Blob_NotAbbreviated) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, CTEWithAComment) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CTEWithAComment.ecdb"));
+
+    const auto testCases = {
+        std::make_pair(1, R"(
+            WITH ce(ECInstanceId) AS (
+                -- comment)
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(2, R"(
+            WITH ce(ECInstanceId) AS (
+                -- multi
+                -- line
+                -- comment
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(3, R"(
+            WITH ce(ECInstanceId) AS (
+                -- multi
+                -- line
+                -- comment()
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(4, R"(
+            WITH ce(ECInstanceId) AS (
+                /* comment) */
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(5, R"(
+            WITH ce(ECInstanceId) AS (
+                // calling function()
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(6, R"(
+            WITH ce(ECInstanceId) AS (
+                -- calling function()
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(7, R"(
+            WITH ce(ECInstanceId) AS (
+                /* comment */
+                SELECT ECInstanceId FROM meta.ECClassDef
+            ) SELECT * FROM ce)"),
+        std::make_pair(8, R"(
+            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId FROM meta.ECClassDef -- comment)
+            ) SELECT * FROM ce)"),
+        std::make_pair(9, R"(
+            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId FROM meta.ECClassDef /* comment) */
+            ) SELECT * FROM ce)")
+    };
+
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        for (const auto& [testCaseNumber, ecSqlQuery] : testCases) {
+            auto req = ECSqlRequest::MakeRequest(ecSqlQuery);
+            auto response = mgr.Enqueue(std::move(req)).Get();
+            EXPECT_EQ(response->GetStatus(), QueryResponse::Status::Done) << "Test case number: " << testCaseNumber << " failed.";
+        }
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, Blob_Abbreviated) {
     const uint8_t bin[] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x2c, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21};
 
