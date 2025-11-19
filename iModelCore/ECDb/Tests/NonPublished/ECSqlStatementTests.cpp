@@ -121,57 +121,77 @@ TEST_F(ECSqlStatementTestFixture, CTECrash) {
 TEST_F(ECSqlStatementTestFixture, CTEWithAComment) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("test1234.ecdb"));
 
+    const auto sqlTemplate = R"(
+        WITH ce(ECInstanceId, TestColumn) AS (
+            %s
+        ) SELECT * FROM ce)";
+
     for (const auto& [testCaseNumber, ecSqlQuery] : std::vector<std::pair<int, std::string>>{
-        std::make_pair(1, R"(
-            WITH ce(ECInstanceId) AS (
-                -- comment)
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(2, R"(
-            WITH ce(ECInstanceId) AS (
+        std::make_pair(1,
+            R"(
+                -- comment
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(2,
+            R"(
                 -- multi
                 -- line
                 -- comment
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(3, R"(
-            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(3, 
+            R"(
                 -- multi
                 -- line
                 -- comment()
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(4, R"(
-            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(4, 
+            R"(
                 /* comment) */
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(5, R"(
-            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(5, 
+            R"(
                 // calling function()
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(6, R"(
-            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(6, 
+            R"(
                 -- calling function()
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(7, R"(
-            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(7, 
+            R"(
                 /* comment */
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(8, R"(
-            WITH ce(ECInstanceId) AS (
-                SELECT ECInstanceId FROM meta.ECClassDef -- comment)
-            ) SELECT * FROM ce)"),
-        std::make_pair(9, R"(
-            WITH ce(ECInstanceId) AS (
-                SELECT ECInstanceId FROM meta.ECClassDef /* comment) */
-            ) SELECT * FROM ce)")
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(8, 
+            R"(
+                SELECT ECInstanceId, Name FROM meta.ECClassDef -- comment)
+            )"),
+        std::make_pair(9, 
+            R"(
+                SELECT ECInstanceId, Name FROM meta.ECClassDef /* comment) */
+            )"),
+        std::make_pair(10, 
+            R"(
+                SELECT ECInstanceId, 'invalid -- column' AS TestColumn FROM meta.ECClassDef
+            )"),
+        std::make_pair(11, 
+            R"(
+                SELECT ECInstanceId, 'text with ) paren' AS TestColumn FROM meta.ECClassDef -- real comment
+            )"),
+        std::make_pair(12, 
+            R"(
+                SELECT ECInstanceId, 'text /* not a comment */' AS TestColumn FROM meta.ECClassDef
+            )"),
+        std::make_pair(13, R"(
+                SELECT ECInstanceId, 'first)' AS Col1 FROM meta.ECClassDef -- comment)
+            )"),
     }) {
         ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecSqlQuery.c_str())) << "Test case number: " << testCaseNumber << " failed.";
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString(sqlTemplate, ecSqlQuery.c_str()))) << "Test case number: " << testCaseNumber << " failed.";
     }
 }
 

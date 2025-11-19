@@ -945,15 +945,51 @@ QueryResponse::Future& QueryResponse::Future::operator =(Future&& rhs) {
     return *this;
 }
 namespace {
+    // This function has been brought over from delComment() in the parser which deletes the comments from an ECSql statement.
+    // delComment has an early exit check when no comments are found.
     Utf8String RemoveCommentsFromECSql(Utf8String const& query) {
-        // Remove SQL comments
-        Utf8String result = query.c_str();
-        std::regex blockCommentRx("/\\*.*?\\*/", std::regex_constants::ECMAScript);
-        result = std::regex_replace(result, blockCommentRx, "");
+        if (query.find("--") == Utf8String::npos && query.find("//") == Utf8String::npos && query.find("/*") == Utf8String::npos)
+            return query;
+
+        const char* pCopy = query.c_str();
+        size_t nQueryLen = query.size();
+        bool bIsText1  = false;     // "text"
+        bool bIsText2  = false;     // 'text'
+        bool bComment2 = false;     // /* comment */
+        bool bComment  = false;     // -- or // comment
+        Utf8String result;
+        result.reserve(nQueryLen);
         
-        std::regex lineCommentRx("(--|//).*?(?=\n|$)", std::regex_constants::ECMAScript);
-        result = std::regex_replace(result, lineCommentRx, "");
-        
+        for (size_t i = 0; i < nQueryLen; ++i) {
+            if (bComment2) {
+                if ((i + 1) < nQueryLen) {
+                    if (pCopy[i] == '*' && pCopy[i + 1] == '/') {
+                        bComment2 = false;
+                        ++i;
+                    }
+                }
+                continue;
+            }
+            
+            if (pCopy[i] == '\n')
+                bComment = false;
+            else if (!bComment) {
+                if (pCopy[i] == '\"' && !bIsText2)
+                    bIsText1 = !bIsText1;
+                else if (pCopy[i] == '\'' && !bIsText1)
+                    bIsText2 = !bIsText2;
+                    
+                if (!bIsText1 && !bIsText2 && (i + 1) < nQueryLen) {
+                    if ((pCopy[i] == '-' && pCopy[i + 1] == '-') || (pCopy[i] == '/' && pCopy[i + 1] == '/'))
+                        bComment = true;
+                    else if (pCopy[i] == '/' && pCopy[i + 1] == '*')
+                        bComment2 = true;
+                }
+            }
+            
+            if (!bComment && !bComment2)
+                result.append(&pCopy[i], 1);
+        }
         return result;
     }
 }

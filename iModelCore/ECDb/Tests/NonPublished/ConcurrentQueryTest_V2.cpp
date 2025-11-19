@@ -358,59 +358,79 @@ TEST_F(ConcurrentQueryFixture, Blob_NotAbbreviated) {
 TEST_F(ConcurrentQueryFixture, CTEWithAComment) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CTEWithAComment.ecdb"));
 
+    const auto sqlTemplate = R"(
+        WITH ce(ECInstanceId, TestColumn) AS (
+            %s
+        ) SELECT * FROM ce)";
+
     const auto testCases = {
-        std::make_pair(1, R"(
-            WITH ce(ECInstanceId) AS (
-                -- comment)
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(2, R"(
-            WITH ce(ECInstanceId) AS (
+        std::make_pair(1,
+            R"(
+                -- comment
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(2,
+            R"(
                 -- multi
                 -- line
                 -- comment
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(3, R"(
-            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(3, 
+            R"(
                 -- multi
                 -- line
                 -- comment()
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(4, R"(
-            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(4, 
+            R"(
                 /* comment) */
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(5, R"(
-            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(5, 
+            R"(
                 // calling function()
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(6, R"(
-            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(6, 
+            R"(
                 -- calling function()
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(7, R"(
-            WITH ce(ECInstanceId) AS (
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(7, 
+            R"(
                 /* comment */
-                SELECT ECInstanceId FROM meta.ECClassDef
-            ) SELECT * FROM ce)"),
-        std::make_pair(8, R"(
-            WITH ce(ECInstanceId) AS (
-                SELECT ECInstanceId FROM meta.ECClassDef -- comment)
-            ) SELECT * FROM ce)"),
-        std::make_pair(9, R"(
-            WITH ce(ECInstanceId) AS (
-                SELECT ECInstanceId FROM meta.ECClassDef /* comment) */
-            ) SELECT * FROM ce)")
+                SELECT ECInstanceId, Name FROM meta.ECClassDef
+            )"),
+        std::make_pair(8, 
+            R"(
+                SELECT ECInstanceId, Name FROM meta.ECClassDef -- comment)
+            )"),
+        std::make_pair(9, 
+            R"(
+                SELECT ECInstanceId, Name FROM meta.ECClassDef /* comment) */
+            )"),
+        std::make_pair(10, 
+            R"(
+                SELECT ECInstanceId, 'invalid -- column' AS TestColumn FROM meta.ECClassDef
+            )"),
+        std::make_pair(11, 
+            R"(
+                SELECT ECInstanceId, 'text with ) paren' AS TestColumn FROM meta.ECClassDef -- real comment
+            )"),
+        std::make_pair(12, 
+            R"(
+                SELECT ECInstanceId, 'text /* not a comment */' AS TestColumn FROM meta.ECClassDef
+            )"),
+        std::make_pair(13, R"(
+                SELECT ECInstanceId, 'first)' AS Col1 FROM meta.ECClassDef -- comment)
+            )"),
     };
 
     ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
         for (const auto& [testCaseNumber, ecSqlQuery] : testCases) {
-            auto req = ECSqlRequest::MakeRequest(ecSqlQuery);
+            auto req = ECSqlRequest::MakeRequest(SqlPrintfString(sqlTemplate, ecSqlQuery).GetUtf8CP());
             auto response = mgr.Enqueue(std::move(req)).Get();
             EXPECT_EQ(response->GetStatus(), QueryResponse::Status::Done) << "Test case number: " << testCaseNumber << " failed.";
         }
