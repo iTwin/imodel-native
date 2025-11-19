@@ -9,13 +9,13 @@
 
 // For now, all versions are using the same config.
 #if defined(_WIN32)
-    #include "win/jconfig.h.in"
+    #include "jconfig.h.in"
 #elif defined(ANDROID)
-    #include "win/jconfig.h.in"
+    #include "jconfig.h.in"
 #elif defined (__linux)
-    #include "win/jconfig.h.in"
+    #include "jconfig.h.in"
 #elif defined (__APPLE__)
-    #include "win/jconfig.h.in"
+    #include "jconfig.h.in"
 #else
     #error libjpeg-turbo, platform config not implemented
 #endif
