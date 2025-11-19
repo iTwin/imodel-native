@@ -42,7 +42,7 @@ dirToSearch = $(turboJpegSrcDir)src/
 
     libJpegturbo_SIMD="x64"
 
-%elif $(TARGET_PROCESSOR_ARCHITECTURE)=="need Android-ndk-r9-windows-x86_64")
+%elif $(TARGET_PROCESSOR_ARCHITECTURE)=="need Android-ndk-r9-windows-x86_64"
 
     # Disable for Android for now since we required Android-ndk-r9-windows-x86_64 to get this fix :
     #   Fixed GCC 4.7 64-bit Windows assembler crash. (Error: out of memory allocating 4294967280 bytes).
