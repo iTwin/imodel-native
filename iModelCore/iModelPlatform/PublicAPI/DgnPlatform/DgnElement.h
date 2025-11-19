@@ -3997,6 +3997,9 @@ public:
     //! Return the DgnElementId for the root Subject
     static DgnElementId GetRootSubjectId() { return DgnElementId((uint64_t)1LL);}
 
+    //! Return the DgnElementId for the schema Subject
+    static DgnElementId GetSchemaSubjectId() { return DgnElementId((uint64_t)2LL);}
+
     //! Return the root Subject
     SubjectCPtr GetRootSubject() const {return Get<Subject>(GetRootSubjectId());}
 

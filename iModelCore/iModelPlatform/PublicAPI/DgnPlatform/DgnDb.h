@@ -63,7 +63,7 @@ enum DgnDbProfileValues : int32_t
     DGNDB_CURRENT_VERSION_Major = 2,
     DGNDB_CURRENT_VERSION_Minor = 0,
     DGNDB_CURRENT_VERSION_Sub1  = 0,
-    DGNDB_CURRENT_VERSION_Sub2  = 7,
+    DGNDB_CURRENT_VERSION_Sub2  = 8,
 
     DGNDB_SUPPORTED_VERSION_Major = 2,  // oldest version of the profile supported by the current api
     DGNDB_SUPPORTED_VERSION_Minor = 0,
@@ -262,6 +262,7 @@ protected:
     BeSQLite::DbResult CreateCodeSpecs(); //!< @private
     BeSQLite::DbResult CreateRepositoryModel(); //!< @private
     BeSQLite::DbResult CreateRootSubject(CreateDgnDbParams const& params); //!< @private
+    BeSQLite::DbResult CreateSchemaSubject(); //!< @private
     BeSQLite::DbResult CreatePartitionElement(Utf8CP, DgnElementId, Utf8CP); //!< @private
     BeSQLite::DbResult CreateDictionaryModel(); //!< @private
     BeSQLite::DbResult CreateRealityDataSourcesModel(); //!< @private

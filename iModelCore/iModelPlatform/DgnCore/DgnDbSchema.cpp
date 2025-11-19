@@ -295,6 +295,39 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateSchemaSubject()
+    {
+    DgnElementId elementId = Elements().GetRootSubjectId();
+    DgnModelId modelId = DgnModel::RepositoryModelId();
+    CodeSpecId codeSpecId = CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_Subject);
+    Utf8String schemaSubjectName = "Schemas";
+    DgnCode elementCode = DgnCode(codeSpecId, elementId, schemaSubjectName, m_codeValueBehavior);
+    BeGuid federationGuid(true);
+
+    // element handlers are not initialized yet, so insert subject directly
+    ECSqlStatement statement;
+    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,Model.Id,CodeSpec.Id,CodeScope.Id,CodeValue,Description,FederationGuid) VALUES(?,?,?,?,?,?,?)", GetECCrudWriteToken()))
+        {
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+        }
+
+    statement.BindId(1, elementId);
+    statement.BindId(2, modelId);
+    statement.BindId(3, elementCode.GetCodeSpecId());
+    statement.BindId(4, elementCode.GetScopeElementId(*this));
+    statement.BindText(5, elementCode.GetValueUtf8CP(), IECSqlBinder::MakeCopy::No);
+    statement.BindText(6, schemaSubjectName.c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindGuid(7, federationGuid, IECSqlBinder::MakeCopy::No);
+
+    DbResult result = statement.Step();
+    BeAssert(BE_SQLITE_DONE == result);
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateRebaseTable()
     {
     return CreateTable(DGN_TABLE_Rebase, "Id INTEGER PRIMARY KEY AUTOINCREMENT, Rebase BLOB");
@@ -375,6 +408,7 @@ void DgnDb::OnBisCoreSchemaImported(CreateDgnDbParams const& params)
     ExecuteSql("PRAGMA defer_foreign_keys = true;"); // the RepositoryModel and root Subject have foreign keys to each other
     CreateRepositoryModel();
     CreateRootSubject(params);
+    CreateSchemaSubject();
     ExecuteSql("PRAGMA defer_foreign_keys = false;");
     CreateDictionaryModel();
     CreateRealityDataSourcesModel();
