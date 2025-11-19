@@ -944,6 +944,55 @@ QueryResponse::Future& QueryResponse::Future::operator =(Future&& rhs) {
     }
     return *this;
 }
+namespace {
+    // This function has been brought over from delComment() in the parser which deletes the comments from an ECSql statement.
+    // delComment has an early exit check when no comments are found.
+    Utf8String RemoveCommentsFromECSql(Utf8String const& query) {
+        if (query.find("--") == Utf8String::npos && query.find("//") == Utf8String::npos && query.find("/*") == Utf8String::npos)
+            return query;
+
+        const char* pCopy = query.c_str();
+        size_t nQueryLen = query.size();
+        bool bIsText1  = false;     // "text"
+        bool bIsText2  = false;     // 'text'
+        bool bComment2 = false;     // /* comment */
+        bool bComment  = false;     // -- or // comment
+        Utf8String result;
+        result.reserve(nQueryLen);
+        
+        for (size_t i = 0; i < nQueryLen; ++i) {
+            if (bComment2) {
+                if ((i + 1) < nQueryLen) {
+                    if (pCopy[i] == '*' && pCopy[i + 1] == '/') {
+                        bComment2 = false;
+                        ++i;
+                    }
+                }
+                continue;
+            }
+            
+            if (pCopy[i] == '\n')
+                bComment = false;
+            else if (!bComment) {
+                if (pCopy[i] == '\"' && !bIsText2)
+                    bIsText1 = !bIsText1;
+                else if (pCopy[i] == '\'' && !bIsText1)
+                    bIsText2 = !bIsText2;
+                    
+                if (!bIsText1 && !bIsText2 && (i + 1) < nQueryLen) {
+                    if ((pCopy[i] == '-' && pCopy[i + 1] == '-') || (pCopy[i] == '/' && pCopy[i + 1] == '/'))
+                        bComment = true;
+                    else if (pCopy[i] == '/' && pCopy[i + 1] == '*')
+                        bComment2 = true;
+                }
+            }
+            
+            if (!bComment && !bComment2)
+                result.append(&pCopy[i], 1);
+        }
+        return result;
+    }
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -954,6 +1003,7 @@ std::string QueryHelper::FormatQuery(const char* query) {
     while (!trimmedECSql.empty() && (c = trimmedECSql[trimmedECSql.size() - 1])  && (c == ';' || isspace(c)))
         trimmedECSql.erase(trimmedECSql.size() - 1);
     if (trimmedECSql.StartsWithIAscii("with")) {
+        trimmedECSql = RemoveCommentsFromECSql(trimmedECSql);
         std::regex rx("\\)\\s*select", std::regex_constants::ECMAScript | std::regex_constants::icase);
         std::match_results<Utf8String::const_iterator> matches;
         if (std::regex_search<Utf8String::const_iterator>(trimmedECSql.begin(), trimmedECSql.end(), matches, rx)) {

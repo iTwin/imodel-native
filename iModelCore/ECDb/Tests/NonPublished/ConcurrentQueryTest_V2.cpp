@@ -355,6 +355,119 @@ TEST_F(ConcurrentQueryFixture, Blob_NotAbbreviated) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, CTEWithAComment) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CTEWithAComment.ecdb"));
+
+    const auto sqlTemplate = R"(
+        WITH ce(TestColumn1, TestColumn2) AS (
+            %s
+        ) SELECT * FROM ce)";
+
+    const auto testCases = {
+        std::make_tuple(1, "TestColumn",
+            R"(
+                -- comment
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(2, "TestColumn",
+            R"(
+                -- multi
+                -- line
+                -- comment
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(3, "TestColumn",
+            R"(
+                -- multi
+                -- line
+                -- comment()
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(4, "TestColumn",
+            R"(
+                /* comment) */
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(5, "TestColumn",
+            R"(
+                // calling function()
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(6, "TestColumn",
+            R"(
+                -- calling function()
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(7, "TestColumn",
+            R"(
+                /* comment */
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(8, "TestColumn",
+            R"(
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1 -- comment)
+            )"),
+        std::make_tuple(9, "TestColumn",
+            R"(
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1 /* comment) */
+            )"),
+        std::make_tuple(10, "invalid -- column",
+            R"(
+                SELECT 1, 'invalid -- column' AS TestColumn FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(11, "text with ) parenthesis",
+            R"(
+                SELECT 1, 'text with ) parenthesis' AS TestColumn FROM meta.ECClassDef LIMIT 1 -- real comment
+            )"),
+        std::make_tuple(12, "text /* not a comment */",
+            R"(
+                SELECT 1, 'text /* not a comment */' AS TestColumn FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(13, "comment)",
+            R"(
+                SELECT 1, 'comment)' AS TestColumn FROM meta.ECClassDef LIMIT 1 -- called from function XYZ()
+            )"),
+        std::make_tuple(14, "TestColumn",
+            R"(
+                SELECT /* Primary Key (class Id) */ 1, /* Class Name */ 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(15, "TestColumn",
+            R"(
+                SELECT 1,
+                'TestColumn' /* multiline
+                comment */ FROM meta.ECClassDef LIMIT 1
+            )"),
+    };
+
+    ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
+        for (const auto& [testCaseNumber, expectedSecondColumnValue, ecSqlQuery] : testCases) {
+            const auto errorMessage = Utf8PrintfString("Test case number: %d failed.", testCaseNumber);
+            
+            auto req = ECSqlRequest::MakeRequest(SqlPrintfString(sqlTemplate, ecSqlQuery).GetUtf8CP());
+            auto queryResponse = mgr.Enqueue(std::move(req)).Get();
+            EXPECT_EQ(queryResponse->GetStatus(), QueryResponse::Status::Done) << errorMessage;
+
+            auto ecsqlResponse = static_cast<ECSqlResponse*>(queryResponse.get());
+            BeJsDocument responseJson;
+            ecsqlResponse->ToJs(responseJson, true);
+            EXPECT_EQ(responseJson["rowCount"].asInt(), 1) << errorMessage;
+
+            BeJsDocument row;
+            row.Parse(responseJson["data"].asString());
+
+            ASSERT_TRUE(row.isArray()) << errorMessage;
+            ASSERT_TRUE(row[0].isArray()) << errorMessage;
+            ASSERT_EQ(row[0].size(), 2) << errorMessage;
+
+            EXPECT_EQ(row[0][0].asDouble(), 1.0) << errorMessage;
+            EXPECT_STREQ(row[0][1].asString().c_str(), expectedSecondColumnValue) << errorMessage;
+        }
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ConcurrentQueryFixture, Blob_Abbreviated) {
     const uint8_t bin[] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x2c, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21};
 
