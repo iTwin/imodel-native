@@ -1,25 +1,25 @@
 /* Version ID for the JPEG library.
  * Might be useful for tests like "#if JPEG_LIB_VERSION >= 60".
  */
-#define JPEG_LIB_VERSION  @JPEG_LIB_VERSION@
+#define JPEG_LIB_VERSION  62
 
 /* libjpeg-turbo version */
-#define LIBJPEG_TURBO_VERSION  @VERSION@
+#define LIBJPEG_TURBO_VERSION  3.1.2
 
 /* libjpeg-turbo version in integer form */
-#define LIBJPEG_TURBO_VERSION_NUMBER  @LIBJPEG_TURBO_VERSION_NUMBER@
+#define LIBJPEG_TURBO_VERSION_NUMBER  3001002
 
 /* Support arithmetic encoding when using 8-bit samples */
-#cmakedefine C_ARITH_CODING_SUPPORTED 1
+#define C_ARITH_CODING_SUPPORTED 1
 
 /* Support arithmetic decoding when using 8-bit samples */
-#cmakedefine D_ARITH_CODING_SUPPORTED 1
+#define D_ARITH_CODING_SUPPORTED 1
 
 /* Support in-memory source/destination managers */
 #define MEM_SRCDST_SUPPORTED  1
 
 /* Use accelerated SIMD routines when using 8-bit samples */
-#cmakedefine WITH_SIMD 1
+#define WITH_SIMD 1
 
 /* This version of libjpeg-turbo supports run-time selection of data precision,
  * so BITS_IN_JSAMPLE is no longer used to specify the data precision at build
@@ -55,6 +55,6 @@ typedef signed int INT32;
 
 /* Define if your (broken) compiler shifts signed values as if they were
    unsigned. */
-#cmakedefine RIGHT_SHIFT_IS_UNSIGNED 1
+/* #undef RIGHT_SHIFT_IS_UNSIGNED */
 
 #endif

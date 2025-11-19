@@ -31,34 +31,6 @@
 #include "jpeglib.h"
 #ifdef WITH_SIMD
 #include "jsimd.h"
-#include "jconfigint.h.in"
-#include <limits.h>
-
-/*
- * NOTE: If USE_CLZ_INTRINSIC is defined, then clz/bsr instructions will be
- * used for bit counting rather than the lookup table.  This will reduce the
- * memory footprint by 64k, which is important for some mobile applications
- * that create many isolated instances of libjpeg-turbo (web browsers, for
- * instance.)  This may improve performance on some mobile platforms as well.
- * This feature is enabled by default only on Arm processors, because some x86
- * chips have a slow implementation of bsr, and the use of clz/bsr cannot be
- * shown to have a significant performance impact even on the x86 chips that
- * have a fast implementation of it.  When building for Armv6, you can
- * explicitly disable the use of clz/bsr by adding -mthumb to the compiler
- * flags (this defines __thumb__).
- */
-
-/* NOTE: Both GCC and Clang define __GNUC__ */
-#if (defined(__GNUC__) && (defined(__arm__) || defined(__aarch64__))) || \
-    defined(_M_ARM) || defined(_M_ARM64)
-#if !defined(__thumb__) || defined(__thumb2__)
-#define USE_CLZ_INTRINSIC
-#endif
-#endif
-
-#ifdef USE_CLZ_INTRINSIC
-#if defined(_MSC_VER) && !defined(__clang__)
-#define JPEG_NBITS_NONZERO(x)  (32 - _CountLeadingZeros(x))
 #else
 #include "jchuff.h"             /* Declarations shared with jc*huff.c */
 #endif
