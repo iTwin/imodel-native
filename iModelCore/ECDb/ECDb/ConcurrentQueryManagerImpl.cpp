@@ -946,14 +946,15 @@ QueryResponse::Future& QueryResponse::Future::operator =(Future&& rhs) {
 }
 namespace {
     Utf8String RemoveCommentsFromECSql(Utf8String const& query) {
-        // Remove SQL comments while preserving string literals
-        std::string result = query.c_str();
+        // Remove SQL comments
+        Utf8String result = query.c_str();
         std::regex blockCommentRx("/\\*.*?\\*/", std::regex_constants::ECMAScript);
         result = std::regex_replace(result, blockCommentRx, "");
+        
         std::regex lineCommentRx("(--|//).*?(?=\n|$)", std::regex_constants::ECMAScript);
         result = std::regex_replace(result, lineCommentRx, "");
         
-        return Utf8String(result.c_str());
+        return result;
     }
 }
 //---------------------------------------------------------------------------------------
