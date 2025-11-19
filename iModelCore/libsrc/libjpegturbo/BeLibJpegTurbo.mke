@@ -215,10 +215,6 @@ $(o)jddiffct$(oext)                 : $(turboJpegSrcDir)src/jddiffct.c          
 
     $(o)jsimd_neon$(oext) : $(turboJpegSrcDir)simd/jsimd_neon.S ${MultiCompileDepends}
 
-%elif $(libJpegturbo_SIMD)=="None"
-
-    $(o)jsimd_none$(oext) : $(turboJpegSrcDir)src/jsimd_none.c ${MultiCompileDepends}
-
 %endif
 
 # 12-bit wrapper files
