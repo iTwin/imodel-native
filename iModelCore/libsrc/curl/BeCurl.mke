@@ -1,4 +1,3 @@
-#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
@@ -341,6 +340,8 @@ $(o)gsasl$(oext) : $(BeCurlLibDir)vauth/gsasl.c ${MultiCompileDepends}
 $(o)krb5_gssapi$(oext) : $(BeCurlLibDir)vauth/krb5_gssapi.c ${MultiCompileDepends}
 
 $(o)krb5_sspi$(oext) : $(BeCurlLibDir)vauth/krb5_sspi.c ${MultiCompileDepends}
+
+$(o)ntlm$(oext) : $(BeCurlLibDir)vauth/ntlm.c ${MultiCompileDepends}
 
 $(o)ntlm_sspi$(oext) : $(BeCurlLibDir)vauth/ntlm_sspi.c ${MultiCompileDepends}
 
