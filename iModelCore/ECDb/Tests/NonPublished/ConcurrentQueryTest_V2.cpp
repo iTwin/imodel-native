@@ -359,80 +359,108 @@ TEST_F(ConcurrentQueryFixture, CTEWithAComment) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CTEWithAComment.ecdb"));
 
     const auto sqlTemplate = R"(
-        WITH ce(ECInstanceId, TestColumn) AS (
+        WITH ce(TestColumn1, TestColumn2) AS (
             %s
         ) SELECT * FROM ce)";
 
     const auto testCases = {
-        std::make_pair(1,
+        std::make_tuple(1, "TestColumn",
             R"(
                 -- comment
-                SELECT ECInstanceId, Name FROM meta.ECClassDef
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
             )"),
-        std::make_pair(2,
+        std::make_tuple(2, "TestColumn",
             R"(
                 -- multi
                 -- line
                 -- comment
-                SELECT ECInstanceId, Name FROM meta.ECClassDef
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
             )"),
-        std::make_pair(3, 
+        std::make_tuple(3, "TestColumn",
             R"(
                 -- multi
                 -- line
                 -- comment()
-                SELECT ECInstanceId, Name FROM meta.ECClassDef
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
             )"),
-        std::make_pair(4, 
+        std::make_tuple(4, "TestColumn",
             R"(
                 /* comment) */
-                SELECT ECInstanceId, Name FROM meta.ECClassDef
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
             )"),
-        std::make_pair(5, 
+        std::make_tuple(5, "TestColumn",
             R"(
                 // calling function()
-                SELECT ECInstanceId, Name FROM meta.ECClassDef
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
             )"),
-        std::make_pair(6, 
+        std::make_tuple(6, "TestColumn",
             R"(
                 -- calling function()
-                SELECT ECInstanceId, Name FROM meta.ECClassDef
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
             )"),
-        std::make_pair(7, 
+        std::make_tuple(7, "TestColumn",
             R"(
                 /* comment */
-                SELECT ECInstanceId, Name FROM meta.ECClassDef
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
             )"),
-        std::make_pair(8, 
+        std::make_tuple(8, "TestColumn",
             R"(
-                SELECT ECInstanceId, Name FROM meta.ECClassDef -- comment)
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1 -- comment)
             )"),
-        std::make_pair(9, 
+        std::make_tuple(9, "TestColumn",
             R"(
-                SELECT ECInstanceId, Name FROM meta.ECClassDef /* comment) */
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1 /* comment) */
             )"),
-        std::make_pair(10, 
+        std::make_tuple(10, "invalid -- column",
             R"(
-                SELECT ECInstanceId, 'invalid -- column' AS TestColumn FROM meta.ECClassDef
+                SELECT 1, 'invalid -- column' AS TestColumn FROM meta.ECClassDef LIMIT 1
             )"),
-        std::make_pair(11, 
+        std::make_tuple(11, "text with ) parenthesis",
             R"(
-                SELECT ECInstanceId, 'text with ) paren' AS TestColumn FROM meta.ECClassDef -- real comment
+                SELECT 1, 'text with ) parenthesis' AS TestColumn FROM meta.ECClassDef LIMIT 1 -- real comment
             )"),
-        std::make_pair(12, 
+        std::make_tuple(12, "text /* not a comment */",
             R"(
-                SELECT ECInstanceId, 'text /* not a comment */' AS TestColumn FROM meta.ECClassDef
+                SELECT 1, 'text /* not a comment */' AS TestColumn FROM meta.ECClassDef LIMIT 1
             )"),
-        std::make_pair(13, R"(
-                SELECT ECInstanceId, 'first)' AS Col1 FROM meta.ECClassDef -- comment)
+        std::make_tuple(13, "comment)",
+            R"(
+                SELECT 1, 'comment)' AS TestColumn FROM meta.ECClassDef LIMIT 1 -- called from function XYZ()
+            )"),
+        std::make_tuple(14, "TestColumn",
+            R"(
+                SELECT /* Primary Key (class Id) */ 1, /* Class Name */ 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(15, "TestColumn",
+            R"(
+                SELECT 1,
+                'TestColumn' /* multiline
+                comment */ FROM meta.ECClassDef LIMIT 1
             )"),
     };
 
     ConcurrentQueryMgr::WithInstance(m_ecdb, [&](auto& mgr) {
-        for (const auto& [testCaseNumber, ecSqlQuery] : testCases) {
+        for (const auto& [testCaseNumber, expectedSecondColumnValue, ecSqlQuery] : testCases) {
+            const auto errorMessage = Utf8PrintfString("Test case number: %d failed.", testCaseNumber);
+            
             auto req = ECSqlRequest::MakeRequest(SqlPrintfString(sqlTemplate, ecSqlQuery).GetUtf8CP());
-            auto response = mgr.Enqueue(std::move(req)).Get();
-            EXPECT_EQ(response->GetStatus(), QueryResponse::Status::Done) << "Test case number: " << testCaseNumber << " failed.";
+            auto queryResponse = mgr.Enqueue(std::move(req)).Get();
+            EXPECT_EQ(queryResponse->GetStatus(), QueryResponse::Status::Done) << errorMessage;
+
+            auto ecsqlResponse = static_cast<ECSqlResponse*>(queryResponse.get());
+            BeJsDocument responseJson;
+            ecsqlResponse->ToJs(responseJson, true);
+            EXPECT_EQ(responseJson["rowCount"].asInt(), 1) << errorMessage;
+
+            BeJsDocument row;
+            row.Parse(responseJson["data"].asString());
+
+            ASSERT_TRUE(row.isArray()) << errorMessage;
+            ASSERT_TRUE(row[0].isArray()) << errorMessage;
+            ASSERT_EQ(row[0].size(), 2) << errorMessage;
+
+            EXPECT_EQ(row[0][0].asDouble(), 1.0) << errorMessage;
+            EXPECT_STREQ(row[0][1].asString().c_str(), expectedSecondColumnValue) << errorMessage;
         }
     });
 }
