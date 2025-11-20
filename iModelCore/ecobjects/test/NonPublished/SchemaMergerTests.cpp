@@ -17,9 +17,6 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 struct SchemaMergerTests : ECTestFixture
     {};
 
-// Uncomment the following line to enable the TroubleshootMergeFromDump test
-// #define ENABLE_TROUBLESHOOT_MERGE_TEST
-
 ECSchemaReadContextPtr InitializeReadContextWithAllSchemas(bvector<Utf8CP> const& schemasXml, bvector<ECSchemaCP>* loadedSchemas = nullptr, bool skipValidation = false)
     {
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
@@ -81,8 +78,8 @@ void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult
     ASSERT_EQ(false, changes.IsChanged()) << "Actual schemas did not match expected result";
     }
 
-// #define ENABLE_TROUBLESHOOT_MERGE_TEST
-#ifdef ENABLE_TROUBLESHOOT_MERGE_TEST
+// #define _TROUBLESHOOT_MERGE_TEST
+#ifdef _TROUBLESHOOT_MERGE_TEST
 
 BentleyStatus LoadSchemasFromDirectory(BeFileNameCR directoryPath, ECSchemaReadContextR readContext, bvector<ECN::ECSchemaCP>& outSchemas, Utf8CP side)
     {
@@ -7785,6 +7782,7 @@ TEST_F(SchemaMergerTests, SchemaMergeTakesInDuplicateReferenceOrSearchesClassInW
 
 
 END_BENTLEY_ECN_TEST_NAMESPACE
+
 
 
 
