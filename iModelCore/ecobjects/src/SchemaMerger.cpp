@@ -487,6 +487,31 @@ ECObjectsStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP l
             SchemaKey newRef;
             SchemaKey::ParseSchemaFullName(newRef, referenceFullName.c_str());
             ECSchemaP newReferencedSchema = result.GetSchema(newRef.GetName().c_str());
+            bool doNotMergeReferences = options.DoNotMergeReferences();
+            if(newReferencedSchema == nullptr && doNotMergeReferences)
+                {
+                // In this case the referenced schema may not be in the result schemas collection
+                auto it = right->GetReferencedSchemas().Find(newRef, SchemaMatchType::LatestReadCompatible);
+                if (it != right->GetReferencedSchemas().end())
+                    {
+                    ECSchemaPtr rightReferencedSchema = it->second;
+                    ECSchemaPtr copiedSchema;
+                    auto status = rightReferencedSchema->CopySchema(copiedSchema, result.GetSchemaReadContext().get(), options.GetSkipValidation());
+                    if (status != ECObjectsStatus::Success)
+                        {
+                        result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
+                            "Schema '%s' failed to be copied.", rightReferencedSchema->GetFullSchemaName().c_str());
+                        return status;
+                        }
+                    if (copiedSchema.IsValid())
+                        {
+                        // Add the copied schema to the result
+                        copiedSchema->SetOriginalECXmlVersion(rightReferencedSchema->GetOriginalECXmlVersionMajor(), rightReferencedSchema->GetOriginalECXmlVersionMinor());
+                        result.GetSchemaCache().AddSchema(*copiedSchema);
+                        newReferencedSchema = copiedSchema.get();
+                        }
+                    }
+                }
             if(newReferencedSchema == nullptr)
                 {
                 result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0028,
