@@ -120,13 +120,13 @@ BentleyStatus LoadSchemasFromDirectory(BeFileNameCR directoryPath, ECSchemaReadC
             else
               {
                 printf("Failed to locate duplicate %s schema: %s\n", side, schemaName.c_str());
-                return ERROR;
+                return BentleyStatus::ERROR;
               }
           }
         else
           {
             printf("Failed to load %s schema from: %s (status: %d)\n", side, schemaPath.GetNameUtf8().c_str(), (int)status);
-            return ERROR;
+            return BentleyStatus::ERROR;
           }
         }
 
