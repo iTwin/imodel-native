@@ -78,8 +78,8 @@ void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult
     ASSERT_EQ(false, changes.IsChanged()) << "Actual schemas did not match expected result";
     }
 
-// #define _TROUBLESHOOT_MERGE_TEST
-#ifdef _TROUBLESHOOT_MERGE_TEST
+// #define ENABLE_TROUBLESHOOT_MERGE_TEST
+#ifdef ENABLE_TROUBLESHOOT_MERGE_TEST
 
 BentleyStatus LoadSchemasFromDirectory(BeFileNameCR directoryPath, ECSchemaReadContextR readContext, bvector<ECN::ECSchemaCP>& outSchemas, Utf8CP side)
     {
@@ -7782,6 +7782,7 @@ TEST_F(SchemaMergerTests, SchemaMergeTakesInDuplicateReferenceOrSearchesClassInW
 
 
 END_BENTLEY_ECN_TEST_NAMESPACE
+
 
 
 
