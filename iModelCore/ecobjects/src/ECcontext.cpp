@@ -342,9 +342,10 @@ struct ECSchemaBackedInstanceReadContext: public ECInstanceReadContext
 private:
     ECSchemaCR m_schema;
     SchemaKey m_key;
+    bool m_lookInReferences;
 public:
-    ECSchemaBackedInstanceReadContext(ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater, IPrimitiveTypeResolver const* typeResolver)
-        : m_schema(schema), ECInstanceReadContext(standaloneEnablerLocater, schema, typeResolver), m_key(schema.GetSchemaKey())
+    ECSchemaBackedInstanceReadContext(ECSchemaCR schema, bool lookInReferences, IStandaloneEnablerLocaterP standaloneEnablerLocater, IPrimitiveTypeResolver const* typeResolver)
+        : m_schema(schema), m_lookInReferences(lookInReferences), ECInstanceReadContext(standaloneEnablerLocater, schema, typeResolver), m_key(schema.GetSchemaKey())
         { }
 
     virtual ECObjectsStatus _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const
@@ -372,9 +373,9 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceReadContextPtr ECInstanceReadContext::CreateContext(ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater, IPrimitiveTypeResolver const* typeResolver)
+ECInstanceReadContextPtr ECInstanceReadContext::CreateContext(ECSchemaCR schema, bool lookInReferences, IStandaloneEnablerLocaterP standaloneEnablerLocater, IPrimitiveTypeResolver const* typeResolver)
     {
-    return new ECSchemaBackedInstanceReadContext (schema, standaloneEnablerLocater, typeResolver);
+    return new ECSchemaBackedInstanceReadContext (schema, lookInReferences, standaloneEnablerLocater, typeResolver);
     }
 
 /*---------------------------------------------------------------------------------**//**

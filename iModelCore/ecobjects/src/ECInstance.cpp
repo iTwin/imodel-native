@@ -166,8 +166,8 @@ IECInstancePtr IECInstance::CreateCopyThroughSerialization(ECSchemaCR targetSche
         this->WriteToXmlString(ecInstanceXml, true, false);
     else
         this->WriteToXmlStringLatestVersion(ecInstanceXml, true, false);
-
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(targetSchema);
+    
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(targetSchema, true); 
 
     IECInstancePtr deserializedInstance;
     IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext);

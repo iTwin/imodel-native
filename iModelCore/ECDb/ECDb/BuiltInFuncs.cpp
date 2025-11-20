@@ -757,8 +757,10 @@ void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         }
 
     Utf8CP caXml = xmlValue.GetValueText();
-
-    ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateContext(caClass->GetSchema());
+    
+    // Here the caClassId is expected to be the custom attribute class id so the caClass->GetSchema() 
+    // should give us the schema where the custom attribute class is defined so here we need not look into references while matching schema keys
+    ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateContext(caClass->GetSchema()); 
     IECInstancePtr deserializedCa = nullptr;
     if (InstanceReadStatus::Success != IECInstance::ReadFromXmlString(deserializedCa, caXml, *readContext))
         {
