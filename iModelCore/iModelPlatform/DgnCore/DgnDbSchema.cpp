@@ -651,7 +651,7 @@ SchemaStatus DgnDb::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaStatus DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas, size_t* numImported, bool shouldAllowDataTransform)
+SchemaStatus DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas, size_t* numImported)
     {
     bvector<ECN::ECSchemaCP> schemasToImport;
     SchemaStatus status = PickSchemasToImport(schemasToImport, schemas, true /*=isImportingFromV8*/);
@@ -665,16 +665,10 @@ SchemaStatus DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas, si
         *numImported = schemasToImport.size();
     if (schemasToImport.empty())
         return SchemaStatus::Success;
-    
-    SchemaManager::SchemaImportOptions options;
-    if(shouldAllowDataTransform)
-        options = SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues
-            | SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications
-            | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade;
-    else
-        options = SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues
-            | SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
-    
+
+    SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues
+        | SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications
+        | SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade;
 
     return Domains().DoImportSchemas(schemasToImport, options);
     }
