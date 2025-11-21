@@ -1475,6 +1475,7 @@ void CheckDataTransformCommand::RunTryImportSchema(Session& session, std::vector
         return;
         }
 
+    Dgn::SchemaStatus status = Dgn::SchemaStatus::Success;
     bool isSuccessful = false;
     if (session.GetFile().GetType() == SessionFile::Type::IModel)
         {
