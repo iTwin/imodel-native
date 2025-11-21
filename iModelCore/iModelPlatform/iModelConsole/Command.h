@@ -183,10 +183,10 @@ struct ImportCommand final : public Command
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //---------------------------------------------------------------------------------------
-struct CheckDataTransformCommand final : public Command
+struct CheckTransformCommand final : public Command
     {
     private:
-        Utf8String _GetName() const override { return ".check-data-transform"; }
+        Utf8String _GetName() const override { return ".check-transform"; }
         Utf8String _GetUsage() const override;
         void _Run(Session&, Utf8StringCR args) const override;
 
@@ -194,8 +194,8 @@ struct CheckDataTransformCommand final : public Command
         static BentleyStatus DeserializeECSchema(ECN::ECSchemaReadContextR readContext, BeFileNameCR ecschemaFilePath);
 
     public:
-        CheckDataTransformCommand() : Command() {}
-        ~CheckDataTransformCommand() {}
+        CheckTransformCommand() : Command() {}
+        ~CheckTransformCommand() {}
     };
 
 //---------------------------------------------------------------------------------------
