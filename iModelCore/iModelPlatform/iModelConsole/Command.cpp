@@ -1476,7 +1476,7 @@ void CheckDataTransformCommand::RunTryImportSchema(Session& session, std::vector
 
     
     
-    bool isSuccessful = false;
+    bool cannotDetermineReason = false;
     if (session.GetFile().GetType() == SessionFile::Type::IModel)
         {
         Dgn::SchemaStatus status;
@@ -1485,31 +1485,31 @@ void CheckDataTransformCommand::RunTryImportSchema(Session& session, std::vector
         else
             status = session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportSchemas(context->GetCache().GetSchemas(), true);
         if(status == Dgn::SchemaStatus::Success)
-            {
-            isSuccessful = true;
-            IModelConsole::WriteLine("No data transformation needed for importing %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
-            }
+            IModelConsole::WriteLine("No data transformation is required for importing %s '%s'. The %s '%s' can be imported successfully.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
         else if(status == Dgn::SchemaStatus::DataTransformRequired)
             IModelConsole::WriteErrorLine("Data transformation is required for importing %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
         else
-            IModelConsole::WriteErrorLine("Could not determine whether data transformation is required or not for importing %s '%s'", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+            {
+            cannotDetermineReason = true;
+            IModelConsole::WriteErrorLine("Could not determine whether data transformation is required or not for importing %s '%s'. Trying to import %s '%s' failed due to some reason.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+            }
         }
     else
         {
         SchemaImportResult status = session.GetFile().GetECDbHandle()->Schemas().ImportSchemas(context->GetCache().GetSchemas(), options);
         if(status == SchemaImportResult::OK)
-            {
-            isSuccessful = true;
-            IModelConsole::WriteLine("No data transformation needed. %s '%s' can be successfully imported.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
-            }
+            IModelConsole::WriteLine("No data transformation is required for importing %s '%s'. The %s '%s' can be imported successfully.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
         else if(status == SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED)
-            IModelConsole::WriteErrorLine("Data transformation is required. %s '%s' cannot be successfully imported.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+            IModelConsole::WriteErrorLine("Data transformation is required for importing %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
         else
-            IModelConsole::WriteErrorLine("%s '%s' cannot be successfully imported but data transformation is not the reason", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+            {
+            cannotDetermineReason = true;
+            IModelConsole::WriteErrorLine("Could not determine whether data transformation is required or not for importing %s '%s'. Trying to import %s '%s' failed due to some reason.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+            }
         }
 
     session.GetFile().GetHandleR().AbandonChanges(); // we do not really want to import the schemas, we just want to try for an import
-    if (session.GetIssues().HasIssue() && !isSuccessful)
+    if (session.GetIssues().HasIssue() && cannotDetermineReason)
         IModelConsole::WriteErrorLine("Issues \n %s", schemaStr, ecschemaPath.GetNameUtf8().c_str(), session.GetIssues().GetIssue());
     }
 
