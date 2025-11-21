@@ -181,6 +181,24 @@ struct ImportCommand final : public Command
     };
 
 //---------------------------------------------------------------------------------------
+// @bsiclass
+//---------------------------------------------------------------------------------------
+struct CheckTransformCommand final : public Command
+    {
+    private:
+        Utf8String _GetName() const override { return ".check-transform"; }
+        Utf8String _GetUsage() const override;
+        void _Run(Session&, Utf8StringCR args) const override;
+
+        void RunTryImportSchema(Session&, std::vector<Utf8String> const& args) const;
+        static BentleyStatus DeserializeECSchema(ECN::ECSchemaReadContextR readContext, BeFileNameCR ecschemaFilePath);
+
+    public:
+        CheckTransformCommand() : Command() {}
+        ~CheckTransformCommand() {}
+    };
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 struct DropCommand final : public Command
