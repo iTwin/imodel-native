@@ -520,6 +520,8 @@ public:
     //! @private internal use only (V8 converter)
     //! Imports v8 EC Schemas into the DgnDb
     //! @param[in] schemas Schemas to be imported.
+    //! @param[out] numImported The final number of schemas which will be imported after validating the specified @p schemas . Default value is nullptr.
+    //! @param[in] shouldAllowDataTransform Flag to determine whether data transform should be allowed during import or not. Default value is true.
     //! @remarks
     //! <ul>
     //! <li> Only used by the V8 converter for first importing V8 legacy schemas. Upgrades of existing schemas are
@@ -529,7 +531,7 @@ public:
     //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing
     //! the changes if necessary, and then creating a revision.
     //! </ul>
-    DGNPLATFORM_EXPORT SchemaStatus ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas, size_t* numImported = nullptr);
+    DGNPLATFORM_EXPORT SchemaStatus ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas, size_t* numImported = nullptr, bool shouldAllowDataTransform = true);
 
     //! Utility method to get the next id in a sequence
     //! @private internal use only

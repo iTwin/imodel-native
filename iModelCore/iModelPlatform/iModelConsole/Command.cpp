@@ -1379,12 +1379,12 @@ BentleyStatus ImportCommand::InsertCsvRow(Session& session, Statement& stmt, int
 //---------------------------------------------------------------------------------------
 Utf8String CheckDataTransformCommand::_GetUsage() const
     {
-    return " .check-data-transform schema <ecschema xml file|folder>\r\n"
+    return " .check-data-transform [legacy] schema <ecschema xml file|folder>\r\n"
         COMMAND_USAGE_IDENT "Checks if data transformation is required by trying to import the specified ECSchema XML file into the file. If a folder was specified, all ECSchemas\r\n"
         COMMAND_USAGE_IDENT "in the folder are tried for.\r\n"
+        COMMAND_USAGE_IDENT "Options: legacy (optional): This option is optional. Use the legacy option while using this feature with V8 legacy Schemas and not otherwise\r\n"
         COMMAND_USAGE_IDENT "Note: Outstanding changes are committed before starting the import.\r\n"
-        COMMAND_USAGE_IDENT "Note: This command doesnot actually import the schema, it tries for an import and tells if data transformation is required or not.\r\n"
-        COMMAND_USAGE_IDENT "Note: This command should not be used with V8 EC Schemas, using it with V8 EC Schemas can give incorrect results or cause any other form of malfunction.\r\n";
+        COMMAND_USAGE_IDENT "Note: This command doesnot actually import the schema, it tries for an import and tells if data transformation is required or not.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1394,7 +1394,7 @@ void CheckDataTransformCommand::_Run(Session& session, Utf8StringCR argsUnparsed
     {
     std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
 
-    if (args.size() != 2 || !args[0].EqualsIAscii("schema"))
+    if (args.size() < 2 || args.size() > 3 || !args[0].EqualsIAscii("schema"))
         {
         IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
@@ -1419,16 +1419,15 @@ void CheckDataTransformCommand::_Run(Session& session, Utf8StringCR argsUnparsed
 void CheckDataTransformCommand::RunTryImportSchema(Session& session, std::vector<Utf8String> const& args) const
     {
     Utf8StringCR firstArg = args[1];
+    size_t pathIx = 1;
     SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::None;
-
-    BeFileName ecschemaPath(firstArg);
-    ecschemaPath.Trim(L"\"");
-    if (!ecschemaPath.DoesPathExist())
+    if (firstArg.EqualsIAscii("legacy"))
         {
-        IModelConsole::WriteErrorLine("Command failed. Specified path '%s' does not exist.", ecschemaPath.GetNameUtf8().c_str());
-        return;
+        options = SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues;
+        pathIx = 2;
         }
 
+    BeFileName ecschemaPath(args[pathIx]);
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext(false, true);
     context->AddSchemaLocater(session.GetFile().GetECDbHandle()->GetSchemaLocater());
 
@@ -1475,10 +1474,16 @@ void CheckDataTransformCommand::RunTryImportSchema(Session& session, std::vector
         return;
         }
 
+    
+    
     bool isSuccessful = false;
     if (session.GetFile().GetType() == SessionFile::Type::IModel)
         {
-        Dgn::SchemaStatus status = session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportSchemas(context->GetCache().GetSchemas());
+        Dgn::SchemaStatus status;
+        if (options == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)
+            status = session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportV8LegacySchemas(context->GetCache().GetSchemas(), nullptr, false);
+        else
+            status = session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportSchemas(context->GetCache().GetSchemas(), true);
         if(status == Dgn::SchemaStatus::Success)
             {
             isSuccessful = true;
