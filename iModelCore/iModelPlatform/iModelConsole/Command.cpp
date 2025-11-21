@@ -52,7 +52,7 @@ BentleyStatus Command::TokenizeString(std::vector<Utf8String>& tokens, WStringCR
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     {
-    BeAssert(m_commandMap.size() == 27 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 28 && "Command was added or removed, please update the HelpCommand accordingly.");
     IModelConsole::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     IModelConsole::WriteLine();
     IModelConsole::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -72,6 +72,7 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     IModelConsole::WriteLine(m_commandMap.at(".change")->GetUsage().c_str());
     IModelConsole::WriteLine();
     IModelConsole::WriteLine(m_commandMap.at(".import")->GetUsage().c_str());
+    IModelConsole::WriteLine(m_commandMap.at(".check-data-transform")->GetUsage().c_str());
     IModelConsole::WriteLine(m_commandMap.at(".export")->GetUsage().c_str());
     IModelConsole::WriteLine(m_commandMap.at(".drop")->GetUsage().c_str());
     IModelConsole::WriteLine();
@@ -1369,6 +1370,155 @@ BentleyStatus ImportCommand::InsertCsvRow(Session& session, Statement& stmt, int
     stmt.ClearBindings();
     stmt.Reset();
     return SUCCESS;
+    }
+
+//******************************* CheckDataTransform ******************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8String CheckDataTransformCommand::_GetUsage() const
+    {
+    return " .check-data-transform schema <ecschema xml file|folder>\r\n"
+        COMMAND_USAGE_IDENT "Checks if data transformation is required by trying to import the specified ECSchema XML file into the file. If a folder was specified, all ECSchemas\r\n"
+        COMMAND_USAGE_IDENT "in the folder are tried for.\r\n"
+        COMMAND_USAGE_IDENT "Note: Outstanding changes are committed before starting the import.\r\n"
+        COMMAND_USAGE_IDENT "Note: This command doesnot actually import the schema, it tries for an import and tells if data transformation is required or not.\r\n"
+        COMMAND_USAGE_IDENT "Note: This command should not be used with V8 EC Schemas, using it with V8 EC Schemas can give incorrect results or cause any other form of malfunction.\r\n";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void CheckDataTransformCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
+    {
+    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+
+    if (args.size() != 2 || !args[0].EqualsIAscii("schema"))
+        {
+        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (!session.IsECDbFileLoaded(true))
+        return;
+
+    if (session.GetFile().GetHandle().IsReadonly())
+        {
+        IModelConsole::WriteErrorLine("File must be editable. Please close the file and re-open it in read-write mode.");
+        return;
+        }
+
+    RunTryImportSchema(session, args);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void CheckDataTransformCommand::RunTryImportSchema(Session& session, std::vector<Utf8String> const& args) const
+    {
+    Utf8StringCR firstArg = args[1];
+    SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::None;
+
+    BeFileName ecschemaPath(firstArg);
+    ecschemaPath.Trim(L"\"");
+    if (!ecschemaPath.DoesPathExist())
+        {
+        IModelConsole::WriteErrorLine("Command failed. Specified path '%s' does not exist.", ecschemaPath.GetNameUtf8().c_str());
+        return;
+        }
+
+    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext(false, true);
+    context->AddSchemaLocater(session.GetFile().GetECDbHandle()->GetSchemaLocater());
+
+    BeFileName schemaAssetsFolder = Dgn::PlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+
+    BeFileName schemaSearchPath(schemaAssetsFolder);
+    schemaSearchPath.AppendToPath(L"ECSchemas").AppendToPath(L"Domain");
+    context->AddSchemaPath(schemaSearchPath);
+
+    bvector<BeFileName> ecschemaFilePaths;
+
+    const bool isFolder = (const_cast<BeFileNameR> (ecschemaPath)).IsDirectory();
+    if (isFolder)
+        {
+        context->AddSchemaPath(ecschemaPath);
+        BeDirectoryIterator::WalkDirsAndMatch(ecschemaFilePaths, ecschemaPath, L"*.ecschema.xml", false);
+        if (ecschemaFilePaths.empty())
+            {
+            IModelConsole::WriteErrorLine("Command failed. Folder '%s' does not contain ECSchema XML files.", ecschemaPath.GetNameUtf8().c_str());
+            return;
+            }
+        }
+    else
+        {
+        context->AddSchemaPath(ecschemaPath.GetDirectoryName().GetName());
+        ecschemaFilePaths.push_back(ecschemaPath);
+        }
+
+    for (BeFileName const& ecschemaFilePath : ecschemaFilePaths)
+        {
+        IModelConsole::WriteLine("Reading ECSchema ... %s", ecschemaFilePath.GetNameUtf8().c_str());
+        if (SUCCESS != DeserializeECSchema(*context, ecschemaFilePath))
+            {
+            IModelConsole::WriteErrorLine("Command failed. Could not read ECSchema '%s' into memory.", ecschemaFilePath.GetNameUtf8().c_str());
+            return;
+            }
+        }
+
+    Utf8CP schemaStr = isFolder ? "ECSchemas in folder" : "ECSchema";
+
+    if (BE_SQLITE_OK != session.GetFile().GetHandleR().SaveChanges())
+        {
+        IModelConsole::WriteLine("Saving outstanding changes in the file failed: %s", session.GetFile().GetHandle().GetLastError().c_str());
+        return;
+        }
+
+    Dgn::SchemaStatus status = Dgn::SchemaStatus::Success;
+    bool isSuccessful = false;
+    if (session.GetFile().GetType() == SessionFile::Type::IModel)
+        {
+        Dgn::SchemaStatus status = session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportSchemas(context->GetCache().GetSchemas());
+        if(status == Dgn::SchemaStatus::Success)
+            {
+            isSuccessful = true;
+            IModelConsole::WriteLine("No data transformation needed for importing %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+            }
+        else if(status == Dgn::SchemaStatus::DataTransformRequired)
+            IModelConsole::WriteErrorLine("Data transformation is required for importing %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+        else
+            IModelConsole::WriteErrorLine("Could not determine whether data transformation is required or not for importing %s '%s'", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+        }
+    else
+        {
+        SchemaImportResult status = session.GetFile().GetECDbHandle()->Schemas().ImportSchemas(context->GetCache().GetSchemas(), options);
+        if(status == SchemaImportResult::OK)
+            {
+            isSuccessful = true;
+            IModelConsole::WriteLine("No data transformation needed. %s '%s' can be successfully imported.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+            }
+        else if(status == SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED)
+            IModelConsole::WriteErrorLine("Data transformation is required. %s '%s' cannot be successfully imported.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+        else
+            IModelConsole::WriteErrorLine("%s '%s' cannot be successfully imported but data transformation is not the reason", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+        }
+
+    session.GetFile().GetHandleR().AbandonChanges(); // we do not really want to import the schemas, we just want to try for an import
+    if (session.GetIssues().HasIssue() && !isSuccessful)
+        IModelConsole::WriteErrorLine("Issues \n %s", schemaStr, ecschemaPath.GetNameUtf8().c_str(), session.GetIssues().GetIssue());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus CheckDataTransformCommand::DeserializeECSchema(ECSchemaReadContextR readContext, BeFileNameCR ecschemaXmlFile)
+    {
+    ECN::ECSchemaPtr ecSchema = nullptr;
+    const auto stat = ECN::ECSchema::ReadFromXmlFile(ecSchema, ecschemaXmlFile.GetName(), readContext);
+    //duplicate schema error is ok, as the ReadFromXmlFile reads schema references implicitly.
+    return stat == ECN::SchemaReadStatus::Success || stat == ECN::SchemaReadStatus::DuplicateSchema ? SUCCESS : ERROR;
     }
 
 
