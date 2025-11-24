@@ -243,6 +243,8 @@ $(o)jddiffct$(oext)                 : $(turboJpegSrcDir)src/wrapper/jddiffct-8.c
 
     cIncs + -I$(turboJpegSrcDir)platforms/other/
 
+    $(o)jpeg_nbits$(oext)                 : $(turboJpegSrcDir)src/jpeg_nbits.c          ${MultiCompileDepends}
+
 %endif
 
 %if $(libJpegturbo_SIMD)=="Arm" || $(libJpegturbo_SIMD)=="Arm64"
