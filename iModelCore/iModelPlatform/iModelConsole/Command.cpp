@@ -1383,7 +1383,7 @@ Utf8String CheckTransformCommand::_GetUsage() const
         COMMAND_USAGE_IDENT "Checks if transformation is required by trying to import the specified ECSchema XML file into the file. If a folder was specified, all ECSchemas\r\n"
         COMMAND_USAGE_IDENT "in the folder are tried for.\r\n"
         COMMAND_USAGE_IDENT "Note: Outstanding changes are committed before starting the import.\r\n"
-        COMMAND_USAGE_IDENT "Note: This command doesnot actually import the schema, it tries for an import and tells if data transformation is required or not.\r\n"
+        COMMAND_USAGE_IDENT "Note: This command doesnot actually import the schema, it tries for an import and tells if transformation is required or not.\r\n"
         COMMAND_USAGE_IDENT "Note: This command should not be used with V8 legacy Schemas, using it with V8 EC Schemas can result in incorrect results or unexpected behaviour.\r\n";  // we donot support v8 schemas for this feature as discussed
     }
 

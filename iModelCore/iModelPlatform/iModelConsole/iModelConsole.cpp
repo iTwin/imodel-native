@@ -195,7 +195,7 @@ void IModelConsole::Setup()
     AddCommand(std::make_shared<DetachCommand>());
     AddCommand(std::make_shared<ChangeCommand>());
     AddCommand(std::make_shared<ImportCommand>());
-    AddCommand(std::make_shared<CheckDataTransformCommand>());
+    AddCommand(std::make_shared<CheckTransformCommand>());
     AddCommand(std::make_shared<MergeCommand>());
     AddCommand(std::make_shared<ExportCommand>());
     AddCommand(std::make_shared<DropCommand>());
