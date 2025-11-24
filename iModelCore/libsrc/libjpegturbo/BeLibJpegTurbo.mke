@@ -36,17 +36,45 @@ dirToSearch = $(turboJpegSrcDir)src/
 #----------------------------------------------------------  
 %if $(TARGET_PROCESSOR_ARCHITECTURE)=="x86" || $(TARGET_PROCESSOR_ARCHITECTURE)=="WinRTx86"
 
+    cIncs + -I$(turboJpegSrcDir)platforms/other/
+
     libJpegturbo_SIMD="x86"
 
 %elif $(TARGET_PROCESSOR_ARCHITECTURE)=="x64" || $(TARGET_PROCESSOR_ARCHITECTURE)=="WinRTx64"
+
+    cIncs + -I$(turboJpegSrcDir)platforms/other/
 
     libJpegturbo_SIMD="x64"
 
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSARM64" ||  $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM64" ||  $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM64Simulator"
 
+    cIncs + -I$(turboJpegSrcDir)platforms/apple_arm64/ -I$(turboJpegSrcDir)simd/arm/
+
     libJpegturbo_SIMD="Arm64"
 
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidARM64"
+
+    cIncs + -I$(turboJpegSrcDir)platforms/android/ -I$(turboJpegSrcDir)simd/arm/
+
+    libJpegturbo_SIMD="Arm64"
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "AndroidX64"
+
+    cIncs + -I$(turboJpegSrcDir)platforms/android/
+
+    libJpegturbo_SIMD="None"
+    cDefs + -DNO_SIMD=1
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
+
+    cIncs + -I$(turboJpegSrcDir)platforms/linux/
+
+    libJpegturbo_SIMD="None"
+    cDefs + -DNO_SIMD=1
+
 %elif $(TARGET_PROCESSOR_ARCHITECTURE)=="need Android-ndk-r9-windows-x86_64"
+
+    cIncs + -I$(turboJpegSrcDir)platforms/other/
 
     # Disable for Android for now since we required Android-ndk-r9-windows-x86_64 to get this fix :
     #   Fixed GCC 4.7 64-bit Windows assembler crash. (Error: out of memory allocating 4294967280 bytes).
@@ -57,6 +85,8 @@ dirToSearch = $(turboJpegSrcDir)src/
     libJpegturbo_SIMD="Arm"
 
 %else 
+
+    cIncs + -I$(turboJpegSrcDir)platforms/other/
 
     libJpegturbo_SIMD="None"
         
@@ -209,21 +239,15 @@ $(o)jddiffct$(oext)                 : $(turboJpegSrcDir)src/wrapper/jddiffct-8.c
 
 %if $(libJpegturbo_SIMD) == "x86"
 
-    cIncs + -I$(turboJpegSrcDir)platforms/other/
-
     $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/i386/jsimd.c ${MultiCompileDepends}
 
 %elif $(libJpegturbo_SIMD)=="x64"
     
-    cIncs + -I$(turboJpegSrcDir)platforms/other/
-
     $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/x86_64/jsimd.c ${MultiCompileDepends}      
 
 %elif $(libJpegturbo_SIMD)=="Arm"
 
     cDefs + -DNEON_INTRINSICS
-
-    cIncs + -I$(turboJpegSrcDir)platforms/other/ -I$(turboJpegSrcDir)simd/arm/
 
     $(o)jchuff-neon$(oext) : $(turboJpegSrcDir)simd/arm/aarch32/jchuff-neon.c ${MultiCompileDepends}
 
@@ -233,15 +257,11 @@ $(o)jddiffct$(oext)                 : $(turboJpegSrcDir)src/wrapper/jddiffct-8.c
 
     cDefs + -DNEON_INTRINSICS
 
-    cIncs + -I$(turboJpegSrcDir)platforms/apple_arm64/ -I$(turboJpegSrcDir)simd/arm/
-
     $(o)jchuff-neon$(oext) : $(turboJpegSrcDir)simd/arm/aarch64/jchuff-neon.c ${MultiCompileDepends}
 
     $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/arm/aarch64/jsimd.c ${MultiCompileDepends}
 
 %else
-
-    cIncs + -I$(turboJpegSrcDir)platforms/other/
 
     $(o)jpeg_nbits$(oext)                 : $(turboJpegSrcDir)src/jpeg_nbits.c          ${MultiCompileDepends}
 
