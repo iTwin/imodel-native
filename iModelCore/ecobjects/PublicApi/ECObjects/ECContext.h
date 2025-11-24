@@ -269,7 +269,7 @@ public:
     IssueReporter& Issues() { return m_issueReporter; }
 public:
     //! - For use when the caller knows the schema of the instance he is deserializing. Or knows the container schema and wants to check in its references
-    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaCR, bool = false, IStandaloneEnablerLocaterP = nullptr, IPrimitiveTypeResolver const* typeResolver = nullptr);
+    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaCR, IStandaloneEnablerLocaterP = nullptr, IPrimitiveTypeResolver const* typeResolver = nullptr, bool lookInReferences = false);
 
     //! - For use when the caller does not know the schema of the instance he is deserializing.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaReadContextR, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema);

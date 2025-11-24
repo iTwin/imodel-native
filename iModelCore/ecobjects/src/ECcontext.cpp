@@ -344,7 +344,7 @@ private:
     SchemaKey m_key;
     bool m_lookInReferences;
 public:
-    ECSchemaBackedInstanceReadContext(ECSchemaCR schema, bool lookInReferences, IStandaloneEnablerLocaterP standaloneEnablerLocater, IPrimitiveTypeResolver const* typeResolver)
+    ECSchemaBackedInstanceReadContext(ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater, IPrimitiveTypeResolver const* typeResolver, bool lookInReferences)
         : m_schema(schema), m_lookInReferences(lookInReferences), ECInstanceReadContext(standaloneEnablerLocater, schema, typeResolver), m_key(schema.GetSchemaKey())
         { }
 
@@ -373,9 +373,9 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceReadContextPtr ECInstanceReadContext::CreateContext(ECSchemaCR schema, bool lookInReferences, IStandaloneEnablerLocaterP standaloneEnablerLocater, IPrimitiveTypeResolver const* typeResolver)
+ECInstanceReadContextPtr ECInstanceReadContext::CreateContext(ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater, IPrimitiveTypeResolver const* typeResolver, bool lookInReferences)
     {
-    return new ECSchemaBackedInstanceReadContext (schema, lookInReferences, standaloneEnablerLocater, typeResolver);
+    return new ECSchemaBackedInstanceReadContext (schema, standaloneEnablerLocater, typeResolver, lookInReferences);
     }
 
 /*---------------------------------------------------------------------------------**//**
