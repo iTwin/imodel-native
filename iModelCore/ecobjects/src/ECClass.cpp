@@ -732,7 +732,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
 
     Utf8String errorMsg;
     ECObjectsStatus status = CanPropertyBeOverridden(*baseProperty, *pProperty, errorMsg);
-    if(ECObjectsStatus::Success == status) // existing local property is compatible with the incoming one
+    if(ECObjectsStatus::Success == status) // existing base property is compatible with the incoming one
         {
         if(resolveConflicts && !isBasePropNameExactlySame) // Preserving old behavior. In case resolveConflicts is true and the base prop name and this prop name is not same, we just update this prop name
             {
