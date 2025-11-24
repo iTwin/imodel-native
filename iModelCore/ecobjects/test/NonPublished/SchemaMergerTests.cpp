@@ -8,6 +8,7 @@
 #include <ECObjects/SchemaMerger.h>
 #include <ECObjects/SchemaComparer.h> //for result comparisons
 #include <Bentley/BeDirectoryIterator.h>
+#include "iostream"
 
 USING_NAMESPACE_BENTLEY_EC
 using namespace NativeLogging;
@@ -6769,6 +6770,58 @@ TEST_F(SchemaMergerTests, BasePropAndLocalPropSameNameWithDiffCase)
         )schema"
     }; // Preserving old behavior, note here display label also changed, this was the old behavior, just preserving it
 
+    CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, BasePropAndLocalPropSameExactName)
+    {
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="test" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="test" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Alpha">
+                <ECProperty propertyName="PIPE_DIA" typeName="double" displayLabel="Pipe Diameter" />
+            </ECEntityClass>
+            <ECEntityClass typeName = "Bravo">
+                <BaseClass>Alpha</BaseClass>
+                <ECProperty propertyName="PIPE_DIA" typeName="double" displayLabel="Pipe Diameter" />
+            </ECEntityClass>
+        </ECSchema>)xml"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+    
+    //merge the schemas
+    SchemaMergeResult result;
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // Compare result
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="test" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Alpha">
+                <ECProperty propertyName="PIPE_DIA" typeName="double" displayLabel="Pipe Diameter"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Bravo">
+                <BaseClass>Alpha</BaseClass>
+                <ECProperty propertyName="PIPE_DIA" typeName="double" displayLabel="Pipe Diameter"/>
+            </ECEntityClass>
+    </ECSchema>
+        )schema"
+    }; 
+    
     CompareResults(expectedSchemasXml, result);
     }
 
