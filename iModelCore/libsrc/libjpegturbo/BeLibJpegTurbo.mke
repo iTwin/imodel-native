@@ -42,6 +42,10 @@ dirToSearch = $(turboJpegSrcDir)src/
 
     libJpegturbo_SIMD="x64"
 
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSARM64" ||  $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM64" ||  $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM64Simulator"
+
+    libJpegturbo_SIMD="Arm64"
+
 %elif $(TARGET_PROCESSOR_ARCHITECTURE)=="need Android-ndk-r9-windows-x86_64"
 
     # Disable for Android for now since we required Android-ndk-r9-windows-x86_64 to get this fix :
@@ -60,7 +64,9 @@ dirToSearch = $(turboJpegSrcDir)src/
     #$(TARGET_PROCESSOR_ARCHITECTURE)=="AndroidX86"
     #$(TARGET_PROCESSOR_ARCHITECTURE)=="LinuxX86"
     #$(TARGET_PROCESSOR_ARCHITECTURE)=="iOSX86"
-    
+
+    cDefs + -DNO_SIMD=1
+
 %endif
     
 #----------------------------------------------------------------------
@@ -203,17 +209,69 @@ $(o)jddiffct$(oext)                 : $(turboJpegSrcDir)src/wrapper/jddiffct-8.c
 
 %if $(libJpegturbo_SIMD) == "x86"
 
+    cIncs + -I$(turboJpegSrcDir)platforms/other/
+
     $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/i386/jsimd.c ${MultiCompileDepends}
 
 %elif $(libJpegturbo_SIMD)=="x64"
     
+    cIncs + -I$(turboJpegSrcDir)platforms/other/
+
     $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/x86_64/jsimd.c ${MultiCompileDepends}      
 
 %elif $(libJpegturbo_SIMD)=="Arm"
 
-    $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/arm/jsimd.c ${MultiCompileDepends}
+    cDefs + -DNEON_INTRINSICS
 
-    $(o)jsimd_neon$(oext) : $(turboJpegSrcDir)simd/jsimd_neon.S ${MultiCompileDepends}
+    cIncs + -I$(turboJpegSrcDir)platforms/other/ -I$(turboJpegSrcDir)simd/arm/
+
+    $(o)jchuff-neon$(oext) : $(turboJpegSrcDir)simd/arm/aarch32/jchuff-neon.c ${MultiCompileDepends}
+
+    $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/arm/aarch32/jsimd.c ${MultiCompileDepends}
+
+%elif $(libJpegturbo_SIMD)=="Arm64"
+
+    cDefs + -DNEON_INTRINSICS
+
+    cIncs + -I$(turboJpegSrcDir)platforms/apple_arm64/ -I$(turboJpegSrcDir)simd/arm/
+
+    $(o)jchuff-neon$(oext) : $(turboJpegSrcDir)simd/arm/aarch64/jchuff-neon.c ${MultiCompileDepends}
+
+    $(o)jsimd$(oext) : $(turboJpegSrcDir)simd/arm/aarch64/jsimd.c ${MultiCompileDepends}
+
+%else
+
+    cIncs + -I$(turboJpegSrcDir)platforms/other/
+
+%endif
+
+%if $(libJpegturbo_SIMD)=="Arm" || $(libJpegturbo_SIMD)=="Arm64"
+
+    $(o)jccolor-neon$(oext) : $(turboJpegSrcDir)simd/arm/jccolor-neon.c ${MultiCompileDepends}
+
+    $(o)jcsample-neon$(oext) : $(turboJpegSrcDir)simd/arm/jcsample-neon.c ${MultiCompileDepends}
+
+    $(o)jidctfst-neon$(oext) : $(turboJpegSrcDir)simd/arm/jidctfst-neon.c ${MultiCompileDepends}
+
+    $(o)jcgray-neon$(oext) : $(turboJpegSrcDir)simd/arm/jcgray-neon.c ${MultiCompileDepends}
+
+    $(o)jdsample-neon$(oext) : $(turboJpegSrcDir)simd/arm/jdsample-neon.c ${MultiCompileDepends}
+
+    $(o)jidctint-neon$(oext) : $(turboJpegSrcDir)simd/arm/jidctint-neon.c ${MultiCompileDepends}
+
+    $(o)jdcolor-neon$(oext) : $(turboJpegSrcDir)simd/arm/jdcolor-neon.c ${MultiCompileDepends}
+
+    $(o)jfdctfst-neon$(oext) : $(turboJpegSrcDir)simd/arm/jfdctfst-neon.c ${MultiCompileDepends}
+
+    $(o)jidctred-neon$(oext) : $(turboJpegSrcDir)simd/arm/jidctred-neon.c ${MultiCompileDepends}
+
+    $(o)jcphuff-neon$(oext) : $(turboJpegSrcDir)simd/arm/jcphuff-neon.c ${MultiCompileDepends}
+
+    $(o)jdmerge-neon$(oext) : $(turboJpegSrcDir)simd/arm/jdmerge-neon.c ${MultiCompileDepends}
+
+    $(o)jfdctint-neon$(oext) : $(turboJpegSrcDir)simd/arm/jfdctint-neon.c ${MultiCompileDepends}
+
+    $(o)jquanti-neon$(oext) : $(turboJpegSrcDir)simd/arm/jquanti-neon.c ${MultiCompileDepends}
 
 %endif
 
