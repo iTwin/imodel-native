@@ -58,7 +58,7 @@ int QueryRetryHandler::_OnBusy(int count) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error) {
+std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue) {
     auto const hashCode = ECSqlStatement::GetHashCode(ecsql);
     auto iter = std::find_if(m_cache.begin(), m_cache.end(), [&ecsql,&hashCode,&usePrimaryConn] (std::shared_ptr<CachedQueryAdaptor>& entry) {
         return entry->GetUsePrimaryConn() == usePrimaryConn && entry->GetStatement().GetHashCode() == hashCode && strcmp(entry->GetStatement().GetECSql(), ecsql) == 0;
@@ -78,27 +78,93 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
     auto newCachedAdaptor = CachedQueryAdaptor::Make();
     newCachedAdaptor->SetWorkerConn(m_conn.GetDb());
     newCachedAdaptor->SetUsePrimaryConn(usePrimaryConn);
+    if(!usePrimaryConn && m_doNotUsePrimaryConnToPrepare)
+        return TryGetWithoutPrimaryDbLock(ecsql, usePrimaryConn, suppressLogError, status, ecsql_error, newCachedAdaptor, queue);
+    else
+        return TryGetWithPrimaryDbLock(ecsql, usePrimaryConn, suppressLogError, status, ecsql_error, newCachedAdaptor, queue);
+
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGetWithPrimaryDbLock(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, std::shared_ptr<BentleyM0200::BeSQLite::EC::CachedQueryAdaptor>& newCachedAdaptor, RunnableRequestQueue& queue) 
+    {
+    BeMutex& ecdbMutex = m_conn.GetPrimaryDb().GetImpl().GetMutex();
+    auto start = std::chrono::steady_clock::now();
+    while(!ecdbMutex.try_lock())
+        {
+        if(queue.GetState() == RunnableRequestQueue::State::Stop)
+            {
+            status = ECSqlStatus::Error;
+            ecsql_error = "Concurrent Query is shutting down, cannot prepare ECSql statement.";
+            return nullptr;
+            }
+        auto now = std::chrono::steady_clock::now();
+        if(std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 10)
+            {
+            status = ECSqlStatus::Error;
+            ecsql_error = "Tried to acquire primary ECDb mutex for preparing ECSql statement but timed out after 10 seconds.";
+            return nullptr;
+            }
+        }
     ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
     if (usePrimaryConn)
         status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
-    else {
-        if (m_doNotUsePrimaryConnToPrepare) {
-            status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
-        } else {
-            status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
-        }
-    }
+    else 
+        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
+    
     if (status != ECSqlStatus::Success) {
         ecsql_error = err_scope.GetLastError();
+        ecdbMutex.unlock();
         return nullptr;
     }
     while (m_cache.size() > m_maxEntries)
         m_cache.pop_back();
 
     m_cache.insert(m_cache.begin(), newCachedAdaptor);
+    ecdbMutex.unlock();
     return newCachedAdaptor;
-}
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGetWithoutPrimaryDbLock(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, std::shared_ptr<BentleyM0200::BeSQLite::EC::CachedQueryAdaptor>& newCachedAdaptor, RunnableRequestQueue& queue) 
+    {
+    BeMutex& ecdbMutex = m_conn.GetDb().GetImpl().GetMutex();
+    auto start = std::chrono::steady_clock::now();
+    while(!ecdbMutex.try_lock())
+        {
+        if(queue.GetState() == RunnableRequestQueue::State::Stop)
+            {
+            status = ECSqlStatus::Error;
+            ecsql_error = "Concurrent Query is shutting down, cannot prepare ECSql statement.";
+            return nullptr;
+            }
+        auto now = std::chrono::steady_clock::now();
+        if(std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 10)
+            {
+            status = ECSqlStatus::Error;
+            ecsql_error = "Tried to acquire ECDb mutex for preparing ECSql statement but timed out after 10 seconds.";
+            return nullptr;
+            }
+        }
+    ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetDb()));
+    status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
+    
+    if (status != ECSqlStatus::Success) {
+        ecsql_error = err_scope.GetLastError();
+        ecdbMutex.unlock();
+        return nullptr;
+    }
+    while (m_cache.size() > m_maxEntries)
+        m_cache.pop_back();
+
+    m_cache.insert(m_cache.begin(), newCachedAdaptor);
+    ecdbMutex.unlock();
+    return newCachedAdaptor;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1294,7 +1360,7 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
             runnableRequest.SetPrepareTime(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - prepareTimeStart));
         };
 
-        auto adaptor = adaptorCache.TryGet(sql.c_str(), request.UsePrimaryConnection(), request.GetSuppressLogErrors(), status, err);
+        auto adaptor = adaptorCache.TryGet(sql.c_str(), request.UsePrimaryConnection(), request.GetSuppressLogErrors(), status, err, runnableRequest.GetQueue());
         if (adaptor == nullptr) {
             recordPrepareTime();
             if (status.IsSQLiteError()) {
