@@ -8,7 +8,6 @@
 #include <ECObjects/SchemaMerger.h>
 #include <ECObjects/SchemaComparer.h> //for result comparisons
 #include <Bentley/BeDirectoryIterator.h>
-#include "iostream"
 
 USING_NAMESPACE_BENTLEY_EC
 using namespace NativeLogging;
