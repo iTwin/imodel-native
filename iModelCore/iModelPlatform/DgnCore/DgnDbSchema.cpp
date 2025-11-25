@@ -297,7 +297,7 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateSchemaSubject()
     {
-    DgnElementId elementId = Elements().GetRootSubjectId();
+    DgnElementId elementId = Elements().GetSchemaSubjectId();
     DgnModelId modelId = DgnModel::RepositoryModelId();
     CodeSpecId codeSpecId = CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_Subject);
     Utf8String schemaSubjectName = "Schemas";
@@ -509,50 +509,33 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params) {
     return SaveChanges();
 }
 
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct ProjectSchemaUpgrader
+/*---------------------------------------------------------------------------------**//**
+* Helper function to upgrade profile to 2.0.0.8 - adds Schema Subject element
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::UpgradeToProfile2_0_0_8(DgnDbR db)
     {
-    virtual DgnDbProfileVersion _GetVersion() = 0;
-    virtual DbResult _Upgrade(DgnDbR project, DgnDbProfileVersion version) = 0;
-    };
-
-#if defined (WIP_RebaseSupportUpgrader)
-struct RebaseSupportUpgrader : ProjectSchemaUpgrader
+    // Check if Schema Subject already exists
+    ECSqlStatement checkStmt;
+    if (ECSqlStatus::Success != checkStmt.Prepare(db, "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE ECInstanceId=?"))
     {
-    DgnDbProfileVersion _GetVersion() override {return DgnDbProfileVersion(2, 1);}
-    DbResult _Upgrade(DgnDbR db, DgnDbProfileVersion version)
-        {
-        // DGN_TABLE_Rebase was introduced in 2.1
-        if ((version.GetMajor() != 2) || (version.GetMinor() >= 1))
-            return BE_SQLITE_OK;
-
-        if (db.TableExists(DGN_TABLE_Rebase))
-            return BE_SQLITE_OK;
-
-        return db.CreateRebaseTable();
-        }
-    };
-
-static RebaseSupportUpgrader s_rebaseSupportUpgrader;
-
-static ProjectSchemaUpgrader* s_upgraders[] =
+        LOG.error("Failed to prepare ECSQL statement to check for Schema Subject element during profile upgrade to 2.0.0.8");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+    }
+    
+    checkStmt.BindId(1, DgnElements::GetSchemaSubjectId());
+    
+    if (BE_SQLITE_ROW == checkStmt.Step())
     {
-    // NOTE: entries in this list *must* be sorted in ascending version order.
-    // Add a new version here
-    &s_rebaseSupportUpgrader
-    };
-#endif
-
-#if defined (WHEN_FIRST_UPGRADER)
-static ProjectSchemaUpgrader* s_upgraders[] =
-    {
-    // NOTE: entries in this list *must* be sorted in ascending version order.
-    // Add a new version here
-
-    };
-#endif
+        LOG.error("Schema Subject element already exists during profile upgrade to 2.0.0.8");
+        BeAssert(false && "Should not happen, indicates a file that already occupies the element id used for schema subject.");
+        return BE_SQLITE_OK; //BE_SQLITE_ERROR_ProfileUpgradeFailed; // TODO: We may want to choose to fail here, still needs decision
+    }
+    
+    // Create the Schema Subject
+    DbResult result = db.CreateSchemaSubject();
+    return (BE_SQLITE_DONE == result) ? BE_SQLITE_OK : BE_SQLITE_ERROR_ProfileUpgradeFailed;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -633,21 +616,24 @@ DbResult DgnDb::_UpgradeProfile(Db::OpenParams const& params)
     if (BE_SQLITE_OK != result)
         return result;
 
-#if defined (WHEN_FIRST_UPGRADER)
-    for (auto upgrader : s_upgraders)
-        {
-        if (m_profileVersion < upgrader->_GetVersion())
-            {
-            DbResult stat = upgrader->_Upgrade(project, m_profileVersion);
-            if (BE_SQLITE_OK != stat)
-                return stat;
+    DgnDbProfileVersion versionBeforeUpgrade = m_profileVersion;
+    
+    // We use a flat implementation since DgnDb currently has only one upgrader.
+    // We just hard code the upgrader sequence here for simplicity.
 
-            m_profileVersion = upgrader->_GetVersion();
-            }
+    // Upgrade to 2.0.0.8 if needed (adds Schema Subject element)
+    if (versionBeforeUpgrade < DgnDbProfileVersion(2, 0, 0, 8))
+        {
+        result = UpgradeToProfile2_0_0_8(*this);
+        if (BE_SQLITE_OK != result)
+            return result;
+        
+        m_profileVersion = DgnDbProfileVersion(2, 0, 0, 8);
         }
-#else
-    m_profileVersion = DgnDbProfileVersion::GetCurrent();
-#endif
+
+    // Always update to current version after running all upgraders
+    if (m_profileVersion < DgnDbProfileVersion::GetCurrent())
+        m_profileVersion = DgnDbProfileVersion::GetCurrent();
 
     return SaveDgnDbProfileVersion(m_profileVersion);
     }

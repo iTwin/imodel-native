@@ -216,6 +216,7 @@ private:
     void OnBisCoreSchemaImported(CreateDgnDbParams const& params);
     BeSQLite::DbResult InitializeElementIdSequence();
     void ClearECSqlCache() const { m_ecsqlCache.Empty(); }
+    static BeSQLite::DbResult UpgradeToProfile2_0_0_8(DgnDbR db);
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
     BeSQLite::DbResult ProcessRevisions(BeSQLite::Db::OpenParams const& params);

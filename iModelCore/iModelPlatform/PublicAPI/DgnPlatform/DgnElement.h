@@ -3997,7 +3997,7 @@ public:
     //! Return the DgnElementId for the root Subject
     static DgnElementId GetRootSubjectId() { return DgnElementId((uint64_t)1LL);}
 
-    //! Return the DgnElementId for the schema Subject
+    //! Return the DgnElementId for the schema Subject (represents an element that is locked during schema updates)
     static DgnElementId GetSchemaSubjectId() { return DgnElementId((uint64_t)2LL);}
 
     //! Return the root Subject

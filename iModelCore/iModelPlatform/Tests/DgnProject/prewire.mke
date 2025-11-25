@@ -36,6 +36,6 @@ $(BuildContext)Delivery/UnitTests/PresentationRules : $(baseDir)PresentationRule
 #------------------------------------------------------------------------------------------
 #   Deliver CompatibilityTestFiles for use by unit tests
 #------------------------------------------------------------------------------------------
-$(BuildContext)Delivery/UnitTests/CompatibilityTestFiles/2-0-1-60/ : $(SrcRoot)iModelUnitTestData/Compatability/2-0-1-60
+$(BuildContext)Delivery/UnitTests/CompatibilityTestFiles/ : $(SrcRoot)iModelUnitTestData/Compatability
     $(LinkFirstDepToFirstTargetAsDirectory)
 
