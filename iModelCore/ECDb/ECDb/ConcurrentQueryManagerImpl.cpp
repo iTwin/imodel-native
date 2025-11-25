@@ -78,10 +78,10 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
     auto newCachedAdaptor = CachedQueryAdaptor::Make();
     newCachedAdaptor->SetWorkerConn(m_conn.GetDb());
     newCachedAdaptor->SetUsePrimaryConn(usePrimaryConn);
-    if(!usePrimaryConn && m_doNotUsePrimaryConnToPrepare)
-        return TryGetWithoutPrimaryDbLock(ecsql, usePrimaryConn, suppressLogError, status, ecsql_error, newCachedAdaptor, queue);
-    else
+    if(usePrimaryConn)
         return TryGetWithPrimaryDbLock(ecsql, usePrimaryConn, suppressLogError, status, ecsql_error, newCachedAdaptor, queue);
+    else
+        return TryGetWithoutPrimaryDbLock(ecsql, usePrimaryConn, suppressLogError, status, ecsql_error, newCachedAdaptor, queue);
 
 }
 
@@ -109,10 +109,7 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGetWithPrimaryDbLock(U
             }
         }
     ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
-    if (usePrimaryConn)
-        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
-    else 
-        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
+    status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
     
     if (status != ECSqlStatus::Success) {
         ecsql_error = err_scope.GetLastError();
@@ -151,7 +148,10 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGetWithoutPrimaryDbLoc
             }
         }
     ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetDb()));
-    status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
+    if(m_doNotUsePrimaryConnToPrepare)
+        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
+    else
+        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
     
     if (status != ECSqlStatus::Success) {
         ecsql_error = err_scope.GetLastError();
