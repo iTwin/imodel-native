@@ -29,13 +29,11 @@ cDefs + -DSQLITE_ENABLE_FTS5=1 -DSQLITE_ENABLE_JSON1=1 -DSQLITE_ENABLE_MATH_FUNC
 
 cDefs + -DSQLITE_DEBUG=1 -DSQLITE_ENABLE_IOTRACE=1 -DSQLITE_ENABLE_NORMALIZE=1 -DSQLITE_ENABLE_DBSTAT_VTAB=1
 
-cDefs + -DSQLITE_INTROSPECTION_PRAGMAS -DSQLITE_ENABLE_STMTVTAB=1 -DSQLITE_ENABLE_BYTECODE_VTAB=1 -DSQLITE_ENABLE_ICU=1
+cDefs + -DSQLITE_INTROSPECTION_PRAGMAS -DSQLITE_ENABLE_STMTVTAB=1 -DSQLITE_ENABLE_BYTECODE_VTAB=1 -DSQLITE_ENABLE_STMT_SCANSTATUS=1
 
 # Third-party section of this library.
 %include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
 
-dirToSearch = $(BuildContext)VendorAPI/icu4c
-%include cincapnd.mki
 
 MultiCompileDepends =$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
@@ -73,6 +71,5 @@ LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinCurl$(stlibext
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
 LINKER_LIBRARIES + $(CLibs)
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
-LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(libprefix)iTwinIcu4c$(libext)
 
 %include $(SharedMki)linktool.mki
