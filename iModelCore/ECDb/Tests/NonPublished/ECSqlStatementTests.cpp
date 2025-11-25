@@ -114,6 +114,106 @@ TEST_F(ECSqlStatementTestFixture, CTECrash) {
         ASSERT_STREQ( stmt.GetNativeSql(), "WITH RECURSIVE F(A) AS (SELECT 1),S(A) AS (SELECT F.A FROM F UNION SELECT 1 FROM S WHERE S.A=1)\nSELECT S.A FROM S");
     }
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, CTEWithAComment) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CTEWithAComment.ecdb"));
+
+    const auto sqlTemplate = R"(
+        WITH ce(TestColumn1, TestColumn2) AS (
+            %s
+        ) SELECT * FROM ce)";
+
+    for (const auto& [testCaseNumber, expectedSecondColumnValue, ecSqlQuery] : std::vector<std::tuple<int, Utf8String, std::string>>{
+        std::make_tuple(1, "TestColumn",
+            R"(
+                -- comment
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(2, "TestColumn",
+            R"(
+                -- multi
+                -- line
+                -- comment
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(3, "TestColumn",
+            R"(
+                -- multi
+                -- line
+                -- comment()
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(4, "TestColumn",
+            R"(
+                /* comment) */
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(5, "TestColumn",
+            R"(
+                // calling function()
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(6, "TestColumn",
+            R"(
+                -- calling function()
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(7, "TestColumn",
+            R"(
+                /* comment */
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(8, "TestColumn",
+            R"(
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1 -- comment)
+            )"),
+        std::make_tuple(9, "TestColumn",
+            R"(
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1 /* comment) */
+            )"),
+        std::make_tuple(10, "invalid -- column",
+            R"(
+                SELECT 1, 'invalid -- column' AS TestColumn FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(11, "text with ) parenthesis",
+            R"(
+                SELECT 1, 'text with ) parenthesis' AS TestColumn FROM meta.ECClassDef LIMIT 1 -- real comment
+            )"),
+        std::make_tuple(12, "text /* not a comment */",
+            R"(
+                SELECT 1, 'text /* not a comment */' AS TestColumn FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(13, "comment)",
+            R"(
+                SELECT 1, 'comment)' AS TestColumn FROM meta.ECClassDef LIMIT 1 -- called from function XYZ()
+            )"),
+        std::make_tuple(14, "TestColumn",
+            R"(
+                SELECT /* Primary Key (class Id) */ 1, /* Class Name */ 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(15, "TestColumn",
+            R"(
+                SELECT 1,
+                'TestColumn' /* multiline
+                comment */ FROM meta.ECClassDef LIMIT 1
+            )"),
+    }) {
+        const auto errorMessage = Utf8PrintfString("Test case number: %d failed.", testCaseNumber);
+
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString(sqlTemplate, ecSqlQuery.c_str()))) << errorMessage;
+
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << errorMessage;
+        EXPECT_EQ(1, stmt.GetValueInt(0)) << errorMessage;
+        EXPECT_STREQ(expectedSecondColumnValue.c_str(), stmt.GetValueText(1)) << errorMessage;
+        
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << errorMessage;
+    }
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
