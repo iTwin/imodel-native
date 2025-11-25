@@ -20,7 +20,7 @@ protected:
     ECSchemaReadContextR m_schemaContext;
     ECSchemaPtr m_conversionSchema;
 
-    bool IsOpenPlantPidCircularReferenceSpecialCase(Utf8String& referencedECSchemaName, Utf8String& referencingECSchemaFullName);
+    bool IsOpenPlantPidCircularReferenceSpecialCase(Utf8StringCR referencedECSchemaName, Utf8StringCR referencingECSchemaFullName);
 
     virtual bool ReadClassNode(ECClassP &ecClass, pugi::xml_node classNode, ECSchemaPtr& schemaOut) = 0;
     virtual SchemaReadStatus _ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector& classes);

@@ -54,8 +54,8 @@ static  bool        s_noAssert = false;
 //---------------+---------------+---------------+---------------+---------------+-------
 bool  SchemaXmlReaderImpl::IsOpenPlantPidCircularReferenceSpecialCase
     (
-    Utf8String& referencedECSchemaName,
-    Utf8String& referencingECSchemaFullName
+    Utf8StringCR referencedECSchemaName,
+    Utf8StringCR referencingECSchemaFullName
     )
     {
     if (0 != referencedECSchemaName.CompareTo("OpenPlant_PID"))
@@ -80,7 +80,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
             LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", ECXML_SCHEMAREFERENCE_ELEMENT, NAME_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        key.m_schemaName = nameAttr.as_string();
+        key.SetName(nameAttr.as_string());
 
         Utf8String alias;
         if (schemaOut->OriginalECXmlVersionAtLeast(ECVersion::V3_1))
@@ -104,9 +104,9 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
             alias = prefixAttr.as_string();
             }
 
-        if (m_schemaContext.AddAliasIfSchemaToPrune(schemaOut->GetName(), key.m_schemaName, alias))
+        if (m_schemaContext.AddAliasIfSchemaToPrune(schemaOut->GetName(), key.GetName(), alias))
             {
-            LOG.tracev("Context was setup to prune encountered referenced schema, '%s' in schema '%s'", key.m_schemaName.c_str(), schemaOut->GetName().c_str());
+            LOG.tracev("Context was setup to prune encountered referenced schema, '%s' in schema '%s'", key.GetName().c_str(), schemaOut->GetName().c_str());
             continue;
             }
 
@@ -121,25 +121,30 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
         versionString = versionAttr.as_string();
 
         {
+        uint32_t versionRead, versionWrite, versionMinor;
         ECObjectsStatus versionStatus = ECObjectsStatus::Success;
         if (schemaOut->OriginalECXmlVersionGreaterThan(ECVersion::V3_1))
-            versionStatus = SchemaKey::ParseVersionStringStrict(key.m_versionRead, key.m_versionWrite, key.m_versionMinor, versionString.c_str());
+            versionStatus = SchemaKey::ParseVersionStringStrict(versionRead, versionWrite, versionMinor, versionString.c_str());
         else
-            versionStatus = SchemaKey::ParseVersionString(key.m_versionRead, key.m_versionWrite, key.m_versionMinor, versionString.c_str());
+            versionStatus = SchemaKey::ParseVersionString(versionRead, versionWrite, versionMinor, versionString.c_str());
 
         if (ECObjectsStatus::Success != versionStatus)
             {
-            LOG.errorv("Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", key.m_schemaName.c_str());
+            LOG.errorv("Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", key.GetName().c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
+        
+        key.SetVersionRead(versionRead);
+        key.SetVersionWrite(versionWrite);
+        key.SetVersionMinor(versionMinor);
         }
 
         // If the schema (uselessly) references itself, just skip it
-        if (schemaOut->GetSchemaKey().m_schemaName.compare(key.m_schemaName) == 0)
+        if (schemaOut->GetSchemaKey().GetName().compare(key.GetName()) == 0)
             continue;
 
         Utf8String schemaFullName = schemaOut->GetFullSchemaName();
-        if (IsOpenPlantPidCircularReferenceSpecialCase(key.m_schemaName, schemaFullName))
+        if (IsOpenPlantPidCircularReferenceSpecialCase(key.GetName(), schemaFullName))
             continue;
 
         LOG.debugv("About to locate referenced ECSchema %s, referenced by %s", key.GetFullSchemaName().c_str(), schemaOut->GetFullSchemaName().c_str());
@@ -147,7 +152,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
         // There are some schemas out there that reference the non-existent Unit_Attributes.1.1 schema.  We need to deliver 1.0, which does not match our criteria
         // for LatestCompatible.
         if (0 == key.GetName().CompareTo("Unit_Attributes") && 1 == key.GetVersionRead() && 1 == key.GetVersionMinor())
-            key.m_versionMinor = 0;
+            key.SetVersionMinor(0);
         ECSchemaPtr referencedSchema = schemaOut->LocateSchema(key, m_schemaContext);
 
         if (referencedSchema.IsValid())
@@ -917,7 +922,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, SchemaKey&
 
     // If checksum comparison is enabled on context then use the original context
     if (m_schemaContext.GetCalculateChecksum() && nullptr != checksum)
-        schemaOut->m_key.m_checksum = checksum;
+        schemaOut->m_key.SetChecksum(checksum);
 
     // Handle conversion of encoded ECName to name + display label for legacy schemas
     if (schemaOut->OriginalECXmlVersionLessThan(ECVersion::V3_1))
