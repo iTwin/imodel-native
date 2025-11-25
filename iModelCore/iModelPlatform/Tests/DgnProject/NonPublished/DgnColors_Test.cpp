@@ -107,6 +107,7 @@ TEST_F(DgnColorTests, ColorBook)
 
     }
     auto colorBook = m_db->Elements().GetForEdit<ColorBook>(elementId);
+    DgnDb::PurgeOperation _(*m_db);
     ASSERT_EQ(DgnDbStatus::Success, colorBook->Delete());
     DgnCode code=ColorBook::CreateCode(m_db->GetDictionaryModel(), "TestBook1");
     ASSERT_FALSE(m_db->Elements().QueryElementIdByCode(code).IsValid());
