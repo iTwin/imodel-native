@@ -406,13 +406,14 @@ $(o)curl_osslq$(oext) : $(BeCurlLibDir)vquic/curl_osslq.c ${MultiCompileDepends}
 
 $(o)vquic-tls$(oext) : $(BeCurlLibDir)vquic/vquic-tls.c ${MultiCompileDepends}
 
-$(o)ares_buf$(oext) : $(AresLibDir)ares_buf.c ${MultiCompileDepends}
 
 %if $(TARGET_PLATFORM) != "Windows" && $(TARGET_PLATFORM) != "iOS" && $(TARGET_PLATFORM) != "Android"
 
     $(o)ares_library_init$(oext) : $(AresLibDir)ares_library_init.c ${MultiCompileDepends}
 
     $(o)ares_init$(oext) : $(AresLibDir)ares_init.c ${MultiCompileDepends}
+
+    $(o)ares_buf$(oext) : $(AresLibDir)ares_buf.c ${MultiCompileDepends}
 
     $(o)ares_cancel$(oext) : $(AresLibDir)ares_cancel.c ${MultiCompileDepends}
 
@@ -430,7 +431,7 @@ $(o)ares_buf$(oext) : $(AresLibDir)ares_buf.c ${MultiCompileDepends}
 
     $(o)ares_destroy$(oext) : $(AresLibDir)ares_destroy.c ${MultiCompileDepends}
 
-    $(o)ares__close_sockets$(oext) : $(AresLibDir)ares__close_sockets.c ${MultiCompileDepends}
+    $(o)ares_close_sockets$(oext) : $(AresLibDir)ares_close_sockets.c ${MultiCompileDepends}
 
     $(o)ares_getnameinfo$(oext) : $(AresLibDir)ares_getnameinfo.c ${MultiCompileDepends}
 
@@ -438,35 +439,31 @@ $(o)ares_buf$(oext) : $(AresLibDir)ares_buf.c ${MultiCompileDepends}
 
     $(o)inet_net_pton$(oext) : $(AresLibDir)inet_net_pton.c ${MultiCompileDepends}
 
-    $(o)ares__addrinfo_localhost$(oext) : $(AresLibDir)ares__addrinfo_localhost.c ${MultiCompileDepends}
+    $(o)ares_addrinfo_localhost$(oext) : $(AresLibDir)ares_addrinfo_localhost.c ${MultiCompileDepends}
 
     $(o)ares_strdup$(oext) : $(AresLibDir)ares_strdup.c ${MultiCompileDepends}
 
     $(o)ares_getenv$(oext) : $(AresLibDir)ares_getenv.c ${MultiCompileDepends}
 
-    $(o)ares__htable$(oext) : $(AresLibDir)ares__htable.c ${MultiCompileDepends}
+    $(o)ares_htable$(oext) : $(AresLibDir)ares_htable.c ${MultiCompileDepends}
 
-    $(o)ares__htable_asvp$(oext) : $(AresLibDir)ares__htable_asvp.c ${MultiCompileDepends}
+    $(o)ares_htable_asvp$(oext) : $(AresLibDir)ares_htable_asvp.c ${MultiCompileDepends}
 
-    $(o)ares__htable_stvp$(oext) : $(AresLibDir)ares__htable_stvp.c ${MultiCompileDepends}
+    $(o)ares_htable_stvp$(oext) : $(AresLibDir)ares_htable_stvp.c ${MultiCompileDepends}
 
-    $(o)ares__llist$(oext) : $(AresLibDir)ares__llist.c ${MultiCompileDepends}
-
-    $(o)ares__readaddrinfo$(oext) : $(AresLibDir)ares__readaddrinfo.c ${MultiCompileDepends}
+    $(o)ares_llist$(oext) : $(AresLibDir)ares_llist.c ${MultiCompileDepends}
 
     $(o)ares_query$(oext) : $(AresLibDir)ares_query.c ${MultiCompileDepends}
 
-    $(o)ares__sortaddrinfo$(oext) : $(AresLibDir)ares__sortaddrinfo.c ${MultiCompileDepends}
+    $(o)ares_sortaddrinfo$(oext) : $(AresLibDir)ares_sortaddrinfo.c ${MultiCompileDepends}
 
-    $(o)ares__parse_into_addrinfo$(oext) : $(AresLibDir)ares__parse_into_addrinfo.c ${MultiCompileDepends}
+    $(o)ares_parse_into_addrinfo$(oext) : $(AresLibDir)ares_parse_into_addrinfo.c ${MultiCompileDepends}
 
-    $(o)ares__slist$(oext) : $(AresLibDir)ares__slist.c ${MultiCompileDepends}
+    $(o)ares_slist$(oext) : $(AresLibDir)ares_slist.c ${MultiCompileDepends}
 
-    $(o)ares__timeval$(oext) : $(AresLibDir)ares__timeval.c ${MultiCompileDepends}
+    $(o)ares_timeval$(oext) : $(AresLibDir)ares_timeval.c ${MultiCompileDepends}
 
     $(o)ares_rand$(oext) : $(AresLibDir)ares_rand.c ${MultiCompileDepends}
-
-    $(o)ares__read_line$(oext) : $(AresLibDir)ares__read_line.c ${MultiCompileDepends}
 
     $(o)ares_strsplit$(oext) : $(AresLibDir)ares_strsplit.c ${MultiCompileDepends}
 
@@ -490,7 +487,7 @@ $(o)ares_buf$(oext) : $(AresLibDir)ares_buf.c ${MultiCompileDepends}
 
     $(o)ares_free_hostent$(oext) : $(AresLibDir)ares_free_hostent.c ${MultiCompileDepends}
 
-    $(o)ares__get_hostent$(oext) : $(AresLibDir)ares__get_hostent.c ${MultiCompileDepends}
+    $(o)ares_get_hostent$(oext) : $(AresLibDir)ares_get_hostent.c ${MultiCompileDepends}
 
     $(o)ares_parse_ptr_reply$(oext) : $(AresLibDir)ares_parse_ptr_reply.c ${MultiCompileDepends}
 
