@@ -96,10 +96,12 @@ struct QueryAdaptorCache final {
             CachedConnection& m_conn;
             uint32_t m_maxEntries;
             bool m_doNotUsePrimaryConnToPrepare;
+            std::shared_ptr<CachedQueryAdaptor> TryGetWithPrimaryDbLock(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, std::shared_ptr<BentleyM0200::BeSQLite::EC::CachedQueryAdaptor>& newCachedAdaptor, RunnableRequestQueue& queue);
+            std::shared_ptr<CachedQueryAdaptor> TryGetWithoutPrimaryDbLock(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, std::shared_ptr<BentleyM0200::BeSQLite::EC::CachedQueryAdaptor>& newCachedAdaptor, RunnableRequestQueue& queue);
     public:
         QueryAdaptorCache(CachedConnection& conn);
         ~QueryAdaptorCache(){}
-        std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error);
+        std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue);
         void Reset() { m_cache.clear(); }
         void SetMaxCacheSize(uint32_t n) { if (n < QueryAdaptorCache::kDefaultCacheSize) return; m_maxEntries = n; }
         CachedConnection& GetConnection() {return m_conn;}
