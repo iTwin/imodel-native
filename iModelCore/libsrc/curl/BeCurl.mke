@@ -406,7 +406,6 @@ $(o)curl_osslq$(oext) : $(BeCurlLibDir)vquic/curl_osslq.c ${MultiCompileDepends}
 
 $(o)vquic-tls$(oext) : $(BeCurlLibDir)vquic/vquic-tls.c ${MultiCompileDepends}
 
-
 %if $(TARGET_PLATFORM) != "Windows" && $(TARGET_PLATFORM) != "iOS" && $(TARGET_PLATFORM) != "Android"
 
     $(o)ares_library_init$(oext) : $(AresLibDir)ares_library_init.c ${MultiCompileDepends}
