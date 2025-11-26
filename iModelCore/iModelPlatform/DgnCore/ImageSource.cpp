@@ -10,8 +10,6 @@
 #endif
 
 #include <png/png.h>
-#include <png/pngstruct.h>
-#include <png/pnginfo.h>
 #include <BeJpeg/BeJpeg.h>
 
 BEGIN_UNNAMED_NAMESPACE
@@ -30,7 +28,7 @@ public:
 
     static void Read(png_structp png_ptr, png_bytep data, png_size_t length)
         {
-        PngData* pngData = (PngData*)(png_ptr->io_ptr);
+        PngData* pngData = (PngData*)png_get_io_ptr(png_ptr);
 
         if (pngData->m_position + length > pngData->m_size)
             png_error(png_ptr, "Read Error");   // >>>>  Will long jump and not return.
@@ -91,16 +89,20 @@ struct PngReader
 
     Byte** GetRows() const {return png_get_rows(m_png, m_info);}
     int GetBytesPerRow() const {return static_cast<int>(png_get_rowbytes(m_png, m_info));}
-    int GetPixelDepth() const {return m_info->pixel_depth;}
+    int GetPixelDepth() const {return png_get_bit_depth(m_png, m_info) * png_get_channels(m_png, m_info);}
     bool IsValid() const{return nullptr != m_png;}
-    int GetWidth() const {return m_info->width;}
-    int GetHeight() const {return m_info->height;}
+    int GetWidth() const {return static_cast<int>(png_get_image_width(m_png, m_info));}
+    int GetHeight() const {return static_cast<int>(png_get_image_height(m_png, m_info));}
     bool SupportsTransparency() const
         {
-        if (PNG_COLOR_TYPE_RGBA == m_info->color_type || PNG_COLOR_TYPE_GA == m_info->color_type)
+        png_byte color_type = png_get_color_type(m_png, m_info);
+        if (PNG_COLOR_TYPE_RGBA == color_type || PNG_COLOR_TYPE_GA == color_type)
             return true;
         else
-            return m_info->num_trans > 0;
+            {
+            png_bytep trans_alpha; png_int_32 num_trans; png_color_16p trans_color;
+            return (PNG_INFO_tRNS & png_get_tRNS(m_png, m_info, &trans_alpha, &num_trans, &trans_color)) && num_trans > 0;
+            }
         }
 };
 
