@@ -1,3 +1,4 @@
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #  See LICENSE.md in the repository root for full copyright notice.
 #---------------------------------------------------------------------------------------------
@@ -405,13 +406,13 @@ $(o)curl_osslq$(oext) : $(BeCurlLibDir)vquic/curl_osslq.c ${MultiCompileDepends}
 
 $(o)vquic-tls$(oext) : $(BeCurlLibDir)vquic/vquic-tls.c ${MultiCompileDepends}
 
+$(o)ares_buf$(oext) : $(AresLibDir)ares_buf.c ${MultiCompileDepends}
+
 %if $(TARGET_PLATFORM) != "Windows" && $(TARGET_PLATFORM) != "iOS" && $(TARGET_PLATFORM) != "Android"
 
     $(o)ares_library_init$(oext) : $(AresLibDir)ares_library_init.c ${MultiCompileDepends}
 
     $(o)ares_init$(oext) : $(AresLibDir)ares_init.c ${MultiCompileDepends}
-
-    $(o)ares__buf$(oext) : $(AresLibDir)ares__buf.c ${MultiCompileDepends}
 
     $(o)ares_cancel$(oext) : $(AresLibDir)ares_cancel.c ${MultiCompileDepends}
 
