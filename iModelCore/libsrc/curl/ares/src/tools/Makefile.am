@@ -12,14 +12,12 @@ noinst_PROGRAMS =$(PROGS)
 # being currently built and tested are searched before the library which
 # might possibly already be installed in the system.
 
-AM_CPPFLAGS = -I$(top_builddir)/include \
-              -I$(top_builddir)/src/lib \
-              -I$(top_srcdir)/include \
-              -I$(top_srcdir)/src/lib
-
-if USE_CPPFLAG_CARES_STATICLIB
-AM_CPPFLAGS += $(CPPFLAG_CARES_STATICLIB)
-endif
+AM_CPPFLAGS += -I$(top_builddir)/include \
+               -I$(top_builddir)/src/lib \
+               -I$(top_srcdir)/include \
+               -I$(top_srcdir)/src/lib \
+               -I$(top_srcdir)/src/lib/include \
+               -DCARES_NO_DEPRECATED
 
 include Makefile.inc
 
@@ -31,6 +29,6 @@ ahost_SOURCES = ahost.c $(SAMPLESOURCES) $(SAMPLEHEADERS)
 ahost_CFLAGS = $(AM_CFLAGS)
 ahost_CPPFLAGS = $(AM_CPPFLAGS)
 
-adig_SOURCES = adig.c $(SAMPLESOURCES) $(SAMPLEHEADERS)
+adig_SOURCES = adig.c
 adig_CFLAGS = $(AM_CFLAGS)
 adig_CPPFLAGS = $(AM_CPPFLAGS)
