@@ -2,8 +2,8 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd">
 
-    <Part Name="GeoCoordWorkspaceData">
-        <SubPackage PkgType="UPack" Name="csmap_workspaces" PartName="PrebuiltWorkspaces_imodel" PartFile="csmap_workspaces" />
+    <Part Name="GeoCoordDictionaryData">
+        <SubPackage PkgType="UPack" Name="csmap_data" PartName="PrebuiltGeoCoordData_imodel" PartFile="csmap_data" />
     </Part>
 
     <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
