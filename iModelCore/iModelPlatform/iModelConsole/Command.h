@@ -191,7 +191,6 @@ struct CheckTransformCommand final : public Command
         void _Run(Session&, Utf8StringCR args) const override;
 
         void RunTryImportSchema(Session&, std::vector<Utf8String> const& args) const;
-        static BentleyStatus DeserializeECSchema(ECN::ECSchemaReadContextR readContext, BeFileNameCR ecschemaFilePath);
 
     public:
         CheckTransformCommand() : Command() {}
