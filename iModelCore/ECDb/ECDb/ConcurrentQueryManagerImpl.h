@@ -85,6 +85,8 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         }
 };
 
+struct RunnableRequestQueue;
+
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
@@ -203,7 +205,6 @@ struct ConnectionCache final {
         void SyncAttachDbs();
 };
 
-struct RunnableRequestQueue;
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
