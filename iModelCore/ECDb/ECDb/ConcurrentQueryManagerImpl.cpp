@@ -91,20 +91,12 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
 std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGetWithPrimaryDbLock(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, std::shared_ptr<BentleyM0200::BeSQLite::EC::CachedQueryAdaptor>& newCachedAdaptor, RunnableRequestQueue& queue) 
     {
     BeMutex& ecdbMutex = m_conn.GetPrimaryDb().GetImpl().GetMutex();
-    auto start = std::chrono::steady_clock::now();
     while(!ecdbMutex.try_lock())
         {
         if(queue.GetState() == RunnableRequestQueue::State::Stop)
             {
             status = ECSqlStatus::Error;
             ecsql_error = "Concurrent Query is shutting down, cannot prepare ECSql statement.";
-            return nullptr;
-            }
-        auto now = std::chrono::steady_clock::now();
-        if(std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 10)
-            {
-            status = ECSqlStatus::Error;
-            ecsql_error = "Tried to acquire primary ECDb mutex for preparing ECSql statement but timed out after 10 seconds.";
             return nullptr;
             }
         }
@@ -129,24 +121,7 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGetWithPrimaryDbLock(U
 //---------------------------------------------------------------------------------------
 std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGetWithoutPrimaryDbLock(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, std::shared_ptr<BentleyM0200::BeSQLite::EC::CachedQueryAdaptor>& newCachedAdaptor, RunnableRequestQueue& queue) 
     {
-    BeMutex& ecdbMutex = m_conn.GetDb().GetImpl().GetMutex();
-    auto start = std::chrono::steady_clock::now();
-    while(!ecdbMutex.try_lock())
-        {
-        if(queue.GetState() == RunnableRequestQueue::State::Stop)
-            {
-            status = ECSqlStatus::Error;
-            ecsql_error = "Concurrent Query is shutting down, cannot prepare ECSql statement.";
-            return nullptr;
-            }
-        auto now = std::chrono::steady_clock::now();
-        if(std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 10)
-            {
-            status = ECSqlStatus::Error;
-            ecsql_error = "Tried to acquire ECDb mutex for preparing ECSql statement but timed out after 10 seconds.";
-            return nullptr;
-            }
-        }
+    // No try lock machnism required here as while concurrent query shutdown we lock the ecdb mutex which is the primary connection mutex so deadlock can't happen here
     ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetDb()));
     if(m_doNotUsePrimaryConnToPrepare)
         status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
@@ -155,14 +130,12 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGetWithoutPrimaryDbLoc
     
     if (status != ECSqlStatus::Success) {
         ecsql_error = err_scope.GetLastError();
-        ecdbMutex.unlock();
         return nullptr;
     }
     while (m_cache.size() > m_maxEntries)
         m_cache.pop_back();
 
     m_cache.insert(m_cache.begin(), newCachedAdaptor);
-    ecdbMutex.unlock();
     return newCachedAdaptor;
     }
 //---------------------------------------------------------------------------------------
