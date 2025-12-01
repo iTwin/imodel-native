@@ -37,6 +37,14 @@
     #define SIZEOF_CURL_OFF_T 8 // copied from config-win32.h, seems reasonable for 64-bit
     #include "vendor/lib/config-bentleyopenssl.h"
     #include "vendor/lib/config-bentleylinux.h"
+    // c-ares configuration for Linux
+    #define RECVFROM_TYPE_ARG1 int
+    #define RECVFROM_TYPE_ARG2 void
+    #define RECVFROM_TYPE_ARG3 size_t
+    #define RECVFROM_TYPE_ARG4 int
+    #define RECVFROM_TYPE_ARG5 struct sockaddr
+    #define RECVFROM_TYPE_ARG6 socklen_t
+    #define RECVFROM_TYPE_RETV ssize_t
 #elif defined (BENTLEY_WINRT)
     #include "vendor/lib/config-bentleyopenssl.h"
     #include "vendor/lib/config-bentleywinrt.h"
