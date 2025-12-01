@@ -1379,11 +1379,12 @@ BentleyStatus ImportCommand::InsertCsvRow(Session& session, Statement& stmt, int
 //---------------------------------------------------------------------------------------
 Utf8String CheckTransformCommand::_GetUsage() const
     {
-    return " .check-transform schema <ecschema xml file|folder>\r\n"
+    return " .check-transform schema <ecschema xml file|folder> [importAfter]\r\n"
         COMMAND_USAGE_IDENT "Checks if transformation is required by trying to import the specified ECSchema XML file into the file. If a folder was specified, all ECSchemas\r\n"
         COMMAND_USAGE_IDENT "in the folder are tried for.\r\n"
+        COMMAND_USAGE_IDENT "Optional importAfter flag if specified, the schema will be imported after the check.\r\n"
         COMMAND_USAGE_IDENT "Note: Outstanding changes are committed before starting the import.\r\n"
-        COMMAND_USAGE_IDENT "Note: This command doesnot actually import the schema, it tries for an import and tells if transformation is required or not.\r\n"
+        COMMAND_USAGE_IDENT "Note: This command doesnot actually import the schema if the importAfter flag is not specified, it tries for an import and tells if transformation is required or not.\r\n"
         COMMAND_USAGE_IDENT "Note: This command should not be used with V8 legacy Schemas, using it with V8 EC Schemas can result in incorrect results or unexpected behaviour.\r\n";  // we donot support v8 schemas for this feature as discussed
     }
 
@@ -1394,13 +1395,19 @@ void CheckTransformCommand::_Run(Session& session, Utf8StringCR argsUnparsed) co
     {
     std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
 
-    if (args.size() != 2 || !args[0].EqualsIAscii("schema"))
+    if ((args.size() != 2 && args.size() != 3) || !args[0].EqualsIAscii("schema"))
         {
         IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
         }
 
-    if (!session.IsECDbFileLoaded(true))
+    if (args.size() == 3 && !args[2].EqualsIAscii("importAfter"))
+        {
+        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (!session.IsIModelFileLoaded(true))
         return;
 
     if (session.GetFile().GetHandle().IsReadonly())
@@ -1418,8 +1425,12 @@ void CheckTransformCommand::_Run(Session& session, Utf8StringCR argsUnparsed) co
 //---------------------------------------------------------------------------------------
 void CheckTransformCommand::RunTryImportSchema(Session& session, std::vector<Utf8String> const& args) const
     {
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_ERROR);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_ERROR);
+
     Utf8StringCR firstArg = args[1];
-    SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::None;
+    bool importAfter = (args.size() == 3 && args[2].EqualsIAscii("importAfter"));
 
     BeFileName ecschemaPath(firstArg);
     if (!ecschemaPath.DoesPathExist())
@@ -1498,36 +1509,42 @@ void CheckTransformCommand::RunTryImportSchema(Session& session, std::vector<Utf
         }
 
     bool cannotDetermineReason = false;
-    if (session.GetFile().GetType() == SessionFile::Type::IModel)
-        {
-        Dgn::SchemaStatus status = session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportSchemas(context->GetCache().GetSchemas());
-        if(status == Dgn::SchemaStatus::Success)
-            IModelConsole::WriteLine("No data transformation is required for importing %s '%s'. The %s '%s' can be imported successfully.", schemaStr, ecschemaPath.GetNameUtf8().c_str(), schemaStr, ecschemaPath.GetNameUtf8().c_str());
-        else if(status == Dgn::SchemaStatus::DataTransformRequired)
-            IModelConsole::WriteErrorLine("Data transformation is required for importing %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
-        else
-            {
-            cannotDetermineReason = true;
-            IModelConsole::WriteErrorLine("Could not determine whether data transformation is required or not for importing %s '%s'. Trying to import %s '%s' failed due to some reason.", schemaStr, ecschemaPath.GetNameUtf8().c_str(), schemaStr, ecschemaPath.GetNameUtf8().c_str());
-            }
-        }
+
+    Dgn::SchemaStatus status = session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportSchemas(schemas);
+    if(status == Dgn::SchemaStatus::Success)
+        IModelConsole::WriteLine("No transformation is required for importing %s '%s'. The %s '%s' can be imported successfully.", schemaStr, ecschemaPath.GetNameUtf8().c_str(), schemaStr, ecschemaPath.GetNameUtf8().c_str());
+    else if(status == Dgn::SchemaStatus::DataTransformRequired)
+        IModelConsole::WriteErrorLine("Transformation is required for importing %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
     else
         {
-        SchemaImportResult status = session.GetFile().GetECDbHandle()->Schemas().ImportSchemas(context->GetCache().GetSchemas(), options);
-        if(status == SchemaImportResult::OK)
-            IModelConsole::WriteLine("No data transformation is required for importing %s '%s'. The %s '%s' can be imported successfully.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
-        else if(status == SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED)
-            IModelConsole::WriteErrorLine("Data transformation is required for importing %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
-        else
-            {
-            cannotDetermineReason = true;
-            IModelConsole::WriteErrorLine("Could not determine whether data transformation is required or not for importing %s '%s'. Trying to import %s '%s' failed due to some reason.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
-            }
+        cannotDetermineReason = true;
+        IModelConsole::WriteErrorLine("Could not determine whether transformation is required or not for importing %s '%s'. Trying to import %s '%s' failed due to some reason.", schemaStr, ecschemaPath.GetNameUtf8().c_str(), schemaStr, ecschemaPath.GetNameUtf8().c_str());
         }
 
     session.GetFile().GetHandleR().AbandonChanges(); // we do not really want to import the schemas, we just want to try for an import
     if (session.GetIssues().HasIssue() && cannotDetermineReason)
         IModelConsole::WriteErrorLine("Issues \n %s", schemaStr, ecschemaPath.GetNameUtf8().c_str(), session.GetIssues().GetIssue());
+
+    if(importAfter)
+        {
+        
+        bool  schemaImportSuccessful = Dgn::SchemaStatus::Success == session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR().ImportSchemas(schemas, true);
+
+        if (schemaImportSuccessful)
+            {
+            session.GetFile().GetHandleR().SaveChanges();
+            IModelConsole::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+            return;
+            }
+        else
+            {
+            session.GetFile().GetHandleR().AbandonChanges();
+            if (session.GetIssues().HasIssue())
+                IModelConsole::WriteErrorLine("Failed to import %s '%s': %s", schemaStr, ecschemaPath.GetNameUtf8().c_str(), session.GetIssues().GetIssue());
+            else
+                IModelConsole::WriteErrorLine("Failed to import %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+            }
+        }
     }
 
 //******************************* ExportCommand ******************
