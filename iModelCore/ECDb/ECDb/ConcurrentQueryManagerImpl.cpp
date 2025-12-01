@@ -78,31 +78,25 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
     auto newCachedAdaptor = CachedQueryAdaptor::Make();
     newCachedAdaptor->SetWorkerConn(m_conn.GetDb());
     newCachedAdaptor->SetUsePrimaryConn(usePrimaryConn);
-    if(usePrimaryConn)
-        return TryGetWithPrimaryDbLock(ecsql, usePrimaryConn, suppressLogError, status, ecsql_error, newCachedAdaptor, queue);
-    else
-        return TryGetWithoutPrimaryDbLock(ecsql, usePrimaryConn, suppressLogError, status, ecsql_error, newCachedAdaptor, queue);
-
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGetWithPrimaryDbLock(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, std::shared_ptr<BentleyM0200::BeSQLite::EC::CachedQueryAdaptor>& newCachedAdaptor, RunnableRequestQueue& queue) 
-    {
     BeMutex& ecdbMutex = m_conn.GetPrimaryDb().GetImpl().GetMutex();
-    while(!ecdbMutex.try_lock())
-        {
-        if(queue.GetState() == RunnableRequestQueue::State::Stop)
-            {
+    while(!ecdbMutex.try_lock()) {
+        if(queue.GetState() == RunnableRequestQueue::State::Stop) {
             status = ECSqlStatus::Error;
-            ecsql_error = "Concurrent Query is shutting down, cannot prepare ECSql statement.";
+            ecsql_error = "Queue is shut down, cannot go ahead with the request.";
             return nullptr;
-            }
         }
+        std::this_thread::yield();
+    }
     ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
-    status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
-    
+    if (usePrimaryConn)
+        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
+    else {
+        if (m_doNotUsePrimaryConnToPrepare) {
+            status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
+        } else {
+            status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
+        }
+    }
     if (status != ECSqlStatus::Success) {
         ecsql_error = err_scope.GetLastError();
         ecdbMutex.unlock();
@@ -114,30 +108,9 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGetWithPrimaryDbLock(U
     m_cache.insert(m_cache.begin(), newCachedAdaptor);
     ecdbMutex.unlock();
     return newCachedAdaptor;
-    }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGetWithoutPrimaryDbLock(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, std::shared_ptr<BentleyM0200::BeSQLite::EC::CachedQueryAdaptor>& newCachedAdaptor, RunnableRequestQueue& queue) 
-    {
-    // No try lock machnism required here as while concurrent query shutdown we lock the ecdb mutex which is the primary connection mutex so deadlock can't happen here
-    ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetDb()));
-    if(m_doNotUsePrimaryConnToPrepare)
-        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
-    else
-        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
-    
-    if (status != ECSqlStatus::Success) {
-        ecsql_error = err_scope.GetLastError();
-        return nullptr;
-    }
-    while (m_cache.size() > m_maxEntries)
-        m_cache.pop_back();
+}
 
-    m_cache.insert(m_cache.begin(), newCachedAdaptor);
-    return newCachedAdaptor;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
