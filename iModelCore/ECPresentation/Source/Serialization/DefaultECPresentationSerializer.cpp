@@ -1218,6 +1218,8 @@ rapidjson::Value DefaultECPresentationSerializer::_AsJson(ContextR ctx, RelatedC
         json.AddMember("IsTargetPolymorphic", relatedClass.GetTargetClass().IsSelectPolymorphic(), allocator);
     if (relatedClass.IsTargetOptional())
         json.AddMember("IsTargetOptional", relatedClass.IsTargetOptional(), allocator);
+    if (!relatedClass.GetTargetInstanceFilter().empty())
+        json.AddMember("TargetInstanceFilter", rapidjson::Value(relatedClass.GetTargetInstanceFilter().c_str(), allocator), allocator);
 
     json.AddMember("RelationshipInfo", _AsJson(ctx, relatedClass.GetRelationship().GetClass(), &allocator), allocator);
     if (!relatedClass.GetRelationship().GetAlias().empty())

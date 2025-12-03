@@ -83,7 +83,7 @@
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
         <RequiredRepository>iModelUnitTestData</RequiredRepository>
         <SubPart PartName="iModelPlatformDLL"/>
-        <SubPart PartName="GeoCoordWorkspaceData" PartFile="iModelCore/libsrc/csmap/csmap"/>
+        <SubPart PartName="GeoCoordDictionaryData" PartFile="iModelCore/libsrc/csmap/csmap"/>
         <SubPart PartName="iModelPlatformUnitTestHelpers"/>
         <Bindings>
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>

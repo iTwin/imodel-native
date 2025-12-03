@@ -1,6 +1,6 @@
 ﻿// © 2016 and later: Unicode, Inc. and others.
 // License & terms of use: http://www.unicode.org/copyright.html
-// Generated using tools/cldr/cldr-to-icu/build-icu-data.xml
+// Generated using tools/cldr/cldr-to-icu/
 ro{
     Countries{
         001{"Lume"}
@@ -85,6 +85,7 @@ ro{
         CN{"China"}
         CO{"Columbia"}
         CP{"Insula Clipperton"}
+        CQ{"Sark"}
         CR{"Costa Rica"}
         CU{"Cuba"}
         CV{"Capul Verde"}
@@ -298,6 +299,9 @@ ro{
         ZW{"Zimbabwe"}
         ZZ{"Regiune necunoscută"}
     }
+    Countries%chagos{
+        IO{"Arhipelagul Chagos"}
+    }
     Countries%short{
         HK{"Hong Kong"}
         MO{"Macao"}
@@ -314,6 +318,6 @@ ro{
         NZ{"Aotearoa Noua Zeelandă"}
         SZ{"Swaziland"}
         TL{"Timorul de Est"}
-        TR{"Türkiye"}
+        TR{"TR-variant"}
     }
 }

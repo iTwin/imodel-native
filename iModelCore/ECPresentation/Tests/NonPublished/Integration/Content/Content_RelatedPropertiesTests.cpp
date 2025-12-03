@@ -8010,34 +8010,35 @@ R"*(
             <Class class = "Aspect" />
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="DerivedAspect">
+    <ECEntityClass typeName="Aspect1">
         <BaseClass>Aspect</BaseClass>
-        <ECProperty propertyName="intProp" typeName="int"/>
+        <ECProperty propertyName="Prop1" typeName="int"/>
     </ECEntityClass>
-    <ECEntityClass typeName="InfoAspect">
+    <ECEntityClass typeName="Aspect2">
         <BaseClass>Aspect</BaseClass>
-        <ECProperty propertyName="intProp" typeName="int"/>
+        <ECProperty propertyName="Prop2" typeName="string"/>
     </ECEntityClass>
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, HandlesContentWithPolymorphicallyRelatedPropertiesAndRelatedInstanceUsedInInstanceFilterCorrectly)
     {
     // prepare the dataset
     ECRelationshipClassCP rel = dynamic_cast<ECRelationshipClass const *>(GetSchema()->GetClassCP("ElementHasAspect"));
-    ECClassCP ecClassElement = GetSchema()->GetClassCP("Element");
-    ECClassCP ecClassAspect = GetSchema()->GetClassCP("Aspect");
-    ECClassCP ecClassInfoAspect = GetSchema()->GetClassCP("InfoAspect");
+    ECClassCP elementClass = GetSchema()->GetClassCP("Element");
+    ECClassCP aspect1Class = GetSchema()->GetClassCP("Aspect1");
+    ECClassCP aspect2Class= GetSchema()->GetClassCP("Aspect2");
 
-    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClassElement);
-    IECInstancePtr infoAspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClassInfoAspect, [](IECInstanceR instance) {instance.SetValue("intProp", ECValue(75)); });
-
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element, *infoAspect, nullptr, true);
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr filterAspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspect1Class, [](IECInstanceR instance){instance.SetValue("Prop1", ECValue(75));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element, *filterAspect);
+    IECInstancePtr dataAspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspect2Class, [](IECInstanceR instance){instance.SetValue("Prop2", ECValue("One")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element, *dataAspect);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     ContentRuleP rule = new ContentRule("", 1, false);
-    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "b.intProp < 100", ecClassElement->GetFullName(), true, false);
-    specification->AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, rel->GetFullName(), ecClassInfoAspect->GetFullName(), "b", true));
-    specification->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel->GetFullName(), ecClassAspect->GetFullName(), "*",
+    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "b.Prop1 < 100", elementClass->GetFullName(), true, false);
+    specification->AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, rel->GetFullName(), aspect1Class->GetFullName(), "b", true));
+    specification->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel->GetFullName(), aspect2Class->GetFullName(), "Prop2",
         RelationshipMeaning::RelatedInstance, true));
 
     rule->AddSpecification(*specification);
@@ -8068,17 +8069,17 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HandlesContentWithPolymorph
                 "ECInstanceId": "%s"
                 }],
             "Values": {
-                "%s": 75
+                "%s": "One"
                 },
             "DisplayValues": {
-                "%s": "75"
+                "%s": "One"
                 },
             "MergedFieldNames": []
             }]
         })",
-        NESTED_CONTENT_FIELD_NAME(ecClassElement, ecClassInfoAspect),
-        ecClassInfoAspect->GetId().ToString().c_str(), infoAspect->GetInstanceId().c_str(),
-        FIELD_NAME(ecClassInfoAspect, "intProp"), FIELD_NAME(ecClassInfoAspect, "intProp")).c_str());
+        NESTED_CONTENT_FIELD_NAME(elementClass, aspect2Class),
+        aspect2Class->GetId().ToString().c_str(), dataAspect->GetInstanceId().c_str(),
+        FIELD_NAME(aspect2Class, "Prop2"), FIELD_NAME(aspect2Class, "Prop2")).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
