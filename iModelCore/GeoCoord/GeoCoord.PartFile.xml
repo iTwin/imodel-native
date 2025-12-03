@@ -37,7 +37,7 @@
 
     <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="GeoCoord" />
-        <SubPart PartName="GeoCoordWorkspaceData"            PartFile="iModelCore/libsrc/csmap/csmap"/>
+        <SubPart PartName="GeoCoordDictionaryData"            PartFile="iModelCore/libsrc/csmap/csmap"/>
         <Bindings>
             <PublicAPI Domain="GeoCoord" />
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeoCoord/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
@@ -94,7 +94,7 @@
 
     <Part Name="UnitTests-ExtensiveTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=ExtensiveTests">
         <SubPart PartName="GeoCoord" />
-        <SubPart PartName="GeoCoordWorkspaceData"            PartFile="iModelCore/libsrc/csmap/csmap"/>
+        <SubPart PartName="GeoCoordDictionaryData"            PartFile="iModelCore/libsrc/csmap/csmap"/>
         <Bindings>
             <PublicAPI Domain="GeoCoord" />
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeoCoord/ExtensiveTests" SourceName="Delivery/UnitTests/Objects/ExtensiveTests"/>
