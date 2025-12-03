@@ -13,6 +13,7 @@
             <VendorAPI Domain="proxyres" />
             <Libs>Delivery/$(stlibprefix)proxyres$(stlibext)</Libs>
             <VendorNotices>Delivery/proxyres-license.txt</VendorNotices>
+            <VendorNotices>Delivery/ios-cmake-license.txt</VendorNotices>
         </Bindings>
     </Part>
 

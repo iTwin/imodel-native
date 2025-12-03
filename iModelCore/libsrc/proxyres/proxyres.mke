@@ -14,6 +14,12 @@ vendorSrc = $(_MakeFilePath)vendor/
     %else
         configDir=Release/
     %endif
+%elif $(TARGET_PLATFORM)=="iOS"
+    %if defined (DEBUG)
+        configDir=Debug-iphoneos/
+    %else
+        configDir=Release-iphoneos/
+    %endif
 %else
     configDir=
 %endif
@@ -23,12 +29,22 @@ always:
 
 $(o)$(libprefix)proxyres$(libext) :
     ~chdir $(vendorSrc)
-    %if defined (DEBUG)
-        cmake -S . -B $(o) -D CMAKE_BUILD_TYPE=Debug
-        cmake --build $(o) --config Debug
+    %if $(TARGET_PLATFORM)=="iOS"
+        %if defined (DEBUG)
+            cmake -S . -G Xcode -DCMAKE_TOOLCHAIN_FILE=../../ios-cmake/ios.toolchain.cmake -DPLATFORM=OS64 -B $(o) -D CMAKE_BUILD_TYPE=Debug
+            cmake --build $(o) --config Debug
+        %else
+            cmake -S . -G Xcode -DCMAKE_TOOLCHAIN_FILE=../../ios-cmake/ios.toolchain.cmake -DPLATFORM=OS64 -B $(o)
+            cmake --build $(o) --config Release
+        %endif
     %else
-        cmake -S . -B $(o)
-        cmake --build $(o) --config Release
+        %if defined (DEBUG)
+            cmake -S . -B $(o) -D CMAKE_BUILD_TYPE=Debug
+            cmake --build $(o) --config Debug
+        %else
+            cmake -S . -B $(o)
+            cmake --build $(o) --config Release
+        %endif
     %endif
 
 # Vendor API
@@ -39,4 +55,7 @@ $(BuildContext)Delivery/$(stlibprefix)proxyres$(stlibext) : $(o)$(configDir)$(st
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)Delivery/proxyres-license.txt : $(vendorSrc)LICENSE.md
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/ios-cmake-license.txt : $(_MakeFilePath)../ios-cmake/LICENSE.md
     $(LinkFirstDepToFirstTarget)
