@@ -8,7 +8,7 @@
         <SubPart PartName="LibraryStatic" />
     </Part>
 
-    <Part Name="proxyreslib" BentleyBuildMakeFile="proxyres.mke">
+    <Part Name="proxyreslib" BentleyBuildMakeFile="proxyres.mke" ExcludePlatforms="android*">
         <Bindings>
             <VendorAPI Domain="proxyres" />
             <Libs>Delivery/$(stlibprefix)proxyres$(stlibext)</Libs>

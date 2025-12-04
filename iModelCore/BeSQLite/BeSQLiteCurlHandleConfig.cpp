@@ -5,7 +5,12 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "SQLite/sqlite3.h"
 #include <curl/curl.h>
+#ifndef ANDROID
+#define ENABLE_PROXYRES
+#endif // !ANDROID
+#ifdef ENABLE_PROXYRES
 #include <proxyres/proxyres.h>
+#endif // ENABLE_PROXYRES
 #include <cstdlib>
 #include <ctime>
 #include <map>
@@ -73,6 +78,8 @@ void besqlite_bcv_set_cacert_path(const std::string& caFilename) {
 }
 
 #endif // __APPLE__
+
+#ifdef ENABLE_PROXYRES
 
 static const std::string& getEnvProxy() {
     static bool envChecked = false;
@@ -148,11 +155,7 @@ static const std::string& getProxyForUrl(const std::string& url) {
     return s_proxyMap[key].second;
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int besqlite_bcv_curl_handle_config(CURL * pCurl, int /*eMethod*/, const char * zUri) {
+void setupProxyResolver(CURL * pCurl, const char * zUri) {
     static int s_initialized = 0;
     if (!s_initialized) {
         proxy_resolver_global_init();
@@ -168,6 +171,18 @@ int besqlite_bcv_curl_handle_config(CURL * pCurl, int /*eMethod*/, const char * 
         // printf("No proxy for %s\n", zUri);
         curl_easy_setopt(pCurl, CURLOPT_PROXY, NULL);
     }
+}
+
+#endif // ENABLE_PROXYRES
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int besqlite_bcv_curl_handle_config(CURL * pCurl, int /*eMethod*/, const char * zUri) {
+#ifdef ENABLE_PROXYRES
+    setupProxyResolver(pCurl, zUri);
+#endif // ENABLE_PROXYRES
     curl_easy_setopt(pCurl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_REVOKE_BEST_EFFORT);
 #ifdef __APPLE__
     const std::string& certsPath = getCACertPath();

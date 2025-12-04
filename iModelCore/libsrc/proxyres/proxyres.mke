@@ -27,24 +27,30 @@ vendorSrc = $(_MakeFilePath)vendor/
 always:
     !~@mkdir $(o)
 
+%if defined (DEBUG)
+    CMAKE_BUILD_TYPE=Debug
+%else
+    CMAKE_BUILD_TYPE=Release
+%endif
+
 $(o)$(libprefix)proxyres$(libext) :
     ~chdir $(vendorSrc)
     %if $(TARGET_PLATFORM)=="iOS"
-        %if defined (DEBUG)
-            cmake -S . -G Xcode -DCMAKE_TOOLCHAIN_FILE=../../ios-cmake/ios.toolchain.cmake -DPLATFORM=OS64 -B $(o) -D CMAKE_BUILD_TYPE=Debug
-            cmake --build $(o) --config Debug
-        %else
-            cmake -S . -G Xcode -DCMAKE_TOOLCHAIN_FILE=../../ios-cmake/ios.toolchain.cmake -DPLATFORM=OS64 -B $(o)
-            cmake --build $(o) --config Release
-        %endif
+        cmake -S . -G Xcode \
+            -DCMAKE_TOOLCHAIN_FILE=../../ios-cmake/ios.toolchain.cmake \
+            -DPLATFORM=OS64 \
+            -DPROXYRES_BUILD_CLI=OFF \
+            -DPROXYRES_BUILD_TESTS=OFF \
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+            -B $(o)
+        cmake --build $(o) --config ${CMAKE_BUILD_TYPE}
     %else
-        %if defined (DEBUG)
-            cmake -S . -B $(o) -D CMAKE_BUILD_TYPE=Debug
-            cmake --build $(o) --config Debug
-        %else
-            cmake -S . -B $(o)
-            cmake --build $(o) --config Release
-        %endif
+        cmake -S . \
+            -DPROXYRES_BUILD_CLI=OFF \
+            -DPROXYRES_BUILD_TESTS=OFF \
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+            -B $(o)
+        cmake --build $(o) --config ${CMAKE_BUILD_TYPE}
     %endif
 
 # Vendor API
