@@ -78,6 +78,9 @@ public:
     //! unlock the mutex
     BENTLEYDLL_EXPORT void unlock();
     void Leave() {unlock();}
+
+    //! try locking the mutex
+    BENTLEYDLL_EXPORT bool try_lock();
 };
 
 //=======================================================================================
