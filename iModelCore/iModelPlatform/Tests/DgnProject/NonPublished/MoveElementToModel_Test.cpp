@@ -80,7 +80,9 @@ TEST_F(MoveElementToModelTests, SimpleElementMoveAcrossModels)
     VerifyElementInModel(elementId, sourceModel->GetModelId(), "Before move");
 
     // Move element to target model
-    EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().MoveElementToModel(*firstElement, targetModel->GetModelId()));
+    DgnDbStatus stat;
+    auto movedIds = m_db->Elements().MoveElementToModel(*firstElement, targetModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
 
     // Verify element is now in target model
     VerifyElementInModel(elementId, targetModel->GetModelId(), "After move");
@@ -95,7 +97,9 @@ TEST_F(MoveElementToModelTests, RejectMoveElementWithParent)
     EXPECT_TRUE(childElement->GetParentId().IsValid());
 
     // Attempt to move child (which has a parent element)
-    EXPECT_EQ(DgnDbStatus::ParentBlockedChange, m_db->Elements().MoveElementToModel(*childElement, targetModel->GetModelId()));
+    DgnDbStatus stat;
+    m_db->Elements().MoveElementToModel(*childElement, targetModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::ParentBlockedChange, stat);
 
     // Verify child is still in source model
     VerifyElementInModel(childElement->GetElementId(), sourceModel->GetModelId(), "After move");
@@ -122,7 +126,9 @@ TEST_F(MoveElementToModelTests, MoveElementWithChildren)
     VerifyElementsInModel({parentId, child1Id, child2Id, grandchildId}, sourceModel->GetModelId(), "Before move - elements should be in source model");
 
     // Move parent with descendants
-    EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().MoveElementToModel(*firstElement, targetModel->GetModelId()));
+    DgnDbStatus stat;
+    auto movedIds = m_db->Elements().MoveElementToModel(*firstElement, targetModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
 
     // Verify all elements are now in target model
     VerifyElementsInModel({parentId, child1Id, child2Id, grandchildId}, targetModel->GetModelId(), "After move - elements should be in target model");
@@ -151,7 +157,9 @@ TEST_F(MoveElementToModelTests, UniqueAspectPreserved)
 
     // Move element
     DgnElementCPtr beforeMove = m_db->Elements().GetElement(elementId);
-    EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().MoveElementToModel(*beforeMove, targetModel->GetModelId()));
+    DgnDbStatus stat;
+    auto movedIds = m_db->Elements().MoveElementToModel(*beforeMove, targetModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
 
     // Verify aspect preserved
     DgnElementCPtr afterMove = m_db->Elements().GetElement(elementId);
@@ -175,7 +183,9 @@ TEST_F(MoveElementToModelTests, MultiAspectPreserved)
 
     // Move element
     DgnElementCPtr beforeMove = m_db->Elements().GetElement(elementId);
-    EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().MoveElementToModel(*beforeMove, targetModel->GetModelId()));
+    DgnDbStatus stat;
+    auto movedIds = m_db->Elements().MoveElementToModel(*beforeMove, targetModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
 
     // Verify aspect preserved
     DgnElementCPtr afterMove = m_db->Elements().GetElement(elementId);
@@ -202,7 +212,9 @@ TEST_F(MoveElementToModelTests, DeepHierarchyMove)
     ASSERT_TRUE(greatGrandchild1Element.IsValid());
 
     // Move root element
-    EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().MoveElementToModel(*firstElement, targetModel->GetModelId()));
+    DgnDbStatus stat;
+    auto movedIds = m_db->Elements().MoveElementToModel(*firstElement, targetModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
 
     // Verify all descendants moved
     VerifyElementsInModel({
@@ -218,7 +230,9 @@ TEST_F(MoveElementToModelTests, DeepHierarchyMove)
 TEST_F(MoveElementToModelTests, MoveToSameModelIsNoop)
     {
     // Try to move element to its current model
-    EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().MoveElementToModel(*firstElement, sourceModel->GetModelId()));
+    DgnDbStatus stat;
+    m_db->Elements().MoveElementToModel(*firstElement, sourceModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
 
     // Verify element is still in source model
     VerifyElementInModel(firstElement->GetElementId(), sourceModel->GetModelId(), "After move");
@@ -227,7 +241,9 @@ TEST_F(MoveElementToModelTests, MoveToSameModelIsNoop)
 TEST_F(MoveElementToModelTests, MoveToInvalidModelFails)
     {
     DgnModelId invalidModelId;
-    EXPECT_EQ(DgnDbStatus::InvalidId, m_db->Elements().MoveElementToModel(*firstElement, invalidModelId));
+    DgnDbStatus stat;
+    m_db->Elements().MoveElementToModel(*firstElement, invalidModelId, stat);
+    EXPECT_EQ(DgnDbStatus::InvalidId, stat);
 
     // Verify element is still in source model
     VerifyElementInModel(firstElement->GetElementId(), sourceModel->GetModelId(), "After move");
@@ -246,7 +262,9 @@ TEST_F(MoveElementToModelTests, CodePreservedAfterMove)
     DgnCode originalCode = insertedElement->GetCode();
 
     // Move element
-    EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().MoveElementToModel(*insertedElement, targetModel->GetModelId()));
+    DgnDbStatus stat;
+    auto movedIds = m_db->Elements().MoveElementToModel(*insertedElement, targetModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
 
     // Verify code is preserved
     DgnElementCPtr movedElement = m_db->Elements().GetElement(insertedElement->GetElementId());
@@ -262,7 +280,9 @@ TEST_F(MoveElementToModelTests, CacheInvalidatedAfterMove)
     VerifyElementInModel(elementId, sourceModel->GetModelId(), "Before move");
 
     // Move element
-    EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().MoveElementToModel(*firstElement, targetModel->GetModelId()));
+    DgnDbStatus stat;
+    auto movedIds = m_db->Elements().MoveElementToModel(*firstElement, targetModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
 
     // Load element again - should get updated version from DB
     VerifyElementInModel(elementId, targetModel->GetModelId(), "After move");
@@ -300,14 +320,17 @@ TEST_F(MoveElementToModelTests, RollbackWhenTargetModelRejectsInsert)
 
     // Attempt move to definition model - should fail because TestElement is Geometric3d
     // DefinitionModel's _OnInsertElement will return DgnDbStatus::WrongModel
-    EXPECT_EQ(DgnDbStatus::WrongModel, m_db->Elements().MoveElementToModel(*firstElement, definitionModel->GetModelId()));
+    DgnDbStatus stat;
+    m_db->Elements().MoveElementToModel(*firstElement, definitionModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::WrongModel, stat);
     
     // Verify ALL elements remain in source model
     VerifyElementsInModel(allElements, sourceModel->GetModelId(), "After failed move to DefinitionModel - elements should remain in source model");
 
     // Attempt move to drawing model - should fail because TestElement is Geometric3d and not Geometric2d
     // DrawingModel's _OnInsertElement will return DgnDbStatus::Mismatch2d3d
-    EXPECT_EQ(DgnDbStatus::Mismatch2d3d, m_db->Elements().MoveElementToModel(*firstElement, drawingModel->GetModelId()));
+    m_db->Elements().MoveElementToModel(*firstElement, drawingModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::Mismatch2d3d, stat);
     
     // Verify ALL elements remain in source model
     VerifyElementsInModel(allElements, sourceModel->GetModelId(), "After failed move to DrawingModel - elements should remain in source model");
@@ -329,7 +352,9 @@ TEST_F(MoveElementToModelTests, ModelScopedCodeConflictWithRootElement)
     ASSERT_TRUE(insertedElement2.IsValid());
 
     // Attempt move - should fail with DuplicateCode
-    EXPECT_EQ(DgnDbStatus::DuplicateCode, m_db->Elements().MoveElementToModel(*insertedElement1, targetModel->GetModelId()));
+    DgnDbStatus stat;
+    m_db->Elements().MoveElementToModel(*insertedElement1, targetModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::DuplicateCode, stat);
 
     // Verify elements remain in their original models
     VerifyElementInModel(insertedElement1->GetElementId(), sourceModel->GetModelId(), "After move");
@@ -357,7 +382,9 @@ TEST_F(MoveElementToModelTests, ModelScopedCodeConflictWithChildElement)
     ASSERT_TRUE(insertedElement2.IsValid());
 
     // Attempt move - should fail with DuplicateCode
-    EXPECT_EQ(DgnDbStatus::DuplicateCode, m_db->Elements().MoveElementToModel(*insertedElement1, targetModel->GetModelId()));
+    DgnDbStatus stat;
+    m_db->Elements().MoveElementToModel(*insertedElement1, targetModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::DuplicateCode, stat);
 
     // Verify all elements remain in their original models
     VerifyElementsInModel({ insertedElement1->GetElementId(), insertedChild1->GetElementId() }, sourceModel->GetModelId(), "After code conflict - elements should remain in source model");
@@ -376,7 +403,9 @@ TEST_F(MoveElementToModelTests, UndoRedoMoveElement)
     m_db->SaveChanges("Insert test elements");
 
     // Move element to target model
-    EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().MoveElementToModel(*firstElement, targetModel->GetModelId()));
+    DgnDbStatus stat;
+    auto movedIds = m_db->Elements().MoveElementToModel(*firstElement, targetModel->GetModelId(), stat);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
     m_db->SaveChanges("Move elements to target model");
 
     // Verify element is now in target model

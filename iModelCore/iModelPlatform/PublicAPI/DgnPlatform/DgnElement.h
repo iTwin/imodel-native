@@ -4038,11 +4038,12 @@ public:
     //! If validation fails or any error occurs, no changes are made to the database.
     //! @param[in] element The root element to move. Must not have a parent element.
     //! @param[in] targetModelId The DgnModelId of the destination model
-    //! @return DgnDbStatus::Success if the move was successful, error status otherwise.
+    //! @param[out] stat Status of the move operation
+    //! @return The set of DgnElementIds of all elements that were moved, including the root element.
     //! @note All child elements in the hierarchy are moved along with the root element.
     //! @note Element codes are automatically updated to use the target model's scope.
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnDbStatus MoveElementToModel(DgnElementCR element, const DgnModelId targetModelId);
+    DGNPLATFORM_EXPORT DgnElementIdSet MoveElementToModel(DgnElementCR element, const DgnModelId targetModelId, DgnDbStatus& stat);
 
     //! Set the maximum number of elements to be held by the "Most Recentley Used" element cache for this DgnDb.
     //! @param newMax The maximum number of elements to be held in the element MRU cache. After this many elements are in memory,

@@ -1732,7 +1732,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_STRING(0, elementIdStr);
         REQUIRE_ARGUMENT_STRING(1, targetModelIdStr);
 
-        return Napi::Number::New(Env(), static_cast<int>(JsInterop::MoveElementToModel(db, elementIdStr, targetModelIdStr)));
+        DgnDbStatus status;
+        const auto movedElementIds = JsInterop::MoveElementToModel(db, elementIdStr, targetModelIdStr, status);
+        if (DgnDbStatus::Success != status)
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Error moving element to model", status);
+
+        uint32_t index = 0;
+        auto returnArray = Napi::Array::New(Env(), movedElementIds.size());
+        for (const auto& elemId : movedElementIds)
+            returnArray.Set(index++, Napi::String::New(Env(), elemId.ToHexStr().c_str()));
+
+        return returnArray;
     }
 
     void DeleteElement(NapiInfoCR info) {

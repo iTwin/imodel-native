@@ -654,7 +654,7 @@ namespace
         };
     }
 
-DgnDbStatus DgnElements::MoveElementToModel(DgnElementCR element, const DgnModelId targetModelId)
+DgnElementIdSet DgnElements::MoveElementToModel(DgnElementCR element, const DgnModelId targetModelId, DgnDbStatus& stat)
     {
     DgnDb::VerifyClientThread();
 
@@ -663,15 +663,24 @@ DgnDbStatus DgnElements::MoveElementToModel(DgnElementCR element, const DgnModel
 
     // Validate models
     if (!sourceModel.IsValid() || !targetModel.IsValid())
-        return DgnDbStatus::InvalidId;
+        {
+        stat = DgnDbStatus::InvalidId;
+        return DgnElementIdSet();
+        }
 
     // Already in target model (noop)
     if (sourceModel->GetModelId() == targetModel->GetModelId())
-        return DgnDbStatus::Success;
+        {
+        stat = DgnDbStatus::Success;
+        return DgnElementIdSet();
+        }
 
     // Should not move if an element has a parent
     if (element.m_parent.IsValid())
-        return DgnDbStatus::ParentBlockedChange;
+        {
+        stat = DgnDbStatus::ParentBlockedChange;
+        return DgnElementIdSet();
+        }
 
     // Collect all element IDs to move
     DgnElementIdSet allElementIds;
@@ -686,58 +695,73 @@ DgnDbStatus DgnElements::MoveElementToModel(DgnElementCR element, const DgnModel
         {
         DgnElementCPtr elem = GetElement(elemId);
         if (!elem.IsValid())
-            return DgnDbStatus::InvalidId;
+            {
+            stat = DgnDbStatus::InvalidId;
+            return DgnElementIdSet();
+            }
 
-        // Calculate new code for target model
-        DgnCode newCode = DgnCode::CreateWithDbContext(m_dgndb, elem->GetCode().GetCodeSpecId(), targetModel->GetModeledElementId(), elem->GetCode().GetValueUtf8());
+        // Compute new code with target model scope
+        DgnCode newCode = DgnCode::CreateWithDbContext(
+            m_dgndb, 
+            elem->GetCode().GetCodeSpecId(), 
+            targetModel->GetModeledElementId(), 
+            elem->GetCode().GetValueUtf8());
         
-        // Check for code conflicts in the target model
+        // Check for code conflicts in target model
         if (QueryElementIdByCode(newCode).IsValid())
-            return DgnDbStatus::DuplicateCode;
+            {
+            stat = DgnDbStatus::DuplicateCode;
+            return DgnElementIdSet();
+            }
 
-        // Validate with source model
-        DgnDbStatus stat = sourceModel->_OnDeleteElement(*elem);
+        // Validate removal from source model
+        stat = sourceModel->_OnDeleteElement(*elem);
         if (DgnDbStatus::Success != stat)
-            return stat;
+            return DgnElementIdSet();
 
+        // Validate insertion into target model
         DgnElementPtr tempElement = elem->MakeCopy<DgnElement>();
         tempElement->SetCode(newCode);
         tempElement->m_modelId = targetModel->GetModelId();
-
-        // Validate with target model
+        
         stat = targetModel->_OnInsertElement(*tempElement);
         if (DgnDbStatus::Success != stat)
-            return stat;
+            return DgnElementIdSet();
 
         elementsToMove.push_back({elemId, elem, newCode});
         }
 
-    // Perform the database update
+    // Update ModelId for all elements in database
     auto updateStmt = m_dgndb.GetCachedStatement("UPDATE bis_Element SET ModelId=? WHERE InVirtualSet(?, Id)");
     if (!updateStmt.IsValid())
-        return DgnDbStatus::SQLiteError;
+        {
+        stat = DgnDbStatus::SQLiteError;
+        return DgnElementIdSet();
+        }
 
     updateStmt->BindId(1, targetModelId);
     updateStmt->BindVirtualSet(2, allElementIds);
     
     if (BE_SQLITE_DONE != updateStmt->Step())
-        return DgnDbStatus::WriteError;
+        {
+        stat = DgnDbStatus::SQLiteError;
+        return DgnElementIdSet();
+        }
 
     for (const auto& elemToMove : elementsToMove)
         {
         sourceModel->_OnDeletedElement(elemToMove.m_id);
         
-        // Create a mutable copy with updated model for notification
         DgnElementPtr movedElement = elemToMove.m_element->MakeCopy<DgnElement>();
         movedElement->SetCode(elemToMove.m_newCode);
         movedElement->m_modelId = targetModel->GetModelId();
         targetModel->_OnInsertedElement(*movedElement);
         
-        // Drop from cache so next load gets the updated element
         DropFromPool(*elemToMove.m_element);
         }
 
-    return DgnDbStatus::Success;
+    stat = DgnDbStatus::Success;
+    return allElementIds;
     }
 
 /*---------------------------------------------------------------------------------**//**
