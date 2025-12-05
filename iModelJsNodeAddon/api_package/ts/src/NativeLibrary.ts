@@ -766,6 +766,7 @@ export declare namespace IModelJsNative {
     public getChangesetHealthData(changesetId: string): ChangesetHealthStats;
     public getAllChangesetHealthData(): ChangesetHealthStats[];
     public updateElement(elemProps: Partial<ElementProps>): void;
+    public moveElementToModel(elementId: Id64String, modelId: Id64String): IModelStatus;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;
     public updateIModelProps(props: IModelProps): void;

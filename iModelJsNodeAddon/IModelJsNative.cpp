@@ -1727,6 +1727,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         JsInterop::UpdateElement(db, elemProps);
     }
 
+    Napi::Value MoveElementToModel(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING(0, elementIdStr);
+        REQUIRE_ARGUMENT_STRING(1, targetModelIdStr);
+
+        return Napi::Number::New(Env(), static_cast<int>(JsInterop::MoveElementToModel(db, elementIdStr, targetModelIdStr)));
+    }
+
     void DeleteElement(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
@@ -3164,6 +3172,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeDgnDb::SchemaSyncGetLocalDbInfo),
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeDgnDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
+            InstanceMethod("moveElementToModel", &NativeDgnDb::MoveElementToModel),
             InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
             InstanceMethod("updateElementGeometryCache", &NativeDgnDb::UpdateElementGeometryCache),
             InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
