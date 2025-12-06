@@ -1727,6 +1727,24 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         JsInterop::UpdateElement(db, elemProps);
     }
 
+    Napi::Value MoveElementToModel(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING(0, elementIdStr);
+        REQUIRE_ARGUMENT_STRING(1, targetModelIdStr);
+
+        DgnDbStatus status;
+        const auto movedElementIds = JsInterop::MoveElementToModel(db, elementIdStr, targetModelIdStr, status);
+        if (DgnDbStatus::Success != status)
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Error moving element to model", status);
+
+        uint32_t index = 0;
+        auto returnArray = Napi::Array::New(Env(), movedElementIds.size());
+        for (const auto& elemId : movedElementIds)
+            returnArray.Set(index++, Napi::String::New(Env(), elemId.ToHexStr().c_str()));
+
+        return returnArray;
+    }
+
     void DeleteElement(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
@@ -3164,6 +3182,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeDgnDb::SchemaSyncGetLocalDbInfo),
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeDgnDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
+            InstanceMethod("moveElementToModel", &NativeDgnDb::MoveElementToModel),
             InstanceMethod("updateElementAspect", &NativeDgnDb::UpdateElementAspect),
             InstanceMethod("updateElementGeometryCache", &NativeDgnDb::UpdateElementGeometryCache),
             InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),

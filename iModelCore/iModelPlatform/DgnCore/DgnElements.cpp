@@ -624,6 +624,146 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement)
     return DgnDbStatus::Success;
     }
 
+namespace
+    {
+    void GetElementHierarchy(DgnDbCR db, const DgnElementId rootId, DgnElementIdSet& elements)
+        {
+        // Collect all child elements recursively
+        const auto stmt = db.GetCachedStatement(R"sql(
+            WITH RECURSIVE elements(id) AS (
+                SELECT Id FROM bis_Element WHERE ParentId=?
+                    UNION ALL
+                SELECT e.Id FROM bis_Element e
+                JOIN elements d ON e.ParentId = d.id
+            ) SELECT id FROM elements)sql");
+
+        if (!stmt.IsValid())
+            return;
+
+        stmt->BindId(1, rootId);
+
+        while (BE_SQLITE_ROW == stmt->Step())
+            elements.insert(stmt->GetValueId<DgnElementId>(0));
+        }
+
+    struct ElementToMove
+        {
+        DgnElementId m_id;
+        DgnElementCPtr m_element;
+        DgnCode m_newCode;
+        };
+    }
+
+DgnElementIdSet DgnElements::MoveElementToModel(DgnElementCR element, const DgnModelId targetModelId, DgnDbStatus& stat)
+    {
+    DgnDb::VerifyClientThread();
+
+    DgnModelPtr sourceModel = element.GetModel();
+    DgnModelPtr targetModel = m_dgndb.Models().GetModel(targetModelId);
+
+    // Validate models
+    if (!sourceModel.IsValid() || !targetModel.IsValid())
+        {
+        stat = DgnDbStatus::InvalidId;
+        return DgnElementIdSet();
+        }
+
+    // Already in target model (noop)
+    if (sourceModel->GetModelId() == targetModel->GetModelId())
+        {
+        stat = DgnDbStatus::Success;
+        return DgnElementIdSet();
+        }
+
+    // Should not move if an element has a parent
+    if (element.m_parent.IsValid())
+        {
+        stat = DgnDbStatus::ParentBlockedChange;
+        return DgnElementIdSet();
+        }
+
+    // Collect all element IDs to move
+    DgnElementIdSet allElementIds;
+    allElementIds.insert(element.GetElementId());  // Parent first
+    GetElementHierarchy(m_dgndb, element.GetElementId(), allElementIds);
+
+    // Load all elements and validate
+    bvector<ElementToMove> elementsToMove;
+    elementsToMove.reserve(allElementIds.size());
+    
+    for (const auto& elemId : allElementIds)
+        {
+        DgnElementCPtr elem = GetElement(elemId);
+        if (!elem.IsValid())
+            {
+            stat = DgnDbStatus::InvalidId;
+            return DgnElementIdSet();
+            }
+
+        // Compute new code with target model scope
+        DgnCode newCode = DgnCode::CreateWithDbContext(
+            m_dgndb, 
+            elem->GetCode().GetCodeSpecId(), 
+            targetModel->GetModeledElementId(), 
+            elem->GetCode().GetValueUtf8());
+        
+        // Check for code conflicts in target model
+        if (QueryElementIdByCode(newCode).IsValid())
+            {
+            stat = DgnDbStatus::DuplicateCode;
+            return DgnElementIdSet();
+            }
+
+        // Validate removal from source model
+        stat = sourceModel->_OnDeleteElement(*elem);
+        if (DgnDbStatus::Success != stat)
+            return DgnElementIdSet();
+
+        // Validate insertion into target model
+        DgnElementPtr tempElement = elem->MakeCopy<DgnElement>();
+        tempElement->SetCode(newCode);
+        tempElement->m_modelId = targetModel->GetModelId();
+        
+        stat = targetModel->_OnInsertElement(*tempElement);
+        if (DgnDbStatus::Success != stat)
+            return DgnElementIdSet();
+
+        elementsToMove.push_back({elemId, elem, newCode});
+        }
+
+    // Update ModelId for all elements in database
+    auto updateStmt = m_dgndb.GetCachedStatement("UPDATE bis_Element SET ModelId=? WHERE InVirtualSet(?, Id)");
+    if (!updateStmt.IsValid())
+        {
+        stat = DgnDbStatus::SQLiteError;
+        return DgnElementIdSet();
+        }
+
+    updateStmt->BindId(1, targetModelId);
+    updateStmt->BindVirtualSet(2, allElementIds);
+    
+    if (BE_SQLITE_DONE != updateStmt->Step())
+        {
+        stat = DgnDbStatus::SQLiteError;
+        return DgnElementIdSet();
+        }
+
+    for (const auto& elemToMove : elementsToMove)
+        {
+        sourceModel->_OnDeletedElement(elemToMove.m_id);
+        
+        DgnElementPtr movedElement = elemToMove.m_element->MakeCopy<DgnElement>();
+        movedElement->SetCode(elemToMove.m_newCode);
+        movedElement->m_modelId = targetModel->GetModelId();
+        targetModel->_OnInsertedElement(*movedElement);
+        
+        DropFromPool(*elemToMove.m_element);
+        }
+
+    stat = DgnDbStatus::Success;
+    return allElementIds;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

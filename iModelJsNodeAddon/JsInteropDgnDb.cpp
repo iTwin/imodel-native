@@ -670,6 +670,34 @@ void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet JsInterop::MoveElementToModel(DgnDbR dgndb, Utf8StringCR elementIdStr, Utf8StringCR targetModelIdStr, DgnDbStatus& status) {
+    DgnElementId elementId(BeInt64Id::FromString(elementIdStr.c_str()).GetValue());
+    if (!elementId.IsValid())
+        {
+        status = DgnDbStatus::InvalidId;
+        return DgnElementIdSet();
+        }
+
+    DgnElementCPtr element = dgndb.Elements().GetElement(elementId);
+    if (!element.IsValid())
+        {
+        status = DgnDbStatus::BadElement;
+        return DgnElementIdSet();
+        }
+
+    DgnModelId targetModelId(BeInt64Id::FromString(targetModelIdStr.c_str()).GetValue());
+    if (!targetModelId.IsValid())
+        {
+        status = DgnDbStatus::InvalidId;
+        return DgnElementIdSet();
+        }
+
+    return dgndb.Elements().MoveElementToModel(*element, targetModelId, status);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr) {
     DgnElementId eid(BeInt64Id::FromString(eidStr.c_str()).GetValue());
     if (!eid.IsValid())
