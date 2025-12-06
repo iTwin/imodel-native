@@ -47,6 +47,22 @@ bool Session::IsECDbFileLoaded(bool printMessageIfFalse) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+bool Session::IsIModelFileLoaded(bool printMessageIfFalse) const
+    {
+    if (!IsFileLoaded(printMessageIfFalse))
+        return false;
+
+    const bool isECDbFile = m_file->GetECDbHandle() != nullptr;
+    const bool isIModelFile = isECDbFile && m_file->GetType() == SessionFile::Type::IModel;
+    if (!isIModelFile && printMessageIfFalse)
+        IModelConsole::WriteErrorLine("Command requires iModel, but currently opened file is only a ECDb or BeSQLite file.");
+
+    return isIModelFile;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 BentleyStatus Session::SetFile(std::unique_ptr<SessionFile> file)
     {
     if (file == nullptr)
@@ -195,6 +211,7 @@ void IModelConsole::Setup()
     AddCommand(std::make_shared<DetachCommand>());
     AddCommand(std::make_shared<ChangeCommand>());
     AddCommand(std::make_shared<ImportCommand>());
+    AddCommand(std::make_shared<CheckTransformCommand>());
     AddCommand(std::make_shared<MergeCommand>());
     AddCommand(std::make_shared<ExportCommand>());
     AddCommand(std::make_shared<DropCommand>());
