@@ -1,0 +1,26 @@
+---
+BasedOnStyle: Google
+
+AlignConsecutiveMacros: AcrossEmptyLines
+AlignOperands: DontAlign
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+ColumnLimit: 120
+DerivePointerAlignment: false
+IndentCaseLabels: false
+IndentPPDirectives: AfterHash
+IndentWidth: 4
+PPIndentWidth: 2
+PointerAlignment: Right
+SortIncludes: Never
+---
+Language: JavaScript
+AllowShortCaseLabelsOnASingleLine: true
+ContinuationIndentWidth: 2
+IndentWidth: 2
+JavaScriptQuotes: Double
+---
+Language: Json
+IndentWidth: 2
+UseTab: Never
