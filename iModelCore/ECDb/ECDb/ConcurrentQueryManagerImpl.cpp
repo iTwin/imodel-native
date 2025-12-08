@@ -83,7 +83,7 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
         if(queue.GetState() == RunnableRequestQueue::State::Stop) {
             status = ECSqlStatus::Error;
             isShutDownInProgress = true;
-            ecsql_error = "concurrent query is shutting down";
+            ecsql_error = "Queue is shut down, cannot go ahead with the request.";
             return nullptr;
         }
         std::this_thread::yield();
