@@ -110,6 +110,7 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
     ecdbMutex.unlock();
     return newCachedAdaptor;
 
+
 }
 
 //---------------------------------------------------------------------------------------

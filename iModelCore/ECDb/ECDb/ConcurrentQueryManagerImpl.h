@@ -87,6 +87,8 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
 
 struct RunnableRequestQueue;
 
+struct RunnableRequestQueue;
+
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
