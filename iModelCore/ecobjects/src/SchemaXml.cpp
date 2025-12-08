@@ -407,13 +407,10 @@ CustomAttributeReadStatus SchemaXmlReaderImpl::ReadChildrenCustomAttributes(ECSc
         auto* container = accessor(accessorNeedsContainerName ? containerName.c_str() : nullptr);
         if (nullptr == container)
             {
-            if (!parentSchema.IsStandardSchema())
-                {
-                if (accessorNeedsContainerName)
-                    LOG.warningv("Failed to locate potential CA container in schema. Container: %s", containerName.c_str());
-                else
-                    LOG.warningv("Failed to locate potential CA container in schema.");
-                }
+            if (parentSchema.IsStandardSchema())
+                LOG.debugv(Utf8PrintfString("Failed to locate potential CA container in schema.%s", accessorNeedsContainerName ? Utf8PrintfString(" Container: %s", containerName.c_str()).c_str() : ""));
+            else
+                LOG.warningv(Utf8PrintfString("Failed to locate potential CA container in schema.%s", accessorNeedsContainerName ? Utf8PrintfString(" Container: %s", containerName.c_str()).c_str() : ""));
             continue;
             }
 
@@ -636,7 +633,12 @@ void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECS
                 }
             else
                 {
-                if (!schemaOut->IsStandardSchema())
+                if (schemaOut->IsStandardSchema())
+                    LOG.debugv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
+                        "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s'_V3Conversion to force a different class type.",
+                        className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
+                        schemaOut->GetFullSchemaName().c_str());
+                else
                     LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
                         "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s'_V3Conversion to force a different class type.",
                         className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
@@ -665,11 +667,19 @@ void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECS
         WriteLogMessage(ecClass, "ECClass", "StructClass");
         classType = ECClassType::Struct;
         }
-    else if (1 < sum && !schemaOut->IsStandardSchema())
-        LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
-            "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s'_V3Conversion to force a different class type.",
-            className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
-            schemaOut->GetFullSchemaName().c_str());
+    else if (1 < sum)
+        {
+        if (schemaOut->IsStandardSchema())
+            LOG.debugv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
+                "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s'_V3Conversion to force a different class type.",
+                className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
+                schemaOut->GetFullSchemaName().c_str());
+        else
+            LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
+                "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s'_V3Conversion to force a different class type.",
+                className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
+                schemaOut->GetFullSchemaName().c_str());
+        }
 
 
     if (ecClass->IsDefined("ForceAbstract"))
@@ -869,7 +879,10 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t&
         // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
         if (!versionAttr || (ECObjectsStatus::Success != SchemaKey::ParseVersionString(versionRead, versionWrite, versionMinor, versionAttr.as_string())))
             {
-            if (!ECSchema::IsStandardSchema(schemaName.c_str()))
+            if (ECSchema::IsStandardSchema(schemaName.c_str()))
+                LOG.debugv("Invalid version attribute has been ignored while reading ECSchema '%s'.  The default version number %s has been applied.",
+                    schemaName.c_str(), SchemaKey::FormatSchemaVersion(versionRead, versionWrite, versionMinor).c_str());
+            else
                 LOG.warningv("Invalid version attribute has been ignored while reading ECSchema '%s'.  The default version number %s has been applied.",
                     schemaName.c_str(), SchemaKey::FormatSchemaVersion(versionRead, versionWrite, versionMinor).c_str());
             }
@@ -1104,7 +1117,10 @@ SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
         if (ECObjectsStatus::Success != m_ecSchema.ResolveAlias(*refSchema, alias))
             {
             alias = refSchema->GetAlias();
-            if (!m_ecSchema.IsStandardSchema())
+            if (m_ecSchema.IsStandardSchema())
+                LOG.debugv("Could not resolve the alias for '%s' as a schema reference of '%s'.  Using default alias '%s', this may cause problems if alias is renamed in ECSchemaReference",
+                    refSchema->GetFullSchemaName().c_str(), m_ecSchema.GetFullSchemaName().c_str(), alias.c_str());
+            else
                 LOG.warningv("Could not resolve the alias for '%s' as a schema reference of '%s'.  Using default alias '%s', this may cause problems if alias is renamed in ECSchemaReference",
                     refSchema->GetFullSchemaName().c_str(), m_ecSchema.GetFullSchemaName().c_str(), alias.c_str());
             }
