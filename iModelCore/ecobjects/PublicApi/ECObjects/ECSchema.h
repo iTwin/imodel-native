@@ -2300,13 +2300,15 @@ enum class SchemaMatchType
 //=======================================================================================
 struct SchemaKey
 {
-    uint32_t      m_versionRead;
-    uint32_t      m_versionWrite;
-    uint32_t      m_versionMinor;
-    Utf8String    m_schemaName;
-    Utf8String    m_checksum;
+private:
+    uint32_t            m_versionRead;
+    uint32_t            m_versionWrite;
+    uint32_t            m_versionMinor;
+    Utf8String          m_schemaName;
     CachedUtf8String    m_schemaFullName;
+    Utf8String          m_checksum; // This field seems a bit odd. It's only used in ECSchema::ComputeChecksum, which always recalculates it,
 
+public:
     //! Creates a new SchemaKey with the given name and version information
     //! @param[in]  name    The name of the ECSchema
     //! @param[in]  read    The read portion of the version
@@ -2349,6 +2351,24 @@ struct SchemaKey
 
     //! Least significant version number that increments with read/write compatible additions.
     uint32_t GetVersionMinor() const {return m_versionMinor;}
+
+    Utf8StringCR GetChecksum() const {return m_checksum;}
+
+    //! Sets the read schema version. Identifies the generation of the schema that guarantees that newer schemas can be
+    //! read by older software.
+    void SetVersionRead(uint32_t versionRead) { m_versionRead = versionRead; m_schemaFullName.Invalidate(); m_checksum.clear(); }
+
+    //! Sets the major for write version. This is less significant than the read version. It identifies the generation of the schema
+    //! that guarantees that newer schemas can be written by older software.
+    void SetVersionWrite(uint32_t versionWrite) { m_versionWrite = versionWrite; m_schemaFullName.Invalidate(); m_checksum.clear(); }
+
+    //! Sets the least significant version number that increments with read/write compatible additions.
+    void SetVersionMinor(uint32_t versionMinor) { m_versionMinor = versionMinor; m_schemaFullName.Invalidate(); m_checksum.clear(); }
+
+    //! Sets the schema name.
+    void SetName(Utf8StringCR name) { m_schemaName = name; m_schemaFullName.Invalidate(); m_checksum.clear(); }
+
+    void SetChecksum(Utf8StringCR checksum) { m_checksum = checksum; }
 
     //! Given a full schema name (which includes the version information), will return a SchemaKey with the schema name and version information set
     //! @param[out] key             A SchemaKey with the schema's name and version set
@@ -3358,7 +3378,7 @@ public:
     //! @param[in]  value   The name of the ECSchema
     //! @returns Success if the name passes validation and is set, ECObjectsStatus::InvalidName otherwise
     ECOBJECTS_EXPORT ECObjectsStatus SetName(Utf8StringCR value);
-    Utf8StringCR GetName() const {return m_key.m_schemaName;} //!< Returns the name of this ECSchema
+    Utf8StringCR GetName() const {return m_key.GetName();} //!< Returns the name of this ECSchema
 
     ECOBJECTS_EXPORT ECObjectsStatus SetAlias(Utf8StringCR value); //!< Sets the alias for this ECSchema
     Utf8StringCR GetAlias() const {return m_alias;} //!< Gets the alias for this ECSchema
@@ -3369,15 +3389,15 @@ public:
 
     ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8StringCR value); //!< Sets the display label for this ECSchema
     ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const; //!< Gets the DisplayLabel for this ECSchema.  If no DisplayLabel has been set explicitly, returns the name of the schema.
-    Utf8StringCR GetInvariantDisplayLabel() const {return m_hasExplicitDisplayLabel ? m_displayLabel : m_key.m_schemaName;} //!< Gets the invariant display label for this ECSchema.
+    Utf8StringCR GetInvariantDisplayLabel() const {return m_hasExplicitDisplayLabel ? m_displayLabel : m_key.GetName();} //!< Gets the invariant display label for this ECSchema.
     bool GetIsDisplayLabelDefined() const {return m_hasExplicitDisplayLabel;} //!< Returns true if the display label has been set explicitly for this schema or not
 
     ECOBJECTS_EXPORT ECObjectsStatus SetVersionRead(uint32_t value); //!< Sets the read version of this schema, check SchemaKey for detailed description.
-    uint32_t GetVersionRead() const {return m_key.m_versionRead;} //!< Gets the read version of this schema, check SchemaKey for detailed description.
+    uint32_t GetVersionRead() const {return m_key.GetVersionRead();} //!< Gets the read version of this schema, check SchemaKey for detailed description.
     ECOBJECTS_EXPORT ECObjectsStatus SetVersionWrite(uint32_t value); //!< Sets the write compatibility version of this schema, check SchemaKey for detailed description.
-    uint32_t GetVersionWrite() const {return m_key.m_versionWrite;} //!< Gets the write compatibility version of this schema, check SchemaKey for detailed description.
+    uint32_t GetVersionWrite() const {return m_key.GetVersionWrite();} //!< Gets the write compatibility version of this schema, check SchemaKey for detailed description.
     ECOBJECTS_EXPORT ECObjectsStatus SetVersionMinor(uint32_t value); //!< Sets the minor version of this schema, check SchemaKey for detailed description.
-    uint32_t GetVersionMinor() const {return m_key.m_versionMinor;} //!< Gets the minor version of this schema, check SchemaKey for detailed description.
+    uint32_t GetVersionMinor() const {return m_key.GetVersionMinor();} //!< Gets the minor version of this schema, check SchemaKey for detailed description.
 
     BeMutex& GetMutex() const { return m_mutex; }
     //! Returns true if the original xml version is greater or equal to the input ECVersion
