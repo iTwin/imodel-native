@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #! /bin/sh
 
 # libpng-config
@@ -22,3 +23,29 @@ cppflags=""
 ccopts=""
 ldopts=""
 
+=======
+#! /bin/sh
+
+# libpng-config
+# provides configuration info for libpng.
+
+# Copyright (C) 2002 Glenn Randers-Pehrson
+
+# This code is released under the libpng license.
+# For conditions of distribution and use, see the disclaimer
+# and license in png.h
+
+# Modeled after libxml-config.
+
+version=1.6.53
+prefix=""
+libdir=""
+libs=""
+I_opts=""
+L_opts=""
+R_opts=""
+cppflags=""
+ccopts=""
+ldopts=""
+
+>>>>>>> aecca346 (Update libpng to 1.6.53 (#1303))
