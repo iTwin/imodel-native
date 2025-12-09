@@ -253,6 +253,7 @@ struct RunnableRequestBase {
         QueryResponse::Ptr CreateTimeoutResponse() const;
         QueryResponse::Ptr CreateCancelResponse() const;
         QueryResponse::Ptr CreateBlobIOResponse(std::vector<uint8_t>& meta, bool done, uint32_t rawBlobSize) const;
+        QueryResponse::Ptr CreateShutDownResponse() const;
         QueryResponse::Ptr CreateECSqlResponse(std::string& result, ECSqlRowProperty::List& meta, uint32_t rowcount, bool done) const;
         static QueryResponse::Ptr CreateQueueFullResponse() ;
 

@@ -584,6 +584,18 @@ QueryResponse::Ptr RunnableRequestBase::CreateECSqlResponse(std::string& resultJ
         meta,
         rowCount);
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+QueryResponse::Ptr RunnableRequestBase::CreateShutDownResponse() const {
+    return std::make_shared<QueryResponse>(
+        QueryResponse::Kind::NoResult,
+        QueryResponse::Stats( GetCpuTime(), GetTotalTime(), 0, m_quota, m_prepareTime),
+        QueryResponse::Status::ShuttingDown,
+        ""
+        );
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -770,7 +782,7 @@ QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, Quer
     } else  {
         if (m_state.load()==State::Stop) {
             log_error("%s concurrent query shuting down, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
-            runnableReq->SetResponse(runnableReq->CreateErrorResponse(QueryResponse::Status::ShuttingDown, "concurrent query is shutting down"));
+            runnableReq->SetResponse(runnableReq->CreateShutDownResponse());
         } else {
             if (runnableReq->GetRequest().UsePrimaryConnection()) {
                 ExecuteSynchronously(conns, std::move(runnableReq));
@@ -806,7 +818,7 @@ void RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr req
     } else  {
         if (m_state.load()==State::Stop) {
             log_error("%s concurrent query shuting down, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
-            runnableReq->SetResponse(runnableReq->CreateErrorResponse(QueryResponse::Status::ShuttingDown,"concurrent query is shutting down"));
+            runnableReq->SetResponse(runnableReq->CreateShutDownResponse());
         } else {
             if (runnableReq->GetRequest().UsePrimaryConnection()) {
                 ExecuteSynchronously(conns, std::move(runnableReq));
@@ -838,7 +850,8 @@ bool RunnableRequestQueue::Stop() {
 
     recursive_guard_t lock(m_mutex);
     for(auto & request : m_requests) {
-        request->SetResponse(request->CreateErrorResponse(QueryResponse::Status::ShuttingDown,"concurrent query is shutting down"));
+        log_error("%s cancelling request [id=%" PRIu32 "] due to shutdown.", GetTimestamp().c_str(), request->GetId());
+        request->SetResponse(request->CreateShutDownResponse());
     }
     m_cond.notify_all();
     log_trace("%s request queue stopped.", GetTimestamp().c_str());
@@ -1313,7 +1326,8 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
         if (adaptor == nullptr) {
             recordPrepareTime();
             if(isShutDownInProgress) {
-                setError(QueryResponse::Status::ShuttingDown, err);
+                log_error("%s cancelling request [id=%" PRIu32 "] because %s.", GetTimestamp().c_str(), runnableRequest.GetId(), err.c_str());
+                runnableRequest.SetResponse(runnableRequest.CreateShutDownResponse());
                 return;
             }
             if (status.IsSQLiteError()) {
