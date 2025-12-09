@@ -416,9 +416,7 @@ CustomAttributeReadStatus SchemaXmlReaderImpl::ReadChildrenCustomAttributes(ECSc
         auto* container = accessor(accessorNeedsContainerName ? containerName.c_str() : nullptr);
         if (nullptr == container)
             {
-            LOG_SCHEMA_WARNING(parentSchema, "Failed to locate potential CA container in schema%s%s",
-                accessorNeedsContainerName ? ". Container: " : "",
-                accessorNeedsContainerName ? containerName.c_str() : "");
+            LOG_SCHEMA_WARNING(parentSchema, "Failed to locate potential CA container in schema.%s", accessorNeedsContainerName ? Utf8PrintfString(" Container: %s", containerName.c_str()).c_str() : "");
             continue;
             }
 
