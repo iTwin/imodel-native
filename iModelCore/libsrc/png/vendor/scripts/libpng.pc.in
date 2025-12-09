@@ -1,15 +1,3 @@
-<<<<<<< HEAD
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-includedir=@includedir@/libpng16
-
-Name: libpng
-Description: Loads and saves PNG files
-Version: 1.6.39
-Libs: -L${libdir} -lpng16
-Cflags: -I${includedir}
-=======
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
@@ -20,4 +8,3 @@ Description: Loads and saves PNG files
 Version: 1.6.53
 Libs: -L${libdir} -lpng16
 Cflags: -I${includedir}
->>>>>>> aecca346 (Update libpng to 1.6.53 (#1303))
