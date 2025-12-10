@@ -6488,7 +6488,10 @@ void Db::QueryStandaloneEditFlags(BeJsValue out) const {
 
     // Invalid/unsupported value
     if (!val.empty())
+    {
+        out.SetNull();
         LOG.warningv("QueryStandaloneEditFlags got an unsupported value: '%s' supported value must be either boolean or json object.", val.c_str());
+    }
 }
 
 /*---------------------------------------------------------------------------------**/ /**
