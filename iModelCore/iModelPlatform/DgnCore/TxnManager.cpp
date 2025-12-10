@@ -195,7 +195,7 @@ DbResult TxnManager::SaveTxn(ChangeSetCR changeSet, Utf8CP operation, TxnType tx
         stmt->BindInt(Column::TxnType, (int) txnType);
 
     // if we're in a multi-txn operation, and if the current TxnId is greater than the first txn, mark it as "grouped"
-    stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr > m_multiTxnOp.back()));
+    stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr > m_multiTxnOp.front()));
 
     m_snappyTo.Init();
     uint32_t csetSize = (uint32_t) changeSet.GetSize();
