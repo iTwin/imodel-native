@@ -330,6 +330,14 @@ protected:
     //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDeleteElement(DgnElementCR element);
 
+    //! Called when a DgnElement in this DgnModel is about to be moved to a different DgnModel.
+    //! @param[in] element The element that is about to be moved.
+    //! @param[in] targetModel The model that the element is being moved to.
+    //! @return DgnDbStatus::Success to allow the element to be moved. Any other status will block the move and will be
+    //! returned to the caller attempting to move the element.
+    //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnMoveElement(DgnElementCR element, DgnModelCR targetModel);
+
     //! Called after a DgnElement in this DgnModel has been loaded into memory.
     //! @param[in] element The element that was just loaded.
     //! @note If you override this method, you @em must call the T_Super implementation.
@@ -354,6 +362,12 @@ protected:
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     virtual void _OnDeletedElement(DgnElementId id) {CallJsElementPostHandler(id, "onDeletedElement");}
+
+    //! Called after a DgnElement in this DgnModel has been moved to a different DgnModel
+    //! @param[in] element The element that was just moved.
+    //! @param[in] targetModel The model that the element was moved to.
+    //! @note If you override this method, you @em must call the T_Super implementation.
+    virtual void _OnMovedElement(DgnElementCR element, DgnModelCR targetModel) { CallJsElementPostHandler(element.m_elementId, "onMovedElement"); }
 
     /** @} */
 
@@ -897,6 +911,7 @@ protected:
     void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element);}
     void _OnDeletedElement(DgnElementId id) override {RemoveFromRangeIndex(id); T_Super::_OnDeletedElement(id);}
     void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original);}
+    void _OnMovedElement(DgnElementCR element, DgnModelCR targetModel) override { T_Super::_OnMovedElement(element, targetModel); RemoveFromRangeIndex(element.GetElementId()); }
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
     GeometricModelCP _ToGeometricModel() const override final {return this;}

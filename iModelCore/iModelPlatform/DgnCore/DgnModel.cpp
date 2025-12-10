@@ -1235,6 +1235,17 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_OnMoveElement(DgnElementCR element, DgnModelCR targetModel) {
+    if (m_dgndb.IsReadonly())
+        return DgnDbStatus::ReadOnly;
+
+    CallJsElementPreHandler(element, "onMoveElement"); // javascript `model.onMoveElement`
+    return DgnDbStatus::Success;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDelete() {
     ModelHandlerR modelHandler = GetModelHandler();
     if (modelHandler.GetDomain().IsReadonly())

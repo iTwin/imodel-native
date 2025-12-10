@@ -4034,18 +4034,17 @@ public:
     //! @note This method is merely a shortcut to #GetElement and then #Delete
     DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::NotFound;}
 
-    //! Move an element and all its child elements to a different model.
-    //! If validation fails or any error occurs, no changes are made to the database.
-    //! @param[in] element The root element to move. Must not have a parent element.
+    //! Move a DgnElement to a different model.
+    //! If validation fails or any error occurs, the element stays unmoved.
+    //! @param[in] element The element to move.
     //! @param[in] targetModelId The DgnModelId of the destination model
-    //! @param[out] stat Status of the move operation
-    //! @return The set of DgnElementIds of all elements that were moved, including the root element.
-    //! @note All child elements in the hierarchy are moved along with the root element.
-    //! @note Element codes are automatically updated to use the target model's scope.
+    //! @return DgnDbStatus::Success if the element was moved, error status otherwise.
+    //! @note This method will only move the element itself. It will not move any of its children or parent elements.
+    //! @note The caller is responsible for moving the assembly and acquiring the necessary locks.
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnElementIdSet MoveElementToModel(DgnElementCR element, const DgnModelId targetModelId, DgnDbStatus& stat);
+    DGNPLATFORM_EXPORT DgnDbStatus MoveElementToModel(DgnElementCR element, const DgnModelId targetModelId);
 
-    //! Set the maximum number of elements to be held by the "Most Recentley Used" element cache for this DgnDb.
+    //! Set the maximum number of elements to be held by the "Most Recently Used" element cache for this DgnDb.
     //! @param newMax The maximum number of elements to be held in the element MRU cache. After this many elements are in memory,
     //! the least recently used element is discarded. Set to 0 to disable MRU cache.
     //! @note If there are currently more than newMax elements in memory, the oldest ones are removed until the size is newMax.

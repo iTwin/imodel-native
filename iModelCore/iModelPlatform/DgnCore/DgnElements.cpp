@@ -626,26 +626,6 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement)
 
 namespace
     {
-    void GetElementHierarchy(DgnDbCR db, const DgnElementId rootId, DgnElementIdSet& elements)
-        {
-        // Collect all child elements recursively
-        const auto stmt = db.GetCachedStatement(R"sql(
-            WITH RECURSIVE elements(id) AS (
-                SELECT Id FROM bis_Element WHERE ParentId=?
-                    UNION ALL
-                SELECT e.Id FROM bis_Element e
-                JOIN elements d ON e.ParentId = d.id
-            ) SELECT id FROM elements)sql");
-
-        if (!stmt.IsValid())
-            return;
-
-        stmt->BindId(1, rootId);
-
-        while (BE_SQLITE_ROW == stmt->Step())
-            elements.insert(stmt->GetValueId<DgnElementId>(0));
-        }
-
     struct ElementToMove
         {
         DgnElementId m_id;
@@ -654,7 +634,7 @@ namespace
         };
     }
 
-DgnElementIdSet DgnElements::MoveElementToModel(DgnElementCR element, const DgnModelId targetModelId, DgnDbStatus& stat)
+DgnDbStatus DgnElements::MoveElementToModel(DgnElementCR element, const DgnModelId targetModelId)
     {
     DgnDb::VerifyClientThread();
 
@@ -663,105 +643,53 @@ DgnElementIdSet DgnElements::MoveElementToModel(DgnElementCR element, const DgnM
 
     // Validate models
     if (!sourceModel.IsValid() || !targetModel.IsValid())
-        {
-        stat = DgnDbStatus::InvalidId;
-        return DgnElementIdSet();
-        }
+        return DgnDbStatus::InvalidId;
 
     // Already in target model (noop)
     if (sourceModel->GetModelId() == targetModel->GetModelId())
-        {
-        stat = DgnDbStatus::Success;
-        return DgnElementIdSet();
-        }
+        return DgnDbStatus::Success;
 
-    // Should not move if an element has a parent
-    if (element.m_parent.IsValid())
-        {
-        stat = DgnDbStatus::ParentBlockedChange;
-        return DgnElementIdSet();
-        }
-
-    // Collect all element IDs to move
-    DgnElementIdSet allElementIds;
-    allElementIds.insert(element.GetElementId());  // Parent first
-    GetElementHierarchy(m_dgndb, element.GetElementId(), allElementIds);
-
-    // Load all elements and validate
-    bvector<ElementToMove> elementsToMove;
-    elementsToMove.reserve(allElementIds.size());
-    
-    for (const auto& elemId : allElementIds)
-        {
-        DgnElementCPtr elem = GetElement(elemId);
-        if (!elem.IsValid())
-            {
-            stat = DgnDbStatus::InvalidId;
-            return DgnElementIdSet();
-            }
-
-        // Compute new code with target model scope
-        DgnCode newCode = DgnCode::CreateWithDbContext(
-            m_dgndb, 
-            elem->GetCode().GetCodeSpecId(), 
-            targetModel->GetModeledElementId(), 
-            elem->GetCode().GetValueUtf8());
+    // Compute new code with target model scope
+    const DgnCode newCode = DgnCode::CreateWithDbContext(
+        m_dgndb,
+        element.GetCode().GetCodeSpecId(),
+        targetModel->GetModeledElementId(),
+        element.GetCode().GetValueUtf8());
         
-        // Check for code conflicts in target model
-        if (QueryElementIdByCode(newCode).IsValid())
-            {
-            stat = DgnDbStatus::DuplicateCode;
-            return DgnElementIdSet();
-            }
+    // Check for code conflicts in target model
+    if (QueryElementIdByCode(newCode).IsValid())
+        return DgnDbStatus::DuplicateCode;
 
-        // Validate removal from source model
-        stat = sourceModel->_OnDeleteElement(*elem);
-        if (DgnDbStatus::Success != stat)
-            return DgnElementIdSet();
+    // Validate removal from source model
+    if (const auto status = sourceModel->_OnMoveElement(element, *targetModel); DgnDbStatus::Success != status)
+        return status;
 
-        // Validate insertion into target model
-        DgnElementPtr tempElement = elem->MakeCopy<DgnElement>();
-        tempElement->SetCode(newCode);
-        tempElement->m_modelId = targetModel->GetModelId();
+    // Validate insertion into target model
+    DgnElementPtr movedElement = element.MakeCopy<DgnElement>();
+    movedElement->SetCode(newCode);
+    movedElement->m_modelId = targetModel->GetModelId();
         
-        stat = targetModel->_OnInsertElement(*tempElement);
-        if (DgnDbStatus::Success != stat)
-            return DgnElementIdSet();
-
-        elementsToMove.push_back({elemId, elem, newCode});
-        }
+    if (const auto status = targetModel->_OnInsertElement(*movedElement); DgnDbStatus::Success != status)
+        return status;
 
     // Update ModelId for all elements in database
-    auto updateStmt = m_dgndb.GetCachedStatement("UPDATE bis_Element SET ModelId=? WHERE InVirtualSet(?, Id)");
+    auto updateStmt = m_dgndb.GetCachedStatement("UPDATE bis_Element SET ModelId=? WHERE Id = ?");
     if (!updateStmt.IsValid())
-        {
-        stat = DgnDbStatus::SQLiteError;
-        return DgnElementIdSet();
-        }
+        return DgnDbStatus::SQLiteError;
 
     updateStmt->BindId(1, targetModelId);
-    updateStmt->BindVirtualSet(2, allElementIds);
+    updateStmt->BindId(2, element.GetElementId());
     
     if (BE_SQLITE_DONE != updateStmt->Step())
-        {
-        stat = DgnDbStatus::SQLiteError;
-        return DgnElementIdSet();
-        }
+        return DgnDbStatus::SQLiteError;
 
-    for (const auto& elemToMove : elementsToMove)
-        {
-        sourceModel->_OnDeletedElement(elemToMove.m_id);
-        
-        DgnElementPtr movedElement = elemToMove.m_element->MakeCopy<DgnElement>();
-        movedElement->SetCode(elemToMove.m_newCode);
-        movedElement->m_modelId = targetModel->GetModelId();
-        targetModel->_OnInsertedElement(*movedElement);
-        
-        DropFromPool(*elemToMove.m_element);
-        }
+    // Notify models of the move
+    sourceModel->_OnMovedElement(element, *targetModel);
+    targetModel->_OnInsertedElement(*movedElement);
 
-    stat = DgnDbStatus::Success;
-    return allElementIds;
+    DropFromPool(*movedElement);
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
