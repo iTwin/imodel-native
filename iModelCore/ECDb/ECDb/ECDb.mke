@@ -140,7 +140,8 @@ ECDbAllHeaders = \
                 $(baseDir)SqlNames.h \
                 $(baseDir)InstanceWriterImpl.h \
                 $(baseDir)ClassMapColumnFactory.h \
-                $(baseDir)ClassViews.h
+                $(baseDir)ClassViews.h \
+                $(baseDir)ChangesetReaderImpl.h
 
 
 #----------------------------------------------------------------------
@@ -407,6 +408,9 @@ $(o)ClassViews$(oext):                                        $(baseDir)ClassVie
 $(o)InstanceWriterImpl$(oext):                                $(baseDir)InstanceWriterImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)InstanceRepository$(oext):                                $(baseDir)InstanceRepository.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangesetReaderImpl$(oext):                               $(baseDir)ChangesetReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

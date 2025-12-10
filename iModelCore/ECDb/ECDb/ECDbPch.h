@@ -131,3 +131,5 @@
 #include "ECSql/ECInstanceAdapterHelper.h"
 
 #include "ECSql/ECSqlPragmas.h"
+
+#include "ChangesetReaderImpl.h"

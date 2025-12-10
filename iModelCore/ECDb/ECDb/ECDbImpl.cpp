@@ -872,5 +872,4 @@ DbResult ECDb::Impl::InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAs
     return BE_SQLITE_OK;
     }
 
-
 END_BENTLEY_SQLITE_EC_NAMESPACE
