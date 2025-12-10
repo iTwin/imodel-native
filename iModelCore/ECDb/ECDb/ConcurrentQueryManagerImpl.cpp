@@ -1148,6 +1148,8 @@ Utf8CP QueryResponse::StatusToString(QueryResponse::Status status) {
             return "QueueFull";
         case QueryResponse::Status::Timeout:
             return "Timeout";
+        case QueryResponse::Status::ShuttingDown:
+            return "ShuttingDown";
     };
     return "Unknow QueryResponse::Status code";
 }
