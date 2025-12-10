@@ -624,16 +624,6 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement)
     return DgnDbStatus::Success;
     }
 
-namespace
-    {
-    struct ElementToMove
-        {
-        DgnElementId m_id;
-        DgnElementCPtr m_element;
-        DgnCode m_newCode;
-        };
-    }
-
 DgnDbStatus DgnElements::MoveElementToModel(DgnElementCR element, const DgnModelId targetModelId)
     {
     DgnDb::VerifyClientThread();
