@@ -85,6 +85,8 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         }
 };
 
+struct RunnableRequestQueue;
+
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
@@ -99,7 +101,7 @@ struct QueryAdaptorCache final {
     public:
         QueryAdaptorCache(CachedConnection& conn);
         ~QueryAdaptorCache(){}
-        std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error);
+        std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue);
         void Reset() { m_cache.clear(); }
         void SetMaxCacheSize(uint32_t n) { if (n < QueryAdaptorCache::kDefaultCacheSize) return; m_maxEntries = n; }
         CachedConnection& GetConnection() {return m_conn;}
@@ -201,7 +203,6 @@ struct ConnectionCache final {
         void SyncAttachDbs();
 };
 
-struct RunnableRequestQueue;
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================

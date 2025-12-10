@@ -58,7 +58,7 @@ int QueryRetryHandler::_OnBusy(int count) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error) {
+std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue) {
     auto const hashCode = ECSqlStatement::GetHashCode(ecsql);
     auto iter = std::find_if(m_cache.begin(), m_cache.end(), [&ecsql,&hashCode,&usePrimaryConn] (std::shared_ptr<CachedQueryAdaptor>& entry) {
         return entry->GetUsePrimaryConn() == usePrimaryConn && entry->GetStatement().GetHashCode() == hashCode && strcmp(entry->GetStatement().GetECSql(), ecsql) == 0;
@@ -78,6 +78,15 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
     auto newCachedAdaptor = CachedQueryAdaptor::Make();
     newCachedAdaptor->SetWorkerConn(m_conn.GetDb());
     newCachedAdaptor->SetUsePrimaryConn(usePrimaryConn);
+    BeMutex& ecdbMutex = m_conn.GetPrimaryDb().GetImpl().GetMutex();
+    while(!ecdbMutex.try_lock()) {
+        if(queue.GetState() == RunnableRequestQueue::State::Stop) {
+            status = ECSqlStatus::Error;
+            ecsql_error = "Queue is shut down, cannot go ahead with the request.";
+            return nullptr;
+        }
+        std::this_thread::yield();
+    }
     ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
     if (usePrimaryConn)
         status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
@@ -90,13 +99,16 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
     }
     if (status != ECSqlStatus::Success) {
         ecsql_error = err_scope.GetLastError();
+        ecdbMutex.unlock();
         return nullptr;
     }
     while (m_cache.size() > m_maxEntries)
         m_cache.pop_back();
 
     m_cache.insert(m_cache.begin(), newCachedAdaptor);
+    ecdbMutex.unlock();
     return newCachedAdaptor;
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -1294,7 +1306,7 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
             runnableRequest.SetPrepareTime(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - prepareTimeStart));
         };
 
-        auto adaptor = adaptorCache.TryGet(sql.c_str(), request.UsePrimaryConnection(), request.GetSuppressLogErrors(), status, err);
+        auto adaptor = adaptorCache.TryGet(sql.c_str(), request.UsePrimaryConnection(), request.GetSuppressLogErrors(), status, err, runnableRequest.GetQueue());
         if (adaptor == nullptr) {
             recordPrepareTime();
             if (status.IsSQLiteError()) {
