@@ -87,6 +87,8 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
 
 struct RunnableRequestQueue;
 
+struct RunnableRequestQueue;
+
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
@@ -101,7 +103,7 @@ struct QueryAdaptorCache final {
     public:
         QueryAdaptorCache(CachedConnection& conn);
         ~QueryAdaptorCache(){}
-        std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue);
+        std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue, bool & isShutDownInProgress);
         void Reset() { m_cache.clear(); }
         void SetMaxCacheSize(uint32_t n) { if (n < QueryAdaptorCache::kDefaultCacheSize) return; m_maxEntries = n; }
         CachedConnection& GetConnection() {return m_conn;}
@@ -211,6 +213,7 @@ struct RunnableRequestBase {
         QueryRequest::Ptr m_request;
         uint32_t m_id;
         bool m_isCompleted;
+        bool m_isDequeued;
         std::chrono::time_point<std::chrono::steady_clock> m_dequeuedOn;
         std::chrono::time_point<std::chrono::steady_clock> m_submittedOn;
         bool m_requestCancel;
@@ -224,7 +227,7 @@ struct RunnableRequestBase {
         virtual void _SetResponse(QueryResponse::Ptr response) = 0;
     public:
         RunnableRequestBase(RunnableRequestQueue& queue, QueryRequest::Ptr request, QueryQuota quota, uint32_t id)
-            :m_queue(queue), m_request(std::move(request)), m_id(id), m_isCompleted(false),m_dequeuedOn(0s),m_interrupted(false),
+            :m_queue(queue), m_request(std::move(request)), m_id(id), m_isCompleted(false),m_dequeuedOn(0s),m_isDequeued(false), m_interrupted(false),
              m_quota(quota), m_submittedOn(std::chrono::steady_clock::now()), m_cancelled(false), m_executorId(0), m_connId(0),m_prepareTime(0){}
         virtual ~RunnableRequestBase(){}
         QueryRequest const& GetRequest() const {return *m_request;}
@@ -241,16 +244,18 @@ struct RunnableRequestBase {
         bool IsMemoryExceeded(std::string const& result) const { return m_quota.MaxMemoryAllowed() == 0 ? false : result.size() > m_quota.MaxMemoryAllowed(); }
         bool IsTimeOrMemoryExceeded(std::string const& result) const { return IsTimeExceeded() || IsMemoryExceeded(result);}
         void Interrupt(CachedConnection& conn);
-        void OnDequeued()  { m_dequeuedOn = std::chrono::steady_clock::now(); }
+        void OnDequeued()  { m_isDequeued = true; m_dequeuedOn = std::chrono::steady_clock::now(); }
         uint32_t GetExecutorId() const {return m_executorId; }
         uint32_t GetConnectionId() const {return m_connId; }
         void SetExecutorContext(uint32_t executorId, uint32_t connId) { m_executorId = executorId;  m_connId = connId;}
         std::chrono::milliseconds GetTotalTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - m_submittedOn);}
-        std::chrono::microseconds GetCpuTime() const { return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_dequeuedOn) ;}
+        // As the logic evidently suggests that this method is used to find the time diff between when the method is called and when the request was dequeued. But that means if the request is not yet dequeued, it should return 0.
+        std::chrono::microseconds GetCpuTime() const { return m_isDequeued ? std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_dequeuedOn) : std::chrono::microseconds::zero();} 
         QueryResponse::Ptr CreateErrorResponse(QueryResponse::Status status, std::string error) const;
         QueryResponse::Ptr CreateTimeoutResponse() const;
         QueryResponse::Ptr CreateCancelResponse() const;
         QueryResponse::Ptr CreateBlobIOResponse(std::vector<uint8_t>& meta, bool done, uint32_t rawBlobSize) const;
+        QueryResponse::Ptr CreateShutDownResponse() const;
         QueryResponse::Ptr CreateECSqlResponse(std::string& result, ECSqlRowProperty::List& meta, uint32_t rowcount, bool done) const;
         static QueryResponse::Ptr CreateQueueFullResponse() ;
 
