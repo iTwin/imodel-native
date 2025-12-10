@@ -213,8 +213,8 @@ struct RunnableRequestBase {
         QueryRequest::Ptr m_request;
         uint32_t m_id;
         bool m_isCompleted;
-        std::chrono::time_point<std::chrono::steady_clock> m_dequeuedOn;
         bool m_isDequeued;
+        std::chrono::time_point<std::chrono::steady_clock> m_dequeuedOn;
         std::chrono::time_point<std::chrono::steady_clock> m_submittedOn;
         bool m_requestCancel;
         RunnableRequestQueue& m_queue;
