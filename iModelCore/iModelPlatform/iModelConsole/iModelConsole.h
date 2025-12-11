@@ -207,6 +207,7 @@ struct Session final
 
         bool IsFileLoaded(bool printMessageIfFalse = false) const;
         bool IsECDbFileLoaded(bool printMessageIfFalse = false) const;
+        bool IsIModelFileLoaded(bool printMessageIfFalse = false) const;
         SessionFile const& GetFile() const { BeAssert(IsFileLoaded()); return *m_file; }
         SessionFile& GetFileR() { BeAssert(IsFileLoaded()); return *m_file; }
         BentleyStatus SetFile(std::unique_ptr<SessionFile>);
