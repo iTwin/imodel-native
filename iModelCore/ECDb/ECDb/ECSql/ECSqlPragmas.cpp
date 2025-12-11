@@ -665,7 +665,7 @@ DbResult PragmaIntegrityCheck::CheckLinkTableFkClassIds(IntegrityChecker& checke
 	result.AppendProperty("key_classId", PRIMITIVETYPE_String);
 	result.FreezeSchemaChanges();
 	int rowCount = 1;
-	return checker.CheckNavClassIds([&](ECInstanceId id , Utf8CP relName, Utf8CP propertyName, ECInstanceId keyId, ECClassId keyClassId) {
+	return checker.CheckLinkTableFkClassIds([&](ECInstanceId id , Utf8CP relName, Utf8CP propertyName, ECInstanceId keyId, ECClassId keyClassId) {
 		auto row = result.AppendRow();
 		row.appendValue() = rowCount++;
 		row.appendValue() = id.ToHexStr();
