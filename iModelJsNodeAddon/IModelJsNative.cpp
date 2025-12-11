@@ -1727,12 +1727,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         JsInterop::UpdateElement(db, elemProps);
     }
 
-    Napi::Value MoveElementToModel(NapiInfoCR info) {
+    void MoveElementToModel(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, elementIdStr);
         REQUIRE_ARGUMENT_STRING(1, targetModelIdStr);
 
-        return Napi::Number::New(Env(), static_cast<int>(JsInterop::MoveElementToModel(db, elementIdStr, targetModelIdStr)));
+        JsInterop::MoveElementToModel(db, elementIdStr, targetModelIdStr);
     }
 
     void DeleteElement(NapiInfoCR info) {

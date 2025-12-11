@@ -670,20 +670,21 @@ void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus JsInterop::MoveElementToModel(DgnDbR dgndb, Utf8StringCR elementIdStr, Utf8StringCR targetModelIdStr) {
+void JsInterop::MoveElementToModel(DgnDbR dgndb, Utf8StringCR elementIdStr, Utf8StringCR targetModelIdStr) {
     DgnElementId elementId(BeInt64Id::FromString(elementIdStr.c_str()).GetValue());
     if (!elementId.IsValid())
-        return DgnDbStatus::InvalidId;
+        throwInvalidId();
 
     DgnElementCPtr element = dgndb.Elements().GetElement(elementId);
     if (!element.IsValid())
-        return DgnDbStatus::BadElement;
+        throwInvalidId();
 
     DgnModelId targetModelId(BeInt64Id::FromString(targetModelIdStr.c_str()).GetValue());
     if (!targetModelId.IsValid())
-        return DgnDbStatus::InvalidId;
+        throwInvalidId();
 
-    return dgndb.Elements().MoveElementToModel(*element, targetModelId);
+    if (const auto moveStatus = dgndb.Elements().MoveElementToModel(*element, targetModelId); moveStatus != DgnDbStatus::Success)
+        throwDgnDbStatus(moveStatus);
 }
 
 /*---------------------------------------------------------------------------------**//**
