@@ -195,7 +195,7 @@ DbResult TxnManager::SaveTxn(ChangeSetCR changeSet, Utf8CP operation, TxnType tx
         stmt->BindInt(Column::TxnType, (int) txnType);
 
     // if we're in a multi-txn operation, and if the current TxnId is greater than the first txn, mark it as "grouped"
-    stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr > m_multiTxnOp.back()));
+    stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr > m_multiTxnOp.front()));
 
     m_snappyTo.Init();
     uint32_t csetSize = (uint32_t) changeSet.GetSize();
@@ -931,6 +931,8 @@ void TxnManager::_OnCommitted(bool isCommit, Utf8CP) {
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangesetStatus TxnManager::MergeDdlChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream)  {
+    m_dgndb.ClearECDbCache(); // before merging ddl changes ecdb cache to be cleared
+
     bool containsSchemaChanges;
     DdlChanges ddlChanges;
     DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges);
@@ -1354,7 +1356,10 @@ bool TxnManager::HasPendingSchemaChanges() const {
 ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges, bool fastForward) {
     if (TrackChangesetHealthStats())
         Profiler::InitScope(*changeStream.GetDb(), "Apply Changeset", revision.GetChangesetId().c_str(), Profiler::Params(false, true));
-
+    
+    if(containsSchemaChanges)
+        m_dgndb.ClearECDbCache(); // if changes contain schema changes ecdb cache to be cleared
+    
     DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, false, fastForward);
     if (result != BE_SQLITE_OK) {
         if (changeStream.GetLastErrorMessage().empty())
@@ -1370,18 +1375,16 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     if (status == ChangesetStatus::Success) {
         SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());
 
-        if (status == ChangesetStatus::Success) {
-            if (PullMergeConf::Load(m_dgndb).InProgress()) {
-                result = m_dgndb.SaveChanges();
-            }
-            // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one.
-            // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
-            // the merged changes are lost after this routine and cannot be used for change propagation anymore.
-            if (BE_SQLITE_OK != result) {
-                LOG.fatalv("MergeDataChanges failed to save: %s", BeSQLiteLib::GetErrorName(result));
-                BeAssert(false);
-                status = ChangesetStatus::SQLiteError;
-            }
+        if (PullMergeConf::Load(m_dgndb).InProgress()) {
+            result = m_dgndb.SaveChanges();
+        }
+        // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one.
+        // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
+        // the merged changes are lost after this routine and cannot be used for change propagation anymore.
+        if (BE_SQLITE_OK != result) {
+            LOG.fatalv("MergeDataChanges failed to save: %s", BeSQLiteLib::GetErrorName(result));
+            BeAssert(false);
+            status = ChangesetStatus::SQLiteError;
         }
     }
     if (status != ChangesetStatus::Success) {
@@ -1416,6 +1419,7 @@ void TxnManager::SetChangesetHealthStatistics(ChangesetPropsCR revision) {
 
     auto stats = scope->GetDetailedSqlStats();
     stats["changeset_id"] = revision.GetChangesetId();
+    stats["changeset_index"] = revision.GetChangesetIndex();
     stats["uncompressed_size_bytes"] = static_cast<int64_t>(revision.GetUncompressedSize());
     stats["sha1_validation_time_ms"] = static_cast<int64_t>(revision.GetSha1ValidationTime());
     m_changesetHealthStatistics[revision.GetChangesetId()] = stats.Stringify();
@@ -1427,8 +1431,19 @@ void TxnManager::SetChangesetHealthStatistics(ChangesetPropsCR revision) {
 BeJsDocument TxnManager::GetAllChangesetHealthStatistics() const {
     BeJsDocument stats;
     auto changesets = stats["changesets"];
+    
+    // Sort the changesets by their changeset_index
+    std::vector<const BeJsDocument*> sortedStats;
+    sortedStats.reserve(m_changesetHealthStatistics.size());
+    
     for (const auto& [changesetId, stat] : m_changesetHealthStatistics)
-        changesets.appendObject().From(stat);
+        sortedStats.push_back(&stat);
+    
+    std::sort(sortedStats.begin(), sortedStats.end(), [](const BeJsDocument* a, const BeJsDocument* b) { return (*a)["changeset_index"].asInt() < (*b)["changeset_index"].asInt(); });
+
+    for (const auto* doc : sortedStats)
+        changesets.appendObject().From(*doc);
+    
     return stats;
 }
 
