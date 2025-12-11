@@ -2530,6 +2530,8 @@ public:
         // if true, the database to be opened is from a CloudSqlite container.
         bool m_fromContainer = false;
 
+        bool m_readUncommitted = false;
+
         // if true, the schema lock for this Db is held by the application, so operations
         // that require there be "no other writers on any computer anywhere" are allowed.
         bool m_schemaLockHeld = false;
