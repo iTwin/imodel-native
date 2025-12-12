@@ -659,7 +659,11 @@ int EXP_LVL9 CSgridiI2 (struct csGridi_ *gridi,double* trgLl,Const double* srcLl
 			{
 				fbStatus = 1;
 			}
+#ifdef GEOCOORD_ENHANCEMENT
+			status = (fbStatus == 0) ? cs_CNVRT_USFL : cs_CNVRT_DOMN; // Value 1 is a warning and 2 an hard error ... since the fallback worked it should be a warning only.
+#else
 			status = (fbStatus == 0) ? 2 : 1;
+#endif
 		}
 		else
 		{

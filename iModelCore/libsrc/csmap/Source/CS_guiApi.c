@@ -590,7 +590,7 @@ char * EXP_LVL9 CSdtKeyNames (void)
 			CS_stncp (targetPaths[1], currentDir, sizeof(targetPaths[1]));
 
 			targetPaths_cnt = sizeof(targetPaths) / sizeof(targetPaths[0]);
-			for (i = 0; i < targetPaths_cnt; ++i)
+			for (i = 0; i < (size_t)targetPaths_cnt; ++i)
 			{
 				pTargetPath = targetPaths[i];
 				if ('\0' == *pTargetPath)

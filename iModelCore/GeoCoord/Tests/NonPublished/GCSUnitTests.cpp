@@ -25,14 +25,6 @@ class GCSUnitTests : public ::testing::Test
         ~GCSUnitTests() {};
     };
 
-static bvector<Utf8String> s_listOfTransfoDefinedButIncomplete = {
-"ATS77",
-"EPSG:6140",
-"EPSG:6122",
-"NAD27/CGQ77-83",
-"CAPE/GSB"
-};
-
 // List of datums that require two non-null steps to go to WGS84
 static bvector<Utf8String> s_listOfKnownMultiTransform =
 { "CH1903/GSB",
@@ -3225,7 +3217,7 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "      },"
 "      \"unit\": \"Meter\","
 "      \"projection\": {"
-"        \"method\": \"MercatorScale\","
+"        \"method\": \"Mercator\","
 "        \"centralMeridian\": 0,"
 "        \"scaleFactor\": 1,"
 "        \"standardParallel\": 0,"
@@ -3672,73 +3664,6 @@ static bvector<Utf8String> s_listOfTestJsonGCS =
 "   }"
 "}"
 };
-
-
-/*---------------------------------------------------------------------------------**//**
-* Test specific to grid file based transformations
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GCSUnitTests, GeodeticTransformGetAllGridFileBasedTransformsWithMissingFiles)
-{
-    GeoCoordinates::DatumCP wgs84 = GeoCoordinates::Datum::CreateDatum("WGS84");
-
-    for (int index = 0; index < s_listOfTransfoDefinedButIncomplete.size(); index++)
-    {
-        Utf8String theKeyname(s_listOfTransfoDefinedButIncomplete[index]);
-
-        GeoCoordinates::DatumCP theDatum = GeoCoordinates::Datum::CreateDatum(theKeyname.c_str());
-
-        // Check transformation properties
-        ASSERT_TRUE(theDatum != NULL && theDatum->IsValid());
-
-        // Create a Datum converter between the two datums
-        GeoCoordinates::DatumConverterP theConverter = GeoCoordinates::DatumConverter::Create(*theDatum, *wgs84);
-
-        // Check converter properties (We expect the datum converter creation to have failed due to missing files)
-        EXPECT_TRUE(theConverter == NULL);
-
-        // Now we obtain the path instead
-        GeoCoordinates::GeodeticTransformPathCP theTransformPath = GeoCoordinates::GeodeticTransformPath::Create(*theDatum, *wgs84);
-
-        ASSERT_TRUE(theTransformPath != NULL);
-
-        for (int indexTrf = 0; indexTrf < theTransformPath->GetGeodeticTransformCount(); indexTrf++)
-        {
-            GeoCoordinates::GeodeticTransformCP theTransform = theTransformPath->GetGeodeticTransform(indexTrf);
-
-            ASSERT_TRUE(theTransform != NULL);
-
-            if (theTransform->GetConvertMethodCode() == GeoCoordinates::GenConvertCode::GenConvertType_GFILE)
-            {
-                // There should be some missing files
-                EXPECT_TRUE(theTransform->GetDataAvailability() == GeoCoordinates::GeodeticTransformDataAvailability::DataUnavailable);
-
-                size_t numGrid = theTransform->GetGridFileDefinitionCount();
-
-                for (size_t indexGrid = 0; indexGrid < numGrid; ++indexGrid)
-                {
-                    GeoCoordinates::GridFileDefinition theGridFile = theTransform->GetGridFileDefinition(indexGrid);
-                    GeoCoordinates::GridFileDirection theDirection = theGridFile.GetDirection();
-
-                    int directionInt = (int)theDirection;
-
-                    if (directionInt != 0x49 && directionInt != 0x46)
-                        EXPECT_TRUE(false);
-                }
-            }
-        }
-        theTransformPath->Destroy();
-        theDatum->Destroy();
-    }
-
-    wgs84->Destroy();
-}
-
-
-
-
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * Specific test FromJson

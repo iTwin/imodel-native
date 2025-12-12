@@ -85,8 +85,14 @@ int CSost02F2 (struct cs_Ostn02_ *ost02, double *ll_trg, Const double *ll_src)
 	extern char csErrnam[];
 
 	int st;
+
+#ifdef GEOCOORD_ENHANCEMENT
+	double xy_src[3];
+	double xy_trg[3];
+#else
 	double xy_src[2];
 	double xy_trg[2];
+#endif
 
 	/* ll_src and ll_trg may be the same array, so we don't set ll_trg until
 	   we know the status of the conversion. */
@@ -120,19 +126,31 @@ int CSost02F3 (struct cs_Ostn02_ *ost02, double *ll_trg, Const double *ll_src)
 	extern char csErrnam[];
 
 	int st;
+#ifdef GEOCOORD_ENHANCEMENT
+	double xy_src[3];
+	double xy_trg[3];
+#else
 	double xy_src[2];
 	double xy_trg[2];
+#endif
 
 	/* ll_src and ll_trg may be the same array, so we don't set ll_trg until
 	   we know the status of the conversion. */
 	st = CSosgb2XY(TRUE, xy_src, ll_src);
 	if (st == 0)
 	{
+#ifdef GEOCOORD_ENHANCEMENT
+		xy_src[2] = ll_src[2];
+#endif
 		st = CSforwardOstn02(ost02, xy_trg, xy_src);
 		if (st == 0)
 		{
 			st = CSosgb2LL(FALSE, ll_trg, xy_trg);
+#ifdef GEOCOORD_ENHANCEMENT
+			ll_trg[2] = xy_trg[2];
+#else
 			ll_trg[2] = ll_src[2];
+#endif
 		}
 	}
 	if (st != 0)
@@ -157,8 +175,13 @@ int CSost02I2 (struct cs_Ostn02_ *ost02,double *ll_trg,Const double *ll_src)
 	extern char csErrnam[];
 
 	int st;
+#ifdef GEOCOORD_ENHANCEMENT
+	double xy_src[3];
+	double xy_trg[3];
+#else
 	double xy_src[2];
 	double xy_trg[2];
+#endif
 
 	/* ll_src and ll_trg may be the same array, so we don't set ll_trg until
 	   we know the status of the conversion. */
@@ -192,19 +215,31 @@ int CSost02I3 (struct cs_Ostn02_ *ost02, double *ll_trg, Const double *ll_src)
 	extern char csErrnam[];
 
 	int st;
+#ifdef GEOCOORD_ENHANCEMENT
+	double xy_src[3];
+	double xy_trg[3];
+#else
 	double xy_src[2];
 	double xy_trg[2];
+#endif
 
 	/* ll_src and ll_trg may be the same array, so we don't set ll_src until
 	   we know the status of the conversion. */
 	st = CSosgb2XY(FALSE, xy_src, ll_src);
 	if (st == 0)
 	{
+#ifdef GEOCOORD_ENHANCEMENT
+		xy_src[2] = ll_src[2];
+#endif
 		st = CSinverseOstn02(ost02, xy_trg, xy_src);
 		if (st == 0)
 		{
 			st = CSosgb2LL(TRUE, ll_trg, xy_trg);
+#ifdef GEOCOORD_ENHANCEMENT
+			ll_trg[2] = xy_trg[2];
+#else
 			ll_trg[2] = ll_src[2];
+#endif
 		}
 	}
 	if (st != 0)

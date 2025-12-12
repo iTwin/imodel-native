@@ -312,7 +312,7 @@ TEST_F (ExtendedGCSUnitTests, WKGenerateToWGS84Config)
     toWGS84.Trim();
     toWGS84 = toWGS84.substr(1);
 
-    double  deltaX, deltaY, deltaZ, rotationX, rotationY, rotationZ, scalePPM;
+    double  deltaX = 0.0, deltaY = 0.0, deltaZ = 0.0, rotationX = 0.0, rotationY = 0.0, rotationZ = 0.0, scalePPM = 0.0;
     
     EXPECT_TRUE(7 == Utf8String::Sscanf_safe(toWGS84.c_str(), "%lf,%lf,%lf,%lf,%lf,%lf,%lf", &deltaX, &deltaY, &deltaZ, &rotationX, &rotationY, &rotationZ, &scalePPM));
     

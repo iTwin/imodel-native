@@ -5597,6 +5597,7 @@ struct cs_TrmBF_
                                system.  Can also carry bits concerning
                                specific variations. This bundling is
                                done for performance reasons. */
+	double unitScaleToMeter;
 };
 #endif
 
@@ -6819,6 +6820,9 @@ extern "C" {
 #endif
 
 #ifdef GEOCOORD_ENHANCEMENT
+long32_t CS_convertEndianInteger(long32_t oneEndianValue); 
+float CS_convertEndianFloat(float oneEndianValue);
+double CS_convertEndianDouble(double oneEndianValue);
 
 BASEGEOCOORD_EXPORTED size_t CS_fread(void* buffer, size_t size, size_t count, csFILE* stream);
 BASEGEOCOORD_EXPORTED size_t CS_fwrite(const void* ptr, size_t size, size_t count, csFILE* stream);
@@ -8224,6 +8228,97 @@ struct csBynGridFile_
 	char bynFilePath [MAXPATH];
 };
 
+#ifdef GEOCOORD_ENHANCEMENT
+/*
+    This file holds the N x N(e.g. 2.5'x2.5') geoid undulations in sequential,
+    unformatted, binary format, with each geoid undulation stored as a single,
+    REAL*4 value. Each record contains all of the geoid undulations for a single
+    parallel band. Each geoid undulation is situated at the corner of its respective
+    cell, such that the top-left value in the N x N grid has a longitude of 0° East
+    and a latitude of 90° North. The first record in the file contains the
+    northern-most parallel, and the first value in each record is the western-most
+    value for that parallel. Note that each N x N value situated on the zero meridian
+    appears only once, as the first value in its respective record, at a longitude
+    of 0° East. These values are NOT repeated at the end of their respective records,
+    at longitude of 360° East. As such, this file contains (180/N + 1) rows x 360/N
+    columns of geoid undulations.
+
+    Note that this file was created on a SUN computer, which uses a SMALL ENDIAN
+    internal binary representation. Each record is preceded and terminated with an
+    INTEGER*4 count, making each record 8 characters longer than normal.
+*/
+struct cs_Egm2008_
+{
+    double southWest[2];
+    double northEast[2];
+    double density[2];
+    double searchDensity;
+    long32_t headerSize;
+    long32_t rowHeaderSize;
+    long32_t rowTailSize;
+    long32_t elementCount;
+    long32_t recordCount;
+    long32_t recordSize;
+    long32_t elementSize;
+    csFILE* strm;                       /* file is not opened until required,
+                                           may be closed if entire contents
+                                           have been buffered. */
+    long32_t bufferSize;
+    long32_t bufferBeginPosition;       /* file position of 1st byte in buffer,
+                                           -1 says nothing in buffer */
+    long32_t bufferEndPosition;         /* file position of last byte in buffer,
+                                           -2 says nothing in buffer */
+    void* dataBuffer;                   /* not allocated until required, i.e.
+                                           file is actually opened. */
+    char filePath[MAXPATH];             /* Full path to source data file. */
+};
+
+/*
+	Represents a GTX file, which describes geoid heights at lat long grid based intervals.
+	
+	The file starts with a single line header: 
+	SouthWestLatitude SouthWestLongitude DeltaLatitude DeltaLongitude NumRows NumColumns
+
+	The heights follow with one height given per line, starting from south-west:
+	south-west	---> south-east
+	|
+	V
+	north-west	---> north east
+
+	Null values are written as the value 88.8888.
+*/
+struct cs_GtxFile_
+{
+	double southWestExtent [2];
+	double northEastExtent [2];
+	double density [2];
+	double searchDensity;
+	long32_t headerCount;
+	long32_t elementCount;
+	long32_t recordCount;
+	long32_t recordSize;
+	long32_t elementSize;
+	csFILE* strm;						/* file is not opened until required,
+										may be closed if entire contents
+										have been buffered. */
+	long32_t bufferSize;
+	long32_t bufferBeginPosition;		/* file position of 1st byte in buffer,
+										-1 says nothing in buffer */
+	long32_t bufferEndPosition;			/* file position of last byte in buffer,
+										-2 says nothing in buffer */
+	void *dataBuffer;					/* not allocated until required, i.e.
+										file is actually opened. */
+	char filePath [MAXPATH];			/* Full path to source data file. */
+	char fileName [32];					/* Used for error reporting. */
+	char binaryPath [MAXPATH];			/* Full path of binary shadow file. */
+#ifdef GEOCOORD_ENHANCEMENT
+	short specifiedFileIsBinary;        /* Indicates that file specified in filePath is already in binary format */
+	short fileIsBigEndian;              /* Indicates that the binary is encoded as little-endian(which is a rare occurence) */
+	short fileHasDoubleRowsColumns;     /* For one specific file that has mistakenly rows and columns defined using double */
+#endif
+};
+#endif
+
 /******************************************************************************
 	US Geoid Height Object
 	Encapsulates the functionality of converting a WGS84 latitude/longitude
@@ -8239,7 +8334,12 @@ enum csGeoidHeightType {csGeoidHgtTypeNone = 0,
 						csGeoidHgtTypeWorld,
 						csGeoidHgtTypeBynGridFile,
 						csGeoidHgtTypeAustralia,
-						csGeoidHgtTypeEgm96
+						csGeoidHgtTypeEgm96,
+#ifdef GEOCOORD_ENHANCEMENT
+						csGeoidHgtTypeEgm2008,
+						csGeoidHgtTypeGtxFile,
+						csGeoidHgtTypeOstn02,
+#endif
 					   };
 struct csGeoidHeight_
 {
@@ -8263,6 +8363,11 @@ struct csGeoidHeightEntry_
 		struct csBynGridFile_ *bynGridFilePtr;
 		struct csGeoidGridAu_ *australiaGrid;
 		struct cs_Egm96_ *egm96Ptr;
+#ifdef GEOCOORD_ENHANCEMENT
+		struct cs_Egm2008_ *egm2008Ptr;
+		struct cs_GtxFile_ *gtxFilePtr;
+		struct cs_Ostn02_ *ostn02Ptr;
+#endif
 	} pointers;
 };
 /******************************************************************************
@@ -8283,6 +8388,30 @@ struct csVertconUSEntry_
 	struct cs_NadconFile_ *usGridPtr;
 };
 
+#ifdef GEOCOORD_ENHANCEMENT
+/******************************************************************************
+	vertical Datum catalog format-- The following enumerates the various formats for 
+	vertical datum grid file supported.
+	supported.  Generally this value is used to select the group of names which
+	are searched to identify objects which are named in WKT; specifically
+	projections, methods, parameters, etc.  Those flavors appearing after the
+	wktFlvrUnknown tag are not yet supported. */
+	enum VerticalDatumGridFormat {	
+		verticalDatumGridFormatUnknown = 0, /* Indcates that the format is unknown and the filename extension should be used to determine the type. */
+		verticalDatumGridFormatEGM2008,     /* Geoid 2008 format (usually _08 file name extension) */
+		verticalDatumGridFormatGEOID96,     /* USA Geoid 96 format (usually GEO file name extension) */
+		verticalDatumGridFormatBIN,         /* USA Geoid (various epoch) format (usually BIN file name extension) */
+		verticalDatumGridFormatOSGM91,      /* OSGM 91 format (usually TXT file name extension) */
+		verticalDatumGridFormatBYN,         /* Canadian BYN format (usually BYN file name extension) */
+		verticalDatumGridFormatEGM1996,     /* Geoid 1996 format (usually GRD file name extension. The binary sister file has _96 extension) */
+		verticalDatumGridFormatGTX_TEXT,    /* Text based GTX text format (usually TXT file name extension. A NOAA compliant GTX binary sister file will be generated with extension GTX or NOAA.GTX) */
+		verticalDatumGridFormatNOAA_GTX,    /* NOAA compliant Binary GTX format (usual extension GTX but can be NOAA.GTX) */
+		verticalDatumGridFormatGTXB,        /* Binary GTXB format encoded as Little-Endian (This file format is being deprecated) */
+		verticalDatumGridFormatOSGM02,      /* UK OSGM 2002 format (usually _02 file name extension) */
+		verticalDatumGridFormatVERTCON      /* USA VERTCON format */
+	  };
+#endif
+	  
 /******************************************************************************
 	Catalog object
 	Supporting datum files are access through a list of files known as a
@@ -8305,6 +8434,9 @@ struct csDatumCatalogEntry_
 	long32_t bufferSize;
 	ulong32_t flags;
 	short relative;
+#ifdef GEOCOORD_ENHANCEMENT
+	enum VerticalDatumGridFormat gridFormat;
+#endif
 };
 
 
@@ -8325,6 +8457,9 @@ int CSmoveDownDatumCatalog (struct csDatumCatalog_ *__This,size_t index);
 int CSmakeFirstDatumCatalog (struct csDatumCatalog_ *__This,size_t index);
 int CSmakeLastDatumCatalog (struct csDatumCatalog_ *__This,size_t index);
 struct csDatumCatalogEntry_* CSgetDatumCatalogEntry (struct csDatumCatalog_ *__This,int index);
+#ifdef GEOCOORD_ENHANCEMENT
+struct csDatumCatalogEntry_* CSnewDatumCatalogEntry2 (Const char* path,short relative,long32_t bufferSize,ulong32_t flags,double density, enum VerticalDatumGridFormat gridFormat);
+#endif
 struct csDatumCatalogEntry_* CSnewDatumCatalogEntry (Const char* path,short relative,long32_t bufferSize,ulong32_t flags,double density);
 void CSdeleteDatumCatalogEntry (struct csDatumCatalogEntry_* __This);
 void CSwriteDatumCatalogEntry (struct csDatumCatalogEntry_* __This,csFILE *fstr,Const char *baseDir);
@@ -8362,6 +8497,9 @@ int CScalcFallbackForward (struct cs_DtcXform_ *__This,double trg [3],Const doub
 int CScalcFallbackInverse (struct cs_DtcXform_ *__This,double trg [3],Const double src [3]);
 
 struct csGeoidHeight_* CSnewGeoidHeight (Const char *catalog);
+#ifdef GEOCOORD_ENHANCEMENT
+struct csGeoidHeight_* CSnewGeoidHeightFromCatalog(struct csDatumCatalog_* catPtr);
+#endif
 void CSdeleteGeoidHeight (struct csGeoidHeight_* __This);
 struct csGeoidHeightEntry_* CSselectGeoidHeight (struct csGeoidHeight_* __This,Const double ll84 [2]);
 void CSfirstGeoidHeight (struct csGeoidHeight_* __This,struct csGeoidHeightEntry_* ghEntryPtr);
@@ -8374,6 +8512,9 @@ double CStestGeoidHeightEntry (struct csGeoidHeightEntry_* __This,Const double l
 int CScalcGeoidHeightEntry (struct csGeoidHeightEntry_* __This,double* geoidHgt,Const double ll84 [2]);
 
 struct csVertconUS_* CSnewVertconUS (Const char *catalog);
+#ifdef GEOCOORD_ENHANCEMENT
+struct csVertconUS_* CSnewVertconUSFromCatalog(struct csDatumCatalog_* catPtr);
+#endif
 void CSdeleteVertconUS (struct csVertconUS_* __This);
 struct csVertconUSEntry_* CSselectVertconUS (struct csVertconUS_* __This,Const double ll83 [2]);
 void CSfirstVertconUS (struct csVertconUS_* __This,struct csVertconUSEntry_* vcEntryPtr);
@@ -8401,9 +8542,15 @@ struct cs_Ostn02_ *CSnewOstn02 (const char *filePath);
 #endif
 void CSdeleteOstn02 (struct cs_Ostn02_ *__This);
 void CSreleaseOstn02 (struct cs_Ostn02_ *__This);
+#ifdef GEOCOORD_ENHANCEMENT
+int CSprivateOstn02 (struct cs_Ostn02_ *__This,double result [3],const double etrs89 [3]);
+int CSforwardOstn02 (struct cs_Ostn02_ *__This,double osgb36 [3],const double etrs89 [3]);
+int CSinverseOstn02 (struct cs_Ostn02_ *__This,double etrs89 [3],const double osgb36 [3]);
+#else
 int CSprivateOstn02 (struct cs_Ostn02_ *__This,double result [2],const double etrs89 [2]);
 int CSforwardOstn02 (struct cs_Ostn02_ *__This,double osgb36 [2],const double etrs89 [2]);
 int CSinverseOstn02 (struct cs_Ostn02_ *__This,double etrs89 [2],const double osgb36 [2]);
+#endif
 int CSmkBinaryOstn02 (struct cs_Ostn02_ *__This);
 double CStestOstn02 (struct cs_Ostn02_ *__This);
 
@@ -8436,6 +8583,25 @@ int CScalcEgm96 (struct cs_Egm96_ *__This,double *geoidHgt,const double wgs84 [2
 int CSmkBinaryEgm96 (struct cs_Egm96_ *__This);
 int CSopnBinaryEgm96 (struct cs_Egm96_ *__This,long32_t bufrSize);
 double CSdebugEgm96 (struct cs_Egm96_ *__This);
+
+#ifdef GEOCOORD_ENHANCEMENT
+void CSreleaseEgm2008(struct cs_Egm2008_* __This);
+void CSdeleteEgm2008(struct cs_Egm2008_* __This);
+struct cs_Egm2008_* CSnewEgm2008(const char* filePath, double density);
+int CScalcEgm2008(struct cs_Egm2008_* __This, double* geoidHgt, const double ll[2]);
+
+#ifdef GEOCOORD_ENHANCEMENT
+struct cs_GtxFile_ *CSnewGtxFile (const char *filePath,long32_t bufferSize,ulong32_t flags,double density,short fileIsAlreadyBinary, short fileIsBigEndian, short fileHasDoubleRowsColumns);
+#else
+struct cs_GtxFile_ *CSnewGtxFile (const char *filePath,long32_t bufferSize,ulong32_t flags,double density);
+#endif
+void CSdeleteGtxFile (struct cs_GtxFile_ *__This);
+void CSreleaseGtxFile (struct cs_GtxFile_ *__This);
+int CScalcGtxFile (struct cs_GtxFile_ *__This,double *geoidHgt,const double wgs84 [2]);
+int CSmkBinaryGtxFile (struct cs_GtxFile_ *__This);
+int CSopnBinaryGtxFile (struct cs_GtxFile_ *__This,long32_t bufrSize);
+double CSdebugGtxFile (struct cs_GtxFile_ *__This);
+#endif
 
 void EXP_LVL5 CS_llhToXyz (double xyz [3],Const double llh [3],double e_rad,double e_sq);
 int EXP_LVL5 CS_xyzToLlh (double llh [3],Const double xyz [3],double e_rad,double e_sq);
