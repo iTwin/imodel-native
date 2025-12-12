@@ -1687,6 +1687,93 @@ TEST_F(BeSQLiteDbTests, BriefcaseLocalValues)
 
 
 /*---------------------------------------------------------------------------------**//**
+* Test QueryStandaloneEditFlags and SaveStandaloneEditFlags
+* Tests backward compatibility with legacy boolean values and new JSON object format
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, StandaloneEditFlags)
+    {
+    SetupDb(L"standalone.db");
+
+    // Test 1: Query when no value is set - should return null/empty
+    BeJsDocument result1;
+    m_db.QueryStandaloneEditFlags(result1);
+    EXPECT_TRUE(result1.isNull()) << "Should be null when no value is set";
+
+    // Test 2: Save and query JSON object format (current format)
+    BeJsDocument objVal;
+    objVal.SetEmptyObject();
+    objVal["txns"] = true;
+    objVal["otherFlag"] = false;
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveStandaloneEditFlags(objVal));
+    m_db.SaveChanges();
+
+    BeJsDocument result2;
+    m_db.QueryStandaloneEditFlags(result2);
+    EXPECT_TRUE(result2.isObject()) << "Should return an object";
+    EXPECT_TRUE(result2["txns"].asBool()) << "txns should be true";
+    EXPECT_FALSE(result2["otherFlag"].asBool()) << "otherFlag should be false";
+
+    // Test 3: Test backward compatibility - simulate legacy boolean value stored directly
+    // This tests the fix where we previously tried to parse a boolean as JSON improperly
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveBriefcaseLocalValue("StandaloneEdit", "true"));
+    m_db.SaveChanges();
+
+    BeJsDocument result3;
+    m_db.QueryStandaloneEditFlags(result3);
+    EXPECT_TRUE(result3.isObject()) << "Should convert boolean to object format";
+    EXPECT_TRUE(result3["txns"].asBool()) << "txns should be true for legacy boolean true";
+
+    // Test 4: Test backward compatibility with false boolean
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveBriefcaseLocalValue("StandaloneEdit", "false"));
+    m_db.SaveChanges();
+
+    BeJsDocument result4;
+    m_db.QueryStandaloneEditFlags(result4);
+    EXPECT_TRUE(result4.isObject()) << "Should convert boolean to object format";
+    EXPECT_FALSE(result4["txns"].asBool()) << "txns should be false for legacy boolean false";
+
+    // Test 5: Test invalid/unsupported value (should log warning but not crash)
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveBriefcaseLocalValue("StandaloneEdit", "invalid_json_string"));
+    m_db.SaveChanges();
+
+    BeJsDocument result5;
+    m_db.QueryStandaloneEditFlags(result5);
+    EXPECT_TRUE(result5.isNull()) << "Should return null for invalid value";
+
+    // Test 6: Delete/clear the flags (pass null to SaveStandaloneEditFlags)
+    BeJsDocument nullVal;
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveStandaloneEditFlags(nullVal));
+    m_db.SaveChanges();
+
+    BeJsDocument result6;
+    m_db.QueryStandaloneEditFlags(result6);
+    EXPECT_TRUE(result6.isNull()) << "Should be null after deletion";
+
+    // Test 7: Save complex JSON object with multiple properties
+    BeJsDocument complexObj;
+    complexObj.SetEmptyObject();
+    complexObj["txns"] = true;
+    complexObj["prop1"] = "value1";
+    complexObj["prop2"] = 42;
+    complexObj["prop3"] = true;
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveStandaloneEditFlags(complexObj));
+    m_db.SaveChanges();
+
+    BeJsDocument result7;
+    m_db.QueryStandaloneEditFlags(result7);
+    EXPECT_TRUE(result7.isObject()) << "Should return an object";
+    EXPECT_TRUE(result7["txns"].asBool());
+    EXPECT_STREQ("value1", result7["prop1"].asCString());
+    EXPECT_EQ(42, result7["prop2"].asInt());
+    EXPECT_TRUE(result7["prop3"].asBool());
+
+    m_db.SaveChanges();
+    m_db.CloseDb();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * Simulate a LineStyle bim case
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

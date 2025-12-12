@@ -721,8 +721,9 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
             pProperty->GetName().c_str(), GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
         return ECObjectsStatus::Error;
         }
-
-    if (!resolveConflicts && !baseProperty->GetName().Equals(pProperty->GetName()))
+    
+    bool isBasePropNameExactlySame = baseProperty->GetName().Equals(pProperty->GetName());
+    if (!resolveConflicts && !isBasePropNameExactlySame)
         {
         LOG.errorv("Could not add property '%s' to '%s' due to case-collision with %s:%s", 
             pProperty->GetName().c_str(), GetFullName(), baseProperty->GetClass().GetFullName(), baseProperty->GetName().c_str());
@@ -731,8 +732,16 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
 
     Utf8String errorMsg;
     ECObjectsStatus status = CanPropertyBeOverridden(*baseProperty, *pProperty, errorMsg);
-    if(ECObjectsStatus::Success == status) // existing local property is compatible with the incoming one
+    if(ECObjectsStatus::Success == status) // existing base property is compatible with the incoming one
         {
+        if(resolveConflicts && !isBasePropNameExactlySame) // Preserving old behavior. In case resolveConflicts is true and the base prop name and this prop name is not same, we just update this prop name
+            {
+            Utf8StringCR name = baseProperty->GetName().c_str();
+            if (!name.EqualsIAscii(pProperty->GetName()))
+                AddPropertyMapping(pProperty->GetName().c_str(), name.c_str());
+            pProperty->SetDisplayLabel(pProperty->GetName());
+            pProperty->SetName(name);
+            }
         pProperty->SetBaseProperty(baseProperty);
         return AddPropertyInternal(pProperty, resolveConflicts);
         }
