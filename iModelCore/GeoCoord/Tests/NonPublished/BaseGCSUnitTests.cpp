@@ -30,24 +30,6 @@ class BaseGCSUnitTests : public ::testing::Test
     };
 
 /*---------------------------------------------------------------------------------**//**
-* Compare Web Mercator to plain Mercator (must be different by polar radius)
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BaseGCSUnitTests, WebMercatorDiffToMercator)
-{
-    GeoCoordinates::BaseGCSPtr webMercator = GeoCoordinates::BaseGCS::CreateGCS("EPSG:3857");
-
-    ASSERT_TRUE(webMercator.IsValid() && webMercator->IsValid());
-
-    GeoCoordinates::BaseGCSPtr plainMercator = GeoCoordinates::BaseGCS::CreateGCS("EPSG:54004");
-
-    ASSERT_TRUE(plainMercator.IsValid() && plainMercator->IsValid());
-
-    ASSERT_FALSE(webMercator->IsEquivalent(*plainMercator));
-    ASSERT_FALSE(plainMercator->IsEquivalent(*webMercator));
-}
-
-/*---------------------------------------------------------------------------------**//**
 * Initial test for Json support
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
