@@ -8,7 +8,7 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_DPTEST
 
-class MoveElementToModelTests : public DgnDbTestFixture
+class ChangeElementModelTests : public DgnDbTestFixture
     {
 public:
     DgnModelPtr sourceModel;
@@ -74,9 +74,9 @@ public:
         return codeSpec;
         }
 
-    DgnDbStatus MoveToTargetModel(DgnElementCR element)
+    DgnDbStatus ChangeElementModel(DgnElementCR element)
         {
-        return m_db->Elements().MoveElementToModel(element, targetModelId);
+        return m_db->Elements().ChangeElementModel(element, targetModelId);
         }
 
     void VerifyInSourceModel(std::vector<DgnElementId> elementIds, Utf8CP context = nullptr)
@@ -100,19 +100,19 @@ public:
         }
     };
 
-TEST_F(MoveElementToModelTests, SimpleElementMoveAcrossModels)
+TEST_F(ChangeElementModelTests, MoveElementToAnotherModel)
     {
     const DgnElementId elementId = firstElement->GetElementId();
 
     VerifyInSourceModel({elementId}, "Before move");
 
-    EXPECT_EQ(DgnDbStatus::Success, MoveToTargetModel(*firstElement));
+    EXPECT_EQ(DgnDbStatus::Success, ChangeElementModel(*firstElement));
 
     VerifyInTargetModel({elementId}, "After move");
     EXPECT_STREQ("FirstElement", m_db->Elements().GetElement(elementId)->GetUserLabel());
     }
 
-TEST_F(MoveElementToModelTests, MoveElementWithChildren)
+TEST_F(ChangeElementModelTests, RejectMoveWhenElementHasParentOrChildren)
     {
     const DgnElementId parentId = firstElement->GetElementId();
 
@@ -129,21 +129,19 @@ TEST_F(MoveElementToModelTests, MoveElementWithChildren)
     ASSERT_TRUE(grandchild.IsValid());
     const DgnElementId grandchildId = grandchild->GetElementId();
 
-    VerifyInSourceModel({parentId, child1Id, child2Id, grandchildId}, "Before move");
+    for (auto elementId : {child1Id, child2Id, grandchildId})
+        {
+        VerifyInSourceModel({parentId, child1Id, child2Id, grandchildId}, "Before move");
 
-    EXPECT_EQ(DgnDbStatus::Success, MoveToTargetModel(*firstElement));
+        DgnElementCPtr element = m_db->Elements().GetElement(elementId);
+        ASSERT_TRUE(element.IsValid());
+        EXPECT_EQ(DgnDbStatus::ElementBlockedChange, ChangeElementModel(*element));
 
-    // Only parent moves; children remain in source model
-    VerifyInTargetModel({parentId}, "After move");
-    VerifyInSourceModel({child1Id, child2Id, grandchildId}, "After move");
-
-    // Verify parent-child relationships are maintained
-    EXPECT_EQ(parentId, m_db->Elements().GetElement(child1Id)->GetParentId());
-    EXPECT_EQ(parentId, m_db->Elements().GetElement(child2Id)->GetParentId());
-    EXPECT_EQ(child1Id, m_db->Elements().GetElement(grandchildId)->GetParentId());
+        VerifyInSourceModel({parentId, child1Id, child2Id, grandchildId}, "Before move");
+        }
     }
 
-TEST_F(MoveElementToModelTests, UniqueAspectPreserved)
+TEST_F(ChangeElementModelTests, UniqueAspectPreserved)
     {
     const DgnElementId elementId = firstElement->GetElementId();
     ECN::ECClassCP aspectClass = TestUniqueAspect::GetECClass(*m_db);
@@ -154,7 +152,7 @@ TEST_F(MoveElementToModelTests, UniqueAspectPreserved)
     DgnElement::UniqueAspect::SetAspect(*editElement, *TestUniqueAspect::Create("UniqueAspect"));
     EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().Update(*editElement));
 
-    EXPECT_EQ(DgnDbStatus::Success, MoveToTargetModel(*m_db->Elements().GetElement(elementId)));
+    EXPECT_EQ(DgnDbStatus::Success, ChangeElementModel(*m_db->Elements().GetElement(elementId)));
 
     // Verify aspect preserved after move
     TestUniqueAspectCPtr aspectAfter = DgnElement::UniqueAspect::Get<TestUniqueAspect>(*m_db->Elements().GetElement(elementId), *aspectClass);
@@ -162,7 +160,7 @@ TEST_F(MoveElementToModelTests, UniqueAspectPreserved)
     EXPECT_STREQ("UniqueAspect", aspectAfter->GetTestUniqueAspectProperty().c_str());
     }
 
-TEST_F(MoveElementToModelTests, MultiAspectPreserved)
+TEST_F(ChangeElementModelTests, MultiAspectPreserved)
     {
     const DgnElementId elementId = firstElement->GetElementId();
     ECN::ECClassCP aspectClass = TestMultiAspect::GetECClass(*m_db);
@@ -174,7 +172,7 @@ TEST_F(MoveElementToModelTests, MultiAspectPreserved)
     DgnElement::MultiAspect::AddAspect(*editElement, *aspect);
     EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().Update(*editElement));
 
-    EXPECT_EQ(DgnDbStatus::Success, MoveToTargetModel(*m_db->Elements().GetElement(elementId)));
+    EXPECT_EQ(DgnDbStatus::Success, ChangeElementModel(*m_db->Elements().GetElement(elementId)));
 
     // Verify aspect preserved after move
     TestMultiAspectCPtr aspectAfter = DgnElement::MultiAspect::Get<TestMultiAspect>(*m_db->Elements().GetElement(elementId), *aspectClass, aspect->GetAspectInstanceId());
@@ -182,66 +180,27 @@ TEST_F(MoveElementToModelTests, MultiAspectPreserved)
     EXPECT_STREQ("MultiAspect", aspectAfter->GetTestMultiAspectProperty().c_str());
     }
 
-TEST_F(MoveElementToModelTests, DeepHierarchyMove)
+TEST_F(ChangeElementModelTests, MoveToSameModelIsNoop)
     {
-    /* Create a deep hierarchy: parent -> child1 -> grandchild1 -> greatGrandChild1
-                                       -> child2 -> grandchild2
-    */
-    const DgnElementId parentId = firstElement->GetElementId();
-    DgnElementCPtr child1 = CreateChildElement(parentId, "Child1");
-    ASSERT_TRUE(child1.IsValid());
-    const DgnElementId child1Id = child1->GetElementId();
-
-    DgnElementCPtr child2 = CreateChildElement(parentId, "Child2");
-    ASSERT_TRUE(child2.IsValid());
-    const DgnElementId child2Id = child2->GetElementId();
-
-    DgnElementCPtr grandchild1 = CreateChildElement(child1Id, "Grandchild1");
-    ASSERT_TRUE(grandchild1.IsValid());
-    const DgnElementId grandchild1Id = grandchild1->GetElementId();
-
-    DgnElementCPtr grandchild2 = CreateChildElement(child2Id, "Grandchild2");
-    ASSERT_TRUE(grandchild2.IsValid());
-    const DgnElementId grandchild2Id = grandchild2->GetElementId();
-
-    DgnElementCPtr greatGrandchild1 = CreateChildElement(grandchild1Id, "GreatGrandchild1");
-    ASSERT_TRUE(greatGrandchild1.IsValid());
-    const DgnElementId greatGrandchild1Id = greatGrandchild1->GetElementId();
-
-    // Move grandchild1 to target
-    EXPECT_EQ(DgnDbStatus::Success, MoveToTargetModel(*m_db->Elements().GetElement(grandchild1Id)));
-    VerifyInSourceModel({parentId, child1Id, child2Id, grandchild2Id, greatGrandchild1Id}, "After first move");
-    VerifyInTargetModel({grandchild1Id}, "After first move");
-
-    // Move remaining elements one by one
-    for (auto elementId : {greatGrandchild1Id, grandchild2Id, child1Id, child2Id})
-        EXPECT_EQ(DgnDbStatus::Success, MoveToTargetModel(*m_db->Elements().GetElement(elementId)));
-
-    VerifyInSourceModel({parentId}, "After all moves");
-    VerifyInTargetModel({child1Id, child2Id, grandchild1Id, grandchild2Id, greatGrandchild1Id}, "After all moves");
-    }
-
-TEST_F(MoveElementToModelTests, MoveToSameModelIsNoop)
-    {
-    EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().MoveElementToModel(*firstElement, sourceModelId));
+    EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().ChangeElementModel(*firstElement, sourceModelId));
     VerifyInSourceModel({firstElement->GetElementId()});
     }
 
-TEST_F(MoveElementToModelTests, MoveToInvalidModelFails)
+TEST_F(ChangeElementModelTests, MoveToInvalidModelFails)
     {
     DgnModelId invalidModelId;
-    EXPECT_EQ(DgnDbStatus::InvalidId, m_db->Elements().MoveElementToModel(*firstElement, invalidModelId));
+    EXPECT_EQ(DgnDbStatus::InvalidId, m_db->Elements().ChangeElementModel(*firstElement, invalidModelId));
     VerifyInSourceModel({firstElement->GetElementId()});
     }
 
-TEST_F(MoveElementToModelTests, CodePreservedAfterMove)
+TEST_F(ChangeElementModelTests, CodePreservedAfterMove)
     {
     CodeSpecPtr codeSpec = CreateModelScopedCodeSpec("TestCodeSpec");
     DgnElementCPtr element = CreateElementWithCode(sourceModelId, codeSpec->GetCodeSpecId(), sourceModel->GetModeledElementId(), "ElementLabel", "UniqueCode123");
     ASSERT_TRUE(element.IsValid());
     DgnCode originalCode = element->GetCode();
 
-    EXPECT_EQ(DgnDbStatus::Success, MoveToTargetModel(*element));
+    EXPECT_EQ(DgnDbStatus::Success, ChangeElementModel(*element));
 
     // Verify code is preserved
     DgnElementCPtr movedElement = m_db->Elements().GetElement(element->GetElementId());
@@ -249,16 +208,16 @@ TEST_F(MoveElementToModelTests, CodePreservedAfterMove)
     EXPECT_STREQ(originalCode.GetValue().GetUtf8CP(), movedElement->GetCode().GetValue().GetUtf8CP());
     }
 
-TEST_F(MoveElementToModelTests, CacheInvalidatedAfterMove)
+TEST_F(ChangeElementModelTests, CacheInvalidatedAfterMove)
     {
     const DgnElementId elementId = firstElement->GetElementId();
 
     VerifyInSourceModel({elementId}, "Before move");
-    EXPECT_EQ(DgnDbStatus::Success, MoveToTargetModel(*firstElement));
+    EXPECT_EQ(DgnDbStatus::Success, ChangeElementModel(*firstElement));
     VerifyInTargetModel({elementId}, "After move");
     }
 
-TEST_F(MoveElementToModelTests, RollbackWhenTargetModelRejectsInsert)
+TEST_F(ChangeElementModelTests, RollbackWhenTargetModelRejectsInsert)
     {
     // Create non-compatible target models
     const DgnModelPtr definitionModel = DgnDbTestUtils::InsertDefinitionModel(*m_db, "DefinitionModel");
@@ -272,32 +231,20 @@ TEST_F(MoveElementToModelTests, RollbackWhenTargetModelRejectsInsert)
 
     // Create element hierarchy
     const DgnElementId parentId = firstElement->GetElementId();
-    DgnElementCPtr child1 = CreateChildElement(parentId, "Child1");
-    ASSERT_TRUE(child1.IsValid());
-    const DgnElementId child1Id = child1->GetElementId();
-
-    DgnElementCPtr child2 = CreateChildElement(parentId, "Child2");
-    ASSERT_TRUE(child2.IsValid());
-    const DgnElementId child2Id = child2->GetElementId();
-
-    DgnElementCPtr grandchild = CreateChildElement(child1Id, "Grandchild1");
-    ASSERT_TRUE(grandchild.IsValid());
-    const DgnElementId grandchildId = grandchild->GetElementId();
-
     m_db->SaveChanges();
 
-    VerifyInSourceModel({parentId, child1Id, child2Id, grandchildId}, "Before failed move");
+    VerifyInSourceModel({parentId}, "Before failed move");
 
     // Attempt move to DefinitionModel - should fail (TestElement is Geometric3d)
-    EXPECT_EQ(DgnDbStatus::WrongModel, m_db->Elements().MoveElementToModel(*firstElement, definitionModel->GetModelId()));
-    VerifyInSourceModel({parentId, child1Id, child2Id, grandchildId}, "After failed move to DefinitionModel");
+    EXPECT_EQ(DgnDbStatus::WrongModel, m_db->Elements().ChangeElementModel(*firstElement, definitionModel->GetModelId()));
+    VerifyInSourceModel({parentId}, "After failed move to DefinitionModel");
 
     // Attempt move to DrawingModel - should fail (TestElement is 3d, not 2d)
-    EXPECT_EQ(DgnDbStatus::Mismatch2d3d, m_db->Elements().MoveElementToModel(*firstElement, drawingModel->GetModelId()));
-    VerifyInSourceModel({parentId, child1Id, child2Id, grandchildId}, "After failed move to DrawingModel");
+    EXPECT_EQ(DgnDbStatus::Mismatch2d3d, m_db->Elements().ChangeElementModel(*firstElement, drawingModel->GetModelId()));
+    VerifyInSourceModel({parentId}, "After failed move to DrawingModel");
     }
 
-TEST_F(MoveElementToModelTests, ModelScopedCodeConflictWithRootElement)
+TEST_F(ChangeElementModelTests, ModelScopedCodeConflictWithRootElement)
     {
     CodeSpecPtr codeSpec = CreateModelScopedCodeSpec("ModelScopedCodeSpec");
 
@@ -308,66 +255,28 @@ TEST_F(MoveElementToModelTests, ModelScopedCodeConflictWithRootElement)
     ASSERT_TRUE(element2.IsValid());
 
     // Attempt move - should fail due to code conflict
-    EXPECT_EQ(DgnDbStatus::DuplicateCode, m_db->Elements().MoveElementToModel(*element1, targetModelId));
+    EXPECT_EQ(DgnDbStatus::DuplicateCode, m_db->Elements().ChangeElementModel(*element1, targetModelId));
 
     // Verify elements remain in their original models
     VerifyInSourceModel({element1->GetElementId()});
     VerifyInTargetModel({element2->GetElementId()});
     }
 
-TEST_F(MoveElementToModelTests, ModelScopedCodeConflictWithChildElement)
-    {
-    CodeSpecPtr codeSpec = CreateModelScopedCodeSpec("ModelScopedCodeSpec");
-
-    // Create parent with child that has code "DuplicateCode"
-    DgnElementCPtr parent = CreateElementWithCode(sourceModelId, codeSpec->GetCodeSpecId(), sourceModel->GetModeledElementId(), "Parent", "ParentCode");
-    ASSERT_TRUE(parent.IsValid());
-    const auto childCode = DgnCode::CreateWithDbContext(*m_db, codeSpec->GetCodeSpecId(), parent->GetElementId(), "DuplicateCode");
-    
-    DgnElementCPtr child = CreateChildElement(parent->GetElementId(), "Child", &childCode);
-    ASSERT_TRUE(child.IsValid());
-    const DgnElementId childId = child->GetElementId();
-
-    // Create element in target model with conflicting code
-    DgnElementCPtr targetElement = CreateElementWithCode(targetModelId, codeSpec->GetCodeSpecId(), targetModel->GetModeledElementId(), "TargetElement", "DuplicateCode");
-    ASSERT_TRUE(targetElement.IsValid());
-
-    // Move parent (child stays in source) - should succeed since parent itself has no conflict
-    EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().MoveElementToModel(*parent, targetModelId));
-
-    // Verify: parent moved, child and targetElement remain
-    VerifyInSourceModel({childId});
-    VerifyInTargetModel({parent->GetElementId(), targetElement->GetElementId()});
-    }
-
-TEST_F(MoveElementToModelTests, UndoRedoMoveElement)
+TEST_F(ChangeElementModelTests, UndoRedoMoveElement)
     {
     const DgnElementId parentId = firstElement->GetElementId();
-    DgnElementCPtr child1 = CreateChildElement(parentId, "Child1");
-    ASSERT_TRUE(child1.IsValid());
-    const DgnElementId child1Id = child1->GetElementId();
 
-    DgnElementCPtr child2 = CreateChildElement(parentId, "Child2");
-    ASSERT_TRUE(child2.IsValid());
-    const DgnElementId child2Id = child2->GetElementId();
-
-    DgnElementCPtr grandchild = CreateChildElement(child1->GetElementId(), "Grandchild1");
-    ASSERT_TRUE(grandchild.IsValid());
-    const DgnElementId grandchildId = grandchild->GetElementId();
-
-    VerifyInSourceModel({parentId, child1Id, child2Id, grandchildId}, "Before move");
+    VerifyInSourceModel({parentId}, "Before move");
     m_db->SaveChanges("Insert test elements");
 
-    EXPECT_EQ(DgnDbStatus::Success, MoveToTargetModel(*firstElement));
+    EXPECT_EQ(DgnDbStatus::Success, ChangeElementModel(*firstElement));
     m_db->SaveChanges("Move parent to target model");
 
     VerifyInTargetModel({parentId}, "After move");
-    VerifyInSourceModel({child1Id, child2Id, grandchildId}, "After move");
 
     EXPECT_EQ(DgnDbStatus::Success, m_db->Txns().ReverseSingleTxn());
-    VerifyInSourceModel({parentId, child1Id, child2Id, grandchildId}, "After undo");
+    VerifyInSourceModel({parentId}, "After undo");
 
     EXPECT_EQ(DgnDbStatus::Success, m_db->Txns().ReinstateTxn());
     VerifyInTargetModel({parentId}, "After redo");
-    VerifyInSourceModel({child1Id, child2Id, grandchildId}, "After redo");
     }

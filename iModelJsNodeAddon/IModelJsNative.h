@@ -509,7 +509,7 @@ public:
     static DgnDbStatus GetElement(BeJsValue results, DgnDbR db, Napi::Object);
     static Napi::String InsertElement(DgnDbR db, Napi::Object props, Napi::Value options);
     static void UpdateElement(DgnDbR db, Napi::Object);
-    static void MoveElementToModel(DgnDbR db, Utf8StringCR elementIdStr, Utf8StringCR targetModelIdStr);
+    static void ChangeElementModel(DgnDbR db, Napi::Object elementProps, const DgnModelId& targetModelId);
     static void DeleteElement(DgnDbR db, Utf8StringCR eidStr);
     static DgnDbStatus SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyArgs);
     static InlineGeometryPartsResult InlineGeometryParts(DgnDbR db);
