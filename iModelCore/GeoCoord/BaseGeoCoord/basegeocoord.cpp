@@ -9754,7 +9754,7 @@ StatusInt VerticalDatumInfo::GetTransformPath(bvector<Utf8String>& path, const U
         }
     }
 
-    return (path.size()) ? SUCCESS : GEOCOORDERR_NoTransforms;
+    return (path.size()) ? SUCCESS : static_cast<StatusInt>(GEOCOORDERR_NoTransforms);
 }
 
 StatusInt VerticalDatumInfo::GetTransformTargetNames(bvector<Utf8String>& targetNames) const
@@ -9764,7 +9764,7 @@ StatusInt VerticalDatumInfo::GetTransformTargetNames(bvector<Utf8String>& target
     for (const auto& transform : m_transforms)
         targetNames.push_back(transform->GetTarget());
 
-    return (targetNames.size() > 0) ? SUCCESS : GEOCOORDERR_NoTransforms;
+    return (targetNames.size() > 0) ? SUCCESS : static_cast<StatusInt>(GEOCOORDERR_NoTransforms);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -10154,7 +10154,7 @@ StatusInt VerticalDatumDictionary::GetVerticalDatumTransforms(bvector<VerticalTr
 
     // Note that GEOCOORDERR_NoTransforms means that there are no transforms available for this particular latLong,
     // for a different latLong there may be transforms available
-    return (transforms.size()) ? SUCCESS : GEOCOORDERR_NoTransforms;
+    return (transforms.size()) ? SUCCESS : static_cast<StatusInt>(GEOCOORDERR_NoTransforms);
 }
 
 StatusInt VerticalDatumDictionary::QueryVerticalDatumsAvailableAtPoint(bvector<Utf8String>& verticalDatums, const GeoPoint2d& latLong) const
@@ -13600,12 +13600,6 @@ StatusInt BaseGCS::ToHorizontalJson(BeJsValue jsonValue, bool expandDatum) const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt BaseGCS::FromVerticalJson(BeJsConst jsonValue, Utf8StringR errorMessage) {
-    // Error processing lambda definitions
-    auto MissingProperty = [&errorMessage](Utf8CP name) {
-        errorMessage.Sprintf("'%s' is missing", name);
-        return GEOCOORDERR_MissingPropertyOrParameter;
-    };
-
     if (!IsLibraryInitialized())
         return GEOCOORDERR_GeoCoordNotInitialized;
 
