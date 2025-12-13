@@ -624,6 +624,71 @@ DgnDbStatus DgnElements::UpdateElement(DgnElementR replacement)
     return DgnDbStatus::Success;
     }
 
+DgnDbStatus DgnElements::ChangeElementModel(DgnElementCR element, const DgnModelId& targetModelId)
+    {
+    DgnDb::VerifyClientThread();
+
+    DgnModelPtr sourceModel = element.GetModel();
+    DgnModelPtr targetModel = m_dgndb.Models().GetModel(targetModelId);
+
+    // Validate models
+    if (!sourceModel.IsValid() || !targetModel.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    // Already in target model (noop)
+    if (sourceModel->GetModelId() == targetModel->GetModelId())
+        return DgnDbStatus::Success;
+
+    if (element.m_parent.IsValid() || element.QueryChildren().size() > 0)
+        return DgnDbStatus::ElementBlockedChange;
+    
+    // Check if the DgnCode is model-scoped
+    DgnCode updatedCode = element.GetCode();
+    if (updatedCode.IsValid() && !updatedCode.IsEmpty())
+        {
+        CodeSpecCPtr codeSpec = m_dgndb.CodeSpecs().GetCodeSpec(updatedCode.GetCodeSpecId());
+        if (codeSpec.IsValid() && codeSpec->IsModelScope())
+            updatedCode = DgnCode::CreateWithDbContext(m_dgndb, updatedCode.GetCodeSpecId(), targetModel->GetModeledElementId(), updatedCode.GetValueUtf8());
+        }
+        
+    // Check for code conflicts in target model
+    if (QueryElementIdByCode(updatedCode).IsValid())
+        return DgnDbStatus::DuplicateCode;
+
+    // Validate removal from source model
+    if (const auto status = sourceModel->_OnElementModelChange(element, *targetModel); DgnDbStatus::Success != status)
+        return status;
+
+    // Validate insertion into target model
+    DgnElementPtr movedElement = element.MakeCopy<DgnElement>();
+    movedElement->m_modelId = targetModel->GetModelId();
+
+    if (updatedCode.IsValid() && updatedCode != element.GetCode())
+        movedElement->m_code = updatedCode;
+        
+    if (const auto status = targetModel->_OnInsertElement(*movedElement); DgnDbStatus::Success != status)
+        return status;
+
+    // Update ModelId and CodeScope in database
+    auto updateStmt = m_dgndb.GetCachedStatement("UPDATE bis_Element SET ModelId=?, CodeScopeId=? WHERE Id = ?");
+    if (!updateStmt.IsValid())
+        return DgnDbStatus::SQLiteError;
+
+    updateStmt->BindId(1, targetModelId);
+    updateStmt->BindId(2, updatedCode.GetScopeElementId(m_dgndb));
+    updateStmt->BindId(3, element.GetElementId());
+    
+    if (BE_SQLITE_DONE != updateStmt->Step())
+        return DgnDbStatus::SQLiteError;
+
+    // Notify models of the change
+    sourceModel->_OnElementModelChanged(element);
+
+    DropFromPool(*movedElement);
+
+    return DgnDbStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

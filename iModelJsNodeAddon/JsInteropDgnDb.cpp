@@ -670,6 +670,22 @@ void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::ChangeElementModel(DgnDbR dgndb, const DgnElementId& elementId, const DgnModelId& targetModelId) {
+    if (!elementId.IsValid() || !targetModelId.IsValid())
+        throwInvalidId();
+
+    DgnElementCPtr element = dgndb.Elements().GetElement(elementId);
+    DgnModelCPtr targetModel = dgndb.Models().GetModel(targetModelId);
+    if (!element.IsValid() || !targetModel.IsValid())
+        throwBadArg();
+
+    if (const auto moveStatus = dgndb.Elements().ChangeElementModel(*element, targetModelId); moveStatus != DgnDbStatus::Success)
+        throwDgnDbStatus(moveStatus);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr) {
     DgnElementId eid(BeInt64Id::FromString(eidStr.c_str()).GetValue());
     if (!eid.IsValid())

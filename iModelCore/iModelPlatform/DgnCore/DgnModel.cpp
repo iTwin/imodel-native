@@ -44,6 +44,20 @@ void DgnModel::CallJsElementPreHandler(DgnElementCR element, Utf8CP methodName) 
 /*---------------------------------------------------------------------------------**/ /**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::CallJsElementPreHandler(DgnElementCR element, DgnModelCR model, Utf8CP methodName) const {
+    auto jsDb = m_dgndb.GetJsIModelDb();
+    if (jsDb) {
+        BeJsNapiObject arg(jsDb->Env());
+        arg["id"] = m_modelId;
+        arg["elementId"] = element.GetElementId();
+        arg["targetModelId"] = model.GetModelId();
+        m_dgndb.CallJsHandlerMethod(m_classId, methodName, arg);
+    }
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::CallJsElementPostHandler(DgnElementId elementId, Utf8CP methodName) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
     if (jsDb) {
@@ -1229,6 +1243,17 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
         return DgnDbStatus::ReadOnly;
 
     CallJsElementPreHandler(modified, "onUpdateElement"); // javascript `model.onUpdateElement`
+    return DgnDbStatus::Success;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_OnElementModelChange(DgnElementCR element, DgnModelCR targetModel) {
+    if (m_dgndb.IsReadonly())
+        return DgnDbStatus::ReadOnly;
+
+    CallJsElementPreHandler(element, targetModel, "onElementModelChange"); // javascript `model.onElementModelChange`
     return DgnDbStatus::Success;
 }
 
