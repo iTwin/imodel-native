@@ -718,7 +718,7 @@ export declare namespace IModelJsNative {
     public isTxnIdValid(txnId: TxnIdString): boolean;
     public isUndoPossible(): boolean;
     public logTxnError(fatal: boolean): void;
-    public changeElementModel(elementProps: Partial<ElementProps>, modelId: Id64String): void;
+    public changeElementModel(elementId: Id64String, modelId: Id64String): void;
     public openIModel(dbName: string, mode: OpenMode, upgradeOptions?: UpgradeOptions & SchemaImportOptions, props?: SnapshotOpenOptions, container?: CloudContainer, sqliteOptions?: { busyTimeout?: number }): void;
     public pauseProfiler(): DbResult;
     public pollTileContent(treeId: string, tileId: string): ErrorStatusOrResult<IModelStatus, TileContentState | TileContent>;

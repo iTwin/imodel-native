@@ -670,10 +670,7 @@ void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::ChangeElementModel(DgnDbR dgndb, Napi::Object elementProps, const DgnModelId& targetModelId) {
-    BeJsConst inJson(elementProps);
-    
-    auto elementId = inJson[DgnElement::json_id()].GetId64<DgnElementId>();
+void JsInterop::ChangeElementModel(DgnDbR dgndb, const DgnElementId& elementId, const DgnModelId& targetModelId) {
     if (!elementId.IsValid() || !targetModelId.IsValid())
         throwInvalidId();
 
@@ -682,12 +679,7 @@ void JsInterop::ChangeElementModel(DgnDbR dgndb, Napi::Object elementProps, cons
     if (!element.IsValid() || !targetModel.IsValid())
         throwBadArg();
 
-    // Create a mutable copy so we can set m_napiObj for the hook
-    auto el = element->CopyForEdit();
-    el->FromJson(elementProps);
-    SetNapiObjOnElement _v(*el, &elementProps);
-
-    if (const auto moveStatus = dgndb.Elements().ChangeElementModel(*el, targetModelId); moveStatus != DgnDbStatus::Success)
+    if (const auto moveStatus = dgndb.Elements().ChangeElementModel(*element, targetModelId); moveStatus != DgnDbStatus::Success)
         throwDgnDbStatus(moveStatus);
 }
 

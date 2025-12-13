@@ -46,10 +46,10 @@ void DgnModel::CallJsElementPreHandler(DgnElementCR element, Utf8CP methodName) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::CallJsElementPreHandler(DgnElementCR element, DgnModelCR model, Utf8CP methodName) const {
     auto jsDb = m_dgndb.GetJsIModelDb();
-    if (jsDb && element.m_napiObj) {
+    if (jsDb) {
         BeJsNapiObject arg(jsDb->Env());
         arg["id"] = m_modelId;
-        ((Napi::Object)arg)["elementProps"] = *element.m_napiObj;
+        arg["elementId"] = element.GetElementId();
         arg["targetModelId"] = model.GetModelId();
         m_dgndb.CallJsHandlerMethod(m_classId, methodName, arg);
     }

@@ -1729,10 +1729,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     void ChangeElementModel(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        REQUIRE_ARGUMENT_ANY_OBJ(0, elementProps);
+        REQUIRE_ARGUMENT_STRING_ID(0, elementIdStr, DgnElementId, elementId);
         REQUIRE_ARGUMENT_STRING_ID(1, targetModelIdStr, DgnModelId, modelId);
 
-        JsInterop::ChangeElementModel(db, elementProps, modelId);
+        JsInterop::ChangeElementModel(db, elementId, modelId);
     }
 
     void DeleteElement(NapiInfoCR info) {
