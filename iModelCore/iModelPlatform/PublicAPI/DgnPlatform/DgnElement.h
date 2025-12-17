@@ -4035,14 +4035,13 @@ public:
     DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::NotFound;}
 
     //! Move a DgnElement to a different model.
+    //! If the element has any child elements, they are moved to the target model as well.
     //! If validation fails or any error occurs, the element stays unmoved.
-    //! @param[in] element The element to move. Should not have any children or parent elements.
+    //! @param[in] element The element to move. Should not have a parent element.
     //! @param[in] targetModelId The DgnModelId of the destination model
     //! @return DgnDbStatus::Success if the element was moved, error status otherwise.
-    //! @note This method will only move the element itself. It will not move any of its children or parent elements.
-    //! @note The caller is responsible for moving the assembly and acquiring the necessary locks.
     //! @note This function can only be safely invoked from the client thread.
-    DGNPLATFORM_EXPORT DgnDbStatus ChangeElementModel(DgnElementCR element, const DgnModelId& targetModelId);
+    DGNPLATFORM_EXPORT DgnDbStatus ChangeElementModel(DgnElementCR element, const DgnModelId targetModelId);
 
     //! Set the maximum number of elements to be held by the "Most Recently Used" element cache for this DgnDb.
     //! @param newMax The maximum number of elements to be held in the element MRU cache. After this many elements are in memory,

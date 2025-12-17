@@ -670,7 +670,7 @@ void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::ChangeElementModel(DgnDbR dgndb, const DgnElementId& elementId, const DgnModelId& targetModelId) {
+void JsInterop::ChangeElementModel(DgnDbR dgndb, const DgnElementId elementId, const DgnModelId targetModelId) {
     if (!elementId.IsValid() || !targetModelId.IsValid())
         throwInvalidId();
 
