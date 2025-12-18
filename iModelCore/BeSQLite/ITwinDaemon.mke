@@ -66,7 +66,10 @@ LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinCurl$(stlibext
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
 LINKER_LIBRARIES + $(CLibs)
 LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
-LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)proxyres$(stlibext)
+
+%if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)proxyres$(stlibext)
+%endif
 
 %if $(TARGET_PLATFORM)=="Windows"
     LINKER_LIBRARIES + iphlpapi.lib

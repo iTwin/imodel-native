@@ -434,7 +434,6 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(lib
                             $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(stlibext) \
                             $(ContextSubPartsStaticLibs)$(libprefix)BePng$(stlibext) \
                             $(ContextSubPartsStaticLibs)$(libprefix)BeLibJpegTurbo$(stlibext) \
-                            $(ContextSubPartsStaticLibs)$(libprefix)proxyres$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinJpeg$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext) \
                             $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
@@ -448,6 +447,10 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)iTwinSQLiteEC$(lib
                             $(ContextSubpartsLibs)$(libprefix)iTwinFolly$(libext) \
                             $(ContextSubPartsLibs)$(libprefix)iTwinECPresentation$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)iTwinNapi$(libext)
+
+%if $(TARGET_PLATFORM)!="Android" && $(TARGET_PLATFORM)!="Linux"
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(libprefix)proxyres$(stlibext)
+%endif
 
 %if $(TARGET_PLATFORM)=="Windows"
     LINKER_LIBRARIES + iphlpapi.lib
