@@ -417,6 +417,7 @@ private:
     BeSQLite::SnappyFromBlob m_snappyFrom;
     BeSQLite::SnappyToBlob   m_snappyTo;
     TxnRelationshipLinkTables m_rlt;
+    bool m_allowSaveChangesDuringRebase = false;
     int m_txnErrors = 0;
     bool m_fatalValidationError;
     bool m_initTableHandlers;
@@ -473,7 +474,7 @@ private:
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     bool IsMultiTxnMember(TxnId rowid) const;
     TxnType GetTxnType(TxnId rowid) const;
-
+    bool IsTxnReversed(TxnId rowid) const;
     BentleyStatus PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8StringCR compoundSQL);
     void NotifyOnCommit();
     void ThrowIfChangesetInProgress();
