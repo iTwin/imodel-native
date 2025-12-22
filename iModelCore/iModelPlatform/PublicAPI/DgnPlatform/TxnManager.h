@@ -428,12 +428,16 @@ private:
     std::unordered_map<Utf8String, BeJsDocument> m_changesetHealthStatistics;
 
 public:
+    enum SessionOption {
+        New,
+        Resume,
+    }; 
     ModelChanges m_modelChanges;
 
     void ProcessModelChanges();
     void NotifyModelChanges();
     void ClearModelChanges();
-    DGNPLATFORM_EXPORT void Initialize();
+    DGNPLATFORM_EXPORT void Initialize(SessionOption option = SessionOption::New);
 private:
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     void _OnCommitted(bool isCommit, Utf8CP operation) override;
