@@ -217,10 +217,6 @@ TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConf
         return ConflictResolution::Skip; // caused by inserting row and then updating it in the same txn and then undoing the txn. It's not a problem.
     }
 
-    if (change.GetTableName().EqualsIAscii("bis_Element")){
-        const auto id = change.GetValue(0, change.GetOpcode() != DbOpcode::Insert ? Changes::Change::Stage::Old : Changes::Change::Stage::New).GetValueId<ECInstanceId>();
-        LOG.errorv("Conflict during undo of change to Element 0x%" PRIx64 " (table=%s, opcode=%d, cause=%d)", id.GetValue(), change.GetTableName().c_str(), static_cast<int>(opcode), static_cast<int>(cause));
-    }
     BeAssert(false);
     return ConflictResolution::Skip;
 }
