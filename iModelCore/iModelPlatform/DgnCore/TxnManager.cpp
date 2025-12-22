@@ -3724,20 +3724,7 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
     while(!m_multiTxnOp.empty()) {
         EndMultiTxnOperation();
     }
-    // auto findEl = [](BeSQLite::Db& db, BeInt64Id elementId) -> bool {
-    //     Statement stmt;
-    //     auto rc = stmt.Prepare(db, "SELECT 1 FROM bis_Element WHERE Id = ?");
-    //     BeAssert(rc == BE_SQLITE_OK);
-    //     rc = stmt.BindId(1, elementId);
-    //     BeAssert(rc == BE_SQLITE_OK);
-    //     rc = stmt.Step();
-    //     return rc == BE_SQLITE_ROW;
-    // };
 
-    // printf("PullMergeReverseLocalChanges Exists 0x40000000001: %d\n", findEl(m_dgndb, BeInt64Id(0x40000000001)));
-    // printf("PullMergeReverseLocalChanges Exists 0x40000000002: %d\n", findEl(m_dgndb, BeInt64Id(0x40000000002)));
-    // printf("PullMergeReverseLocalChanges Exists 0x40000000003: %d\n", findEl(m_dgndb, BeInt64Id(0x40000000003)));
-    // printf("PullMergeReverseLocalChanges Exists 0x40000000004: %d\n", findEl(m_dgndb, BeInt64Id(0x40000000004)));
     DeleteReversedTxns();
     TxnId startTxnId = QueryNextTxnId(TxnId(0));
     TxnId endTxnId = GetCurrentTxnId();
@@ -3759,11 +3746,6 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
         }
     }
  
-
-    // printf("PullMergeReverseLocalChanges Exists 0x40000000001: %d\n", findEl(m_dgndb, BeInt64Id(0x40000000001)));
-    // printf("PullMergeReverseLocalChanges Exists 0x40000000002: %d\n", findEl(m_dgndb, BeInt64Id(0x40000000002)));
-    // printf("PullMergeReverseLocalChanges Exists 0x40000000003: %d\n", findEl(m_dgndb, BeInt64Id(0x40000000003)));
-    // printf("PullMergeReverseLocalChanges Exists 0x40000000004: %d\n", findEl(m_dgndb, BeInt64Id(0x40000000004)));
     BeAssert(HasPendingTxns() == false);
     BeAssert(HasDataChanges() == false);
 
