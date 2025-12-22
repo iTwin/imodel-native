@@ -851,16 +851,15 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             if (HasDataChanges()) {
                 if(!m_allowSaveChangesDuringRebase) {
                     LOG.error("Saving changes are not allowed when rebasing local changes");
-                    m_allowSaveChangesDuringRebase = false; // reset the flag
                     return OnCommitStatus::RebaseInProgress;
                 }
             } else {
-                m_allowSaveChangesDuringRebase = false; // reset the flag
+                if(m_allowSaveChangesDuringRebase)
+                    m_allowSaveChangesDuringRebase = false; // reset the flag
                 return OnCommitStatus::NoChanges;
             }
         } 
     }
-    m_allowSaveChangesDuringRebase = false; // reset the flag
 
     ModelChangesScope v_v_v_(*this);
     DdlChanges ddlChanges = std::move(m_ddlChanges);
