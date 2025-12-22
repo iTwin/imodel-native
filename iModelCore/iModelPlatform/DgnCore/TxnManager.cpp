@@ -452,7 +452,7 @@ void TxnManager::Initialize(SessionOption option) {
         last = stmt.GetValueInt64(0);
     }    
     
-    m_curr = TxnId(SessionId(0), 0);
+    m_curr = TxnId(SessionId(1), 0);
     if (last.IsValid()) {
         if (option == SessionOption::Resume) {
             m_curr = last;
