@@ -431,7 +431,7 @@ public:
     enum SessionOption {
         New,
         Resume,
-    }; 
+    };
     ModelChanges m_modelChanges;
 
     void ProcessModelChanges();
