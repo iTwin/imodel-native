@@ -1175,12 +1175,7 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 		seCell [LNG] = cvtPtr->SeReference [LNG] + cvtPtr->DeltaLng * (double)eleNbr;
 		seCell [LAT] = cvtPtr->SeReference [LAT] + cvtPtr->DeltaLat * (double)rowNbr;
 		nwCell [LNG] = seCell [LNG] + cvtPtr->DeltaLng;
-#ifdef GEOCOORD_ENHANCEMENT
-        /* Possible CSMAP bug(?) ... check */
 		nwCell [LAT] = seCell [LAT] + cvtPtr->DeltaLat;
-#else
-		nwCell [LAT] = seCell [LAT] + cvtPtr->DeltaLng;
-#endif
 
 		/* Build the extent portions of the grid cells. */
 		thisPtr->longitudeCell.seCorner [LNG] = seCell [LNG];

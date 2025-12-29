@@ -685,7 +685,12 @@ int EXP_LVL9 CSlmbrtF (Const struct cs_Lmbrt_ *lmbrt,double xy [2],Const double 
 		   situation. What we're attempting to do here is isolate
 		   the case where the central meridian is at -179 and the
 		   provided longitude is +179. */
-
+#ifdef GEOCOORD_ENHANCEMENT
+        if (del_lng > cs_Pi && (cs_Pi - lmbrt->org_lng > cs_Pi))
+            rtn_val = cs_CNVRT_RNG;
+        if (del_lng < cs_Mpi && (cs_Mpi - lmbrt->org_lng < cs_Mpi))
+            rtn_val = cs_CNVRT_RNG;
+#endif
 		if      (del_lng > cs_Pi  && lmbrt->org_lng < 0.0) del_lng -= cs_Two_pi;
 		else if (del_lng < cs_Mpi && lmbrt->org_lng > 0.0) del_lng += cs_Two_pi;
 		if (fabs (del_lng) > cs_Pi) rtn_val = cs_CNVRT_RNG;
