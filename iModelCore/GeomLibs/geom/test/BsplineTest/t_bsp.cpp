@@ -2251,3 +2251,26 @@ TEST(MSBsplineSurface, ClosestPoint2)
         }
     Check::ClearGeometry("MSBsplineSurface.ClosestPoint2");
     }
+
+TEST(MSBsplineCurve, TinySegmentCurve)
+    { // ADO#1856036 (imodel bridge for ORD)
+    bvector<DPoint3d> poles; // in meters
+    poles.push_back(DPoint3d::From(2247933.8357029339, 345789.18927804346, 346.65309182483424));
+    poles.push_back(DPoint3d::From(2247933.7552207710, 345789.51997256994, 346.64712138469233));
+    poles.push_back(DPoint3d::From(2247933.6747384823, 345789.85066761246, 346.64118121938831));
+    poles.push_back(DPoint3d::From(2247933.5942560692, 345790.18136316576, 346.63527132932027));
+    double endKnot = 0.66691248946726212;
+    bvector<double> knots = {0, 0, 0, 0, endKnot, endKnot, endKnot, endKnot};
+    auto curve = ICurvePrimitive::CreateBsplineCurve(MSBsplineCurve::CreateFromPolesAndOrder(poles, nullptr, &knots, 4, false, false));
+    Check::SaveTransformed(*curve);
+    auto segment = curve->CloneBetweenFractions(0, 1.1675261144662873e-10, false); // used to create curve without poles
+    if (Check::True(segment.IsValid(), "Created tiny segment curve"))
+        {
+        Check::Shift(0, 0, 5);
+        Check::SaveTransformed(*segment);
+        double length = 0.0;
+        if (Check::True(segment->Length(length), "Length successfully computed")) // used to crash
+            Check::Near(length, 1.0e-10, "Tiny segment curve has expected length", 100); // 1.6783220900768064e-10
+        }
+    Check::ClearGeometry("MSBsplineCurve.TinySegmentCurve");
+    }

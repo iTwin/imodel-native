@@ -396,7 +396,7 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
 
     std::vector<Utf8String> & resultSet = const_cast<DerivedPropertyExp&>(exp).SqlResultSetR();
     Utf8String alias = exp.GetColumnAlias();
-    if (alias.empty() || exp.FindParent(Exp::Type::Subquery) != nullptr)
+    if (alias.empty() || exp.OriginateInASubQuery() || exp.OriginateInACommonTableBlockWithNoColumns())
         alias = exp.GetNestedAlias();
     if (innerExp->GetType() == Exp::Type::CommonTablePropertyName)
         resultSet.push_back(alias);

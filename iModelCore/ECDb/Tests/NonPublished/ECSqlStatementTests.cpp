@@ -114,6 +114,106 @@ TEST_F(ECSqlStatementTestFixture, CTECrash) {
         ASSERT_STREQ( stmt.GetNativeSql(), "WITH RECURSIVE F(A) AS (SELECT 1),S(A) AS (SELECT F.A FROM F UNION SELECT 1 FROM S WHERE S.A=1)\nSELECT S.A FROM S");
     }
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, CTEWithAComment) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CTEWithAComment.ecdb"));
+
+    const auto sqlTemplate = R"(
+        WITH ce(TestColumn1, TestColumn2) AS (
+            %s
+        ) SELECT * FROM ce)";
+
+    for (const auto& [testCaseNumber, expectedSecondColumnValue, ecSqlQuery] : std::vector<std::tuple<int, Utf8String, std::string>>{
+        std::make_tuple(1, "TestColumn",
+            R"(
+                -- comment
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(2, "TestColumn",
+            R"(
+                -- multi
+                -- line
+                -- comment
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(3, "TestColumn",
+            R"(
+                -- multi
+                -- line
+                -- comment()
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(4, "TestColumn",
+            R"(
+                /* comment) */
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(5, "TestColumn",
+            R"(
+                // calling function()
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(6, "TestColumn",
+            R"(
+                -- calling function()
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(7, "TestColumn",
+            R"(
+                /* comment */
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(8, "TestColumn",
+            R"(
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1 -- comment)
+            )"),
+        std::make_tuple(9, "TestColumn",
+            R"(
+                SELECT 1, 'TestColumn' FROM meta.ECClassDef LIMIT 1 /* comment) */
+            )"),
+        std::make_tuple(10, "invalid -- column",
+            R"(
+                SELECT 1, 'invalid -- column' AS TestColumn FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(11, "text with ) parenthesis",
+            R"(
+                SELECT 1, 'text with ) parenthesis' AS TestColumn FROM meta.ECClassDef LIMIT 1 -- real comment
+            )"),
+        std::make_tuple(12, "text /* not a comment */",
+            R"(
+                SELECT 1, 'text /* not a comment */' AS TestColumn FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(13, "comment)",
+            R"(
+                SELECT 1, 'comment)' AS TestColumn FROM meta.ECClassDef LIMIT 1 -- called from function XYZ()
+            )"),
+        std::make_tuple(14, "TestColumn",
+            R"(
+                SELECT /* Primary Key (class Id) */ 1, /* Class Name */ 'TestColumn' FROM meta.ECClassDef LIMIT 1
+            )"),
+        std::make_tuple(15, "TestColumn",
+            R"(
+                SELECT 1,
+                'TestColumn' /* multiline
+                comment */ FROM meta.ECClassDef LIMIT 1
+            )"),
+    }) {
+        const auto errorMessage = Utf8PrintfString("Test case number: %d failed.", testCaseNumber);
+
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString(sqlTemplate, ecSqlQuery.c_str()))) << errorMessage;
+
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << errorMessage;
+        EXPECT_EQ(1, stmt.GetValueInt(0)) << errorMessage;
+        EXPECT_STREQ(expectedSecondColumnValue.c_str(), stmt.GetValueText(1)) << errorMessage;
+        
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << errorMessage;
+    }
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -12773,6 +12873,179 @@ TEST_F(ECSqlStatementTestFixture, CoalesceWithInsertUsingOnly)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, AsteriskResolutionColumnInfoTest)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+      <ECSchema schemaName="TestSchema" alias="ts" version="1.0.%d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name='ECDbMap' version='02.00.04' alias='ecdbmap' />
+          <ECEntityClass typeName="Entity">
+              <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+      </ECSchema>)xml";
+
+    SchemaItem testSchema(schemaXml);
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("AsteriskResolutionColumnInfoTest.ecdb", testSchema));
+    auto verifyColumnInfo = [](
+        ECSqlColumnInfoCR colInfo,
+        bool expectedIsGeneratedProperty,
+        bool expectedIsDynamic,
+        bool expectedIsSystemProperty,
+        PrimitiveType expectedPrimitiveType,
+        ValueKind expectedTypeKind,
+        Utf8CP expectedPropertyName,
+        Utf8CP expectedClassName,
+        Utf8CP expectedOriginName,
+        Utf8CP expectedOriginClassName,
+        Utf8CP expectedPropertyPath,
+        Utf8CP expectedRootClassName)
+        {
+        ASSERT_EQ(expectedIsGeneratedProperty, colInfo.IsGeneratedProperty());
+        ASSERT_EQ(expectedIsDynamic, colInfo.IsDynamic());
+        ASSERT_EQ(expectedIsSystemProperty, colInfo.IsSystemProperty());
+        auto& typeInfo = colInfo.GetDataType();
+        ASSERT_EQ(expectedPrimitiveType, typeInfo.GetPrimitiveType());
+        ASSERT_EQ(expectedTypeKind, typeInfo.GetTypeKind());
+        ECPropertyCP property = colInfo.GetProperty();
+        ASSERT_STREQ(expectedPropertyName, property->GetName().c_str());
+        ASSERT_STREQ(expectedClassName, property->GetClass().GetName().c_str());
+
+        ECPropertyCP originProperty = colInfo.GetOriginProperty();
+        if (expectedOriginClassName != nullptr || expectedOriginName != nullptr) {
+            ASSERT_TRUE(originProperty != nullptr);
+            ASSERT_STREQ(expectedOriginName, originProperty->GetName().c_str());
+            ASSERT_STREQ(expectedOriginClassName, originProperty->GetClass().GetName().c_str());
+        }
+
+        ECSqlPropertyPathCR path = colInfo.GetPropertyPath();
+        Utf8String pathStr = path.ToString();
+        ASSERT_STREQ(expectedPropertyPath, pathStr.c_str());
+
+        ECSqlColumnInfo::RootClass const& rootClass = colInfo.GetRootClass();
+        ASSERT_STREQ(expectedRootClassName, rootClass.GetClass().GetName().c_str());
+        };
+
+    if("insert")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Entity(Name) VALUES(?)"));
+        stmt.BindText(1, "Foo", IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());    
+        }
+
+    if("selecting_*_in_SELECT_statements")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Entity"));
+        verifyColumnInfo(stmt.GetColumnInfo(0),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECInstanceId", "ClassECSqlSystemProperties", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECInstanceId", "Entity"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(1),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECClassId", "ClassECSqlSystemProperties", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECClassId", "Entity"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(2),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "Name", "Entity", //Property
+        "Name", "Entity", //OriginProperty
+        "Name", "Entity"); //PropertyPath, RootClass
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+        ASSERT_STREQ("1", stmt.GetValueText(0)); 
+        ASSERT_STREQ("88", stmt.GetValueText(1)); 
+        ASSERT_STREQ("Foo", stmt.GetValueText(2)); 
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());  
+        }
+    if("selecting_*_in_CTE_statements_with_columns")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH cte(a,b,c,d) AS (SELECT a.*, Name FROM ts.Entity a) SELECT * FROM cte"));
+        verifyColumnInfo(stmt.GetColumnInfo(0),
+        true, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "a", "DynamicECSqlSelectClause", //Property
+        nullptr, nullptr, //OriginProperty
+        "a", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(1),
+        true, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "b", "DynamicECSqlSelectClause", //Property
+        nullptr, nullptr, //OriginProperty
+        "b", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(2),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "c", "DynamicECSqlSelectClause", //Property
+        nullptr, nullptr, //OriginProperty
+        "c", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(3),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "d", "DynamicECSqlSelectClause", //Property
+        nullptr, nullptr, //OriginProperty
+        "d", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+        ASSERT_STREQ("1", stmt.GetValueText(0)); 
+        ASSERT_STREQ("88", stmt.GetValueText(1)); 
+        ASSERT_STREQ("Foo", stmt.GetValueText(2)); 
+        ASSERT_STREQ("Foo", stmt.GetValueText(3)); 
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());  
+        }
+    if("selecting_*_in_CTE_statements_without_columns")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "WITH cte AS (SELECT a.*, Name MyName FROM ts.Entity a) SELECT * FROM cte"));
+        verifyColumnInfo(stmt.GetColumnInfo(0),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECInstanceId", "ClassECSqlSystemProperties", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECInstanceId", "Entity"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(1),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECClassId", "ClassECSqlSystemProperties", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECClassId", "Entity"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(2),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "Name", "Entity", //Property
+        "Name", "Entity", //OriginProperty
+        "Name", "Entity"); //PropertyPath, RootClass
+
+        verifyColumnInfo(stmt.GetColumnInfo(3),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName", "DynamicECSqlSelectClause", //Property
+        nullptr, nullptr, //OriginProperty
+        "MyName", "DynamicECSqlSelectClause"); //PropertyPath, RootClass
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); 
+        ASSERT_STREQ("1", stmt.GetValueText(0)); 
+        ASSERT_STREQ("88", stmt.GetValueText(1)); 
+        ASSERT_STREQ("Foo", stmt.GetValueText(2)); 
+        ASSERT_STREQ("Foo", stmt.GetValueText(3)); 
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());  
+        }
+    }
+//---------------------------------------------------------------------------------------
 // @bsitest
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, StructArrayUnsetMembersWithInsertUsingOnly)
@@ -13385,5 +13658,40 @@ TEST_F(InvalidRelECClassIdTestFixture, SelectWithInvalidRelECClassId_WithPragma)
         stmt.Finalize();
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, IsCoreSelectTests) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("is_core_select_tests.ecdb"));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM IdSet('[1,2,3,4,5]') LIMIT 3 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT * FROM IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') ORDER BY id ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT * FROM IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES UNION SELECT * FROM IdSet('[5, 6, 7, 8]') LIMIT 3 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 3);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT * FROM IdSet('[1,2,3,4,5]') UNION SELECT * FROM IdSet('[5, 6, 7, 8]')) LIMIT 3 ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 3);
+        }
+}
 
 END_ECDBUNITTESTS_NAMESPACE

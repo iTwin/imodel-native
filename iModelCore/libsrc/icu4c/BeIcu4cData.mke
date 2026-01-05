@@ -5,6 +5,7 @@
 %include mdl.mki
 
 %include BeIcu4cCommon.mki
+BUILD_WITH_C20=1
 
 AppName = BeIcu4cData
 BuildDir = $(DataBuildDir)
@@ -86,7 +87,7 @@ CnvBuildDir = $(BuildDir)
     $(BuildToolsBuildDir)makeconv$(BuildToolExeExt) -c -d ${TargetDir} $<
 
 #..................................................................................................
-$(CnvBuildDir)gb18030.cnv : $(SourceDir)data/mappings/gb18030.ucm $(CommonDependencies)
+$(CnvBuildDir)gb18030-2022.cnv : $(SourceDir)data/mappings/gb18030-2022.ucm $(CommonDependencies)
 
 $(CnvBuildDir)gsm-03.38-2009.cnv : $(SourceDir)data/mappings/gsm-03.38-2009.ucm $(CommonDependencies)
 
@@ -211,8 +212,6 @@ $(BrkitrBuildDir)title.brk : $(SourceDir)data/brkitr/rules/title.txt $(CommonDep
 
 $(BrkitrBuildDir)word.brk : $(SourceDir)data/brkitr/rules/word.txt $(CommonDependencies)
 
-$(BrkitrBuildDir)word_fi_sv.brk : $(SourceDir)data/brkitr/rules/word_fi_sv.txt $(CommonDependencies)
-
 $(BrkitrBuildDir)word_POSIX.brk : $(SourceDir)data/brkitr/rules/word_POSIX.txt $(CommonDependencies)
 
 #..................................................................................................
@@ -249,8 +248,6 @@ $(BrkitrBuildDir)en_US_POSIX.res : $(SourceDir)data/brkitr/en_US_POSIX.txt $(Com
 
 $(BrkitrBuildDir)es.res : $(SourceDir)data/brkitr/es.txt $(CommonDependencies)
 
-$(BrkitrBuildDir)fi.res : $(SourceDir)data/brkitr/fi.txt $(CommonDependencies)
-
 $(BrkitrBuildDir)fr.res : $(SourceDir)data/brkitr/fr.txt $(CommonDependencies)
 
 $(BrkitrBuildDir)it.res : $(SourceDir)data/brkitr/it.txt $(CommonDependencies)
@@ -264,8 +261,6 @@ $(BrkitrBuildDir)pt.res : $(SourceDir)data/brkitr/pt.txt $(CommonDependencies)
 $(BrkitrBuildDir)root.res : $(SourceDir)data/brkitr/root.txt $(CommonDependencies)
 
 $(BrkitrBuildDir)ru.res : $(SourceDir)data/brkitr/ru.txt $(CommonDependencies)
-
-$(BrkitrBuildDir)sv.res : $(SourceDir)data/brkitr/sv.txt $(CommonDependencies)
 
 $(BrkitrBuildDir)zh.res : $(SourceDir)data/brkitr/zh.txt $(CommonDependencies)
 
@@ -507,7 +502,6 @@ GeneratedDataFiles =                                \
     $(BrkitrBuildDir)en_US.res                      \
     $(BrkitrBuildDir)en_US_POSIX.res                \
     $(BrkitrBuildDir)es.res                         \
-    $(BrkitrBuildDir)fi.res                         \
     $(BrkitrBuildDir)fr.res                         \
     $(BrkitrBuildDir)it.res                         \
     $(BrkitrBuildDir)ja.res                         \
@@ -527,11 +521,9 @@ GeneratedDataFiles =                                \
     $(BrkitrBuildDir)ru.res                         \
     $(BrkitrBuildDir)sent.brk                       \
     $(BrkitrBuildDir)sent_el.brk                    \
-    $(BrkitrBuildDir)sv.res                         \
     $(BrkitrBuildDir)thaidict.dict                  \
     $(BrkitrBuildDir)title.brk                      \
     $(BrkitrBuildDir)word.brk                       \
-    $(BrkitrBuildDir)word_fi_sv.brk                 \
     $(BrkitrBuildDir)word_POSIX.brk                 \
     $(BrkitrBuildDir)zh.res                         \
     $(BrkitrBuildDir)zh_Hant.res                    \
@@ -544,7 +536,7 @@ GeneratedDataFiles =                                \
     $(BuildDir)unames.icu                           \
     $(BuildDir)uemoji.icu                           \
     $(BuildDir)uts46.nrm                            \
-    $(CnvBuildDir)gb18030.cnv                       \
+    $(CnvBuildDir)gb18030-2022.cnv                  \
     $(CnvBuildDir)gsm-03.38-2009.cnv                \
     $(CnvBuildDir)ibm-1089_P100-1995.cnv            \
     $(CnvBuildDir)ibm-1363_P11B-1998.cnv            \

@@ -10,6 +10,12 @@
 
 // cspell:ignore bcvfs itwindb nrequest isdaemon ncleanup ifnot bcvconfig blockno npin
 
+#ifdef __APPLE__
+
+void besqlite_bcv_set_cacert_path(const std::string& caFilename);
+
+#endif // __APPLE__
+
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -17,21 +23,6 @@ USING_NAMESPACE_BENTLEY_SQLITE
 static const int DEFAULT_MAX_HTTP_CONNECTIONS = 6;
 // default for "httpTimeout" to SQLite apis (time in seconds to wait without a response before considering an http request as timed out).
 static const int DEFAULT_HTTP_TIMEOUT = 60;
-
-/**
- * Initializer for CloudSqlite that happens at load time:
- * * Enables best effort mode for certificate revocation on Windows.
- */
-struct CloudSqliteInit {
-    CloudSqliteInit() {
-        // Enable best effort mode for certificate revocation on Windows.
-        sqlite3_bcv_global_config(SQLITE_BCVGLOBALCONFIG_REVOKEBESTEFFORT, 1);
-    }
-};
-
-// This is a static object that ensures the CloudSqliteInit constructor is called before any other CloudSqlite code runs.
-// Right now, ensure sqlite3_bcv_global_config is called before any other sqlite3_bcv_* calls
-static CloudSqliteInit s_cloudSqliteInit;
 
 Utf8String Db::OpenParams::SetFromContainer(Utf8CP dbName, CloudContainerP container) {
     if (nullptr == container)
@@ -378,6 +369,15 @@ CloudResult CloudContainer::DeleteDatabase(Utf8StringCR dbName) {
  */
 CloudResult CloudContainer::PollManifest() {
     return CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_poll(m_cache->m_vfs, m_alias.c_str(), msg); }, "poll");
+}
+
+void CloudUtil::Initialize(BeFileNameCR assetDir) {
+#ifdef __APPLE__
+    BeFileName caFilename = assetDir;
+    caFilename.AppendToPath(L"cacert.pem");
+    // On macOS and iOS, use a CA file that is bundled with the native add-on.
+    besqlite_bcv_set_cacert_path(caFilename.GetNameUtf8());
+#endif // __APPLE__
 }
 
 /** close the bcv handle, if open */

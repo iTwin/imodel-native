@@ -58,7 +58,7 @@ int QueryRetryHandler::_OnBusy(int count) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error) {
+std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue, bool& isShutDownInProgress) {
     auto const hashCode = ECSqlStatement::GetHashCode(ecsql);
     auto iter = std::find_if(m_cache.begin(), m_cache.end(), [&ecsql,&hashCode,&usePrimaryConn] (std::shared_ptr<CachedQueryAdaptor>& entry) {
         return entry->GetUsePrimaryConn() == usePrimaryConn && entry->GetStatement().GetHashCode() == hashCode && strcmp(entry->GetStatement().GetECSql(), ecsql) == 0;
@@ -78,6 +78,16 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
     auto newCachedAdaptor = CachedQueryAdaptor::Make();
     newCachedAdaptor->SetWorkerConn(m_conn.GetDb());
     newCachedAdaptor->SetUsePrimaryConn(usePrimaryConn);
+    BeMutex& ecdbMutex = m_conn.GetPrimaryDb().GetImpl().GetMutex();
+    while(!ecdbMutex.try_lock()) {
+        if(queue.GetState() == RunnableRequestQueue::State::Stop) {
+            status = ECSqlStatus::Error;
+            isShutDownInProgress = true;
+            ecsql_error = "Queue is shut down, cannot go ahead with the request.";
+            return nullptr;
+        }
+        std::this_thread::yield();
+    }
     ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
     if (usePrimaryConn)
         status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
@@ -90,13 +100,17 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
     }
     if (status != ECSqlStatus::Success) {
         ecsql_error = err_scope.GetLastError();
+        ecdbMutex.unlock();
         return nullptr;
     }
     while (m_cache.size() > m_maxEntries)
         m_cache.pop_back();
 
     m_cache.insert(m_cache.begin(), newCachedAdaptor);
+    ecdbMutex.unlock();
     return newCachedAdaptor;
+
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -176,6 +190,18 @@ void CachedConnection::SyncAttachDbs() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)> cb, std::unique_ptr<RunnableRequestBase> request) {
+    if (m_db.IsDbOpen()) {
+        // Check if the primary file data version has changed
+        uint32_t dataVersion;
+        if (BE_SQLITE_OK == GetPrimaryDb().GetFileDataVersion(dataVersion)) {
+            if (dataVersion != m_primaryFileDataVer) {
+                m_db.ClearECDbCache();
+                m_db.ClearDbCache();
+                m_primaryFileDataVer = dataVersion;
+            }
+        }
+    }
+
     SyncAttachDbs();
     SetRequest(std::move(request));
     cb(m_adaptorCache, *m_request);
@@ -289,6 +315,8 @@ std::shared_ptr<CachedConnection> CachedConnection::Make(ConnectionCache& cache,
     if (mmsize > 0) {
         newConn->m_db.ExecuteSql(SqlPrintfString("PRAGMA mmap_size=%" PRIu32, mmsize));
     }
+
+    cache.GetPrimaryDb().GetFileDataVersion(newConn->m_primaryFileDataVer);
     return newConn;
 }
 
@@ -556,6 +584,18 @@ QueryResponse::Ptr RunnableRequestBase::CreateECSqlResponse(std::string& resultJ
         meta,
         rowCount);
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+QueryResponse::Ptr RunnableRequestBase::CreateShutDownResponse() const {
+    return std::make_shared<QueryResponse>(
+        QueryResponse::Kind::NoResult,
+        QueryResponse::Stats( GetCpuTime(), GetTotalTime(), 0, m_quota, m_prepareTime),
+        QueryResponse::Status::ShuttingDown,
+        ""
+        );
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -742,7 +782,7 @@ QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, Quer
     } else  {
         if (m_state.load()==State::Stop) {
             log_error("%s concurrent query shuting down, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
-            runnableReq->SetResponse(runnableReq->CreateErrorResponse(QueryResponse::Status::ShuttingDown, "concurrent query is shutting down"));
+            runnableReq->SetResponse(runnableReq->CreateShutDownResponse());
         } else {
             if (runnableReq->GetRequest().UsePrimaryConnection()) {
                 ExecuteSynchronously(conns, std::move(runnableReq));
@@ -778,7 +818,7 @@ void RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr req
     } else  {
         if (m_state.load()==State::Stop) {
             log_error("%s concurrent query shuting down, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
-            runnableReq->SetResponse(runnableReq->CreateErrorResponse(QueryResponse::Status::ShuttingDown,"concurrent query is shutting down"));
+            runnableReq->SetResponse(runnableReq->CreateShutDownResponse());
         } else {
             if (runnableReq->GetRequest().UsePrimaryConnection()) {
                 ExecuteSynchronously(conns, std::move(runnableReq));
@@ -810,7 +850,8 @@ bool RunnableRequestQueue::Stop() {
 
     recursive_guard_t lock(m_mutex);
     for(auto & request : m_requests) {
-        request->SetResponse(request->CreateErrorResponse(QueryResponse::Status::Error,"concurrent query is shutting down"));
+        log_error("%s cancelling request [id=%" PRIu32 "] due to shutdown.", GetTimestamp().c_str(), request->GetId());
+        request->SetResponse(request->CreateShutDownResponse());
     }
     m_cond.notify_all();
     log_trace("%s request queue stopped.", GetTimestamp().c_str());
@@ -930,6 +971,55 @@ QueryResponse::Future& QueryResponse::Future::operator =(Future&& rhs) {
     }
     return *this;
 }
+namespace {
+    // This function has been brought over from delComment() in the parser which deletes the comments from an ECSql statement.
+    // delComment has an early exit check when no comments are found.
+    Utf8String RemoveCommentsFromECSql(Utf8String const& query) {
+        if (query.find("--") == Utf8String::npos && query.find("//") == Utf8String::npos && query.find("/*") == Utf8String::npos)
+            return query;
+
+        const char* pCopy = query.c_str();
+        size_t nQueryLen = query.size();
+        bool bIsText1  = false;     // "text"
+        bool bIsText2  = false;     // 'text'
+        bool bComment2 = false;     // /* comment */
+        bool bComment  = false;     // -- or // comment
+        Utf8String result;
+        result.reserve(nQueryLen);
+        
+        for (size_t i = 0; i < nQueryLen; ++i) {
+            if (bComment2) {
+                if ((i + 1) < nQueryLen) {
+                    if (pCopy[i] == '*' && pCopy[i + 1] == '/') {
+                        bComment2 = false;
+                        ++i;
+                    }
+                }
+                continue;
+            }
+            
+            if (pCopy[i] == '\n')
+                bComment = false;
+            else if (!bComment) {
+                if (pCopy[i] == '\"' && !bIsText2)
+                    bIsText1 = !bIsText1;
+                else if (pCopy[i] == '\'' && !bIsText1)
+                    bIsText2 = !bIsText2;
+                    
+                if (!bIsText1 && !bIsText2 && (i + 1) < nQueryLen) {
+                    if ((pCopy[i] == '-' && pCopy[i + 1] == '-') || (pCopy[i] == '/' && pCopy[i + 1] == '/'))
+                        bComment = true;
+                    else if (pCopy[i] == '/' && pCopy[i + 1] == '*')
+                        bComment2 = true;
+                }
+            }
+            
+            if (!bComment && !bComment2)
+                result.append(&pCopy[i], 1);
+        }
+        return result;
+    }
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -940,6 +1030,7 @@ std::string QueryHelper::FormatQuery(const char* query) {
     while (!trimmedECSql.empty() && (c = trimmedECSql[trimmedECSql.size() - 1])  && (c == ';' || isspace(c)))
         trimmedECSql.erase(trimmedECSql.size() - 1);
     if (trimmedECSql.StartsWithIAscii("with")) {
+        trimmedECSql = RemoveCommentsFromECSql(trimmedECSql);
         std::regex rx("\\)\\s*select", std::regex_constants::ECMAScript | std::regex_constants::icase);
         std::match_results<Utf8String::const_iterator> matches;
         if (std::regex_search<Utf8String::const_iterator>(trimmedECSql.begin(), trimmedECSql.end(), matches, rx)) {
@@ -1057,6 +1148,8 @@ Utf8CP QueryResponse::StatusToString(QueryResponse::Status status) {
             return "QueueFull";
         case QueryResponse::Status::Timeout:
             return "Timeout";
+        case QueryResponse::Status::ShuttingDown:
+            return "ShuttingDown";
     };
     return "Unknow QueryResponse::Status code";
 }
@@ -1225,14 +1318,20 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
         std::string sql = QueryHelper::FormatQuery(request.GetQuery().c_str());
         ECSqlStatus status;
         std::string err;
+        bool isShutDownInProgress = false;
         const auto prepareTimeStart = std::chrono::steady_clock::now();
         auto recordPrepareTime = [&]() {
             runnableRequest.SetPrepareTime(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - prepareTimeStart));
         };
 
-        auto adaptor = adaptorCache.TryGet(sql.c_str(), request.UsePrimaryConnection(), request.GetSuppressLogErrors(), status, err);
+        auto adaptor = adaptorCache.TryGet(sql.c_str(), request.UsePrimaryConnection(), request.GetSuppressLogErrors(), status, err, runnableRequest.GetQueue(), isShutDownInProgress);
         if (adaptor == nullptr) {
             recordPrepareTime();
+            if(isShutDownInProgress) {
+                log_error("%s cancelling request [id=%" PRIu32 "] because %s.", GetTimestamp().c_str(), runnableRequest.GetId(), err.c_str());
+                runnableRequest.SetResponse(runnableRequest.CreateShutDownResponse());
+                return;
+            }
             if (status.IsSQLiteError()) {
                 if (status.GetSQLiteError() == BE_SQLITE_INTERRUPT) {
                     if (runnableRequest.IsCancelled()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -21,10 +21,9 @@ CRYPTO_RWLOCK *CRYPTO_THREAD_lock_new(void)
 {
     CRYPTO_RWLOCK *lock;
 
-    if ((lock = OPENSSL_zalloc(sizeof(unsigned int))) == NULL) {
+    if ((lock = CRYPTO_zalloc(sizeof(unsigned int), NULL, 0)) == NULL)
         /* Don't set error, to avoid recursion blowup. */
         return NULL;
-    }
 
     *(unsigned int *)lock = 1;
 
@@ -75,18 +74,28 @@ int CRYPTO_THREAD_run_once(CRYPTO_ONCE *once, void (*init)(void))
 
 #define OPENSSL_CRYPTO_THREAD_LOCAL_KEY_MAX 256
 
-static void *thread_local_storage[OPENSSL_CRYPTO_THREAD_LOCAL_KEY_MAX];
+struct thread_local_storage_entry {
+    void *data;
+    uint8_t used;
+};
+
+static struct thread_local_storage_entry thread_local_storage[OPENSSL_CRYPTO_THREAD_LOCAL_KEY_MAX];
 
 int CRYPTO_THREAD_init_local(CRYPTO_THREAD_LOCAL *key, void (*cleanup)(void *))
 {
-    static unsigned int thread_local_key = 0;
+    int entry_idx = 0;
 
-    if (thread_local_key >= OPENSSL_CRYPTO_THREAD_LOCAL_KEY_MAX)
+    for (entry_idx = 0; entry_idx < OPENSSL_CRYPTO_THREAD_LOCAL_KEY_MAX; entry_idx++) {
+        if (!thread_local_storage[entry_idx].used)
+            break;
+    }
+
+    if (entry_idx == OPENSSL_CRYPTO_THREAD_LOCAL_KEY_MAX)
         return 0;
 
-    *key = thread_local_key++;
-
-    thread_local_storage[*key] = NULL;
+    *key = entry_idx;
+    thread_local_storage[*key].used = 1;
+    thread_local_storage[*key].data = NULL;
 
     return 1;
 }
@@ -96,7 +105,7 @@ void *CRYPTO_THREAD_get_local(CRYPTO_THREAD_LOCAL *key)
     if (*key >= OPENSSL_CRYPTO_THREAD_LOCAL_KEY_MAX)
         return NULL;
 
-    return thread_local_storage[*key];
+    return thread_local_storage[*key].data;
 }
 
 int CRYPTO_THREAD_set_local(CRYPTO_THREAD_LOCAL *key, void *val)
@@ -104,13 +113,18 @@ int CRYPTO_THREAD_set_local(CRYPTO_THREAD_LOCAL *key, void *val)
     if (*key >= OPENSSL_CRYPTO_THREAD_LOCAL_KEY_MAX)
         return 0;
 
-    thread_local_storage[*key] = val;
+    thread_local_storage[*key].data = val;
 
     return 1;
 }
 
 int CRYPTO_THREAD_cleanup_local(CRYPTO_THREAD_LOCAL *key)
 {
+    if (*key >= OPENSSL_CRYPTO_THREAD_LOCAL_KEY_MAX)
+        return 0;
+
+    thread_local_storage[*key].used = 0;
+    thread_local_storage[*key].data = NULL;
     *key = OPENSSL_CRYPTO_THREAD_LOCAL_KEY_MAX + 1;
     return 1;
 }
@@ -145,6 +159,13 @@ int CRYPTO_atomic_or(uint64_t *val, uint64_t op, uint64_t *ret,
 int CRYPTO_atomic_load(uint64_t *val, uint64_t *ret, CRYPTO_RWLOCK *lock)
 {
     *ret  = *val;
+
+    return 1;
+}
+
+int CRYPTO_atomic_load_int(int *val, int *ret, CRYPTO_RWLOCK *lock)
+{
+    *ret = *val;
 
     return 1;
 }

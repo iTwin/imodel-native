@@ -14,7 +14,6 @@ BESQLITE_TYPEDEFS(ChangeStream);
 BESQLITE_TYPEDEFS(DdlChanges);
 BESQLITE_TYPEDEFS(ApplyChangesArgs);
 
-struct sqlite3_rebaser;
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
@@ -210,49 +209,7 @@ public:
     ~ChangeGroup() { Finalize(); }
 };
 
-//=======================================================================================
-//! A set of "rebases" that hold the result of conflict resolutions during a call to ChangeSet::ApplyChanges from
-//! a ChangeSet received from a remote session.
-//! All ChangeSets for the local session should be "rebased" via calls to Rebaser::AddRebease + Rebaser::DoRebase
-//! before sending to the server. This essentially moves the local ChangeSet to be "based on" the state of the
-//! database AFTER the remote changes were made, rather than the state of the database at the start of the session.
-// @bsiclass
-//=======================================================================================
-struct Rebase : NonCopyableClass {
-    friend struct ChangeSet;
-    friend struct ChangeStream;
 
-private:
-    int m_size = 0;
-    void* m_data = nullptr;
-
-public:
-    Rebase() {}
-    BE_SQLITE_EXPORT ~Rebase();
-    bool HasData() const { return m_size != 0; }
-    int GetSize() const { return m_size; }
-    void* GetData() const { return m_data; }
-};
-
-//=======================================================================================
-//! Tool to "rebase" a ChangeSet to become based on the state of the database "as of" a new state, different than the beginning
-//! of the session in which the changes were recoreded. This is only necessary when remote changes are applied and conflicts are resolved.
-//! See SQlite documentation on "Rebasing changesets" for complete explanation.
-// @bsiclass
-//=======================================================================================
-struct Rebaser : NonCopyableClass {
-private:
-    sqlite3_rebaser* m_rebaser;
-
-public:
-    BE_SQLITE_EXPORT Rebaser();
-    BE_SQLITE_EXPORT ~Rebaser();
-
-    BE_SQLITE_EXPORT DbResult AddRebase(Rebase const& rebase);
-    BE_SQLITE_EXPORT DbResult AddRebase(void const* data, int count);
-    BE_SQLITE_EXPORT DbResult DoRebase(struct ChangeSet const& in, struct ChangeSet& out);
-    BE_SQLITE_EXPORT DbResult DoRebase(struct ChangeStream const& in, struct ChangeStream& out);
-};
 
 //=======================================================================================
 //! A base class for a streaming version of the ChangeSet. ChangeSets require that their
@@ -262,7 +219,6 @@ public:
 //=======================================================================================
 struct ChangeStream : NonCopyableClass {
     friend struct Changes;
-    friend struct Rebaser;
     friend struct ApplyChangesArgs;
 
     enum class SetType : bool { Full = 0, Patch = 1 };
@@ -291,7 +247,7 @@ public:
     Changes GetChanges(bool invert = false) { return Changes(*this, invert); }
     BE_SQLITE_EXPORT DbResult FromChangeTrack(ChangeTracker& tracker, SetType setType = SetType::Full);
     BE_SQLITE_EXPORT DbResult FromChangeGroup(ChangeGroupCR changeGroup);
-    BE_SQLITE_EXPORT DbResult ApplyChanges(DbR db, Rebase* rebase = nullptr, bool invert = false, bool ignoreNoop = false, bool fkNoAction = false) const;
+    BE_SQLITE_EXPORT DbResult ApplyChanges(DbR db, bool invert = false, bool ignoreNoop = false, bool fkNoAction = false) const;
     BE_SQLITE_EXPORT DbResult ApplyChanges(DbR db, ApplyChangesArgs const& args) const;
     BE_SQLITE_EXPORT DbResult ReadFrom(Changes::Reader& reader);
     BE_SQLITE_EXPORT DbResult InvertFrom(Changes::Reader& reader);
@@ -336,7 +292,6 @@ public:
 struct ApplyChangesArgs {
     friend struct ChangeStream;
     private:
-        Rebase* m_rebase;
         bool m_invert;
         bool m_ignoreNoop;
         bool m_fkNoAction;
@@ -353,9 +308,8 @@ struct ApplyChangesArgs {
         ChangeStream::ConflictResolution OnConflict(ChangeStream::ConflictCause cause, Changes::Change iter) const;
 
     public:
-        ApplyChangesArgs() : m_rebase(nullptr), m_invert(false), m_ignoreNoop(false), m_fkNoAction(false), m_filterTable(nullptr),m_conflictHandler(nullptr),m_filterRowCount(0),m_conflictRowCount(0), m_abortOnAnyConflict(false){}
+        ApplyChangesArgs() :m_invert(false), m_ignoreNoop(false), m_fkNoAction(false), m_filterTable(nullptr),m_conflictHandler(nullptr),m_filterRowCount(0),m_conflictRowCount(0), m_abortOnAnyConflict(false){}
         ApplyChangesArgs& SetAbortOnAnyConflict(bool abortOnAnyConflict) { m_abortOnAnyConflict = abortOnAnyConflict; return *this; }
-        ApplyChangesArgs& SetRebase(Rebase* rebase) { m_rebase = rebase; return *this; }
         ApplyChangesArgs& SetInvert(bool invert) { m_invert = invert; return *this; }
         ApplyChangesArgs& SetIgnoreNoop(bool ignoreNoop) { m_ignoreNoop = ignoreNoop; return *this; }
         ApplyChangesArgs& SetFkNoAction(bool fkNoAction) { m_fkNoAction = fkNoAction; return *this; }
@@ -364,7 +318,6 @@ struct ApplyChangesArgs {
         BE_SQLITE_EXPORT ApplyChangesArgs& ApplyOnlyDataChanges();
         ApplyChangesArgs& ApplyAnyChanges() { m_filterTable = nullptr; return *this; }
         ApplyChangesArgs& SetConflictHandler(std::function<ChangeStream::ConflictResolution(ChangeStream::ConflictCause, Changes::Change)> conflictHandler) { m_conflictHandler = conflictHandler; return *this; }
-        Rebase* GetRebase() const { return m_rebase; }
         bool GetInvert() const { return m_invert; }
         bool GetAbortOnAnyConflict() const { return m_abortOnAnyConflict; }
         bool GetIgnoreNoop() const { return m_ignoreNoop; }
@@ -521,7 +474,7 @@ protected:
     SqlSessionP m_session;
     Utf8String m_name;
 
-    enum class OnCommitStatus { Commit = 0, Abort=1, Completed=2, NoChanges=3, RebaseInProgress=4 };
+    enum class OnCommitStatus { Commit = 0, Abort=1, Completed=2, NoChanges=3, RebaseInProgress=4, PropagateChangesFailed=5 };
     enum class TrackChangesForTable : bool { No = 0, Yes = 1 };
 
     BE_SQLITE_EXPORT DbResult CreateSession();

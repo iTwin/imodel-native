@@ -571,7 +571,7 @@ DbResult    Statement::BindNull(int col) {return (DbResult)sqlite3_bind_null(m_s
 DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindInt64(col, (int64_t) &intSet);}
 DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) {return (DbResult) sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP());}
 DbResult    Statement::BindPointer(int col, void* ptr, const char* name, void(*destroy)(void*))  {return (DbResult) sqlite3_bind_pointer(m_stmt, col, ptr, name, destroy);}
-
+DbResult    Statement::BindValueFrom(int col, Statement& fromStmt, int fromCol) { return (DbResult) sqlite3_bind_value(m_stmt, col, sqlite3_column_value(fromStmt.m_stmt, fromCol)) ;}
 DbValueType Statement::GetColumnType(int col)   {return (DbValueType) sqlite3_column_type(m_stmt, col);}
 Utf8CP      Statement::GetColumnDeclaredType(int col) { return sqlite3_column_decltype(m_stmt, col); }
 Utf8CP      Statement::GetColumnTableName(int col) { return sqlite3_column_table_name(m_stmt, col); }
@@ -649,6 +649,14 @@ int BusyRetry::_OnBusy(int count) const {
     LOG.infov("Busy retry %d",count);
     BeThreadUtilities::BeSleep(m_timeout);
     return 1;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DbFile::GetFileDataVersion(uint32_t& version) const {
+    version = 0;
+    return (DbResult)sqlite3_file_control(m_sqlDb, nullptr, SQLITE_FCNTL_DATA_VERSION, &version);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1579,26 +1587,41 @@ static Utf8CP getStartTxnSql(BeSQLiteTxnMode mode)
 static int savepointCommitHook(void* arg) {return ((DbFile*) arg)->OnCommit();}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BeSQLiteLib::s_throwExceptionOnUnexpectedAutoCommit = false;
-
-/*---------------------------------------------------------------------------------**//**
 * Ensure that all commits and rollbacks are done using BeSQLite api, not through SQL directly
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DbFile::OnCommit()
-    {
+int DbFile::OnCommit() {
+    constexpr static const char* errFull = "Sqlite initiated autocommit due to a fatal error (SQLITE_FULL)";
+    constexpr static const char* errIO = "Sqlite initiated autocommit due to a fatal error (SQLITE_IOERR)";
+    constexpr static const char* errNoMem = "Sqlite initiated autocommit due to a fatal error (SQLITE_NOMEM)";
+    constexpr static const char* errBusy = "Sqlite initiated autocommit due to a fatal error (SQLITE_BUSY)";
+    constexpr static const char* errInterrupt = "Sqlite initiated autocommit due to a fatal error (SQLITE_INTERRUPT)";
+    constexpr static const char* errUnknown = "Sqlite initiated autocommit due to a fatal error (UNKNOWN)";
+
     if (m_inCommit || m_txns.empty())
         return  0;
 
-    // Sqlite initiate auto rollback in case of SQLITE_FULL, SQLITE_IOERR, SQLITE_NOMEM, SQLITE_BUSY, and SQLITE_INTERRUPT
-    // We force a crash if COMMIT/ROLLBACK is called outside BeSQLite api.
-    if (sqlite3_get_autocommit(m_sqlDb) != 0 ) {
-        LOG.error("Sqlite initiated autocommit due to a fatal error.");
-        if (BeSQLiteLib::s_throwExceptionOnUnexpectedAutoCommit) {
-             LOG.error("Runtime debug option to throw exception on unexpected autocommit is set to *true*. Caller must handle exception and then delete the briefcase/db afterword.");
-            throw std::runtime_error("sqlite initiated autocommit due to a fatal error");
+    const auto errCode = sqlite3_get_autocommit(m_sqlDb);
+    if (errCode != 0) {
+        switch(errCode) {
+            case SQLITE_FULL:
+                LOG.error(errFull);
+                throw std::runtime_error(errFull);
+            case SQLITE_IOERR:
+                LOG.error(errIO);
+                throw std::runtime_error(errIO);
+            case SQLITE_NOMEM:
+                LOG.error(errNoMem);
+                throw std::runtime_error(errNoMem);
+            case SQLITE_BUSY:
+                LOG.error(errBusy);
+                throw std::runtime_error(errBusy);
+            case SQLITE_INTERRUPT:
+                LOG.error(errInterrupt);
+                throw std::runtime_error(errInterrupt);
+            default:
+                LOG.error(errUnknown);
+                throw std::runtime_error(errUnknown);
         }
         return 0;
     }
@@ -1616,7 +1639,7 @@ int DbFile::OnCommit()
 #endif
 
     return  1;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1723,7 +1746,9 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
     if (trackerStatus == ChangeTracker::OnCommitStatus::RebaseInProgress) {
         return BE_SQLITE_ERROR;
     }
-
+    if (trackerStatus == ChangeTracker::OnCommitStatus::PropagateChangesFailed) {
+        return BE_SQLITE_ERROR_PropagateChangesFailed;
+    }
     if (trackerStatus == ChangeTracker::OnCommitStatus::Abort) {
         // Abort is considered fatal and application must quit.
         // We do not allocate memory or attempt to log as this is only happens when sqlite returns NOMEM.
@@ -1856,7 +1881,7 @@ DbResult Savepoint::Commit(Utf8CP operation) {return _Commit(operation);}
 DbResult Savepoint::Save(Utf8CP operation)
     {
     DbResult res = Commit(operation);
-    if (BE_SQLITE_BUSY == res) {
+    if (BE_SQLITE_OK != res) {
         return res;
     }
     return Begin();
@@ -3862,8 +3887,17 @@ DbResult Db::AbandonChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Db::_OnDbChangedByOtherConnection()
     {
+    ClearDbCache();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void Db::ClearDbCache()
+    {
     m_dbFile->DeleteCachedPropertyMap();
     m_dbFile->m_blvCache.Clear();
+    m_dbFile->m_statements.Empty();
     }
 
 //---------------------------------------------------------------------------------------
@@ -6416,8 +6450,33 @@ DbResult Db::QueryCreationDate(DateTime& creationDate) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Db::QueryStandaloneEditFlags(BeJsValue out) const {
     Utf8String val;
-    if (BE_SQLITE_ROW == QueryBriefcaseLocalValue(val, BE_LOCAL_StandaloneEdit))
-        out.From(BeJsDocument(val));
+    if (BE_SQLITE_ROW != QueryBriefcaseLocalValue(val, BE_LOCAL_StandaloneEdit))
+        return;
+
+    // Parse JSON only once and handle all cases
+    BeJsDocument doc(val);
+
+    if (doc.isObject()) {
+        out.From(doc);
+        return;
+    }
+
+    /**
+     * Though we intend for this to be an object, we did previously allow a boolean value to slip through
+     * So we need to handle that here for backward compatibility
+     */
+    if (doc.isBool()) {
+        out.SetEmptyObject();
+        out["txns"] = doc.asBool();
+        return;
+    }
+
+    // Invalid/unsupported value
+    if (!val.empty())
+    {
+        out.SetNull();
+        LOG.warningv("QueryStandaloneEditFlags got an unsupported value: '%s' supported value must be either boolean or json object.", val.c_str());
+    }
 }
 
 /*---------------------------------------------------------------------------------**/ /**

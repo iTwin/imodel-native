@@ -530,6 +530,7 @@ public:
     static Napi::String InsertLinkTableRelationship(DgnDbR db, Napi::Object props);
     static void UpdateLinkTableRelationship(DgnDbR db, Napi::Object props);
     static void DeleteLinkTableRelationship(DgnDbR db, Napi::Object props);
+    static void DeleteLinkTableRelationships(DgnDbR db, Napi::Array propsArray);
     static Napi::String InsertCodeSpec(DgnDbR db, Utf8StringCR name, BeJsConst jsonProperties);
     static Napi::String InsertModel(DgnDbR db, Napi::Object);
     static void UpdateModel(DgnDbR db, Napi::Object props);
@@ -549,6 +550,8 @@ public:
     static Napi::Value ConvertOrUpdateGeometrySource(DgnDbR db, NapiInfoCR info);
     static Napi::Value ConvertOrUpdateGeometryPart(DgnDbR db, NapiInfoCR info);
     static void ClearECDbCache(ECDbR db, NapiInfoCR info);
+
+    static DbResult DropSchemas(ECDbR ecdb, bvector<Utf8String>& schemaNames);
 
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);

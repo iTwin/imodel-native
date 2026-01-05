@@ -52,7 +52,7 @@ export const NativeLoggerCategory = {
 /** @internal */
 export interface NativeLogger {
   readonly minLevel: LogLevel | undefined;
-  readonly categoryFilter: Readonly<{[categoryName: string]: LogLevel | undefined}>;
+  readonly categoryFilter: Readonly<{ [categoryName: string]: LogLevel | undefined }>;
   logTrace: (category: string, message: string) => void;
   logInfo: (category: string, message: string) => void;
   logWarning: (category: string, message: string) => void;
@@ -531,6 +531,18 @@ export declare namespace IModelJsNative {
     readonly parentChangesetIndex?: string;
   }
 
+  export interface TxnProps {
+    id: TxnIdString;
+    sessionId: number;
+    nextId?: TxnIdString;
+    prevId?: TxnIdString;
+    props: { description?: string; source?: string, appData: { [key: string]: any } };
+    type: "Data" | "ECSchema" | "Ddl";
+    reversed: boolean;
+    grouped: boolean;
+    timestamp: string; // ISO 8601 format
+  }
+
   type GeometryOutputFormat = "BinaryStream" | "GeometryStreamProps";
   interface IGeometrySource {
     geom?: Uint8Array | GeometryStreamProps;
@@ -612,10 +624,11 @@ export declare namespace IModelJsNative {
     public deleteElement(elemIdJson: string): void;
     public deleteElementAspect(aspectIdJson: string): void;
     public deleteLinkTableRelationship(props: RelationshipProps): DbResult;
+    public deleteLinkTableRelationships(props: ReadonlyArray<RelationshipProps>): DbResult;
     public deleteLocalValue(name: string): void;
     public deleteModel(modelIdJson: string): void;
     public detachChangeCache(): number;
-    public dropSchema(schemaName: string): void;
+    public dropSchemas(schemaNames: ReadonlyArray<string>): void;
     public dumpChangeset(changeSet: ChangesetFileProps): void;
     public elementGeometryCacheOperation(requestProps: any/* ElementGeometryCacheOperationRequestProps */): BentleyStatus;
     public embedFile(arg: EmbedFileArg): void;
@@ -655,14 +668,14 @@ export declare namespace IModelJsNative {
     public insertInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): Id64String;
     public updateInstance(inst: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
     public deleteInstance(key: NodeJS.Dict<any>, args: NodeJS.Dict<any>): boolean;
-    public patchJsonProperties(jsonProps: string):  string;
+    public patchJsonProperties(jsonProps: string): string;
     public newBeGuid(): GuidString;
 
     public clearECDbCache(): void;
 
     public convertOrUpdateGeometrySource(arg: IGeometrySource, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometrySource;
     public convertOrUpdateGeometryPart(arg: IGeometryPart, outFmt: GeometryOutputFormat, opts: ElementLoadOptions): IGeometryPart;
-    
+
     // when lets getIModelProps know that the extents may have been updated as the result of a pullChanges and should be read directly from the iModel as opposed to the cached extents.
     public getITwinId(): GuidString;
     public getLastError(): string;
@@ -695,7 +708,6 @@ export declare namespace IModelJsNative {
     public insertModel(modelProps: ModelProps): Id64String;
     public isChangeCacheAttached(): boolean;
     public isGeometricModelTrackingSupported(): boolean;
-    public isIndirectChanges(): boolean;
     public isLinkTableRelationship(classFullName: string): boolean | undefined;
     public isOpen(): boolean;
     public isProfilerPaused(): boolean;
@@ -730,6 +742,7 @@ export declare namespace IModelJsNative {
     public resetBriefcaseId(idValue: number): void;
     public restartDefaultTxn(): void;
     public restartTxnSession(): void;
+    public currentTxnSessionId(): number;
     public resumeProfiler(): DbResult;
     public reverseAll(): IModelStatus;
     public reverseTo(txnId: TxnIdString): IModelStatus;
@@ -766,16 +779,28 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
-    public pullMergeInProgress(): boolean;
-    public pullMergeBegin(): void;
-    public pullMergeEnd(): void;
-    public pullMergeResume(): void;
 
+    public pullMergeGetStage(): "None" | "Merging" | "Rebasing";
+    public pullMergeRebaseReinstateTxn(): void;
+    public pullMergeRebaseUpdateTxn(): void;
+    public pullMergeRebaseNext(): TxnIdString | undefined;
+    public pullMergeRebaseAbortTxn(): void
+    public pullMergeRebaseBegin(): TxnIdString[];
+    public pullMergeRebaseEnd(): void;
+    public pullMergeReverseLocalChanges(): TxnIdString[];
+    public stashChanges(args: { stashRootDir: string, description: string, iModelId: string, resetBriefcase?: true}): any;
+    public stashRestore(stashFile: string): void;
+    public getPendingTxnsHash(includeReversedTxns: boolean): string;
+    public hasPendingSchemaChanges(): boolean;
+    public discardLocalChanges(): void;
+    public getTxnProps(id: TxnIdString): TxnProps | undefined;
+    public setTxnMode(mode: "direct" | "indirect"): void;
+    public getTxnMode(): "direct" | "indirect";
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
     public static zlibCompress(data: Uint8Array): Uint8Array;
     public static zlibDecompress(data: Uint8Array, actualSize: number): Uint8Array;
-    public static computeChangesetId(args: Partial<ChangesetFileProps> & Required<Pick<ChangesetFileProps, "parentId" | "pathname">> ): string;
+    public static computeChangesetId(args: Partial<ChangesetFileProps> & Required<Pick<ChangesetFileProps, "parentId" | "pathname">>): string;
   }
 
   /** The native object for GeoServices. */
@@ -817,7 +842,7 @@ export declare namespace IModelJsNative {
     public closeDb(): void;
     public createDb(dbName: string): DbResult;
     public dispose(): void;
-    public dropSchema(schemaName: string): void;
+    public dropSchemas(schemaNames: ReadonlyArray<string>): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
     public schemaSyncGetDefaultUri(): string;
     public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
@@ -845,7 +870,6 @@ export declare namespace IModelJsNative {
     public concurrentQueryShutdown(): void;
     public attachDb(filename: string, alias: string): void;
     public detachDb(alias: string): void;
-
   }
 
   class ChangedElementsECDb implements IDisposable {
@@ -1487,6 +1511,7 @@ export declare namespace IModelJsNative {
     public openFile(fileName: string, invert: boolean): void;
     public openGroup(fileName: string[], db: AnyECDb, invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
+    public openInMemoryChanges(db: DgnDb, invert: boolean): void;
     public openTxn(db: DgnDb, txnId: Id64String, invert: boolean): void;
     public reset(): void;
     public step(): boolean;

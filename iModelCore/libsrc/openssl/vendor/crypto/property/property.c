@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2025 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates.  All rights reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -321,7 +321,7 @@ int ossl_method_store_add(OSSL_METHOD_STORE *store, const OSSL_PROVIDER *prov,
 
     /* Insert into the hash table if required */
     if (!ossl_property_write_lock(store)) {
-        OPENSSL_free(impl);
+        impl_free(impl);
         return 0;
     }
     ossl_method_cache_flush(store, nid);
@@ -683,7 +683,7 @@ static void ossl_method_cache_flush_some(OSSL_METHOD_STORE *store)
     store->cache_nelem = state.nelem;
     /* Without a timer, update the global seed */
     if (state.using_global_seed)
-        tsan_store(&global_seed, state.seed);
+        tsan_add(&global_seed, state.seed);
 }
 
 int ossl_method_store_cache_get(OSSL_METHOD_STORE *store, OSSL_PROVIDER *prov,
