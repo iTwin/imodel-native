@@ -236,6 +236,7 @@ enum  BaseGeoCoordErrors
     GEOCOORDERR_ParameterNotUsed                = (GeoCoordErrorBase  - 35),
     GEOCOORDERR_InvalidDatum                    = (GeoCoordErrorBase  - 36),
     GEOCOORDERR_NotInUserLibrary                = (GeoCoordErrorBase  - 37),
+    GEOCOORDERR_UnknownDatumType                = (GeoCoordErrorBase  - 38),
 
     GEOCOORDERR_EllipsoidIllegalName            = (GeoCoordErrorBase  - 40),
     GEOCOORDERR_EllipsoidNotFound               = (GeoCoordErrorBase  - 41),
@@ -247,6 +248,8 @@ enum  BaseGeoCoordErrors
     GEOCOORDERR_GeoCoordNotInitialized          = (GeoCoordErrorBase  - 46),
     GEOCOORDERR_InvalidGeodeticTransform        = (GeoCoordErrorBase  - 47),
     GEOCOORDERR_MissingPropertyOrParameter      = (GeoCoordErrorBase  - 48),
+    GEOCOORDERR_NoTransforms                    = (GeoCoordErrorBase  - 49),
+    GEOCOORDERR_NotAllTransformsAvailable       = (GeoCoordErrorBase  - 50),
 
     GEOCOORDERR_GeodeticTransformIllegalName    = (GeoCoordErrorBase  - 60),
     GEOCOORDERR_GeodeticTransformNoUniqueName   = (GeoCoordErrorBase  - 62),
@@ -254,6 +257,18 @@ enum  BaseGeoCoordErrors
 
     GEOCOORDERR_FileNotFoundError               = (GeoCoordErrorBase  - 70),
     GEOCOORDERR_FileAccessDenied                = (GeoCoordErrorBase  - 71),
+
+    GEOCOORDERR_NotImplemented                  = (GeoCoordErrorBase  - 80),
+    GEOCOORDERR_EmptyDictionary                 = (GeoCoordErrorBase  - 81),
+    GEOCOORDERR_NoDictionary                    = (GeoCoordErrorBase  - 82),
+    GEOCOORDERR_FormatNotSupported              = (GeoCoordErrorBase  - 83),
+    GEOCOORDERR_Duplicate                       = (GeoCoordErrorBase  - 84),
+    GEOCOORDERR_NotFound                        = (GeoCoordErrorBase  - 85),
+    GEOCOORDERR_NoVersion                       = (GeoCoordErrorBase  - 86),
+    GEOCOORDERR_UnsupportedVersion              = (GeoCoordErrorBase  - 87),
+    GEOCOORDERR_ParseError                      = (GeoCoordErrorBase  - 88),
+    GEOCOORDERR_InvalidDirection                = (GeoCoordErrorBase  - 89),
+    GEOCOORDERR_InvalidTransform                = (GeoCoordErrorBase  - 90),
 
     // GeoTiff read errors:
     GEOCOORDERR_GeocentricNotSupported          = (GeoCoordErrorTiffBase - 1),
