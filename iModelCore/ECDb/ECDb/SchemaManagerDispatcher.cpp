@@ -10,6 +10,49 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 Utf8String ECSchemaOwnershipClaimAppData::s_key = "ecdb.owned_by";
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus MainSchemaManager::UpdateDbSchema(bool doNotTrackDDLChanges) const{
+    ECDB_PERF_LOG_SCOPE("Updating sqlite schema");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin MainSchemaManager::UpdateDbSchema");
+
+    [[maybe_unused]] auto _ =  doNotTrackDDLChanges ? std::make_unique<ECDb::Impl::DisableDDLTracking> (m_ecdb) : nullptr;
+
+    BeMutexHolder holder(m_ecdb.GetImpl().GetMutex());
+    SchemaImportContext ctx(m_ecdb, SchemaManager::SchemaImportOptions(), /* synchronizeSchemas = */true);
+    auto& mainDisp = m_ecdb.Schemas().Main();
+    m_ecdb.ClearECDbCache();
+    m_ecdb.GetImpl().RefreshProfileVersion();
+
+    if (SUCCESS != mainDisp.RepopulateCacheTables()) {
+        return ERROR;
+    }
+
+    if (SUCCESS != mainDisp.GetDbSchema().ForceReloadTableAndIndexesFromDisk()) {
+        return ERROR;
+    }
+
+    if (SUCCESS != mainDisp.CreateOrUpdateRequiredTables()) {
+        return ERROR;
+    }
+
+    if (SUCCESS != mainDisp.CreateOrUpdateIndexesInDb(ctx)) {
+        return ERROR;
+    }
+
+    if (SUCCESS != mainDisp.PurgeOrphanTables(ctx)) {
+        return ERROR;
+    }
+
+    if (SUCCESS != DbMapValidator(ctx).Validate()) {
+        return ERROR;
+    }
+
+    m_conn.ClearECDbCache();
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End MainSchemaManager::UpdateDbSchema");
+    return SUCCESS;
+}
 //*****************************************************************
 //VirtualSchemaManager
 //*****************************************************************
