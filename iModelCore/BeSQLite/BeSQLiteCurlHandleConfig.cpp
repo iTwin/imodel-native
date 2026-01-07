@@ -155,7 +155,7 @@ static const std::string& getProxyForUrl(const std::string& url) {
     return s_proxyMap[key].second;
 }
 
-void setupProxyResolver(CURL * pCurl, const char * zUri) {
+void setupCurlProxy(CURL * pCurl, const char * zUri) {
     static int s_initialized = 0;
     if (!s_initialized) {
         proxy_resolver_global_init();
@@ -181,7 +181,7 @@ extern "C" {
 
 int besqlite_bcv_curl_handle_config(CURL * pCurl, int /*eMethod*/, const char * zUri) {
 #ifdef ENABLE_PROXYRES
-    setupProxyResolver(pCurl, zUri);
+    setupCurlProxy(pCurl, zUri);
 #endif // ENABLE_PROXYRES
     curl_easy_setopt(pCurl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_REVOKE_BEST_EFFORT);
 #ifdef __APPLE__
