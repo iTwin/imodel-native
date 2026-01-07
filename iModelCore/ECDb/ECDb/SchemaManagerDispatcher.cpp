@@ -49,7 +49,7 @@ BentleyStatus MainSchemaManager::UpdateDbSchema(bool doNotTrackDDLChanges) const
         return ERROR;
     }
 
-    m_conn.ClearECDbCache();
+    m_ecdb.ClearECDbCache();
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End MainSchemaManager::UpdateDbSchema");
     return SUCCESS;
 }
