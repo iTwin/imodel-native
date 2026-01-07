@@ -208,8 +208,18 @@ BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const
             newColumns.push_back(col);
         }
 
+    std::vector<Utf8String> deletedColumns;
+    if (ecdb.GetImpl().GetECSqlConfig().GetPurgeUnusedColumns())
+        {
+        //compute deleted columns;
+        for (auto& existingColumn : existingColumnNamesInDbSet)
+            {
+            if (!table.FindColumnP(existingColumn.c_str()))
+                deletedColumns.push_back(existingColumn);
+            }
+        }
 
-    if (SUCCESS != AlterTable(ecdb, table, newColumns))
+    if (SUCCESS != AlterTable(ecdb, table, newColumns, deletedColumns))
         return ERROR;
 
     return CreateTriggers(ecdb, table, false);
@@ -219,11 +229,12 @@ BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const
 // @bsimethod
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const& table, std::vector<DbColumn const*> const& columnsToAdd)
+BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const& table, std::vector<DbColumn const*> const& columnsToAdd, std::vector<Utf8String> const& columnsToDelete)
     {
+    BeAssert(!ecdb.GetImpl().GetECSqlConfig().GetPurgeUnusedColumns() && !columnsToDelete.empty());
     if (columnsToAdd.empty())
         return SUCCESS;
-
+    
     Utf8String alterDdlTemplate;
     alterDdlTemplate.Sprintf("ALTER TABLE [%s] ADD COLUMN ", table.GetName().c_str());
     for (DbColumn const* columnToAdd : columnsToAdd)
@@ -271,6 +282,18 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
             return ERROR;
             }
         }
+
+    // Columns dropped one by one and if it any fail we continue with the next one.
+    for (auto const& colName : columnsToDelete)
+        {
+        Utf8String dropDdl;
+        dropDdl.Sprintf("ALTER TABLE [%s] DROP COLUMN [%s]", table.GetName().c_str(), colName.c_str());
+        if (BE_SQLITE_OK != ecdb.GetImpl().ExecuteDDL(dropDdl.c_str()))
+            {
+            ecdb.GetImpl().Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0228,
+                "Failed to drop column %s from table %s. Error message: %s", colName.c_str(), table.GetName().c_str(), ecdb.GetLastError().c_str());
+            }
+        }    
 
     return SUCCESS;
     }
