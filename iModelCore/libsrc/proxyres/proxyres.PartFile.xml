@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd"
+    >
+
+    <Part Name="proxyres">
+        <SubPart PartName="LibraryStatic" />
+    </Part>
+
+    <Part Name="proxyreslib" BentleyBuildMakeFile="proxyres.mke" ExcludePlatforms="Android*,Linux*">
+        <Bindings>
+            <VendorAPI Domain="proxyres" />
+            <Libs>Delivery/$(stlibprefix)proxyres$(stlibext)</Libs>
+            <VendorNotices>Delivery/proxyres-license.txt</VendorNotices>
+            <VendorNotices>Delivery/ios-cmake-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <Part Name="LibraryStatic">
+        <SubPart PartName="proxyreslib" LibType="Static"/>
+    </Part>
+
+</BuildContext>

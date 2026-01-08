@@ -16,6 +16,10 @@ void besqlite_bcv_set_cacert_path(const std::string& caFilename);
 
 #endif // __APPLE__
 
+extern "C" {
+int besqlite_bcv_custom_init();
+}
+
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -378,6 +382,7 @@ void CloudUtil::Initialize(BeFileNameCR assetDir) {
     // On macOS and iOS, use a CA file that is bundled with the native add-on.
     besqlite_bcv_set_cacert_path(caFilename.GetNameUtf8());
 #endif // __APPLE__
+    besqlite_bcv_custom_init();
 }
 
 /** close the bcv handle, if open */
