@@ -1,0 +1,14 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+SourceDir = $(_MakeFilePath)vendor/
+
+$(BuildContext)VendorAPI/msgpack : $(SourceDir)include
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Delivery/msgpackc-license.txt : $(SourceDir)COPYING
+    $(LinkFirstDepToFirstTarget)
+
