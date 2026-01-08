@@ -26,6 +26,27 @@
 
 static std::string s_empty;
 
+// RAII wrapper around a sqlite3_mutex.
+// Note: this is designed only for use in this file, so is very minimal.
+class SQLiteMutexLock {
+    sqlite3_mutex *m_mutex;
+public:
+    explicit SQLiteMutexLock(sqlite3_mutex *mutex): m_mutex(mutex) {
+        if (nullptr == m_mutex) {
+            assert(false && "Mutex not initialized.");
+            throw "Null mutex";
+        }
+        sqlite3_mutex_enter(m_mutex);
+    }
+    ~SQLiteMutexLock() {
+        // Note: constructor throws if m_mutex is nullptr; if that happens, the destructor isn't called.
+        sqlite3_mutex_leave(m_mutex);
+    }
+    // Prevent copying
+    SQLiteMutexLock(const SQLiteMutexLock&) = delete;
+    SQLiteMutexLock& operator=(const SQLiteMutexLock&) = delete;
+};
+
 #ifndef ITWIN_DAEMON
 
 void logTrace(Utf8CP fmt, ...) {
@@ -45,11 +66,11 @@ void logError(Utf8CP fmt, ...) {
 #else // ITWIN_DAEMON
 
 void logTrace(const char* /*fmt*/, ...) {
-    // Do nothing in daemon mode
+    // NativeLogging isn't available daemon mode
 }
 
 void logError(const char* /*fmt*/, ...) {
-    // Do nothing in daemon mode
+    // NativeLogging isn't available daemon mode
 }
 
 #endif // !ITWIN_DAEMON
@@ -64,36 +85,33 @@ static const void initAppleMutex() {
 }
 
 static std::string &getCACertPath() {
-    if (s_appleMutex == NULL) {
-        assert(false && "s_appleMutex not initialized");
-        logError("getCACertPath: s_appleMutex not initialized");
+    try {
+        SQLiteMutexLock lock(s_appleMutex);
+        if (s_certsPath.empty()) {
+            uint32_t size = 0;
+            _NSGetExecutablePath(nullptr, &size); // get the size needed
+            if (size == 0) {
+                return s_empty;
+            }
+            std::string executablePath;
+            executablePath.resize(size);
+            if (_NSGetExecutablePath(&executablePath[0], &size) != 0) {
+                return s_empty;
+            }
+            const std::string suffix = "/Assets/cacert.pem";
+            size_t lastSlashIndex = executablePath.rfind('/');
+            if (lastSlashIndex != std::string::npos) {
+                s_certsPath = executablePath.substr(0, lastSlashIndex) + suffix;
+            } else {
+                // If there aren't any slashes in the executable path, just use the current directory.
+                s_certsPath = std::string(".") + suffix;
+            }
+        }
+        return s_certsPath;
+    } catch (...) {
+        logError("getCACertPath: s_appleMutex not initialized.");
         return s_empty;
     }
-    sqlite3_mutex_enter(s_appleMutex);
-    if (s_certsPath.empty()) {
-        uint32_t size = 0;
-        _NSGetExecutablePath(nullptr, &size); // get the size needed
-        if (size == 0) {
-            sqlite3_mutex_leave(s_appleMutex);
-            return s_empty;
-        }
-        std::string executablePath;
-        executablePath.resize(size);
-        if (_NSGetExecutablePath(&executablePath[0], &size) != 0) {
-            sqlite3_mutex_leave(s_appleMutex);
-            return s_empty;
-        }
-        const std::string suffix = "/Assets/cacert.pem";
-        size_t lastSlashIndex = executablePath.rfind('/');
-        if (lastSlashIndex != std::string::npos) {
-            s_certsPath = executablePath.substr(0, lastSlashIndex) + suffix;
-        } else {
-            // If there aren't any slashes in the executable path, just use the current directory.
-            s_certsPath = std::string(".") + suffix;
-        }
-    }
-    sqlite3_mutex_leave(s_appleMutex);
-    return s_certsPath;
 }
 
 void besqlite_bcv_set_cacert_path(const std::string& caFilename) {
@@ -118,28 +136,26 @@ static const std::string& getEnvProxy() {
     static bool envChecked = false;
     static std::string envProxy;
 
-    if (nullptr == s_envMutex) {
-        assert(false && "s_envMutex not initialized");
-        logError("getEnvProxy: s_envMutex not initialized");
-        return envProxy;
-    }
-    sqlite3_mutex_enter(s_envMutex);
-    if (!envChecked) {
-        const char* httpsProxy = std::getenv("https_proxy");
-        if (httpsProxy != nullptr) {
-            envProxy = httpsProxy;
-        } else {
-            const char* httpProxy = std::getenv("http_proxy");
-            if (httpProxy != nullptr) {
-                envProxy = httpProxy;
+    try {
+        SQLiteMutexLock lock(s_envMutex);
+        if (!envChecked) {
+            const char* httpsProxy = std::getenv("https_proxy");
+            if (httpsProxy != nullptr) {
+                envProxy = httpsProxy;
+            } else {
+                const char* httpProxy = std::getenv("http_proxy");
+                if (httpProxy != nullptr) {
+                    envProxy = httpProxy;
+                }
             }
+            if (!envProxy.empty()) {
+                logTrace("Using proxy from environment: <%s>\n", envProxy.c_str());
+            }
+            envChecked = true;
         }
-        if (!envProxy.empty()) {
-            logTrace("Using proxy from environment: <%s>\n", envProxy.c_str());
-        }
-        envChecked = true;
+    } catch (...) {
+        logError("getEnvProxy: s_envMutex not initialized");
     }
-    sqlite3_mutex_leave(s_envMutex);
     return envProxy;
 }
 
@@ -149,80 +165,74 @@ static const std::string& getProxyForUrl(const std::string& url) {
     static std::map<std::string, TimeStringPair> proxyMap;
     const std::string& envProxy = getEnvProxy();
 
-    if (nullptr == s_proxyMapMutex) {
-        assert(false && "s_proxyMapMutex not initialized");
-        logError("getProxyForUrl: s_proxyMapMutex not initialized");
-        return s_empty;
-    }
-    sqlite3_mutex_enter(s_proxyMapMutex);
-    if (!envProxy.empty()) {
-        sqlite3_mutex_leave(s_proxyMapMutex);
-        return envProxy;
-    }
-    auto schemeEnd = url.find("://");
-    if (schemeEnd == std::string::npos) {
-        logTrace("\nCannot determine proxy: invalid URL: %s\n", url.c_str());
-        sqlite3_mutex_leave(s_proxyMapMutex);
-        return s_empty;
-    }
-    auto hostEnd = url.find('/', schemeEnd + 3);
-    std::string key = url.substr(0, hostEnd);
-    std::time_t now = std::time(nullptr);
-    auto it = proxyMap.find(key);
-    if (it != proxyMap.end()) {
-        if (now - it->second.first > 3600) { // cache for 1 hour
-            proxyMap.erase(it);
-        } else {
-            sqlite3_mutex_leave(s_proxyMapMutex);
-            return it->second.second;
+    try {
+        SQLiteMutexLock lock(s_proxyMapMutex);
+        if (!envProxy.empty()) {
+            return envProxy;
         }
-    }
-    void* pProxy = proxy_resolver_create();
-    if (nullptr == pProxy) {
-        sqlite3_mutex_leave(s_proxyMapMutex);
-        return s_empty;
-    }
-    proxy_resolver_get_proxies_for_url(pProxy, url.c_str());
-    proxy_resolver_wait(pProxy, -1);
-    const char *list = proxy_resolver_get_list(pProxy);
-    std::string proxy;
-    if (list != nullptr) {
-        proxy = list;
-        auto commaSpot = proxy.find(',');
-        if (commaSpot != std::string::npos) {
-            proxy = proxy.substr(0, commaSpot);
-        } else {
+        auto schemeEnd = url.find("://");
+        if (schemeEnd == std::string::npos) {
+            logTrace("\nCannot determine proxy: invalid URL: %s\n", url.c_str());
+            return s_empty;
+        }
+        auto hostEnd = url.find('/', schemeEnd + 3);
+        std::string key = url.substr(0, hostEnd);
+        std::time_t now = std::time(nullptr);
+        auto it = proxyMap.find(key);
+        if (it != proxyMap.end()) {
+            if (now - it->second.first > 3600) { // cache for 1 hour
+                proxyMap.erase(it);
+            } else {
+                return it->second.second;
+            }
+        }
+        void* pProxy = proxy_resolver_create();
+        if (nullptr == pProxy) {
+            return s_empty;
+        }
+        proxy_resolver_get_proxies_for_url(pProxy, url.c_str());
+        proxy_resolver_wait(pProxy, -1);
+        const char *list = proxy_resolver_get_list(pProxy);
+        std::string proxy;
+        if (list != nullptr) {
             proxy = list;
+            auto commaSpot = proxy.find(',');
+            if (commaSpot != std::string::npos) {
+                proxy = proxy.substr(0, commaSpot);
+            } else {
+                proxy = list;
+            }
+            if (proxy == "direct://") {
+                proxy = "";
+            }
         }
-        if (proxy == "direct://") {
-            proxy = "";
+        proxy_resolver_delete(&pProxy);
+        if (!proxy.empty()) {
+            logTrace("Resolved proxy for URL %s: <%s>\n", url.c_str(), proxy.c_str());
         }
+        proxyMap[key] = std::make_pair(now, proxy);
+        return proxyMap[key].second;
+    } catch (...) {
+        logError("getProxyForUrl: s_proxyMapMutex not initialized.");
+        return s_empty;
     }
-    proxy_resolver_delete(&pProxy);
-    if (!proxy.empty()) {
-        logTrace("Resolved proxy for URL %s: <%s>\n", url.c_str(), proxy.c_str());
-    }
-    proxyMap[key] = std::make_pair(now, proxy);
-    sqlite3_mutex_leave(s_proxyMapMutex);
-    return proxyMap[key].second;
 }
 
 void setupCurlProxy(CURL * pCurl, const char * zUri) {
     static int s_initialized = 0;
 
-    if (nullptr == s_initMutex) {
-        assert(false && "s_initMutex not initialized");
-        logError("setupCurlProxy: s_initMutex not initialized");
+    try {
+        SQLiteMutexLock lock(s_initMutex);
+        if (!s_initialized) {
+            proxy_resolver_global_init();
+            proxy_config_global_init();
+            // proxy_config_set_auto_config_url_override("http://localhost:3001/pac.js"); // for testing
+            s_initialized = 1;
+        }
+    } catch (...) {
+        logError("setupCurlProxy: s_initMutex not initialized.");
         return;
     }
-    sqlite3_mutex_enter(s_initMutex);
-    if (!s_initialized) {
-        proxy_resolver_global_init();
-        proxy_config_global_init();
-        // proxy_config_set_auto_config_url_override("http://localhost:3001/pac.js"); // for testing
-        s_initialized = 1;
-    }
-    sqlite3_mutex_leave(s_initMutex);
     const std::string& proxy = getProxyForUrl(zUri);
     if (!proxy.empty()) {
         curl_easy_setopt(pCurl, CURLOPT_PROXY, proxy.c_str());
