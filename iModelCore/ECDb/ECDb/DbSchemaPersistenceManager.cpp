@@ -231,7 +231,6 @@ BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const
 //static
 BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const& table, std::vector<DbColumn const*> const& columnsToAdd, std::vector<Utf8String> const& columnsToDelete)
     {
-    BeAssert(!ecdb.GetImpl().GetECSqlConfig().GetPurgeUnusedColumns() && !columnsToDelete.empty());
     if (columnsToAdd.empty())
         return SUCCESS;
     

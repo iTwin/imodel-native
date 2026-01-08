@@ -1014,7 +1014,47 @@ int ApplyChangesArgs::FilterChangeCallback(void* pCtx, SqlChangesetIterP iter) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ApplyChangesArgs::IsSchemaChange(Changes::Change const& change) {
-    return IsSchemaTable(change.GetTableName().c_str());
+    constexpr auto kBePropTableName = "be_Prop";
+    constexpr auto kDgnDbNamespace = "dgndb_Db";
+    constexpr auto kBeDbNamespace = "be_Db";
+    constexpr auto kEcDbNamespace = "ec_Db";
+    constexpr auto kSchemaVersion = "SchemaVersion";
+    constexpr auto kLocalDbInfo = "localDbInfo";
+
+    const auto& tableName = change.GetTableName();
+    if (change.GetOpcode() != DbOpcode::Insert && tableName.EqualsIAscii(kBePropTableName) == 0) {
+        auto namespaceVal = change.GetOldValue(0);
+        auto nameVal = change.GetOldValue(1);
+        const auto ns = namespaceVal.IsValid() && namespaceVal.GetValueType() == DbValueType::TextVal ? namespaceVal.GetValueText() : nullptr;
+        const auto name = nameVal.IsValid() && nameVal.GetValueType() == DbValueType::TextVal ? nameVal.GetValueText() : nullptr;
+        if (ns && name){
+            if (0 == BeStringUtilities::StricmpAscii(ns, kDgnDbNamespace) && 0 == BeStringUtilities::StricmpAscii(name, kSchemaVersion) ) {
+                return true;
+            }
+            if (0 == BeStringUtilities::StricmpAscii(ns, kBeDbNamespace) && 0 == BeStringUtilities::StricmpAscii(name, kSchemaVersion) ) {
+                return true;
+            }            
+            if (0 == BeStringUtilities::StricmpAscii(ns, kEcDbNamespace)) {
+                if (0 == BeStringUtilities::StricmpAscii(name, kSchemaVersion) || 0 == BeStringUtilities::StricmpAscii(name, kLocalDbInfo)) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    if (!tableName[0] || (tableName[0] != 'e' && tableName[0] != 'E'))  {
+        return false;
+    }
+
+    if (!tableName[1] || (tableName[1] != 'c' && tableName[1] != 'C')) {
+        return false;
+    }
+
+    if (!tableName[2] || tableName[2] != '_' ) {
+        return false;
+    }
+
+    return true;
 }
 
 /*---------------------------------------------------------------------------------**/ /**
