@@ -2377,7 +2377,7 @@ DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
     }
 
     EnableTracking(wasTracking);
-    return result;
+    return BE_SQLITE_OK;
 }
 
 /*---------------------------------------------------------------------------------**/ /**

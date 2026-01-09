@@ -222,16 +222,15 @@ struct ChangeStream : NonCopyableClass {
     friend struct ApplyChangesArgs;
 
     enum class SetType : bool { Full = 0, Patch = 1 };
-    enum class ApplyChangesForTable : bool { No = 0, Yes = 1 };
+    enum class FilterChangeAction : bool { Accept = 1, Skip = 0 };
     enum class ConflictCause : int { Data = 1, NotFound = 2, Conflict = 3, Constraint = 4, ForeignKey = 5 };
     enum class ConflictResolution : int { Skip = 0, Replace = 1, Abort = 2 };
 
 protected:
     mutable ApplyChangesArgs const* m_args = nullptr;
     static int ConflictCallback(void* pCtx, int cause, SqlChangesetIterP iter);
-    static int FilterTableCallback(void* pCtx, Utf8CP tableName);
-
-    virtual ApplyChangesForTable _FilterTable(Utf8CP tableName) { return ApplyChangesForTable::Yes; }
+    static int FilterChangeCallback(void* pCtx, SqlChangesetIterP iter);
+    virtual FilterChangeAction _FilterChange(Changes::Change const&) { return FilterChangeAction::Accept; }
     virtual ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) = 0;
 
     //! Application implements this to receive data from the system.
@@ -254,7 +253,7 @@ public:
 
     //! Implement to handle conflicts when applying changes
     //! @see ApplyChanges
-    ApplyChangesForTable FilterTable(Utf8CP tableName) { return _FilterTable(tableName); }
+    FilterChangeAction FilterChange(Changes::Change const& change) { return _FilterChange(change); }
 
     //! Implement to filter out specific tables when applying changes
     //! @see ApplyChanges
@@ -298,25 +297,25 @@ struct ApplyChangesArgs {
         bool m_abortOnAnyConflict;
         mutable int64_t m_filterRowCount;
         mutable int64_t m_conflictRowCount;
-        std::function<ChangeStream::ApplyChangesForTable(Utf8CP)> m_filterTable;
+        std::function<ChangeStream::FilterChangeAction(Changes::Change const&)> m_filterChange;
         std::function<ChangeStream::ConflictResolution(ChangeStream::ConflictCause, Changes::Change)> m_conflictHandler;
 
     protected:
         static int ConflictCallback(void*, int, SqlChangesetIterP);
-        static int FilterTableCallback(void*, Utf8CP);
-        ChangeStream::ApplyChangesForTable FilterTable(Utf8CP tableName) const;
+        static int FilterChangeCallback(void*, SqlChangesetIterP);
+        ChangeStream::FilterChangeAction FilterChange(Changes::Change const& change) const;
         ChangeStream::ConflictResolution OnConflict(ChangeStream::ConflictCause cause, Changes::Change iter) const;
 
     public:
-        ApplyChangesArgs() :m_invert(false), m_ignoreNoop(false), m_fkNoAction(false), m_filterTable(nullptr),m_conflictHandler(nullptr),m_filterRowCount(0),m_conflictRowCount(0), m_abortOnAnyConflict(false){}
+        ApplyChangesArgs() :m_invert(false), m_ignoreNoop(false), m_fkNoAction(false), m_filterChange(nullptr),m_conflictHandler(nullptr),m_filterRowCount(0),m_conflictRowCount(0), m_abortOnAnyConflict(false){}
         ApplyChangesArgs& SetAbortOnAnyConflict(bool abortOnAnyConflict) { m_abortOnAnyConflict = abortOnAnyConflict; return *this; }
         ApplyChangesArgs& SetInvert(bool invert) { m_invert = invert; return *this; }
         ApplyChangesArgs& SetIgnoreNoop(bool ignoreNoop) { m_ignoreNoop = ignoreNoop; return *this; }
         ApplyChangesArgs& SetFkNoAction(bool fkNoAction) { m_fkNoAction = fkNoAction; return *this; }
-        ApplyChangesArgs& SetFilterTable(std::function<ChangeStream::ApplyChangesForTable(Utf8CP)> filterTable) { m_filterTable = filterTable; return *this; }
+        ApplyChangesArgs& SetFilterChange(std::function<ChangeStream::FilterChangeAction(Changes::Change const&)> filterChange) { m_filterChange = filterChange; return *this; }
         BE_SQLITE_EXPORT ApplyChangesArgs& ApplyOnlySchemaChanges();
         BE_SQLITE_EXPORT ApplyChangesArgs& ApplyOnlyDataChanges();
-        ApplyChangesArgs& ApplyAnyChanges() { m_filterTable = nullptr; return *this; }
+        ApplyChangesArgs& ApplyAnyChanges() { m_filterChange = nullptr; return *this; }
         ApplyChangesArgs& SetConflictHandler(std::function<ChangeStream::ConflictResolution(ChangeStream::ConflictCause, Changes::Change)> conflictHandler) { m_conflictHandler = conflictHandler; return *this; }
         bool GetInvert() const { return m_invert; }
         bool GetAbortOnAnyConflict() const { return m_abortOnAnyConflict; }
@@ -324,10 +323,11 @@ struct ApplyChangesArgs {
         bool GetFkNoAction() const { return m_fkNoAction; }
         int64_t GetFilterRowCount() const { return m_filterRowCount; }
         int64_t GetConflictRowCount() const { return m_conflictRowCount; }
-        bool HasFilterTable() const { return m_filterTable != nullptr; }
+        bool HasFilterChange() const { return m_filterChange != nullptr; }
         bool HasConflictHandler() const { return m_conflictHandler != nullptr; }
         static ApplyChangesArgs Default() { return ApplyChangesArgs(); }
         BE_SQLITE_EXPORT static bool IsSchemaTable(Utf8CP tableName);
+        BE_SQLITE_EXPORT static bool IsSchemaChange(Changes::Change const& change);
 };
 
 //=======================================================================================

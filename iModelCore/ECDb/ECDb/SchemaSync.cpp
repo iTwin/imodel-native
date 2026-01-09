@@ -961,42 +961,12 @@ SchemaSync::Status SchemaSync::Pull(SyncDbUri const& syncDbUri, SchemaImportToke
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::Status SchemaSync::UpdateDbSchema() {
-    ECDB_PERF_LOG_SCOPE("Updating sqlite schema");
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::UpdateDbSchema");
-
-    BeMutexHolder holder(m_conn.GetImpl().GetMutex());
-    SchemaImportContext ctx(m_conn, SchemaManager::SchemaImportOptions(), /* synchronizeSchemas = */true);
-    auto& mainDisp = m_conn.Schemas().Main();
-    m_conn.ClearECDbCache();
-    m_conn.GetImpl().RefreshProfileVersion();
-
-    if (SUCCESS != mainDisp.RepopulateCacheTables()) {
+    const auto kDoNotTrackDdlChanges = true;
+    const auto rc = m_conn.Schemas().Main().UpdateDbSchema(kDoNotTrackDdlChanges);
+    if (rc != SUCCESS) {
+        LOG.error("SchemaSync::UpdateDbSchema(): Failed to update db schema.");
         return Status::ERROR;
     }
-
-    if (SUCCESS != mainDisp.GetDbSchema().ForceReloadTableAndIndexesFromDisk()) {
-        return Status::ERROR;
-    }
-
-    if (SUCCESS != mainDisp.CreateOrUpdateRequiredTables()) {
-        return Status::ERROR;
-    }
-
-    if (SUCCESS != mainDisp.CreateOrUpdateIndexesInDb(ctx)) {
-        return Status::ERROR;
-    }
-
-    if (SUCCESS != mainDisp.PurgeOrphanTables(ctx)) {
-        return Status::ERROR;
-    }
-
-    if (SUCCESS != DbMapValidator(ctx).Validate()) {
-        return Status::ERROR;
-    }
-
-    m_conn.ClearECDbCache();
-
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::UpdateDbSchema");
     return Status::OK;
 }
 

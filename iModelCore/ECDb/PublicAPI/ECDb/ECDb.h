@@ -125,10 +125,11 @@ struct ECSqlConfig {
         DisableSqlFunctions m_disabledFunctions;
         bool m_experimentalFeaturesEnabled;
         bool m_validateWriteValues;
+        bool m_purgeUnusedColumns;
         mutable std::unordered_map<OptimizationOptions, bool> m_optimisationOptionsMap;
 
     public:
-        ECSqlConfig(): m_experimentalFeaturesEnabled(false), m_validateWriteValues(false) {
+        ECSqlConfig(): m_experimentalFeaturesEnabled(false), m_validateWriteValues(false), m_purgeUnusedColumns(false) {
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForClassIds] = true;
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForNestedSelectQuery] = true;
         }
@@ -142,6 +143,8 @@ struct ECSqlConfig {
 
         bool IsWriteValueValidationEnabled() const { return m_validateWriteValues; }
         void SetWriteValueValidation(const bool v) { m_validateWriteValues = v; }
+        bool GetPurgeUnusedColumns() const { return m_purgeUnusedColumns; }
+        void SetPurgeUnusedColumns(bool v) { m_purgeUnusedColumns = v; }
 };
 
 //=======================================================================================
