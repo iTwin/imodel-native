@@ -23,6 +23,10 @@ InstanceReader& ECDb::GetInstanceReader() const { return m_pimpl->GetInstanceRea
 //---------------+---------------+---------------+---------------+---------------+------
 InstanceWriter& ECDb::GetInstanceWriter()  const { return m_pimpl->GetInstanceWriter(); }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+RelatedInstanceFinder const& ECDb::GetRelatedInstanceFinder() const { return m_pimpl->GetRelatedInstanceFinder(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
