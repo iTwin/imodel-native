@@ -1014,17 +1014,17 @@ int ApplyChangesArgs::FilterChangeCallback(void* pCtx, SqlChangesetIterP iter) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ApplyChangesArgs::IsSchemaChange(Changes::Change const& change) {
-    constexpr auto kBePropTableName = "be_Prop";
-    constexpr auto kDgnDbNamespace = "dgndb_Db";
-    constexpr auto kBeDbNamespace = "be_Db";
-    constexpr auto kEcDbNamespace = "ec_Db";
-    constexpr auto kSchemaVersion = "SchemaVersion";
-    constexpr auto kLocalDbInfo = "localDbInfo";
-
+    const auto kBePropTableName = "be_Prop";
+    const auto kDgnDbNamespace = "dgndb_Db";
+    const auto kBeDbNamespace = "be_Db";
+    const auto kEcDbNamespace = "ec_Db";
+    const auto kSchemaVersion = "SchemaVersion";
+    const auto kLocalDbInfo = "localDbInfo";
     const auto& tableName = change.GetTableName();
-    if (change.GetOpcode() != DbOpcode::Insert && tableName.EqualsIAscii(kBePropTableName) == 0) {
-        auto namespaceVal = change.GetOldValue(0);
-        auto nameVal = change.GetOldValue(1);
+
+    if (tableName.EqualsIAscii(kBePropTableName)) {
+        auto namespaceVal = change.GetOpcode() != DbOpcode::Insert ? change.GetOldValue(0) : change.GetNewValue(0);
+        auto nameVal = change.GetOpcode() != DbOpcode::Insert ? change.GetOldValue(1) : change.GetNewValue(1);
         const auto ns = namespaceVal.IsValid() && namespaceVal.GetValueType() == DbValueType::TextVal ? namespaceVal.GetValueText() : nullptr;
         const auto name = nameVal.IsValid() && nameVal.GetValueType() == DbValueType::TextVal ? nameVal.GetValueText() : nullptr;
         if (ns && name){
@@ -1033,7 +1033,7 @@ bool ApplyChangesArgs::IsSchemaChange(Changes::Change const& change) {
             }
             if (0 == BeStringUtilities::StricmpAscii(ns, kBeDbNamespace) && 0 == BeStringUtilities::StricmpAscii(name, kSchemaVersion) ) {
                 return true;
-            }            
+            }
             if (0 == BeStringUtilities::StricmpAscii(ns, kEcDbNamespace)) {
                 if (0 == BeStringUtilities::StricmpAscii(name, kSchemaVersion) || 0 == BeStringUtilities::StricmpAscii(name, kLocalDbInfo)) {
                     return true;
@@ -1109,17 +1109,17 @@ ChangeStream::ConflictResolution ApplyChangesArgs::OnConflict(ChangeStream::Conf
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ApplyChangesArgs& ApplyChangesArgs::ApplyOnlySchemaChanges() { 
-    m_filterChange = [](Changes::Change const& change) { 
-        return ApplyChangesArgs::IsSchemaChange(change) ? ChangeStream::FilterChangeAction::Accept : ChangeStream::FilterChangeAction::Skip; 
-    }; return *this; 
+ApplyChangesArgs& ApplyChangesArgs::ApplyOnlySchemaChanges() {
+    m_filterChange = [](Changes::Change const& change) {
+        return ApplyChangesArgs::IsSchemaChange(change) ? ChangeStream::FilterChangeAction::Accept : ChangeStream::FilterChangeAction::Skip;
+    }; return *this;
 }
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ApplyChangesArgs& ApplyChangesArgs::ApplyOnlyDataChanges() { 
-    m_filterChange = [](Changes::Change const& change) { 
-        return ApplyChangesArgs::IsSchemaChange(change) ? ChangeStream::FilterChangeAction::Skip : ChangeStream::FilterChangeAction::Accept; 
-    }; return *this; 
+ApplyChangesArgs& ApplyChangesArgs::ApplyOnlyDataChanges() {
+    m_filterChange = [](Changes::Change const& change) {
+        return ApplyChangesArgs::IsSchemaChange(change) ? ChangeStream::FilterChangeAction::Skip : ChangeStream::FilterChangeAction::Accept;
+    }; return *this;
 }
