@@ -184,7 +184,7 @@ Utf8StringCR CommonTableBlockExp::_GetId() const {
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-void CommonTableBlockExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const {
+void CommonTableBlockExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const {
     
     auto ctb = [&]() -> CommonTableBlockNameExp const* {
         if (ctx.CurrentArg()->GetType() != ECSqlParseContext::ParseArg::Type::RangeClass)
@@ -426,7 +426,7 @@ Utf8StringCR CommonTableBlockNameExp::_GetId() const {
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-void CommonTableBlockNameExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const {
+void CommonTableBlockNameExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const {
     auto blockExp = ResolveBlock(ctx, false);
     BeAssert(blockExp != nullptr && "Programmer Error, this should be set");
     if (blockExp) {

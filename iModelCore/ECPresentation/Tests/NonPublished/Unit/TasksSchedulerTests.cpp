@@ -78,7 +78,7 @@ protected:
             }
         return vec;
         }
-    TasksCancelationResult _Cancel(IECPresentationTask::Predicate const& pred) override
+    TasksCancelationResult _Cancel(IECPresentationTask::Predicate const& pred, bool requestRestart) override
         {
         BeMutexHolder lock(m_mutex);
         bset<IECPresentationTaskCPtr> matchingTasks;
@@ -89,7 +89,7 @@ protected:
                 {
                 if (nullptr != task->GetCancelationToken())
                     {
-                    task->Cancel();
+                    task->Cancel(requestRestart);
                     task->Complete();
                     canceledTasks.insert(task);
                     }
@@ -824,60 +824,6 @@ TEST_F(ECPresentationTasksSchedulerExecutionTests, Cancel_DoesntCancelPendingNot
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECPresentationTasksSchedulerExecutionTests, Restart_RestartsCancelableRunningTasks)
-    {
-    auto task = CreateCancelableTask();
-    ICancelationTokenCPtr cancelationToken = task->GetCancelationToken();
-    m_scheduler->Schedule(*task);
-    // at this point a task should be in the running tasks list and scheduled for execution via the executor
-    EXPECT_EQ(1, m_scheduler->GetRunningTasks().size());
-
-    // restart the task
-    TasksCancelationResult result = m_scheduler->Restart();
-    EXPECT_EQ(1, result.GetTasks().size());
-    EXPECT_TRUE(result.GetTasks().end() != result.GetTasks().find(task.get()));
-    EXPECT_TRUE(cancelationToken->IsCanceled());
-    // task should still have canceled token until it gracefully finishes
-    EXPECT_TRUE(task->GetCancelationToken()->IsCanceled());
-
-    // the task should _not_ be completed and should still be running - we're
-    // letting it gracefully finish
-    EXPECT_FALSE(result.GetCompletion().poll().hasValue());
-    EXPECT_FALSE(task->GetCompletion().poll().hasValue());
-    EXPECT_EQ(1, m_scheduler->GetRunningTasks().size());
-
-    // it should also be in the pending tasks list
-    EXPECT_EQ(1, m_scheduler->GetPendingTasks().size());
-    EXPECT_TRUE(ContainerHelpers::Contains(m_scheduler->GetPendingTasks(), task));
-
-    // advance the executor to get the task to execute and expect:
-    // - restart to be completed
-    // - the task to be **not** canceled
-    // - the task to be **not** completed
-    // - the task to be in running tasks list
-    // - pending tasks list to be empty
-    m_executor.drive();
-    EXPECT_TRUE(result.GetCompletion().poll().hasValue());
-    EXPECT_FALSE(task->IsExecuted());
-    EXPECT_FALSE(task->GetCancelationToken()->IsCanceled());
-    EXPECT_FALSE(task->GetCompletion().poll().hasValue());
-    EXPECT_TRUE(ContainerHelpers::Contains(m_scheduler->GetRunningTasks(), task));
-    EXPECT_TRUE(m_scheduler->GetPendingTasks().empty());
-
-    // advance the executor to get the task to execute and expect:
-    // - the task to be completed
-    // - running tasks list to be empty
-    // - pending tasks list to be empty
-    m_executor.drive();
-    EXPECT_TRUE(task->IsExecuted());
-    EXPECT_TRUE(task->GetCompletion().poll().hasValue());
-    EXPECT_TRUE(m_scheduler->GetRunningTasks().empty());
-    EXPECT_TRUE(m_scheduler->GetPendingTasks().empty());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECPresentationTasksSchedulerExecutionTests, Block_BlocksTasksFromExecution)
     {
     // block all tasks
@@ -902,47 +848,6 @@ TEST_F(ECPresentationTasksSchedulerExecutionTests, Block_BlocksTasksFromExecutio
     EXPECT_TRUE(task->GetFuture().poll().hasValue());
     EXPECT_TRUE(task->GetCompletion().poll().hasValue());
     EXPECT_TRUE(m_scheduler->GetRunningTasks().empty());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECPresentationTasksSchedulerExecutionTests, Block_BlocksAndUnblocksRestartedTasks)
-    {
-    // create and schedule a task
-    auto task = CreateCancelableTask();
-    ICancelationTokenCPtr cancelationToken = task->GetCancelationToken();
-    m_scheduler->Schedule(*task);
-    EXPECT_EQ(1, m_scheduler->GetRunningTasks().size());
-
-    // restart the task - it should stay in the running tasks list, but also get added to the pending tasks list
-    TasksCancelationResult result = m_scheduler->Restart();
-    EXPECT_EQ(1, m_scheduler->GetRunningTasks().size());
-    EXPECT_EQ(1, m_scheduler->GetPendingTasks().size());
-
-    // block execution of all tasks
-    auto blocker = ECPresentationTasksBlocker::Create(*m_scheduler, [](IECPresentationTaskCR){return true;});
-
-    // advance the executor to get the task to execute, expect the task to be only in the pending tasks list now
-    m_executor.drive();
-    EXPECT_EQ(0, m_scheduler->GetRunningTasks().size());
-    EXPECT_EQ(1, m_scheduler->GetPendingTasks().size());
-
-    // advance the executor and ensure nothing changes
-    m_executor.drive();
-    EXPECT_EQ(0, m_scheduler->GetRunningTasks().size());
-    EXPECT_EQ(1, m_scheduler->GetPendingTasks().size());
-
-    // unblock and expect the task to get into running tasks list
-    blocker = nullptr;
-    EXPECT_EQ(1, m_scheduler->GetRunningTasks().size());
-    EXPECT_EQ(0, m_scheduler->GetPendingTasks().size());
-
-    // advance the executor again and expect it to be executed and out of running and pending tasks lists
-    m_executor.drive();
-    EXPECT_TRUE(task->IsExecuted());
-    EXPECT_EQ(0, m_scheduler->GetRunningTasks().size());
-    EXPECT_EQ(0, m_scheduler->GetPendingTasks().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1071,24 +976,6 @@ TEST_F(ECPresentationTaskTests, CompletesWithError_IfDbInterruptExceptionIsThrow
 
     EXPECT_TRUE(taskFuture.poll().hasValue());
     EXPECT_TRUE(taskFuture.hasException());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECPresentationTaskTests, DoesNotComplete_IfDbInterruptExceptionIsThrownWhileRestarting)
-    {
-    RefCountedPtr<ECPresentationTask> task = new ECPresentationTask(m_mutex, [](IECPresentationTaskCR) { throw DbConnectionInterruptException(); });
-    task->SetIsCancelable(true);
-    auto taskFuture = task->GetFuture();
-
-    EXPECT_FALSE(taskFuture.poll().hasValue());
-    task->Restart();
-
-    ExecuteTask(*task);
-
-    EXPECT_FALSE(taskFuture.poll().hasValue());
-    task->Complete();
     }
 
 /*---------------------------------------------------------------------------------**//**

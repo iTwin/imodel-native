@@ -157,6 +157,7 @@ BeMutex::BeMutex()      {new (this) std::recursive_mutex();}
 BeMutex::~BeMutex()     {to_mutex(this).~recursive_mutex(); /* May assert if mutex is still locked */ }
 void BeMutex::lock()    {to_mutex(this).lock();}
 void BeMutex::unlock()  {to_mutex(this).unlock();}
+bool BeMutex::try_lock()  {return to_mutex(this).try_lock();}
 BeMutexHolder::BeMutexHolder(BeMutex& mutex, Lock lock)
     {
     if (lock == Lock::Yes)

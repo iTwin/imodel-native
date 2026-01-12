@@ -7,6 +7,79 @@
 
 BEGIN_UNNAMED_NAMESPACE
 
+#define TXN_DEBUG_ENABLED 0
+#if TXN_DEBUG_ENABLED
+    #define TXN_DEBUG_LOGGER NativeLogging::CategoryLogger("Txns")
+    #define TXN_DEBUG(...) TXN_DEBUG_LOGGER.debugv(__VA_ARGS__)
+    /*---------------------------------------------------------------------------------**/ /**
+    @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void DumpChangeset(ChangeSetR changeset, DgnDbR dgndb, Utf8CP title){
+        auto codeToString = [](DbOpcode opcode) -> Utf8CP {
+            switch(opcode){
+                case DbOpcode::Insert: return "Insert";
+                case DbOpcode::Update: return "Update";
+                case DbOpcode::Delete: return "Delete";
+                default: return "Unknown";
+            }
+        };
+        auto hasSinglePrimaryKey = [](Changes::Change const& change) -> bool {
+            int pk = 0;
+            for(int i = 0; i < change.GetPrimaryKeyColumnCount(); i++) {  
+                if(change.IsPrimaryKeyColumn(i)) {
+                    pk++;
+                }
+            }
+            return pk == 1;
+        };
+        std::map<Utf8String, std::vector<Utf8String>> tableMap;
+        TXN_DEBUG("---- %s Changeset Dump Start ----", title);
+        for(auto const& change : changeset.GetChanges()) {
+            if (!hasSinglePrimaryKey(change))
+                continue;
+            
+            TXN_DEBUG("%s: Op=%s Id=%s  Table=%s",
+                title, 
+                codeToString(change.GetOpcode()),
+                change.GetTableName().c_str(), 
+                change.GetOpcode() == DbOpcode::Insert ? 
+                    change.GetNewValue(0).GetValueId<ECInstanceId>().ToHexStr().c_str(): 
+                    change.GetOldValue(0).GetValueId<ECInstanceId>().ToHexStr().c_str());
+        }
+        TXN_DEBUG("---- %s Changeset Dump End ----", title);
+    }
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/    
+    static void DumpTxns(DgnDbR db, Utf8CP msg) {
+        Statement stmt;
+        stmt.Prepare(db, R"sql(SELECT [Id], [Deleted], [Operation], [IsSchemaChange] FROM [main].[dgn_Txns] ORDER BY [Id])sql");
+        TXN_DEBUG("---- DumpTxns: %s ----", msg);
+        while (stmt.Step() == BE_SQLITE_ROW) {
+            auto id = stmt.GetValueId<TxnManager::TxnId>(0);
+            auto deleted = stmt.GetValueInt(1);
+            auto operation = stmt.GetValueText(2);
+            auto isSchemaChange = stmt.GetValueInt(3);
+
+            TXN_DEBUG("TxnId: %s, Deleted: %d, Operation: %s, IsSchemaChange: %d", BeInt64Id(id.GetValue()).ToHexStr().c_str(), deleted, operation, isSchemaChange);
+        }
+        TXN_DEBUG("---- End DumpTxns ----");
+    }   
+    static Utf8CP TxnActionToString(TxnAction action){
+        switch(action){
+            case TxnAction::Commit: return "Commit";
+            case TxnAction::Abandon: return "Abandon";
+            case TxnAction::Reverse: return "Reverse";
+            case TxnAction::Reinstate: return "Reinstate";
+            case TxnAction::Merge: return "Merge";
+            default: return "Unknown";
+        };
+    }
+#else
+    #define TXN_DEBUG(...)
+#endif
+
+
 typedef bvector<TxnMonitorP> TxnMonitors;
 static TxnMonitors s_monitors;
 static T_OnCommitCallback s_onCommitCallback = nullptr;
@@ -164,6 +237,7 @@ CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::SaveTxn(ChangeSetCR changeSet, Utf8CP operation, TxnType txnType) {
+    TXN_DEBUG("<< Saving txn with operation: %s, size: %" PRIu64, operation ? operation : "null", changeSet.GetSize());
     if (0 == changeSet.GetSize()) {
         BeAssert(false);
         LOG.error("called SaveChangeSet for empty changeset");
@@ -195,7 +269,7 @@ DbResult TxnManager::SaveTxn(ChangeSetCR changeSet, Utf8CP operation, TxnType tx
         stmt->BindInt(Column::TxnType, (int) txnType);
 
     // if we're in a multi-txn operation, and if the current TxnId is greater than the first txn, mark it as "grouped"
-    stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr > m_multiTxnOp.back()));
+    stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr > m_multiTxnOp.front()));
 
     m_snappyTo.Init();
     uint32_t csetSize = (uint32_t) changeSet.GetSize();
@@ -244,8 +318,9 @@ DbResult TxnManager::SaveTxn(ChangeSetCR changeSet, Utf8CP operation, TxnType tx
         }
 
     if (txnType != TxnType::Data)
-        Initialize(); // schema changes are never undoable, initialize the TxnManager to start a new session
+        Initialize(SessionOption::New); 
 
+    TXN_DEBUG(">> Saved txn with operation: %s, size: %" PRIu64, operation ? operation : "null", changeSet.GetSize());
     return rc;
     }
 
@@ -277,6 +352,17 @@ TxnType TxnManager::GetTxnType(TxnId rowid) const {
         return TxnType::Data;
     // for backwards compatibility, Null means EcSchema. Otherwise old versions will interpret it as DDL changes.
     return stmt.IsColumnNull(0) ? TxnType::EcSchema : (TxnType) stmt.GetValueInt(0);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TxnManager::IsTxnReversed(TxnId rowid) const {
+    Statement stmt(m_dgndb, "SELECT 1 FROM " DGN_TABLE_Txns " WHERE [Id]=? AND [Deleted]=1");
+    stmt.BindInt64(1, rowid.GetValue());
+    if (stmt.Step() == BE_SQLITE_ROW)
+        return true;
+    return false;
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -355,19 +441,38 @@ TxnManager::TxnId TxnManager::GetLastTxnId() {
     return stmt.GetValueInt64(0);
 }
 
-void TxnManager::Initialize() {
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::Initialize(SessionOption option) {
+    TXN_DEBUG("<< Initializing TxnManager with option: %s", option == SessionOption::New ? "New" : "Resume");
+    Statement stmt(m_dgndb, "SELECT MAX(Id) FROM " DGN_TABLE_Txns);
+    TxnId last;
+    if (stmt.Step() == BE_SQLITE_ROW) {
+        last = stmt.GetValueInt64(0);
+    }    
+    
+    m_curr = TxnId(SessionId(1), 0);
+    if (last.IsValid()) {
+        if (option == SessionOption::Resume) {
+            m_curr = last;
+            m_curr.Increment();
+        } else {
+            m_curr = TxnId(SessionId(last.GetSession().GetValue() + 1), 0);
+        }
+    }
+
     m_action = TxnAction::None;
-    TxnId last = GetLastTxnId(); // this is where we left off last session
-    m_curr = TxnId(SessionId(last.GetSession().GetValue()+1), 0); // increment the session id, reset to index to 0.
     m_reversedTxn.clear();
     m_multiTxnOp.clear();
+    TXN_DEBUG(">> TxnManager initialized. Current TxnId: %s", BeInt64Id(m_curr.GetValue()).ToHexStr().c_str());
 }
 
 /**
  * Increment the current SessionId by 1, so that all current Txns will no longer be undoable.
  */
 void TxnManager::StartNewSession() {
-    m_curr = TxnId(SessionId(m_curr.GetSession().GetValue()+1), 0);
+    Initialize(SessionOption::New);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -375,7 +480,7 @@ void TxnManager::StartNewSession() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this), m_initTableHandlers(false), m_modelChanges(*this) {
     m_dgndb.SetChangeTracker(this);
-    Initialize();
+    Initialize(SessionOption::New);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -744,13 +849,16 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     if (conf.IsRebasingLocalChanges()) {
         if (isCommit) {
             if (HasDataChanges()) {
-                LOG.error("Saving changes are not allowed when rebasing local changes");
-                return OnCommitStatus::RebaseInProgress;
+                if(!m_allowSaveChangesDuringRebase) {
+                    LOG.error("Saving changes are not allowed when rebasing local changes");
+                    return OnCommitStatus::RebaseInProgress;
+                }
             } else {
+                if(m_allowSaveChangesDuringRebase)
+                    m_allowSaveChangesDuringRebase = false; // reset the flag
                 return OnCommitStatus::NoChanges;
             }
-        } else {
-        }
+        } 
     }
 
     ModelChangesScope v_v_v_(*this);
@@ -931,6 +1039,8 @@ void TxnManager::_OnCommitted(bool isCommit, Utf8CP) {
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangesetStatus TxnManager::MergeDdlChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream)  {
+    m_dgndb.ClearECDbCache(); // before merging ddl changes ecdb cache to be cleared
+
     bool containsSchemaChanges;
     DdlChanges ddlChanges;
     DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges);
@@ -997,6 +1107,7 @@ void TxnManager::StashRestore(BeFileNameCR stashFile) {
         m_dgndb.ThrowException("stash file does not exist", BE_SQLITE_ERROR);
     }
 
+    TXN_DEBUG("<< Restoring from stash file: %s", stashFile.c_str());
     Db stashDb;
     auto rc = stashDb.OpenBeSQLiteDb(stashFile, Db::OpenParams(Db::OpenMode::Readonly));
     if (rc != BE_SQLITE_OK) {
@@ -1020,8 +1131,8 @@ void TxnManager::StashRestore(BeFileNameCR stashFile) {
         m_dgndb.ThrowException("briefcaseId mismatch", BE_SQLITE_ERROR);
     }
 
-    if (stashInfo.isObjectMember("idSequence")){
-        auto sequence = stashInfo["idSequence"];
+    if (stashInfo.isObjectMember("idSequences")){
+        auto sequence = stashInfo["idSequences"];
          BeInt64Id maxElementIdSeq;
         if (sequence.isStringMember("element"))
             maxElementIdSeq = BeInt64Id::FromString(sequence["element"].asCString());
@@ -1108,9 +1219,11 @@ void TxnManager::StashRestore(BeFileNameCR stashFile) {
                 m_dgndb.ThrowException("failed to apply txn changes", BE_SQLITE_ERROR);
             }
         }
+        m_curr = txnId;
     }
     PurgeCaches();
-    Initialize();
+    Initialize(SessionOption::Resume);
+    TXN_DEBUG(">> Restored from stash file: %s", stashFile.c_str());
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1130,6 +1243,7 @@ void TxnManager::Stash(BeFileNameCR stashRootDir, Utf8StringCR description, Utf8
         m_dgndb.ThrowException("there are uncommitted changes", BE_SQLITE_ERROR);
     }
 
+    TXN_DEBUG("<< Stashing to dir: %s", stashRootDir.GetNameUtf8().c_str());
     m_dgndb.SaveChanges("before stashing changes");
     
     auto briefcaseId = m_dgndb.GetBriefcaseId().GetValue();
@@ -1299,6 +1413,7 @@ void TxnManager::Stash(BeFileNameCR stashRootDir, Utf8StringCR description, Utf8
 
     db.CloseDb();
     out.From(stashInfo);
+    TXN_DEBUG(">> Stashed to file: %s", stashFile.c_str());
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1314,29 +1429,51 @@ void TxnManager::PurgeCaches() {
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::DiscardLocalChanges() {
-    auto rc = m_dgndb.SaveChanges();
+    TXN_DEBUG("<< DiscardLocalChanges(): Discarding local changes in briefcaseId: %d", m_dgndb.GetBriefcaseId().GetValue());
+    auto rc = m_dgndb.AbandonChanges();
     if (BE_SQLITE_OK != rc) {
         return rc;
+    } 
+
+    #if TXN_DEBUG_ENABLED
+        DumpTxns(m_dgndb, "Before DiscardLocalChanges - Txns to be reversed");
+    #endif
+
+    PurgeCaches();
+    DeleteReversedTxns();
+    auto conf = PullMergeConf::Load(m_dgndb);
+    if (conf.IsRebasingLocalChanges()) {
+        conf.SetMergeStage(PullMergeStage::None).Save(m_dgndb);
     }
 
     TxnId startTxnId = QueryNextTxnId(TxnId(0));
-    TxnId endTxnId = GetCurrentTxnId();
+    TxnId endTxnId = TxnId(m_curr.GetSession(), std::numeric_limits<uint32_t>::max());
     if (startTxnId < endTxnId) {
         OnBeforeUndoRedo(true);
-        for (TxnId curr = QueryPreviousTxnId(endTxnId); curr.IsValid() && curr >= startTxnId; curr = QueryPreviousTxnId(curr)) {
-            LOG.infov("Reversing TxnId: %s, Descr: %s", BeInt64Id(curr.GetValue()).ToHexStr().c_str(),GetTxnDescription(curr).c_str());
+        for (TxnId curr = QueryPreviousTxnId(endTxnId); curr.IsValid() && curr >= startTxnId; curr = QueryPreviousTxnId(curr)) { 
+            if (IsTxnReversed(curr))
+                continue;
+
+            TXN_DEBUG("Reversing TxnId: %s, Descr: %s", BeInt64Id(curr.GetValue()).ToHexStr().c_str(),GetTxnDescription(curr).c_str());
             auto rc = ApplyTxnChanges(curr, TxnAction::Reverse);
             if (BE_SQLITE_OK != rc) {
                 m_dgndb.AbandonChanges();
+                PurgeCaches();
                 return rc;
             }
         }
     }
 
-    PullMergeConf::Remove(m_dgndb);    
+    #if TXN_DEBUG_ENABLED
+        DumpTxns(m_dgndb, "After DiscardLocalChanges - Txns to be reversed");
+    #endif
+
+    PullMergeConf::Remove(m_dgndb);
     DeleteAllTxns();
     Restart();
-    Initialize();
+    Initialize(SessionOption::New);
+    PurgeCaches();
+    TXN_DEBUG(">> DiscardLocalChanges(): Successfully discarded local changes in briefcaseId: %d", m_dgndb.GetBriefcaseId().GetValue());
     return m_dgndb.SaveChanges();
 }
 
@@ -1354,7 +1491,10 @@ bool TxnManager::HasPendingSchemaChanges() const {
 ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges, bool fastForward) {
     if (TrackChangesetHealthStats())
         Profiler::InitScope(*changeStream.GetDb(), "Apply Changeset", revision.GetChangesetId().c_str(), Profiler::Params(false, true));
-
+    
+    if(containsSchemaChanges)
+        m_dgndb.ClearECDbCache(); // if changes contain schema changes ecdb cache to be cleared
+    
     DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, false, fastForward);
     if (result != BE_SQLITE_OK) {
         if (changeStream.GetLastErrorMessage().empty())
@@ -1370,18 +1510,16 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     if (status == ChangesetStatus::Success) {
         SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());
 
-        if (status == ChangesetStatus::Success) {
-            if (PullMergeConf::Load(m_dgndb).InProgress()) {
-                result = m_dgndb.SaveChanges();
-            }
-            // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one.
-            // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
-            // the merged changes are lost after this routine and cannot be used for change propagation anymore.
-            if (BE_SQLITE_OK != result) {
-                LOG.fatalv("MergeDataChanges failed to save: %s", BeSQLiteLib::GetErrorName(result));
-                BeAssert(false);
-                status = ChangesetStatus::SQLiteError;
-            }
+        if (PullMergeConf::Load(m_dgndb).InProgress()) {
+            result = m_dgndb.SaveChanges();
+        }
+        // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one.
+        // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
+        // the merged changes are lost after this routine and cannot be used for change propagation anymore.
+        if (BE_SQLITE_OK != result) {
+            LOG.fatalv("MergeDataChanges failed to save: %s", BeSQLiteLib::GetErrorName(result));
+            BeAssert(false);
+            status = ChangesetStatus::SQLiteError;
         }
     }
     if (status != ChangesetStatus::Success) {
@@ -1889,6 +2027,10 @@ struct DisableTracking {
     ~DisableTracking() { m_txns.EnableTracking(m_wasTracking); }
 };
 
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 class ProfilerScope {
     const Profiler::Scope* m_scope = nullptr;
     bool m_isTrackingEnabled;
@@ -1932,7 +2074,9 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
         // notify ECPresentation and ConcurrentQuery to stop/cancel all running task before applying schema changeset.
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
     }
-
+    if (pmConf.InProgress()) {
+        TXN_DEBUG("<< ApplyChanges() action=%s invert=%s fastForward=%s during rebase", TxnActionToString(action), invert ? "true" : "false", fastForward ? "true" : "false");
+    }
     // we want cascade delete to work during rebase.
     bool fkNoAction = !pmConf.IsRebasingLocalChanges();
     const bool ignoreNoop = pmConf.IsRebasingLocalChanges();
@@ -2064,6 +2208,9 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     if (containsSchemaChanges)
         m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
 
+    if (pmConf.InProgress()) {
+        TXN_DEBUG(">> ApplyChanges() action=%s invert=%s fastForward=%s during rebase", TxnActionToString(action), invert ? "true" : "false", fastForward ? "true" : "false");
+    }
     return BE_SQLITE_OK;
 }
 
@@ -2260,17 +2407,19 @@ ZipErrors TxnManager::ReadChanges(ChangeSet& changeset, TxnId rowId) {
     return m_snappyFrom.ReadToChunkedArray(changeset.m_data, header.m_size);
 }
 
+
 /*---------------------------------------------------------------------------------**/ /**
 * Read a changeset from the dgn_Txn table, potentially inverting it (depending on whether we're performing undo or redo),
 * and then apply the changeset to the DgnDb.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action, bool skipSchemaChanges) {
+    TXN_DEBUG("<< ApplyTxnChanges() txnId=%s action=%s skipSchemaChanges=%d", BeInt64Id(rowId.GetValue()).ToHexStr().c_str(), TxnActionToString(action), (int)skipSchemaChanges);
     auto updateTxnDeletedFlag = [&]() -> DbResult {
         CachedStatementPtr stmt = GetTxnStatement("UPDATE " DGN_TABLE_Txns " SET Deleted=? WHERE Id=?");
         stmt->BindInt(1, action == TxnAction::Reverse);
         stmt->BindInt64(2, rowId.GetValue());
-        auto rc = stmt->Step();
+        auto rc = stmt->Step();        
         return rc != BE_SQLITE_DONE ? rc : BE_SQLITE_OK;
     };
 
@@ -2302,13 +2451,19 @@ DbResult TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action, bool skipSch
         return rc;
     }
 
+    #if TXN_DEBUG_ENABLED
+        DumpChangeset(changeset, m_dgndb, "ApplyTxnChanges()");
+    #endif 
+   
     rc = ApplyChanges(changeset, action, type == TxnType::EcSchema);
     BeAssert(!HasDataChanges());
 
     if (BE_SQLITE_OK != rc)
         return rc;
-
-    return updateTxnDeletedFlag();
+    
+    rc = updateTxnDeletedFlag();
+    TXN_DEBUG(">> ApplyTxnChanges() txnId=%s action=%s skipSchemaChanges=%d", BeInt64Id(rowId.GetValue()).ToHexStr().c_str(), TxnActionToString(action), (int)skipSchemaChanges);
+    return rc;
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2561,7 +2716,7 @@ void TxnManager::DeleteAllTxns() {
     m_dgndb.SaveChanges(); // in case there are outstanding changes that will create a new Txn
     m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Txns);
     m_dgndb.SaveChanges();
-    Initialize();
+    Initialize(SessionOption::New);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3450,6 +3605,7 @@ void TxnManager::DumpTxns(bool verbose) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::PullMergeUpdateTxn(ChangeSetCR changeSet, TxnId id) {
+    TXN_DEBUG("<< PullMergeUpdateTxn() txnId=%s", BeInt64Id(id.GetValue()).ToHexStr().c_str());
     if (0 == changeSet.GetSize()) {
         BeAssert(false);
         LOG.error("called UpdateTxn for empty changeset");
@@ -3513,25 +3669,29 @@ DbResult TxnManager::PullMergeUpdateTxn(ChangeSetCR changeSet, TxnId id) {
         BeAssert(false);
         return rc;
     }
-
+    TXN_DEBUG(">> PullMergeUpdateTxn() txnId=%s", BeInt64Id(id.GetValue()).ToHexStr().c_str());
     return rc;
 }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::PullMergeResume() {
+    TXN_DEBUG("<< PullMergeResume()");
     auto conf = PullMergeConf::Load(m_dgndb);
     if (!conf.IsRebasingLocalChanges()) {
         return;
     }
     PullMergeEnd();
+    TXN_DEBUG(">> PullMergeResume()");
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::PullMergeBegin() {
-  PullMergeReverseLocalChanges();
+    TXN_DEBUG("<< PullMergeBegin()");
+    PullMergeReverseLocalChanges();
+    TXN_DEBUG(">> PullMergeBegin()");
 }
 
 struct MakeQueryOnly {
@@ -3547,7 +3707,8 @@ struct MakeQueryOnly {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
-  auto conf = PullMergeConf::Load(m_dgndb);
+    TXN_DEBUG("<< PullMergeReverseLocalChanges()");
+    auto conf = PullMergeConf::Load(m_dgndb);
     if (conf.InProgress()) {
         m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
     }
@@ -3563,7 +3724,7 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
     while(!m_multiTxnOp.empty()) {
         EndMultiTxnOperation();
     }
-    
+
     DeleteReversedTxns();
     TxnId startTxnId = QueryNextTxnId(TxnId(0));
     TxnId endTxnId = GetCurrentTxnId();
@@ -3571,6 +3732,9 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
     if (startTxnId < endTxnId) {
         OnBeforeUndoRedo(true);
         for (TxnId curr = QueryPreviousTxnId(endTxnId); curr.IsValid() && curr >= startTxnId; curr = QueryPreviousTxnId(curr)) {
+            if (IsTxnReversed(curr))
+                continue;
+                
             LOG.infov("Reversing TxnId: %s, Descr: %s", BeInt64Id(curr.GetValue()).ToHexStr().c_str(),GetTxnDescription(curr).c_str());
             auto rc = ApplyTxnChanges(curr, TxnAction::Reverse);
             if (BE_SQLITE_OK != rc) {
@@ -3582,7 +3746,6 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
         }
     }
  
-
     BeAssert(HasPendingTxns() == false);
     BeAssert(HasDataChanges() == false);
 
@@ -3595,6 +3758,7 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
         m_dgndb.ThrowException("PullMergeBegin(): fail to save pull-merge conf ", (int)st);
     }
     CallMonitors([&](TxnMonitor& monitor) { monitor._OnPullMergeBegin(*this); });
+    TXN_DEBUG(">> PullMergeReverseLocalChanges() %d txns reversed", reversedTxns.size());
     return reversedTxns;
 }
 
@@ -3602,6 +3766,7 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeReverseLocalChanges() {
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TxnManager::PullMergeEraseTxn(TxnId txnId) {    
+    TXN_DEBUG("<< PullMergeEraseTxn() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
     LOG.infov("Erasing Txn with id: %" PRIX64, txnId.GetValue());
     if (!txnId.IsValid()) {
         LOG.error("cannot delete a null Txn");
@@ -3621,6 +3786,7 @@ bool TxnManager::PullMergeEraseTxn(TxnId txnId) {
         return false;
     }
     BeAssert(m_dgndb.GetModifiedRowCount() == 1); // we should have deleted exactly one row
+    TXN_DEBUG(">> PullMergeEraseTxn() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
     return true;
 }
 
@@ -3628,6 +3794,7 @@ bool TxnManager::PullMergeEraseTxn(TxnId txnId) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::PullMergeAbortRebase(TxnId id, Utf8String err, DbResult rc){
+    TXN_DEBUG("PullMergeAbortRebase() txnId=%s error=%s", BeInt64Id(id.GetValue()).ToHexStr().c_str(), err.c_str());
     auto conf = PullMergeConf::Load(m_dgndb);
     if (!conf.InProgress()) {
         return;
@@ -3640,6 +3807,7 @@ void TxnManager::PullMergeAbortRebase(TxnId id, Utf8String err, DbResult rc){
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::PullMergeSetTxnActive(TxnId txnId) {
+    TXN_DEBUG("<< PullMergeSetTxnActive() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
     const auto idStr = BeInt64Id(txnId.GetValue()).ToHexStr();
     CachedStatementPtr stmt = GetTxnStatement("UPDATE " DGN_TABLE_Txns " SET Deleted=? WHERE Id=?");
     stmt->BindInt(1, false);
@@ -3649,6 +3817,7 @@ void TxnManager::PullMergeSetTxnActive(TxnId txnId) {
         PullMergeAbortRebase(txnId, SqlPrintfString("unable to save rebased local txn (id: %s)", idStr.c_str()).GetUtf8CP(), rc);
     }
     m_curr = txnId;
+    TXN_DEBUG(">> PullMergeSetTxnActive() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3665,6 +3834,7 @@ void TxnManager::PullMergeRebaseReinstateTxn() {
          m_dgndb.ThrowException("PullMergeRebaseReinstateTxn(): in progress rebase txn id is not set", BE_SQLITE_ERROR);
     }
 
+    TXN_DEBUG("<< PullMergeRebaseReinstateTxn() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
     const auto type = GetTxnType(txnId);
     const auto desc = GetTxnDescription(txnId);
     const auto currTxnIdStr = BeInt64Id(txnId.GetValue()).ToHexStr();
@@ -3686,6 +3856,7 @@ void TxnManager::PullMergeRebaseReinstateTxn() {
         else
             PullMergeAbortRebase(txnId, changeset.GetLastErrorMessage(), rc);
     }
+    TXN_DEBUG(">> PullMergeRebaseReinstateTxn() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3702,6 +3873,7 @@ void TxnManager::PullMergeRebaseUpdateTxn() {
          m_dgndb.ThrowException("PullMergeRebaseReinstateTxn(): in progress rebase txn id is not set", BE_SQLITE_ERROR);
     }
 
+    TXN_DEBUG("<< PullMergeRebaseUpdateTxn() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
     const auto type = GetTxnType(txnId);
     if(type == TxnType::Ddl) {
         PullMergeSetTxnActive(txnId);
@@ -3754,11 +3926,14 @@ void TxnManager::PullMergeRebaseUpdateTxn() {
             PullMergeAbortRebase(txnId, SqlPrintfString("unable to save rebased local txn (id: %s)", idStr.c_str()).GetUtf8CP(), rc);
         }
     }
+
     Restart();
+    m_allowSaveChangesDuringRebase = true;
     rc = m_dgndb.SaveChanges(); // save dgn_txn/be_Local
     if (rc != BE_SQLITE_OK) {
         PullMergeAbortRebase(txnId, SqlPrintfString("unable to save rebased txn (id: %s)", idStr.c_str()).GetUtf8CP(), rc);
     }
+    TXN_DEBUG(">> PullMergeRebaseUpdateTxn() txnId=%s", BeInt64Id(txnId.GetValue()).ToHexStr().c_str());
     m_curr = txnId;
 }
 
@@ -3779,10 +3954,14 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeRebaseBegin() {
     TxnId startTxnId = QueryNextTxnId(TxnId(0));
     TxnId endTxnId = conf.GetEndTxnId();
 
+    TXN_DEBUG("<< PullMergeRebaseBegin() startTxnId=%s endTxnId=%s",
+        startTxnId.IsValid() ? BeInt64Id(startTxnId.GetValue()).ToHexStr().c_str() : "null",
+        endTxnId.IsValid() ? BeInt64Id(endTxnId.GetValue()).ToHexStr().c_str() : "null");
     std::vector<TxnId> txnsToBeRebased;
     for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
         txnsToBeRebased.push_back(currTxnId);
     }
+    TXN_DEBUG(">> PullMergeRebaseBegin(): %zu txns to be rebased", txnsToBeRebased.size());
     return txnsToBeRebased;
 }
 
@@ -3790,6 +3969,7 @@ std::vector<TxnManager::TxnId> TxnManager::PullMergeRebaseBegin() {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManager::TxnId TxnManager::PullMergeRebaseNext() {
+
     auto conf = PullMergeConf::Load(m_dgndb);
     if (!conf.IsRebasingLocalChanges()){
         m_dgndb.ThrowException("PullMergeRebaseEnd(): not rebasing local changes", BE_SQLITE_ERROR);
@@ -3799,6 +3979,7 @@ TxnManager::TxnId TxnManager::PullMergeRebaseNext() {
         m_dgndb.ThrowException("PullMergeRebaseNext(): expect no unsaved changes", BE_SQLITE_ERROR);
     }    
     auto id = conf.GetInProgressRebaseTxnId();
+    TXN_DEBUG("<< PullMergeRebaseNext(): %s", id.IsValid() ? BeInt64Id(id.GetValue()).ToHexStr().c_str() : "null");
     if (id.IsValid()) {
         id = QueryNextTxnId(id);
     } else {
@@ -3807,6 +3988,7 @@ TxnManager::TxnId TxnManager::PullMergeRebaseNext() {
 
     conf.SetInProgressRebaseTxnId(id).Save(m_dgndb);
     m_dgndb.SaveChanges();
+    TXN_DEBUG(">> PullMergeRebaseNext(): %s", id.IsValid() ? BeInt64Id(id.GetValue()).ToHexStr().c_str() : "null");
     return id;
 }
 
@@ -3814,21 +3996,24 @@ TxnManager::TxnId TxnManager::PullMergeRebaseNext() {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::PullMergeRebaseAbortTxn() {
+    TXN_DEBUG("<< PullMergeRebaseAbortTxn()");
     auto conf = PullMergeConf::Load(m_dgndb);
     if (!conf.IsRebasingLocalChanges()){
         m_dgndb.ThrowException("PullMergeRebaseAbortTxn(): not rebasing local changes", BE_SQLITE_ERROR);
     }
 
-    conf.ResetInProgressRebaseTxnId().Save(m_dgndb);
     m_dgndb.AbandonChanges();
     conf.ResetInProgressRebaseTxnId().Save(m_dgndb);
+    m_allowSaveChangesDuringRebase = true;
     m_dgndb.SaveChanges();   
+    TXN_DEBUG(">> PullMergeRebaseAbortTxn()");
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::PullMergeRebaseEnd() {
+    TXN_DEBUG("<< PullMergeRebaseEnd()");
     auto conf = PullMergeConf::Load(m_dgndb);
     if (!conf.IsRebasingLocalChanges()){
         m_dgndb.ThrowException("PullMergeRebaseEnd(): not rebasing local changes", BE_SQLITE_ERROR);
@@ -3847,18 +4032,21 @@ void TxnManager::PullMergeRebaseEnd() {
     }
     Restart();
     CallMonitors([&](TxnMonitor& monitor) { monitor._OnPullMergeEnd(*this); });
+    TXN_DEBUG(">> PullMergeRebaseEnd()");
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::PullMergeEnd() {
-   PullMergeRebaseBegin();
+    TXN_DEBUG("<< PullMergeEnd()");
+    PullMergeRebaseBegin();
     while(PullMergeRebaseNext().IsValid()){
        PullMergeRebaseReinstateTxn();
        PullMergeRebaseUpdateTxn();
-   }
-   PullMergeRebaseEnd();
+    }
+    PullMergeRebaseEnd();
+    TXN_DEBUG(">> PullMergeEnd()");
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3888,8 +4076,10 @@ bool TxnManager::PullMergeInProgress() const {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangesetStatus TxnManager::PullMergeApply(ChangesetPropsCR revision){
+    TXN_DEBUG("<< PullMergeApply(): %s", revision.GetFileName().GetNameUtf8().c_str());
     PullMergeBegin();
     auto rc = MergeChangeset(revision, false);
     PullMergeEnd();
+    TXN_DEBUG(">> PullMergeApply(): %s rc(%d)", revision.GetFileName().GetNameUtf8().c_str(), rc);
     return rc;
 }
