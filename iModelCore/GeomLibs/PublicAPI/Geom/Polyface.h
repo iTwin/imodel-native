@@ -771,7 +771,8 @@ GEOMDLLIMPEXP int32_t const*                  GetNormalIndexCP (bool resolveToDe
 //! Return pointer to contiguous face indices.  Optionally use default indices (points)
 GEOMDLLIMPEXP int32_t const*                  GetFaceIndexCP   (bool resolveToDefaults = false) const;
 
-//! Query if facets are considered two sided. (If not, outward normal can be used to cull backfaces)
+//! Query if facets are considered two sided.
+//! If false, the mesh is known to be a closed volume with outward normals that can be used to cull backfaces.
 GEOMDLLIMPEXP bool                          GetTwoSided () const;
 //! Query if the facets have an expected closure.  0=> unknown, 1=> expect sheet, 2=> expect solid
 GEOMDLLIMPEXP uint32_t                          GetExpectedClosure () const;
@@ -1055,12 +1056,12 @@ GEOMDLLIMPEXP void CollectPerFaceCounts (size_t &minPerFace, size_t &maxPerFace)
 //! @param [in] omitInvisibles true to hide segments that are not visible (due to negated indices)
 GEOMDLLIMPEXP void CollectSegments (bvector<DSegment3d> &segments, bool omitInvisibles) const;
 
-//! Cut with a plane. (Prototype)
-//! Return as a curve vector. Optionally structure as area-bounding loops.
+//! Cut with a plane. Return intersection edges as a curve vector, optionally structured as area-bounding loops.
 //! @param [in] sectionPlane plane to cut the mesh.
 //! @param [in] formRegions true to look for closed loops and structure the return as a loop or parity CurveVector.
-//! @param [in] markEdgeFractions true to attache FacetEdgeLocationDetailVector to the linestrings.
-GEOMDLLIMPEXP CurveVectorPtr PlaneSlice (DPlane3dCR sectionPlane, bool formRegions, bool markEdgeFractions = false) const;
+//! @param [in] markEdgeFractions true to attach FacetEdgeLocationDetailVector to the linestrings. Default is false.
+//! @param [in] skipOnPlaneFacets whether output lacks facets coplanar with sectionPlane. Default is false (include them).
+GEOMDLLIMPEXP CurveVectorPtr PlaneSlice (DPlane3dCR sectionPlane, bool formRegions, bool markEdgeFractions = false, bool skipOnPlaneFacets = false) const;
 
 //! Project linestring in given direction to intersection with facets.
 //! Return as a curve vector.
@@ -1507,7 +1508,7 @@ bvector<PolyfaceHeaderPtr> &submeshArray
 
 
 //! Return connected meshes.
-//! @param [in] connectivityType 0 for vertex connectivity, 1 for invisible edge connectivity (any shared visible edge is a barrier), 2 for connectivity across any edge (no visibility test)
+//! @param [in] connectivityType 0 for vertex connectivity, 1 for connectivity across any edge (no visibility test), 2 for invisible edge connectivity (any shared visible edge is a barrier)
 //! @param [out] submeshArray This is initially cleared, then filled with as many (smartpointers to) new arrays as needed
 //!     for the blocking.  Each new array receives data from a block.
 GEOMDLLIMPEXP bool PartitionByConnectivity (int connectivityType, bvector<PolyfaceHeaderPtr> &submeshArray) const;
@@ -1558,8 +1559,6 @@ private:
     FacetFaceDataCP     m_faceDataPtr;
     PolyfaceEdgeChainCP m_edgeChainsPtr;
     PolyfaceAuxDataCPtr m_auxDataPtr;
-
-    //bool              m_twoSided;
     size_t              m_pointCount;
     size_t              m_paramCount;
     size_t              m_normalCount;
@@ -1758,7 +1757,11 @@ public:
     //! In PolyfaceQuery, determine active status from pointers.
     //! This is only valid if the PolyfaceQuery has already been filled !!!
     GEOMDLLIMPEXP void CopyAllActiveFlagsFromQuery (PolyfaceQueryCR source);
-    //! Set the flag for twosided facets
+    //! Set the flag for two-sided facets.
+    //! This flag indicates if the facets are viewable from the back.
+    //! Default value is true.
+    //! Set to false only if the mesh is known to be a closed volume with outward normals,
+    //! indicating it is amenable to backface culling for improved display performance.
     GEOMDLLIMPEXP void  SetTwoSided (bool twoSided);
     //! Set the flag for expected closure
     GEOMDLLIMPEXP void  SetExpectedClosure(uint32_t expectedClosure);
@@ -1865,7 +1868,7 @@ GEOMDLLIMPEXP void Compress(double pointAbsTol, double normalAbsTol = -1.0, doub
 //! Points are active.
 //! Point indices are active if style is MESH_ELM_STYLE_INDEXED_FACE_LOOPS
 //! All other coordinate and index arrays are NOT active.
-//! NOTE: TwoSided is set to true, contrary to the typical default of false.
+//! TwoSided flag is set to the default value (true).
 GEOMDLLIMPEXP void ClearTags (uint32_t numPerFace, uint32_t meshStyle);
 
 //! Add data to index arrays.
@@ -2378,9 +2381,12 @@ IPolyfaceVisitorFilter *filter  //!< [in] optional object to ask if current face
 //! @returns true if any changes were made.
 GEOMDLLIMPEXP bool CompactIndexArrays ();
 
+//! Trim excess capacity from the data and index vectors. No data is removed.
+//! @param compactIndices call CompactIndexArrays first
+//! @returns bytes trimmed
+GEOMDLLIMPEXP size_t CompactArrays(bool compactIndices);
 
 //! Apply a transform to all coordinates. Optionally reverse index order (to maintain cross product relationships)
-
 GEOMDLLIMPEXP void Transform
 (
 TransformCR transform,
@@ -2388,14 +2394,12 @@ bool        reverseIndicesIfMirrored = true
 );
 
 //! Apply a transform to all coordinates of an array of meshes. Optionally reverse index order (to maintain cross product relationships)
-
 static GEOMDLLIMPEXP void Transform
 (
 bvector<PolyfaceHeaderPtr> &data,
 TransformCR transform,
 bool        reverseIndicesIfMirrored = true
 );
-
 
 //!
 //! Reverse (negate) all stored normals.  Note that this does NOT change index order.
@@ -3086,7 +3090,8 @@ GEOMDLLIMPEXP DPoint2dCP                        GetParamCP () const;
 GEOMDLLIMPEXP uint32_t const*                   GetIntColorCP () const;
 //! Get pointer to contiguous FaceData structs
 GEOMDLLIMPEXP FacetFaceDataCP                   GetFaceDataCP () const;
-//! Query two-sided flag
+//! Query the two-sided flag.
+//! This flag indicates if the facets are viewable from the back.
 GEOMDLLIMPEXP bool                              GetTwoSided () const;
 //! Query number of indices per face block.  0 or 1 means 0-terminated variable size blocks.
 GEOMDLLIMPEXP uint32_t                          GetNumPerFace () const;
@@ -3434,12 +3439,12 @@ GEOMDLLIMPEXP bool operator() (const DVec3d& pointA, const DVec3d &pointB) const
 struct PolyfaceZYXMap : bmap <DPoint3d, size_t, DPoint3dZYXTolerancedSortComparison>
 {
 PolyfaceZYXMap (DPoint3dZYXTolerancedSortComparison const &compare);
+DPoint3dZYXTolerancedSortComparison const& GetComparator() const;
 };
 struct PolyfaceZYXDVec3dMap : bmap <DVec3d, size_t, DVec3dZYXTolerancedSortComparison>
 {
 PolyfaceZYXDVec3dMap (DVec3dZYXTolerancedSortComparison const &compare);
 };
-
 
 struct DPoint3dZYXSortComparison
 {
@@ -3529,6 +3534,11 @@ public:
     //! @param [in] point coordinates to look up.
     //! @param [out] index 0-based index within the client mesh.
     GEOMDLLIMPEXP bool   FindPoint (DPoint3dCR point, size_t &index);
+
+    //! return absolute tolerance for point comparisons
+    GEOMDLLIMPEXP double GetXYZAbsTol() const;
+    //! return relative tolerance for point comparisons
+    GEOMDLLIMPEXP double GetXYZRelTol() const;
 
 //! (Find or) Add a normal.  Return its (0 based) index.
     //! @param [in] normal normal coordinates.

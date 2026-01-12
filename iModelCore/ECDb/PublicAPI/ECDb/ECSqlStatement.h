@@ -111,6 +111,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @return true, if it is prepared. false otherwise
         ECDB_EXPORT bool IsPrepared() const;
 
+        //! Indicates whether this statement is a write statement (INSERT, UPDATE, or DELETE).
+        //!
+        //! This method returns true if the prepared ECSql statement is an INSERT, UPDATE, or DELETE statement,
+        //! i.e., if it modifies data in the database. It returns false for SELECT and other non-modifying statements.
+        //!
+        //! @return true if the statement is a write statement (INSERT, UPDATE, DELETE), false otherwise.
+        ECDB_EXPORT bool IsWriteStatement() const;
+
         //! @name Methods to bind values to an ECSQL parameter
         //! @{
 
@@ -248,6 +256,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! returns the appropriate error-code.
         //! @return Parameter binder
         ECDB_EXPORT IECSqlBinder& GetBinder(int parameterIndex);
+
+        //! Gets BinderInfo for the binder associated with the parameter at the specified index.
+        //! @param[in] parameterIndex Parameter index.
+        //! @return Parameter BinderInfo. If there is no valid binder on that index the it will still return BinderInfo with Binder type NoopECSqlBinderType
+        ECDB_EXPORT BinderInfo const& GetBinderInfo(int parameterIndex) { return GetBinder(parameterIndex).GetBinderInfo(); }
 
         //! Gets the parameter index for a named parameter. Will log an error if parameter not found.
         //!
@@ -752,32 +765,76 @@ enum class QueryRowFormat {
     UseJsPropertyNames = 2
 };
 
+enum class JsFormat {
+    Standard,
+    JsName,
+};
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct JsReadOptions final {
+    static constexpr auto JAbbreviateBlobs = "abbreviateBlobs";
+    static constexpr auto JClassIdsToClassNames = "classIdsToClassNames";
+    static constexpr auto JUseJsName = "useJsName";
+    static constexpr auto JDoNotConvertClassIdsToClassNamesWhenAliased = "doNotConvertClassIdsToClassNamesWhenAliased";
+    static constexpr auto JSkipReadOnlyProperties = "skipReadOnlyProperties";
+    static constexpr auto JUseClassFullNameInsteadofClassName = "useClassFullNameInsteadofClassNaem";
+
+    private:
+        bool m_abbreviateBlobs:1;
+        bool m_classIdToClassNames:2;
+        bool m_useJsName:3;
+        bool m_doNotConvertClassIdsToClassNamesWhenAliased:4;
+        bool m_skipReadOnlyProperties:5;
+        bool m_useClassFullNameInsteadofClassName:6;
+
+    public:
+        JsReadOptions(JsReadOptions const& other) =default;
+        JsReadOptions& operator = (JsReadOptions const& other) = default;
+        JsReadOptions(JsReadOptions&& other) = default;
+        JsReadOptions& operator = (JsReadOptions&& other) = default;
+        JsReadOptions(JsFormat fmt = JsFormat::Standard):m_abbreviateBlobs(true), m_classIdToClassNames(false), m_useJsName(false), m_doNotConvertClassIdsToClassNamesWhenAliased(false), m_skipReadOnlyProperties(false), m_useClassFullNameInsteadofClassName(false){}
+
+        bool operator == (JsReadOptions const& other) const {
+            return m_abbreviateBlobs == other.m_abbreviateBlobs &&
+                m_classIdToClassNames == other.m_classIdToClassNames &&
+                m_useJsName == other.m_useJsName &&
+                m_doNotConvertClassIdsToClassNamesWhenAliased == other.m_doNotConvertClassIdsToClassNamesWhenAliased &&
+                m_skipReadOnlyProperties == other.m_skipReadOnlyProperties &&
+                m_useClassFullNameInsteadofClassName == other.m_useClassFullNameInsteadofClassName;
+        }
+
+        bool operator != (JsReadOptions const& other) const {
+            return !(*this == other);
+        }
+        bool AbbreviateBlobs() const { return m_abbreviateBlobs; }
+        bool ConvertClassIdsToClassNames() const { return m_classIdToClassNames; }
+        bool UseJsNames() const { return m_useJsName; }
+        bool DoNotConvertClassIdsToClassNamesWhenAliased() const { return m_useJsName && m_doNotConvertClassIdsToClassNamesWhenAliased; }
+        bool SkipReadOnlyProperties() const { return m_skipReadOnlyProperties; }
+        bool UseClassFullNameInsteadofClassName() const { return m_useJsName && m_useClassFullNameInsteadofClassName; }
+
+    JsReadOptions& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this; }
+    JsReadOptions& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v; return *this; }
+    JsReadOptions& SetUseJsNames(bool v) { m_useJsName = v; return *this; }
+    JsReadOptions& SetDoNotConvertClassIdsToClassNamesWhenAliased(bool v) { m_doNotConvertClassIdsToClassNamesWhenAliased = v; return *this; }
+    JsReadOptions& SetSkipReadOnlyProperties(bool v) { m_skipReadOnlyProperties = v; return *this; }
+    JsReadOptions& SetUseClassFullNameInsteadofClassName(bool v) { m_useClassFullNameInsteadofClassName = v; return *this; }
+
+    ECDB_EXPORT void FromJson(BeJsValue opts);
+    ECDB_EXPORT void ToJson(BeJsValue opts) const;
+};
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
 struct ECSqlRowAdaptor {
-    struct Options {
-        static constexpr auto JAbbreviateBlobs = "abbreviateBlobs";
-        static constexpr auto JClassIdsToClassNames = "classIdsToClassNames";
-        static constexpr auto JUseJsName = "useJsName";
-        static constexpr auto JDoNotConvertClassIdsToClassNamesWhenAliased = "doNotConvertClassIdsToClassNamesWhenAliased";
-
-        bool m_abbreviateBlobs = true;
-        bool m_classIdToClassNames = false;
-        bool m_useJsName = false;
-        bool m_doNotConvertClassIdsToClassNamesWhenAliased = false;
-
-        Options& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this; }
-        Options& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v;  return *this; }
-        Options& UseJsNames(bool v) { m_useJsName = v;  return *this; }
-        Options& DoNotConvertClassIdsToClassNamesWhenAliased(bool v) { m_doNotConvertClassIdsToClassNamesWhenAliased = v;  return *this; }
-        ECDB_EXPORT void FromJson(BeJsValue opts);
-        ECDB_EXPORT void ToJson(BeJsValue opts) const;
-    };
+    using CustomHandler = std::function<PropertyHandlerResult(BeJsValue out, IECSqlValue const& val)>;
+    using SkipPropertyHandler = std::function<bool(ECN::ECPropertyCR)>;
 private:
     ECDbCR m_ecdb;
-    ECSqlRowAdaptor::Options m_options;
-
+    JsReadOptions m_options;
+    CustomHandler m_customHandler;
+    SkipPropertyHandler m_skipPropertyHandler;
 private:
     BentleyStatus RenderRootProperty(BeJsValue out, IECSqlValue const& in) const;
     BentleyStatus RenderProperty(BeJsValue out, IECSqlValue const& in) const;
@@ -793,12 +850,14 @@ private:
     BentleyStatus RenderStructArrayProperty(BeJsValue out, IECSqlValue const& in) const;
 
 public:
-    ECSqlRowAdaptor(ECDbCR ecdb):m_ecdb(ecdb){}
+    explicit ECSqlRowAdaptor(ECDbCR ecdb, JsReadOptions options = JsReadOptions()):m_ecdb(ecdb), m_options(options){}
     ECDB_EXPORT BentleyStatus RenderRow(BeJsValue rowJson, IECSqlRow const& stmt, bool asArray = true) const;
     ECDB_EXPORT BentleyStatus RenderValue(BeJsValue valJson, IECSqlValue const& val) { return RenderRootProperty(valJson, val); }
     ECDB_EXPORT void GetMetaData(ECSqlRowProperty::List& list, ECSqlStatement const& stmt) const;
-    Options& GetOptions() { return m_options; }
-    Options const& GetOptions() const { return m_options; }
+    JsReadOptions& GetOptions() { return m_options; }
+    void SetCustomHandler(CustomHandler handler) { m_customHandler = handler; }
+    void SetSkipPropertyHandler(SkipPropertyHandler handler) { m_skipPropertyHandler = handler; }
+    JsReadOptions const& GetOptions() const { return m_options; }
     BentleyStatus RenderRowAsArray(BeJsValue rowJson, IECSqlRow const& stmt) const { return RenderRow(rowJson, stmt, true); }
     BentleyStatus RenderRowAsObject(BeJsValue rowJson, IECSqlRow const& stmt) const{ return RenderRow(rowJson, stmt, false); }
 };

@@ -147,6 +147,7 @@ private:
     BCVHandle m_handle = nullptr;
 
 public:
+    BE_SQLITE_EXPORT static void Initialize(BeFileNameCR assetDir);
     static int ProgressCallback(void* util, uint64_t nDone, uint64_t nTotal) { return (int)((CloudUtil*)util)->_OnProgress(nDone, nTotal); }
     static void LogCallback(void* util, Utf8CP msg) { ((CloudUtil*)util)->_Log(msg); }
     virtual int _OnProgress(uint64_t nDone, uint64_t nTotal) { return 0; }

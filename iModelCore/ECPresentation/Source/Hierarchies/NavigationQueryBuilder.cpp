@@ -162,7 +162,6 @@ protected:
             specification.GetHideNodesInHierarchy(), specification.GetHideIfNoChildren(), specification.GetGroupByClass(),
             specification.GetGroupByLabel(), specification.GetSkipRelatedLevel(), "", specification.GetRequiredRelationDirection(),
             GetSupportedSchemas(specification, m_queryBuilder.GetParameters().GetRuleset()), "", "");
-        relatedInstanceNodesSpecification.SetGroupByRelationship(specification.GetGroupByRelationship());
         m_queries = m_queryBuilder.GetQueries(m_parentNode, relatedInstanceNodesSpecification, specification.GetHash(), m_rule);
         for (auto const& query : m_queries)
             query->GetNavigationResultParameters().SetSpecification(&specification);
@@ -2813,9 +2812,13 @@ static SelectClassAcceptStatus ApplyClassFilter(SelectClassWithExcludes<>& selec
 static void ApplyClassFilter(bvector<SelectClassWithExcludes<>>& selectClasses, SelectClass<> const& groupingClass)
     {
     bvector<SelectClassWithExcludes<> const*> toErase;
-    for (auto& selectClass : selectClasses)
+    for (size_t i = 0; i < selectClasses.size(); ++i)
         {
-        if (SelectClassAcceptStatus::Drop == ApplyClassFilter(selectClass, groupingClass))
+        auto& selectClass = selectClasses[i];
+        bool shouldErase = SelectClassAcceptStatus::Drop == ApplyClassFilter(selectClass, groupingClass);
+        for (size_t j = 0; j < i && !shouldErase; ++j)
+            shouldErase |= (selectClasses[j] == selectClass);
+        if (shouldErase)
             toErase.push_back(&selectClass);
         }
     ContainerHelpers::RemoveIf(selectClasses, [&toErase](auto const& item)
@@ -2830,10 +2833,14 @@ static void ApplyClassFilter(bvector<SelectClassWithExcludes<>>& selectClasses, 
 static void ApplyClassFilter(bvector<RelatedClassPath>& selectPaths, SelectClass<> const& groupingClass)
     {
     bvector<RelatedClassPath const*> toErase;
-    for (RelatedClassPathR path : selectPaths)
+    for (size_t i = 0; i < selectPaths.size(); ++i)
         {
+        RelatedClassPathR path = selectPaths[i];
         auto& pathTarget = path.back().GetTargetClass();
-        if (SelectClassAcceptStatus::Drop == ApplyClassFilter(pathTarget, groupingClass))
+        bool shouldErase = SelectClassAcceptStatus::Drop == ApplyClassFilter(pathTarget, groupingClass);
+        for (size_t j = 0; j < i && !shouldErase; ++j)
+            shouldErase |= (selectPaths[j] == path);
+        if (shouldErase)
             toErase.push_back(&path);
         }
     ContainerHelpers::RemoveIf(selectPaths, [&toErase](auto const& item)

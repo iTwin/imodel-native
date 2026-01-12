@@ -13,9 +13,14 @@ import string
 if __name__ == "__main__":
     # launched as a script
     srcPref = os.path.dirname(sys.argv[0])
+    try:
+        dstPref = sys.argv[1]
+    except IndexError:
+        dstPref = os.getcwd()
 else:
     # imported
     srcPref = os.path.dirname(__file__)
+    dstPref = os.getcwd()
 
 #######################################################################
 #
@@ -240,6 +245,7 @@ py_types = {
     'xmlCatalogPtr': ('O', "catalog", "xmlCatalogPtr", "xmlCatalogPtr"),
     'FILE *': ('O', "File", "FILEPtr", "FILE *"),
     'xmlURIPtr': ('O', "URI", "xmlURIPtr", "xmlURIPtr"),
+    'const xmlError *': ('O', "Error", "xmlErrorPtr", "const xmlError *"),
     'xmlErrorPtr': ('O', "Error", "xmlErrorPtr", "xmlErrorPtr"),
     'xmlOutputBufferPtr': ('O', "outputBuffer", "xmlOutputBufferPtr", "xmlOutputBufferPtr"),
     'xmlParserInputBufferPtr': ('O', "inputBuffer", "xmlParserInputBufferPtr", "xmlParserInputBufferPtr"),
@@ -289,35 +295,40 @@ skip_impl = (
 )
 
 deprecated_funcs = {
+    'htmlAutoCloseTag': True,
     'htmlDefaultSAXHandlerInit': True,
+    'htmlHandleOmittedElem': True,
     'htmlInitAutoClose': True,
+    'htmlIsAutoClosed': True,
+    'htmlIsBooleanAttr': True,
     'htmlParseCharRef': True,
     'htmlParseElement': True,
-    'namePop': True,
-    'namePush': True,
-    'nodePop': True,
-    'nodePush': True,
+    'xmlByteConsumed': True,
+    'xmlCheckFilename': True,
     'xmlCheckLanguageID': True,
     'xmlCleanupCharEncodingHandlers': True,
     'xmlCleanupGlobals': True,
+    'xmlCopyChar': True,
+    'xmlCopyCharMultiByte': True,
+    'xmlCreateEntityParserCtxt': True,
     'xmlDefaultSAXHandlerInit': True,
-    'xmlDecodeEntities': True,
     'xmlDictCleanup': True,
-    'xmlEncodeEntities': True,
-    'xmlHandleEntity': True,
+    'xmlFileMatch': True,
+    'xmlGetCompressMode': True,
     'xmlInitCharEncodingHandlers': True,
     'xmlInitGlobals': True,
     'xmlInitializeDict': True,
-    'xmlInitializePredefinedEntities': True,
+    'xmlIOFTPMatch': True,
+    'xmlIOHTTPMatch': True,
+    'xmlIsLetter': True,
     'xmlIsRef': True,
-    'xmlNamespaceParseNCName': True,
-    'xmlNamespaceParseNSDef': True,
-    'xmlNanoFTPCleanup': True,
-    'xmlNanoFTPInit': True,
-    'xmlNanoFTPProxy': True,
-    'xmlNanoFTPScanProxy': True,
-    'xmlNewGlobalNs': True,
+    'xmlKeepBlanksDefault': True,
+    'xmlLineNumbersDefault': True,
+    'xmlNanoHTTPCleanup': True,
+    'xmlNanoHTTPInit': True,
+    'xmlNanoHTTPScanProxy': True,
     'xmlNextChar': True,
+    'xmlNormalizeWindowsPath': True,
     'xmlParseAttValue': True,
     'xmlParseAttributeListDecl': True,
     'xmlParseCDSect': True,
@@ -333,17 +344,17 @@ deprecated_funcs = {
     'xmlParseEntity': True,
     'xmlParseEntityDecl': True,
     'xmlParseEntityRef': True,
+    'xmlParseExtParsedEnt': True,
+    'xmlParseExternalSubset': True,
     'xmlParseMarkupDecl': True,
     'xmlParseMisc': True,
     'xmlParseName': True,
-    'xmlParseNamespace': True,
     'xmlParseNmtoken': True,
     'xmlParseNotationDecl': True,
     'xmlParsePEReference': True,
     'xmlParsePI': True,
     'xmlParsePITarget': True,
     'xmlParsePubidLiteral': True,
-    'xmlParseQuotedString': True,
     'xmlParseReference': True,
     'xmlParseSDDecl': True,
     'xmlParseStartTag': True,
@@ -353,27 +364,62 @@ deprecated_funcs = {
     'xmlParseVersionNum': True,
     'xmlParseXMLDecl': True,
     'xmlParserHandlePEReference': True,
-    'xmlParserHandleReference': True,
+    'xmlParserInputBufferGrow': True,
+    'xmlParserInputBufferPush': True,
+    'xmlParserInputBufferRead': True,
+    'xmlParserSetLineNumbers': True,
+    'xmlParserSetLoadSubset': True,
+    'xmlParserSetPedantic': True,
+    'xmlParserSetReplaceEntities': True,
+    'xmlParserSetValidate': True,
+    'xmlPedanticParserDefault': True,
+    'xmlPopInput': True,
     'xmlRecoverDoc': True,
     'xmlRecoverFile': True,
     'xmlRecoverMemory': True,
+    'xmlRegexpPrint': True,
+    'xmlRegisterHTTPPostCallbacks': True,
     'xmlRelaxNGCleanupTypes': True,
     'xmlRelaxNGInitTypes': True,
     'xmlRemoveRef': True,
     'xmlSAXDefaultVersion': True,
-    'xmlScanName': True,
     'xmlSchemaCleanupTypes': True,
     'xmlSchemaInitTypes': True,
+    'xmlSetCompressMode': True,
     'xmlSetupParserForBuffer': True,
     'xmlSkipBlankChars': True,
     'xmlStringDecodeEntities': True,
     'xmlStringLenDecodeEntities': True,
-    'xmlThrDefDefaultBufferSize': True,
+    'xmlSubstituteEntitiesDefault': True,
+    'xmlThrDefDoValidityCheckingDefaultValue': True,
+    'xmlThrDefGetWarningsDefaultValue': True,
+    'xmlThrDefIndentTreeOutput': True,
+    'xmlThrDefKeepBlanksDefaultValue': True,
     'xmlThrDefLineNumbersDefaultValue': True,
+    'xmlThrDefLoadExtDtdDefaultValue': True,
     'xmlThrDefPedanticParserDefaultValue': True,
+    'xmlThrDefSaveNoEmptyTags': True,
+    'xmlThrDefSubstituteEntitiesDefaultValue': True,
+    'xmlThrDefTreeIndentString': True,
+    'xmlValidCtxtNormalizeAttributeValue': True,
+    'xmlValidNormalizeAttributeValue': True,
+    'xmlValidateAttributeValue': True,
+    'xmlValidateDocumentFinal': True,
+    'xmlValidateDtdFinal': True,
+    'xmlValidateNotationUse': True,
+    'xmlValidateOneAttribute': True,
+    'xmlValidateOneElement': True,
+    'xmlValidateOneNamespace': True,
+    'xmlValidatePopElement': True,
+    'xmlValidatePushCData': True,
+    'xmlValidatePushElement': True,
+    'xmlValidateRoot': True,
+    'xmlValidate': True,
+    'xmlXPathEvalExpr': True,
     'xmlXPathInit': True,
     'xmlXPtrEvalRangePredicate': True,
     'xmlXPtrNewCollapsedRange': True,
+    'xmlXPtrNewContext': True,
     'xmlXPtrNewLocationSetNodes': True,
     'xmlXPtrNewRange': True,
     'xmlXPtrNewRangeNodes': True,
@@ -455,7 +501,10 @@ def print_function_wrapper(name, output, export, include):
         # Don't delete the function entry in the caller.
         return 1
 
-    is_deprecated = name in deprecated_funcs
+    if name.startswith('xmlUCSIs'):
+        is_deprecated = name != 'xmlUCSIsBlock' and name != 'xmlUCSIsCat'
+    else:
+        is_deprecated = name in deprecated_funcs
 
     c_call = ""
     format=""
@@ -652,11 +701,11 @@ def buildStubs():
     failed = 0
     skipped = 0
 
-    include = open("libxml2-py.h", "w")
+    include = open(os.path.join(dstPref, "libxml2-py.h"), "w")
     include.write("/* Generated */\n\n")
-    export = open("libxml2-export.c", "w")
+    export = open(os.path.join(dstPref, "libxml2-export.c"), "w")
     export.write("/* Generated */\n\n")
-    wrapper = open("libxml2-py.c", "w")
+    wrapper = open(os.path.join(dstPref, "libxml2-py.c"), "w")
     wrapper.write("/* Generated */\n\n")
     wrapper.write("#define PY_SSIZE_T_CLEAN\n")
     wrapper.write("#include <Python.h>\n")
@@ -727,6 +776,7 @@ classes_type = {
     "xmlValidCtxtPtr": ("._o", "ValidCtxt(_obj=%s)", "ValidCtxt"),
     "xmlCatalogPtr": ("._o", "catalog(_obj=%s)", "catalog"),
     "xmlURIPtr": ("._o", "URI(_obj=%s)", "URI"),
+    "const xmlError *": ("._o", "Error(_obj=%s)", "Error"),
     "xmlErrorPtr": ("._o", "Error(_obj=%s)", "Error"),
     "xmlOutputBufferPtr": ("._o", "outputBuffer(_obj=%s)", "outputBuffer"),
     "xmlParserInputBufferPtr": ("._o", "inputBuffer(_obj=%s)", "inputBuffer"),
@@ -1037,8 +1087,8 @@ def buildWrappers():
         info = (0, func, name, ret, args, file)
         function_classes['None'].append(info)
    
-    classes = open("libxml2class.py", "w")
-    txt = open("libxml2class.txt", "w")
+    classes = open(os.path.join(dstPref, "libxml2class.py"), "w")
+    txt = open(os.path.join(dstPref, "libxml2class.txt"), "w")
     txt.write("          Generated Classes for libxml2-python\n\n")
 
     txt.write("#\n# Global functions of the module\n#\n\n")

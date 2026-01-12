@@ -23,10 +23,6 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-#define ENABLE_CURLX_PRINTF
-
-/* use our own printf() functions */
-#include "curlx.h"
 #include "tool_cfgable.h"
 #include "tool_writeout_json.h"
 #include "tool_writeout.h"
@@ -39,9 +35,9 @@
    Return 0 on success, non-zero on error.
 */
 int jsonquoted(const char *in, size_t len,
-               struct curlx_dynbuf *out, bool lowercase)
+               struct dynbuf *out, bool lowercase)
 {
-  const unsigned char *i = (unsigned char *)in;
+  const unsigned char *i = (const unsigned char *)in;
   const unsigned char *in_end = &i[len];
   CURLcode result = CURLE_OK;
 
@@ -88,7 +84,7 @@ int jsonquoted(const char *in, size_t len,
 
 void jsonWriteString(FILE *stream, const char *in, bool lowercase)
 {
-  struct curlx_dynbuf out;
+  struct dynbuf out;
   curlx_dyn_init(&out, MAX_JSON_STRING);
 
   if(!jsonquoted(in, strlen(in), &out, lowercase)) {
@@ -121,11 +117,6 @@ void ourWriteOutJSON(FILE *stream, const struct writeoutvar mappings[],
   fprintf(stream, "}");
 }
 
-#ifdef _MSC_VER
-/* warning C4706: assignment within conditional expression */
-#pragma warning(disable:4706)
-#endif
-
 void headerJSON(FILE *stream, struct per_transfer *per)
 {
   struct curl_header *header;
@@ -133,7 +124,7 @@ void headerJSON(FILE *stream, struct per_transfer *per)
 
   fputc('{', stream);
   while((header = curl_easy_nextheader(per->curl, CURLH_HEADER, -1,
-                                       prev))) {
+                                       prev)) != NULL) {
     if(header->amount > 1) {
       if(!header->index) {
         /* act on the 0-index entry and pull the others in, then output in a

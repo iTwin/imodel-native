@@ -5,7 +5,34 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `2.0.0.0` |
+| ECSQL   | `2.0.2.1` |
+
+## ## `05/12/2025`: Added PRAGMA `validate_ecsql_writes` to validate navigation property inserts or updates
+* ECSql version change `2.0.2.0` -> `2.0.2.1`.
+* Add `PRAGMA validate_ecsql_writes` allow to enable validation of RelECClassId when inserting or updating a navigation property of a class.
+* This config defaults to false.
+* The navigation value binders have also been updated to handle the validations when the config is enabled.
+* The validation only covers the navigation properties in ECSql insert statements.
+
+
+## ## `01/29/2025`: Made schema names optional for table valued functions
+* ECSql version change `2.0.1.1` -> `2.0.2.0`.
+* Made schema names optional for table valued functions
+* Table valued functions will now work with and without schema names. Example :- `SELECT * FROM json_each(:json_param)` & 
+    `SELECT * FROM json1.json_each(:json_param)` both are now valid queries from ECSQL perspective.
+* Example: `Select test.str_prop, test.int_prop, v.id from ts.A test RIGHT OUTER JOIN IdSet(:idSet_param) v on test.ECInstanceId = v.id`,
+           `SELECT * FROM json_each(:json_param)`.
+
+## ## `01/22/2025`: Added IdSet Virtual Table in ECSQL
+* ECSql version change `2.0.1.0` -> `2.0.1.1`.
+* Added IdSet Virtual Table in ECSQL
+* Example: `Select test.str_prop, test.int_prop, v.id from ts.A test RIGHT OUTER JOIN ECVLib.IdSet(:idSet_param) v on test.ECInstanceId = v.id`.
+
+## ## `01/10/2025`: Added support for CTE subquery with alias
+* ECSql version change `2.0.0.0` -> `2.0.1.0`.
+* Added support for CTE subquery with alias
+* Example: `select a.x from (with tmp(x) as (SELECT e.i FROM aps.TestElement e order by e.i LIMIT 1) select x from tmp) a`.
+
 
 ## ## `09/05/2024`: Remove class names ALIAS support and Disqualify_polymorphic_constraint(+) support in UPDATE & DELETE statements
 * ECSql version change `1.2.14.0` -> `2.0.0.0`.

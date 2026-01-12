@@ -74,7 +74,7 @@ struct ECJsonSystemNames final
     public:
         static constexpr Utf8CP Id() { return "id"; }
         static constexpr Utf8CP ClassName() { return "className"; }
-
+        static constexpr Utf8CP ClassFullName() { return "classFullName"; }
         static constexpr Utf8CP SourceId() { return "sourceId"; }
         static constexpr Utf8CP SourceClassName() { return "sourceClassName"; }
         static constexpr Utf8CP TargetId() { return "targetId"; }
@@ -188,7 +188,11 @@ public:
     //! Generates the fully qualified name of an ECClass as used in the ECJSON format: &lt;schema name&gt;.&lt;class name&gt;
     //! @param[in] ecClass ECClass
     //! @return Fully qualified class name for the ECJSON format
-    static Utf8String FormatClassName(ECClassCR ecClass) {return Utf8PrintfString("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());}
+    static Utf8String FormatClassName(ECClassCR ecClass, bool useColon = false) {
+        if (useColon)
+            return Utf8PrintfString("%s:%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
+        return Utf8PrintfString("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
+    }
 
     //! Generates the fully qualified name of an PropertyCategory as used in the ECJSON format: &lt;schema name&gt;.&lt;PropertyCategory name&gt;
     //! @param[in] ecPropertyCategory PropertyCategory
@@ -217,7 +221,7 @@ public:
     //! @param[out] json JSON value
     //! @param[in] ecClass ECClass
     //! @return SUCCESS or ERROR
-    static void ClassNameToJson(BeJsValue json, ECClassCR ecClass) { json = FormatClassName(ecClass); }
+    static void ClassNameToJson(BeJsValue json, ECClassCR ecClass, bool useColon = false) { json = FormatClassName(ecClass, useColon); }
 
     //! Returns a fully qualified name of any SchemaChild
     //! Type must have both GetName() and GetSchema() methods
@@ -378,7 +382,7 @@ public:
         {
         int64_t val = 0;
         bool stringCheckFailed = false;
-        if (json.IsString()) 
+        if (json.IsString())
             {
             Utf8CP strVal = json.GetString();
             if (strVal[0] == '-') // negative numbers are not valid
@@ -386,11 +390,11 @@ public:
             else if (strchr(strVal, '.') != nullptr) // decimal numbers are not valid
                 stringCheckFailed = true;
             }
-        else if (json.IsFloat() && IsLosslessUint64(json.GetFloat())) 
+        else if (json.IsFloat() && IsLosslessUint64(json.GetFloat()))
             {
             return TBeInt64Id((uint64_t) json.GetFloat());
-            } 
-        else if (json.IsDouble() && IsLosslessUint64(json.GetDouble())) 
+            }
+        else if (json.IsDouble() && IsLosslessUint64(json.GetDouble()))
             {
             return TBeInt64Id((uint64_t) json.GetDouble());
             }

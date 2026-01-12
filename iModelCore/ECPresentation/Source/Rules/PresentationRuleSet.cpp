@@ -3,8 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
-
-#include "PresentationRuleXmlConstants.h"
 #include "PresentationRuleJsonConstants.h"
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/PresentationRules.h>
@@ -24,14 +22,14 @@ Version const& PresentationRuleSet::GetCurrentRulesetSchemaVersion()
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSet::PresentationRuleSet (void)
-    : m_schemaVersion(GetCurrentRulesetSchemaVersion()), m_isSupplemental(false), m_isSearchEnabled(true)
+    : m_schemaVersion(GetCurrentRulesetSchemaVersion()), m_isSupplemental(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSet::PresentationRuleSet(Version schemaVersion, Utf8String ruleSetId)
-    : m_ruleSetId(ruleSetId), m_schemaVersion(schemaVersion), m_isSupplemental(false), m_isSearchEnabled(true)
+    : m_ruleSetId(ruleSetId), m_schemaVersion(schemaVersion), m_isSupplemental(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -47,10 +45,6 @@ PresentationRuleSet::PresentationRuleSet(PresentationRuleSetCR other)
     CommonToolsInternal::CopyRules(m_requiredSchemas, other.m_requiredSchemas, this);
     m_isSupplemental = other.m_isSupplemental;
     m_supplementationPurpose = other.m_supplementationPurpose;
-    m_preferredImage = other.m_preferredImage;
-    m_isSearchEnabled = other.m_isSearchEnabled;
-    m_extendedData = other.m_extendedData;
-    m_searchClasses = other.m_searchClasses;
 
     CommonToolsInternal::CopyRules(m_rootNodesRules, other.m_rootNodesRules, this);
     CommonToolsInternal::CopyRules(m_childNodesRules, other.m_childNodesRules, this);
@@ -82,10 +76,6 @@ PresentationRuleSet::PresentationRuleSet(PresentationRuleSet&& other)
     CommonToolsInternal::SwapRules(m_requiredSchemas, other.m_requiredSchemas, this);
     m_isSupplemental = std::move(other.m_isSupplemental);
     m_supplementationPurpose = std::move(other.m_supplementationPurpose);
-    m_preferredImage = std::move(other.m_preferredImage);
-    m_isSearchEnabled = std::move(other.m_isSearchEnabled);
-    m_extendedData = std::move(other.m_extendedData);
-    m_searchClasses = std::move(other.m_searchClasses);
 
     CommonToolsInternal::SwapRules(m_rootNodesRules, other.m_rootNodesRules, this);
     CommonToolsInternal::SwapRules(m_childNodesRules, other.m_childNodesRules, this);
@@ -189,182 +179,6 @@ Utf8String PresentationRuleSet::GetFullRuleSetId (void) const
         fullId.append(".").append(GetRulesetVersion().Value().ToString());
 
     return fullId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
-    {
-    BeXmlNodeP ruleSetNode;
-    if ((BEXML_Success != xmlDom.SelectNode(ruleSetNode, "/" PRESENTATION_RULE_SET_XML_NODE_NAME, NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == ruleSetNode))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Invalid XML: Missing a top-level `%s` node", PRESENTATION_RULE_SET_XML_NODE_NAME));
-        return false;
-        }
-
-    // required:
-    if (BEXML_Success != ruleSetNode->GetAttributeStringValue(m_ruleSetId, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString(INVALID_XML, PRESENTATION_RULE_SET_XML_NODE_NAME, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID));
-        return false;
-        }
-
-    // optional:
-    if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_supportedSchemas, COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS))
-        m_supportedSchemas = "";
-
-    if (BEXML_Success != ruleSetNode->GetAttributeBooleanValue (m_isSupplemental, PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSUPPLEMENTAL))
-        m_isSupplemental = false;
-
-    if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_supplementationPurpose, PRESENTATION_RULE_SET_XML_ATTRIBUTE_SUPPLEMENTATIONPURPOSE))
-        m_supplementationPurpose = "";
-
-    int versionMajor, versionMinor;
-    if (BEXML_Success != ruleSetNode->GetAttributeInt32Value (versionMajor, PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMAJOR))
-        versionMajor = 1;
-    if (BEXML_Success != ruleSetNode->GetAttributeInt32Value (versionMinor, PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMINOR))
-        versionMinor = 0;
-    m_rulesetVersion = Version(versionMajor, versionMinor, 0);
-
-    if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_preferredImage, PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE))
-        m_preferredImage = "";
-
-    if (BEXML_Success != ruleSetNode->GetAttributeBooleanValue (m_isSearchEnabled, PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED))
-        m_isSearchEnabled = true;
-
-    if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_searchClasses, PRESENTATION_RULE_SET_XML_ATTRIBUTE_SEARCHCLASSES))
-        m_searchClasses = "";
-
-    if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_extendedData, PRESENTATION_RULE_SET_XML_ATTRIBUTE_EXTENDEDDATA))
-        m_extendedData = "";
-
-    CommonToolsInternal::LoadRulesFromXmlNode <RootNodeRule>      (ruleSetNode, m_rootNodesRules,   ROOT_NODE_RULE_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode <ChildNodeRule>     (ruleSetNode, m_childNodesRules,  CHILD_NODE_RULE_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode <ContentRule>       (ruleSetNode, m_contentRules,     CONTENT_RULE_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode <ImageIdOverride>   (ruleSetNode, m_imageIdRules,     IMAGE_ID_OVERRIDE_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode <LabelOverride>     (ruleSetNode, m_labelOverrides,   LABEL_OVERRIDE_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode <StyleOverride>     (ruleSetNode, m_styleOverrides,   STYLE_OVERRIDE_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode <GroupingRule>      (ruleSetNode, m_groupingRules,    GROUPING_RULE_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode <LocalizationResourceKeyDefinition> (ruleSetNode, m_localizationResourceKeyDefinitions, LOCALIZATION_DEFINITION_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode <UserSettingsGroup> (ruleSetNode, m_userSettings,     USER_SETTINGS_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode <CheckBoxRule>      (ruleSetNode, m_checkBoxRules,    CHECKBOX_RULE_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode <SortingRule>       (ruleSetNode, m_sortingRules,     SORTING_RULE_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode <ContentModifier>   (ruleSetNode, m_contentModifiers, CONTENTMODIFIER_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode <InstanceLabelOverride> (ruleSetNode, m_instanceLabelOverrides, INSTANCE_LABEL_OVERRIDE_XML_NODE_NAME, this);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom) const
-    {
-    BeXmlNodeP ruleSetNode = xmlDom.AddNewElement (PRESENTATION_RULE_SET_XML_NODE_NAME, NULL, NULL);
-
-    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID,              m_ruleSetId.c_str ());
-    ruleSetNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS,                      m_supportedSchemas.c_str ());
-    ruleSetNode->AddAttributeBooleanValue (PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSUPPLEMENTAL,         m_isSupplemental);
-    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_SUPPLEMENTATIONPURPOSE, m_supplementationPurpose.c_str ());
-    ruleSetNode->AddAttributeInt32Value   (PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMAJOR,           m_rulesetVersion.IsValid() ? m_rulesetVersion.Value().GetMajor() : 1);
-    ruleSetNode->AddAttributeInt32Value   (PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMINOR,           m_rulesetVersion.IsValid() ? m_rulesetVersion.Value().GetMinor() : 0);
-    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE,         m_preferredImage.c_str ());
-    ruleSetNode->AddAttributeBooleanValue (PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED,        m_isSearchEnabled);
-    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_SEARCHCLASSES,          m_searchClasses.c_str ());
-    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_EXTENDEDDATA,           m_extendedData.c_str ());
-
-    CommonToolsInternal::WriteRulesToXmlNode<RootNodeRule,      RootNodeRuleList>      (ruleSetNode, m_rootNodesRules);
-    CommonToolsInternal::WriteRulesToXmlNode<ChildNodeRule,     ChildNodeRuleList>     (ruleSetNode, m_childNodesRules);
-    CommonToolsInternal::WriteRulesToXmlNode<ContentRule,       ContentRuleList>       (ruleSetNode, m_contentRules);
-    CommonToolsInternal::WriteRulesToXmlNode<ImageIdOverride,   ImageIdOverrideList>   (ruleSetNode, m_imageIdRules);
-    CommonToolsInternal::WriteRulesToXmlNode<LabelOverride,     LabelOverrideList>     (ruleSetNode, m_labelOverrides);
-    CommonToolsInternal::WriteRulesToXmlNode<StyleOverride,     StyleOverrideList>     (ruleSetNode, m_styleOverrides);
-    CommonToolsInternal::WriteRulesToXmlNode<GroupingRule,      GroupingRuleList>      (ruleSetNode, m_groupingRules);
-    CommonToolsInternal::WriteRulesToXmlNode<LocalizationResourceKeyDefinition, LocalizationResourceKeyDefinitionList> (ruleSetNode, m_localizationResourceKeyDefinitions);
-    CommonToolsInternal::WriteRulesToXmlNode<UserSettingsGroup, UserSettingsGroupList> (ruleSetNode, m_userSettings);
-    CommonToolsInternal::WriteRulesToXmlNode<CheckBoxRule,      CheckBoxRuleList>      (ruleSetNode, m_checkBoxRules);
-    CommonToolsInternal::WriteRulesToXmlNode<SortingRule,       SortingRuleList>       (ruleSetNode, m_sortingRules);
-    CommonToolsInternal::WriteRulesToXmlNode<ContentModifier,   ContentModifierList>   (ruleSetNode, m_contentModifiers);
-    CommonToolsInternal::WriteRulesToXmlNode<InstanceLabelOverride,InstanceLabelOverrideList> (ruleSetNode, m_instanceLabelOverrides);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (Utf8CP xmlString)
-    {
-    auto scope = Diagnostics::Scope::Create("Read PresentationRuleSet from XML string");
-
-    BeXmlStatus xmlStatus;
-    size_t stringSize = strlen (xmlString) * sizeof(Utf8Char);
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString, stringSize / sizeof(Utf8Char));
-    if (BEXML_Success != xmlStatus)
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, "Failed to read XML from string. Is XML valid?");
-        return NULL;
-        }
-
-    PresentationRuleSetPtr ruleSet = new PresentationRuleSet();
-    if (ruleSet->ReadXml(*xmlDom.get()))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_INFO, "Successfully read presentation rules");
-        return ruleSet;
-        }
-
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, "Failed to read presentation rules from XML.");
-    return NULL;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlFile (BeFileNameCR xmlFilePath)
-    {
-    auto scope = Diagnostics::Scope::Create("Read PresentationRuleSet from XML file");
-
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, xmlFilePath.c_str());
-    if (xmlStatus != BEXML_Success || !xmlDom.IsValid())
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, "Failed to read XML from file. Is XML valid?");
-        return NULL;
-        }
-
-    PresentationRuleSetPtr ruleSet = new PresentationRuleSet();
-    if (ruleSet->ReadXml(*xmlDom.get()))
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_INFO, "Successfully read presentation rules");
-        return ruleSet;
-        }
-
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, "Failed to read presentation rules from XML.");
-    return NULL;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String PresentationRuleSet::WriteToXmlString () const
-    {
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();
-    WriteXml (*xmlDom.get());
-
-    Utf8String presentationRuleSetXml;
-    xmlDom->ToString (presentationRuleSetXml, BeXmlDom::TO_STRING_OPTION_Default);
-
-    return presentationRuleSetXml;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PresentationRuleSet::WriteToXmlFile (BeFileNameCR xmlFilePath) const
-    {
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();
-    WriteXml (*xmlDom.get());
-
-    return BEXML_Success == xmlDom->ToFile(xmlFilePath.c_str(), (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), BeXmlDom::FILE_ENCODING_Utf8);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -595,36 +409,6 @@ void PresentationRuleSet::AddRequiredSchemaSpecification(RequiredSchemaSpecifica
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR           PresentationRuleSet::GetPreferredImage (void) const    { return m_preferredImage;   }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool                   PresentationRuleSet::GetIsSearchEnabled (void) const   { return m_isSearchEnabled;  }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR           PresentationRuleSet::GetSearchClasses (void) const     { return m_searchClasses;    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void                   PresentationRuleSet::SetSearchClasses (Utf8StringCR searchClasses) { m_searchClasses = searchClasses; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR           PresentationRuleSet::GetExtendedData (void) const      { return m_extendedData;     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void                   PresentationRuleSet::SetExtendedData (Utf8StringCR extendedData) { m_extendedData = extendedData; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 RootNodeRuleList const& PresentationRuleSet::GetRootNodesRules (void) const   { return m_rootNodesRules;   }
 
 /*---------------------------------------------------------------------------------**//**
@@ -715,15 +499,6 @@ MD5 PresentationRuleSet::_ComputeHash() const
         ADD_PRIMITIVE_VALUE_TO_HASH(md5, "IsSupplemental", m_isSupplemental);
     if (!m_supplementationPurpose.empty())
         ADD_STR_VALUE_TO_HASH(md5, PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPLEMENTATIONINFO_PURPOSE, m_supplementationPurpose);
-
-    if (!m_preferredImage.empty())
-        ADD_STR_VALUE_TO_HASH(md5, PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE, m_preferredImage);
-    if (m_isSearchEnabled)
-        ADD_PRIMITIVE_VALUE_TO_HASH(md5, PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED, m_isSearchEnabled);
-    if (!m_extendedData.empty())
-        ADD_STR_VALUE_TO_HASH(md5, PRESENTATION_RULE_SET_XML_ATTRIBUTE_EXTENDEDDATA, m_extendedData);
-    if (!m_searchClasses.empty())
-        ADD_STR_VALUE_TO_HASH(md5, PRESENTATION_RULE_SET_XML_ATTRIBUTE_SEARCHCLASSES, m_searchClasses);
 
     ADD_RULES_TO_HASH(md5, "RootNodeRules", m_rootNodesRules);
     ADD_RULES_TO_HASH(md5, "ChildNodeRules", m_childNodesRules);

@@ -19,6 +19,7 @@ struct DbClassMapLoadContext final
         bool m_classMapExists = false;
         MapStrategyExtendedInfo m_mapStrategyExtInfo;
         std::map<Utf8String, std::vector<DbColumn const*>> m_columnByAccessString;
+        std::set<Utf8String> m_propertiesToIgnore;
 
         //not copyable
         DbClassMapLoadContext(DbClassMapLoadContext const&) = delete;
@@ -37,6 +38,8 @@ struct DbClassMapLoadContext final
         bool HasMappedProperties() const { return !m_columnByAccessString.empty(); }
         std::map<Utf8String, std::vector<DbColumn const*>> const& GetPropertyMaps() const { return m_columnByAccessString; }
         std::vector<DbColumn const*> const* FindColumnByAccessString(Utf8StringCR accessString) const;
+        void AddPropertyToIgnoreList(Utf8StringCR propertyName) { m_propertiesToIgnore.insert(propertyName); }
+        bool IsPropertyIgnored(Utf8StringCR propertyName) const { return m_propertiesToIgnore.find(propertyName) != m_propertiesToIgnore.end(); }
     };
 
 

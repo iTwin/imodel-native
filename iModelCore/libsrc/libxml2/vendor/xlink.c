@@ -19,9 +19,7 @@
 #include <libxml/xmlmemory.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
-#include <libxml/valid.h>
 #include <libxml/xlink.h>
-#include <libxml/globals.h>
 
 #define XLINK_NAMESPACE (BAD_CAST "http://www.w3.org/1999/xlink/namespace/")
 #define XHTML_NAMESPACE (BAD_CAST "http://www.w3.org/1999/xhtml/")
@@ -38,6 +36,8 @@ static xlinkNodeDetectFunc	xlinkDefaultDetect = NULL;
 /**
  * xlinkGetDefaultHandler:
  *
+ * DEPRECATED: Don't use.
+ *
  * Get the default xlink handler.
  *
  * Returns the current xlinkHandlerPtr value.
@@ -52,6 +52,8 @@ xlinkGetDefaultHandler(void) {
  * xlinkSetDefaultHandler:
  * @handler:  the new value for the xlink handler block
  *
+ * DEPRECATED: Don't use.
+ *
  * Set the default xlink handlers
  */
 void
@@ -61,6 +63,8 @@ xlinkSetDefaultHandler(xlinkHandlerPtr handler) {
 
 /**
  * xlinkGetDefaultDetect:
+ *
+ * DEPRECATED: Don't use.
  *
  * Get the default xlink detection routine
  *
@@ -74,6 +78,8 @@ xlinkGetDefaultDetect	(void) {
 /**
  * xlinkSetDefaultDetect:
  * @func: pointer to the new detection routine.
+ *
+ * DEPRECATED: Don't use.
  *
  * Set the default xlink detection routine
  */

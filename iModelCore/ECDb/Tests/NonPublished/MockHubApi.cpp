@@ -460,7 +460,6 @@ SchemaImportResult InMemoryECDb::ImportSchema(SchemaItem const& si) {
     bvector<ECN::ECSchemaP> schemas;
     ctx->GetCache().GetSchemas(schemas);
     bvector<ECN::ECSchemaCP> schemasIn(schemas.begin(), schemas.end());
-   // if (m_tracker != nullptr) m_tracker->SetHasEcSchemaChanges(true);
     return Schemas().ImportSchemas(schemasIn, nullptr);
 }
 
@@ -780,12 +779,20 @@ ECDbChangeSet::Ptr ECDbChangeSet::From(ECDbChangeTracker& tracker, Utf8CP commen
     if (!tracker.HasChanges() && !tracker.HasDdlChanges()) {
         return nullptr;
     }
-    auto changeset = std::make_unique<ECDbChangeSet>( (int)(tracker.GetLocalChangesets().size() + 1), comment, tracker.GetDDL().c_str(), tracker.HasEcSchemaChanges());
+    auto changeset = std::make_unique<ECDbChangeSet>( (int)(tracker.GetLocalChangesets().size() + 1), comment, tracker.GetDDL().c_str(), false);
     if (tracker.HasChanges()) {
         auto rc = changeset->FromChangeTrack(tracker);
         if (rc != BE_SQLITE_OK) {
             return nullptr;
         }
+        bool hasECChanges = false;
+        for (auto& change : changeset->GetChanges()) {
+            if (change.GetTableName().StartsWithIAscii("ec_")) {
+                hasECChanges = true;
+                break;
+            }
+        }
+        changeset->m_hasSchemaChanges = hasECChanges;
     }
     return std::move(changeset);
 }
@@ -995,7 +1002,7 @@ DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
 //                 return rc;
 //             }
 //         }
-        auto rc = changesetToApply->ApplyChanges(*this, nullptr, false, true);
+        auto rc = changesetToApply->ApplyChanges(*this, false, true);
         if (rc != BE_SQLITE_OK) {
             LOG.errorv("PullAndMergeChangesFrom(): %s", GetLastError().c_str());
 #ifdef TRACE_CS

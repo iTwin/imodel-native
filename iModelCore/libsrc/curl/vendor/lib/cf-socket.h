@@ -25,7 +25,7 @@
  ***************************************************************************/
 #include "curl_setup.h"
 
-#include "nonblock.h" /* for curlx_nonblock(), formerly Curl_nonblock() */
+#include "curlx/nonblock.h" /* for curlx_nonblock() */
 #include "sockaddr.h"
 
 struct Curl_addrinfo;
@@ -52,12 +52,12 @@ struct Curl_sockaddr_ex {
     struct Curl_sockaddr_storage buff;
   } _sa_ex_u;
 };
-#define sa_addr _sa_ex_u.addr
+#define curl_sa_addr _sa_ex_u.addr
 
 /*
  * Parse interface option, and return the interface name and the host part.
 */
-CURLcode Curl_parse_interface(const char *input, size_t len,
+CURLcode Curl_parse_interface(const char *input,
                               char **dev, char **iface, char **host);
 
 /*
@@ -68,10 +68,10 @@ CURLcode Curl_parse_interface(const char *input, size_t len,
  *
  */
 CURLcode Curl_socket_open(struct Curl_easy *data,
-                            const struct Curl_addrinfo *ai,
-                            struct Curl_sockaddr_ex *addr,
-                            int transport,
-                            curl_socket_t *sockfd);
+                          const struct Curl_addrinfo *ai,
+                          struct Curl_sockaddr_ex *addr,
+                          int transport,
+                          curl_socket_t *sockfd);
 
 int Curl_socket_close(struct Curl_easy *data, struct connectdata *conn,
                       curl_socket_t sock);
@@ -90,14 +90,6 @@ void Curl_sndbuf_init(curl_socket_t sockfd);
 #else
 #define Curl_sndbuf_init(y) Curl_nop_stmt
 #endif
-
-/**
- * Assign the address `ai` to the Curl_sockaddr_ex `dest` and
- * set the transport used.
- */
-void Curl_sock_assign_addr(struct Curl_sockaddr_ex *dest,
-                           const struct Curl_addrinfo *ai,
-                           int transport);
 
 /**
  * Creates a cfilter that opens a TCP socket to the given address
@@ -147,12 +139,11 @@ CURLcode Curl_conn_tcp_listen_set(struct Curl_easy *data,
                                   curl_socket_t *s);
 
 /**
- * Replace the listen socket with the accept()ed one.
+ * Return TRUE iff the last filter at `sockindex` was set via
+ * Curl_conn_tcp_listen_set().
  */
-CURLcode Curl_conn_tcp_accepted_set(struct Curl_easy *data,
-                                    struct connectdata *conn,
-                                    int sockindex,
-                                    curl_socket_t *s);
+bool Curl_conn_is_tcp_listen(struct Curl_easy *data,
+                             int sockindex);
 
 /**
  * Peek at the socket and remote ip/port the socket filter is using.

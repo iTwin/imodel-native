@@ -26,6 +26,10 @@ struct ECSchemaXmlContextUtils
         public:
             LocaterCallback(Napi::FunctionReference&& cb);
             virtual ~LocaterCallback() {}
+
+        Utf8String GetDescription() const override {
+                return Utf8PrintfString("ECSchemaXmlContextUtils::LocaterCallback");
+            }
         };
 
     enum class SchemaConversionStatus : std::underlying_type<SchemaReadStatus>::type

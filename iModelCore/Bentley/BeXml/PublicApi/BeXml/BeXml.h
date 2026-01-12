@@ -146,7 +146,7 @@ public:
     private:    BeXmlDom     (ParseOptions options);
     
     private: static BeXmlDomPtr CreateAndReadFromString (BeXmlStatus& xmlStatus, CharCP source, size_t characterCount, CharCP encoding, WStringP errorMsg = NULL, ParseOptions options = XMLPARSE_OPTION_None);
-    public:  static void        FormatErrorMessage (WStringP errorMsg, xmlErrorPtr xmlError);
+    public:  static void        FormatErrorMessage (WStringP errorMsg, const xmlError *xmlError);
 
     //-----------------------------------------------------------------------------------------------------------------------------------------------
     // Basic memory management

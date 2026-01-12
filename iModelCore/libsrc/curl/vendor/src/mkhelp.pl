@@ -23,17 +23,16 @@
 #
 ###########################################################################
 
-# Yeah, I know, probably 1000 other persons already wrote a script like
-# this, but I'll tell ya:
+use strict;
+use warnings;
 
-# THEY DON'T FIT ME :-)
-
-# Get readme file as parameter:
-
-if($ARGV[0] eq "-c") {
-    $c=1;
+my $c = 0;
+if(@ARGV && $ARGV[0] eq "-c") {
+    $c = 1;
     shift @ARGV;
 }
+
+my @out;
 
 push @out, "          _   _ ____  _\n";
 push @out, "      ___| | | |  _ \\| |\n";
@@ -41,8 +40,7 @@ push @out, "     / __| | | | |_) | |\n";
 push @out, "    | (__| |_| |  _ <| |___\n";
 push @out, "     \\___|\\___/|_| \\_\\_____|\n";
 
-my $olen=0;
-while (<STDIN>) {
+while(<STDIN>) {
     my $line = $_;
     push @out, $line;
 }
@@ -51,8 +49,10 @@ print <<HEAD
 /*
  * NEVER EVER edit this manually, fix the mkhelp.pl script instead!
  */
-#ifdef USE_MANUAL
 #include "tool_hugehelp.h"
+#ifdef USE_MANUAL
+#include "tool_help.h"
+
 HEAD
     ;
 if($c) {
@@ -64,7 +64,7 @@ if($c) {
       IO::Compress::Gzip->import();
       1;
     };
-    print STDERR "Warning: compression requested but Gzip is not available\n" if (!$c)
+    print STDERR "Warning: compression requested but Gzip is not available\n" if(!$c)
 }
 
 if($c)
@@ -73,12 +73,12 @@ if($c)
     my $gzippedContent;
     IO::Compress::Gzip::gzip(
         \$content, \$gzippedContent, Level => 9, TextFlag => 1, Time=>0) or die "gzip failed:";
-    $gzip = length($content);
-    $gzipped = length($gzippedContent);
+    my $gzip = length($content);
+    my $gzipped = length($gzippedContent);
 
     print <<HEAD
 #include <zlib.h>
-#include "memdebug.h" /* keep this as LAST include */
+#include <memdebug.h> /* keep this as LAST include */
 static const unsigned char hugehelpgz[] = {
   /* This mumbo-jumbo is the huge help text compressed with gzip.
      Thanks to this operation, the size of this data shrank from $gzip
@@ -88,12 +88,14 @@ HEAD
 ;
 
     my $c=0;
-    print " ";
     for(split(//, $gzippedContent)) {
         my $num=ord($_);
+        if(!($c % 12)) {
+            print " ";
+        }
         printf(" 0x%02x,", 0+$num);
         if(!(++$c % 12)) {
-            print "\n ";
+            print "\n";
         }
     }
     print "\n};\n";
@@ -102,32 +104,34 @@ HEAD
 #define BUF_SIZE 0x10000
 static voidpf zalloc_func(voidpf opaque, unsigned int items, unsigned int size)
 {
-  (void) opaque;
+  (void)opaque;
   /* not a typo, keep it calloc() */
   return (voidpf) calloc(items, size);
 }
 static void zfree_func(voidpf opaque, voidpf ptr)
 {
-  (void) opaque;
+  (void)opaque;
   free(ptr);
 }
+
+#define HEADERLEN 10
+
 /* Decompress and send to stdout a gzip-compressed buffer */
 void hugehelp(void)
 {
   unsigned char *buf;
-  int status, headerlen;
+  int status;
   z_stream z;
 
   /* Make sure no gzip options are set */
   if(hugehelpgz[3] & 0xfe)
     return;
 
-  headerlen = 10;
   memset(&z, 0, sizeof(z_stream));
   z.zalloc = (alloc_func)zalloc_func;
   z.zfree = (free_func)zfree_func;
-  z.avail_in = (unsigned int)(sizeof(hugehelpgz) - headerlen);
-  z.next_in = (unsigned char *)hugehelpgz + headerlen;
+  z.avail_in = (uInt)(sizeof(hugehelpgz) - HEADERLEN);
+  z.next_in = (z_const Bytef *)hugehelpgz + HEADERLEN;
 
   if(inflateInit2(&z, -MAX_WBITS) != Z_OK)
     return;
@@ -144,7 +148,49 @@ void hugehelp(void)
           break;
       }
       else
-        break;    /* Error */
+        break;    /* error */
+    }
+    free(buf);
+  }
+  inflateEnd(&z);
+}
+/* Show the help text for the 'arg' curl argument on stdout */
+void showhelp(const char *trigger, const char *arg, const char *endarg)
+{
+  unsigned char *buf;
+  int status;
+  z_stream z;
+  struct scan_ctx ctx;
+  inithelpscan(&ctx, trigger, arg, endarg);
+
+  /* Make sure no gzip options are set */
+  if(hugehelpgz[3] & 0xfe)
+    return;
+
+  memset(&z, 0, sizeof(z_stream));
+  z.zalloc = (alloc_func)zalloc_func;
+  z.zfree = (free_func)zfree_func;
+  z.avail_in = (uInt)(sizeof(hugehelpgz) - HEADERLEN);
+  z.next_in = (z_const Bytef *)hugehelpgz + HEADERLEN;
+
+  if(inflateInit2(&z, -MAX_WBITS) != Z_OK)
+    return;
+
+  buf = malloc(BUF_SIZE);
+  if(buf) {
+    while(1) {
+      z.avail_out = BUF_SIZE;
+      z.next_out = buf;
+      status = inflate(&z, Z_SYNC_FLUSH);
+      if(status == Z_OK || status == Z_STREAM_END) {
+        size_t len = BUF_SIZE - z.avail_out;
+        if(!helpscan(buf, len, &ctx))
+          break;
+        if(status == Z_STREAM_END)
+          break;
+      }
+      else
+        break;    /* error */
     }
     free(buf);
   }
@@ -187,6 +233,21 @@ void hugehelp(void)
   int i = 0;
   while(curlman[i])
     puts(curlman[i++]);
+}
+
+/* Show the help text for the 'arg' curl argument on stdout */
+void showhelp(const char *trigger, const char *arg, const char *endarg)
+{
+  int i = 0;
+  struct scan_ctx ctx;
+  inithelpscan(&ctx, trigger, arg, endarg);
+  while(curlman[i]) {
+    size_t len = strlen(curlman[i]);
+    if(!helpscan((const unsigned char *)curlman[i], len, &ctx) ||
+       !helpscan((const unsigned char *)"\\n", 1, &ctx))
+      break;
+    i++;
+  }
 }
 ENDLINE
     ;

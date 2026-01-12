@@ -335,6 +335,85 @@ DbResult ChangeTracker::DifferenceToDb(Utf8StringP errMsgOut, BeFileNameCR baseF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeSet::Write(Utf8StringCR pathname) const {
+    BeFile file;
+    if (BeFileStatus::Success != file.Create(pathname))
+        return BE_SQLITE_ERROR;
+
+    for(auto& chunk : m_data.m_chunks) {
+        if (BeFileStatus::Success != file.Write(nullptr, (const void *)chunk.data(), (uint32_t)chunk.size())){
+            file.Close();
+            return BE_SQLITE_ERROR;
+        }
+    }
+    file.Flush();
+    file.Close();
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ChangesetFile::GetSize() const {
+    uint64_t size = 0;
+    m_file.GetSize(size);
+    return (size_t)size;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangesetFile::_Append(Byte const* data, int size) {
+    m_file.Write(nullptr, data, size);
+    m_file.Flush();
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangesetFile::ChangesetFile(Utf8String name) : m_fileName(name) {
+    m_file.Create(m_fileName);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangesetFile::~ChangesetFile() {
+    m_file.Flush();
+    m_file.Close();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeSet::Read(Utf8StringCR pathname) {
+    BeFile file;
+    if (BeFileStatus::Success != file.Open(pathname, BeFileAccess::Read ))
+        return BE_SQLITE_ERROR;
+
+    m_data.Clear();
+    uint8_t buffer[64 * 1024];
+    uint32_t bytesRead = 0;
+
+    if (BeFileStatus::Success != file.Read(buffer, & bytesRead, sizeof(buffer))) {
+        m_data.Clear();
+        return BE_SQLITE_ERROR;
+    }
+
+    while (bytesRead > 0) {
+        m_data.Append(buffer, bytesRead);
+        if (BeFileStatus::Success != file.Read(buffer, & bytesRead, sizeof(buffer))){
+            m_data.Clear();
+            return BE_SQLITE_ERROR;
+        }
+    }
+    return BE_SQLITE_OK;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeSet::Invert() {
     if (!IsValid()) {
         BeAssert(false);
@@ -410,9 +489,53 @@ DbValue  Changes::Change::GetNewValue(int colNum) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+Changes::Change::Change(SqlChangesetIterP iter, bool isValid) {
+    m_iter = iter;
+    m_isValid = isValid;
+    LoadOperation();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void Changes::Change::LoadOperation() const {
+    Utf8CP tableName = nullptr;
+    auto rc = m_iter != nullptr ? GetOperation(&tableName, &m_nCols, &m_opcode, &m_indirect) : BE_SQLITE_ERROR;
+    if (rc != BE_SQLITE_OK) {
+        m_tableName.clear();
+        m_nCols = 0;
+        m_indirect = 0;
+        m_opcode = (DbOpcode)0;
+    }
+    m_tableName.AssignOrClear(tableName);
+    rc = m_iter != nullptr ? GetPrimaryKeyColumns(&m_primaryKeyColumns, &m_primaryKeyColumnsCount) : BE_SQLITE_ERROR;
+    if (rc != BE_SQLITE_OK) {
+        m_primaryKeyColumns = nullptr;
+        m_primaryKeyColumnsCount = 0;
+    }
+    rc = m_iter != nullptr && m_tableName.empty() ? GetFKeyConflicts(&m_foreignKeyConflicts) : BE_SQLITE_ERROR;
+    if (rc != BE_SQLITE_OK) {
+        m_foreignKeyConflicts = 0;
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Changes::Change::IsPrimaryKeyColumn(int colNum) const {
+    if (m_primaryKeyColumns == nullptr || colNum < 0 || colNum >= m_primaryKeyColumnsCount) {
+        return false;
+    }
+    return m_primaryKeyColumns[colNum] != 0;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Changes::Change& Changes::Change::operator++()
     {
     m_isValid = (BE_SQLITE_ROW == (DbResult) sqlite3changeset_next(m_iter));
+    LoadOperation();
     return  *this;
     }
 
@@ -765,7 +888,7 @@ DbResult ChangeStream::ToChangeSet(ChangeSet& changeSet, bool invert) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::ApplyChanges(DbR db, Rebase* rebase, bool invert, bool ignoreNoop, bool fkNoAction) const
+DbResult ChangeStream::ApplyChanges(DbR db, bool invert, bool ignoreNoop, bool fkNoAction) const
     {
     int flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
     if (invert)
@@ -776,7 +899,7 @@ DbResult ChangeStream::ApplyChanges(DbR db, Rebase* rebase, bool invert, bool ig
         flags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
     auto reader = _GetReader();
     DbResult result = (DbResult) sqlite3changeset_apply_v2_strm(db.GetSqlDb(), Changes::Reader::ReadCallback, (void*) reader.get(), FilterTableCallback, ConflictCallback, (void*) this,
-        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, flags);
+        nullptr,  nullptr, flags);
     return result;
     }
 
@@ -802,7 +925,7 @@ DbResult ChangeStream::ApplyChanges(DbR db, ApplyChangesArgs const& args) const
         ApplyChangesArgs::FilterTableCallback,
         ApplyChangesArgs::ConflictCallback,
         (void*) this,
-        args.GetRebase() ? &(args.GetRebase()->m_data) : nullptr, args.GetRebase() ? &(args.GetRebase()->m_size) : nullptr,
+        nullptr, nullptr,
         flags);
 
     m_args = nullptr;
@@ -857,28 +980,19 @@ DbResult ChangeSet::ConcatenateWith(ChangeSet const& second)
     return FromConcatenatedChangeStreams(saved, second);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Rebaser::Rebaser() { sqlite3rebaser_create(&m_rebaser); }
-Rebaser::~Rebaser() { sqlite3rebaser_delete(m_rebaser); }
-DbResult Rebaser::AddRebase(Rebase const& rebase) { return (DbResult)sqlite3rebaser_configure(m_rebaser, rebase.GetSize(), rebase.GetData()); }
-DbResult Rebaser::AddRebase(void const* data, int count) { return (DbResult)sqlite3rebaser_configure(m_rebaser, count, data); }
-DbResult Rebaser::DoRebase(ChangeStream const& in, ChangeStream& out) {
-    auto reader = in._GetReader();
-    return (DbResult)sqlite3rebaser_rebase_strm(m_rebaser, Changes::Reader::ReadCallback, reader.get(), out.AppendCallback, &out);
-}
-Rebase::~Rebase() {
-    if (m_data) BeSQLiteLib::FreeMem(m_data);
-}
-
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ApplyChangesArgs::ConflictCallback(void* pCtx, int cause, SqlChangesetIterP iter) {
     const auto changeStream = (ChangeStream*)pCtx;
-    if (changeStream->m_args && changeStream->m_args->HasConflictHandler()){
-        return (int)(((ChangeStream*)pCtx)->m_args)->OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
+    auto thisArgs = changeStream->m_args;
+    if (thisArgs) {
+        if (thisArgs->m_abortOnAnyConflict) {
+            return (int)ChangeStream::ConflictResolution::Abort;
+        }
+        if (thisArgs->HasConflictHandler()){
+            return (int)(((ChangeStream*)pCtx)->m_args)->OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
+        }
     }
     return (int)changeStream->_OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
 }

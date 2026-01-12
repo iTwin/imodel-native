@@ -75,7 +75,7 @@ $(BuildContext)Delivery/libxml2-license.txt : $(baseDir)Copyright
 %endif
 
 # Prefer to disable warnings in third-party code vs. editing it.
-%if ("APPLE_CLANG" == $(BUILD_TOOLSET))
+%if "APPLE_CLANG" == $(BUILD_TOOLSET) || "LINUX_CLANG" == $(BUILD_TOOLSET)
     OldLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
     LLVMCommonCompOpts + -Wno-error=implicit-function-declaration
 %endif
@@ -131,11 +131,7 @@ $(o)HTMLparser$(oext)       : $(baseDir)HTMLparser.c ${BeLibxmlCompileDepends}
 
 $(o)HTMLtree$(oext)         : $(baseDir)HTMLtree.c ${BeLibxmlCompileDepends}
 
-$(o)legacy$(oext)           : $(baseDir)legacy.c ${BeLibxmlCompileDepends}
-
 $(o)list$(oext)             : $(baseDir)list.c ${BeLibxmlCompileDepends}
-
-$(o)nanoftp$(oext)          : $(baseDir)nanoftp.c ${BeLibxmlCompileDepends}
 
 $(o)nanohttp$(oext)         : $(baseDir)nanohttp.c ${BeLibxmlCompileDepends}
 
@@ -146,8 +142,6 @@ $(o)parserInternals$(oext)  : $(baseDir)parserInternals.c ${BeLibxmlCompileDepen
 $(o)pattern$(oext)          : $(baseDir)pattern.c ${BeLibxmlCompileDepends}
 
 $(o)relaxng$(oext)          : $(baseDir)relaxng.c ${BeLibxmlCompileDepends}
-
-$(o)SAX$(oext)              : $(baseDir)SAX.c ${BeLibxmlCompileDepends}
 
 $(o)SAX2$(oext)             : $(baseDir)SAX2.c ${BeLibxmlCompileDepends}
 
@@ -217,7 +211,6 @@ $(o)xzlib$(oext)            : $(baseDir)xzlib.c ${BeLibxmlCompileDepends}
     testRelax.c
     testSAX.c
     testSchemas.c
-    testThreads.c
     testURI.c
     testXPath.c
     xmllint.c
@@ -251,7 +244,7 @@ DLM_NOENTRY = 1
 DLM_NO_BENTLEY_LIB = 1
 
 %if $(TARGET_PLATFORM) == "Windows"
-    LINKER_LIBRARIES = ws2_32.lib
+    LINKER_LIBRARIES = ws2_32.lib bcrypt.lib
 %endif
 
 LINKER_LIBRARIES + $(BuildContext)SubParts/Libs/$(shlibprefix)$(dllPrefix)Icu4c$(libext)

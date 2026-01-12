@@ -585,6 +585,9 @@
 /* Define to 1 if you have RECVFROM. CARES */
 #define HAVE_RECVFROM 1
 
+/* Define to the type of arg 3 for recvfrom. */
+#define RECVFROM_TYPE_ARG3 size_t
+
 /* Define to 1 if you have struct sockaddr_in6. CARES */
 #define HAVE_STRUCT_SOCKADDR_IN6 1
 
@@ -822,7 +825,7 @@
 /* #undef NTLM_WB_FILE */
 
 /* cpu-machine-OS */
-#define OS "x86_64-unknown-linux-gnu"
+#define CURL_OS "x86_64-unknown-linux-gnu"
 
 /* Name of package */
 #define PACKAGE "curl"

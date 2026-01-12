@@ -837,7 +837,7 @@
 #define NTLM_WB_FILE "/usr/bin/ntlm_auth"
 
 /* cpu-machine-OS */
-#define OS "aarch64-apple-darwin"
+#define CURL_OS "aarch64-apple-darwin"
 
 /* Name of package */
 #define PACKAGE "curl"
@@ -1007,7 +1007,7 @@
 /* #undef USE_OPENLDAP */
 
 /* if OpenSSL is in use */
-/* #undef USE_OPENSSL */
+#define USE_OPENSSL 1
 
 /* if quiche is in use */
 /* #undef USE_QUICHE */
@@ -1017,9 +1017,6 @@
 
 /* to enable Windows native SSL/TLS support */
 /* #undef USE_SCHANNEL */
-
-/* enable Secure Transport */
-#define USE_SECTRANSP 1
 
 /* if you want POSIX threaded DNS lookup */
 #define USE_THREADS_POSIX 1

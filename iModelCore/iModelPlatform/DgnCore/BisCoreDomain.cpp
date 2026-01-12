@@ -16,6 +16,7 @@ TABLEHANDLER_DEFINE_MEMBERS(Geometric3d)
 TABLEHANDLER_DEFINE_MEMBERS(Geometric2d)
 TABLEHANDLER_DEFINE_MEMBERS(Model)
 TABLEHANDLER_DEFINE_MEMBERS(ElementDep)
+TABLEHANDLER_DEFINE_MEMBERS(DefinitionElement)
 };
 
 namespace dgn_ModelHandler
@@ -224,6 +225,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterTableHandler(dgn_TableHandler::Geometric2d::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());
     RegisterTableHandler(dgn_TableHandler::ElementDep::GetHandler());
+    RegisterTableHandler(dgn_TableHandler::DefinitionElement::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------

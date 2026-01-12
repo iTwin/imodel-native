@@ -39,6 +39,9 @@ Unfortunately it seems some perls like msysgit cannot handle a global input-only
 =end comment
 =cut
 
+use strict;
+use warnings;
+
 my %optshort;
 my %optlong;
 my %helplong;
@@ -49,7 +52,7 @@ my %catlong;
 
 use POSIX qw(strftime);
 my @ts;
-if (defined($ENV{SOURCE_DATE_EPOCH})) {
+if(defined($ENV{SOURCE_DATE_EPOCH})) {
     @ts = gmtime($ENV{SOURCE_DATE_EPOCH});
 } else {
     @ts = localtime;
@@ -58,14 +61,14 @@ my $date = strftime "%Y-%m-%d", @ts;
 my $year = strftime "%Y", @ts;
 my $version = "unknown";
 my $globals;
-
+my $error = 0;
 my $indent = 4;
 
 # get the long name version, return the manpage string
 sub manpageify {
     my ($k)=@_;
     my $l;
-    my $trail;
+    my $trail = '';
     # the matching pattern might include a trailing dot that cannot be part of
     # the option name
     if($k =~ s/\.$//) {
@@ -127,7 +130,10 @@ sub justline {
 
 sub lastline {
     my ($lvl, @line) = @_;
-    prefixline($lvl * $indent);
+    my $l = 0;
+    $line[0] =~ s/^( +)//;
+    $l = length($1) if($1);
+    prefixline($lvl * $indent + $l);
     my $prev = 0;
     for(@line) {
         printf "%s%s", $prev?" ":"", $_;
@@ -173,9 +179,11 @@ sub printdesc {
     }
     else {
         my $p = -1;
-        my $para;
+        my $pnum;
+        my $para = '';
         for my $l (@desc) {
-            my $lvl;
+            my $lvl = 0;
+            my $lvlnum;
             if($l !~ /^[\n\r]+/) {
                 # get the indent level off the string
                 $l =~ s/^\[([0-9q]*)\]//;
@@ -185,14 +193,24 @@ sub printdesc {
                 # the previous was quoted, this is not
                 print "\n";
             }
-            if($lvl != $p) {
-                outputpara($baselvl + $p, $para);
+            if($lvl ne $p) {
+                $pnum = $p;
+                $pnum =~ s/q$//;
+                outputpara($baselvl + $pnum, $para);
                 $para = "";
             }
             if($lvl =~ /q/) {
                 # quoted, do not right-justify
                 chomp $l;
-                lastline($baselvl + $lvl + 1, $l);
+                $lvlnum = $lvl;
+                $lvlnum =~ s/q$//;
+                lastline($baselvl + $lvlnum + 1, $l);
+                my $w = ($baselvl + $lvlnum + 1) * $indent + length($l);
+                if($w > $colwidth) {
+                    print STDERR "ERROR: $w columns is too long\n";
+                    print STDERR "$l\n";
+                    $error++;
+                }
             }
             else {
                 $para .= $l;
@@ -200,7 +218,9 @@ sub printdesc {
 
             $p = $lvl;
         }
-        outputpara($baselvl + $p, $para);
+        $pnum = $p;
+        $pnum =~ s/q$//;
+        outputpara($baselvl + $pnum, $para);
     }
 }
 
@@ -274,10 +294,11 @@ sub render {
     my $header = 0;
     # if $top is TRUE, it means a top-level page and not a command line option
     my $top = ($line == 1);
-    my $quote;
-    my $level;
+    my $quote = 0;
+    my $level = 0;
     my $finalblank;
-    $start = 0;
+    my $blankline = 0;
+    my $start = 0;
 
     while(<$fh>) {
         my $d = $_;
@@ -295,7 +316,46 @@ sub render {
             # skip leading blank lines
             next;
         }
+
         $start = 1;
+
+        if(/^[ \t]*\n/) {
+            # count and ignore blank lines
+            $blankline++;
+            next;
+        }
+        elsif($d =~ /^    (.*)/) {
+            my $word = $1;
+            if(!$quote && $manpage) {
+                push @desc, "\n" if($blankline);
+                push @desc, ".nf\n";
+                $blankline = 0;
+            }
+            $quote = 1;
+            $d = "$word\n";
+        }
+        elsif($d =~ /^(```|~~~)/) {
+            if(!$quote) {
+                if($manpage) {
+                    push @desc, "\n" if($blankline);
+                    push @desc, ".nf\n";
+                    $blankline = 0;
+                }
+                $quote = 2;
+            }
+            else {
+                # end of quote
+                push @desc, ".fi\n" if($manpage);
+                $quote = 0;
+            }
+            next;
+        }
+        elsif($quote == 1) {
+            # end of quote
+            push @desc, ".fi\n" if($manpage);
+            $quote = 0;
+        }
+
         if(/^# (.*)/) {
             $header = 1;
             if($top != 1) {
@@ -313,11 +373,18 @@ sub render {
         }
         elsif(/^## (.*)/) {
             my $word = $1;
+            my $nontick = $word;
             # if there are enclosing quotes, remove them first
             $word =~ s/[\"\'](.*)[\"\']\z/$1/;
 
             # remove backticks from headers
             $word =~ s/\`//g;
+
+            # remove backticked sections
+            $nontick =~ s/\`[^\`]*\`//g;
+            if($nontick =~ /[^\\][\<\>]/) {
+                print STDERR "$f:$line:1:WARN: un-escaped < or > used: $nontick\n";
+            }
 
             # if there is a space, it needs quotes for manpage
             if(($word =~ / /) && $manpage) {
@@ -349,7 +416,9 @@ sub render {
             if($tablemode) {
                 # end of table
                 push @desc, ".RE\n.IP\n" if($manpage);
+                push @desc, "\n" if(!$manpage);
                 $tablemode = 0;
+                $level = 0;
             }
             $header = 1;
             next;
@@ -359,28 +428,27 @@ sub render {
             print STDERR "$f:$line:1:ERROR: $cmd detected, use ##-style\n";
             return 3;
         }
-        elsif(/^[ \t]*\n/) {
-            # count and ignore blank lines
-            $blankline++;
-            next;
-        }
-        elsif($d =~ /^    (.*)/) {
-            my $word = $1;
-            if(!$quote && $manpage) {
-                push @desc, ".nf\n";
-            }
-            $quote = 1;
-            $d = "$word\n";
-        }
-        elsif($quote && ($d !~ /^    (.*)/)) {
-            # end of quote
-            push @desc, ".fi\n" if($manpage);
-            $quote = 0;
-        }
 
         $d =~ s/`%DATE`/$date/g;
         $d =~ s/`%VERSION`/$version/g;
         $d =~ s/`%GLOBALS`/$globals/g;
+
+        if(!$quote) {
+            if($d =~ /^(.*)  /) {
+                printf STDERR "$f:$line:%d:ERROR: 2 spaces detected\n",
+                    length($1);
+                return 3;
+            }
+            my $back = $d;
+
+            # remove all backticked pieces
+            $back =~ s/\`(.*?)\`//g;
+
+            if($back =~ /[^\\][\<\>]/) {
+                print STDERR "$f:$line:1:WARN: un-escaped < or > used: $back\n";
+                return 3;
+            }
+        }
 
         # convert backticks to double quotes
         $d =~ s/\`/\"/g;
@@ -401,17 +469,6 @@ sub render {
             }
         }
 
-        if(!$quote) {
-            if($d =~ /^(.*)  /) {
-                printf STDERR "$f:$line:%d:ERROR: 2 spaces detected\n",
-                    length($1);
-                return 3;
-            }
-            elsif($d =~ /[^\\][\<\>]/) {
-                print STDERR "$f:$line:1:WARN: un-escaped < or > used\n";
-                return 3;
-            }
-        }
         # convert backslash-'<' or '> to just the second character
         $d =~ s/\\([><])/$1/g;
         # convert single backslash to double-backslash
@@ -463,6 +520,20 @@ sub render {
         push @desc, ".RE\n.IP\n" if($manpage);
     }
     return @desc;
+}
+
+sub maybespace {
+    my ($string) = @_;
+
+    if(($string =~ /(.* )(.*)/) &&
+       (length($2) <= 20)) {
+        return $1;
+    }
+    if(($string =~ /(.*:)(.*)/) &&
+       (length($2) <= 20)) {
+        return $1;
+    }
+    return $string;
 }
 
 sub single {
@@ -527,7 +598,7 @@ sub single {
             $protocols=$1;
         }
         elsif(/^See-also: +(.+)/i) {
-            if($seealso) {
+            if(@seealso) {
                 print STDERR "ERROR: duplicated See-also in $f\n";
                 return 1;
             }
@@ -618,10 +689,6 @@ sub single {
 
     my @desc = render($manpage, $fh, $f, $line);
     close($fh);
-    if($tablemode) {
-        # end of table
-        push @desc, ".RE\n.IP\n";
-    }
     my $opt;
 
     if(defined($short) && $long) {
@@ -754,7 +821,7 @@ sub single {
         my @m=split(/ /, $mutexed);
         my $mstr;
         my $num = scalar(@m);
-        my $count;
+        my $count = 0;
         for my $k (@m) {
             if(!$helplong{$k}) {
                 print STDERR "WARN: $f mutexes a non-existing option: $k\n";
@@ -778,18 +845,46 @@ sub single {
             print ".nf\n";
             foreach my $e (@examples) {
                 $e =~ s!\$URL!https://example.com!g;
-                # convert single backslahes to doubles
+                # convert single backslashes to doubles
                 $e =~ s/\\/\\\\/g;
-                print " curl $e\n";
+                print "curl $e\n";
             }
             print ".fi\n";
         }
         else {
             my @ex;
             push @ex, "[0q]Example$s:\n";
+            #
+            # long ASCII examples are wrapped. Preferably at the last space
+            # before the margin. Or at a colon. Otherwise it just cuts at the
+            # exact boundary.
+            #
             foreach my $e (@examples) {
                 $e =~ s!\$URL!https://example.com!g;
-                push @ex, "[0q] curl $e\n";
+                my $maxwidth = 60; # plus the "    curl " 18 col prefix
+                if(length($e) > $maxwidth) {
+                    # a long example, shorten it
+                    my $p = substr($e, 0, $maxwidth);
+                    $p = maybespace($p);
+                    push @ex, "[0q] curl ".$p."\\";
+                    $e = substr($e, length($p));
+                    do {
+                        my $r = substr($e, 0, $maxwidth);
+                        if(length($e) > $maxwidth) {
+                            $r = maybespace($r);
+                        }
+                        my $slash ="";
+                        $e = substr($e, length($r));
+                        if(length($e) > 0) {
+                            $slash = "\\";
+                        }
+
+                        push @ex, "[0q]      $r$slash" if($r);
+                    } while(length($e));
+                }
+                else {
+                    push @ex, "[0q] curl $e\n";
+                }
             }
             printdesc($manpage, 2, @ex);
         }
@@ -800,13 +895,13 @@ sub single {
     push @foot, seealso($standalone, $mstr);
 
     print "\n";
-    my $f = join("", @foot);
+    my $ft = join("", @foot);
     if($manpage) {
-        $f =~ s/ +\z//; # remove trailing space
-        print "$f\n";
+        $ft =~ s/ +\z//; # remove trailing space
+        print "$ft\n";
     }
     else {
-        printdesc($manpage, 2, "[1]$f");
+        printdesc($manpage, 2, "[1]$ft");
     }
     return 0;
 }
@@ -874,8 +969,8 @@ sub getshortlong {
 
 sub indexoptions {
     my ($dir, @files) = @_;
-    foreach my $f (@files) {
-        getshortlong($dir, $f);
+    foreach my $file (@files) {
+        getshortlong($dir, $file);
     }
 }
 
@@ -1046,7 +1141,6 @@ sub listglobals {
         }
         close(F);
     }
-    return $ret if($ret);
     for my $e (0 .. $#globalopts) {
         $globals .= sprintf "%s--%s",  $e?($globalopts[$e+1] ? ", " : " and "):"",
             $globalopts[$e],;
@@ -1100,7 +1194,7 @@ sub mainpage {
 .\\"
 .TH curl 1 "$date" "curl $version" "curl Manual"
 HEADER
-        if ($manpage);
+        if($manpage);
 
     while(<$fh>) {
         my $f = $_;
@@ -1125,8 +1219,8 @@ HEADER
 }
 
 sub showonly {
-    my ($f) = @_;
-    if(single($f, 1)) {
+    my ($dir, $f) = @_;
+    if(single($dir, 1, $f, 1)) {
         print STDERR "$f: failed\n";
     }
 }
@@ -1161,7 +1255,7 @@ sub getargs {
         return;
     }
     elsif($f eq "single") {
-        showonly($s[0]);
+        showonly($dir, $s[0]);
         return;
     }
     elsif($f eq "protos") {
@@ -1181,7 +1275,7 @@ sub getargs {
 
 my $dir = ".";
 my $include = "../../include";
-my $cmd = shift @ARGV;
+my $cmd = shift @ARGV || '';
 
  check:
 if($cmd eq "-d") {
@@ -1205,16 +1299,24 @@ elsif($cmd eq "-c") {
 
 my @files = @ARGV; # the rest are the files
 
-open(INC, "<$include/curl/curlver.h");
-while(<INC>) {
-    if($_ =~ /^#define LIBCURL_VERSION \"([0-9.]*)/) {
-        $version = $1;
-        last;
-    }
+# can be overridden for releases
+if($ENV{'CURL_MAKETGZ_VERSION'}) {
+    $version = $ENV{'CURL_MAKETGZ_VERSION'};
 }
-close(INC);
+else {
+    open(INC, "<$include/curl/curlver.h");
+    while(<INC>) {
+        if($_ =~ /^#define LIBCURL_VERSION \"([0-9.]*)/) {
+            $version = $1;
+            last;
+        }
+    }
+    close(INC);
+}
 
 # learn all existing options
 indexoptions($dir, @files);
 
 getargs($dir, $cmd, @files);
+
+exit $error;

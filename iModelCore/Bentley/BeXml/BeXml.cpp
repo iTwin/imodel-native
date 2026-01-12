@@ -192,7 +192,7 @@ static int getDefaultXmlParseOptions ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void XMLCDECL beXmlErrorFunction (void* userArg, xmlErrorPtr xmlParseError)
+void XMLCDECL beXmlErrorFunction (void* userArg, const xmlError *xmlParseError)
     {
     BeXmlDomP   beXmlDom = (BeXmlDomP) userArg;
 
@@ -207,7 +207,7 @@ void XMLCDECL beXmlErrorFunction (void* userArg, xmlErrorPtr xmlParseError)
         {
         xmlParserCtxtPtr parserContext;
         if (NULL != (parserContext = (xmlParserCtxtPtr) xmlParseError->ctxt))
-            parserContext->recovery = 1;
+          xmlCtxtSetOptions(parserContext, XML_PARSE_RECOVER);
         }
 
     if (XML_ERR_WARNING == xmlParseError->level)
@@ -358,8 +358,8 @@ BeXmlDomPtr BeXmlDom::CreateAndReadFromString (BeXmlStatus& xmlStatus, CharCP so
     if (0 == characterCount)
         characterCount = strlen (source);
 
-    // when passing bufferSize to xmlReadMemory, include the trailing 0.
-    wrapper->m_doc = xmlReadMemory (source, (int)(characterCount + 1), NULL, encoding, getDefaultXmlParseOptions ());
+    // when passing bufferSize to xmlReadMemory, do not include the trailing 0.
+    wrapper->m_doc = xmlReadMemory (source, (int)(characterCount), NULL, encoding, getDefaultXmlParseOptions ());
     if (NULL == wrapper->m_doc)
         {
         // Can we tell more than this?
@@ -420,15 +420,16 @@ BeXmlDomPtr BeXmlDom::CreateAndReadFromString (BeXmlStatus& xmlStatus, Utf16CP s
         characterCount = BeStringUtilities::Utf16Len(source);
 
     // this is here because the semantics of this method was changed from taking "bufferSize" to "characterCount", and I want to make sure all the old callers get an Assert.
-    // It's ok if characterCount includes the zero terminator.
+    // It's ok if characterCount includes the zero terminator although the call to xmlReadMemory must not.
 #if defined (_WIN32)
     // This uses wcslen, which is invalid on UTF-16 strings on non-Win32.
     BeAssert (charCountCloseEnough (characterCount, (WCharCP) source));
 #endif
 
-    size_t numCharsToCopy = ((0 == characterCount) || (source[characterCount - 1])) ? characterCount + 1 : characterCount; // TFS 15586
+    // Subtract if characterCount includes the null terminator.
+    size_t numCharsToCopy = (0 == characterCount || source[characterCount] != '\0') ? characterCount : characterCount - 1; // TFS 15586
 
-    // when passing bufferSize to xmlReadMemory, include the null terminator, account for char size.
+    // when passing bufferSize to xmlReadMemory, do not include the null terminator, account for char size.
     wrapper->m_doc = xmlReadMemory ((CharCP)source, (int) (sizeof (Utf16Char) * numCharsToCopy), NULL, "UTF-16LE", getDefaultXmlParseOptions ());
     if (NULL == wrapper->m_doc)
         {
@@ -469,7 +470,7 @@ BeXmlDomPtr BeXmlDom::CreateAndReadFromString (BeXmlStatus& xmlStatus, WCharCP s
     // libXml no longer supports UTF-32, so convert to UTF-8.
     Utf8String utf8Source;
     BeStringUtilities::WCharToUtf8(utf8Source, source, characterCount);
-    wrapper->m_doc = xmlReadMemory ((CharCP)utf8Source.c_str(), (int) (sizeof (Utf8Char) * (utf8Source.size() + 1)), NULL, "UTF-8", getDefaultXmlParseOptions ());
+    wrapper->m_doc = xmlReadMemory ((CharCP)utf8Source.c_str(), (int) (sizeof (Utf8Char) * (utf8Source.size())), NULL, "UTF-8", getDefaultXmlParseOptions ());
 
     if (NULL == wrapper->m_doc)
         {
@@ -499,7 +500,7 @@ void    BeXmlDom::GetLastErrorString (WStringR errorString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    BeXmlDom::FormatErrorMessage (WStringP errorMsg, xmlErrorPtr xmlError)
+void    BeXmlDom::FormatErrorMessage (WStringP errorMsg, const xmlError *xmlError)
     {
     if ( (NULL == errorMsg) || (NULL == xmlError) )
         return;
@@ -754,8 +755,8 @@ void BeXmlDom::ToString (Utf16BufferR buffer, ToStringOption options) const
 
     xmlSaveClose (saveContext);
 
-    xmlChar const*  effectiveContent    = xmlBuffer->content;
-    size_t          effectiveBufferSize = xmlBuffer->use;
+    xmlChar const*  effectiveContent    = xmlBufferContent(xmlBuffer);
+    size_t          effectiveBufferSize = xmlBufferLength(xmlBuffer);
 
     // the last character in an XML string produced by libxml is always the 0x0a character, which we don't want.
     BeAssert (0x0a == effectiveContent[effectiveBufferSize-2]);
@@ -793,9 +794,9 @@ void BeXmlDom::ToString (WStringR buffer, ToStringOption options) const
 
     xmlSaveClose (saveContext);
 
-    xmlChar const*  effectiveContent    = xmlBuffer->content;
+    xmlChar const*  effectiveContent    = xmlBufferContent(xmlBuffer);
 #if defined (_WIN32)
-    size_t          effectiveBufferSize = xmlBuffer->use;
+    size_t          effectiveBufferSize = xmlBufferLength(xmlBuffer);
 
     // WString resize adds 1 for NULL terminator; account for that.
     buffer.resize (effectiveBufferSize / sizeof (WChar));
@@ -833,8 +834,8 @@ void BeXmlDom::ToString (Utf8StringR buffer, ToStringOption options) const
 
     xmlSaveClose (saveContext);
 
-    xmlChar const*  effectiveContent    = xmlBuffer->content;
-    size_t          effectiveBufferSize = xmlBuffer->use;
+    xmlChar const*  effectiveContent    = xmlBufferContent(xmlBuffer);
+    size_t          effectiveBufferSize = xmlBufferLength(xmlBuffer);
 
     // the last character in an XML string produced by libxml is always the 0x0a character, which we don't want.
     BeAssert (0x0a == effectiveContent[effectiveBufferSize-1]);
@@ -3354,8 +3355,8 @@ void BeXmlWriter::ToString (Utf8StringR buffer)
     xmlTextWriterEndDocument (m_writer);
     xmlTextWriterFlush(m_writer);
 
-    xmlChar const*  effectiveContent    = m_buffer->content;
-    size_t          effectiveBufferSize = m_buffer->use;
+    xmlChar const*  effectiveContent    = xmlBufferContent(m_buffer);
+    size_t          effectiveBufferSize = xmlBufferLength(m_buffer);
 
     buffer.resize(effectiveBufferSize / sizeof (char));
     memcpy(&buffer[0], effectiveContent, effectiveBufferSize);

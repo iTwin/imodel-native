@@ -417,6 +417,30 @@ TEST_F(DgnDbTest, IsPurgeOperationActive)
     }
     ASSERT_FALSE(db->IsPurgeOperationActive());
     }
+    
+TEST_F(DgnDbTest, CreateImodel_ShouldLogLessWarnings)
+    {
+    // Log to console
+    // NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    // NativeLogging::ConsoleLogger::GetLogger().SetSeverity("SQLite", BentleyApi::NativeLogging::LOG_TRACE);
+    
+    TestLogger testLogger;
+    LogCatcher logCatcher(testLogger);
+
+    CreateDgnDbParams params("EmptyModelTest");
+    DgnDbPtr db = DgnDb::CreateIModel(nullptr, DgnDbTestDgnManager::GetOutputFilePath(L"EmptyModelTest.bim"), params);
+    ASSERT_TRUE(db.IsValid());
+
+    int warningCount = 0;
+    for (const auto& message : testLogger.m_messages) {
+        if (message.first == NativeLogging::SEVERITY::LOG_WARNING) {
+            ++warningCount;
+        }
+    }
+    ASSERT_LT(warningCount, 50);
+    }
+
+
 
 //----------------------------------------------------------------------------------------
 // @bsiclass

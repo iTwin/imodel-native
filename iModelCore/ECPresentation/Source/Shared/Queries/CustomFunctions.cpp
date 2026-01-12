@@ -180,6 +180,20 @@ protected:
         }
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String GetFormattedPropertyValue(PrimitiveECPropertyCR property, DbValue const& sqlValue, IECPropertyFormatter const* formatter, ECPresentation::UnitSystem unitSystem)
+    {
+    if (sqlValue.IsNull())
+        return "";
+    ECValue value = ValueHelpers::GetECValueFromSqlValue(property.GetType(), property.GetExtendedTypeName(), sqlValue);
+    Utf8String formattedValue;
+    if (nullptr != formatter && SUCCESS == formatter->GetFormattedPropertyValue(formattedValue, property, value, unitSystem))
+        return formattedValue;
+    return value.ToString();
+    }
+
 /*=================================================================================**//**
 * Parameters:
 * - ECClassId
@@ -228,10 +242,19 @@ public:
                     if (nullptr == ecClass)
                         HANDLE_CUSTOM_FUNCTION_FAILURE_RETURN(Utf8PrintfString("Invalid ECClassId: %" PRIu64, classId.GetValue()));
 
+                    ECPropertyCP instanceLabelProperty = ecClass->GetInstanceLabelProperty();
                     // if the override didn't apply, look for instance label property
-                    if (nullptr != ecClass->GetInstanceLabelProperty())
+                    if (nullptr != instanceLabelProperty)
                         {
-                        labelDefinition->SetECPropertyValue(*ecClass->GetInstanceLabelProperty(), args[2], args[2].GetValueText());
+                        if (instanceLabelProperty->GetIsPrimitive())
+                            {
+                            labelDefinition->SetECPropertyValue(*instanceLabelProperty, args[2], GetFormattedPropertyValue(*instanceLabelProperty->GetAsPrimitiveProperty(), args[2],
+                                GetContext().GetPropertyFormatter(), GetContext().GetUnitSystem()).c_str());
+                            }
+                        else
+                            {
+                            labelDefinition->SetECPropertyValue(*instanceLabelProperty, args[2], args[2].GetValueText());
+                            }
                         }
                     }
                 }
@@ -468,12 +491,15 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
                 ctx.SetResultError(Utf8PrintfString("Could not get ECValue from evaluated ECExpression: %s", expression).c_str());
                 return;
                 }
-            if (!value.IsPrimitive())
+            if (value.IsUninitialized())
+                {
+                value.SetIsNull(true);
+                }
+            if (!value.IsPrimitive() && !value.IsNull())
                 {  
                 ctx.SetResultError("Calculated property evaluated to a type that is not primitive");
                 return;
                 }
-
             if (!value.ConvertToPrimitiveType(requestedTypePrimitive))
                 {
                 ctx.SetResultError("Calculated property evaluated to a type that couldn't be converted to requested type");
@@ -487,6 +513,12 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
                 }
 
             iter = GetCache().Insert(key, std::make_shared<ECValue>(value)).first;
+            }
+
+        if (iter->second->IsNull())
+            {
+            ctx.SetResultNull();
+            return;
             }
 
         switch (requestedTypePrimitive)
@@ -519,20 +551,6 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
             }
         }
    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String GetFormattedPropertyValue(PrimitiveECPropertyCR property, DbValue const& sqlValue, IECPropertyFormatter const* formatter, ECPresentation::UnitSystem unitSystem)
-    {
-    if (sqlValue.IsNull())
-        return "";
-    ECValue value = ValueHelpers::GetECValueFromSqlValue(property.GetType(), property.GetExtendedTypeName(), sqlValue);
-    Utf8String formattedValue;
-    if (nullptr != formatter && SUCCESS == formatter->GetFormattedPropertyValue(formattedValue, property, value, unitSystem))
-        return formattedValue;
-    return value.ToString();
-    }
 
 /*=================================================================================**//**
 * @bsiclass

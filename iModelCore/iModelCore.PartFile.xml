@@ -47,6 +47,7 @@
         <SubPart PartName="iModelCore"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="PSBRepGeometry" PartFile="iModelCore/PSBRepGeometry/PSBRepGeometry" Repository="imodel-native-internal"/>
+        <SubPart PartName="VisualizationDll" PartFile="iModelCore/Visualization/Visualization" Repository="imodel-native-internal"/>
     </UPackProduct>
 
     <ProductDirectoryList ListName="iModelCoreNugetDirs">
@@ -153,7 +154,7 @@
     </Part>
 
     <Part Name="IModelNativeConsole" OnlyPlatforms="x64">
-        <SubProduct ProductName="iModelConsole" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
+        <SubNuGetProduct NuGetProductName="iModelConsoleNuGet" PartFile="iModelCore/iModelPlatform/iModelPlatform" />
     </Part>
 
     <Part Name="iModelNativeImport">

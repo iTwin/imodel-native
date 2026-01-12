@@ -26,9 +26,9 @@
 
 #include "urldata.h"
 #include "strdup.h"
-#include "strcase.h"
 #include "sendf.h"
 #include "headers.h"
+#include "curlx/strparse.h"
 
 /* The last 3 #include files should be in this order */
 #include "curl_printf.h"
@@ -42,7 +42,7 @@
 static void copy_header_external(struct Curl_header_store *hs,
                                  size_t index,
                                  size_t amount,
-                                 struct Curl_llist_element *e,
+                                 struct Curl_llist_node *e,
                                  struct curl_header *hout)
 {
   struct curl_header *h = hout;
@@ -54,7 +54,7 @@ static void copy_header_external(struct Curl_header_store *hs,
      impossible for applications to do == comparisons, as that would otherwise
      be very tempting and then lead to the reserved bits not being reserved
      anymore. */
-  h->origin = (unsigned int)(hs->type | (1<<27));
+  h->origin = (unsigned int)(hs->type | (1 << 27));
   h->anchor = e;
 }
 
@@ -66,8 +66,8 @@ CURLHcode curl_easy_header(CURL *easy,
                            int request,
                            struct curl_header **hout)
 {
-  struct Curl_llist_element *e;
-  struct Curl_llist_element *e_pick = NULL;
+  struct Curl_llist_node *e;
+  struct Curl_llist_node *e_pick = NULL;
   struct Curl_easy *data = easy;
   size_t match = 0;
   size_t amount = 0;
@@ -85,9 +85,9 @@ CURLHcode curl_easy_header(CURL *easy,
     request = data->state.requests;
 
   /* we need a first round to count amount of this header */
-  for(e = data->state.httphdrs.head; e; e = e->next) {
-    hs = e->ptr;
-    if(strcasecompare(hs->name, name) &&
+  for(e = Curl_llist_head(&data->state.httphdrs); e; e = Curl_node_next(e)) {
+    hs = Curl_node_elem(e);
+    if(curl_strequal(hs->name, name) &&
        (hs->type & type) &&
        (hs->request == request)) {
       amount++;
@@ -104,9 +104,9 @@ CURLHcode curl_easy_header(CURL *easy,
     /* if the last or only occurrence is what's asked for, then we know it */
     hs = pick;
   else {
-    for(e = data->state.httphdrs.head; e; e = e->next) {
-      hs = e->ptr;
-      if(strcasecompare(hs->name, name) &&
+    for(e = Curl_llist_head(&data->state.httphdrs); e; e = Curl_node_next(e)) {
+      hs = Curl_node_elem(e);
+      if(curl_strequal(hs->name, name) &&
          (hs->type & type) &&
          (hs->request == request) &&
          (match++ == nameindex)) {
@@ -131,8 +131,8 @@ struct curl_header *curl_easy_nextheader(CURL *easy,
                                          struct curl_header *prev)
 {
   struct Curl_easy *data = easy;
-  struct Curl_llist_element *pick;
-  struct Curl_llist_element *e;
+  struct Curl_llist_node *pick;
+  struct Curl_llist_node *e;
   struct Curl_header_store *hs;
   size_t amount = 0;
   size_t index = 0;
@@ -147,18 +147,18 @@ struct curl_header *curl_easy_nextheader(CURL *easy,
     if(!pick)
       /* something is wrong */
       return NULL;
-    pick = pick->next;
+    pick = Curl_node_next(pick);
   }
   else
-    pick = data->state.httphdrs.head;
+    pick = Curl_llist_head(&data->state.httphdrs);
 
   if(pick) {
     /* make sure it is the next header of the desired type */
     do {
-      hs = pick->ptr;
+      hs = Curl_node_elem(pick);
       if((hs->type & type) && (hs->request == request))
         break;
-      pick = pick->next;
+      pick = Curl_node_next(pick);
     } while(pick);
   }
 
@@ -166,13 +166,13 @@ struct curl_header *curl_easy_nextheader(CURL *easy,
     /* no more headers available */
     return NULL;
 
-  hs = pick->ptr;
+  hs = Curl_node_elem(pick);
 
   /* count number of occurrences of this name within the mask and figure out
      the index for the currently selected entry */
-  for(e = data->state.httphdrs.head; e; e = e->next) {
-    struct Curl_header_store *check = e->ptr;
-    if(strcasecompare(hs->name, check->name) &&
+  for(e = Curl_llist_head(&data->state.httphdrs); e; e = Curl_node_next(e)) {
+    struct Curl_header_store *check = Curl_node_elem(e);
+    if(curl_strequal(hs->name, check->name) &&
        (check->request == request) &&
        (check->type & type))
       amount++;
@@ -208,15 +208,15 @@ static CURLcode namevalue(char *header, size_t hlen, unsigned int type,
   else
     return CURLE_BAD_FUNCTION_ARGUMENT;
 
-  /* skip all leading space letters */
-  while(*header && ISBLANK(*header))
+  /* skip all leading blank letters */
+  while(ISBLANK(*header))
     header++;
 
   *value = header;
 
   /* skip all trailing space letters */
-  while((end > header) && ISSPACE(*end))
-    *end-- = 0; /* nul terminate */
+  while((end > header) && ISBLANK(*end))
+    *end-- = 0; /* null-terminate */
   return CURLE_OK;
 }
 
@@ -235,7 +235,7 @@ static CURLcode unfold_value(struct Curl_easy *data, const char *value,
   oalloc = olen + offset + 1;
 
   /* skip all trailing space letters */
-  while(vlen && ISSPACE(value[vlen - 1]))
+  while(vlen && ISBLANK(value[vlen - 1]))
     vlen--;
 
   /* save only one leading space */
@@ -247,7 +247,7 @@ static CURLcode unfold_value(struct Curl_easy *data, const char *value,
   /* since this header block might move in the realloc below, it needs to
      first be unlinked from the list and then re-added again after the
      realloc */
-  Curl_llist_remove(&data->state.httphdrs, &hs->node, NULL);
+  Curl_node_remove(&hs->node);
 
   /* new size = struct + new value length + old name+value length */
   newhs = Curl_saferealloc(hs, sizeof(*hs) + vlen + oalloc + 1);
@@ -312,12 +312,17 @@ CURLcode Curl_headers_push(struct Curl_easy *data, const char *header,
         return CURLE_WEIRD_SERVER_REPLY;
     }
   }
+  if(Curl_llist_count(&data->state.httphdrs) >= MAX_HTTP_RESP_HEADER_COUNT) {
+    failf(data, "Too many response headers, %d is max",
+          MAX_HTTP_RESP_HEADER_COUNT);
+    return CURLE_TOO_LARGE;
+  }
 
   hs = calloc(1, sizeof(*hs) + hlen);
   if(!hs)
     return CURLE_OUT_OF_MEMORY;
   memcpy(hs->buffer, header, hlen);
-  hs->buffer[hlen] = 0; /* nul terminate */
+  hs->buffer[hlen] = 0; /* null-terminate */
 
   result = namevalue(hs->buffer, hlen, type, &name, &value);
   if(!result) {
@@ -330,8 +335,10 @@ CURLcode Curl_headers_push(struct Curl_easy *data, const char *header,
     Curl_llist_append(&data->state.httphdrs, hs, &hs->node);
     data->state.prevhead = hs;
   }
-  else
+  else {
+    failf(data, "Invalid response header");
     free(hs);
+  }
   return result;
 }
 
@@ -405,12 +412,12 @@ CURLcode Curl_headers_init(struct Curl_easy *data)
  */
 CURLcode Curl_headers_cleanup(struct Curl_easy *data)
 {
-  struct Curl_llist_element *e;
-  struct Curl_llist_element *n;
+  struct Curl_llist_node *e;
+  struct Curl_llist_node *n;
 
-  for(e = data->state.httphdrs.head; e; e = n) {
-    struct Curl_header_store *hs = e->ptr;
-    n = e->next;
+  for(e = Curl_llist_head(&data->state.httphdrs); e; e = n) {
+    struct Curl_header_store *hs = Curl_node_elem(e);
+    n = Curl_node_next(e);
     free(hs);
   }
   headers_reset(data);

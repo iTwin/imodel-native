@@ -27,11 +27,11 @@
 /* =================================================================== */
 /*                Hand crafted config file for Mac OS 9                */
 /* =================================================================== */
-/*  On Mac OS X you must run configure to generate curl_config.h file  */
+/*   On macOS you must run configure to generate curl_config.h file    */
 /* =================================================================== */
 
-#ifndef OS
-#define OS "mac"
+#ifndef CURL_OS
+#define CURL_OS "mac"
 #endif
 
 #include <ConditionalMacros.h>
@@ -64,10 +64,6 @@
 #define HAVE_STRUCT_TIMEVAL     1
 
 #define HAVE_SIGACTION          1
-
-#ifdef MACOS_SSL_SUPPORT
-#  define USE_OPENSSL           1
-#endif
 
 #define CURL_DISABLE_LDAP       1
 
@@ -103,6 +99,9 @@
 /* Define if you have inet_ntop. */
 #define HAVE_INET_NTOP 1
 
+/* Define to enable OpenSSL support */
+#define USE_OPENSSL             1
+
 /* Define to enable c-ares support */
 #define USE_ARES 1
 
@@ -129,5 +128,8 @@
 
 /* Define if you have recvfrom. CARES */
 #define HAVE_RECVFROM 1
+
+/* Define to the type of arg 3 for recvfrom. */
+#define RECVFROM_TYPE_ARG3 size_t
 
 #endif /* HEADER_CURL_CONFIG_MAC_H */

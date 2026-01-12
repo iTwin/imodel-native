@@ -274,13 +274,7 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
 // @bsimethod
 //--------------------------------------------------------------------------------------
 DgnDb::PullResult DgnDb::PullSchemaChanges(SyncDbUri uri) {
-    auto rc = Schemas().GetSchemaSync().Pull(uri, GetSchemaImportToken());
-    if (rc == PullResult::OK) {
-        if (Schemas().GetSchemaSync().GetModifiedRowCount()>0) {
-            this->Txns().SetHasEcSchemaChanges(true);
-        }
-    }
-    return rc;
+    return Schemas().GetSchemaSync().Pull(uri, GetSchemaImportToken());
 }
 
 //--------------------------------------------------------------------------------------
@@ -440,6 +434,8 @@ DbResult DgnDb::InitializeElementIdSequence()
 //--------------------------------------------------------------------------------------
 DbResult DgnDb::ResetElementIdSequence(BeBriefcaseId briefcaseId)
     {
+    const auto currentId = m_elementIdSequence.GetCurrentValue<BeBriefcaseBasedId>();
+
     BeBriefcaseBasedId firstId(briefcaseId, 0);
     BeBriefcaseBasedId lastId(briefcaseId.GetNextBriefcaseId(), 0);
 
@@ -450,6 +446,9 @@ DbResult DgnDb::ResetElementIdSequence(BeBriefcaseId briefcaseId)
     stmt.Step();
 
     uint64_t minimumId = stmt.IsColumnNull(0) ? firstId.GetValueUnchecked() : stmt.GetValueInt64(0);
+    if (currentId.IsValid() && currentId.GetBriefcaseId() == briefcaseId) {
+        minimumId = std::max(currentId.GetValueUnchecked(), minimumId);
+    }
 
     return m_elementIdSequence.Reset(minimumId);
     }
@@ -615,6 +614,41 @@ DbResult DgnDb::DeleteLinkTableRelationships(Utf8CP relClassECSqlName, ECInstanc
     return BE_SQLITE_DONE == stat ? BE_SQLITE_OK : stat;
 }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult DgnDb::DeleteLinkTableRelationships(Utf8StringCR relClassECSqlName, const DgnElementIdSet& relationshipInstanceIds)
+    {
+    if (relationshipInstanceIds.empty() || Utf8String::IsNullOrEmpty(relClassECSqlName.c_str()))
+        return BE_SQLITE_DONE;
+
+    Utf8PrintfString deleteSql("DELETE FROM %s WHERE ECInstanceId IN (SELECT id FROM IdSet(?) OPTIONS ENABLE_EXPERIMENTAL_FEATURES)", relClassECSqlName.c_str());
+
+    const auto stmt = GetNonSelectPreparedECSqlStatement(deleteSql.c_str(), GetECCrudWriteToken());
+    if (stmt.IsNull())
+        {
+        LOG.errorv("Failed to prepare statement to delete relationship instances from ECClass '%s'.", relClassECSqlName.c_str());
+        return BE_SQLITE_ERROR;
+        }
+
+    auto& binder = stmt->GetBinder(1);
+    for (const auto& id : relationshipInstanceIds)
+        {
+        if (ECSqlStatus::Success != binder.AddArrayElement().BindId(id))
+            {
+            LOG.errorv("Failed to bind relationship instance ID for deletion from ECClass '%s'.", relClassECSqlName.c_str());
+            return BE_SQLITE_ERROR;
+            }
+        }
+
+    if (stmt->Step() != BE_SQLITE_DONE)
+        {
+        LOG.errorv("Failed to delete relationship instances from ECClass '%s'.", relClassECSqlName.c_str());
+        return BE_SQLITE_ERROR;
+        }
+
+    return BE_SQLITE_DONE;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

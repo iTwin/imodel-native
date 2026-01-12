@@ -72,7 +72,7 @@ BentleyStatus GeoServicesInterop::GetGeographicCRSInterpretation(BeJsValue resul
 // @param extent If provided, only return CRS's that contain the given extent. Minimum longitude and latitude correspond to extent.low.x and extent.low.y, respectively.
 // Maximum longitude and latitude correspond to extent.high.x and extent.high.y, respectively.
 //---------------------------------------------------------------------------------------
-bvector<CRSListResponseProps> GeoServicesInterop::GetListOfCRS(DRange2dCP extent)
+bvector<CRSListResponseProps> GeoServicesInterop::GetListOfCRS(DRange2dCP extent, bool includeWorld)
     {
     bvector<CRSListResponseProps> listOfCRS;
     char csKeyName[128];
@@ -85,8 +85,10 @@ bvector<CRSListResponseProps> GeoServicesInterop::GetListOfCRS(DRange2dCP extent
         DRange2d crsRange(DRange2d::From(crs->GetMinimumLongitude(),
                         crs->GetMinimumLatitude(),
                         crs->GetMaximumLongitude(),
-                        crs->GetMaximumLatitude()));
-        if (crsRange.IsEmpty() || crsRange.Area() == 64800) //64800 => Worldwide, not wanted
+                    crs->GetMaximumLatitude()));
+
+        // Don't include world crs (area == 64800) by default
+        if (!includeWorld && (crsRange.IsEmpty() || crsRange.Area() == 64800)) 
             {
             continue;
             }

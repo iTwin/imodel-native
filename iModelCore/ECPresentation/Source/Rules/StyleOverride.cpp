@@ -3,9 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
-
 #include "PresentationRuleJsonConstants.h"
-#include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/Rules/PresentationRules.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
@@ -21,45 +19,6 @@ StyleOverride::StyleOverride() {}
 StyleOverride::StyleOverride (Utf8StringCR condition, int priority, Utf8StringCR foreColor, Utf8StringCR backColor, Utf8StringCR fontStyle)
     : ConditionalCustomizationRule(condition, priority, false), m_foreColor (foreColor), m_backColor (backColor), m_fontStyle (fontStyle)
     {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP StyleOverride::_GetXmlElementName () const
-    {
-    return STYLE_OVERRIDE_XML_NODE_NAME;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool StyleOverride::_ReadXml (BeXmlNodeP xmlNode)
-    {
-    if (!ConditionalCustomizationRule::_ReadXml(xmlNode))
-        return false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_foreColor, STYLE_OVERRIDE_XML_ATTRIBUTE_FORECOLOR))
-        m_foreColor = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_backColor, STYLE_OVERRIDE_XML_ATTRIBUTE_BACKCOLOR))
-        m_backColor = "";
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_fontStyle, STYLE_OVERRIDE_XML_ATTRIBUTE_FONTSTYLE))
-        m_fontStyle = "";
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void StyleOverride::_WriteXml (BeXmlNodeP xmlNode) const
-    {
-    ConditionalCustomizationRule::_WriteXml (xmlNode);
-    xmlNode->AddAttributeStringValue (STYLE_OVERRIDE_XML_ATTRIBUTE_FORECOLOR, m_foreColor.c_str ());
-    xmlNode->AddAttributeStringValue (STYLE_OVERRIDE_XML_ATTRIBUTE_BACKCOLOR, m_backColor.c_str ());
-    xmlNode->AddAttributeStringValue (STYLE_OVERRIDE_XML_ATTRIBUTE_FONTSTYLE, m_fontStyle.c_str ());
     }
 
 /*---------------------------------------------------------------------------------**//**

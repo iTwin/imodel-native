@@ -283,6 +283,159 @@ TEST(CurveVectorA, PointIsPlanar)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CurveVectorA, InitFromPointsOnAxisAndArc)
+    {
+    int dx = 5;
+    DPoint3d p0 = DPoint3d::From(1, 0, 0);
+    DPoint3d p1 = DPoint3d::From(0, 1, 0);
+    DPoint3d p2 = DPoint3d::From(-1, 0, 0);
+    DEllipse3d unitCircle;
+    ICurvePrimitivePtr lineString;
+    bool status = unitCircle.InitFromPointsOnAxisAndArc(p0, p1, p2);
+    if (Check::True(status, "created the arc"))
+        {
+        Check::SaveTransformed(unitCircle);
+        auto lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
+        Check::SaveTransformed(*lineString);
+        Check::True(unitCircle.IsFullEllipse(), "unitCircle is full sweep");
+        Check::Exact(unitCircle.center, DPoint3d::From(0, 0, 0), "unitCircle centered at origin");
+        Check::Exact(unitCircle.vector0, DVec3d::From(p0.x, p0.y, p0.z), "unitCircle vector0 along x-axis");
+        Check::Exact(unitCircle.vector90, DVec3d::From(p1.x, p1.y, p1.z), "unitCircle vector90 along y-axis");
+        Check::True(unitCircle.IsCircular(), "unitCircle is circular");
+        Check::Near(unitCircle.FractionToPoint(0.0), p0, "unitCircle start point");
+        }
+
+    Check::Shift(dx, 0, 0);
+    p1.y = 2;
+    DEllipse3d ellipse1;
+    status = ellipse1.InitFromPointsOnAxisAndArc(p0, p1, p2);
+    if (Check::True(status, "created the arc"))
+        {
+        Check::SaveTransformed(ellipse1);
+        lineString = ICurvePrimitive::CreateLineString (bvector<DPoint3d>{p0, p1, p2});
+        Check::SaveTransformed(*lineString);
+        Check::True(ellipse1.IsFullEllipse(), "ellipse1 is full sweep");
+        Check::Exact(ellipse1.center, DPoint3d::From(0, 0, 0), "ellipse1 centered at origin");
+        Check::Exact(ellipse1.vector0, DVec3d::From(p0.x, p0.y, p0.z), "ellipse1 vector0 along x-axis");
+        Check::Exact(ellipse1.vector90, DVec3d::From(p1.x, p1.y, p1.z), "ellipse1 vector90 along y-axis");
+        Check::False(ellipse1.IsCircular(), "ellipse1 is not circular");
+        Check::Near(ellipse1.FractionToPoint(0.0), p0, "ellipse1 start point");
+        }
+
+    Check::Shift(dx, 0, 0);
+    p0.y = 1;
+    p2.y = -1;
+    DEllipse3d ellipse2;
+    status = ellipse2.InitFromPointsOnAxisAndArc(p0, p1, p2);
+    lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
+    Check::SaveTransformed(*lineString);
+    Check::False(status, "arc construction not possible for ellipse2");
+
+    Check::Shift(dx, 0, 0);
+    p1.y = 1.95;
+    DEllipse3d ellipse3;
+    status = ellipse3.InitFromPointsOnAxisAndArc(p0, p1, p2, Angle::TwoPi());
+    if (Check::True(status, "created the arc"))
+        {
+        Check::SaveTransformed(ellipse3);
+        lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
+        Check::SaveTransformed(*lineString);
+        Check::True(ellipse3.IsFullEllipse(), "ellipse3 is full sweep");
+        Check::Exact(ellipse3.center, DPoint3d::From(0, 0, 0), "ellipse3 centered at origin");
+        Check::Exact(ellipse3.vector0, DVec3d::From(p0.x, p0.y, p0.z), "ellipse3 vector0 along x-axis");
+        Check::False(ellipse3.IsCircular(), "ellipse3 is not circular");
+        Check::Near(ellipse3.FractionToPoint(0.0), p0, "ellipse3 start point");
+        }
+
+    Check::Shift(dx, 0, 0);
+    p1.y = -1.95;
+    DEllipse3d ellipse4;
+    status = ellipse4.InitFromPointsOnAxisAndArc(p0, p1, p2, Angle::TwoPi());
+    if (Check::True(status, "created the arc"))
+        {
+        Check::SaveTransformed(ellipse4);
+        lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
+        Check::SaveTransformed(*lineString);
+        Check::True(ellipse4.IsFullEllipse(), "ellipse4 is full sweep");
+        Check::Exact(ellipse4.center, DPoint3d::From(0, 0, 0), "ellipse4 centered at origin");
+        Check::Exact(ellipse4.vector0, DVec3d::From(p0.x, p0.y, p0.z), "ellipse4 vector0 along x-axis");
+        Check::False(ellipse4.IsCircular(), "ellipse4 is not circular");
+        Check::Near(ellipse4.FractionToPoint(0.0), p0, "ellipse4 start point");
+        }
+
+    Check::Shift(dx, 0, 0);
+    p1.y = -2;
+    DEllipse3d ellipse5;
+    status = ellipse5.InitFromPointsOnAxisAndArc(p0, p1, p2);
+    lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
+    Check::SaveTransformed(*lineString);
+    Check::False(status, "arc construction not possible for ellipse5");
+
+    Check::Shift(dx, 0, 0);
+    p1.y = 1;
+    DEllipse3d ellipse6;
+    status = ellipse6.InitFromPointsOnAxisAndArc(p0, p1, p2);
+    if (Check::True(status, "created the arc"))
+        {
+        Check::SaveTransformed(ellipse6);
+        lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
+        Check::SaveTransformed(*lineString);
+        Check::True(ellipse6.IsFullEllipse(), "ellipse6 is full sweep");
+        Check::Exact(ellipse6.center, DPoint3d::From(0, 0, 0), "ellipse6 centered at origin");
+        Check::Exact(ellipse6.vector0, DVec3d::From(p0.x, p0.y, p0.z), "ellipse6 vector0 along x-axis");
+        Check::False(ellipse6.IsCircular(), "ellipse6 is not circular");
+        Check::Near(ellipse6.FractionToPoint(0.0), p0, "ellipse6 start point");
+        }
+
+    Check::Shift(dx, 0, 0);
+    p1.y = -1;
+    DEllipse3d ellipse7;
+    double startAngle = Angle::DegreesToRadians(0);
+    double sweep = Angle::DegreesToRadians(200);
+    status = ellipse7.InitFromPointsOnAxisAndArc(p0, p1, p2, startAngle, sweep);
+    if (Check::True(status, "created the arc"))
+        {
+        Check::SaveTransformed(ellipse7);
+        lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
+        Check::SaveTransformed(*lineString);
+        Check::False(ellipse7.IsFullEllipse(), "ellipse7 is full sweep");
+        Check::Exact(ellipse7.center, DPoint3d::From(0, 0, 0), "ellipse7 centered at origin");
+        Check::Exact(ellipse7.vector0, DVec3d::From(p0.x, p0.y, p0.z), "ellipse7 vector0 along x-axis");
+        Check::False(ellipse7.IsCircular(), "ellipse7 is not circular");
+        double returnedStartAngle, returnedSweep;
+        ellipse7.GetSweep(returnedStartAngle, returnedSweep);
+        Check::ExactDouble(returnedStartAngle, startAngle, "ellipse7 start angle");
+        Check::ExactDouble(returnedSweep, sweep, "ellipse7 end angle");
+        Check::Near(ellipse7.FractionToPoint(0.0), p0, "ellipse7 start point");
+        }
+
+    Check::Shift(dx, 0, 0);
+    DEllipse3d ellipse8;
+    startAngle = Angle::DegreesToRadians(30);
+    sweep = Angle::DegreesToRadians(240);
+    status = ellipse8.InitFromPointsOnAxisAndArc(p0, p1, p2, startAngle, sweep);
+    if (Check::True(status, "created the arc"))
+        {
+        Check::SaveTransformed(ellipse8);
+        lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
+        Check::SaveTransformed(*lineString);
+        Check::False(ellipse8.IsFullEllipse(), "ellipse8 is full sweep");
+        Check::Exact(ellipse8.center, DPoint3d::From(0, 0, 0), "ellipse8 centered at origin");
+        Check::Exact(ellipse8.vector0, DVec3d::From(p0.x, p0.y, p0.z), "ellipse8 vector0 along x-axis");
+        Check::False(ellipse8.IsCircular(), "ellipse8 is not circular");
+        double returnedStartAngle, returnedSweep;
+        ellipse8.GetSweep(returnedStartAngle, returnedSweep);
+        Check::ExactDouble(returnedStartAngle, startAngle, "ellipse8 start angle");
+        Check::ExactDouble(returnedSweep, sweep, "ellipse8 end angle");
+        Check::False(ellipse8.FractionToPoint(0.0).AlmostEqual(p0), "ellipse8 start point");
+        }
+
+    Check::ClearGeometry("CurveVectorA.InitFromPointsOnAxisAndArc");
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, LocalRange)
     {
     CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
@@ -2983,7 +3136,7 @@ TEST(CurveVector, TunnelProfileShadowIntersectionsXY)
     {
     BeFileName dataFullPathName;
     BeTest::GetHost().GetDocumentsRoot(dataFullPathName);
-    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"profiles.imjs");
+    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"Regions").AppendToPath(L"profiles.imjs");
     bvector<IGeometryPtr> geometry;
     CurveVectorPtr curves[2];
     if (Check::True(GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry), "File read") &&
@@ -3029,7 +3182,7 @@ TEST(CurveVector, TunnelProfileInOutOnXY)
     {
     BeFileName dataFullPathName;
     BeTest::GetHost().GetDocumentsRoot(dataFullPathName);
-    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"profiles2.imjs");
+    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"Regions").AppendToPath(L"profiles2.imjs");
     bvector<IGeometryPtr> geometry;
     CurveVectorPtr curves[2];
     if (Check::True(GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry), "File read") &&
@@ -3119,4 +3272,40 @@ TEST(CurveVector, TunnelProfileInOutOnXY)
             }
         }
     Check::ClearGeometry("CurveVector.TunnelProfileInOutOnXY");
+    }
+
+TEST(CurveVector, CentroidAreaXY)
+    {
+    BeFileName path0;
+    BeTest::GetHost().GetDocumentsRoot(path0);
+    path0.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"loop-concave-lineseg-cw.imjs");
+
+    BeFileName path1;
+    BeTest::GetHost().GetDocumentsRoot(path1);
+    path1.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"loop-concave-linestring-ccw.imjs");
+
+    bvector<IGeometryPtr> geometry;
+    CurveVectorPtr curve0, curve1;  // these regions only differ by constant z
+    if (Check::True(GTestFileOps::JsonFileToGeometry(path0, geometry), "File0 read") &&
+        Check::True(geometry.size() >= 1, "Extracted at least one geometry from file0") &&
+        Check::True((curve0 = geometry[0]->GetAsCurveVector()).IsValid(), "Extracted curve from file0") &&
+        Check::True(GTestFileOps::JsonFileToGeometry(path1, geometry), "File1 read") &&
+        Check::True(geometry.size() >= 1, "Extracted at least one geometry from file1") &&
+        Check::True((curve1 = geometry[0]->GetAsCurveVector()).IsValid(), "Extracted curve from file1"))
+        {
+        DPoint3d centroid0, centroid1;
+        double area0, area1;
+        curve0->CentroidAreaXY(centroid0, area0);
+        curve1->CentroidAreaXY(centroid1, area1);
+        if (Check::Near(centroid0, centroid1, "Centroids match"))
+            {
+            Check::Near(centroid0.x, 438.32029287952099, "Centroids have expected x-coordinate");
+            Check::Near(centroid0.y, 215.51318735062446, "Centroids have expected y-coordinate");
+            Check::Near(centroid0.z, 0.0, "Centroids have expected z-coordinate"); // technically irrelevant
+            }
+        Check::True(area0 < 0, "Area of clockwise loop is negative");
+        Check::True(area1 > 0, "Area of counterclockwise loop is positive");
+        if (Check::Near(fabs(area0), fabs(area1), "Absolute areas match"))
+            Check::Near(fabs(area0), 8.3397282162556685, "Regions have expected area");
+        }
     }

@@ -594,7 +594,7 @@ int terminator
     }
 
 // If the current array has blocked structsPerRow, expand to variable length 0-terminated form.
-// (ASSUMES all zeros in blocked form are placeholders.)
+// (ASSUMES input indices are 1-based signed, and all zeros in blocked form are placeholders.)
 void BlockedVectorInt::ConvertBlockedToZeroTerminated ()
     {
     if (m_structsPerRow > 1)

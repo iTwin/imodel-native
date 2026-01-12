@@ -50,15 +50,11 @@
  */
 #include "curl.h"
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
-#if defined(BUILDING_LIBCURL) || defined(CURL_STRICTER)
-typedef struct Curl_multi CURLM;
-#else
 typedef void CURLM;
-#endif
 
 typedef enum {
   CURLM_CALL_MULTI_PERFORM = -1, /* please call curl_multi_perform() or
@@ -248,13 +244,13 @@ CURL_EXTERN CURLMcode curl_multi_cleanup(CURLM *multi_handle);
  *          The data the returned pointer points to will not survive calling
  *          curl_multi_cleanup().
  *
- *          The 'CURLMsg' struct is meant to be very simple and only contain
- *          very basic information. If more involved information is wanted,
- *          we will provide the particular "transfer handle" in that struct
- *          and that should/could/would be used in subsequent
- *          curl_easy_getinfo() calls (or similar). The point being that we
- *          must never expose complex structs to applications, as then we will
- *          undoubtably get backwards compatibility problems in the future.
+ *          The 'CURLMsg' struct is meant to be simple and only contain basic
+ *          information. If more involved information is wanted, we will
+ *          provide the particular "transfer handle" in that struct and that
+ *          should/could/would be used in subsequent curl_easy_getinfo() calls
+ *          (or similar). The point being that we must never expose complex
+ *          structs to applications, as then we will undoubtably get backwards
+ *          compatibility problems in the future.
  *
  * Returns: A pointer to a filled-in struct, or NULL if it failed or ran out
  *          of structs. It also writes the number of messages left in the
@@ -399,9 +395,23 @@ typedef enum {
   /* maximum number of concurrent streams to support on a connection */
   CURLOPT(CURLMOPT_MAX_CONCURRENT_STREAMS, CURLOPTTYPE_LONG, 16),
 
+  /* network has changed, adjust caches/connection reuse */
+  CURLOPT(CURLMOPT_NETWORK_CHANGED, CURLOPTTYPE_LONG, 17),
+
   CURLMOPT_LASTENTRY /* the last unused */
 } CURLMoption;
 
+/* Definition of bits for the CURLMOPT_NETWORK_CHANGED argument: */
+
+/* - CURLMNWC_CLEAR_CONNS tells libcurl to prevent further reuse of existing
+   connections. Connections that are idle will be closed. Ongoing transfers
+   will continue with the connection they have. */
+#define CURLMNWC_CLEAR_CONNS (1L<<0)
+
+/* - CURLMNWC_CLEAR_DNS tells libcurl to prevent further reuse of existing
+   connections. Connections that are idle will be closed. Ongoing transfers
+   will continue with the connection they have. */
+#define CURLMNWC_CLEAR_DNS (1L<<0)
 
 /*
  * Name:    curl_multi_setopt()
@@ -437,6 +447,36 @@ CURL_EXTERN CURLMcode curl_multi_assign(CURLM *multi_handle,
  * Returns: NULL on failure, otherwise a CURL **array pointer
  */
 CURL_EXTERN CURL **curl_multi_get_handles(CURLM *multi_handle);
+
+
+typedef enum {
+  CURLMINFO_NONE, /* first, never use this */
+  /* The number of easy handles currently managed by the multi handle,
+   * e.g. have been added but not yet removed. */
+  CURLMINFO_XFERS_CURRENT = 1,
+  /* The number of easy handles running, e.g. not done and not queueing. */
+  CURLMINFO_XFERS_RUNNING = 2,
+  /* The number of easy handles waiting to start, e.g. for a connection
+   * to become available due to limits on parallelism, max connections
+   * or other factors. */
+  CURLMINFO_XFERS_PENDING = 3,
+  /* The number of easy handles finished, waiting for their results to
+   * be read via `curl_multi_info_read()`. */
+  CURLMINFO_XFERS_DONE = 4,
+  /* The total number of easy handles added to the multi handle, ever. */
+  CURLMINFO_XFERS_ADDED = 5
+} CURLMinfo_offt;
+
+/*
+ * Name:    curl_multi_get_offt()
+ *
+ * Desc:    Retrieves a numeric value for the `CURLMINFO_*` enums.
+ *
+ * Returns: CULRM_OK or error when value could not be obtained.
+ */
+CURL_EXTERN CURLMcode curl_multi_get_offt(CURLM *multi_handle,
+                                          CURLMinfo_offt info,
+                                          curl_off_t *pvalue);
 
 /*
  * Name: curl_push_callback

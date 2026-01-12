@@ -117,7 +117,7 @@ bool PropertyExists::Exists(ECN::ECClassId classId, Utf8CP accessString) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BeJsValue SeekPos::GetJson(InstanceReader::JsonParams const& param) const {
+BeJsValue SeekPos::GetJson(JsReadOptions const& param) const {
     if (m_prop == nullptr) {
         return m_rowRender.GetInstanceJsonObject(ECInstanceKey(m_class->GetClassId(), m_rowId),*this, param);
     }
@@ -166,24 +166,30 @@ RowRender::Document& RowRender::ClearAndGetCachedJsonDocument() const {
     m_allocator.Clear();
     m_cachedJsonDoc.RemoveAllMembers();
     m_cachedJsonDoc.SetObject();
-
-
     return m_cachedJsonDoc;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, InstanceReader::JsonParams const& param ) const  {
+void RowRender::Reset() {
+    m_allocator.Clear();
+    m_cachedJsonDoc.RemoveAllMembers();
+    m_cachedJsonDoc.SetObject();
+    m_instanceKey = ECInstanceKey();
+    m_accessString.clear();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, JsReadOptions const& param ) const  {
     if (instanceKey == m_instanceKey && param == m_jsonParam && m_accessString.empty() && !(m_conn.IsDbOpen() && m_conn.IsWriteable())) {
         return BeJsValue(m_cachedJsonDoc);
     }
     auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
-    ECSqlRowAdaptor adaptor(m_conn);
-    adaptor.GetOptions().UseJsNames(param.GetUseJsName());
-    adaptor.GetOptions().SetAbbreviateBlobs(param.GetAbbreviateBlobs());
-    adaptor.GetOptions().SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
+    ECSqlRowAdaptor adaptor(m_conn, param);
     adaptor.RenderRowAsObject(row, ecsqlRow);
     m_instanceKey = instanceKey;
     m_jsonParam = param;
@@ -194,17 +200,14 @@ BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRo
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BeJsValue RowRender::GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8StringCR  accessString, IECSqlValue const& ecsqlValue, InstanceReader::JsonParams const& param) const  {
+BeJsValue RowRender::GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8StringCR  accessString, IECSqlValue const& ecsqlValue, JsReadOptions const& param) const  {
     if (instanceKey == m_instanceKey && param == m_jsonParam && m_accessString.Equals(accessString)) {
         return BeJsValue(m_cachedJsonDoc)["$"];
     }
     auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
     auto out = row["$"];
-    ECSqlRowAdaptor adaptor(m_conn);
-    adaptor.GetOptions().UseJsNames(param.GetUseJsName());
-    adaptor.GetOptions().SetAbbreviateBlobs(param.GetAbbreviateBlobs());
-    adaptor.GetOptions().SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
+    ECSqlRowAdaptor adaptor(m_conn, param);
     adaptor.RenderValue(out, ecsqlValue);
     m_instanceKey = instanceKey;
     m_jsonParam = param;
@@ -221,6 +224,19 @@ void Reader::Clear() const {
     m_queryClassMap.clear();
     m_seekPos.Reset();
     m_propExists.Clear();
+    m_lastClassResolved = LastClassResolved();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void Reader::InvalidateSeekPos(ECInstanceKey const& key){
+    if (!key.IsValid()) {
+        m_seekPos.Reset();
+    }
+    if (m_seekPos.GetRowId() == key.GetInstanceId() && m_seekPos.GetClass() != nullptr && m_seekPos.GetClass()->GetClassId() == key.GetClassId()) {
+        m_seekPos.Reset();
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -261,7 +277,14 @@ bool Reader::Seek(InstanceReader::Position const& pos, InstanceReader::RowCallba
         hasRow = m_seekPos.Seek(rsPos.GetInstanceId());
     }
     if (hasRow) {
-        callback(m_seekPos);
+
+        callback(m_seekPos, [&](Utf8CP propName) -> std::optional<PropertyReader> {
+            auto prop = m_seekPos.GetClass()->FindProperty(propName);
+            if (prop == nullptr) {
+                return std::nullopt;
+            }
+            return PropertyReader(prop->GetValue());
+        });
     }
     return hasRow;
 }
@@ -367,6 +390,7 @@ void SeekPos::Reset() const {
     m_prop = nullptr;
     m_rowId=ECInstanceId();
     m_rowClassId = ECN::ECClassId();
+    m_rowRender.Reset();
 }
 
 //---------------------------------------------------------------------------------------
@@ -407,7 +431,10 @@ bool Class::Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool Property::Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const {
-    return m_table->Seek(rowId, &rowClassId);
+    OnAfterReset();
+    bool result = m_table->Seek(rowId, &rowClassId);
+    OnAfterStep();
+    return result;
 }
 
 //---------------------------------------------------------------------------------------
@@ -549,7 +576,7 @@ std::unique_ptr<ECSqlField> Class::Factory::CreatePrimitiveField(ECSqlSelectPrep
     const auto prim = propertyMap.GetProperty().GetAsPrimitiveProperty();
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor(prim->GetType()),
-        DateTime::Info(),
+        GetDateTimeInfo(propertyMap),
         nullptr,
         &propertyMap.GetProperty(),
         &propertyMap.GetProperty(),
@@ -676,7 +703,7 @@ std::unique_ptr<ECSqlField>  Class::Factory::CreateNavigationField(ECSqlSelectPr
     const auto prim = propertyMap.GetProperty().GetAsNavigationProperty();
     ECSqlColumnInfo columnInfo(
         ECN::ECTypeDescriptor::CreateNavigationTypeDescriptor(prim->GetType(), prim->IsMultiple()),
-        DateTime::Info(),
+        GetDateTimeInfo(propertyMap),
         nullptr,
         &propertyMap.GetProperty(),
         &propertyMap.GetProperty(),
@@ -703,7 +730,35 @@ std::unique_ptr<ECSqlField>  Class::Factory::CreateNavigationField(ECSqlSelectPr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DateTime::Info Class::Factory::GetDateTimeInfo(PropertyMap const& propertyMap) {
+    DateTime::Info info = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified);
+    if (propertyMap.GetType() != PropertyMap::Type::PrimitiveArray && propertyMap.GetType() != PropertyMap::Type::Primitive) {
+        return info;
+    }
+
+    if (auto property = propertyMap.GetProperty().GetAsPrimitiveArrayProperty()){
+        if (property->GetType() == PRIMITIVETYPE_DateTime) {
+            if (CoreCustomAttributeHelper::GetDateTimeInfo(info, *property) == ECObjectsStatus::Success) {
+                return info;
+            }
+        }
+    }
+    if (auto property = propertyMap.GetProperty().GetAsPrimitiveProperty()){
+        if (property->GetType() == PRIMITIVETYPE_DateTime) {
+            if (CoreCustomAttributeHelper::GetDateTimeInfo(info, *property) == ECObjectsStatus::Success) {
+                return info;
+            }
+        }
+    }
+
+    return info;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 std::unique_ptr<ECSqlField>   Class::Factory::CreateArrayField(ECSqlSelectPreparedStatement& stmt, PropertyMap const& propertyMap, TableView const& tbl) {
+
     ECN::ECTypeDescriptor desc;
     const auto& prop = propertyMap.GetProperty();
     if (prop.GetIsStructArray()) {
@@ -714,7 +769,7 @@ std::unique_ptr<ECSqlField>   Class::Factory::CreateArrayField(ECSqlSelectPrepar
     }
     ECSqlColumnInfo columnInfo(
         desc,
-        DateTime::Info(),
+        GetDateTimeInfo(propertyMap),
         prop.GetIsStructArray()? &prop.GetAsStructArrayProperty()->GetStructElementType(): nullptr,
         &propertyMap.GetProperty(),
         &propertyMap.GetProperty(),
@@ -1125,10 +1180,19 @@ bool InstanceReader::Seek(Position const& pos, RowCallback callback, Options con
     return m_pImpl->Seek(pos, callback, opt);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void InstanceReader::Reset() {
     return m_pImpl->Reset();
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void InstanceReader::InvalidateSeekPos(ECInstanceKey const& key){
+    return m_pImpl->InvalidateSeekPos(key);
+}
 //////////////////////////////////////////////////////////////////////////
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1180,5 +1244,6 @@ bool InMemoryPropertyExistMap::Exist(ECN::ECClassId classId, Utf8CP propertyName
     const auto &classIdSet = it->second;
     return classIdSet.find(classId.GetValueUnchecked()) != classIdSet.end();
 }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

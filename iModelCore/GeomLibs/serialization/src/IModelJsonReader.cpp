@@ -53,6 +53,7 @@ bool derefNumericArray (BeJsConst value, size_t minNeeded, size_t maxNeeded, dou
         values[i] = 0;
     return numOut >= minNeeded;
     }
+
 // look for a named property to pass to derefNumericArray
 bool derefNumericArray(BeJsConst source, char const *name, size_t minNeeded, size_t maxNeeded, double values[])
     {
@@ -169,7 +170,7 @@ bool tryValueToXYZ (BeJsConst value, DPoint3dR xyz)
         xyz.Init (xyzArray[0], xyzArray[1], xyzArray[2]);
         stat = true;
         }
-    else
+    else if (!value.isArray())
         {
         bool haveX = derefNumeric(value, "x", xyzArray[0], 0.0);
         bool haveY = derefNumeric(value, "y", xyzArray[1], 0.0);
@@ -177,7 +178,46 @@ bool tryValueToXYZ (BeJsConst value, DPoint3dR xyz)
         xyz.Init (xyzArray[0], xyzArray[1], xyzArray[2]);
         stat = haveX && haveY;  // allow optional z
         }
+    return stat;
+    }
 
+bool tryValueToXY (BeJsConst value, DPoint2dR xy)
+    {
+    double xyArray[2];
+    bool stat = false;
+    if (derefNumericArray (value, 2, 2, xyArray))
+        {
+        xy.Init (xyArray[0], xyArray[1]);
+        stat = true;
+        }
+    else if (!value.isArray())
+        {
+        bool haveX = derefNumeric(value, "x", xyArray[0], 0.0);
+        bool haveY = derefNumeric(value, "y", xyArray[1], 0.0);
+        xy.Init (xyArray[0], xyArray[1]);
+        stat = haveX && haveY;
+        }
+    return stat;
+    }
+
+bool tryValueToXYZW (BeJsConst value, DPoint4dR xyzw)
+    {
+    double xyzwArray[4];
+    bool stat = false;
+    if (derefNumericArray (value, 4, 4, xyzwArray))
+        {
+        xyzw.Init (xyzwArray[0], xyzwArray[1], xyzwArray[2], xyzwArray[3]);
+        stat = true;
+        }
+    else if (!value.isArray())
+        {
+        bool haveX = derefNumeric(value, "x", xyzwArray[0], 0.0);
+        bool haveY = derefNumeric(value, "y", xyzwArray[1], 0.0);
+        bool haveZ = derefNumeric(value, "z", xyzwArray[2], 0.0);
+        bool haveW = derefNumeric(value, "w", xyzwArray[3], 0.0);
+        xyzw.Init (xyzwArray[0], xyzwArray[1], xyzwArray[2], xyzwArray[3]);
+        stat = haveX && haveY && haveZ && haveW;
+        }
     return stat;
     }
 
@@ -199,14 +239,14 @@ public: bool tryValueToTaggedNumericData(BeJsConst value, TaggedNumericData &dat
 private: bool tryValueToBVectorDPoint3d (BeJsConst value, bvector<DPoint3d> &data)
     {
     data.clear ();
-    double xyzArray[3];
     if (value.isArray())
         {
+        DPoint3d pt;
         for (uint32_t i = 0, n = value.size(); i < n; i++)
             {
-            if (!derefNumericArray (value[i], 2, 3, xyzArray))
+            if (!tryValueToXYZ (value[i], pt))
                 return false;
-            data.push_back (DPoint3d::FromArray (xyzArray));
+            data.push_back (pt);
             }
         return true;
         }
@@ -245,15 +285,16 @@ private: bool tryValueToBVectorFaceData(BeJsConst value, bvector<FacetFaceData> 
  bool tryValueToBVectorDPoint3dAndWeight (BeJsConst value, bvector<DPoint3d> &data, bvector<double> &weights)
     {
     data.clear ();
-    double xyzArray[4];
+    weights.clear ();
     if (value.isArray())
         {
+        DPoint4d xyzw = DPoint4d::From(0, 0, 0 ,0);
         for (uint32_t i = 0, n = value.size(); i < n; i++)
             {
-            if (!derefNumericArray (value[i], 4, 4, xyzArray))
+            if (!tryValueToXYZW (value[i], xyzw))
                 return false;
-            data.push_back (DPoint3d::FromArray (xyzArray));
-            weights.push_back (xyzArray[3]);
+            data.push_back (DPoint3d::FromXYZ(xyzw.x, xyzw.y, xyzw.z));
+            weights.push_back (xyzw.w);
             }
         return true;
         }
@@ -263,14 +304,14 @@ private: bool tryValueToBVectorFaceData(BeJsConst value, bvector<FacetFaceData> 
 bool tryValueToBVectorDVec3d (BeJsConst value, bvector<DVec3d> &data)
     {
     data.clear ();
-    double xyzArray[3];
     if (value.isArray())
         {
+        DVec3d vec;
         for (uint32_t i = 0, n = value.size(); i < n; i++)
             {
-            if (!derefNumericArray (value[i], 2, 3, xyzArray))
+            if (!tryValueToXYZ(value[i], vec))
                 return false;
-            data.push_back (DVec3d::FromArray (xyzArray));
+            data.push_back (vec);
             }
         return true;
         }
@@ -281,14 +322,14 @@ bool tryValueToBVectorDVec3d (BeJsConst value, bvector<DVec3d> &data)
 bool tryValueToBVectorDPoint2d (BeJsConst value, bvector<DPoint2d> &data)
     {
     data.clear ();
-    double xyzArray[2];
     if (value.isArray())
         {
+        DPoint2d xy;
         for (uint32_t i = 0, n = value.size(); i < n; i++)
             {
-            if (!derefNumericArray (value[i], 2, 2, xyzArray))
+            if (!tryValueToXY(value[i], xy))
                 return false;
-            data.push_back (DPoint2d::FromArray (xyzArray));
+            data.push_back (xy);
             }
         return true;
         }
@@ -301,29 +342,30 @@ bool tryValueGridToBVectorDPoint3d (BeJsConst value, bvector<DPoint3d> &data, bv
     {
     data.clear ();
     weight.clear ();
-    double xyzArray[4];
     if (value.isArray())
         {
+        DPoint3d xyz;
+        DPoint4d xyzw = DPoint4d::From(0, 0, 0, 0);
         for (uint32_t i = 0, n = value.size(); i < n; i++)
             {
             if (value[i].isArray ())
                 {
                 auto row = value[i];
-                rowCounts.push_back (value[i].size ());
+                rowCounts.push_back (row.size ());
                 for (uint32_t j = 0, nRow = row.size(); j < nRow; j++)
                     {
                     if (row[j].size() == 2 || row[j].size() == 3)   // used to expect all three xyz!
                         {
-                        if (!derefNumericArray (row[j], 2, 3, xyzArray))
+                        if (!tryValueToXYZ(row[j], xyz))
                             return false;
-                        data.push_back (DPoint3d::FromArray (xyzArray));
+                        data.push_back (xyz);
                         }
                     else if (row[j].size () == 4)
                         {
-                        if (!derefNumericArray (row[j], 4, 4, xyzArray))
+                        if (!tryValueToXYZW(row[j], xyzw))
                             return false;
-                        data.push_back (DPoint3d::FromArray (xyzArray));
-                        weight.push_back (xyzArray[3]);
+                        data.push_back (DPoint3d::FromXYZ(xyzw.x, xyzw.y, xyzw.z));
+                        weight.push_back (xyzw.w);
                         }
                     else
                         return false;
@@ -383,33 +425,50 @@ bool tryValueToBVectorUInt32 (BeJsConst value, bvector<uint32_t> &data)
     return false;
     }
 
-bool completeAxesConstruction (DVec3dCR vector0, int index0, DVec3dCR vector1, int index1, int index2, RotMatrixR axes, RotMatrixCR defaultAxes)
+bool completeAxesConstruction (DVec3dCR vector0, int index0, DVec3dCR vector1, int index1, DVec3dCP vector2, int index2, RotMatrixR axes, RotMatrixCR defaultAxes)
     {
     DVec3d columns[3];
     columns[index0] = vector0;
     columns[index1] = vector1;
-    columns[index2] = DVec3d::FromCrossProduct (vector0, vector1);
-    axes = RotMatrix::FromColumnVectors (columns[0], columns[1], columns[2]);
-    if (axes.SquareAndNormalizeColumns (axes, index0, index1))
+    if (!vector2)
+        { // square and normalize
+        columns[index2] = DVec3d::FromCrossProduct (vector0, vector1);
+        axes = RotMatrix::FromColumnVectors (columns[0], columns[1], columns[2]);
+        if (axes.SquareAndNormalizeColumns (axes, index0, index1))
+            return true;
+        }
+    else
+        { // preserve axes
+        columns[index2] = *vector2;
+        axes = RotMatrix::FromColumnVectors(columns[0], columns[1], columns[2]);
         return true;
+        }
     axes = defaultAxes;
     return false;
     }
 bool derefAxes (BeJsConst source, RotMatrixR axes, RotMatrixCR defaultAxes)
     {
     axes = defaultAxes;
-    auto xyVectors = source["xyVectors"];
     DVec3d vectorX, vectorY, vectorZ;
-    if (xyVectors.isArray () && xyVectors.size () == 2
+
+    auto xyzVectors = source["xyzVectors"];
+    if (!xyzVectors.isNull() && xyzVectors.isArray() && xyzVectors.size() == 3
+        && tryValueToXYZ(xyzVectors[0], vectorX)
+        && tryValueToXYZ(xyzVectors[1], vectorY)
+        && tryValueToXYZ(xyzVectors[2], vectorZ))
+        return completeAxesConstruction(vectorX, 0, vectorY, 1, &vectorZ, 2, axes, defaultAxes);
+
+    auto xyVectors = source["xyVectors"];
+    if (!xyVectors.isNull () && xyVectors.isArray () && xyVectors.size () == 2
         && tryValueToXYZ (xyVectors[0], vectorX)
         && tryValueToXYZ (xyVectors[1], vectorY))
-        return completeAxesConstruction (vectorX, 0, vectorY, 1, 2, axes, defaultAxes);
+        return completeAxesConstruction (vectorX, 0, vectorY, 1, nullptr, 2, axes, defaultAxes);
 
     auto zxVectors = source["zxVectors"];
-    if (zxVectors.isArray () && zxVectors.size () == 2
+    if (!zxVectors.isNull () && zxVectors.isArray () && zxVectors.size () == 2
         && tryValueToXYZ (zxVectors[0], vectorZ)
         && tryValueToXYZ (zxVectors[1], vectorX))
-        return completeAxesConstruction (vectorZ, 2, vectorX, 0, 1, axes, defaultAxes);
+        return completeAxesConstruction (vectorZ, 2, vectorX, 0, nullptr, 1, axes, defaultAxes);
 
     return false;
     }
@@ -523,19 +582,19 @@ bool tryValueToInterpolationCurve(BeJsConst value, ICurvePrimitivePtr &result)
     if (!value.isNull())
         {
         bvector<DPoint3d> fitPoints;
-        bvector<double> knots;
         if (tryValueToBVectorDPoint3d(value["fitPoints"], fitPoints))
             {
+            bvector<double> knots;
             tryValueToBVectorDouble(value["knots"], knots);
             auto order = AsInt(value["order"], 4).Value();
             bool closed;
             derefBool(value, "closed", closed, false);
-            auto isChordLenKnots = AsInt(value["isChordLenKnots"], 0).Value ();
-            auto isColinearTangents = AsInt(value["isColinearTangents"], 0);
-            auto isChordLenTangents = AsInt(value["isChordLenTangents"], 0);
-            auto isNaturalTangents = AsInt(value["isNaturalTangents"], 0);
+            auto isChordLenKnots = AsInt(value["isChordLenKnots"], 0).Value();
+            auto isColinearTangents = AsInt(value["isColinearTangents"], 0).Value();
+            auto isChordLenTangents = AsInt(value["isChordLenTangents"], 0).Value();
+            auto isNaturalTangents = AsInt(value["isNaturalTangents"], 0).Value();
             DVec3d startTangent = DVec3d::From (0,0,0), endTangent = DVec3d::From(0,0,0);
-            if (!value["startTangent"].isNull ())
+            if (!value["startTangent"].isNull())
                 tryValueToXYZ (value["startTangent"], startTangent);
             if (!value["endTangent"].isNull())
                 tryValueToXYZ (value["endTangent"], endTangent);
@@ -613,11 +672,13 @@ bool tryValueToCone (BeJsConst value, ISolidPrimitivePtr &result)
         DPoint3d centerA, centerB;
         bool capped;
         RotMatrix axes;
+
         bool axesOK = derefAxes(value, axes, RotMatrix::FromIdentity());
         auto radius = derefValidatedDouble(value, "radius", ValidatedDouble (0, false));
         auto radiusA = derefValidatedDouble (value, "startRadius", radius);
         auto radiusB = derefValidatedDouble(value, "endRadius", radiusA);
         derefBool (value, "capped", capped, false);
+
         if (   tryValueToXYZ (value["start"], centerA)
             && tryValueToXYZ (value["end"], centerB)
             && radiusA.IsValid ()
@@ -724,8 +785,8 @@ bool tryValueToBox (BeJsConst value, ISolidPrimitivePtr &result)
         double baseX = 0, baseY, topX, topY, height;
         DVec3d vectorX, vectorY, vectorZ;
         RotMatrix axes;
-        // required ...
-        if ((tryValueToXYZ(value["origin"], baseOrigin) || tryValueToXYZ (value["baseOrigin"], baseOrigin))
+        // both baseOrigin and origin may be present, but origin is preferred
+        if ((tryValueToXYZ(value["origin"], baseOrigin) || tryValueToXYZ(value["baseOrigin"], baseOrigin))
             && derefNumeric (value, "baseX", baseX))
             {
             // optional with default from required values
@@ -735,7 +796,6 @@ bool tryValueToBox (BeJsConst value, ISolidPrimitivePtr &result)
             derefNumeric (value, "topY", topY, baseY);
             derefAxes (value, axes, RotMatrix::FromIdentity ());
             axes.GetColumns (vectorX, vectorY, vectorZ);
-
             if (!tryValueToXYZ (value["topOrigin"], topOrigin))
                 {
                 derefNumeric (value, "height", height, baseX);
@@ -804,19 +864,19 @@ bool tryValueToSphere (BeJsConst value, ISolidPrimitivePtr &result)
         derefBool (value, "capped", capped, false);
         derefAxes (value, axes, RotMatrix::FromIdentity ());
         auto radius = derefValidatedDouble (value, "radius", ValidatedDouble (0.0, false));
-        auto radiusX = derefValidatedDouble (value, "radius", radius);
-        auto radiusY = derefValidatedDouble (value, "radius", radiusX);
-        auto radiusZ = derefValidatedDouble (value, "radius", radiusY);
+        auto radiusX = derefValidatedDouble (value, "radiusX", radius);
+        auto radiusY = derefValidatedDouble (value, "radiusY", radiusX);
+        auto radiusZ = derefValidatedDouble (value, "radiusZ", radiusY);
         // required ...
         if (   tryValueToXYZ (value["center"], center)
-            && radiusX.IsValid ()
-            && radiusY.IsValid ()
-            && radiusZ.IsValid ())
+            && radiusX.IsValid () && radiusX.Value() > 0.0
+            && radiusY.IsValid () && radiusY.Value() > 0.0
+            && radiusZ.IsValid () && radiusZ.Value() > 0.0)
             {
-            // hm .. insider knowledge here
-            // 1) sphere by radius and axes multiplies the axes by the radius -- radius=1 preserves "our" radii.
+            DgnSphereDetail dgnSphere(center, 1.0);
             axes.ScaleColumns (radiusX.Value (), radiusY.Value (), radiusZ.Value ());
-            DgnSphereDetail dgnSphere (center, axes, 1.0);
+            dgnSphere.m_localToWorld.SetMatrix(axes); // no constructors preserve the input axes, so set directly
+
             ValidatedDouble latitudeStartRadians, latitudeSweepRadians;
             if (derefLatitudeStartSweepRadians (value, latitudeStartRadians, latitudeSweepRadians))
                 {
@@ -1013,7 +1073,7 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
     PolyfaceHeaderPtr pf = PolyfaceHeader::CreateIndexedMeshSwap(numPerFace, points, pointIndices);
 
     bool twoSided;
-    derefBool(value, "twoSided", twoSided, false);
+    derefBool(value, "twoSided", twoSided, true); // default value is true!
     pf->SetTwoSided(twoSided);
 
     auto iExpectedClosure = AsInt (value["expectedClosure"]);
@@ -1048,6 +1108,7 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
     if (tryValueToTaggedNumericData(value["tags"], numericData))
         pf->SetNumericTags (numericData);
 
+    // TODO: currently edgeMateIndex array is ignored for native Polyface
     return pf;
     }
 
@@ -1133,9 +1194,7 @@ CurveVector::BoundaryType boundaryType
             {
             // PP demands that only one loop be called outer ... check it . .
             int numOuter = 0;
-            int numInner = 0;
             int numOther = 0;
-            UNUSED_VARIABLE(numInner);
             for (auto & cp : *result)
                 {
                 auto loop = cp->GetChildCurveVectorP ();
@@ -1143,9 +1202,7 @@ CurveVector::BoundaryType boundaryType
                     {
                     if (loop->GetBoundaryType () == CurveVector::BOUNDARY_TYPE_Outer)
                         numOuter++;
-                    else if (loop->GetBoundaryType () == CurveVector::BOUNDARY_TYPE_Inner)
-                        numInner++;
-                    else
+                    else if (loop->GetBoundaryType () != CurveVector::BOUNDARY_TYPE_Inner)
                         numOther++;
                     }
                 }

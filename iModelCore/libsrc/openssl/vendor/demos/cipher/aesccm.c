@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2013-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -94,7 +94,7 @@ int aes_ccm_encrypt(void)
     if ((cipher = EVP_CIPHER_fetch(libctx, "AES-192-CCM", propq)) == NULL)
         goto err;
 
-    /* Set nonce length if default 96 bits is not appropriate */
+    /* Default nonce length for AES-CCM is 7 bytes (56 bits). */
     params[0] = OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_AEAD_IVLEN,
                                             &ccm_nonce_len);
     /* Set tag length */

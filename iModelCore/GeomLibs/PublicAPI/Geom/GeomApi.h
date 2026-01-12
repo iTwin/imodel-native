@@ -398,18 +398,6 @@ struct  GeometryValidator : public RefCountedBase
 
 };
 
-//=======================================================================================
-//! Inlinable template for initial zeroing an object of size T.
-//!@bsiclass
-//=======================================================================================
-template<typename T> struct ZeroInit
-{
-    ZeroInit()                           { memset(this, 0, sizeof(T)); }
-    ZeroInit(ZeroInit const&)            { memset(this, 0, sizeof(T)); }
-    ZeroInit(ZeroInit&&)                 { memset(this, 0, sizeof(T)); }
-    ZeroInit& operator=(ZeroInit const&) = default;
-    ZeroInit& operator=(ZeroInit&&)      = default;
-};
 //! POD struct for pair of size_t values
 struct SizeSize
 {

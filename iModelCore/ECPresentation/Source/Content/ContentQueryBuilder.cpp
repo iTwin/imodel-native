@@ -118,6 +118,7 @@ public:
     RelatedClassesJoinContext(ContentDescriptorCR descriptor, ContentQueryBuilderParameters const& params)
         : m_usedFields(descriptor.GetAllFields()), m_params(params)
         {}
+    ContentQueryBuilderParameters const& GetParams() const {return m_params;}
     bset<Utf8String> const& GetUsedClassAliases()
         {
         if (!m_usedClassAliases)
@@ -143,7 +144,107 @@ enum class RelatedClassType
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void JoinRelatedClasses(ComplexQueryBuilderR query, RelatedClassesJoinContext& context, SelectClassInfo const& selectInfo, int joinedClassTypes)
+static ExpressionContextPtr CreateAllowedRelatedPropertiesJoinFilterExpressionContext(Utf8StringCR targetClassAlias, Utf8StringCR navigationPropertyName)
+    {
+    auto rootCtx = SymbolExpressionContext::Create(nullptr);
+
+    // only allow using `{targetClassAlias}.{navigationPropertyName}.Id`
+    auto navigationPropertyCtx = SymbolExpressionContext::Create(nullptr);
+    navigationPropertyCtx->AddSymbol(*ValueSymbol::Create("Id", ECValue(BeInt64Id((uint64_t)1))));
+    auto targetCtx = SymbolExpressionContext::Create(nullptr);
+    targetCtx->AddSymbol(*ContextSymbol::CreateContextSymbol(navigationPropertyName.c_str(), *navigationPropertyCtx));
+    rootCtx->AddSymbol(*ContextSymbol::CreateContextSymbol(targetClassAlias.c_str(), *targetCtx));
+
+    return rootCtx;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The purpose of this function is to add an extra instance filter to a join condition, that acts as
+* an optimization for the following case:
+*
+* ```sql
+* SELECT [el].*, [a].*
+* FROM [MySchema].[MyElement] [el]
+* LEFT JOIN [MySchema].[MyAspect] [a] ON [a].[Element].[Id] = [el].[ECInstanceId]
+* WHERE [el].[ECInstanceId] >= 5497558196278 AND [el].[ECInstanceId] <= 5497558197292
+* ```
+*
+* Because aspects may be split between multiple tables, in certain cases SQLite may decide to
+* materialize the aspect JOIN, which results in a full table scan and possibly very bad performance.
+*
+* To overcome that, we can add a copy of the element's WHERE clause to the JOIN condition, like this:
+*
+* ```sql
+* SELECT [el].*, [a].*
+* FROM [MySchema].[MyElement] [el]
+* LEFT JOIN [MySchema].[MyAspect] [a] ON [a].[Element].[Id] = [el].[ECInstanceId]
+*     AND [a].[Element].[Id] >= 5497558196278 AND [a].[Element].[Id] <= 5497558197292
+* WHERE [el].[ECInstanceId] >= 5497558196278 AND [el].[ECInstanceId] <= 5497558197292
+* ```
+*
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static std::unique_ptr<RelatedClassPath> CreateFilteredPath(RelatedClassPathCR path, SelectClassInfo const& selectInfo, InstanceFilterDefinitionCR instanceFilter, ECExpressionsCache& ecexpressionsCache)
+    {
+    if (path.empty())
+        {
+        // shouldn't get here, but just to be sure, since we're using first/last elements of the path
+        return nullptr;
+        }
+
+    if (instanceFilter.GetExpression().empty())
+        {
+        // nothing to do if there's no filter
+        return nullptr;
+        }
+
+    RelatedClassCR step = path.front();
+    auto navigationProperty = step.GetNavigationProperty();
+    if (!navigationProperty)
+        {
+        // the optimization of carrying instance filter to JOIN clause only works on paths / JOINs that use navigation properties
+        return nullptr;
+        }
+
+    if (step.IsForwardRelationship() == (ECRelatedInstanceDirection::Forward == navigationProperty->GetDirection()))
+        {
+        // we can only apply the optimization if join direction is opposite to navigation property direction
+        return nullptr;
+        }
+
+    Utf8String expression(instanceFilter.GetExpression());
+    expression.ReplaceAll("this.ECInstanceId", Utf8PrintfString("%s.%s.Id", step.GetTargetClass().GetAlias().c_str(), navigationProperty->GetName().c_str()).c_str());
+
+    auto ecexpressionContext = CreateAllowedRelatedPropertiesJoinFilterExpressionContext(step.GetTargetClass().GetAlias(), navigationProperty->GetName());
+    QueryClauseAndBindings filterClause = ECExpressionsHelper(ecexpressionsCache).ConvertToECSql(expression, nullptr, ecexpressionContext.get());
+
+    if (filterClause.GetClause().empty())
+        {
+        // either there's no filter, or we failed to parse it based on our expressions context
+        return nullptr;
+        }
+
+    if (filterClause.GetBindings().size() > 0)
+        {
+        // technically this should be allowed, but we don't have a way to set bindings on the path at the moment
+        return nullptr;
+        }
+
+    Utf8String targetInstanceFilter(step.GetTargetInstanceFilter());
+    if (targetInstanceFilter.empty())
+        targetInstanceFilter = filterClause.GetClause();
+    else
+        targetInstanceFilter.append(" AND (").append(filterClause.GetClause()).append(")");
+
+    std::unique_ptr<RelatedClassPath> filteredPath = std::make_unique<RelatedClassPath>(path);
+    filteredPath->front().SetTargetInstanceFilter(targetInstanceFilter);
+    return filteredPath;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void JoinRelatedClasses(ComplexQueryBuilderR query, RelatedClassesJoinContext& context, SelectClassInfo const& selectInfo, ContentDescriptorCR descriptor, int joinedClassTypes)
     {
     if (0 != ((int)RelatedClassType::NavigationPropertyClass & joinedClassTypes))
         {
@@ -160,10 +261,11 @@ static void JoinRelatedClasses(ComplexQueryBuilderR query, RelatedClassesJoinCon
         // join related properties
         for (RelatedClassPath const& path : selectInfo.GetRelatedPropertyPaths())
             {
+            std::unique_ptr<RelatedClassPath> pathOverride = descriptor.GetInstanceFilter() ? CreateFilteredPath(path, selectInfo, *descriptor.GetInstanceFilter(), context.GetParams().GetECExpressionsCache()) : nullptr;
             if (context.GetUsedClassAliases().end() != context.GetUsedClassAliases().find(path.back().GetTargetClass().GetAlias()))
-                query.Join(path, true);
+                query.Join(pathOverride ? *pathOverride : path, true);
             else if (context.GetUsedClassAliases().end() != context.GetUsedClassAliases().find(path.back().GetRelationship().GetAlias()))
-                query.Join(path, false);
+                query.Join(pathOverride ? *pathOverride : path, false);
             }
         }
 
@@ -361,7 +463,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(SelectedNodeInstancesSpecificationC
         classQuery->From(selectClassInfo->GetSelectClass());
 
         // join related instance classes
-        JoinRelatedClasses(*classQuery, relatedClassesJoinCtx, *selectClassInfo, (int)RelatedClassType::All);
+        JoinRelatedClasses(*classQuery, relatedClassesJoinCtx, *selectClassInfo, descriptor, (int)RelatedClassType::All);
 
         // create params for input filtering
         auto inputFilter = QueryBuilderHelpers::CreateInputFilter(m_params.GetConnection(), *selectClassInfo, nullptr, specificationInput);
@@ -459,7 +561,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentRelatedInstancesSpecificatio
         classQuery->From(selectClassInfo->GetSelectClass());
 
         // join related instance classes
-        JoinRelatedClasses(*classQuery, relatedClassesJoinCtx, *selectClassInfo, (int)RelatedClassType::All);
+        JoinRelatedClasses(*classQuery, relatedClassesJoinCtx, *selectClassInfo, descriptor, (int)RelatedClassType::All);
 
         // create params for input filtering
         auto inputFilter = QueryBuilderHelpers::CreateInputFilter(m_params.GetConnection(), *selectClassInfo, recursiveInfo.get(), specificationInput);
@@ -517,7 +619,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentInstancesOfSpecificClassesSp
         classQuery->From(selectClassInfo->GetSelectClass());
 
         // join related instance classes
-        JoinRelatedClasses(*classQuery, relatedClassesJoinCtx, *selectClassInfo, (int)RelatedClassType::All);
+        JoinRelatedClasses(*classQuery, relatedClassesJoinCtx, *selectClassInfo, descriptor, (int)RelatedClassType::All);
 
         // handle instance filtering
         auto filteringExpressionContext = CreateContentSpecificationInstanceFilterContext(m_params, descriptor);
@@ -569,7 +671,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentDescriptor::NestedContentFie
     query->From(selectClassInfo.GetSelectClass());
 
     RelatedClassesJoinContext relatedClassesJoinCtx(*descriptor, m_params);
-    JoinRelatedClasses(*query, relatedClassesJoinCtx, descriptor->GetSelectClasses().back(), (int)RelatedClassType::All);
+    JoinRelatedClasses(*query, relatedClassesJoinCtx, descriptor->GetSelectClasses().back(), *descriptor, (int)RelatedClassType::All);
 
     ContentDescriptor::RelatedContentField const* relatedContentField = contentField.AsRelatedContentField();
     if (nullptr != relatedContentField)

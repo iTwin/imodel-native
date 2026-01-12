@@ -6,7 +6,11 @@ except:
     from thread import get_ident
 from threading import Thread, Lock
 
+import setup_test
 import libxml2
+
+# Memory debug specific
+libxml2.debugMemory(1)
 
 THREADS_COUNT = 15
 
@@ -36,7 +40,7 @@ def test(expectedLineNumbersDefault):
         failed = 1
         print("FAILED to obtain correct value for " \
               "lineNumbersDefault in thread %d" % get_ident())
-    # check ther global error handler 
+    # check the global error handler 
     # (which is NOT per-thread in the python bindings)
     try:
         doc = libxml2.parseFile("bad.xml")
@@ -92,8 +96,10 @@ if failed:
 
 # Memory debug specific
 libxml2.cleanupParser()
+# Note that this can leak memory on Windows if the global state
+# destructors weren't run yet. They should be called eventually,
+# so this leak should be harmless.
 if libxml2.debugMemory(1) == 0:
     print("OK")
 else:
     print("Memory leak %d bytes" % (libxml2.debugMemory(1)))
-    libxml2.dumpMemory()

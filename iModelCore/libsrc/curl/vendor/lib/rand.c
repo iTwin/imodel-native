@@ -37,7 +37,7 @@
 #include "urldata.h"
 #include "vtls/vtls.h"
 #include "sendf.h"
-#include "timeval.h"
+#include "curlx/timeval.h"
 #include "rand.h"
 #include "escape.h"
 
@@ -48,13 +48,14 @@
 
 #ifdef _WIN32
 
-#if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x600 && \
-  !defined(CURL_WINDOWS_APP)
+#if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA && \
+  !defined(CURL_WINDOWS_UWP)
 #  define HAVE_WIN_BCRYPTGENRANDOM
 #  include <bcrypt.h>
 #  ifdef _MSC_VER
 #    pragma comment(lib, "bcrypt.lib")
 #  endif
+   /* Offered by mingw-w64 v3+. MS SDK v7.0A+. */
 #  ifndef BCRYPT_USE_SYSTEM_PREFERRED_RNG
 #  define BCRYPT_USE_SYSTEM_PREFERRED_RNG 0x00000002
 #  endif
@@ -72,7 +73,7 @@ CURLcode Curl_win32_random(unsigned char *entropy, size_t length)
 {
   memset(entropy, 0, length);
 
-#if defined(HAVE_WIN_BCRYPTGENRANDOM)
+#ifdef HAVE_WIN_BCRYPTGENRANDOM
   if(BCryptGenRandom(NULL, entropy, (ULONG)length,
                      BCRYPT_USE_SYSTEM_PREFERRED_RNG) != STATUS_SUCCESS)
     return CURLE_FAILED_INIT;
@@ -100,107 +101,118 @@ CURLcode Curl_win32_random(unsigned char *entropy, size_t length)
 }
 #endif
 
-static CURLcode randit(struct Curl_easy *data, unsigned int *rnd)
+#ifndef USE_SSL
+/* ---- possibly non-cryptographic version following ---- */
+static CURLcode weak_random(struct Curl_easy *data,
+                            unsigned char *entropy,
+                            size_t length) /* always 4, size of int */
 {
-  CURLcode result = CURLE_OK;
-  static unsigned int randseed;
-  static bool seeded = FALSE;
+  unsigned int r;
+  DEBUGASSERT(length == sizeof(int));
 
-#ifdef DEBUGBUILD
-  char *force_entropy = getenv("CURL_ENTROPY");
-  if(force_entropy) {
-    if(!seeded) {
-      unsigned int seed = 0;
-      size_t elen = strlen(force_entropy);
-      size_t clen = sizeof(seed);
-      size_t min = elen < clen ? elen : clen;
-      memcpy((char *)&seed, force_entropy, min);
-      randseed = ntohl(seed);
-      seeded = TRUE;
-    }
-    else
-      randseed++;
-    *rnd = randseed;
-    return CURLE_OK;
-  }
-#endif
-
-  /* data may be NULL! */
-  result = Curl_ssl_random(data, (unsigned char *)rnd, sizeof(*rnd));
-  if(result != CURLE_NOT_BUILT_IN)
-    /* only if there is no random function in the TLS backend do the non crypto
-       version, otherwise return result */
-    return result;
-
-  /* ---- non-cryptographic version following ---- */
-
+  /* Trying cryptographically secure functions first */
 #ifdef _WIN32
-  if(!seeded) {
-    result = Curl_win32_random((unsigned char *)rnd, sizeof(*rnd));
+  (void)data;
+  {
+    CURLcode result = Curl_win32_random(entropy, length);
     if(result != CURLE_NOT_BUILT_IN)
       return result;
   }
 #endif
 
-#if defined(HAVE_ARC4RANDOM) && !defined(USE_OPENSSL)
-  if(!seeded) {
-    *rnd = (unsigned int)arc4random();
-    return CURLE_OK;
-  }
-#endif
-
-#if defined(RANDOM_FILE) && !defined(_WIN32)
-  if(!seeded) {
-    /* if there is a random file to read a seed from, use it */
-    int fd = open(RANDOM_FILE, O_RDONLY);
-    if(fd > -1) {
-      /* read random data into the randseed variable */
-      ssize_t nread = read(fd, &randseed, sizeof(randseed));
-      if(nread == sizeof(randseed))
-        seeded = TRUE;
-      close(fd);
-    }
-  }
-#endif
-
-  if(!seeded) {
-    struct curltime now = Curl_now();
-    infof(data, "WARNING: using weak random seed");
-    randseed += (unsigned int)now.tv_usec + (unsigned int)now.tv_sec;
-    randseed = randseed * 1103515245 + 12345;
-    randseed = randseed * 1103515245 + 12345;
-    randseed = randseed * 1103515245 + 12345;
-    seeded = TRUE;
-  }
-
+#ifdef HAVE_ARC4RANDOM
+  (void)data;
+  r = (unsigned int)arc4random();
+  memcpy(entropy, &r, length);
+#else
+  infof(data, "WARNING: using weak random seed");
   {
-    unsigned int r;
+    static unsigned int randseed;
+    static bool seeded = FALSE;
+    unsigned int rnd;
+    if(!seeded) {
+      struct curltime now = curlx_now();
+      randseed += (unsigned int)now.tv_usec + (unsigned int)now.tv_sec;
+      randseed = randseed * 1103515245 + 12345;
+      randseed = randseed * 1103515245 + 12345;
+      randseed = randseed * 1103515245 + 12345;
+      seeded = TRUE;
+    }
+
     /* Return an unsigned 32-bit pseudo-random number. */
     r = randseed = randseed * 1103515245 + 12345;
-    *rnd = (r << 16) | ((r >> 16) & 0xFFFF);
+    rnd = (r << 16) | ((r >> 16) & 0xFFFF);
+    memcpy(entropy, &rnd, length);
   }
+#endif
   return CURLE_OK;
+}
+#endif
+
+#ifdef USE_SSL
+#define _random(x,y,z) Curl_ssl_random(x,y,z)
+#else
+#define _random(x,y,z) weak_random(x,y,z)
+#endif
+
+static CURLcode randit(struct Curl_easy *data, unsigned int *rnd,
+                       bool env_override)
+{
+#ifdef DEBUGBUILD
+  if(env_override) {
+    char *force_entropy = getenv("CURL_ENTROPY");
+    if(force_entropy) {
+      static unsigned int randseed;
+      static bool seeded = FALSE;
+
+      if(!seeded) {
+        unsigned int seed = 0;
+        size_t elen = strlen(force_entropy);
+        size_t clen = sizeof(seed);
+        size_t min = elen < clen ? elen : clen;
+        memcpy((char *)&seed, force_entropy, min);
+        randseed = ntohl(seed);
+        seeded = TRUE;
+      }
+      else
+        randseed++;
+      *rnd = randseed;
+      return CURLE_OK;
+    }
+  }
+#else
+  (void)env_override;
+#endif
+
+  /* data may be NULL! */
+  return _random(data, (unsigned char *)rnd, sizeof(*rnd));
 }
 
 /*
  * Curl_rand() stores 'num' number of random unsigned characters in the buffer
  * 'rnd' points to.
  *
- * If libcurl is built without TLS support or with a TLS backend that lacks a
- * proper random API (rustls or mbedTLS), this function will use "weak"
- * random.
+ * If libcurl is built without TLS support or arc4random, this function will
+ * use "weak" random.
  *
- * When built *with* TLS support and a backend that offers strong random, it
- * will return error if it cannot provide strong random values.
+ * When built *with* TLS support, it will return error if it cannot provide
+ * strong random values.
  *
  * NOTE: 'data' may be passed in as NULL when coming from external API without
  * easy handle!
  *
  */
 
-CURLcode Curl_rand(struct Curl_easy *data, unsigned char *rnd, size_t num)
+CURLcode Curl_rand_bytes(struct Curl_easy *data,
+#ifdef DEBUGBUILD
+                         bool env_override,
+#endif
+                         unsigned char *rnd, size_t num)
 {
   CURLcode result = CURLE_BAD_FUNCTION_ARGUMENT;
+#ifndef DEBUGBUILD
+  const bool env_override = FALSE;
+#endif
 
   DEBUGASSERT(num);
 
@@ -208,7 +220,7 @@ CURLcode Curl_rand(struct Curl_easy *data, unsigned char *rnd, size_t num)
     unsigned int r;
     size_t left = num < sizeof(unsigned int) ? num : sizeof(unsigned int);
 
-    result = randit(data, &r);
+    result = randit(data, &r, env_override);
     if(result)
       return result;
 
@@ -278,7 +290,7 @@ CURLcode Curl_rand_alnum(struct Curl_easy *data, unsigned char *rnd,
 
   while(num) {
     do {
-      result = randit(data, &r);
+      result = randit(data, &r, TRUE);
       if(result)
         return result;
     } while(r >= (UINT_MAX - UINT_MAX % alnumspace));

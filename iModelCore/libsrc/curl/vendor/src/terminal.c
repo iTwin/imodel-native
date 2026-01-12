@@ -28,7 +28,6 @@
 #endif
 
 #include "terminal.h"
-
 #include "memdebug.h" /* keep this as LAST include */
 
 #ifdef HAVE_TERMIOS_H
@@ -39,7 +38,7 @@
 
 /*
  * get_terminal_columns() returns the number of columns in the current
- * terminal. It will return 79 on failure. Also, the number can be very big.
+ * terminal. It will return 79 on failure. Also, the number can be big.
  */
 
 unsigned int get_terminal_columns(void)
@@ -47,10 +46,9 @@ unsigned int get_terminal_columns(void)
   unsigned int width = 0;
   char *colp = curl_getenv("COLUMNS");
   if(colp) {
-    char *endptr;
-    long num = strtol(colp, &endptr, 10);
-    if((endptr != colp) && (endptr == colp + strlen(colp)) && (num > 20) &&
-       (num < 10000))
+    curl_off_t num;
+    const char *p = colp;
+    if(!curlx_str_number(&p, &num, 10000) && (num > 20))
       width = (unsigned int)num;
     curl_free(colp);
   }
@@ -66,7 +64,7 @@ unsigned int get_terminal_columns(void)
     struct winsize ts;
     if(!ioctl(STDIN_FILENO, TIOCGWINSZ, &ts))
       cols = (int)ts.ws_col;
-#elif defined(_WIN32) && !defined(CURL_WINDOWS_APP)
+#elif defined(_WIN32) && !defined(CURL_WINDOWS_UWP) && !defined(UNDER_CE)
     {
       HANDLE  stderr_hnd = GetStdHandle(STD_ERROR_HANDLE);
       CONSOLE_SCREEN_BUFFER_INFO console_info;
@@ -87,5 +85,5 @@ unsigned int get_terminal_columns(void)
   }
   if(!width)
     width = 79;
-  return width; /* 79 for unknown, might also be very small or very big */
+  return width; /* 79 for unknown, might also be tiny or enormous */
 }

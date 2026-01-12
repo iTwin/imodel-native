@@ -866,7 +866,7 @@
 /* #define NTLM_WB_FILE "/usr/bin/ntlm_auth" */
 
 /* cpu-machine-OS */
-#define OS "aarch64-unknown-linux-android"
+#define CURL_OS "aarch64-unknown-linux-android"
 
 /* Name of package */
 #define PACKAGE "curl"
@@ -1050,9 +1050,6 @@
 
 /* to enable Windows native SSL/TLS support */
 /* #undef USE_SCHANNEL */
-
-/* enable Secure Transport */
-/* #undef USE_SECTRANSP */
 
 /* if you want POSIX threaded DNS lookup */
 #define USE_THREADS_POSIX 1

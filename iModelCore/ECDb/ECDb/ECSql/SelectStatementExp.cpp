@@ -186,6 +186,16 @@ ExtractPropertyValueExp const* DerivedPropertyExp::TryGetExtractPropExp() const 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+bool DerivedPropertyExp::OriginateInACommonTableBlockWithNoColumns() const {
+    Exp const* exp = this->FindParent(Exp::Type::CommonTableBlock);
+    if(exp == nullptr)
+        return false;
+    
+    return exp->GetAs<CommonTableBlockExp>().GetColumns().size() == 0;
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 bool DerivedPropertyExp::IsWildCard() const {
     if (GetExpression()->GetType() == Exp::Type::PropertyName) {
         return GetExpression()->GetAsCP<PropertyNameExp>()->IsWildCard();
@@ -761,11 +771,11 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(ECSqlParseContext cons
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(ECSqlParseContext const& ctx, DerivedPropertyExp const& asteriskExp, std::vector<RangeClassInfo> const& rangeClassRefs)
     {
-    std::vector<std::unique_ptr<DerivedPropertyExp>> derivedPropExpList;
+    std::vector<std::unique_ptr<Exp>> derivedPropExpList;
     for (RangeClassInfo const& classRef : rangeClassRefs)
         classRef.GetExp().ExpandSelectAsterisk(derivedPropExpList, ctx);
 
-    if (!GetChildrenR().Replace(asteriskExp, derivedPropExpList))
+    if (!ReplaceChild(asteriskExp, derivedPropExpList))
         {
         BeAssert(false && "SelectClauseExp::ReplaceAsteriskExpression did not find an asterisk expression unexpectedly.");
         return ERROR;
@@ -919,7 +929,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                 if (propertyNameExp->GetResolvedPropertyPath().First().GetName().EqualsIAscii(effectivePath.First().GetName())) {
                     if (effectivePath.Size() == 1) {
                         return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
-                    } else if (!propertyNameExp->IsPropertyFromCommonTableBlock() && propertyNameExp->GetPropertyMap() != nullptr) {
+                    } else if (!propertyNameExp->IsPropertyFromCommonTableBlockWithColumns() && propertyNameExp->GetPropertyMap() != nullptr) {
                         if (CompoundDataPropertyMap const *compoundProp = dynamic_cast<CompoundDataPropertyMap const*>(propertyNameExp->GetPropertyMap())) {
                             PropertyPath restOfAccessString = effectivePath.Skip(1);
                             auto endMap = compoundProp->Find(restOfAccessString.ToString().c_str());
@@ -1094,7 +1104,15 @@ void SingleSelectStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryExp::SubqueryExp(std::unique_ptr<Exp> exp) : QueryExp(Type::Subquery)
+SubqueryExp::SubqueryExp(std::unique_ptr<SelectStatementExp> exp) : QueryExp(Type::Subquery)
+    {
+    AddChild(std::move(exp));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SubqueryExp::SubqueryExp(std::unique_ptr<CommonTableExp> exp) : QueryExp(Type::Subquery)
     {
     AddChild(std::move(exp));
     }
@@ -1125,12 +1143,15 @@ SelectClauseExp const* SubqueryExp::_GetSelection() const {
         auto selectStatementInsideCTE = stmcte->GetQuery();
         return selectStatementInsideCTE->GetSelection();
     }
-    return NULL;  
+    // This below code should never be reached by the control. Otherwise unexpected behaviour/ undefined behaviour/ crashes may occur
+    BeAssert(false && "SubqueryExp::_GetSelection> Reaching this code may lead to unexpected behaviour/ undefined behaviour/ crashes because child of SubqueryExp is expected to be either of type SelectStatementExp or CommonTableExp");
+    return nullptr;  
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+// SubqueryExp constructor allows either SelectStatementExp or CommonTableExp both of which are children of Exp so GetQuery<Exp> will always give a valid pointer
 template<typename T>
 T const* SubqueryExp::GetQuery() const { 
     auto child = GetChild<Exp>(0);
@@ -1138,6 +1159,8 @@ T const* SubqueryExp::GetQuery() const {
         return static_cast<T const*>(child);
     return nullptr; 
     }
+// As SubqueryExp can have a child of one of these two types CommonTableExp or SelectStatementExp so only GetQuery<Exp> or GetQuery<SelectStatementExp> or GetQuery<CommonTableExp> is allowed. DON'T CALL GetQuery<>() WITH ANY OTHER TYPE.
+template Exp const* SubqueryExp::GetQuery<Exp>() const;
 template CommonTableExp const* SubqueryExp::GetQuery<CommonTableExp>() const;
 template SelectStatementExp const* SubqueryExp::GetQuery<SelectStatementExp>() const;
 //-----------------------------------------------------------------------------------------
@@ -1147,24 +1170,16 @@ void SubqueryExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: SubqueryExp
     val.SetEmptyObject();
     val["id"] = "SubqueryExp";
-    SelectStatementExp const* stm = GetQuery<SelectStatementExp>();
-    if(stm != nullptr)
-        stm->ToJson(val["query"], fmt);
-    CommonTableExp const* stmcte = GetQuery<CommonTableExp>();
-    if(stmcte != nullptr)
-        stmcte->ToJson(val["query"], fmt);
+    Exp const* query = GetQuery<Exp>();
+    query->ToJson(val["query"], fmt);
 }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const { 
-    SelectStatementExp const* stm = GetQuery<SelectStatementExp>();
-    if(stm != nullptr)
-        ctx.AppendToECSql(*stm); 
-    CommonTableExp const* stmcte = GetQuery<CommonTableExp>();
-    if(stmcte != nullptr)
-        ctx.AppendToECSql(*stmcte); 
+void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const {
+    Exp const* query = GetQuery<Exp>(); 
+    ctx.AppendToECSql(*query); 
     }
 
 //****************************** SubqueryRefExp *****************************************
@@ -1204,7 +1219,7 @@ SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8CP ali
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
+void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Exp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
     {
     for (Exp const* expr : GetSubquery()->GetSelection()->GetChildren())
         {
@@ -1220,16 +1235,10 @@ void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPr
 PropertyMatchResult SubqueryRefExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const
     {
         PropertyMatchOptions overrideOptions = options;
-        overrideOptions.SetAlias(GetAlias().c_str());
-        SelectStatementExp const* selectSubQuery = GetSubquery()->GetQuery<SelectStatementExp>();
-        if(selectSubQuery != nullptr)
-            return selectSubQuery->FindProperty(ctx, propertyPath, overrideOptions);
-        CommonTableExp const* stmcte = GetSubquery()->GetQuery<CommonTableExp>();
-        if(stmcte != nullptr){
-            auto selectStatementInsideCTE = stmcte->GetQuery();
-            return selectStatementInsideCTE->FindProperty(ctx,propertyPath,options);
-        }
-        return PropertyMatchResult::NotFound();
+        if (!Utf8String::IsNullOrEmpty(GetAlias().c_str()))
+            overrideOptions.SetAlias(GetAlias().c_str());
+        
+        return GetSubquery()->FindProperty(ctx, propertyPath, overrideOptions);
     }
 
 //-----------------------------------------------------------------------------------------

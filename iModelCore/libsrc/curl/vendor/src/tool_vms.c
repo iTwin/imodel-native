@@ -26,16 +26,12 @@
 #ifdef __VMS
 
 #if defined(__DECC) && !defined(__VAX) && \
-    defined(__CRTL_VER) && (__CRTL_VER >= 70301000)
+  defined(__CRTL_VER) && (__CRTL_VER >= 70301000)
 #include <unixlib.h>
 #endif
 
-#define ENABLE_CURLX_PRINTF
-#include "curlx.h"
-
 #include "curlmsg_vms.h"
 #include "tool_vms.h"
-
 #include "memdebug.h" /* keep this as LAST include */
 
 void decc$__posix_exit(int __status);
@@ -85,7 +81,7 @@ int is_vms_shell(void)
  * feature macro settings, and one of the exit routines is hidden at compile
  * time.
  *
- * Since we want Curl to work properly under the VMS DCL shell and Unix
+ * Since we want curl to work properly under the VMS DCL shell and Unix
  * shells under VMS, this routine should compile correctly regardless of
  * the settings.
  */
@@ -94,7 +90,7 @@ void vms_special_exit(int code, int vms_show)
 {
   int vms_code;
 
-  /* The Posix exit mode is only available after VMS 7.0 */
+  /* The POSIX exit mode is only available after VMS 7.0 */
 #if __CRTL_VER >= 70000000
   if(is_vms_shell() == 0) {
     decc$__posix_exit(code);
@@ -111,7 +107,7 @@ void vms_special_exit(int code, int vms_show)
 }
 
 #if defined(__DECC) && !defined(__VAX) && \
-    defined(__CRTL_VER) && (__CRTL_VER >= 70301000)
+  defined(__CRTL_VER) && (__CRTL_VER >= 70301000)
 
 /*
  * 2004-09-19 SMS.

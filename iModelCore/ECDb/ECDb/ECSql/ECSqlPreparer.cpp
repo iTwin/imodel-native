@@ -108,7 +108,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOr
     if(selectSubquery != nullptr)
         {
         ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
-        if (stat != ECSqlStatus::Success)
+        if (!stat.IsSuccess())
             return stat;
 
         // Subquery insertion begins
@@ -119,12 +119,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOr
     if(cteSubquery != nullptr)
         {
         ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
-        if (stat != ECSqlStatus::Success)
+        if (!stat.IsSuccess())
             return stat;
         // Subquery insertion begins
         return InsertSubquery(ctx, exp, *(cteSubquery->GetQuery()), type, op);
         // Subquery insertion ends
         }
+    BeAssert(false && "ECSqlExpPreparer::PrepareAllOrAnyExp> SubqueryExp must have a child of type either SelectStatementExp or CommonTableExp.");
     return ECSqlStatus::InvalidECSql;
     }
 
@@ -189,10 +190,10 @@ ECSqlStatus ECSqlExpPreparer::InsertSubquery(ECSqlPrepareContext& ctx, AllOrAnyE
 
                 NativeSqlBuilder::List selectClauseItemNativeSqlSnippets;
                 ctx.SetCreateField(false); // This is added so that when we create derived property expression from here we don't create additional fields for the select statement because in ALL we only need the fields for the first select statement not the second one
-                ECSqlStatus stat = ECSqlSelectPreparer::PrepareDerivedPropertyExp(selectClauseItemNativeSqlSnippets, ctx, childExp->GetAs<DerivedPropertyExp>(), 1);
+                auto prepStat = ECSqlSelectPreparer::PrepareDerivedPropertyExp(selectClauseItemNativeSqlSnippets, ctx, childExp->GetAs<DerivedPropertyExp>(), 1);
                 ctx.SetCreateField(true); // The flag is reverted here
-                if (stat != ECSqlStatus::Success)
-                    return stat;
+                if (!prepStat.IsSuccess())
+                    return prepStat;
                 if(selectClauseItemNativeSqlSnippets.size() == 0)
                 {
                     BeAssert(false && "Failed to prepare derived property expression of the select statement for the final WHERE check inside ALL");
@@ -223,10 +224,10 @@ ECSqlStatus ECSqlExpPreparer::InsertSubquery(ECSqlPrepareContext& ctx, AllOrAnyE
 
                 NativeSqlBuilder::List selectClauseItemNativeSqlSnippets;
                 ctx.SetCreateField(false); // This is added so that when we create derived property expression from here we don't create additional fields for the select statement because in ANY or SOME we only need the fields for the first select statement not the second one
-                ECSqlStatus stat = ECSqlSelectPreparer::PrepareDerivedPropertyExp(selectClauseItemNativeSqlSnippets, ctx, childExp->GetAs<DerivedPropertyExp>(),1);
+                auto prepStat = ECSqlSelectPreparer::PrepareDerivedPropertyExp(selectClauseItemNativeSqlSnippets, ctx, childExp->GetAs<DerivedPropertyExp>(),1);
                 ctx.SetCreateField(true); // The flag is reverted here
-                if (stat != ECSqlStatus::Success)
-                    return stat;
+                if (!prepStat.IsSuccess())
+                    return prepStat;
                 if(selectClauseItemNativeSqlSnippets.size() == 0)
                 {
                     BeAssert(false && "Failed to prepare derived property expression of the select statement ffor the final WHERE check inside ANY or SOME");
@@ -683,7 +684,7 @@ void ECSqlExpPreparer::RemovePropertyRefs(ECSqlPrepareContext& ctx, ClassRefExp 
         if (propertyNameExp->IsPropertyRef())
             continue;
         if (propertyNameExp->IsVirtualProperty())
-            break;
+            continue;
 
         const RangeClassRefExp* classRefExp = propertyNameExp->GetClassRefExp();
         if (&exp == classRefExp)
@@ -825,6 +826,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, TableValuedFunctionExp const& exp) {
+    
+    if (exp.GetFunctionExp()->GetFunctionName().EqualsI(IdSetModule::NAME) && !QueryOptionExperimentalFeaturesEnabled(ctx.GetECDb(), exp))
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0737, "'%s' virtual table is experimental feature and disabled by default.", IdSetModule::NAME);
+        return ECSqlStatus::InvalidECSql;
+        }
+    
     NativeSqlBuilder builder;
     builder.Append(exp.GetFunctionExp()->GetFunctionName());
     builder.AppendParenLeft();
@@ -1563,14 +1571,25 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, Subqu
     {
     ctx.GetSqlBuilder().AppendParenLeft();
     SelectStatementExp const* selectSubquery =  exp.GetQuery<SelectStatementExp>();
-    ECSqlStatus stat;
     if(selectSubquery != nullptr)
-        stat = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
+        {
+        ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
+        if (!stat.IsSuccess())
+            return stat;
+        ctx.GetSqlBuilder().AppendParenRight();
+        return stat;
+        }
     CommonTableExp const* cteSubquery =  exp.GetQuery<CommonTableExp>();
     if(cteSubquery != nullptr)
-        stat = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
-    ctx.GetSqlBuilder().AppendParenRight();
-    return stat;
+    {
+        ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
+        if (!stat.IsSuccess())
+            return stat;
+        ctx.GetSqlBuilder().AppendParenRight();
+        return stat;
+    }
+    BeAssert(false && "ECSqlExpPreparer::PrepareSubqueryExp> SubqueryExp must have a child of type either SelectStatementExp or CommonTableExp.");
+    return ECSqlStatus::Error;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1605,22 +1624,27 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(NativeSqlBuilder::List& nat
     nativeSqlBuilder.AppendParenLeft();
     ctx.GetSqlBuilder().Push();
     SelectStatementExp const* selectSubquery =  exp.GetSubquery()->GetQuery<SelectStatementExp>();
-    ECSqlStatus status;
     if(selectSubquery != nullptr){
-        status = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
+        ECSqlStatus status = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
         if (!status.IsSuccess())
             return status;
+        nativeSqlBuilder.Append(ctx.GetSqlBuilder().Pop());
+        nativeSqlBuilder.AppendParenRight();
+        nativeSqlSnippets.push_back(nativeSqlBuilder);
+        return ECSqlStatus::Success;
     }
     CommonTableExp const* cteSubquery =  exp.GetSubquery()->GetQuery<CommonTableExp>();
     if(cteSubquery != nullptr){
-        status = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
+        ECSqlStatus status = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
         if (!status.IsSuccess())
             return status;
+        nativeSqlBuilder.Append(ctx.GetSqlBuilder().Pop());
+        nativeSqlBuilder.AppendParenRight();
+        nativeSqlSnippets.push_back(nativeSqlBuilder);
+        return ECSqlStatus::Success;
     }
-    nativeSqlBuilder.Append(ctx.GetSqlBuilder().Pop());
-    nativeSqlBuilder.AppendParenRight();
-    nativeSqlSnippets.push_back(nativeSqlBuilder);
-    return ECSqlStatus::Success;
+    BeAssert(false && "ECSqlExpPreparer::PrepareSubqueryTestExp> SubqueryExp must have a child of type either SelectStatementExp or CommonTableExp.");
+    return ECSqlStatus::Error;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -2153,15 +2177,15 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameClauseExp(NativeSqlBuilder& nati
     if (!status.IsSuccess())
         return status;
 
-    if (WindowFrameStartExp const * e = exp.GetWindowFrameStartExp())
+    if (WindowFrameStartExp const * startExp = exp.GetWindowFrameStartExp())
         {
-        status = PrepareWindowFrameStartExp(nativeSqlBuilder, ctx, *e);
+        status = PrepareWindowFrameStartExp(nativeSqlBuilder, ctx, *startExp);
         if (!status.IsSuccess())
             return status;
         }
-    else if (WindowFrameBetweenExp const * e = exp.GetWindowFrameBetweenExp())
+    else if (WindowFrameBetweenExp const * betweenExp = exp.GetWindowFrameBetweenExp())
         {
-        status = PrepareWindowFrameBetweenExp(nativeSqlBuilder, ctx, *e);
+        status = PrepareWindowFrameBetweenExp(nativeSqlBuilder, ctx, *betweenExp);
         if (!status.IsSuccess())
             return status;
         }

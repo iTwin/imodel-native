@@ -55,10 +55,16 @@ always:
 dirToSearch = $(BeCurlLibDir)
 %include cincapnd.mki
 
+dirToSearch = $(AresLibDir)
+%include cincapnd.mki
+
+dirToSearch = $(AresLibDir)include
+%include cincapnd.mki
+
 dirToSearch = ${BuildContext}/VendorAPI/zlib
 %include cincapnd.mki
 
-dirToSearch = $(AresDir)/include
+dirToSearch = $(AresDir)include
 %include cincapnd.mki
 
 CCompOpts + -DHAVE_LIBZ
@@ -72,17 +78,15 @@ $(o)amigaos$(oext) : $(BeCurlLibDir)amigaos.c ${MultiCompileDepends}
 
 $(o)asyn-ares$(oext) : $(BeCurlLibDir)asyn-ares.c ${MultiCompileDepends}
 
-$(o)asyn-thread$(oext) : $(BeCurlLibDir)asyn-thread.c ${MultiCompileDepends}
+$(o)asyn-base$(oext) : $(BeCurlLibDir)asyn-base.c ${MultiCompileDepends}
+
+$(o)asyn-thrdd$(oext) : $(BeCurlLibDir)asyn-thrdd.c ${MultiCompileDepends}
 
 $(o)altsvc$(oext) : $(BeCurlLibDir)altsvc.c ${MultiCompileDepends}
-
-$(o)base64$(oext) : $(BeCurlLibDir)base64.c ${MultiCompileDepends}
 
 $(o)bufref$(oext) : $(BeCurlLibDir)bufref.c ${MultiCompileDepends}
 
 $(o)bufq$(oext) : $(BeCurlLibDir)bufq.c ${MultiCompileDepends}
-
-$(o)c-hyper$(oext) : $(BeCurlLibDir)c-hyper.c ${MultiCompileDepends}
 
 $(o)cf-https-connect$(oext) : $(BeCurlLibDir)cf-https-connect.c ${MultiCompileDepends}
 
@@ -91,6 +95,8 @@ $(o)cf-h1-proxy$(oext) : $(BeCurlLibDir)cf-h1-proxy.c ${MultiCompileDepends}
 $(o)cf-h2-proxy$(oext) : $(BeCurlLibDir)cf-h2-proxy.c ${MultiCompileDepends}
 
 $(o)cf-haproxy$(oext) : $(BeCurlLibDir)cf-haproxy.c ${MultiCompileDepends}
+
+$(o)cf-ip-happy$(oext) : $(BeCurlLibDir)cf-ip-happy.c ${MultiCompileDepends}
 
 $(o)cf-socket$(oext) : $(BeCurlLibDir)cf-socket.c ${MultiCompileDepends}
 
@@ -103,6 +109,8 @@ $(o)connect$(oext) : $(BeCurlLibDir)connect.c ${MultiCompileDepends}
 $(o)content_encoding$(oext) : $(BeCurlLibDir)content_encoding.c ${MultiCompileDepends}
 
 $(o)cookie$(oext) : $(BeCurlLibDir)cookie.c ${MultiCompileDepends}
+
+$(o)cshutdn$(oext) : $(BeCurlLibDir)cshutdn.c ${MultiCompileDepends}
 
 $(o)curl_addrinfo$(oext) : $(BeCurlLibDir)curl_addrinfo.c ${MultiCompileDepends}
 
@@ -120,11 +128,11 @@ $(o)curl_gssapi$(oext) : $(BeCurlLibDir)curl_gssapi.c ${MultiCompileDepends}
 
 $(o)curl_memrchr$(oext) : $(BeCurlLibDir)curl_memrchr.c ${MultiCompileDepends}
 
-$(o)curl_multibyte$(oext) : $(BeCurlLibDir)curl_multibyte.c ${MultiCompileDepends}
-
 $(o)curl_ntlm_core$(oext) : $(BeCurlLibDir)curl_ntlm_core.c ${MultiCompileDepends}
 
 $(o)cw-out$(oext) : $(BeCurlLibDir)cw-out.c ${MultiCompileDepends}
+
+$(o)cw-out$(oext) : $(BeCurlLibDir)cw-pause.c ${MultiCompileDepends}
 
 $(o)curl_rtmp$(oext) : $(BeCurlLibDir)curl_rtmp.c ${MultiCompileDepends}
 
@@ -150,6 +158,8 @@ $(o)easy$(oext) : $(BeCurlLibDir)easy.c ${MultiCompileDepends}
 
 $(o)escape$(oext) : $(BeCurlLibDir)escape.c ${MultiCompileDepends}
 
+$(o)fake_addrinfo$(oext) : $(BeCurlLibDir)fake_addrinfo.c ${MultiCompileDepends}
+
 $(o)file$(oext) : $(BeCurlLibDir)file.c ${MultiCompileDepends}
 
 $(o)fileinfo$(oext) : $(BeCurlLibDir)fileinfo.c ${MultiCompileDepends}
@@ -174,15 +184,11 @@ $(o)headers$(oext) : $(BeCurlLibDir)headers.c ${MultiCompileDepends}
 
 $(o)hmac$(oext) : $(BeCurlLibDir)hmac.c ${MultiCompileDepends}
 
-$(o)hostasyn$(oext) : $(BeCurlLibDir)hostasyn.c ${MultiCompileDepends}
-
 $(o)hostip$(oext) : $(BeCurlLibDir)hostip.c ${MultiCompileDepends}
 
 $(o)hostip4$(oext) : $(BeCurlLibDir)hostip4.c ${MultiCompileDepends}
 
 $(o)hostip6$(oext) : $(BeCurlLibDir)hostip6.c ${MultiCompileDepends}
-
-$(o)hostsyn$(oext) : $(BeCurlLibDir)hostsyn.c ${MultiCompileDepends}
 
 $(o)hsts$(oext) : $(BeCurlLibDir)hsts.c ${MultiCompileDepends}
 
@@ -191,6 +197,8 @@ $(o)http$(oext) : $(BeCurlLibDir)http.c ${MultiCompileDepends}
 $(o)http1$(oext) : $(BeCurlLibDir)http1.c ${MultiCompileDepends}
 
 $(o)http2$(oext) : $(BeCurlLibDir)http2.c ${MultiCompileDepends}
+
+$(o)httpsrr$(oext) : $(BeCurlLibDir)httpsrr.c ${MultiCompileDepends}
 
 $(o)http_aws_sigv4$(oext) : $(BeCurlLibDir)http_aws_sigv4.c ${MultiCompileDepends}
 
@@ -210,15 +218,13 @@ $(o)if2ip$(oext) : $(BeCurlLibDir)if2ip.c ${MultiCompileDepends}
 
 $(o)imap$(oext) : $(BeCurlLibDir)imap.c ${MultiCompileDepends}
 
-$(o)inet_ntop$(oext) : $(BeCurlLibDir)inet_ntop.c ${MultiCompileDepends}
-
-$(o)inet_pton$(oext) : $(BeCurlLibDir)inet_pton.c ${MultiCompileDepends}
-
 $(o)krb5$(oext) : $(BeCurlLibDir)krb5.c ${MultiCompileDepends}
 
 $(o)ldap$(oext) : $(BeCurlLibDir)ldap.c ${MultiCompileDepends}
 
 $(o)llist$(oext) : $(BeCurlLibDir)llist.c ${MultiCompileDepends}
+
+$(o)multi_ev$(oext) : $(BeCurlLibDir)multi_ev.c ${MultiCompileDepends}
 
 $(o)md4$(oext) : $(BeCurlLibDir)md4.c ${MultiCompileDepends}
 
@@ -231,8 +237,6 @@ $(o)mprintf$(oext) : $(BeCurlLibDir)mprintf.c ${MultiCompileDepends}
 $(o)multi$(oext) : $(BeCurlLibDir)multi.c ${MultiCompileDepends}
 
 $(o)netrc$(oext) : $(BeCurlLibDir)netrc.c ${MultiCompileDepends}
-
-$(o)nonblock$(oext) : $(BeCurlLibDir)nonblock.c ${MultiCompileDepends}
 
 $(o)noproxy$(oext) : $(BeCurlLibDir)noproxy.c ${MultiCompileDepends}
 
@@ -280,9 +284,7 @@ $(o)strdup$(oext) : $(BeCurlLibDir)strdup.c ${MultiCompileDepends}
 
 $(o)strerror$(oext) : $(BeCurlLibDir)strerror.c ${MultiCompileDepends}
 
-$(o)strtok$(oext) : $(BeCurlLibDir)strtok.c ${MultiCompileDepends}
-
-$(o)strtoofft$(oext) : $(BeCurlLibDir)strtoofft.c ${MultiCompileDepends}
+$(o)strequal$(oext) : $(BeCurlLibDir)strequal.c ${MultiCompileDepends}
 
 $(o)system_win32$(oext) : $(BeCurlLibDir)system_win32.c ${MultiCompileDepends}
 
@@ -290,11 +292,15 @@ $(o)telnet$(oext) : $(BeCurlLibDir)telnet.c ${MultiCompileDepends}
 
 $(o)tftp$(oext) : $(BeCurlLibDir)tftp.c ${MultiCompileDepends}
 
-$(o)timediff$(oext) : $(BeCurlLibDir)timediff.c ${MultiCompileDepends}
-
-$(o)timeval$(oext) : $(BeCurlLibDir)timeval.c ${MultiCompileDepends}
-
 $(o)transfer$(oext) : $(BeCurlLibDir)transfer.c ${MultiCompileDepends}
+
+$(o)uint-bset$(oext) : $(BeCurlLibDir)uint-bset.c ${MultiCompileDepends}
+
+$(o)uint-hash$(oext) : $(BeCurlLibDir)uint-hash.c ${MultiCompileDepends}
+
+$(o)uint-spbset$(oext) : $(BeCurlLibDir)uint-spbset.c ${MultiCompileDepends}
+
+$(o)uint-table$(oext) : $(BeCurlLibDir)uint-table.c ${MultiCompileDepends}
 
 $(o)url$(oext) : $(BeCurlLibDir)url.c ${MultiCompileDepends}
 
@@ -302,7 +308,31 @@ $(o)urlapi$(oext) : $(BeCurlLibDir)urlapi.c ${MultiCompileDepends}
 
 $(o)version$(oext) : $(BeCurlLibDir)version.c ${MultiCompileDepends}
 
-$(o)warnless$(oext) : $(BeCurlLibDir)warnless.c ${MultiCompileDepends}
+$(o)base64$(oext) : $(BeCurlLibDir)curlx/base64.c ${MultiCompileDepends}
+
+$(o)dynbuf$(oext) : $(BeCurlLibDir)curlx/dynbuf.c ${MultiCompileDepends}
+
+$(o)inet_pton$(oext) : $(BeCurlLibDir)curlx/inet_pton.c ${MultiCompileDepends}
+
+$(o)multibyte$(oext) : $(BeCurlLibDir)curlx/multibyte.c ${MultiCompileDepends}
+
+$(o)inet_ntop$(oext) : $(BeCurlLibDir)curlx/inet_ntop.c ${MultiCompileDepends}
+
+$(o)nonblock$(oext) : $(BeCurlLibDir)curlx/nonblock.c ${MultiCompileDepends}
+
+$(o)strparse$(oext) : $(BeCurlLibDir)curlx/strparse.c ${MultiCompileDepends}
+
+$(o)timediff$(oext) : $(BeCurlLibDir)curlx/timediff.c ${MultiCompileDepends}
+
+$(o)timeval$(oext) : $(BeCurlLibDir)curlx/timeval.c ${MultiCompileDepends}
+
+$(o)version_win32$(oext) : $(BeCurlLibDir)curlx/version_win32.c ${MultiCompileDepends}
+
+$(o)wait$(oext) : $(BeCurlLibDir)curlx/wait.c ${MultiCompileDepends}
+
+$(o)warnless$(oext) : $(BeCurlLibDir)curlx/warnless.c ${MultiCompileDepends}
+
+$(o)winapi$(oext) : $(BeCurlLibDir)curlx/winapi.c ${MultiCompileDepends}
 
 $(o)cleartext$(oext) : $(BeCurlLibDir)vauth/cleartext.c ${MultiCompileDepends}
 
@@ -342,9 +372,11 @@ $(o)rustls$(oext) : $(BeCurlLibDir)vtls/rustls.c ${MultiCompileDepends}
 
 $(o)schannel$(oext) : $(BeCurlLibDir)vtls/schannel.c ${MultiCompileDepends}
 
-$(o)sectransp$(oext) : $(BeCurlLibDir)vtls/sectransp.c ${MultiCompileDepends}
-
 $(o)vtls$(oext) : $(BeCurlLibDir)vtls/vtls.c ${MultiCompileDepends}
+
+$(o)vtls_scache$(oext) : $(BeCurlLibDir)vtls/vtls_scache.c ${MultiCompileDepends}
+
+$(o)vtls_spack$(oext) : $(BeCurlLibDir)vtls/vtls_spack.c ${MultiCompileDepends}
 
 $(o)cipher_suite$(oext) : $(BeCurlLibDir)vtls/cipher_suite.c ${MultiCompileDepends}
 
@@ -358,7 +390,7 @@ $(o)setopt$(oext) : $(BeCurlLibDir)setopt.c ${MultiCompileDepends}
 
 $(o)sha256$(oext) : $(BeCurlLibDir)sha256.c ${MultiCompileDepends}
 
-$(o)curl_path$(oext) : $(BeCurlLibDir)curl_path.c ${MultiCompileDepends}
+$(o)curl_path$(oext) : $(BeCurlLibDir)vssh/curl_path.c ${MultiCompileDepends}
 
 $(o)curl_range$(oext) : $(BeCurlLibDir)curl_range.c ${MultiCompileDepends}
 
@@ -366,11 +398,7 @@ $(o)schannel_verify$(oext) : $(BeCurlLibDir)vtls/schannel_verify.c ${MultiCompil
 
 $(o)socketpair$(oext) : $(BeCurlLibDir)socketpair.c ${MultiCompileDepends}
 
-$(o)dynbuf$(oext) : $(BeCurlLibDir)dynbuf.c ${MultiCompileDepends}
-
 $(o)rename$(oext) : $(BeCurlLibDir)rename.c ${MultiCompileDepends}
-
-$(o)version_win32$(oext) : $(BeCurlLibDir)version_win32.c ${MultiCompileDepends}
 
 $(o)ws$(oext) : $(BeCurlLibDir)ws.c ${MultiCompileDepends}
 
@@ -386,19 +414,123 @@ $(o)vquic-tls$(oext) : $(BeCurlLibDir)vquic/vquic-tls.c ${MultiCompileDepends}
 
 %if $(TARGET_PLATFORM) != "Windows" && $(TARGET_PLATFORM) != "iOS" && $(TARGET_PLATFORM) != "Android"
 
+    $(o)ares_array$(oext) : $(AresLibDir)dsa/ares_array.c ${MultiCompileDepends}
+
+    $(o)ares_htable_asvp$(oext) : $(AresLibDir)dsa/ares_htable_asvp.c ${MultiCompileDepends}
+
+    $(o)ares_htable_dict$(oext) : $(AresLibDir)dsa/ares_htable_dict.c ${MultiCompileDepends}
+
+    $(o)ares_htable_strvp$(oext) : $(AresLibDir)dsa/ares_htable_strvp.c ${MultiCompileDepends}
+
+    $(o)ares_htable_szvp$(oext) : $(AresLibDir)dsa/ares_htable_szvp.c ${MultiCompileDepends}
+
+    $(o)ares_htable_vpstr$(oext) : $(AresLibDir)dsa/ares_htable_vpstr.c ${MultiCompileDepends}
+
+    $(o)ares_htable_vpvp$(oext) : $(AresLibDir)dsa/ares_htable_vpvp.c ${MultiCompileDepends}
+
+    $(o)ares_htable$(oext) : $(AresLibDir)dsa/ares_htable.c ${MultiCompileDepends}
+
+    $(o)ares_llist$(oext) : $(AresLibDir)dsa/ares_llist.c ${MultiCompileDepends}
+
+    $(o)ares_slist$(oext) : $(AresLibDir)dsa/ares_slist.c ${MultiCompileDepends}
+
+    $(o)ares_event_configchg$(oext) : $(AresLibDir)event/ares_event_configchg.c ${MultiCompileDepends}
+
+    $(o)ares_event_epoll$(oext) : $(AresLibDir)event/ares_event_epoll.c ${MultiCompileDepends}
+
+    $(o)ares_event_kqueue$(oext) : $(AresLibDir)event/ares_event_kqueue.c ${MultiCompileDepends}
+
+    $(o)ares_event_poll$(oext) : $(AresLibDir)event/ares_event_poll.c ${MultiCompileDepends}
+
+    $(o)ares_event_select$(oext) : $(AresLibDir)event/ares_event_select.c ${MultiCompileDepends}
+
+    $(o)ares_event_thread$(oext) : $(AresLibDir)event/ares_event_thread.c ${MultiCompileDepends}
+
+    $(o)ares_event_wake_pipe$(oext) : $(AresLibDir)event/ares_event_wake_pipe.c ${MultiCompileDepends}
+
+    $(o)ares_event_win32$(oext) : $(AresLibDir)event/ares_event_win32.c ${MultiCompileDepends}
+
+    $(o)ares_create_query$(oext) : $(AresLibDir)legacy/ares_create_query.c ${MultiCompileDepends}
+
+    $(o)ares_expand_name$(oext) : $(AresLibDir)legacy/ares_expand_name.c ${MultiCompileDepends}
+
+    $(o)ares_expand_string$(oext) : $(AresLibDir)legacy/ares_expand_string.c ${MultiCompileDepends}
+
+    $(o)ares_fds$(oext) : $(AresLibDir)legacy/ares_fds.c ${MultiCompileDepends}
+
+    $(o)ares_getsock$(oext) : $(AresLibDir)legacy/ares_getsock.c ${MultiCompileDepends}
+
+    $(o)ares_parse_a_reply$(oext) : $(AresLibDir)legacy/ares_parse_a_reply.c ${MultiCompileDepends}
+
+    $(o)ares_parse_aaaa_reply$(oext) : $(AresLibDir)legacy/ares_parse_aaaa_reply.c ${MultiCompileDepends}
+
+    $(o)ares_parse_caa_reply$(oext) : $(AresLibDir)legacy/ares_parse_caa_reply.c ${MultiCompileDepends}
+
+    $(o)ares_parse_mx_reply$(oext) : $(AresLibDir)legacy/ares_parse_mx_reply.c ${MultiCompileDepends}
+
+    $(o)ares_parse_naptr_reply$(oext) : $(AresLibDir)legacy/ares_parse_naptr_reply.c ${MultiCompileDepends}
+
+    $(o)ares_parse_ns_reply$(oext) : $(AresLibDir)legacy/ares_parse_ns_reply.c ${MultiCompileDepends}
+
+    $(o)ares_parse_ptr_reply$(oext) : $(AresLibDir)legacy/ares_parse_ptr_reply.c ${MultiCompileDepends}
+
+    $(o)ares_parse_soa_reply$(oext) : $(AresLibDir)legacy/ares_parse_soa_reply.c ${MultiCompileDepends}
+
+    $(o)ares_parse_srv_reply$(oext) : $(AresLibDir)legacy/ares_parse_srv_reply.c ${MultiCompileDepends}
+
+    $(o)ares_parse_txt_reply$(oext) : $(AresLibDir)legacy/ares_parse_txt_reply.c ${MultiCompileDepends}
+
+    $(o)ares_parse_uri_reply$(oext) : $(AresLibDir)legacy/ares_parse_uri_reply.c ${MultiCompileDepends}
+
+    $(o)ares_dns_mapping$(oext) : $(AresLibDir)record/ares_dns_mapping.c ${MultiCompileDepends}
+
+    $(o)ares_dns_multistring$(oext) : $(AresLibDir)record/ares_dns_multistring.c ${MultiCompileDepends}
+
+    $(o)ares_dns_name$(oext) : $(AresLibDir)record/ares_dns_name.c ${MultiCompileDepends}
+
+    $(o)ares_dns_parse$(oext) : $(AresLibDir)record/ares_dns_parse.c ${MultiCompileDepends}
+
+    $(o)ares_dns_record$(oext) : $(AresLibDir)record/ares_dns_record.c ${MultiCompileDepends}
+
+    $(o)ares_dns_write$(oext) : $(AresLibDir)record/ares_dns_write.c ${MultiCompileDepends}
+
+    $(o)ares_buf$(oext) : $(AresLibDir)str/ares_buf.c ${MultiCompileDepends}
+
+    $(o)ares_str$(oext) : $(AresLibDir)str/ares_str.c ${MultiCompileDepends}
+
+    $(o)ares_strsplit$(oext) : $(AresLibDir)str/ares_strsplit.c ${MultiCompileDepends}
+
+    $(o)ares_math$(oext) : $(AresLibDir)util/ares_math.c ${MultiCompileDepends}
+
+    $(o)ares_iface_ips$(oext) : $(AresLibDir)util/ares_iface_ips.c ${MultiCompileDepends}
+
+    $(o)ares_rand$(oext) : $(AresLibDir)util/ares_rand.c ${MultiCompileDepends}
+
+    $(o)ares_threads$(oext) : $(AresLibDir)util/ares_threads.c ${MultiCompileDepends}
+
+    $(o)ares_timeval$(oext) : $(AresLibDir)util/ares_timeval.c ${MultiCompileDepends}
+
+    $(o)ares_uri$(oext) : $(AresLibDir)util/ares_uri.c ${MultiCompileDepends}
+
     $(o)ares_library_init$(oext) : $(AresLibDir)ares_library_init.c ${MultiCompileDepends}
+
+    $(o)ares_metrics$(oext) : $(AresLibDir)ares_metrics.c ${MultiCompileDepends}
 
     $(o)ares_init$(oext) : $(AresLibDir)ares_init.c ${MultiCompileDepends}
 
-    $(o)ares__buf$(oext) : $(AresLibDir)ares__buf.c ${MultiCompileDepends}
-
     $(o)ares_cancel$(oext) : $(AresLibDir)ares_cancel.c ${MultiCompileDepends}
 
-    $(o)ares_getsock$(oext) : $(AresLibDir)ares_getsock.c ${MultiCompileDepends}
+    $(o)ares_conn$(oext) : $(AresLibDir)ares_conn.c ${MultiCompileDepends}
+
+    $(o)ares_cookie$(oext) : $(AresLibDir)ares_cookie.c ${MultiCompileDepends}
 
     $(o)ares_timeout$(oext) : $(AresLibDir)ares_timeout.c ${MultiCompileDepends}
 
+    $(o)ares_update_servers$(oext) : $(AresLibDir)ares_update_servers.c ${MultiCompileDepends}
+
     $(o)ares_process$(oext) : $(AresLibDir)ares_process.c ${MultiCompileDepends}
+
+    $(o)ares_qcache$(oext) : $(AresLibDir)ares_qcache.c ${MultiCompileDepends}
 
     $(o)ares_getaddrinfo$(oext) : $(AresLibDir)ares_getaddrinfo.c ${MultiCompileDepends}
 
@@ -408,51 +540,29 @@ $(o)vquic-tls$(oext) : $(BeCurlLibDir)vquic/vquic-tls.c ${MultiCompileDepends}
 
     $(o)ares_destroy$(oext) : $(AresLibDir)ares_destroy.c ${MultiCompileDepends}
 
-    $(o)ares__close_sockets$(oext) : $(AresLibDir)ares__close_sockets.c ${MultiCompileDepends}
+    $(o)ares_close_sockets$(oext) : $(AresLibDir)ares_close_sockets.c ${MultiCompileDepends}
 
     $(o)ares_getnameinfo$(oext) : $(AresLibDir)ares_getnameinfo.c ${MultiCompileDepends}
+
+    $(o)ares_hosts_file$(oext) : $(AresLibDir)ares_hosts_file.c ${MultiCompileDepends}
 
     $(o)ares_search$(oext) : $(AresLibDir)ares_search.c ${MultiCompileDepends}
 
     $(o)inet_net_pton$(oext) : $(AresLibDir)inet_net_pton.c ${MultiCompileDepends}
 
-    $(o)ares__addrinfo_localhost$(oext) : $(AresLibDir)ares__addrinfo_localhost.c ${MultiCompileDepends}
+    $(o)ares_addrinfo_localhost$(oext) : $(AresLibDir)ares_addrinfo_localhost.c ${MultiCompileDepends}
 
-    $(o)ares_strdup$(oext) : $(AresLibDir)ares_strdup.c ${MultiCompileDepends}
+    $(o)ares_addrinfo2hostent$(oext) : $(AresLibDir)ares_addrinfo2hostent.c ${MultiCompileDepends}
 
     $(o)ares_getenv$(oext) : $(AresLibDir)ares_getenv.c ${MultiCompileDepends}
 
-    $(o)ares__htable$(oext) : $(AresLibDir)ares__htable.c ${MultiCompileDepends}
-
-    $(o)ares__htable_asvp$(oext) : $(AresLibDir)ares__htable_asvp.c ${MultiCompileDepends}
-
-    $(o)ares__htable_stvp$(oext) : $(AresLibDir)ares__htable_stvp.c ${MultiCompileDepends}
-
-    $(o)ares__llist$(oext) : $(AresLibDir)ares__llist.c ${MultiCompileDepends}
-
-    $(o)ares__readaddrinfo$(oext) : $(AresLibDir)ares__readaddrinfo.c ${MultiCompileDepends}
-
     $(o)ares_query$(oext) : $(AresLibDir)ares_query.c ${MultiCompileDepends}
 
-    $(o)ares__sortaddrinfo$(oext) : $(AresLibDir)ares__sortaddrinfo.c ${MultiCompileDepends}
+    $(o)ares_sortaddrinfo$(oext) : $(AresLibDir)ares_sortaddrinfo.c ${MultiCompileDepends}
 
-    $(o)ares__parse_into_addrinfo$(oext) : $(AresLibDir)ares__parse_into_addrinfo.c ${MultiCompileDepends}
-
-    $(o)ares__slist$(oext) : $(AresLibDir)ares__slist.c ${MultiCompileDepends}
-
-    $(o)ares__timeval$(oext) : $(AresLibDir)ares__timeval.c ${MultiCompileDepends}
-
-    $(o)ares_rand$(oext) : $(AresLibDir)ares_rand.c ${MultiCompileDepends}
-
-    $(o)ares__read_line$(oext) : $(AresLibDir)ares__read_line.c ${MultiCompileDepends}
-
-    $(o)ares_strsplit$(oext) : $(AresLibDir)ares_strsplit.c ${MultiCompileDepends}
-
-    $(o)ares_nowarn$(oext) : $(AresLibDir)ares_nowarn.c ${MultiCompileDepends}
+    $(o)ares_parse_into_addrinfo$(oext) : $(AresLibDir)ares_parse_into_addrinfo.c ${MultiCompileDepends}
 
     $(o)ares_data$(oext) : $(AresLibDir)ares_data.c ${MultiCompileDepends}
-
-    $(o)ares_expand_name$(oext) : $(AresLibDir)ares_expand_name.c ${MultiCompileDepends}
 
     $(o)ares_free_string$(oext) : $(AresLibDir)ares_free_string.c ${MultiCompileDepends}
 
@@ -460,17 +570,19 @@ $(o)vquic-tls$(oext) : $(BeCurlLibDir)vquic/vquic-tls.c ${MultiCompileDepends}
 
     $(o)ares_gethostbyaddr$(oext) : $(AresLibDir)ares_gethostbyaddr.c ${MultiCompileDepends}
 
-    $(o)ares_create_query$(oext) : $(AresLibDir)ares_create_query.c ${MultiCompileDepends}
-
     $(o)ares_send$(oext) : $(AresLibDir)ares_send.c ${MultiCompileDepends}
 
-    $(o)ares_expand_name$(oext) : $(AresLibDir)ares_expand_name.c ${MultiCompileDepends}
+    $(o)ares_set_socket_functions$(oext) : $(AresLibDir)ares_set_socket_functions.c ${MultiCompileDepends}
+
+    $(o)ares_socket$(oext) : $(AresLibDir)ares_socket.c ${MultiCompileDepends}
 
     $(o)ares_free_hostent$(oext) : $(AresLibDir)ares_free_hostent.c ${MultiCompileDepends}
 
-    $(o)ares__get_hostent$(oext) : $(AresLibDir)ares__get_hostent.c ${MultiCompileDepends}
+    $(o)ares_strerror$(oext) : $(AresLibDir)ares_strerror.c ${MultiCompileDepends}
 
-    $(o)ares_parse_ptr_reply$(oext) : $(AresLibDir)ares_parse_ptr_reply.c ${MultiCompileDepends}
+    $(o)ares_sysconfig$(oext) : $(AresLibDir)ares_sysconfig.c ${MultiCompileDepends}
+
+    $(o)ares_sysconfig_files$(oext) : $(AresLibDir)ares_sysconfig_files.c ${MultiCompileDepends}
 
     $(o)ares_version$(oext) : $(AresLibDir)ares_version.c ${MultiCompileDepends}\
 
@@ -479,6 +591,8 @@ $(o)vquic-tls$(oext) : $(BeCurlLibDir)vquic/vquic-tls.c ${MultiCompileDepends}
 %if $(TARGET_PLATFORM)=="MacOS"
 
 $(o)macos$(oext) : $(BeCurlLibDir)macos.c ${MultiCompileDepends}
+
+$(o)ares_sysconfig_mac$(oext) : $(AresLibDir)ares_sysconfig_mac.c ${MultiCompileDepends}
 
 %endif
 
@@ -513,8 +627,10 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
     LINKER_LIBRARIES	    + wldap32.lib
     LINKER_LIBRARIES	    + advapi32.lib
     LINKER_LIBRARIES	    + crypt32.lib
+    LINKER_LIBRARIES	    + secur32.lib
 %elif $(TARGET_PLATFORM) == "WinRT"
     LINKER_LIBRARIES	    + crypt32.lib
+    LINKER_LIBRARIES	    + secur32.lib
 %endif
 
 %include $(sharedMki)linkLibrary.mki

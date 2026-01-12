@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2007-2025 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright Nokia 2007-2019
  * Copyright Siemens AG 2015-2019
  *
@@ -11,7 +11,6 @@
 
 #include "cmp_local.h"
 #include "internal/cryptlib.h"
-#include "internal/e_os.h" /* ossl_sleep() */
 
 /* explicit #includes not strictly needed since implied by the above: */
 #include <openssl/bio.h>
@@ -32,7 +31,7 @@
 static int unprotected_exception(const OSSL_CMP_CTX *ctx,
                                  const OSSL_CMP_MSG *rep,
                                  int invalid_protection,
-                                 int expected_type /* ignored here */)
+                                 ossl_unused int expected_type)
 {
     int rcvd_type = OSSL_CMP_MSG_get_bodytype(rep /* may be NULL */);
     const char *msg_type = NULL;
@@ -107,9 +106,12 @@ static int save_statusInfo(OSSL_CMP_CTX *ctx, OSSL_CMP_PKISI *si)
     ss = si->statusString; /* may be NULL */
     for (i = 0; i < sk_ASN1_UTF8STRING_num(ss); i++) {
         ASN1_UTF8STRING *str = sk_ASN1_UTF8STRING_value(ss, i);
+        ASN1_UTF8STRING *dup = ASN1_STRING_dup(str);
 
-        if (!sk_ASN1_UTF8STRING_push(ctx->statusString, ASN1_STRING_dup(str)))
+        if (dup == NULL || !sk_ASN1_UTF8STRING_push(ctx->statusString, dup)) {
+            ASN1_UTF8STRING_free(dup);
             return 0;
+        }
     }
     return 1;
 }
@@ -135,8 +137,10 @@ static int send_receive_check(OSSL_CMP_CTX *ctx, const OSSL_CMP_MSG *req,
     int time_left;
     OSSL_CMP_transfer_cb_t transfer_cb = ctx->transfer_cb;
 
+#ifndef OPENSSL_NO_HTTP
     if (transfer_cb == NULL)
         transfer_cb = OSSL_CMP_MSG_http_perform;
+#endif
     *rep = NULL;
 
     if (ctx->total_timeout != 0 /* not waiting indefinitely */) {
@@ -328,7 +332,7 @@ static int poll_for_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
             OSSL_CMP_MSG_free(prep);
             prep = NULL;
             if (sleep) {
-                ossl_sleep((unsigned long)(1000 * check_after));
+                OSSL_sleep((unsigned long)(1000 * check_after));
             } else {
                 if (checkAfter != NULL)
                     *checkAfter = (int)check_after;
@@ -487,6 +491,7 @@ int OSSL_CMP_certConf_cb(OSSL_CMP_CTX *ctx, X509 *cert, int fail_info,
 {
     X509_STORE *out_trusted = OSSL_CMP_CTX_get_certConf_cb_arg(ctx);
     STACK_OF(X509) *chain = NULL;
+
     (void)text; /* make (artificial) use of var to prevent compiler warning */
 
     if (fail_info != 0) /* accept any error flagged by CMP core library */
@@ -541,7 +546,7 @@ int OSSL_CMP_certConf_cb(OSSL_CMP_CTX *ctx, X509 *cert, int fail_info,
                        "success building approximate chain for newly enrolled cert");
     }
     (void)ossl_cmp_ctx_set1_newChain(ctx, chain);
-    sk_X509_pop_free(chain, X509_free);
+    OSSL_STACK_OF_X509_free(chain);
 
     return fail_info;
 }
@@ -556,7 +561,8 @@ int OSSL_CMP_certConf_cb(OSSL_CMP_CTX *ctx, X509 *cert, int fail_info,
  */
 static int cert_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
                          OSSL_CMP_MSG **resp, int *checkAfter,
-                         int req_type, int expected_type)
+                         ossl_unused int req_type,
+                         ossl_unused int expected_type)
 {
     EVP_PKEY *rkey = ossl_cmp_ctx_get0_newPubkey(ctx);
     int fail_info = 0; /* no failure */
@@ -608,8 +614,10 @@ static int cert_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
         ERR_add_error_data(1, "; cannot extract certificate from response");
         return 0;
     }
-    if (!ossl_cmp_ctx_set0_newCert(ctx, cert))
+    if (!ossl_cmp_ctx_set0_newCert(ctx, cert)) {
+        X509_free(cert);
         return 0;
+    }
 
     /*
      * if the CMP server returned certificates in the caPubs field, copy them
@@ -646,6 +654,10 @@ static int cert_response(OSSL_CMP_CTX *ctx, int sleep, int rid,
     if (fail_info != 0) /* immediately log error before any certConf exchange */
         ossl_cmp_log1(ERROR, ctx,
                       "rejecting newly enrolled cert with subject: %s", subj);
+    /*
+     * certConf exchange should better be moved to do_certreq_seq() such that
+     * also more low-level errors with CertReqMessages get reported to server
+     */
     if (!ctx->disableConfirm
             && !ossl_cmp_hdr_has_implicitConfirm((*resp)->header)) {
         if (!ossl_cmp_exchange_certConf(ctx, rid, fail_info, txt))
@@ -729,7 +741,6 @@ int OSSL_CMP_try_certreq(OSSL_CMP_CTX *ctx, int req_type,
 X509 *OSSL_CMP_exec_certreq(OSSL_CMP_CTX *ctx, int req_type,
                             const OSSL_CRMF_MSG *crm)
 {
-
     OSSL_CMP_MSG *rep = NULL;
     int is_p10 = req_type == OSSL_CMP_PKIBODY_P10CR;
     int rid = is_p10 ? OSSL_CMP_CERTREQID_NONE : OSSL_CMP_CERTREQID;
@@ -770,7 +781,8 @@ int OSSL_CMP_exec_RR_ses(OSSL_CMP_CTX *ctx)
         return 0;
     }
     ctx->status = OSSL_CMP_PKISTATUS_request;
-    if (ctx->oldCert == NULL && ctx->p10CSR == NULL) {
+    if (ctx->oldCert == NULL && ctx->p10CSR == NULL
+        && (ctx->serialNumber == NULL || ctx->issuer == NULL)) {
         ERR_raise(ERR_LIB_CMP, CMP_R_MISSING_REFERENCE_CERT);
         return 0;
     }
@@ -837,7 +849,8 @@ int OSSL_CMP_exec_RR_ses(OSSL_CMP_CTX *ctx)
         OSSL_CRMF_CERTTEMPLATE *tmpl =
             sk_OSSL_CMP_REVDETAILS_value(rr->body->value.rr, rsid)->certDetails;
         const X509_NAME *issuer = OSSL_CRMF_CERTTEMPLATE_get0_issuer(tmpl);
-        const ASN1_INTEGER *serial = OSSL_CRMF_CERTTEMPLATE_get0_serialNumber(tmpl);
+        const ASN1_INTEGER *serial =
+            OSSL_CRMF_CERTTEMPLATE_get0_serialNumber(tmpl);
 
         if (sk_OSSL_CRMF_CERTID_num(rrep->revCerts) != num_RevDetails) {
             ERR_raise(ERR_LIB_CMP, CMP_R_WRONG_RP_COMPONENT_COUNT);
