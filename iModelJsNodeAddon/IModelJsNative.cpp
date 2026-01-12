@@ -346,6 +346,16 @@ template<typename T_Db> struct SQLiteOps {
             JsInterop::throwSqlResult("error vacuuming", db.GetDbFileName(), status);
     }
 
+    void Analyze(NapiInfoCR info) {
+        Db& db = GetOpenedDb(info);
+        Utf8String argument;
+        if (info.Length() > 0 && info[0].IsString())
+            argument = info[0].As<Napi::String>().Utf8Value();
+
+        if (const auto status = db.Analyze(argument.empty() ? nullptr : argument.c_str()); status != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error analyzing", db.GetDbFileName(), status);
+    }
+
     void EnableWalMode(Napi::CallbackInfo const& info) {
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_BOOL(0, yesNo, true);
@@ -815,6 +825,7 @@ public:
             InstanceMethod("saveChanges", &SQLiteDb::SaveChanges),
             InstanceMethod("saveFileProperty", &SQLiteDb::SaveFileProperty),
             InstanceMethod("vacuum", &SQLiteDb::Vacuum),
+            InstanceMethod("analyze", &SQLiteDb::Analyze),
             InstanceMethod("enableWalMode", &SQLiteDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &SQLiteDb::PerformCheckpoint),
             InstanceMethod("setAutoCheckpointThreshold", &SQLiteDb::SetAutoCheckpointThreshold),
@@ -3174,6 +3185,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("writeAffectedElementDependencyGraphToFile", &NativeDgnDb::WriteAffectedElementDependencyGraphToFile),
             InstanceMethod("writeFullElementDependencyGraphToFile", &NativeDgnDb::WriteFullElementDependencyGraphToFile),
             InstanceMethod("vacuum", &NativeDgnDb::Vacuum),
+            InstanceMethod("analyze", &NativeDgnDb::Analyze),
             InstanceMethod("enableWalMode", &NativeDgnDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
             InstanceMethod("enableChangesetStatsTracking", &NativeDgnDb::EnableChangesetStatsTracking),
