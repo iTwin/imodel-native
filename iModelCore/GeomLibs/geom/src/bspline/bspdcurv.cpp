@@ -310,16 +310,16 @@ int             dimension
         }
 
     /* Assign value to newPoles array */
-    memcpy (*newPoles, oldPoles, index * sizeof (DPoint3d));
-    memcpy (*newPoles+index, xtmp, (v-l-index+1) * sizeof (DPoint3d));
-    memcpy (*newPoles+v-l+1, oldPoles+v-l, (*newNumPoles - (v-l+1)) * sizeof (DPoint3d));
+    BeStringUtilities::Memcpy (*newPoles, index * sizeof(DPoint3d), oldPoles, index * sizeof (DPoint3d));
+    BeStringUtilities::Memcpy (*newPoles+index, (v - l - index + 1) * sizeof(DPoint3d), xtmp, (v-l-index+1) * sizeof (DPoint3d));
+    BeStringUtilities::Memcpy (*newPoles+v-l+1, (*newNumPoles - (v - l + 1)) * sizeof(DPoint3d), oldPoles+v-l, (*newNumPoles - (v-l+1)) * sizeof (DPoint3d));
     if (dimension)
         {
         d = dimension * sizeof(double);
-        memcpy (*auxNewPoles, auxOldPoles, index * d);
-        memcpy (*auxNewPoles+index*dimension, auxXtmp, (v-l-index+1) * d);
-        memcpy (*auxNewPoles+(v-l+1)*dimension, auxOldPoles+(v-l)*dimension,
-                (*newNumPoles - (v-l+1)) * d);
+        BeStringUtilities::Memcpy (*auxNewPoles, index * d, auxOldPoles, index * d);
+        BeStringUtilities::Memcpy (*auxNewPoles+index*dimension, (v - l - index + 1) * d, auxXtmp, (v-l-index+1) * d);
+        BeStringUtilities::Memcpy (*auxNewPoles+(v-l+1)*dimension, (*newNumPoles - (v - l + 1)) * d, auxOldPoles+(v-l)*dimension,
+                                   (*newNumPoles - (v-l+1)) * d);
         }
 
     abs0 = fabs (xtmp[n-1].x);
@@ -637,9 +637,9 @@ int             dimension
         }
 
     /* assign the new poles to gPolesP */
-    memcpy (gPolesP, tmpPoles, dim*sizeof(DPoint3d));
+    BeStringUtilities::Memcpy (gPolesP, dim * sizeof(DPoint3d), tmpPoles, dim*sizeof(DPoint3d));
     if (dimension)
-        memcpy (auxGPolesP, auxTmpPoles, dim*dimension*sizeof(double));
+        BeStringUtilities::Memcpy (auxGPolesP, dim * dimension * sizeof(double), auxTmpPoles, dim*dimension*sizeof(double));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -958,8 +958,8 @@ int             dimension
     if (dimension)
         {
         allocSize = dimension * sizeof(double);
-        memcpy (*auxGPolesP, auxCurvePoles, allocSize);
-        memcpy (*auxGPolesP + (newNumPoles-1)*dimension,
+        BeStringUtilities::Memcpy (*auxGPolesP, allocSize, auxCurvePoles, allocSize);
+        BeStringUtilities::Memcpy (*auxGPolesP + (newNumPoles-1)*dimension, allocSize,
                 auxCurvePoles + (numCurveKnots+order-1)*dimension, allocSize);
         }
 
@@ -1053,7 +1053,7 @@ int             dimension              /* => number of extra dimensions */
             status = ERROR;
             goto wrapup;
             }
-        memcpy (auxOrigPoles, *auxPoles, allocSize);
+        BeStringUtilities::Memcpy (auxOrigPoles, allocSize , *auxPoles, allocSize);
         }
 
     /* number of iterations suggested by Tom Lyche */
@@ -1967,7 +1967,7 @@ DPoint3d *pPoint1
         }
     else
         {
-        memcpy (xyz, xyz0, numArrayEntry * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (xyz, numArrayEntry * sizeof(DPoint3d), xyz0, numArrayEntry * sizeof(DPoint3d));
         }
     *pPoint2   = xyz[0];
     tangent2   = xyz[1];

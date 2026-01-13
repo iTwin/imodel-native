@@ -1173,7 +1173,7 @@ BuilderParams          *mpP                /* => mesh parameters */
     if (rational)
         bsputil_unWeightPoles (poles, patchBezP->poles,  patchBezP->weights, numPoles);
     else
-        memcpy (poles, patchBezP->poles, numPoles * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (poles, numPoles * sizeof(DPoint3d), patchBezP->poles, numPoles * sizeof(DPoint3d));
 
     if (mpP->toleranceTransformP)
         mpP->toleranceTransformP->Multiply (poles, numPoles);

@@ -926,7 +926,7 @@ void FinishAndGetBuffer (flatbuffers::Offset<BGFB::VariantGeometry> g, bvector<B
     buffer.resize(buffer.size () + m_fbb.GetSize());
     Byte *fbDest = GetFBStart (buffer);
     if (nullptr != fbDest)
-        memcpy(fbDest, m_fbb.GetBufferPointer(), m_fbb.GetSize());
+        BeStringUtilities::Memcpy(fbDest, m_fbb.GetSize(), m_fbb.GetBufferPointer(), m_fbb.GetSize());
     else
       buffer.clear ();
     }
@@ -1231,7 +1231,8 @@ static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::Polyface* fbPolyface, 
     else
         {
         indices.resize(fbAuxIndices->size());
-        memcpy(indices.data(), fbAuxIndices->GetStructFromOffset(0), fbAuxIndices->size() * sizeof(int32_t));
+        BeStringUtilities::Memcpy(indices.data(), fbAuxIndices->size() * sizeof(int32_t),
+            fbAuxIndices->GetStructFromOffset(0), fbAuxIndices->size() * sizeof(int32_t));
         }
     if (indices.size() != fbPointIndices->size())
         return nullptr;
@@ -1249,7 +1250,8 @@ static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::Polyface* fbPolyface, 
             auto            fbChannelDataValues = fbChannelData->values();
             bvector<double> values(fbChannelDataValues->Length());
 
-            memcpy (values.data(), fbChannelDataValues->GetStructFromOffset(0), fbChannelDataValues->Length() * sizeof(double));
+            BeStringUtilities::Memcpy (values.data(), fbChannelDataValues->Length() * sizeof(double),
+                fbChannelDataValues->GetStructFromOffset(0), fbChannelDataValues->Length() * sizeof(double));
             channelDataVector.push_back(new PolyfaceAuxChannel::Data(fbChannelData->input(), std::move(values)));
             }
         channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType(fbChannel->dataType()), fbChannel->name()->c_str(), fbChannel->inputName()->c_str(), std::move(channelDataVector)));
@@ -1262,7 +1264,7 @@ template <typename MemberType>
 static void ReadBVector(bvector<MemberType> &dest, const MemberType *source, size_t n)
     {
     dest.resize(n);
-    memcpy(&dest[0], source, n * sizeof(MemberType));
+    BeStringUtilities::Memcpy(&dest[0], n * sizeof(MemberType), source, n * sizeof(MemberType));
     }
 
 template <typename MemberType, typename ScalarType>
@@ -1271,7 +1273,7 @@ static void ReadBVector(bvector<MemberType> &dest, uint32_t numPerMember, const 
     dest.resize(n / numPerMember);
     if (n < numPerMember)
         return;
-    memcpy((ScalarType*) &dest[0], source, n * sizeof(ScalarType));
+    BeStringUtilities::Memcpy((ScalarType*) &dest[0], n * sizeof(ScalarType), source, n * sizeof(ScalarType));
     }
 
 // read from fb into taggedDataDest (which is assumed empty/initialized)
@@ -1296,7 +1298,7 @@ static void LoadBlockedVector (BlockedVectorType dest, StructType const*source, 
     {
     dest.SetActive (true);
     dest.resize (n);
-    memcpy (&dest[0], source, n * sizeof (StructType));
+    BeStringUtilities::Memcpy (&dest[0], n * sizeof (StructType), source, n * sizeof (StructType));
     }
 
 static PolyfaceHeaderPtr ReadPolyfaceHeader (const BGFB::VariantGeometry * fbGeometry)

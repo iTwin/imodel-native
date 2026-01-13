@@ -92,7 +92,7 @@ int numExpected
     for (int i = 0; i < mNumBoundary; i++)
         bspTrimCurve_breakCyclicList (&mBoundary[i].pFirst);
 
-    memcpy (pDest, mBoundary, mNumBoundary * sizeof (BsurfBoundary));
+    BeStringUtilities::Memcpy (pDest, mNumBoundary * sizeof(BsurfBoundary), mBoundary, mNumBoundary * sizeof (BsurfBoundary));
     return mNumBoundary;
     }
 

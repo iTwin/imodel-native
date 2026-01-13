@@ -144,7 +144,7 @@ int             polish     /* => If true, roots are polished (improved) */
         return ERROR;
     ScopedArray<DPoint2d> adArray(m+2);    DPoint2d * ad = adArray.GetData ();
 
-    memcpy (ad, a, (m+1)*sizeof(DPoint2d));
+    BeStringUtilities::Memcpy(ad, (m + 1) * sizeof(DPoint2d), a, (m + 1) * sizeof(DPoint2d));
     for (j = m; j >= 1; j--)
         {
         x.x = x.y = 0.0;

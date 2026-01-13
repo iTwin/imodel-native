@@ -748,30 +748,30 @@ int             rational
     if (start < 0)
         {
         shift = numPoles + start;
-        memcpy (poles, fullPoles + shift, -start * sizeof(DPoint3d));
-        memcpy (poles - start, fullPoles, (order + start) * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (poles, -start * sizeof(DPoint3d), fullPoles + shift, -start * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (poles - start, (order + start) * sizeof(DPoint3d), fullPoles, (order + start) * sizeof(DPoint3d));
         if (rational)
             {
-            memcpy (weights, fullWeights+shift, -start * sizeof(double));
-            memcpy (weights - start, fullWeights, (order + start) * sizeof(double));
+            BeStringUtilities::Memcpy (weights, -start * sizeof(double), fullWeights+shift, -start * sizeof(double));
+            BeStringUtilities::Memcpy (weights - start, (order + start) * sizeof(double), fullWeights, (order + start) * sizeof(double));
             }
         }
     else if (start > (numPoles - order))
         {
         shift = numPoles - start;
-        memcpy (poles, fullPoles + start,  shift * sizeof(DPoint3d));
-        memcpy (poles+shift, fullPoles, (order - shift) * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (poles, shift * sizeof(DPoint3d), fullPoles + start,  shift * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (poles + shift, (order - shift) * sizeof(DPoint3d), fullPoles, (order - shift) * sizeof(DPoint3d));
         if (rational)
             {
-            memcpy (weights, fullWeights + start,  shift * sizeof(double));
-            memcpy (weights + shift, fullWeights, (order-shift) * sizeof(double));
+            BeStringUtilities::Memcpy (weights, shift * sizeof(double), fullWeights + start,  shift * sizeof(double));
+            BeStringUtilities::Memcpy (weights + shift, (order - shift) * sizeof(double), fullWeights, (order-shift) * sizeof(double));
             }
         }
     else
         {
-        memcpy (poles, fullPoles + start, order * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (poles, order * sizeof(DPoint3d), fullPoles + start, order * sizeof(DPoint3d));
         if (rational)
-            memcpy (weights, fullWeights + start, order * sizeof(double));
+            BeStringUtilities::Memcpy (weights, order * sizeof(double), fullWeights + start, order * sizeof(double));
         }
     }
 
@@ -852,7 +852,7 @@ int             *bufSize
                 return MDLERR_INSFMEMORY;
             *buffer = bPtr;
             *bufSize = strokes;
-            memcpy (*buffer, out, allocSize);
+            BeStringUtilities::Memcpy (*buffer, allocSize, out, allocSize);
             }
         else
             {
@@ -862,7 +862,7 @@ int             *bufSize
             else
                 {
                 *buffer = bPtr;
-                memcpy ((*buffer) + *bufSize, out, strokes*sizeof(DPoint3d));
+                BeStringUtilities::Memcpy ((*buffer) + *bufSize, strokes * sizeof(DPoint3d), out, strokes*sizeof(DPoint3d));
                 *bufSize += strokes;
                 }
             }
@@ -928,7 +928,7 @@ int             numPoles
 
     if (NULL == weights)
         {
-        memcpy (weightedPoles, poles, numPoles * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (weightedPoles, numPoles * sizeof(DPoint3d), poles, numPoles * sizeof(DPoint3d));
         }
     else
         {
@@ -954,7 +954,7 @@ int             numPoles
 
     if (NULL == weights)
         {
-        memcpy (poles, weightedPoles, numPoles * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (poles, numPoles * sizeof(DPoint3d), weightedPoles, numPoles * sizeof(DPoint3d));
         }
     else
         {
@@ -1684,7 +1684,7 @@ double          *interiorKnots      /* => interior knots (if nonuniform) */
 
     if (params->numKnots && NULL != interiorKnots)
         {
-        memcpy (knotVector+params->order, interiorKnots, numIntrKnots * sizeof (double));
+        BeStringUtilities::Memcpy (knotVector+params->order, numIntrKnots * sizeof(double), interiorKnots, numIntrKnots * sizeof (double));
         }
     else    /* uniform case */
         {
@@ -1732,7 +1732,7 @@ BsplineParam    *params,            /* => B-Spline parameters */
 double          *interiorKnots      /* => interior knots (if nonuniform) */
 )
     {
-    memcpy (knotVector, interiorKnots, (params->numPoles + params->order) * sizeof (double));
+    BeStringUtilities::Memcpy (knotVector, (params->numPoles + params->order) * sizeof(double), interiorKnots, (params->numPoles + params->order) * sizeof (double));
     return SUCCESS;
     }
 
@@ -2510,42 +2510,42 @@ int             rational
         {
         /* new poles wrap around old poles at left */
         shift = order + start;
-        memcpy (newPoles, poleBuffer - start, (shift + addMult) * sizeof(DPoint3d));
-        memcpy (newPoles + shift + addMult, oldPoles + shift, (numPoles - order) * sizeof(DPoint3d));
-        memcpy (newPoles + numPoles + addMult + start, poleBuffer, (-start) * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (newPoles, (shift + addMult) * sizeof(DPoint3d), poleBuffer - start, (shift + addMult) * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (newPoles + shift + addMult, (numPoles - order) * sizeof(DPoint3d), oldPoles + shift, (numPoles - order) * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (newPoles + numPoles + addMult + start, (-start) * sizeof(DPoint3d), poleBuffer, (-start) * sizeof(DPoint3d));
         if (rational)
             {
-            memcpy (newWeights, wtsBuffer - start, (shift + addMult) * sizeof(double));
-            memcpy (newWeights + shift + addMult, oldWeights + shift, (numPoles - order) * sizeof(double));
-            memcpy (newWeights + numPoles + addMult + start, wtsBuffer, (-start) * sizeof(double));
+            BeStringUtilities::Memcpy (newWeights, (shift + addMult) * sizeof(double), wtsBuffer - start, (shift + addMult) * sizeof(double));
+            BeStringUtilities::Memcpy (newWeights + shift + addMult, (numPoles - order) * sizeof(double), oldWeights + shift, (numPoles - order) * sizeof(double));
+            BeStringUtilities::Memcpy (newWeights + numPoles + addMult + start, (-start) * sizeof(double), wtsBuffer, (-start) * sizeof(double));
             }
         }
     else if (closed && start > (numPoles - order))
         {
         /* new poles wrap around old poles at right */
         shift = start + order - numPoles;
-        memcpy (newPoles, poleBuffer + order + addMult - shift, shift * sizeof(DPoint3d));
-        memcpy (newPoles + shift, oldPoles + shift, (numPoles - order) * sizeof(DPoint3d));
-        memcpy (newPoles + start, poleBuffer, (numPoles + addMult - start) * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (newPoles, shift * sizeof(DPoint3d), poleBuffer + order + addMult - shift, shift * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (newPoles + shift, (numPoles - order) * sizeof(DPoint3d), oldPoles + shift, (numPoles - order) * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (newPoles + start, (numPoles + addMult - start) * sizeof(DPoint3d), poleBuffer, (numPoles + addMult - start) * sizeof(DPoint3d));
         if (rational)
             {
-            memcpy (newWeights, wtsBuffer + order + addMult - shift, shift * sizeof(double));
-            memcpy (newWeights + shift, oldWeights + shift, (numPoles - order) * sizeof(double));
-            memcpy (newWeights + start, wtsBuffer, (numPoles + addMult - start) * sizeof(double));
+            BeStringUtilities::Memcpy (newWeights, shift * sizeof(double), wtsBuffer + order + addMult - shift, shift * sizeof(double));
+            BeStringUtilities::Memcpy (newWeights + shift, (numPoles - order) * sizeof(double), oldWeights + shift, (numPoles - order) * sizeof(double));
+            BeStringUtilities::Memcpy (newWeights + start, (numPoles + addMult - start) * sizeof(double), wtsBuffer, (numPoles + addMult - start) * sizeof(double));
             }
         }
     else
         {
         /* new poles fit inside old poles */
         shift = start + order;
-        memcpy (newPoles, oldPoles, start * sizeof(DPoint3d));
-        memcpy (newPoles + start, poleBuffer, (order + addMult) * sizeof(DPoint3d));
-        memcpy (newPoles + shift + addMult, oldPoles + start + order, (numPoles - shift) * sizeof(DPoint3d));
-        if (rational)
+        BeStringUtilities::Memcpy (newPoles, start * sizeof(DPoint3d), oldPoles, start * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (newPoles + start, (order + addMult) * sizeof(DPoint3d), poleBuffer, (order + addMult) * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (newPoles + shift + addMult, (numPoles - shift) * sizeof(DPoint3d), oldPoles + start + order, (numPoles - shift) * sizeof(DPoint3d));
+       if (rational)
             {
-            memcpy (newWeights, oldWeights, start * sizeof(double));
-            memcpy (newWeights + start, wtsBuffer, (order + addMult) * sizeof(double));
-            memcpy (newWeights + shift + addMult, oldWeights + start + order, (numPoles - shift) * sizeof(double));
+            BeStringUtilities::Memcpy (newWeights, start * sizeof(double), oldWeights, start * sizeof(double));
+            BeStringUtilities::Memcpy (newWeights + start, (order + addMult) * sizeof(double), wtsBuffer, (order + addMult) * sizeof(double));
+            BeStringUtilities::Memcpy (newWeights + shift + addMult, (numPoles - shift) * sizeof(double), oldWeights + start + order, (numPoles - shift) * sizeof(double));
             }
         }
 
@@ -2556,10 +2556,10 @@ int             rational
 
     rght -= currentMult;
 #endif
-    memcpy (newKnots, oldKnots, rght * sizeof(double));
+    BeStringUtilities::Memcpy (newKnots, rght * sizeof(double), oldKnots, rght * sizeof(double));
     for (i=0, right=newKnots + rght; i < addMult; i++, right++)
         *right = u;
-    memcpy (newKnots + rght + addMult, oldKnots + rght, (numKnots - rght) * sizeof(double));
+    BeStringUtilities::Memcpy (newKnots + rght + addMult, (numKnots - rght) * sizeof(double), oldKnots + rght, (numKnots - rght) * sizeof(double));
 
 #if defined (USE_NORMALIZED_KNOTS)
     bspknot_normalizeKnotVector (newKnots, numPoles + addMult, order, closed);
@@ -3603,10 +3603,10 @@ MSBsplineCurve  *curveIn                /* => curve.params.closed == true */
     if (SUCCESS != (status = bspcurv_allocateCurve (&curve)))
         return  status;
 
-    memcpy (curve.knots, curveIn->knots, numKnots * sizeof (double));
-    memcpy (curve.poles, curveIn->poles, curveIn->params.numPoles * sizeof (DPoint3d));
+    BeStringUtilities::Memcpy (curve.knots, numKnots * sizeof(double), curveIn->knots, numKnots * sizeof (double));
+    BeStringUtilities::Memcpy (curve.poles, curveIn->params.numPoles * sizeof(DPoint3d), curveIn->poles, curveIn->params.numPoles * sizeof (DPoint3d));
     if (curveIn->rational)
-        memcpy (curve.weights, curveIn->weights, curveIn->params.numPoles * sizeof (double));
+        BeStringUtilities::Memcpy (curve.weights, curveIn->params.numPoles * sizeof(double), curveIn->weights, curveIn->params.numPoles * sizeof (double));
     for (i = 0; i < curve.params.order - 1; i++)
         {
         curve.poles[i+curveIn->params.numPoles] = curveIn->poles[i];

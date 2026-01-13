@@ -80,7 +80,7 @@ char ** argv
     selectTolerances (0);
     const char *pOutfileName = pDefaultOutfileName;
     if (argc > 1)
-        printf (" geomlibs test environment -- command line arguments:\n");
+        printf_s (" geomlibs test environment -- command line arguments:\n");
     // In arg 0, only print what is past the last backslash
     int kLast = -1;
     for (int k = 0; argv[0][k] != 0; k++)
@@ -88,9 +88,9 @@ char ** argv
             kLast = k;
 
     if (argc > 1)
-        printf (" Tail of argv[0] = %s\n", argv[0] + kLast + 1);
+        printf_s (" Tail of argv[0] = %s\n", argv[0] + kLast + 1);
     for (i = 1; i < argc; i++)
-            printf (" argv[%d] = %s\n", i, argv[i]);
+            printf_s (" argv[%d] = %s\n", i, argv[i]);
 
 
     if (argc > 1 && 0 == strcmp (argv[1], "USER"))
@@ -111,7 +111,7 @@ char ** argv
         {
 	if (0 == strcmp (argv[i], "@debug"))
             {
-	    //printf ("dvec3dtest -- debug request from command line \n");
+	    //printf_s ("dvec3dtest -- debug request from command line \n");
 	    //mdlSystem_enterDebug ();
 	    }
 	else if (i+1 < argc && 0 == strcmp (argv[i], "@outfile"))
@@ -123,25 +123,25 @@ char ** argv
             {
 	    if (!optionsPrinted)
                 {
-                printf (" Options:\n");
-                //printf ("     @debug --- start mdl console window debugger\n");
-                printf ("     @outfile filename --- name for output file\n");
+                printf_s (" Options:\n");
+                //printf_s ("     @debug --- start mdl console window debugger\n");
+                printf_s ("     @outfile filename --- name for output file\n");
 		optionsPrinted = 1;
 		}
 	    showArgs = 1;
 	    //mdlSystem_enterDebug ();
 	    }
 	if (showArgs)
-            printf (" argv[%d] = %s\n", i, argv[i]);
+            printf_s (" argv[%d] = %s\n", i, argv[i]);
 	}
 
     if (pOutfileName)
         {
-        printf (" printfuncs: opening output file %s\n", pOutfileName);
+        printf_s (" printfuncs: opening output file %s\n", pOutfileName);
 
         if (NULL == (s_outfile = fopen (pOutfileName, "w")))
             {
-            printf ("  ERROR -- dvec3dtest.ma unable to open output file %s\n", pOutfileName);
+            printf_s ("  ERROR -- dvec3dtest.ma unable to open output file %s\n", pOutfileName);
 	    s_numERR++;
 	    }
 	}
@@ -159,7 +159,7 @@ Public StatusInt getExitStatus
 void
 )
     {
-    printf ("<Exit>%d errors, %d OK</Exit>\n", s_numERR, s_numOK);
+    printf_s ("<Exit>%d errors, %d OK</Exit>\n", s_numERR, s_numOK);
     return s_numERR == 0 ? SUCCESS : ERROR;
     }
 
@@ -168,14 +168,14 @@ Public void xml_startTag
 const char *tagName
 )
     {
-    fprintf (s_outfile, "<%s", tagName);
+    fprintf_s (s_outfile, "<%s", tagName);
     }
 
 Public void xml_endHeader
 (
 )
     {
-    fprintf (s_outfile, ">\n");
+    fprintf_s (s_outfile, ">\n");
     }
 
 Public void xml_endTag
@@ -183,7 +183,7 @@ Public void xml_endTag
 const char *tagName
 )
     {
-    fprintf (s_outfile, "</%s>\n", tagName);
+    fprintf_s (s_outfile, "</%s>\n", tagName);
     }
 
 Public void xml_printAttribute
@@ -192,7 +192,7 @@ const char *pName,
 const char *pValue
 )
     {
-    fprintf (s_outfile, "\n\t\t%s=\"%s\"", pName, pValue);
+    fprintf_s (s_outfile, "\n\t\t%s=\"%s\"", pName, pValue);
     }
 
 static char *s_pName = "GenericReport";
@@ -285,13 +285,13 @@ Tag *pParent
         pParent->EmitCompleteTag (pTagName, pNameString, pContentString);
     else
         {
-        fprintf (s_outfile, "<%s", pTagName);
+        fprintf_s (s_outfile, "<%s", pTagName);
         if (pNameString)
-            fprintf (s_outfile, " name=\"%s\"", pNameString);
+            fprintf_s (s_outfile, " name=\"%s\"", pNameString);
         if (pContentString)
-            fprintf (s_outfile, ">%s</%s>\n", pContentString, pTagName);
+            fprintf_s (s_outfile, ">%s</%s>\n", pContentString, pTagName);
         else
-            fprintf (s_outfile, "/>\n");
+            fprintf_s (s_outfile, "/>\n");
         }
     }
 

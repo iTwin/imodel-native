@@ -2443,7 +2443,7 @@ double param1
 
     for (size_t i = 1; i < numEdge; i++)
         {
-        memcpy (poles, pPoleArray, order * sizeof (DPoint4d));
+        BeStringUtilities::Memcpy (poles, order * sizeof (DPoint4d), pPoleArray, order * sizeof (DPoint4d));
         bsiBezierDPoint4d_subdivideRightInPlace (poles, NULL, order, i * df);
         AddStroke (points, params, derivatives, param0 + i * dp, derivativeScale,
                     poles[0], poles[0], poles[1]);

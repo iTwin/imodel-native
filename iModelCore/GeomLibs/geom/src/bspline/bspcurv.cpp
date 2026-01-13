@@ -164,10 +164,10 @@ MSBsplineCurveCP input
 
     numPoles = output->params.numPoles;
     if (output->poles != NULL && input->poles != NULL)          //Defect #7321
-        memcpy (output->poles, input->poles, numPoles * sizeof (DPoint3d));
+        BeStringUtilities::Memcpy (output->poles, numPoles * sizeof(DPoint3d), input->poles, numPoles * sizeof (DPoint3d));
 
     if (output->rational)
-        memcpy (output->weights, input->weights, numPoles * sizeof(double));
+        BeStringUtilities::Memcpy (output->weights, numPoles * sizeof(double), input->weights, numPoles * sizeof(double));
     else
         output->weights = NULL;
 
@@ -175,7 +175,7 @@ MSBsplineCurveCP input
                                     output->params.closed);
 
     if (input->knots)
-        memcpy (output->knots, input->knots, numKnots * sizeof (double));
+        BeStringUtilities::Memcpy (output->knots, numKnots * sizeof(double), input->knots, numKnots * sizeof (double));
     else
         /* If knot vector is missing then create it */
         bspknot_computeKnotVector (output->knots, &output->params, NULL);
@@ -201,8 +201,8 @@ MSInterpolationCurve    *input
     if (SUCCESS != (status = bspcurv_allocateInterpolationCurve (output)))
         return status;
 
-    memcpy (output->fitPoints, input->fitPoints, output->params.numPoints * sizeof (DPoint3d));
-    memcpy (output->knots, input->knots, output->params.numKnots * sizeof (double));
+    BeStringUtilities::Memcpy (output->fitPoints, output->params.numPoints * sizeof(DPoint3d), input->fitPoints, output->params.numPoints * sizeof (DPoint3d));
+    BeStringUtilities::Memcpy (output->knots, output->params.numKnots * sizeof(double), input->knots, output->params.numKnots * sizeof (double));
 
     return SUCCESS;
     }
@@ -253,7 +253,7 @@ double          *inWeights
     DPoint3d    dPoles[4], derivatives[4];
 
     dWt0 = inWeights[0];
-    memcpy (dPoles, inPoles, sizeof(dPoles));
+    BeStringUtilities::Memcpy (dPoles, sizeof(dPoles), inPoles, sizeof(dPoles));
 
     derivatives[0].x = dPoles[0].x / dWt0;
     derivatives[0].y = dPoles[0].y / dWt0;
@@ -305,7 +305,7 @@ double          *inWeights
                      -  3*dPoles[2].z * c3 * inWeights[1]
                      +    dPoles[3].z * c3 * inWeights[0]) / dWt0;
 
-    memcpy (out, derivatives, sizeof(dPoles));
+    BeStringUtilities::Memcpy (out, sizeof(dPoles), derivatives, sizeof(dPoles));
     }
 
 //--------------------------------------------------------------------------------------
@@ -508,10 +508,10 @@ int             leftHand               /* give left derivatives at knots */
         }
 
     if (dervPoles)
-        memcpy (dervPoles, dPoles, (numDervs+1) * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (dervPoles, (numDervs + 1) * sizeof(DPoint3d), dPoles, (numDervs+1) * sizeof(DPoint3d));
 
     if (dervWts)
-        memcpy (dervWts, dWts, (numDervs+1) * sizeof(double));
+        BeStringUtilities::Memcpy (dervWts, (numDervs + 1) * sizeof(double), dWts, (numDervs+1) * sizeof(double));
 
     return SUCCESS;
     }
@@ -612,7 +612,7 @@ DPoint3d        *defaultM              /* => normal for linear, or NULL */
     if (curve->rational)
         bspcurv_chainRule (derivatives, dPoles, dWeights);
     else
-        memcpy (derivatives, dPoles, 4 * sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (derivatives, 4 * sizeof(DPoint3d), dPoles, 4 * sizeof(DPoint3d));
 
     if (point)
         *point = derivatives[0];
@@ -879,7 +879,7 @@ double          u
         *outCurve = curve;
         outCurve->params.closed = false;
         outCurve->params.numKnots = outCurve->params.numPoles - outCurve->params.order;
-        memmove (outCurve->knots, &outCurve->knots[outCurve->params.order/2], (outCurve->params.numPoles + outCurve->params.order) * sizeof (double));
+        BeStringUtilities::Memmove (outCurve->knots, (outCurve->params.numPoles + outCurve->params.order) * sizeof(double), &outCurve->knots[outCurve->params.order/2], (outCurve->params.numPoles + outCurve->params.order) * sizeof (double));
         return SUCCESS;
         }
 
@@ -943,12 +943,12 @@ double          u
     initPole1 = bCorrect ? 1 : 0;
 
     // shift poles/weights
-    memcpy (outCurve->poles,              curve.poles + initPole,  polesToEnd * sizeof(DPoint3d));
-    memcpy (outCurve->poles + polesToEnd, curve.poles + initPole1, (initPole - initPole1) * sizeof(DPoint3d));
+    BeStringUtilities::Memcpy (outCurve->poles, polesToEnd * sizeof(DPoint3d), curve.poles + initPole,  polesToEnd * sizeof(DPoint3d));
+    BeStringUtilities::Memcpy (outCurve->poles + polesToEnd, (initPole - initPole1) * sizeof(DPoint3d), curve.poles + initPole1, (initPole - initPole1) * sizeof(DPoint3d));
     if (outCurve->rational)
         {
-        memcpy (outCurve->weights,              curve.weights + initPole,  polesToEnd * sizeof(double));
-        memcpy (outCurve->weights + polesToEnd, curve.weights + initPole1, (initPole - initPole1) * sizeof(double));
+        BeStringUtilities::Memcpy (outCurve->weights, polesToEnd * sizeof(double), curve.weights + initPole, polesToEnd * sizeof(double));
+        BeStringUtilities::Memcpy (outCurve->weights + polesToEnd, (initPole - initPole1) * sizeof(double), curve.weights + initPole1, (initPole - initPole1) * sizeof(double));
         }
 
 wrapup:
@@ -1142,7 +1142,7 @@ MSBsplineCurve  const*inCurve
                 status = MDLERR_INSFMEMORY;
                 goto wrapup;
                 }
-            memcpy (pNormalizedKnots, curve.knots, numKnots * sizeof (double));
+            BeStringUtilities::Memcpy (pNormalizedKnots, numKnots * sizeof(double), curve.knots, numKnots * sizeof (double));
 
             /* Fake it!  This produces a problematic knot vector with order
             multiplicity start and end knots---both strictly *inside* the knot
@@ -1702,7 +1702,7 @@ int             newDegree
         }
 
     /* Load the knot vectors of the curve structure */
-    memcpy (outCurve->knots, newKnotVector, bspknot_numberKnots (outCurve->params.numPoles, outCurve->params.order, outCurve->params.closed) * sizeof(double));
+    BeStringUtilities::Memcpy (outCurve->knots, bspknot_numberKnots(outCurve->params.numPoles, outCurve->params.order, outCurve->params.closed) * sizeof(double), newKnotVector, bspknot_numberKnots (outCurve->params.numPoles, outCurve->params.order, outCurve->params.closed) * sizeof(double));
 
     if (bWasClosed)
         status = bspcurv_closeCurve (outCurve, outCurve);
@@ -1834,10 +1834,10 @@ bool            force
     bspcurv_allocateCurve (segment);
 
     size = segment->params.numPoles * sizeof (DPoint3d);
-    memcpy (segment->poles, curve.poles + initKnot, size);
+    BeStringUtilities::Memcpy (segment->poles, size, curve.poles + initKnot, size);
 
     size = (segment->params.numPoles + order) * sizeof (double);
-    memcpy (segment->knots, curve.knots + initKnot, size);
+    BeStringUtilities::Memcpy (segment->knots, size, curve.knots + initKnot, size);
 
     if (SUCCESS !=
         (status = bspknot_normalizeKnotVector (segment->knots, segment->params.numPoles,
@@ -1850,7 +1850,7 @@ bool            force
     if (segment->rational)
         {
         size = segment->params.numPoles * sizeof (double);
-        memcpy (segment->weights, curve.weights + initKnot, size);
+        BeStringUtilities::Memcpy (segment->weights, size, curve.weights + initKnot, size);
         }
 
     segment->display = curve.display;
@@ -2004,7 +2004,7 @@ bool            reparam
         }
     else
         {
-        memcpy (outCurve->knots, curve1->knots, j*sizeof(double));
+        BeStringUtilities::Memcpy (outCurve->knots, j * sizeof(double), curve1->knots, j*sizeof(double));
         for (i=j, j=curve2->params.order; i < outNumKnots; i++, j++)
             {
             outCurve->knots[i] = curve1->knots[curve1->params.numPoles]
@@ -2016,16 +2016,17 @@ bool            reparam
                                  outCurve->params.order, outCurve->params.closed);
 
     /* arrange the poles for outCurve */
-    memcpy (outCurve->poles, curve1->poles, curve1->params.numPoles * sizeof (DPoint3d));
-    memcpy (outCurve->poles + curve1->params.numPoles, curve2->poles + (contiguous ? 1 : 0),
-            (outCurve->params.numPoles - curve1->params.numPoles) * sizeof (DPoint3d));
+    BeStringUtilities::Memcpy (outCurve->poles, curve1->params.numPoles * sizeof(DPoint3d),
+                               curve1->poles, curve1->params.numPoles * sizeof (DPoint3d));
+    BeStringUtilities::Memcpy (outCurve->poles + curve1->params.numPoles, (outCurve->params.numPoles - curve1->params.numPoles) * sizeof(DPoint3d),
+                               curve2->poles + (contiguous ? 1 : 0), (outCurve->params.numPoles - curve1->params.numPoles) * sizeof (DPoint3d));
 
     /* assign the weights and reweight the poles */
     if (outCurve->rational)
         {
         if (curve1->rational)
             {
-            memcpy (outCurve->weights, curve1->weights,
+            BeStringUtilities::Memcpy (outCurve->weights, curve1->params.numPoles * sizeof(double), curve1->weights,
                     curve1->params.numPoles * sizeof (double));
             }
         else
@@ -2035,7 +2036,7 @@ bool            reparam
             }
         if (curve2->rational)
             {
-            memcpy (outCurve->weights + curve1->params.numPoles,
+            BeStringUtilities::Memcpy (outCurve->weights + curve1->params.numPoles, (outCurve->params.numPoles - curve1->params.numPoles) * sizeof(double),
                     curve2->weights + (contiguous ? 1 : 0),
                     (outCurve->params.numPoles - curve1->params.numPoles) * sizeof (double));
             }
@@ -2513,7 +2514,7 @@ int             order
         pCurve->params.numPoles = numPoints;
         if (SUCCESS == (status = bspcurv_allocateCurve (pCurve)))
             {
-            memcpy (pCurve->poles, pPoints, numPoints*sizeof(DPoint3d));
+            BeStringUtilities::Memcpy (pCurve->poles, numPoints * sizeof(DPoint3d), pPoints, numPoints*sizeof(DPoint3d));
             status = bspknot_computeKnotVector (pCurve->knots, &pCurve->params, NULL);
             }
         }
@@ -2729,12 +2730,12 @@ MSBsplineCurve  *in
         size = numKnots - knotIndexP[i] - removeMultsP[i];
         if(size==0)
             break;
-        memcpy (out->knots+knotIndexP[i], out->knots+knotIndexP[i]+removeMultsP[i], size*sizeof(double));
+        BeStringUtilities::Memcpy (out->knots+knotIndexP[i], size * sizeof(double), out->knots+knotIndexP[i]+removeMultsP[i], size*sizeof(double));
 
         size =  knotIndexP[i]+removeMultsP[i]-order+1;
-        memcpy (out->poles+knotIndexP[i]-order+1, out->poles+size, (numPoles-size)*sizeof(DPoint3d));
+        BeStringUtilities::Memcpy (out->poles+knotIndexP[i]-order+1, (numPoles - size) * sizeof(DPoint3d), out->poles+size, (numPoles-size)*sizeof(DPoint3d));
         if (out->rational)
-            memcpy (out->weights+knotIndexP[i]-order+1, out->weights+size, (numPoles-size)*sizeof(double));
+            BeStringUtilities::Memcpy (out->weights+knotIndexP[i]-order+1, (numPoles - size) * sizeof(double), out->weights+size, (numPoles-size)*sizeof(double));
 
         for (j = i+1; j < numRemove; j++)
             knotIndexP[j] -= removeMultsP[i];

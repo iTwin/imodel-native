@@ -325,6 +325,7 @@ const QSIC_RayArray     *pArray
 static int     jmdlQSICRA_compareRayTheta
 
 (
+void* pContext,
 const QSIC_Ray *pRay0,
 const QSIC_Ray *pRay1
 )
@@ -347,8 +348,8 @@ static void    jmdlQSICRA_sort
 QSIC_RayArray    *pArray
 )
     {
-    qsort (pArray->ray, pArray->numRay, sizeof(QSIC_Ray),
-            (int (*)(const void *,const void *))jmdlQSICRA_compareRayTheta);
+    BeStringUtilities::Qsort(pArray->ray, pArray->numRay, sizeof(QSIC_Ray),
+        (int(*)(void*, const void*, const void*))jmdlQSICRA_compareRayTheta, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
