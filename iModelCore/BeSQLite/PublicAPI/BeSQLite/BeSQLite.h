@@ -3329,9 +3329,7 @@ public:
     BE_SQLITE_EXPORT DbResult Vacuum(int newPageSizeInBytes = 0);
 
     //! Run ANALYZE command to gather statistics about tables and indices.
-    //! @param target Optional: schema name, table name, index name, or schema.table/index name.
-    //! @remarks Supports: ANALYZE, ANALYZE schema, ANALYZE table, ANALYZE schema.table, ANALYZE schema.index
-    BE_SQLITE_EXPORT DbResult Analyze(Utf8CP target = nullptr);
+    BE_SQLITE_EXPORT DbResult Analyze();
 
     BE_SQLITE_EXPORT DbResult RestartDefaultTxn();
 

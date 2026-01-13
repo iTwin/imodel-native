@@ -348,11 +348,7 @@ template<typename T_Db> struct SQLiteOps {
 
     void Analyze(NapiInfoCR info) {
         Db& db = GetOpenedDb(info);
-        Utf8String argument;
-        if (info.Length() > 0 && info[0].IsString())
-            argument = info[0].As<Napi::String>().Utf8Value();
-
-        if (const auto status = db.Analyze(argument.empty() ? nullptr : argument.c_str()); status != BE_SQLITE_OK)
+        if (const auto status = db.Analyze(); status != BE_SQLITE_OK)
             JsInterop::throwSqlResult("error analyzing", db.GetDbFileName(), status);
     }
 

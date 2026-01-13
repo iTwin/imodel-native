@@ -6743,11 +6743,9 @@ DbResult Db::VacuumInto(Utf8CP newFileName) {
     return TryExecuteSql(SqlPrintfString("vacuum into '%s'", newFileName));
 }
 
-DbResult Db::Analyze(Utf8CP target) {
-    if (target == nullptr || strlen(target) == 0)
-        return TryExecuteSql("analyze");
-    
-    return TryExecuteSql(SqlPrintfString("analyze %s", target));
+DbResult Db::Analyze() {
+    SuspendDefaultTxn noDefault(*this);
+    return TryExecuteSql("analyze");
 }
 
 /**
