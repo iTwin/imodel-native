@@ -67,12 +67,11 @@
         <Directories DirectoryListName="SqliteShellDir"/>
     </Product>
 
-    <Part Name="SqliteShell-exe" BentleyBuildMakeFile="SqliteShell.mke">
+    <Part Name="SqliteShell-exe" BentleyBuildMakeFile="SqliteShell.mke" >
         <SubPart LibType="Static" PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
         <SubPart LibType="Static" PartName="proxyres" PartFile="iModelCore\libsrc\proxyres\proxyres"/>
         <SubPart LibType="Static" PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
-        <SubPart LibType="Static" PartName="BeIcu4cLibrary" PartFile="iModelCore\libsrc\icu4c\BeIcu4cLibrary"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">
                 Delivery/sqlite3$(exeext)
@@ -88,13 +87,14 @@
         <SubPart PartName="SqliteShell-exe" LibType="Static"/>
     </Part>
 
-    <Part Name="SqliteShellExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
+    <Part Name="SqliteShellExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic">
         <SubPart PartName="SqliteShell-exe" LibType="Static"/>
     </Part>
 
     <ProductDirectoryList ListName="SqliteShellDir" >
         <ProductDirectory Name="ApplicationRoot"                Path = ""/>
         <ProductDirectory Name="ApplicationRoot"                Path = "" LibType = "Static" />
+        <ProductDirectory Name="Assets"                         RelativeTo = "ApplicationRoot" LibType = "Static" />
         <ProductDirectory Name="Assemblies"                     RelativeTo = "ApplicationRoot"/>
         <ProductDirectory Name="Assemblies"                     RelativeTo = "ApplicationRoot" LibType = "Static"  Deliver="false"/>
         <ProductDirectory Name="VendorNotices"                  RelativeTo = "ApplicationRoot" Path="notices"  Deliver="false"/>
