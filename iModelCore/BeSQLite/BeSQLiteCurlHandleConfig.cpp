@@ -5,11 +5,11 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "SQLite/sqlite3.h"
 #include <curl/curl.h>
+#include <assert.h>
 #if !defined(ANDROID) && !defined(__linux__)
 #define ENABLE_PROXYRES
 #endif // !ANDROID
 #ifdef ENABLE_PROXYRES
-#include <assert.h>
 #include <proxyres/proxyres.h>
 #endif // ENABLE_PROXYRES
 #include <cstdlib>
