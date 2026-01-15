@@ -281,7 +281,7 @@ int                 dummy
                                          append->params.closed) * sizeof(double);
         if (NULL == (asp->avgKnots = (double*)msbspline_malloc (allocSize, HEAPSIG_BSRF)))
             return ERROR;
-        memcpy (asp->avgKnots, append->knots, allocSize);
+        BeStringUtilities::Memcpy (asp->avgKnots, allocSize, append->knots, allocSize);
         }
     else
         {
@@ -437,7 +437,7 @@ bool                reparamSurface
         for (avgP = asp.avgKnots, endP = avgP + numKnots; avgP < endP; avgP++)
             *avgP /= divisor;
 
-        memcpy (kntP, asp.avgKnots, numKnots * sizeof(double));
+        BeStringUtilities::Memcpy (kntP, numKnots * sizeof(double), asp.avgKnots, numKnots * sizeof(double));
         }
 
     if (outSurface == surf1 || outSurface == surf2)
@@ -632,15 +632,15 @@ MSBsplineSurface    *surface
              spP += surface->uParams.numPoles, swP += surface->uParams.numPoles,
              pP+=surface->uParams.order, wP+=surface->uParams.order)
             {
-            memcpy (pP, spP, surface->uParams.order * sizeof(DPoint3d));
-            memcpy (wP, swP, surface->uParams.order * sizeof(double));
+            BeStringUtilities::Memcpy (pP, surface->uParams.order * sizeof(DPoint3d),spP, surface->uParams.order * sizeof(DPoint3d));
+            BeStringUtilities::Memcpy (wP, surface->uParams.order * sizeof(double), swP, surface->uParams.order * sizeof(double));
             }
         }
     else
         {
         for (j=0; j < surface->vParams.order;
              j++, spP += surface->uParams.numPoles, pP+=surface->uParams.order)
-            memcpy (pP, spP, surface->uParams.order * sizeof(DPoint3d));
+            BeStringUtilities::Memcpy (pP, surface->uParams.order * sizeof(DPoint3d), spP, surface->uParams.order * sizeof(DPoint3d));
         }
     }
 
@@ -1292,9 +1292,10 @@ double                  processTol
             }
 
         /* Compute the u knot vector */
-        memcpy (surface->uKnots, cvArray[0]->knots,
-                bspknot_numberKnots (numU, cvArray[0]->params.order,
-                cvArray[0]->params.closed) * sizeof(double));
+        BeStringUtilities::Memcpy (surface->uKnots,
+            bspknot_numberKnots (numU, cvArray[0]->params.order, cvArray[0]->params.closed) * sizeof(double),
+            cvArray[0]->knots,
+            bspknot_numberKnots (numU, cvArray[0]->params.order, cvArray[0]->params.closed) * sizeof(double));
 
         /* Compute the v knot vector uniformly */
         surface->vParams.numKnots = 0;

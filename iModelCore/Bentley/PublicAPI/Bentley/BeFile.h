@@ -127,6 +127,12 @@ public:
     //! Gets the status returned by the last operation that failed.
     BeFileStatus GetLastError() const {return m_lastError;}
 
+    //! Reads formatted data from a stream.
+    //! @param[in] stream Pointer to FILE structure.
+    //! @param[in] format Format-control string.
+    //! @return Number of items read.
+    BENTLEYDLL_EXPORT int static Fscanf(FILE* stream, const char* format, ...);
+
     //! Moves the file read/write position.
     //! @param[in] position The new read/write position.
     //! @param[in] origin   The origin mode for the move.

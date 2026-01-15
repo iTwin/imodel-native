@@ -5,6 +5,7 @@
 #include "checkers.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <Bentley/BeTest.h>
+#include <Bentley/BeStringUtilities.h>
 static double s_simpleZeroTol = 1.0e-12;
 
 bool Check::s_enableLongTests = false;
@@ -27,7 +28,7 @@ PUSH_DISABLE_DEPRECATION_WARNINGS
         return 0;
     printf (" string form: (%s)\n", s);
     int value;
-    if (1 == sscanf (s, "%d", &value))
+    if (1 == BeStringUtilities::Sscanf (s, "%d", &value))
         {
         printf ("GTEST_GEOMLIBS_VERBSOSE=%d\n", value);
         return value;

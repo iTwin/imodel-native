@@ -121,6 +121,16 @@ DPoint3d    **paramPP,
 bvector<DPoint3d> const &source
 );
 
+//!
+//! @description Global Adaptor function for any qsort comparison function - can be used throughout geomlibs
+//! @param [in] context comparison function cast to void*
+//! @param [in] a first element to compare
+//! @param [in] b second element to compare
+//! @return comparison result from the actual comparison function
+//! @group "BSIBaseGeom Utility Functions"
+//!
+static int QSortAdaptor(void* context, const void* a, const void* b);
+
 
 };
 #endif

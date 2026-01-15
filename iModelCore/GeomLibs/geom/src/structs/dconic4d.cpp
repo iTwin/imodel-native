@@ -2456,7 +2456,7 @@ bool          clipZ
     if (numSaved > maxOut)
         numSaved = maxOut;
     if (pAngleArray)
-        memcpy (pAngleArray, thetaArray, numSaved * sizeof(double));
+        BeStringUtilities::Memcpy (pAngleArray, maxOut * sizeof(double), thetaArray, numSaved * sizeof(double));
     if (pInOutArray)
         {
         for (i = 1; i < numSaved; i++)
@@ -4334,7 +4334,7 @@ DPoint3dP pCirclePoleArray
 
     if (pCirclePoleArray)
         {
-        memcpy (pCirclePoleArray, circlePoleArray, 5 * sizeof (DPoint3d));
+        BeStringUtilities::Memcpy (pCirclePoleArray, 5 * sizeof (DPoint3d), circlePoleArray, 5 * sizeof (DPoint3d));
         }
     }
 
@@ -4512,7 +4512,7 @@ int        clipType
                                 cos (theta0), sin(theta0), theta0);
             pCriticalAngleArray[numCritical++].Init (
                                 cos (theta1), sin(theta1), theta1);
-            qsort (pCriticalAngleArray, numCritical, sizeof (pCriticalAngleArray[0]), compareZ);
+            BeStringUtilities::Qsort (pCriticalAngleArray, numCritical, sizeof (pCriticalAngleArray[0]), BSIBaseGeom::QSortAdaptor, (void*)compareZ);
 
             for (i = 1; i < numCritical; i++)
                 {
