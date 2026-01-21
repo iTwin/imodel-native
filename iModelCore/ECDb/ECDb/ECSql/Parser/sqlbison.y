@@ -3031,25 +3031,50 @@ void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
     }
 //-----------------------------------------------------------------------------
 
-/** Delete all comments in a query.
-
-    See also getComment()/concatComment() implementation for
-    OQueryController::translateStatement().
+/** Preprocess SQL query: remove comments and invisible Unicode characters.
+ *  
+ *  See also getComment()/concatComment() implementation for
+ *  OQueryController::translateStatement().
  */
-static Utf8String delComment(Utf8String const& rQuery)
+static Utf8String preprocessSqlQuery(const Utf8String& rQuery)
 {
-    // First a quick search if there is any "--" or "//" or "/*", if not then the whole
-    // copying loop is pointless.
-      if (rQuery.find("--") == Utf8String::npos < 0 && rQuery.find( "//") == Utf8String::npos  &&
-          rQuery.find( "/*") == Utf8String::npos)
-        return rQuery;
+    // Invisible Unicode character patterns with precomputed lengths
+    struct InvisibleUnicodeCharacters
+    {
+        const char* bytes;
+        int length;
+    };
+    
+    static const InvisibleUnicodeCharacters invisibleChars[] = {
+        {"\xE2\x80\x8B", 3},  // U+200B Zero Width Space
+        {"\xEF\xBB\xBF", 3},  // U+FEFF Zero Width No-Break Space
+        {"\xC2\xA0", 2},      // U+00A0 No-Break Space
+        {"\xE2\x80\x8C", 3},  // U+200C Zero Width Non-Joiner
+        {"\xE2\x80\x8D", 3},  // U+200D Zero Width Joiner
+        {"\xE2\x80\x8E", 3},  // U+200E Left-to-Right Mark
+        {"\xE2\x80\x8F", 3},  // U+200F Right-to-Left Mark
+        {"\xE2\x81\xA0", 3},  // U+2060 Word Joiner
+        {"\xE2\x80\xAF", 3},  // U+202F Narrow No-Break Space
+        {"\xE2\x80\x82", 3},  // U+2002 En Space
+        {"\xE2\x80\x83", 3},  // U+2003 Em Space
+        {"\xE2\x80\x84", 3},  // U+2004 Three-per-Em Space
+        {"\xE2\x80\x85", 3},  // U+2005 Four-per-Em Space
+        {"\xE2\x80\x86", 3},  // U+2006 Six-per-Em Space
+        {"\xE2\x80\x87", 3},  // U+2007 Figure Space
+        {"\xE2\x80\x88", 3},  // U+2008 Punctuation Space
+        {"\xE2\x80\x89", 3},  // U+2009 Thin Space
+        {"\xE2\x80\x8A", 3},  // U+200A Hair Space
+    };
+    static const int invisibleCharsCount = sizeof(invisibleChars) / sizeof(invisibleChars[0]);
 
     const sal_Char* pCopy = rQuery.c_str();
-    size_t nQueryLen = rQuery.size();
+    const size_t nQueryLen = rQuery.size();
+
     bool bIsText1  = false;     // "text"
     bool bIsText2  = false;     // 'text'
     bool bComment2 = false;     // /* comment */
     bool bComment  = false;     // -- or // comment
+    
     Utf8String aBuf;
     aBuf.reserve(nQueryLen);
     for (sal_Int32 i=0; i < nQueryLen; ++i)
@@ -3087,13 +3112,40 @@ static Utf8String delComment(Utf8String const& rQuery)
             }
         }
         if (!bComment && !bComment2)
-            aBuf.append(&pCopy[i], 1);
+        {
+            // Check for invisible Unicode characters
+            bool isInvisible = false;
+            int invisibleLen = 0;
+            
+            for (int j = 0; j < invisibleCharsCount; ++j)
+            {
+                int len = invisibleChars[j].length;
+                if (i + len <= nQueryLen && memcmp(&pCopy[i], invisibleChars[j].bytes, len) == 0)
+                {
+                    isInvisible = true;
+                    invisibleLen = len;
+                    break;
+                }
+            }
+            
+            if (isInvisible)
+            {
+                // Replace invisible character with a regular whitespace
+                aBuf.append(" ", 1);
+                i += invisibleLen - 1;  // -1 because the loop will increment
+                continue;
+            }
+            else
+            {
+                aBuf.append(&pCopy[i], 1);
+            }
+        }
     }
     return aBuf;
 }
 //-----------------------------------------------------------------------------
 OSQLParseNode* OSQLParser::parseTree (Utf8String& rErrorMessage, Utf8String const& rStatement, sal_Bool bInternational) {
-    Utf8String sTemp = delComment(rStatement);
+    Utf8String sTemp = preprocessSqlQuery(rStatement);
     m_scanner = std::unique_ptr<OSQLScanner>(new OSQLScanner(sTemp.c_str(), m_pContext, sal_True));
     m_pParseTree = nullptr;
     m_sErrorMessage.clear();
