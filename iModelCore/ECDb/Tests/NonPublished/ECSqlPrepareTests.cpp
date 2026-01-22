@@ -168,6 +168,7 @@ TEST_F(ECSqlPrepareTestFixture, InvisibleUnicodeCharacters)
     {
     // Test that various invisible Unicode characters are properly handled by the parser and treated as whitespaces
     for (const auto& [testCaseNumber, testDescription, inputSqlString] : std::vector<std::tuple<unsigned int, Utf8String, Utf8String>> {
+        // Simple select statements with invisible Unicode characters
         {1, "U+00A0 No-Break Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
         {2, "U+2002 En Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
         {3, "U+2003 Em Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
@@ -187,7 +188,14 @@ TEST_F(ECSqlPrepareTestFixture, InvisibleUnicodeCharacters)
         {17, "U+2060 Word Joiner", "SELECT⁠ECInstanceId⁠FROM meta.ECClassDef WHERE⁠Name LIKE 'DynamicSchema'"},
         {18, "U+FEFF Zero Width No-Break Space", "﻿SELECT ECInstanceId﻿FROM meta.ECClassDef ﻿WHERE Name LIKE 'DynamicSchema'"},
         {19, "Multiple distinct invisible unicode characters", "SELECT​ECInstanceId‌FROM meta.ECClassDef‍WHERE Name⁠LIKE 'DynamicSchema'"},
-        {20, "Invisible unicode chars inside string literals", "SELECT '  ‍﻿DynamicSchema​​' AS Literal FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"}
+        {20, "Invisible unicode chars inside string literals", "SELECT '  ‍﻿DynamicSchema​​' AS Literal FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
+        {21, "Invisible unicode chars at the start and end", "​SELECT 'DynamicSchema​​' AS Literal FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema' "},
+
+        // Simple select statement with invisible unicode characters and comments
+        {22, "Line comment with invisible chars before", "SELECT​ECInstanceId FROM meta.ECClassDef -- this​is​a​comment\nWHERE Name​LIKE 'DynamicSchema'"},
+        {23, "Block comment with invisible chars before", "SELECT​ECInstanceId /* comment ​here */ FROM​meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
+        {24, "Comment inside string literal", "SELECT '-- not​a​comment' FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
+        {25, "Invisible chars in string after comment", "-- comment\nSELECT 'text​with​invisible' FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"}
     })
         {
         ECSqlStatement stmt;
@@ -195,6 +203,50 @@ TEST_F(ECSqlPrepareTestFixture, InvisibleUnicodeCharacters)
         if (stmt.IsPrepared())
             EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Failed to step Test case " << testCaseNumber << ": " << testDescription;
         }
+    }
+
+TEST_F(ECSqlPrepareTestFixture, InvisibleUnicodeInDifferentStatementTypes)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InvisibleUnicodeStatements.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+
+    // INSERT statements with invisible chars
+    ECSqlStatement insertStmt;
+    EXPECT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT​INTO ecsql.P (I, L, D, S, B, DtUtc) VALUES​(100, 1000, 3.14, 'test', True, TIMESTAMP '2020-01-01T12:00:00Z')")) 
+        << "INSERT with invisible chars";
+    EXPECT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Finalize();
+
+    // Verify the insert worked
+    ECSqlStatement selectStmt;
+    EXPECT_EQ(ECSqlStatus::Success, selectStmt.Prepare(m_ecdb, "SELECT​I, S FROM ecsql.P WHERE​I = 100")) << "SELECT to verify INSERT";
+    EXPECT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+    EXPECT_EQ(100, selectStmt.GetValueInt(0));
+    EXPECT_STREQ("test", selectStmt.GetValueText(1));
+    selectStmt.Finalize();
+
+    // UPDATE statements with invisible chars
+    ECSqlStatement updateStmt;
+    EXPECT_EQ(ECSqlStatus::Success, updateStmt.Prepare(m_ecdb, "UPDATE​ecsql.P SET​S = 'updated' WHERE​I = 100")) << "UPDATE with invisible chars";
+    EXPECT_EQ(BE_SQLITE_DONE, updateStmt.Step());
+    updateStmt.Finalize();
+
+    // Verify the update
+    EXPECT_EQ(ECSqlStatus::Success, selectStmt.Prepare(m_ecdb, "SELECT S FROM​ecsql.P WHERE I = 100"));
+    EXPECT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+    EXPECT_STREQ("updated", selectStmt.GetValueText(0));
+    selectStmt.Finalize();
+
+    // DELETE statements with invisible chars
+    ECSqlStatement deleteStmt;
+    EXPECT_EQ(ECSqlStatus::Success, deleteStmt.Prepare(m_ecdb, "DELETE​FROM ecsql.P WHERE​I = 100")) << "DELETE with invisible chars";
+    EXPECT_EQ(BE_SQLITE_DONE, deleteStmt.Step());
+    deleteStmt.Finalize();
+
+    // Verify the delete
+    EXPECT_EQ(ECSqlStatus::Success, selectStmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ecsql.P WHERE​I = 100"));
+    EXPECT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+    EXPECT_EQ(0, selectStmt.GetValueInt(0));
+    selectStmt.Finalize();
     }
 
 struct ECSqlSelectPrepareTests : ECSqlPrepareTestFixture {};
