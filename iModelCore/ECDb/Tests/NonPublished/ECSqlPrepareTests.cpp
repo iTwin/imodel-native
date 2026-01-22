@@ -166,41 +166,143 @@ TEST_F(ECSqlPrepareTestFixture, ReservedTokens)
 
 TEST_F(ECSqlPrepareTestFixture, InvisibleUnicodeCharacters)
     {
+    const auto expectedSql = "SELECT [ECClassDef].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'";
     // Test that various invisible Unicode characters are properly handled by the parser and treated as whitespaces
-    for (const auto& [testCaseNumber, testDescription, inputSqlString] : std::vector<std::tuple<unsigned int, Utf8String, Utf8String>> {
+    for (const auto& [testCaseNumber, testDescription, inputSqlString, expectedNativeSql] : std::vector<std::tuple<unsigned int, Utf8String, Utf8String, Utf8String>> {
         // Simple select statements with invisible Unicode characters
-        {1, "U+00A0 No-Break Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {2, "U+2002 En Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {3, "U+2003 Em Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {4, "U+2004 Three-per-Em Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {5, "U+2005 Four-per-Em Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {6, "U+2006 Six-per-Em Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {7, "U+2007 Figure Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {8, "U+2008 Punctuation Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {9, "U+2009 Thin Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {10, "U+200A Hair Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {11, "U+200B Zero Width Space", "SELECT​ECInstanceId​FROM meta.ECClassDef​WHERE Name LIKE 'DynamicSchema'"},
-        {12, "U+200C Zero Width Non-Joiner", "SELECT‌ECInstanceId‌FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {13, "U+200D Zero Width Joiner", "SELECT‍ECInstanceId‍FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {14, "U+200E Left-to-Right Mark", "SELECT‎ECInstanceId‎FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {15, "U+200F Right-to-Left Mark", "SELECT‏ECInstanceId‏FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {16, "U+202F Narrow No-Break Space", "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {17, "U+2060 Word Joiner", "SELECT⁠ECInstanceId⁠FROM meta.ECClassDef WHERE⁠Name LIKE 'DynamicSchema'"},
-        {18, "U+FEFF Zero Width No-Break Space", "﻿SELECT ECInstanceId﻿FROM meta.ECClassDef ﻿WHERE Name LIKE 'DynamicSchema'"},
-        {19, "Multiple distinct invisible unicode characters", "SELECT​ECInstanceId‌FROM meta.ECClassDef‍WHERE Name⁠LIKE 'DynamicSchema'"},
-        {20, "Invisible unicode chars inside string literals", "SELECT '  ‍﻿DynamicSchema​​' AS Literal FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {21, "Invisible unicode chars at the start and end", "​SELECT 'DynamicSchema​​' AS Literal FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema' "},
+        {1, 
+            "U+00A0 No-Break Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {2, 
+            "U+2002 En Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {3, 
+            "U+2003 Em Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {4, 
+            "U+2004 Three-per-Em Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {5, 
+            "U+2005 Four-per-Em Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {6, 
+            "U+2006 Six-per-Em Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {7, 
+            "U+2007 Figure Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {8, 
+            "U+2008 Punctuation Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {9, 
+            "U+2009 Thin Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {10, 
+            "U+200A Hair Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {11, 
+            "U+200B Zero Width Space", 
+            "SELECT​ECInstanceId​FROM meta.ECClassDef​WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {12, 
+            "U+200C Zero Width Non-Joiner", 
+            "SELECT‌ECInstanceId‌FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {13, 
+            "U+200D Zero Width Joiner", 
+            "SELECT‍ECInstanceId‍FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {14, 
+            "U+200E Left-to-Right Mark", 
+            "SELECT‎ECInstanceId‎FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {15, 
+            "U+200F Right-to-Left Mark", 
+            "SELECT‏ECInstanceId‏FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {16, 
+            "U+202F Narrow No-Break Space", 
+            "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {17, 
+            "U+2060 Word Joiner", 
+            "SELECT⁠ECInstanceId⁠FROM meta.ECClassDef WHERE⁠Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {18, 
+            "U+FEFF Zero Width No-Break Space", 
+            "﻿SELECT ECInstanceId﻿FROM meta.ECClassDef ﻿WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {19, 
+            "Multiple distinct invisible unicode characters", 
+            "SELECT​ECInstanceId‌FROM meta.ECClassDef‍WHERE Name⁠LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {20, 
+            "Invisible unicode chars inside string literals", 
+            "SELECT '  ‍﻿DynamicSchema​​' AS Literal FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            "SELECT '  ‍﻿DynamicSchema​​' [Literal] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'"
+        },
+        {21, 
+            "Invisible unicode chars at the start and end", 
+            "​SELECT 'DynamicSchema​​' AS Literal FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema' ", 
+            "SELECT 'DynamicSchema​​' [Literal] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'"
+        },
 
         // Simple select statement with invisible unicode characters and comments
-        {22, "Line comment with invisible chars before", "SELECT​ECInstanceId FROM meta.ECClassDef -- this​is​a​comment\nWHERE Name​LIKE 'DynamicSchema'"},
-        {23, "Block comment with invisible chars before", "SELECT​ECInstanceId /* comment ​here */ FROM​meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {24, "Comment inside string literal", "SELECT '-- not​a​comment' FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"},
-        {25, "Invisible chars in string after comment", "-- comment\nSELECT 'text​with​invisible' FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'"}
+        {22, 
+            "Line comment with invisible chars before", 
+            "SELECT​ECInstanceId FROM meta.ECClassDef -- this​is​a​comment\nWHERE Name​LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {23, 
+            "Block comment with invisible chars before", 
+            "SELECT​ECInstanceId /* comment ​here */ FROM​meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            expectedSql
+        },
+        {24, 
+            "Comment inside string literal", 
+            "SELECT '-- not​a​comment' FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            "SELECT '-- not​a​comment' FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'"
+        },
+        {25, 
+            "Invisible chars in string after comment", 
+            "-- comment\nSELECT 'text​with​invisible' FROM meta.ECClassDef WHERE Name LIKE 'DynamicSchema'", 
+            "SELECT 'text​with​invisible' FROM (SELECT [Id] ECInstanceId,37 ECClassId,[Name] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Name] LIKE 'DynamicSchema'"
+        }
     })
         {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, inputSqlString.c_str())) << "Failed to prepare Test case " << testCaseNumber << ": " << testDescription;
         if (stmt.IsPrepared())
+            EXPECT_STREQ(expectedNativeSql.c_str(), stmt.GetNativeSql()) << "Failed to match SQL for Test case " << testCaseNumber << ": " << testDescription;
             EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Failed to step Test case " << testCaseNumber << ": " << testDescription;
         }
     }

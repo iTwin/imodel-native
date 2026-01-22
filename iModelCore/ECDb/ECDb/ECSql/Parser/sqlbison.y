@@ -3116,15 +3116,19 @@ static Utf8String preprocessSqlQuery(const Utf8String& rQuery)
             // Check for invisible Unicode characters
             bool isInvisible = false;
             int invisibleLen = 0;
-            
-            for (int j = 0; j < invisibleCharsCount; ++j)
+
+            // We wish to preserve any invisible unicode characters that are inside string literals
+            if (!bIsText1 && !bIsText2)
             {
-                int len = invisibleChars[j].length;
-                if (i + len <= nQueryLen && memcmp(&pCopy[i], invisibleChars[j].bytes, len) == 0)
+                for (int j = 0; j < invisibleCharsCount; ++j)
                 {
-                    isInvisible = true;
-                    invisibleLen = len;
-                    break;
+                    int len = invisibleChars[j].length;
+                    if (i + len <= nQueryLen && memcmp(&pCopy[i], invisibleChars[j].bytes, len) == 0)
+                    {
+                        isInvisible = true;
+                        invisibleLen = len;
+                        break;
+                    }
                 }
             }
             
