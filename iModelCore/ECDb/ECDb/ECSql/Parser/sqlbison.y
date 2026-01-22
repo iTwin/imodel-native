@@ -3038,7 +3038,7 @@ void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
  */
 static Utf8String preprocessSqlQuery(const Utf8String& rQuery)
 {
-    // Invisible Unicode character patterns with precomputed lengths
+    // Invisible Unicode character patterns
     struct InvisibleUnicodeCharacters
     {
         const char* bytes;
@@ -3070,81 +3070,105 @@ static Utf8String preprocessSqlQuery(const Utf8String& rQuery)
     const sal_Char* pCopy = rQuery.c_str();
     const size_t nQueryLen = rQuery.size();
 
-    bool bIsText1  = false;     // "text"
-    bool bIsText2  = false;     // 'text'
-    bool bComment2 = false;     // /* comment */
-    bool bComment  = false;     // -- or // comment
+    bool bInDoubleQuoteString = false;  // "text"
+    bool bInSingleQuoteString = false;  // 'text'
+    bool bInMultiLineComment = false;   // /* comment */
+    bool bInSingleLineComment = false;  // -- or // comment
+
+    // Check if comments exist
+    const bool bHasComments = (rQuery.find("--") != Utf8String::npos || rQuery.find("//") != Utf8String::npos || rQuery.find("/*") != Utf8String::npos);
     
     Utf8String aBuf;
     aBuf.reserve(nQueryLen);
-    for (sal_Int32 i=0; i < nQueryLen; ++i)
+    
+    for (sal_Int32 i = 0; i < nQueryLen; ++i)
     {
-        if (bComment2)
+        const sal_Char currentChar = pCopy[i];
+        const sal_Char nextChar = (i + 1 < nQueryLen) ? pCopy[i + 1] : '\0';
+
+        const bool bInStringLiteral = bInDoubleQuoteString || bInSingleQuoteString;
+        const bool bInComment = bInMultiLineComment || bInSingleLineComment;
+
+        if (!bInComment)
         {
-            if ((i+1) < nQueryLen)
+            if (currentChar == '\"' && !bInSingleQuoteString)
+                bInDoubleQuoteString = !bInDoubleQuoteString;
+            else if (currentChar == '\'' && !bInDoubleQuoteString)
+                bInSingleQuoteString = !bInSingleQuoteString;
+        }
+
+        if (bHasComments)
+        {
+            if (bInMultiLineComment)
             {
-                if (pCopy[i]=='*' && pCopy[i+1]=='/')
+                if (currentChar == '*' && nextChar == '/')
                 {
-                    bComment2 = false;
+                    bInMultiLineComment = false;
                     ++i;
                 }
+                continue;  // Skip all characters inside multi-line comments
             }
-            else
+            
+            // Handle single-line comment closure: newline
+            if (bInSingleLineComment)
             {
-                // comment can't close anymore, actually an error, but..
+                if (currentChar == '\n')
+                    bInSingleLineComment = false;
+                continue;  // Skip all characters inside single-line comments
             }
-            continue;
-        }
-        if (pCopy[i] == '\n')
-            bComment = false;
-        else if (!bComment)
-        {
-            if (pCopy[i] == '\"' && !bIsText2)
-                bIsText1 = !bIsText1;
-            else if (pCopy[i] == '\'' && !bIsText1)
-                bIsText2 = !bIsText2;
-            if (!bIsText1 && !bIsText2 && (i+1) < nQueryLen)
+
+            if (!bInStringLiteral)
             {
-                if ((pCopy[i]=='-' && pCopy[i+1]=='-') || (pCopy[i]=='/' && pCopy[i+1]=='/'))
-                    bComment = true;
-                else if ((pCopy[i]=='/' && pCopy[i+1]=='*'))
-                    bComment2 = true;
+                if (currentChar == '-' && nextChar == '-')
+                {
+                    bInSingleLineComment = true;
+                    continue;
+                }
+                if (currentChar == '/' && nextChar == '/')
+                {
+                    bInSingleLineComment = true;
+                    continue;
+                }
+                if (currentChar == '/' && nextChar == '*')
+                {
+                    bInMultiLineComment = true;
+                    ++i;  // Skip the '*'
+                    continue;
+                }
             }
         }
-        if (!bComment && !bComment2)
+        
+        if (!bInComment)
         {
             // Check for invisible Unicode characters
-            bool isInvisible = false;
-            int invisibleLen = 0;
-
-            // We wish to preserve any invisible unicode characters that are inside string literals
-            if (!bIsText1 && !bIsText2)
+            if (!bInStringLiteral)
             {
+                bool isInvisible = false;
+                int invisibleLen = 0;
+                
                 for (int j = 0; j < invisibleCharsCount; ++j)
                 {
-                    int len = invisibleChars[j].length;
+                    const int len = invisibleChars[j].length;
                     if (i + len <= nQueryLen && memcmp(&pCopy[i], invisibleChars[j].bytes, len) == 0)
                     {
-                        isInvisible = true;
+                        isInvisible  = true;
                         invisibleLen = len;
                         break;
                     }
                 }
+                
+                if (isInvisible)
+                {
+                    // Replace invisible character with a regular whitespace
+                    aBuf.append(" ", 1);
+                    i += invisibleLen - 1;  // -1 because the loop will increment as well
+                    continue;
+                }
             }
-            
-            if (isInvisible)
-            {
-                // Replace invisible character with a regular whitespace
-                aBuf.append(" ", 1);
-                i += invisibleLen - 1;  // -1 because the loop will increment
-                continue;
-            }
-            else
-            {
-                aBuf.append(&pCopy[i], 1);
-            }
+            aBuf.append(&currentChar, 1);
         }
     }
+    
     return aBuf;
 }
 //-----------------------------------------------------------------------------
