@@ -1838,6 +1838,22 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return Napi::Number::New(Env(), (int)status);
         }
 
+    Napi::Value ExportGraphicsAsync(NapiInfoCR info)
+        {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, exportProps);
+
+        Napi::Value onGraphicsVal = exportProps.Get("onGraphics");
+        if (!onGraphicsVal.IsFunction())
+            THROW_JS_TYPE_EXCEPTION("onGraphics must be a function");
+
+        Napi::Value elementIdArrayVal = exportProps.Get("elementIdArray");
+        if (!elementIdArrayVal.IsArray())
+            THROW_JS_TYPE_EXCEPTION("elementIdArray must be an array");
+
+        return JsInterop::ExportGraphicsAsync(db, exportProps);
+        }
+
     Napi::Value ProcessGeometryStream(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -3048,6 +3064,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("executeTest", &NativeDgnDb::ExecuteTest),
             InstanceMethod("exportGraphics", &NativeDgnDb::ExportGraphics),
             InstanceMethod("exportPartGraphics", &NativeDgnDb::ExportPartGraphics),
+            InstanceMethod("exportGraphicsAsync", &NativeDgnDb::ExportGraphicsAsync),
             InstanceMethod("exportSchema", &NativeDgnDb::ExportSchema),
             InstanceMethod("exportSchemas", &NativeDgnDb::ExportSchemas),
             InstanceMethod("extractChangedInstanceIdsFromChangeSets", &NativeDgnDb::ExtractChangedInstanceIdsFromChangeSets),
