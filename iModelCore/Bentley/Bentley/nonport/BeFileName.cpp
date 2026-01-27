@@ -921,7 +921,6 @@ static bool UNCPathExists(WCharCP filename)
 
     if (NULL == (endServerName = wcschr(serverName, '\\')))
         {
-        assert(false);
         endServerName = serverName + wcslen(serverName);
         }
 

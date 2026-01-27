@@ -417,6 +417,7 @@ private:
     BeSQLite::SnappyFromBlob m_snappyFrom;
     BeSQLite::SnappyToBlob   m_snappyTo;
     TxnRelationshipLinkTables m_rlt;
+    bool m_allowSaveChangesDuringRebase = false;
     int m_txnErrors = 0;
     bool m_fatalValidationError;
     bool m_initTableHandlers;
@@ -424,15 +425,19 @@ private:
     bool m_trackChangesetHealthStats = false;
     bvector<ECN::ECClassId> m_childPropagatesChangesToParentRels;
     ChangesetPropsPtr m_changesetInProgress;
-    std::map<Utf8String, BeJsDocument> m_changesetHealthStatistics;
+    std::unordered_map<Utf8String, BeJsDocument> m_changesetHealthStatistics;
 
 public:
+    enum SessionOption {
+        New,
+        Resume,
+    };
     ModelChanges m_modelChanges;
 
     void ProcessModelChanges();
     void NotifyModelChanges();
     void ClearModelChanges();
-    DGNPLATFORM_EXPORT void Initialize();
+    DGNPLATFORM_EXPORT void Initialize(SessionOption option = SessionOption::New);
 private:
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     void _OnCommitted(bool isCommit, Utf8CP operation) override;
@@ -473,7 +478,7 @@ private:
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     bool IsMultiTxnMember(TxnId rowid) const;
     TxnType GetTxnType(TxnId rowid) const;
-
+    bool IsTxnReversed(TxnId rowid) const;
     BentleyStatus PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8StringCR compoundSQL);
     void NotifyOnCommit();
     void ThrowIfChangesetInProgress();

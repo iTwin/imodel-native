@@ -101,7 +101,7 @@ IECInstancePtr RulesEngineTestHelpers::InsertInstance(ECDbR db, ECInstanceInsert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbR db, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer, bool commit)
+ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbR db, ECRelationshipClassCR relationship, IECInstanceR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer, bool commit)
     {
     ECInstanceId sourceId;
     ECInstanceId::FromString(sourceId, source.GetInstanceId().c_str());
@@ -112,7 +112,7 @@ ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbR db, ECRelationshi
     ECInstanceKey targetKey(target.GetClass().GetId(), targetId);
 
     ECSqlStatement stmt;
-    if (!stmt.Prepare(db, "SELECT Name FROM meta.ECPropertyDef WHERE NavigationRelationshipClass.Id=?").IsSuccess())
+    if (!stmt.Prepare(db, "SELECT Name, NavigationDirection FROM meta.ECPropertyDef WHERE NavigationRelationshipClass.Id=?").IsSuccess())
         {
         BeAssert(false);
         return ECInstanceKey();
@@ -121,12 +121,16 @@ ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbR db, ECRelationshi
     if (BE_SQLITE_ROW == stmt.Step())
         {
         // Navigation property-backed relationship handling
-        Utf8CP navigationPropertyName = stmt.GetValueText(0);
-        ECClassCP targetClass = db.Schemas().GetClass(targetKey.GetClassId());
         BeAssert(nullptr == instancePreparer && "Navigation property relationships aren't backed by an instance");
 
+        Utf8CP navigationPropertyName = stmt.GetValueText(0);
+        ECEnumeratorCP navigationDirection = stmt.GetValueEnum(1);
+        ECInstanceKey navigationPropertyInstanceKey = (navigationDirection->GetInteger() == (int)ECRelatedInstanceDirection::Forward) ? sourceKey : targetKey;
+        ECInstanceKey navigationPropertyTargetKey = (navigationDirection->GetInteger() == (int)ECRelatedInstanceDirection::Forward) ? targetKey : sourceKey;
+        ECClassCP navigationPropertyClass = db.Schemas().GetClass(navigationPropertyInstanceKey.GetClassId());
+
         ECSqlStatement updateStmt;
-        Utf8String updateQuery = Utf8String("UPDATE ").append(targetClass->GetECSqlName())
+        Utf8String updateQuery = Utf8String("UPDATE ").append(navigationPropertyClass->GetECSqlName())
             .append(" SET ").append(navigationPropertyName).append(" = ?")
             .append(" WHERE ECInstanceId = ?");
         if (!updateStmt.Prepare(db, updateQuery.c_str()).IsSuccess())
@@ -134,10 +138,14 @@ ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbR db, ECRelationshi
             BeAssert(false);
             return ECInstanceKey();
             }
-        updateStmt.BindNavigationValue(1, sourceKey.GetInstanceId(), relationship.GetId());
-        updateStmt.BindId(2, targetKey.GetInstanceId());
+        updateStmt.BindNavigationValue(1, navigationPropertyTargetKey.GetInstanceId(), relationship.GetId());
+        updateStmt.BindId(2, navigationPropertyInstanceKey.GetInstanceId());
         updateStmt.Step();
-        target.SetValue(navigationPropertyName, ECValue(sourceKey.GetInstanceId()));
+        
+        if (navigationDirection->GetInteger() == (int)ECRelatedInstanceDirection::Forward)
+            source.SetValue(navigationPropertyName, ECValue(targetKey.GetInstanceId()));
+        else
+            target.SetValue(navigationPropertyName, ECValue(sourceKey.GetInstanceId()));
 
         if (commit)
             db.SaveChanges();
@@ -166,7 +174,7 @@ ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbR db, ECRelationshi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbTestProject& project, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer, bool commit)
+ECInstanceKey RulesEngineTestHelpers::InsertRelationship(ECDbTestProject& project, ECRelationshipClassCR relationship, IECInstanceR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer, bool commit)
     {
     return InsertRelationship(project.GetECDb(), relationship, source, target, instancePreparer, commit);
     }

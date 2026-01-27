@@ -1687,6 +1687,93 @@ TEST_F(BeSQLiteDbTests, BriefcaseLocalValues)
 
 
 /*---------------------------------------------------------------------------------**//**
+* Test QueryStandaloneEditFlags and SaveStandaloneEditFlags
+* Tests backward compatibility with legacy boolean values and new JSON object format
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, StandaloneEditFlags)
+    {
+    SetupDb(L"standalone.db");
+
+    // Test 1: Query when no value is set - should return null/empty
+    BeJsDocument result1;
+    m_db.QueryStandaloneEditFlags(result1);
+    EXPECT_TRUE(result1.isNull()) << "Should be null when no value is set";
+
+    // Test 2: Save and query JSON object format (current format)
+    BeJsDocument objVal;
+    objVal.SetEmptyObject();
+    objVal["txns"] = true;
+    objVal["otherFlag"] = false;
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveStandaloneEditFlags(objVal));
+    m_db.SaveChanges();
+
+    BeJsDocument result2;
+    m_db.QueryStandaloneEditFlags(result2);
+    EXPECT_TRUE(result2.isObject()) << "Should return an object";
+    EXPECT_TRUE(result2["txns"].asBool()) << "txns should be true";
+    EXPECT_FALSE(result2["otherFlag"].asBool()) << "otherFlag should be false";
+
+    // Test 3: Test backward compatibility - simulate legacy boolean value stored directly
+    // This tests the fix where we previously tried to parse a boolean as JSON improperly
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveBriefcaseLocalValue("StandaloneEdit", "true"));
+    m_db.SaveChanges();
+
+    BeJsDocument result3;
+    m_db.QueryStandaloneEditFlags(result3);
+    EXPECT_TRUE(result3.isObject()) << "Should convert boolean to object format";
+    EXPECT_TRUE(result3["txns"].asBool()) << "txns should be true for legacy boolean true";
+
+    // Test 4: Test backward compatibility with false boolean
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveBriefcaseLocalValue("StandaloneEdit", "false"));
+    m_db.SaveChanges();
+
+    BeJsDocument result4;
+    m_db.QueryStandaloneEditFlags(result4);
+    EXPECT_TRUE(result4.isObject()) << "Should convert boolean to object format";
+    EXPECT_FALSE(result4["txns"].asBool()) << "txns should be false for legacy boolean false";
+
+    // Test 5: Test invalid/unsupported value (should log warning but not crash)
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveBriefcaseLocalValue("StandaloneEdit", "invalid_json_string"));
+    m_db.SaveChanges();
+
+    BeJsDocument result5;
+    m_db.QueryStandaloneEditFlags(result5);
+    EXPECT_TRUE(result5.isNull()) << "Should return null for invalid value";
+
+    // Test 6: Delete/clear the flags (pass null to SaveStandaloneEditFlags)
+    BeJsDocument nullVal;
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveStandaloneEditFlags(nullVal));
+    m_db.SaveChanges();
+
+    BeJsDocument result6;
+    m_db.QueryStandaloneEditFlags(result6);
+    EXPECT_TRUE(result6.isNull()) << "Should be null after deletion";
+
+    // Test 7: Save complex JSON object with multiple properties
+    BeJsDocument complexObj;
+    complexObj.SetEmptyObject();
+    complexObj["txns"] = true;
+    complexObj["prop1"] = "value1";
+    complexObj["prop2"] = 42;
+    complexObj["prop3"] = true;
+    EXPECT_EQ(BE_SQLITE_DONE, m_db.SaveStandaloneEditFlags(complexObj));
+    m_db.SaveChanges();
+
+    BeJsDocument result7;
+    m_db.QueryStandaloneEditFlags(result7);
+    EXPECT_TRUE(result7.isObject()) << "Should return an object";
+    EXPECT_TRUE(result7["txns"].asBool());
+    EXPECT_STREQ("value1", result7["prop1"].asCString());
+    EXPECT_EQ(42, result7["prop2"].asInt());
+    EXPECT_TRUE(result7["prop3"].asBool());
+
+    m_db.SaveChanges();
+    m_db.CloseDb();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * Simulate a LineStyle bim case
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2226,6 +2313,17 @@ TEST_F(BeSQLiteDbTests, InsertMismatchedColumns)
     EXPECT_TRUE(result == BE_SQLITE_OK); // SQLite should ideally fail here - we have reported this to them 8/31/2017
     m_db.SaveChanges();
     }
+
+namespace {
+    void CloneDb(Utf8StringCR seedFileName, DbR from, DbR out, Utf8StringCR name) {
+        ASSERT_EQ (BE_SQLITE_OK, from.SaveChanges());
+        Utf8String fileName = from.GetDbFileName();
+        fileName.ReplaceAll(seedFileName.c_str(), name.c_str());
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(BeFileName(from.GetDbFileName(), true), BeFileName(fileName.c_str(), true)));
+        ASSERT_EQ(BE_SQLITE_OK, out.OpenBeSQLiteDb(fileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    };
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -2235,19 +2333,11 @@ TEST_F (BeSQLiteDbTests, ChangeSetApply_IgnoreNoop)
     SetupDb (WString(kMainFile, true).c_str());
     EXPECT_TRUE (m_db.IsDbOpen ());
 
-    auto cloneDb = [&](DbR from, DbR out, Utf8CP name) {
-        ASSERT_EQ (BE_SQLITE_OK, from.SaveChanges());
-        Utf8String fileName = from.GetDbFileName();
-        fileName.ReplaceAll(kMainFile, name);
-        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(BeFileName(m_db.GetDbFileName(), true), BeFileName(fileName.c_str(), true)));
-        ASSERT_EQ(BE_SQLITE_OK, out.OpenBeSQLiteDb(fileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
-    };
-
     ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("t1", "id integer primary key")) << "Creating table T1 failed.";
     ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("t2", "id integer primary key, t1_id integer not null references t1(id) on delete cascade")) << "Creating table T2 failed.";
 
     Db beforeDb;
-    cloneDb(m_db, beforeDb, "before.db");
+    CloneDb(kMainFile, m_db, beforeDb, "before.db");
 
     // Make a changeset
     MyChangeTracker changeTracker(m_db);
@@ -2262,7 +2352,7 @@ TEST_F (BeSQLiteDbTests, ChangeSetApply_IgnoreNoop)
     changeTracker.EndTracking();
 
     Db afterDb;
-    cloneDb(m_db, afterDb, "after.db");
+    CloneDb(kMainFile, m_db, afterDb, "after.db");
 
     BeTest::SetFailOnAssert(false);
     // Apply changeset to db that not have the data and should not cause conflicts
@@ -2281,6 +2371,65 @@ TEST_F (BeSQLiteDbTests, ChangeSetApply_IgnoreNoop)
     afterDb.SaveChanges();
 }
 
+TEST_F(BeSQLiteDbTests, ChangeSetApply_IgnoreNoopShouldNotSupressConflict)
+{
+    const auto kMainFile = "test1.db";
+    SetupDb(WString(kMainFile, true).c_str());
+    ASSERT_TRUE(m_db.IsDbOpen());
+
+    // Data setup with a table and some data
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable("t1", "id integer primary key, val int"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("insert into t1 values(1, 10)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("insert into t1 values(2, 20)"));
+    m_db.SaveChanges();
+
+    Db firstBriefcaseDb, secondBriefcaseDb;
+    CloneDb(kMainFile, m_db, firstBriefcaseDb, "firstBriefcase.db");
+    CloneDb(kMainFile, m_db, secondBriefcaseDb, "secondBriefcase.db");
+    m_db.CloseDb();
+
+    // Delete a row from the first briefcase and create a changeset
+    MyChangeTracker changeTracker(firstBriefcaseDb);
+    changeTracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, firstBriefcaseDb.ExecuteSql("delete from t1 where id=2"));
+
+    MyChangeSet changeSet;
+    changeSet.FromChangeTrack(changeTracker);
+    ASSERT_GT(changeSet.GetSize(), 0);
+    changeTracker.EndTracking();
+    firstBriefcaseDb.SaveChanges();
+
+    // Update the value in the second briefcase
+    ASSERT_EQ(BE_SQLITE_OK, secondBriefcaseDb.ExecuteSql("update t1 set val=500 where id=2"));
+    secondBriefcaseDb.SaveChanges();
+
+    {
+        // Make sure the row is deleted from the first briefcase
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(firstBriefcaseDb, "SELECT val from t1 where id=2"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.Finalize();
+    }
+    {
+        // Make sure the row is updated in the second briefcase
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(secondBriefcaseDb, "SELECT val from t1 where id=2"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(500, stmt.GetValueDouble(0));
+        stmt.Finalize();
+    }
+
+    BeTest::SetFailOnAssert(false);
+    // This is not a no-op and should trigger a conflict: Trying to delete a row that was updated in secondBriefcaseDb.
+    ASSERT_EQ(BE_SQLITE_ABORT, changeSet.ApplyChanges(secondBriefcaseDb, false, /*ignoreNoop=*/true));
+    BeTest::SetFailOnAssert(true);
+
+    firstBriefcaseDb.SaveChanges();
+    secondBriefcaseDb.SaveChanges();
+
+    firstBriefcaseDb.CloseDb();
+    secondBriefcaseDb.CloseDb();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

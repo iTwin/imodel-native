@@ -346,6 +346,12 @@ template<typename T_Db> struct SQLiteOps {
             JsInterop::throwSqlResult("error vacuuming", db.GetDbFileName(), status);
     }
 
+    void Analyze(NapiInfoCR info) {
+        Db& db = GetOpenedDb(info);
+        if (const auto status = db.Analyze(); status != BE_SQLITE_OK)
+            JsInterop::throwSqlResult("error analyzing", db.GetDbFileName(), status);
+    }
+
     void EnableWalMode(Napi::CallbackInfo const& info) {
         Db& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_BOOL(0, yesNo, true);
@@ -815,6 +821,7 @@ public:
             InstanceMethod("saveChanges", &SQLiteDb::SaveChanges),
             InstanceMethod("saveFileProperty", &SQLiteDb::SaveFileProperty),
             InstanceMethod("vacuum", &SQLiteDb::Vacuum),
+            InstanceMethod("analyze", &SQLiteDb::Analyze),
             InstanceMethod("enableWalMode", &SQLiteDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &SQLiteDb::PerformCheckpoint),
             InstanceMethod("setAutoCheckpointThreshold", &SQLiteDb::SetAutoCheckpointThreshold),
@@ -1554,6 +1561,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
             // Map top-level fields
             jsObj.Set("changesetId", Napi::String::New(env, changeset["changeset_id"].asString().c_str()));
+            jsObj.Set("changesetIndex", Napi::Number::New(env, changeset["changeset_index"].asUInt()));
             jsObj.Set("uncompressedSizeBytes", Napi::Number::New(env, changeset["uncompressed_size_bytes"].asUInt()));
             jsObj.Set("sha1ValidationTimeMs", Napi::Number::New(env, changeset["sha1_validation_time_ms"].asUInt()));
             jsObj.Set("insertedRows", Napi::Number::New(env, changeset["inserted_rows"].asUInt()));
@@ -1828,6 +1836,22 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         DgnDbStatus status = JsInterop::ExportPartGraphics(db, exportProps);
         return Napi::Number::New(Env(), (int)status);
+        }
+
+    Napi::Value ExportGraphicsAsync(NapiInfoCR info)
+        {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_ANY_OBJ(0, exportProps);
+
+        Napi::Value onGraphicsVal = exportProps.Get("onGraphics");
+        if (!onGraphicsVal.IsFunction())
+            THROW_JS_TYPE_EXCEPTION("onGraphics must be a function");
+
+        Napi::Value elementIdArrayVal = exportProps.Get("elementIdArray");
+        if (!elementIdArrayVal.IsArray())
+            THROW_JS_TYPE_EXCEPTION("elementIdArray must be an array");
+
+        return JsInterop::ExportGraphicsAsync(db, exportProps);
         }
 
     Napi::Value ProcessGeometryStream(NapiInfoCR info)
@@ -3040,6 +3064,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("executeTest", &NativeDgnDb::ExecuteTest),
             InstanceMethod("exportGraphics", &NativeDgnDb::ExportGraphics),
             InstanceMethod("exportPartGraphics", &NativeDgnDb::ExportPartGraphics),
+            InstanceMethod("exportGraphicsAsync", &NativeDgnDb::ExportGraphicsAsync),
             InstanceMethod("exportSchema", &NativeDgnDb::ExportSchema),
             InstanceMethod("exportSchemas", &NativeDgnDb::ExportSchemas),
             InstanceMethod("extractChangedInstanceIdsFromChangeSets", &NativeDgnDb::ExtractChangedInstanceIdsFromChangeSets),
@@ -3173,6 +3198,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("writeAffectedElementDependencyGraphToFile", &NativeDgnDb::WriteAffectedElementDependencyGraphToFile),
             InstanceMethod("writeFullElementDependencyGraphToFile", &NativeDgnDb::WriteFullElementDependencyGraphToFile),
             InstanceMethod("vacuum", &NativeDgnDb::Vacuum),
+            InstanceMethod("analyze", &NativeDgnDb::Analyze),
             InstanceMethod("enableWalMode", &NativeDgnDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
             InstanceMethod("enableChangesetStatsTracking", &NativeDgnDb::EnableChangesetStatsTracking),
@@ -6019,6 +6045,24 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 }
         };
 
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
+    struct ThreadSafeFunctionExecutor : folly::Executor
+    {
+    private:
+        Napi::ThreadSafeFunction& m_threadSafeFunc;
+    public:
+        ThreadSafeFunctionExecutor(Napi::ThreadSafeFunction& threadSafeFunc) : m_threadSafeFunc(threadSafeFunc) {}
+        void add(folly::Func func) override
+            {
+            m_threadSafeFunc.BlockingCall([funcPtr = std::make_shared<folly::Func>(std::move(func))](Napi::Env, Napi::Function)
+                {
+                (*funcPtr)();
+                });
+            }
+    };
+
     DEFINE_CONSTRUCTOR;
 
     std::unique_ptr<ECPresentationManager> m_presentationManager;
@@ -6027,6 +6071,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     std::shared_ptr<IModelJsECPresentationUpdateRecordsHandler> m_updatesHandler;
     Napi::ThreadSafeFunction m_threadSafeFunc;
     Napi::ThreadSafeFunction m_updateCallback;
+    std::unique_ptr<ThreadSafeFunctionExecutor> m_mainThreadExecutor;
 
     static bool InstanceOf(Napi::Value val) {
         if (!val.IsObject())
@@ -6142,6 +6187,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             m_primaryRulesets = SimpleRuleSetLocater::Create();
             m_presentationManager->GetLocaters().RegisterLocater(*NonSupplementalRuleSetLocater::Create(*m_primaryRulesets));
             m_threadSafeFunc = Napi::ThreadSafeFunction::New(Env(), Napi::Function::New(Env(), [](NapiInfoCR info) {}), "NativeECPresentationManager result resolver", 0, 1);
+            m_mainThreadExecutor = std::make_unique<ThreadSafeFunctionExecutor>(m_threadSafeFunc);
             }
         catch (std::exception const& e)
             {
@@ -6174,12 +6220,87 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             });
         }
 
+    folly::Future<ECPresentationResult> CreateRequest(Utf8CP requestId, IModelJsNative::NativeDgnDb& db, RapidJsonValueCR params) const
+        {
+        if (0 == strcmp("GetRootNodesCount", requestId))
+            return ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("GetRootNodes", requestId))
+            return ECPresentationUtils::GetRootNodes(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("GetChildrenCount", requestId))
+            return ECPresentationUtils::GetChildrenCount(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("GetChildren", requestId))
+            return ECPresentationUtils::GetChildren(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("GetNodesDescriptor", requestId))
+            return ECPresentationUtils::GetHierarchyLevelDescriptor(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("GetNodePaths", requestId))
+            return ECPresentationUtils::GetNodesPaths(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("GetFilteredNodePaths", requestId))
+            return ECPresentationUtils::GetFilteredNodesPaths(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("GetContentSources", requestId))
+            return ECPresentationUtils::GetContentSources(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("GetContentDescriptor", requestId))
+            return ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("GetContent", requestId))
+            return ECPresentationUtils::GetContent(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("GetContentSet", requestId))
+            return ECPresentationUtils::GetContentSet(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("GetContentSetSize", requestId))
+            return ECPresentationUtils::GetContentSetSize(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("GetPagedDistinctValues", requestId))
+            return ECPresentationUtils::GetPagedDistinctValues(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("GetDisplayLabel", requestId))
+            return ECPresentationUtils::GetDisplayLabel(*m_presentationManager, db.GetDgnDb(), params);
+        if (0 == strcmp("CompareHierarchies", requestId))
+            return ECPresentationUtils::CompareHierarchies(*m_presentationManager, db.GetDgnDb(), params);
+        return folly::makeFuture(ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString("request.requestId = '%s'", requestId)));
+        }
+
+    folly::Future<ECPresentationResult> CreateRestartableRequest
+    (
+        Utf8CP requestId,
+        IModelJsNative::NativeDgnDb& db,
+        std::function<RapidJsonValueCR()> getParams,
+        std::shared_ptr<BeEvent<>> abortEvent
+    ) const
+        {
+        auto f = std::make_shared<folly::Future<ECPresentationResult>>(CreateRequest(requestId, db, getParams()));
+        auto removeListener = abortEvent->AddOnce([f]()
+            {
+            f->cancel();
+            });
+        return
+            f->onError([this, requestId = Utf8String(requestId), &db, getParams, abortEvent](CancellationException const& e)
+                {
+                if (!e.IsRestartRequested() || !m_mainThreadExecutor)
+                    throw e;
+
+                return folly::via(m_mainThreadExecutor.get(), [this, requestId, &db, getParams, abortEvent]()
+                    {
+                    return CreateRestartableRequest(requestId.c_str(), db, getParams, abortEvent);
+                    });
+                })
+            .ensure([this, removeListener = std::move(removeListener)]()
+                {
+                if (!m_mainThreadExecutor)
+                    return;
+
+                folly::via(m_mainThreadExecutor.get(), [removeListener = std::move(removeListener)]()
+                    {
+                    removeListener();
+                    });
+                });
+        }
+
     Napi::Value HandleRequest(NapiInfoCR info)
         {
+        auto abortEvent = std::make_shared<BeEvent<>>();
         Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(Env());
         Napi::Object response = Napi::Object::New(Env());
         response.Set("result", deferred.Promise());
-        response.Set("cancel", Napi::Function::New(Env(), [](NapiInfoCR info) {}));
+        response.Set("cancel", Napi::Function::New(Env(), [abortEvent](NapiInfoCR info)
+            {
+            abortEvent->RaiseEvent();
+            }));
 
         REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db);
         if (!db->IsOpen())
@@ -6189,15 +6310,15 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
 
         REQUIRE_ARGUMENT_STRING(1, serializedRequest);
-        rapidjson::Document requestJson;
-        requestJson.Parse(serializedRequest.c_str());
-        if (requestJson.IsNull())
+        auto requestJson = std::make_shared<rapidjson::Document>();
+        requestJson->Parse(serializedRequest.c_str());
+        if (requestJson->IsNull())
             {
             deferred.Resolve(CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "request")));
             return response;
             }
 
-        Utf8CP requestId = requestJson["requestId"].GetString();
+        Utf8CP requestId = (*requestJson)["requestId"].GetString();
         if (Utf8String::IsNullOrEmpty(requestId))
             {
             deferred.Resolve(CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "request.requestId")));
@@ -6208,74 +6329,41 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         auto requestGuid = BeGuid(true).ToString();
 
         static rapidjson::Value const s_nullValue;
-        RapidJsonValueCR params = requestJson.HasMember("params") ? requestJson["params"] : s_nullValue;
+        auto getParams = [requestJson]() -> RapidJsonValueCR
+            {
+            return requestJson->HasMember("params") ? (*requestJson)["params"] : s_nullValue;
+            };
 
+        RapidJsonValueCR params = getParams();
         ECPresentationUtils::GetLogger().debugv("Received request: %s. Assigned GUID: %s. Request params: %s",
             requestId, requestGuid.c_str(), BeRapidJsonUtilities::ToString(params).c_str());
 
         auto diagnostics = ECPresentation::Diagnostics::Scope::ResetAndCreate(requestId, ECPresentationUtils::CreateDiagnosticsOptions(params));
         try
             {
-            std::shared_ptr<folly::Future<ECPresentationResult>> result = std::make_shared<folly::Future<ECPresentationResult>>(folly::makeFuture(ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString("request.requestId = '%s'", requestId))));
-            if (0 == strcmp("GetRootNodesCount", requestId))
-                *result = ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("GetRootNodes", requestId))
-                *result = ECPresentationUtils::GetRootNodes(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("GetChildrenCount", requestId))
-                *result = ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("GetChildren", requestId))
-                *result = ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("GetNodesDescriptor", requestId))
-                *result = ECPresentationUtils::GetHierarchyLevelDescriptor(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("GetNodePaths", requestId))
-                *result = ECPresentationUtils::GetNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("GetFilteredNodePaths", requestId))
-                *result = ECPresentationUtils::GetFilteredNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("GetContentSources", requestId))
-                *result = ECPresentationUtils::GetContentSources(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("GetContentDescriptor", requestId))
-                *result = ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("GetContent", requestId))
-                *result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("GetContentSet", requestId))
-                *result = ECPresentationUtils::GetContentSet(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("GetContentSetSize", requestId))
-                *result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("GetPagedDistinctValues", requestId))
-                *result = ECPresentationUtils::GetPagedDistinctValues(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("GetDisplayLabel", requestId))
-                *result = ECPresentationUtils::GetDisplayLabel(*m_presentationManager, db->GetDgnDb(), params);
-            else if (0 == strcmp("CompareHierarchies", requestId))
-                *result = ECPresentationUtils::CompareHierarchies(*m_presentationManager, db->GetDgnDb(), params);
-
-            (*result)
-            .then([this, requestGuid, startTime, diagnostics = *diagnostics, deferred = std::move(deferred)](ECPresentationResult result)
-                {
-                result.SetDiagnostics(std::make_unique<rapidjson::Document>(diagnostics->BuildJson()));
-                ResolvePromise(deferred, std::move(result));
-                ECPresentationUtils::GetLogger().debugv("Request %s completed successfully in %" PRIu64 " ms.",
-                    requestGuid.c_str(), (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - startTime));
-                })
-            .onError([this, requestGuid, startTime, diagnostics = *diagnostics, deferred = std::move(deferred)](folly::exception_wrapper e)
-                {
-                ECPresentationResult result = ECPresentationUtils::CreateResultFromException(e, std::make_unique<rapidjson::Document>(diagnostics->BuildJson()));
-                if (ECPresentationStatus::Canceled == result.GetStatus())
+            CreateRestartableRequest(requestId, *db, getParams, abortEvent)
+                .then([this, requestGuid, startTime, diagnostics = *diagnostics, deferred = std::move(deferred)](ECPresentationResult result)
                     {
-                    ECPresentationUtils::GetLogger().debugv("Request %s cancelled after %" PRIu64 " ms.",
+                    result.SetDiagnostics(std::make_unique<rapidjson::Document>(diagnostics->BuildJson()));
+                    ResolvePromise(deferred, std::move(result));
+                    ECPresentationUtils::GetLogger().debugv("Request %s completed successfully in %" PRIu64 " ms.",
                         requestGuid.c_str(), (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - startTime));
-                    }
-                else
+                    })
+                .onError([this, requestGuid, startTime, diagnostics = *diagnostics, deferred = std::move(deferred)](folly::exception_wrapper e)
                     {
-                    ECPresentationUtils::GetLogger().errorv("Request %s completed with error '%s' in %" PRIu64 " ms.",
-                        requestGuid.c_str(), result.GetErrorMessage().c_str(), (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - startTime));
-                    }
-                ResolvePromise(deferred, std::move(result));
-                });
-
-            response.Set("cancel", Napi::Function::New(Env(), [result](NapiInfoCR info)
-                {
-                result->cancel();
-                }));
+                    ECPresentationResult result = ECPresentationUtils::CreateResultFromException(e, std::make_unique<rapidjson::Document>(diagnostics->BuildJson()));
+                    if (ECPresentationStatus::Canceled == result.GetStatus())
+                        {
+                        ECPresentationUtils::GetLogger().debugv("Request %s cancelled after %" PRIu64 " ms.",
+                            requestGuid.c_str(), (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - startTime));
+                        }
+                    else
+                        {
+                        ECPresentationUtils::GetLogger().errorv("Request %s completed with error '%s' in %" PRIu64 " ms.",
+                            requestGuid.c_str(), result.GetErrorMessage().c_str(), (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - startTime));
+                        }
+                    ResolvePromise(deferred, std::move(result));
+                    });
             }
         catch (std::exception const& e)
             {
@@ -6287,7 +6375,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             ECPresentationUtils::GetLogger().errorv("Failed to queue request %s", requestGuid.c_str());
             deferred.Resolve(CreateReturnValue(ECPresentationUtils::CreateResultFromException(folly::exception_wrapper{std::current_exception()}, std::make_unique<rapidjson::Document>((*diagnostics)->BuildJson()))));
             }
-
         return response;
         }
 
@@ -6379,6 +6466,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
 
     void Terminate(NapiInfoCR info)
         {
+        m_mainThreadExecutor = nullptr;
         m_presentationManager.reset();
         m_updateCallback.Release();
         m_threadSafeFunc.Release();

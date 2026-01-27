@@ -48,7 +48,13 @@ public:
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct CancellationException : ECPresentationException<std::exception>
-    {};
+{
+private:
+    bool m_restartRequested;
+public:
+    CancellationException(bool restartRequested = false): m_restartRequested(restartRequested) {}
+    bool IsRestartRequested() const {return m_restartRequested;}
+};
 
 /*=================================================================================**//**
 * This is thrown when library connection to Db is unusable due to being busy (we get
