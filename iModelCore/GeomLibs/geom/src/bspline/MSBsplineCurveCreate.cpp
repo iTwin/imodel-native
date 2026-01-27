@@ -273,7 +273,7 @@ MSBsplineStatus MSBsplineCurve::AllocatePoles (int count, DPoint3dCP data)
     if (NULL == (poles = static_cast<DPoint3d *>(BSIBaseGeom::Malloc (allocSize))))
         return MDLERR_INSFMEMORY;
     if (NULL != data)
-        memcpy (poles, data, allocSize);
+        BeStringUtilities::Memcpy (poles, allocSize, data, allocSize);
     return SUCCESS;
     }
 
@@ -286,7 +286,7 @@ MSBsplineStatus MSBsplineCurve::AllocateWeights (int count, double const *data)
     if (NULL == (weights = static_cast<double *>(BSIBaseGeom::Malloc (allocSize))))
         return MDLERR_INSFMEMORY;
     if (NULL != data)
-        memcpy (weights, data, allocSize);
+        BeStringUtilities::Memcpy (weights, allocSize, data, allocSize);
     rational = true;
     return SUCCESS;
     }
@@ -300,7 +300,7 @@ MSBsplineStatus MSBsplineCurve::AllocateKnots (int count, double const * data)
     if (NULL == (knots = static_cast<double *>(BSIBaseGeom::Malloc (allocSize))))
         return MDLERR_INSFMEMORY;
     if (NULL != data)
-        memcpy (knots, data, allocSize);
+        BeStringUtilities::Memcpy (knots, allocSize, data, allocSize);
     return SUCCESS;
     }
 
@@ -443,7 +443,7 @@ MSBsplineStatus MSBsplineCurve::CreateFromPointsAndOrder (DPoint3dCP pPoints, in
 
         if (SUCCESS == (status = Allocate ()))
             {
-            memcpy (poles, pPoints, numPoints*sizeof(DPoint3d));
+            BeStringUtilities::Memcpy (poles, numPoints * sizeof(DPoint3d), pPoints, numPoints*sizeof(DPoint3d));
             status = bspknot_computeKnotVector (knots, &params, NULL);
             }
         }
@@ -806,7 +806,7 @@ RotMatrixCP axes
     curve.display.curveDisplay = true;
     curve.display.polygonDisplay = false;
     transform.Multiply (curve.poles, tmpPoles, numPoles);
-    memcpy (curve.weights, tmpWeights, numPoles * sizeof (double));
+    BeStringUtilities::Memcpy (curve.weights, numPoles * sizeof (double), tmpWeights, numPoles * sizeof (double));
     bspknot_computeKnotVector (curve.knots, &curve.params, tmpKnots);
     DPoint3d::MultiplyArrayByScales (curve.poles, curve.poles, curve.weights, curve.params.numPoles);
     return MSB_SUCCESS;
@@ -970,7 +970,7 @@ MSBsplineStatus MSBsplineCurve::InitFromPoints (DPoint3dCP points, int nPoints)
     poles = static_cast <DPoint3d *> (BSIBaseGeom::Malloc (pointAllocSize));
     knots = static_cast <double *> (BSIBaseGeom::Malloc (knotsAllocSize));
 
-    memcpy (poles, points, pointAllocSize);
+    BeStringUtilities::Memcpy (poles, pointAllocSize, points, pointAllocSize);
 
     if (SUCCESS != bspknot_computeKnotVector (knots, &params, NULL))
         return ERROR;

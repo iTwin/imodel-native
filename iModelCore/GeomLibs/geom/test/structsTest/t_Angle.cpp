@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
+#include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeNumerical.h>
 
 void TestFunc (double a, double b)
@@ -840,10 +841,18 @@ DoubleGenerator (double a = 0.0, double b = 1.0)
 
 double Next ()
     {
-    // we know that rand () only gives 15 bit values ....
-    uint64_t u0 = rand ();
-    uint64_t u1 = rand ();
-    uint64_t u2 = rand ();
+    // we know that rand_s() returns full 32-bit values
+    unsigned int randValue0, randValue1, randValue2;
+    BeStringUtilities::Rand(&randValue0);
+    BeStringUtilities::Rand(&randValue1);
+    BeStringUtilities::Rand(&randValue2);
+    // Note: Original rand() naturally returned 15-bit values (RAND_MAX=32767)
+    // but as rand_s() returns full 32-bit values, hence masking is needed
+    // Mask each value to 15 bits to create a composite 45-bit random number
+    // This ensures uniform distribution over [0,1) when divided by 2^45 later
+    uint64_t u0 = randValue0 & 0x7FFF;  // Use bits 0-14 (15 bits)
+    uint64_t u1 = randValue1 & 0x7FFF;  // Use bits 15-29 after (<< 15) bits
+    uint64_t u2 = randValue2 & 0x7FFF;  // Use bits 30-44 after (<< 30) bits
     u1 = u1 << 15;
     u2 = u2 << 30;
     m_bits[0] |= u0;

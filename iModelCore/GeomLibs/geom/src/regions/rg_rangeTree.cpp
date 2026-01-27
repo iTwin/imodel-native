@@ -320,9 +320,9 @@ int         axis
     int          minSize;
 
 
-    qsort (pSplitEntries, count, sizeof(NodeTest), (axis==X_AXIS)
-                ? (int (*)(const void *,const void *))compareXRange
-                : (int (*)(const void *,const void *))compareYRange);
+    BeStringUtilities::Qsort (pSplitEntries, count, sizeof(NodeTest),
+                BSIBaseGeom::QSortAdaptor,
+                (void*)((axis==X_AXIS) ? compareXRange : compareYRange));
 
     minSize = count/3;
     pLastEntry = pSplitEntries + count;
