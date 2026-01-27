@@ -468,6 +468,28 @@ describe("basic tests", () => {
       assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
   });
 
+  it("testExportGraphicsAsync", async () => {
+    // Find all 3D elements in the test file
+    const elementIdArray: Id64Array = [];
+    const statement = new iModelJsNative.ECSqlStatement();
+    statement.prepare(dgndb, "SELECT ECInstanceId FROM bis.GeometricElement3d");
+    while (DbResult.BE_SQLITE_ROW === statement.step())
+      elementIdArray.push(statement.getValue(0).getId());
+    statement.dispose();
+
+    assert(elementIdArray.length > 0, "No 3D elements in test file");
+    // Expect a mesh to be generated for each element - valid for test.bim, maybe invalid for future test data
+    const elementsWithGraphics: any = {};
+    const onGraphics = (info: any) => {
+      elementsWithGraphics[info.elementId] = true;
+    };
+    
+    await dgndb.exportGraphicsAsync({ elementIdArray, onGraphics });
+
+    for (const id of elementIdArray)
+      assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
+  });
+
   it("testSchemaImport", () => {
     const writeDbFileName = copyFile("testSchemaImport.bim", dbFileName);
     // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.

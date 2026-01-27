@@ -216,16 +216,16 @@ public:
     bvector<LineStyleGeometryCacheEntry>    m_lineStyleGeometryCache;
     int32_t                                 m_drawingStyledCurveVectorStack;
 
-    ExportGraphicsProcessor(DgnDbR db, IFacetOptionsR facetOptions, double decimationTolerance, bool generateLines, double minLineStyleComponentSize) :
+    ExportGraphicsProcessor(DgnDbR db, IFacetOptionsPtr facetOptions, double decimationTolerance, bool generateLines, double minLineStyleComponentSize) :
         m_db(db), m_facetOptions(facetOptions), m_gotBadPolyface(false), m_decimationTolerance(decimationTolerance),
         m_generateLines(generateLines), m_minLineStyleComponentSize(minLineStyleComponentSize), m_drawingStyledCurveVectorStack(0) { }
     virtual ~ExportGraphicsProcessor() { }
 
 private:
-    IFacetOptionsR                  m_facetOptions;
+    IFacetOptionsPtr                m_facetOptions;
     DgnDbR                          m_db;
 
-    IFacetOptionsP _GetFacetOptionsP() override {return &m_facetOptions;}
+    IFacetOptionsP _GetFacetOptionsP() override {return m_facetOptions.get();}
 
     UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
     UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
@@ -281,7 +281,7 @@ virtual bool _ProcessCurveVector(CurveVectorCR curve, bool filled, SimplifyGraph
 
     // Prepare curve vector for output
     bvector<DPoint3d> strokePoints;
-    curve.AddStrokePoints(strokePoints, m_facetOptions);
+    curve.AddStrokePoints(strokePoints, *m_facetOptions);
     if (strokePoints.empty())
         return true;
 
@@ -817,7 +817,7 @@ struct ExportGraphicsJob
     bvector<PartInstanceRecord>     m_instances;
     bool                            m_caughtException;
 
-ExportGraphicsJob(DgnDbR db, IFacetOptionsR fo, DgnElementId elId, bool saveInstances, double decimationTolerance, bool generateLines, double minLineStyleComponentSize)
+ExportGraphicsJob(DgnDbR db, IFacetOptionsPtr fo, DgnElementId elId, bool saveInstances, double decimationTolerance, bool generateLines, double minLineStyleComponentSize)
     : m_geom(db), m_db(db), m_processor(db, fo, decimationTolerance, generateLines, minLineStyleComponentSize), m_elementId(elId),
     m_context(m_processor, saveInstances ? &m_instances : nullptr), m_caughtException(false)
     {
@@ -980,12 +980,13 @@ static Placement3d getPlacement(BeSQLite::CachedStatement& stmt)
         ElementAlignedBox3d(boxMin.x, boxMin.y, boxMin.z, boxMax.x, boxMax.y, boxMax.z));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps)
+namespace {
+
+bvector<std::unique_ptr<ExportGraphicsJob>> startExportGraphicsJobInMainThread(
+        Napi::Env& env,
+        DgnDbR db,
+        Napi::Object const& exportProps)
     {
-    BeFolly::ThreadPool& threadPool = BeFolly::ThreadPool::GetCpuPool();
     BeSQLite::CachedStatementPtr stmt = getSelectStatement(db);
     IFacetOptionsPtr facetOptions = createFacetOptions(exportProps);
     Napi::Array elementIdArray = exportProps.Get("elementIdArray").As<Napi::Array>();
@@ -1001,19 +1002,14 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
         decimationTolerance = napiDecimationTolerance.DoubleValue();
 
     bvector<std::unique_ptr<ExportGraphicsJob>> jobs;
-    bvector<folly::Future<folly::Unit>> jobHandles;
     jobs.reserve(elementIdArray.Length());
-    jobHandles.reserve(elementIdArray.Length());
 
-    Napi::Array napiPartArray = exportProps.Get("partInstanceArray").As<Napi::Array>();
-    bool saveInstances = napiPartArray.IsArray();
-
-    Napi::Function onLineGraphicsCb = exportProps.Get("onLineGraphics").As<Napi::Function>();
-    bool generateLines = onLineGraphicsCb.IsFunction();
+    bool saveInstances = exportProps.Get("partInstanceArray").IsArray();
+    bool generateLines = exportProps.Get("onLineGraphics").IsFunction();
 
     for (uint32_t i = 0; i < elementIdArray.Length(); ++i)
         {
-        Napi::HandleScope handleScope(Env());
+        Napi::HandleScope handleScope(env);
         Napi::String napiElementId = elementIdArray.Get(i).As<Napi::String>();
         std::string elementIdStr = napiElementId.Utf8Value();
         DgnElementId elementId(BeInt64Id::FromString(elementIdStr.c_str()).GetValue());
@@ -1028,81 +1024,184 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
 
         GeometryStream geomStream;
         auto status = db.Elements().LoadGeometryStream(geomStream, stmt->GetValueBlob(1), stmt->GetColumnBytes(1));
-        if (status != DgnDbStatus::Success)
+        if (status != DgnDbStatus::Success) 
             continue;
 
-        auto job = new ExportGraphicsJob(db, *facetOptions.get(), elementId, saveInstances, decimationTolerance, generateLines, minLineStyleComponentSize);
+        auto job = new ExportGraphicsJob(db, facetOptions, elementId, saveInstances, decimationTolerance, generateLines, minLineStyleComponentSize);
         job->m_geom.m_categoryId = stmt->GetValueId<DgnCategoryId>(0);
         job->m_geom.m_placement = getPlacement(*stmt);
         job->m_geom.m_geomStream = std::move(geomStream);
-
         jobs.emplace_back(job);
-        jobHandles.push_back(folly::via(&threadPool, [=]() { job->Execute(); }));
         }
 
-    // TS API specifies that modifying the binding of this function in the callback will be ignored
+    return jobs;
+    }
+
+void finishExportGraphicsJobInMainThread(
+        Napi::Env& env,
+        const Napi::Function& onGraphicsCb,
+        const Napi::Function& onLineGraphicsCb,
+        Napi::Array& napiPartArray,
+        ExportGraphicsJob& job)
+    {
+    if (job.m_caughtException)
+        {
+        Utf8CP errorMsg = "Element 0x%llx caused uncaught exception, this may indicate problems with the source data.";
+        LOG.errorv(errorMsg, job.m_elementId.GetValueUnchecked());
+        return; // State is invalid - clean up and ignore this element.
+        }
+
+    if (job.m_processor.m_gotBadPolyface)
+        {
+        Utf8CP errorMsg = "Element 0x%llx generated invalid geometry, this may indicate problems with the source data.";
+        LOG.errorv(errorMsg, job.m_elementId.GetValueUnchecked());
+        // Bad polyface is handled gracefully, OK to continue in case other valid geometry was generated
+        }
+
+    Napi::String elementIdString = createIdString(env, job.m_elementId);
+    for (auto& entry : job.m_processor.m_cachedEntries)
+        {
+            // Can happen if all triangles are degenerate
+        if (entry.mesh.indices.empty())
+            continue;
+        Napi::Object cbArgument = Napi::Object::New(env);
+        cbArgument.Set("elementId", elementIdString);
+        cbArgument.Set("mesh", convertMesh(env, entry.mesh, entry.isTwoSided));
+        cbArgument.Set("color", Napi::Number::New(env, entry.color.GetValue()));
+        cbArgument.Set("subCategory", createIdString(env, entry.subCategoryId));
+        cbArgument.Set("geometryClass", Napi::Number::New(env, static_cast<uint8_t>(entry.geometryClass)));
+        if (entry.materialId.IsValid())
+            cbArgument.Set("materialId", createIdString(env, entry.materialId));
+        if (entry.textureId.IsValid())
+            cbArgument.Set("textureId", createIdString(env, entry.textureId));
+        onGraphicsCb.Call({ cbArgument });
+        }
+
+    for (auto& entry : job.m_processor.m_cachedLineStrings)
+        {
+        if (entry.indices.empty())
+            continue;
+        Napi::Object cbArgument = Napi::Object::New(env);
+        cbArgument.Set("elementId", elementIdString);
+        cbArgument.Set("subCategory", createIdString(env, entry.subCategoryId));
+        cbArgument.Set("geometryClass", Napi::Number::New(env, static_cast<uint8_t>(entry.geometryClass)));
+        cbArgument.Set("color", Napi::Number::New(env, entry.color.GetValue()));
+        cbArgument.Set("lines", convertLines(env, entry.indices, entry.points));
+        onLineGraphicsCb.Call({ cbArgument });
+        }
+
+    if (napiPartArray.IsArray() && !job.m_instances.empty())
+        convertPartInstances(env, napiPartArray, job.m_elementId, job.m_instances);
+    }
+
+struct ExportGraphicsWorker : public DgnDbWorker {
+private:
+    std::unique_ptr<ExportGraphicsJob> m_job;
+    Napi::FunctionReference m_onGraphicsCbRef;
+    Napi::FunctionReference m_onLineGraphicsCbRef;
+    Napi::Reference<Napi::Array> m_napiPartArrayRef;
+
+protected:
+    void Execute() override
+        {
+        m_job->Execute();
+        }
+
+    void OnOK() override
+        {
+            auto env = Env();
+            auto partArray = m_napiPartArrayRef.Value();
+            finishExportGraphicsJobInMainThread(env, m_onGraphicsCbRef.Value(), m_onLineGraphicsCbRef.Value(), partArray, *m_job);
+            DgnDbWorker::OnOK();
+        }
+
+public:
+    ExportGraphicsWorker(
+            DgnDbR db,
+            Napi::Env env,
+            Napi::Function onGraphicsCb,
+            Napi::Function onLineGraphicsCb,
+            Napi::Array napiPartArray,
+            std::unique_ptr<ExportGraphicsJob>&& job)
+        :
+            DgnDbWorker(db, env),
+            m_job(std::move(job)),
+            m_onGraphicsCbRef(),
+            m_onLineGraphicsCbRef(),
+            m_napiPartArrayRef()
+        {
+        // These ensure the callbacks and array stay alive for the duration of the worker,
+        // even though the native function that receives them has returned. We create them here
+        // instead of in the member initializer list because we need to check that the values
+        // are valid. `Napi::Persistent` will throw if given an "undefined" value.
+        if (onGraphicsCb.IsFunction()) m_onGraphicsCbRef = Napi::Persistent(onGraphicsCb);
+        if (onLineGraphicsCb.IsFunction()) m_onLineGraphicsCbRef = Napi::Persistent(onLineGraphicsCb);
+        if (napiPartArray.IsArray()) m_napiPartArrayRef = Napi::Persistent(napiPartArray);
+        }
+};
+
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps)
+    {
+    bvector<std::unique_ptr<ExportGraphicsJob>> jobs = startExportGraphicsJobInMainThread(Env(), db, exportProps);
+
+    Napi::Array napiPartArray = exportProps.Get("partInstanceArray").As<Napi::Array>();
+    Napi::Function onLineGraphicsCb = exportProps.Get("onLineGraphics").As<Napi::Function>();
     Napi::Function onGraphicsCb = exportProps.Get("onGraphics").As<Napi::Function>();
 
-    for (uint32_t i = 0; i < (uint32_t)jobHandles.size(); ++i)
+    BeFolly::ThreadPool& threadPool = BeFolly::ThreadPool::GetCpuPool();
+    bvector<folly::Future<folly::Unit>> jobHandles;
+    jobHandles.reserve(jobs.size());
+    
+    // Start all jobs
+    for (uint32_t i = 0; i < (uint32_t)jobs.size(); ++i)
         {
-        Napi::HandleScope handleScope(Env());
-        jobHandles[i].wait(); // Should use folly chaining? Good enough for now, jobs are FIFO
-        ExportGraphicsJob* job = jobs[i].get();
+            auto job = jobs[i].get();
+            jobHandles.push_back(folly::via(&threadPool, [job]() { job->Execute(); }));
+        }
 
-        if (job->m_caughtException)
-            {
-            Utf8CP errorMsg = "Element 0x%llx caused uncaught exception, this may indicate problems with the source data.";
-            LOG.errorv(errorMsg, job->m_elementId.GetValueUnchecked());
-            jobs[i].reset();
-            continue; // State is invalid - clean up and ignore this element.
-            }
+    // Wait for each job in turn, and process its results.
+    for (uint32_t i = 0; i < (uint32_t)jobs.size(); ++i)
+        {
+            jobHandles[i].wait();
+            finishExportGraphicsJobInMainThread(Env(), onGraphicsCb, onLineGraphicsCb, napiPartArray, *jobs[i]);
 
-        if (job->m_processor.m_gotBadPolyface)
-            {
-            Utf8CP errorMsg = "Element 0x%llx generated invalid geometry, this may indicate problems with the source data.";
-            LOG.errorv(errorMsg, job->m_elementId.GetValueUnchecked());
-            // Bad polyface is handled gracefully, OK to continue in case other valid geometry was generated
-            }
-
-        Napi::String elementIdString = createIdString(Env(), job->m_elementId);
-        for (auto& entry : job->m_processor.m_cachedEntries)
-            {
-             // Can happen if all triangles are degenerate
-            if (entry.mesh.indices.empty())
-                continue;
-            Napi::Object cbArgument = Napi::Object::New(Env());
-            cbArgument.Set("elementId", elementIdString);
-            cbArgument.Set("mesh", convertMesh(Env(), entry.mesh, entry.isTwoSided));
-            cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
-            cbArgument.Set("subCategory", createIdString(Env(), entry.subCategoryId));
-            cbArgument.Set("geometryClass", Napi::Number::New(Env(), static_cast<uint8_t>(entry.geometryClass)));
-            if (entry.materialId.IsValid())
-                cbArgument.Set("materialId", createIdString(Env(), entry.materialId));
-            if (entry.textureId.IsValid())
-                cbArgument.Set("textureId", createIdString(Env(), entry.textureId));
-            onGraphicsCb.Call({ cbArgument });
-            }
-
-        for (auto& entry : job->m_processor.m_cachedLineStrings)
-            {
-            if (entry.indices.empty())
-                continue;
-            Napi::Object cbArgument = Napi::Object::New(Env());
-            cbArgument.Set("elementId", elementIdString);
-            cbArgument.Set("subCategory", createIdString(Env(), entry.subCategoryId));
-            cbArgument.Set("geometryClass", Napi::Number::New(Env(), static_cast<uint8_t>(entry.geometryClass)));
-            cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
-            cbArgument.Set("lines", convertLines(Env(), entry.indices, entry.points));
-            onLineGraphicsCb.Call({ cbArgument });
-            }
-
-        if (saveInstances && !job->m_instances.empty())
-            convertPartInstances(Env(), napiPartArray, job->m_elementId, job->m_instances);
-
-        jobs[i].reset(); // Cleaning these up now while they're still in cache is much faster
+            // Cleaning these up now while they're still in cache is much faster
+            jobs[i] = nullptr;
         }
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Napi::Value JsInterop::ExportGraphicsAsync(DgnDbR db, Napi::Object const& exportProps)
+    {
+    bvector<std::unique_ptr<ExportGraphicsJob>> jobs = startExportGraphicsJobInMainThread(Env(), db, exportProps);
+
+    Napi::Array napiPartArray = exportProps.Get("partInstanceArray").As<Napi::Array>();
+    Napi::Function onLineGraphicsCb = exportProps.Get("onLineGraphics").As<Napi::Function>();
+    Napi::Function onGraphicsCb = exportProps.Get("onGraphics").As<Napi::Function>();
+
+    // Run each job via a Node AsyncWorker.
+    Napi::Array promises = Napi::Array::New(Env(), jobs.size());
+    for (uint32_t i = 0; i < (uint32_t)jobs.size(); ++i)
+        {
+        DgnDbWorkerPtr worker = new ExportGraphicsWorker(db, Env(), onGraphicsCb, onLineGraphicsCb, napiPartArray, std::move(jobs[i]));
+        promises[i] = worker->Queue();
+        }
+
+    // The operation is complete when all jobs are complete.
+    Napi::Object global = Env().Global();
+    Napi::Object promiseConstructor = global.Get("Promise").As<Napi::Object>();
+    Napi::Function all = promiseConstructor.Get("all").As<Napi::Function>();
+
+    return all.Call(promiseConstructor, { promises });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1153,7 +1252,7 @@ DgnDbStatus JsInterop::ExportPartGraphics(DgnDbR db, Napi::Object const& exportP
         decimationTolerance = napiDecimationTolerance.DoubleValue();
 
     IFacetOptionsPtr facetOptions = createFacetOptions(exportProps);
-    ExportGraphicsProcessor processor(db, *facetOptions.get(), decimationTolerance, generateLines, minLineStyleComponentSize);
+    ExportGraphicsProcessor processor(db, facetOptions, decimationTolerance, generateLines, minLineStyleComponentSize);
     ExportGraphicsContext context(processor, nullptr);
     context.SetDgnDb(db);
 
