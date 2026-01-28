@@ -122,12 +122,12 @@ void ECSqlStatementCache::GetPreparedStatement(CachedECSqlStatementPtr& stmt, EC
     ECSqlStatus status;
     if (datasource == nullptr)
         {
-        status = stmt->Prepare(ecdb, ecsql, token, logPrepareErrors);
+        status = stmt->Prepare(ecdb, ecsql, token, logPrepareErrors, DbPrepareOptions::Persistent);
         }
     else
         {
         BeAssert(token == nullptr);
-        status = stmt->Prepare(ecdb.Schemas(), *datasource, ecsql, logPrepareErrors);
+        status = stmt->Prepare(ecdb.Schemas(), *datasource, ecsql, logPrepareErrors, DbPrepareOptions::Persistent);
         }
 
     if (ECSqlStatus::Success != status)
