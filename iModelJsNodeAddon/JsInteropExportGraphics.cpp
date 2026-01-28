@@ -982,7 +982,7 @@ static Placement3d getPlacement(BeSQLite::CachedStatement& stmt)
 
 namespace {
 
-bvector<std::unique_ptr<ExportGraphicsJob>> startExportGraphicsJobInMainThread(
+bvector<std::unique_ptr<ExportGraphicsJob>> startExportGraphicsJobsInMainThread(
         Napi::Env& env,
         DgnDbR db,
         Napi::Object const& exportProps)
@@ -1109,10 +1109,10 @@ protected:
 
     void OnOK() override
         {
-            auto env = Env();
-            auto partArray = m_napiPartArrayRef.Value();
-            finishExportGraphicsJobInMainThread(env, m_onGraphicsCbRef.Value(), m_onLineGraphicsCbRef.Value(), partArray, *m_job);
-            DgnDbWorker::OnOK();
+        auto env = Env();
+        auto partArray = m_napiPartArrayRef.Value();
+        finishExportGraphicsJobInMainThread(env, m_onGraphicsCbRef.Value(), m_onLineGraphicsCbRef.Value(), partArray, *m_job);
+        DgnDbWorker::OnOK();
         }
 
 public:
@@ -1147,7 +1147,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps)
     {
-    bvector<std::unique_ptr<ExportGraphicsJob>> jobs = startExportGraphicsJobInMainThread(Env(), db, exportProps);
+    bvector<std::unique_ptr<ExportGraphicsJob>> jobs = startExportGraphicsJobsInMainThread(Env(), db, exportProps);
 
     Napi::Array napiPartArray = exportProps.Get("partInstanceArray").As<Napi::Array>();
     Napi::Function onLineGraphicsCb = exportProps.Get("onLineGraphics").As<Napi::Function>();
@@ -1182,7 +1182,7 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
 +---------------+---------------+---------------+---------------+---------------+------*/
 Napi::Value JsInterop::ExportGraphicsAsync(DgnDbR db, Napi::Object const& exportProps)
     {
-    bvector<std::unique_ptr<ExportGraphicsJob>> jobs = startExportGraphicsJobInMainThread(Env(), db, exportProps);
+    bvector<std::unique_ptr<ExportGraphicsJob>> jobs = startExportGraphicsJobsInMainThread(Env(), db, exportProps);
 
     Napi::Array napiPartArray = exportProps.Get("partInstanceArray").As<Napi::Array>();
     Napi::Function onLineGraphicsCb = exportProps.Get("onLineGraphics").As<Napi::Function>();
