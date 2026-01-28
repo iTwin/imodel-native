@@ -3,7 +3,7 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode, using } from "@itwin/core-bentley";
-import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions, RelationshipProps } from "@itwin/core-common";
+import { BlobRange, Code, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, GeometryPartProps, IModel, PhysicalElementProps, ProfileOptions, RelationshipProps } from "@itwin/core-common";
 import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
 import * as fs from "fs-extra";
@@ -488,6 +488,128 @@ describe("basic tests", () => {
 
     for (const id of elementIdArray)
       assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
+  });
+
+  function createPhysicalElementWithPart(templateElementId: Id64String) {
+    // Create a GeometryPart and attach it to a new physical element.
+    const geometryPartProps: GeometryPartProps = {
+      classFullName: "BisCore:GeometryPart",
+      model: IModel.dictionaryId,
+      code: Code.createEmpty(),
+      geom: [
+        { box: { origin: [0, 0, 0], baseX: 10, baseY: 10, height: 1 } }
+      ]
+    };
+
+    const partId = dgndb.insertElement(geometryPartProps);
+    assert(partId.length > 0, "Failed to create GeometryPart");
+
+    const templateElement = dgndb.getElement({ id: templateElementId }) as PhysicalElementProps;
+    const elementProps: PhysicalElementProps = {
+      classFullName: "Generic:PhysicalObject", // Ensure Generic schema is imported
+      model: templateElement.model,
+      category: templateElement.category,
+      code: Code.createEmpty(),
+      placement: {
+        origin: [100, 0, 0],
+        angles: { yaw: 0, pitch: 0, roll: 0 }
+      },
+      geom: [
+        {
+          geomPart: {
+            part: partId,
+            origin: [5, 0, 0],
+            rotation: { yaw: 45, pitch: 0, roll: 0 }
+          }
+        }
+      ]
+    };
+
+    const elementId = dgndb.insertElement(elementProps);
+    assert(elementId.length > 0, "Failed to create PhysicalObject.");
+
+    return { elementId, partId };
+  }
+
+  it("exportGraphicsAsync enumerates parts directly if array is not provided", async () => {
+    try {
+      // Find all 3D elements in the test file
+      const elementIdArray: Id64Array = [];
+      const statement = new iModelJsNative.ECSqlStatement();
+      statement.prepare(dgndb, "SELECT ECInstanceId FROM bis.GeometricElement3d");
+      while (DbResult.BE_SQLITE_ROW === statement.step())
+        elementIdArray.push(statement.getValue(0).getId());
+      statement.dispose();
+
+      assert(elementIdArray.length > 0, "No 3D elements in test file");
+
+      const partDetails = createPhysicalElementWithPart(elementIdArray[0]);
+      elementIdArray.push(partDetails.elementId);
+
+      // Expect a mesh to be generated for each element - valid for test.bim, maybe invalid for future test data
+      const elementsWithGraphics: any = {};
+      const onGraphics = (info: any) => {
+        elementsWithGraphics[info.elementId] = true;
+      };
+
+      await dgndb.exportGraphicsAsync({ elementIdArray, onGraphics });
+
+      for (const id of elementIdArray) {
+        assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
+      }
+    } finally {
+      dgndb.abandonChanges();
+    }
+  });
+
+  it("exportPartGraphics", async () => {
+    try {
+      // Find all 3D elements in the test file
+      const elementIdArray: Id64Array = [];
+      const statement = new iModelJsNative.ECSqlStatement();
+      statement.prepare(dgndb, "SELECT ECInstanceId FROM bis.GeometricElement3d");
+      while (DbResult.BE_SQLITE_ROW === statement.step())
+        elementIdArray.push(statement.getValue(0).getId());
+      statement.dispose();
+
+      assert(elementIdArray.length > 0, "No 3D elements in test file");
+
+      const partDetails = createPhysicalElementWithPart(elementIdArray[0]);
+      elementIdArray.push(partDetails.elementId);
+
+      // Expect a mesh to be generated for each element - valid for test.bim, maybe invalid for future test data
+      const elementsWithGraphics: any = {};
+      const onGraphics = (info: any) => {
+        elementsWithGraphics[info.elementId] = true;
+      };
+
+      const partInstanceArray: any[] = [];
+
+      await dgndb.exportGraphicsAsync({ elementIdArray, onGraphics, partInstanceArray });
+
+      assert(partInstanceArray.length === 1);
+      assert(partInstanceArray[0].partId === partDetails.partId, "Part instance array does not contain expected part ID.");
+      assert(partInstanceArray[0].partInstanceId === partDetails.elementId, "Part instance array does not contain expected instance ID.");
+
+      for (const id of elementIdArray) {
+        if (id === partDetails.elementId) continue;
+        assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
+      }
+
+      let onPartGraphicsCalls = 0;
+
+      dgndb.exportPartGraphics({
+        elementId: partInstanceArray[0].partId,
+        displayProps: partInstanceArray[0].displayProps,
+        onPartGraphics: (_: any) => {
+          ++onPartGraphicsCalls;
+        }
+      });
+
+      assert(onPartGraphicsCalls === 1, "Expected exactly one call to onPartGraphics.");
+    } finally {
+      dgndb.abandonChanges();
+    }
   });
 
   it("testSchemaImport", () => {
