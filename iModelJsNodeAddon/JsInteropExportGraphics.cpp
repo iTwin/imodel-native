@@ -1226,8 +1226,8 @@ private:
     GeometryStreamIO::Collection    m_geomCollection;
     Render::GeometryParams          m_geomParams;
     bool                            m_caughtException;
-    Napi::Function                  m_onGraphicsCb;
-    Napi::Function                  m_onLineGraphicsCb;
+    Napi::FunctionReference         m_onGraphicsCb;
+    Napi::FunctionReference         m_onLineGraphicsCb;
 
 ExportPartGraphicsJob(DgnDbR db, IFacetOptionsPtr facetOptions, double decimationTolerance, bool generateLines, double minLineStyleComponentSize)
     : m_processor(db, facetOptions, decimationTolerance, generateLines, minLineStyleComponentSize),
@@ -1264,8 +1264,13 @@ static std::unique_ptr<ExportPartGraphicsJob> Create(DgnDbR db, Napi::Object con
 
     std::unique_ptr<ExportPartGraphicsJob> job(new ExportPartGraphicsJob(db, facetOptions, decimationTolerance, generateLines, minLineStyleComponentSize));
     job->m_partElement = partElement;
-    job->m_onGraphicsCb = exportProps.Get("onPartGraphics").As<Napi::Function>();
-    job->m_onLineGraphicsCb = exportProps.Get("onPartLineGraphics").As<Napi::Function>();
+    
+    Napi::Function onGraphicsCb = exportProps.Get("onPartGraphics").As<Napi::Function>();
+    if (onGraphicsCb.IsFunction())
+        job->m_onGraphicsCb = Napi::Persistent(onGraphicsCb);
+    Napi::Function onLineGraphicsCb = exportProps.Get("onPartLineGraphics").As<Napi::Function>();
+    if (onLineGraphicsCb.IsFunction())
+        job->m_onLineGraphicsCb = Napi::Persistent(onLineGraphicsCb);
 
     auto displayProps = exportProps.Get("displayProps").As<Napi::Object>();
     DgnCategoryId categoryId(getIdFromNapiValue(displayProps.Get("categoryId")));
@@ -1317,32 +1322,41 @@ void Finish(Napi::Env& env)
         LOG.errorv(errorMsg, m_partElement->GetElementId().GetValueUnchecked());
         }
 
+    Napi::Function onGraphicsCb = m_onGraphicsCb.Value();
+
     // TS API specifies that modifying the binding of this function in the callback will be ignored
-    for (auto& entry : m_processor.m_cachedEntries)
+    if (onGraphicsCb.IsFunction())
         {
-        // Can happen if all triangles are degenerate
-        if (entry.mesh.indices.empty())
-            continue;
-        Napi::Object cbArgument = Napi::Object::New(env);
-        cbArgument.Set("color", Napi::Number::New(env, entry.color.GetValue()));
-        cbArgument.Set("geometryClass", Napi::Number::New(env, static_cast<uint8_t>(entry.geometryClass)));
-        cbArgument.Set("mesh", convertMesh(env, entry.mesh, entry.isTwoSided));
-        if (entry.materialId.IsValid())
-            cbArgument.Set("materialId", createIdString(env, entry.materialId));
-        if (entry.textureId.IsValid())
-            cbArgument.Set("textureId", createIdString(env, entry.textureId));
-        m_onGraphicsCb.Call({ cbArgument });
+        for (auto& entry : m_processor.m_cachedEntries)
+            {
+            // Can happen if all triangles are degenerate
+            if (entry.mesh.indices.empty())
+                continue;
+            Napi::Object cbArgument = Napi::Object::New(env);
+            cbArgument.Set("color", Napi::Number::New(env, entry.color.GetValue()));
+            cbArgument.Set("geometryClass", Napi::Number::New(env, static_cast<uint8_t>(entry.geometryClass)));
+            cbArgument.Set("mesh", convertMesh(env, entry.mesh, entry.isTwoSided));
+            if (entry.materialId.IsValid())
+                cbArgument.Set("materialId", createIdString(env, entry.materialId));
+            if (entry.textureId.IsValid())
+                cbArgument.Set("textureId", createIdString(env, entry.textureId));
+            m_onGraphicsCb.Call({ cbArgument });
+            }
         }
 
-    for (auto& entry : m_processor.m_cachedLineStrings)
+    Napi::Function onLineGraphicsCb = m_onLineGraphicsCb.Value();
+    if (onLineGraphicsCb.IsFunction())
         {
-        if (entry.indices.empty())
-            continue;
-        Napi::Object cbArgument = Napi::Object::New(env);
-        cbArgument.Set("color", Napi::Number::New(env, entry.color.GetValue()));
-        cbArgument.Set("geometryClass", Napi::Number::New(env, static_cast<uint8_t>(entry.geometryClass)));
-        cbArgument.Set("lines", convertLines(env, entry.indices, entry.points));
-        m_onLineGraphicsCb.Call({ cbArgument });
+        for (auto& entry : m_processor.m_cachedLineStrings)
+            {
+            if (entry.indices.empty())
+                continue;
+            Napi::Object cbArgument = Napi::Object::New(env);
+            cbArgument.Set("color", Napi::Number::New(env, entry.color.GetValue()));
+            cbArgument.Set("geometryClass", Napi::Number::New(env, static_cast<uint8_t>(entry.geometryClass)));
+            cbArgument.Set("lines", convertLines(env, entry.indices, entry.points));
+            m_onLineGraphicsCb.Call({ cbArgument });
+            }
         }
     }
 };
@@ -1362,6 +1376,48 @@ DgnDbStatus JsInterop::ExportPartGraphics(DgnDbR db, Napi::Object const& exportP
     job->Finish(Env());
 
     return DgnDbStatus::Success;
+    }
+
+namespace {
+    
+struct ExportPartGraphicsWorker : public DgnDbWorker {
+private:
+    std::unique_ptr<ExportPartGraphicsJob> m_job;
+
+protected:
+void Execute() override
+    {
+    m_job->Execute();
+    }
+
+void OnOK() override
+    {
+    auto env = Env();
+    m_job->Finish(env);
+    DgnDbWorker::OnOK();
+    }
+
+public:
+ExportPartGraphicsWorker(DgnDbR db, Napi::Env env, std::unique_ptr<ExportPartGraphicsJob>&& job)
+        : DgnDbWorker(db, env), m_job(std::move(job))
+    {
+    }
+};
+
+} // namespace
+
+Napi::Value JsInterop::ExportPartGraphicsAsync(DgnDbR db, Napi::Object const& exportProps)
+    {
+    auto job = ExportPartGraphicsJob::Create(db, exportProps);
+    if (!job)
+        {
+            Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(Env());
+            deferred.Reject(Napi::Error::New(Env(), "Part elementId is invalid or does not refer to a GeometryPart").Value());
+            return deferred.Promise();
+        }
+
+    auto worker = new ExportPartGraphicsWorker(db, Env(), std::move(job));
+    return worker->Queue();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -612,6 +612,56 @@ describe("basic tests", () => {
     }
   });
 
+  it("exportPartGraphicsAsync", async () => {
+    try {
+      // Find all 3D elements in the test file
+      const elementIdArray: Id64Array = [];
+      const statement = new iModelJsNative.ECSqlStatement();
+      statement.prepare(dgndb, "SELECT ECInstanceId FROM bis.GeometricElement3d");
+      while (DbResult.BE_SQLITE_ROW === statement.step())
+        elementIdArray.push(statement.getValue(0).getId());
+      statement.dispose();
+
+      assert(elementIdArray.length > 0, "No 3D elements in test file");
+
+      const partDetails = createPhysicalElementWithPart(elementIdArray[0]);
+      elementIdArray.push(partDetails.elementId);
+
+      // Expect a mesh to be generated for each element - valid for test.bim, maybe invalid for future test data
+      const elementsWithGraphics: any = {};
+      const onGraphics = (info: any) => {
+        elementsWithGraphics[info.elementId] = true;
+      };
+
+      const partInstanceArray: any[] = [];
+
+      await dgndb.exportGraphicsAsync({ elementIdArray, onGraphics, partInstanceArray });
+
+      assert(partInstanceArray.length === 1);
+      assert(partInstanceArray[0].partId === partDetails.partId, "Part instance array does not contain expected part ID.");
+      assert(partInstanceArray[0].partInstanceId === partDetails.elementId, "Part instance array does not contain expected instance ID.");
+
+      for (const id of elementIdArray) {
+        if (id === partDetails.elementId) continue;
+        assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
+      }
+
+      let onPartGraphicsCalls = 0;
+
+      await dgndb.exportPartGraphicsAsync({
+        elementId: partInstanceArray[0].partId,
+        displayProps: partInstanceArray[0].displayProps,
+        onPartGraphics: (_: any) => {
+          ++onPartGraphicsCalls;
+        }
+      });
+
+      assert(onPartGraphicsCalls === 1, "Expected exactly one call to onPartGraphics.");
+    } finally {
+      dgndb.abandonChanges();
+    }
+  });
+
   it("testSchemaImport", () => {
     const writeDbFileName = copyFile("testSchemaImport.bim", dbFileName);
     // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
