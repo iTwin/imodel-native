@@ -2657,13 +2657,6 @@ static Utf8String getDbUri(Utf8CP dbName, Db::OpenParams const& params) {
     return uri;
 }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DisableBloomFilter(SqlDbP db) {
-    const int SQLITE_BloomFilter =  0x00080000;
-    sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, db, SQLITE_BloomFilter);
-}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -2698,10 +2691,6 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
         return rc;
     }
 
-    // Bloom filter introduce in 3.38 has issue with certain queries and fix was in ANALYZE
-    // command which had a rounding error. We need to keep bloom filter disabled for now until
-    // we are able to run ANALYZE on all new checkpoints and old one if necessary.
-    DisableBloomFilter(sqlDb);
 
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn, params.m_busyTimeout);
@@ -3616,10 +3605,6 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    // Bloom filter introduce in 3.38 has issue with certain queries and fix was in ANALYZE
-    // command which had a rounding error. We need to keep bloom filter disabled for now until
-    // we are able to run ANALYZE on all new checkpoints and old one if necessary.
-    DisableBloomFilter(sqlDb);
 
 #ifdef TRACE_ALL_SQLITE_STATEMENTS
     sqlite3_config(SQLITE_CONFIG_LOG, printLog, nullptr);

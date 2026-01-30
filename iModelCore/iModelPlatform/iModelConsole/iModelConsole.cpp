@@ -237,7 +237,16 @@ int IModelConsole::Run(int argc, WCharCP argv[])
             if (i > 1)
                 argsUnparsed.append(" ");
 
-            argsUnparsed.append(Utf8String(argv[i]));
+            auto av = Utf8String(argv[i]);
+            if (av.find(" ") != Utf8String::npos)
+                {
+                //quote the arg if it contains spaces
+                argsUnparsed.append("\"");
+                argsUnparsed.append(av);
+                argsUnparsed.append("\"");
+                }
+            else
+                argsUnparsed.append(Utf8String(argv[i]));
             }
 
         openCommand->Run(m_session, argsUnparsed);
