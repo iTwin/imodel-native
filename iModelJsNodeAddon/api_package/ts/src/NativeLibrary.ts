@@ -590,6 +590,7 @@ export declare namespace IModelJsNative {
     public setNoCaseCollation(collation: NoCaseCollation): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
     public schemaSyncGetDefaultUri(): string;
+    public deleteSchemaItems(schemaName: string, itemNames: string[]): void;
     public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
     public schemaSyncPull(syncDbUri?: string): void;
     public schemaSyncPush(syncDbUri?: string): void;
@@ -851,6 +852,7 @@ export declare namespace IModelJsNative {
     public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
     public schemaSyncPull(syncDbUri: string | undefined): void;
     public schemaSyncPush(syncDbUri: string | undefined): void;
+    public deleteSchemaItems(schemaName: string, itemNames: string[]): void;
     public schemaSyncEnabled(): boolean;
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;

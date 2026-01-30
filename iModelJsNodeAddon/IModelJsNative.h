@@ -554,6 +554,9 @@ public:
 
     static DbResult DropSchemas(ECDbR ecdb, bvector<Utf8String>& schemaNames);
 
+    static DbResult DeleteSchemaItems(ECDbR ecdb, Utf8String schemaName, bvector<Utf8String> const& itemNames);
+    static DbResult DeleteSchemaItems(DgnDbR db, Utf8String schemaName, bvector<Utf8String> const& itemNames);
+
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
     static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);
