@@ -305,8 +305,9 @@ std::vector<CachedConnection::FunctionInfo> CachedConnection::GetPrimaryDbSqlFun
 std::shared_ptr<CachedConnection> CachedConnection::Make(ConnectionCache& cache, uint16_t id) {
     auto newConn = std::make_shared<CachedConnection>(cache, id);
     if (id > 0) {
-        if (BE_SQLITE_OK != cache.GetPrimaryDb().OpenSecondaryConnection(newConn->m_db,
-        ECDb::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No, newConn->m_retryHandler.get()))) {
+        auto openParams = ECDb::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No, newConn->m_retryHandler.get());
+        openParams.m_readUncommitted = true;
+        if (BE_SQLITE_OK != cache.GetPrimaryDb().OpenSecondaryConnection(newConn->m_db, openParams)) {
             return nullptr;
         }
         newConn->UpdateSqlFunctions(ConnectionAction::Opening);

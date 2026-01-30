@@ -3634,6 +3634,11 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
     m_dbFile->m_readonly = ((int)params.m_openMode & (int)OpenMode::Readonly) == (int)OpenMode::Readonly;
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
 
+    if (IsReadonly() && params.m_readUncommitted) {
+        rc = TryExecuteSql("PRAGMA read_uncommitted=1");
+        BeAssert(rc == BE_SQLITE_OK);
+    }
+
     // for writeable databases in WAL mode with DEFERRED defaultTxn mode, promote it to IMMEDIATE mode so there can only
     // be one writer. Without WAL mode we can't do that because the (single) writer would block readers.
     if (IsWriteable() && m_dbFile->m_defaultTxn.GetTxnMode() == BeSQLiteTxnMode::Deferred && IsWalMode()) {
@@ -6192,6 +6197,7 @@ DbResult BeSQLiteLib::Initialize(BeFileNameCR tempDir, LogErrors logErrors)
         sqlite3_config(SQLITE_CONFIG_LOG, logCallback, nullptr);
 #endif
     sqlite3_initialize();
+    sqlite3_enable_shared_cache(1);
     sqlite3_auto_extension((void(*)(void))&besqlite_db_init);
 
     Utf8String tempDirUtf8 = tempDir.GetNameUtf8();
