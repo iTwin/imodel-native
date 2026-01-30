@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2" version="01.00.01" schemaName="Bracket" alias="Myself_303">
+	<ECSchemaReference name="BisCore" version="01.00.16" alias="bis"/>
+	<ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
+	<ECCustomAttributes>
+		<DynamicSchema xmlns="CoreCustomAttributes.01.00.03"/>
+	</ECCustomAttributes>
+	<ECStructClass typeName="Allocation" description="Lineardraft Allocation Class" modifier="None">
+		<ECProperty propertyName="Name" readOnly="true" priority="0" typeName="string"/>
+		<ECProperty propertyName="Quantity" readOnly="true" priority="0" typeName="string"/>
+	</ECStructClass>
+	<ECEntityClass typeName="Bracket" description="Lineardraft Bracket Class" modifier="None">
+		<BaseClass>bis:PhysicalElement</BaseClass>
+		<ECStructArrayProperty propertyName="BracketSlots" displayLabel="Bracket Slots" readOnly="true" priority="0" typeName="BracketSlot" minOccurs="0" maxOccurs="2147483647"/>
+		<ECProperty propertyName="Status" readOnly="true" priority="0" typeName="string"/>
+		<ECStructArrayProperty propertyName="Allocation" readOnly="true" priority="0" typeName="Allocation" minOccurs="0" maxOccurs="2147483647"/>
+		<ECArrayProperty propertyName="Heights" readOnly="true" priority="0" typeName="double" minOccurs="0" maxOccurs="2147483647"/>
+	</ECEntityClass>
+	<ECStructClass typeName="BracketSlot" description="Lineardraft BracketSlot Class" modifier="None">
+		<ECStructProperty propertyName="WireSupport" readOnly="false" priority="0" typeName="WireSupport"/>
+		<ECProperty propertyName="Status" readOnly="true" priority="0" typeName="string"/>
+	</ECStructClass>
+	<ECStructClass typeName="WireSupport" description="Lineardraft WireSupport Class" modifier="None">
+		<ECProperty propertyName="Status" readOnly="true" priority="0" typeName="string"/>
+		<ECProperty propertyName="Type" readOnly="true" priority="0" typeName="string"/>
+		<ECStructArrayProperty propertyName="Allocation" readOnly="true" priority="0" typeName="Allocation" minOccurs="0" maxOccurs="2147483647"/>
+		<ECProperty propertyName="Reach" readOnly="true" priority="0" typeName="double"/>
+		<ECProperty propertyName="SystemHeight" readOnly="true" priority="0" typeName="double"/>
+	</ECStructClass>
+</ECSchema>
