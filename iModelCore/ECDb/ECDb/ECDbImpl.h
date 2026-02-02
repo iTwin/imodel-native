@@ -155,6 +155,7 @@ private:
     mutable std::unique_ptr<InstanceReader> m_instanceReader;
     mutable std::unique_ptr<InstanceWriter> m_instanceWriter;
     mutable std::unique_ptr<InstanceRepository> m_instanceRepo;
+    mutable std::unique_ptr<RelatedInstanceFinder> m_relatedInstanceFinder;
     BeBriefcaseBasedIdSequenceManager m_idSequenceManager;
     static const uint32_t s_instanceIdSequenceKey = 0;
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
@@ -281,6 +282,15 @@ public:
             }
         }
         return *m_instanceRepo;
+    }
+    RelatedInstanceFinder const& GetRelatedInstanceFinder() const {
+        if (m_relatedInstanceFinder == nullptr) {
+            BeMutexHolder holder(m_mutex);
+            if (m_relatedInstanceFinder == nullptr) {
+                m_relatedInstanceFinder = std::make_unique<RelatedInstanceFinder>(m_ecdb);
+            }
+        }
+        return *m_relatedInstanceFinder;
     }
     IssueDataSource const& Issues() const { return m_issueReporter; }
     ProfileVersion const& RefreshProfileVersion() const {
