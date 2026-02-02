@@ -1021,6 +1021,8 @@ static bvector<std::unique_ptr<ExportGraphicsJob>> Create(DgnDbR db, Napi::Objec
         job->m_geom.m_categoryId = stmt->GetValueId<DgnCategoryId>(0);
         job->m_geom.m_placement = getPlacement(*stmt);
         job->m_geom.m_geomStream = std::move(geomStream);
+        
+        job->m_context.SetDgnDb(db);
 
         if (onGraphicsCb.IsFunction())
             job->m_onGraphicsCbRef = Napi::Persistent(onGraphicsCb);
@@ -1040,7 +1042,6 @@ void Execute()
     {
     try
         {
-        m_context.SetDgnDb(m_db);
         m_geom.Draw(m_context, 0);
         }
     catch (...)
