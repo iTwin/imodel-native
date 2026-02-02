@@ -804,42 +804,6 @@ public:
     DgnDbStatus _SetPlacement(Placement3dCR) override { BeAssert(false); return DgnDbStatus::BadRequest; }
 };
 
-//=======================================================================================
-// @bsistruct
-//=======================================================================================
-struct ExportGraphicsJob
-{
-    ExportGeometrySource3d          m_geom;
-    DgnDbR                          m_db;
-    ExportGraphicsProcessor         m_processor;
-    ExportGraphicsContext           m_context;
-    DgnElementId                    m_elementId;
-    bvector<PartInstanceRecord>     m_instances;
-    bool                            m_caughtException;
-
-ExportGraphicsJob(DgnDbR db, IFacetOptionsPtr fo, DgnElementId elId, bool saveInstances, double decimationTolerance, bool generateLines, double minLineStyleComponentSize)
-    : m_geom(db), m_db(db), m_processor(db, fo, decimationTolerance, generateLines, minLineStyleComponentSize), m_elementId(elId),
-    m_context(m_processor, saveInstances ? &m_instances : nullptr), m_caughtException(false)
-    {
-    }
-
-void Execute()
-    {
-    try
-        {
-        // Needed to handle errors and clear thread exclusion.
-        RefCountedPtr<IRefCounted> errorHandler = T_HOST.GetBRepGeometryAdmin()._CreateWorkerThreadErrorHandler();
-
-        m_context.SetDgnDb(m_db);
-        m_geom.Draw(m_context, 0);
-        }
-    catch (...)
-        { // Mimic TileContext::ProcessElement bomb-proofing. Necessary for Parasolid error handling at a minimum.
-        m_caughtException = true;
-        }
-    }
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -982,10 +946,30 @@ static Placement3d getPlacement(BeSQLite::CachedStatement& stmt)
 
 namespace {
 
-bvector<std::unique_ptr<ExportGraphicsJob>> startExportGraphicsJobsInMainThread(
-        Napi::Env& env,
-        DgnDbR db,
-        Napi::Object const& exportProps)
+struct ExportGraphicsJob
+{
+private:
+    ExportGeometrySource3d          m_geom;
+    DgnDbR                          m_db;
+    ExportGraphicsProcessor         m_processor;
+    ExportGraphicsContext           m_context;
+    DgnElementId                    m_elementId;
+    bvector<PartInstanceRecord>     m_instances;
+    bool                            m_caughtException;
+    Napi::FunctionReference         m_onGraphicsCbRef;
+    Napi::FunctionReference         m_onLineGraphicsCbRef;
+    Napi::Reference<Napi::Array>    m_napiPartArrayRef;
+
+ExportGraphicsJob(DgnDbR db, IFacetOptionsPtr fo, DgnElementId elId, bool saveInstances, double decimationTolerance, bool generateLines, double minLineStyleComponentSize)
+    : m_geom(db), m_db(db), m_processor(db, fo, decimationTolerance, generateLines, minLineStyleComponentSize), m_elementId(elId),
+    m_context(m_processor, saveInstances ? &m_instances : nullptr), m_caughtException(false),
+    m_onGraphicsCbRef(), m_onLineGraphicsCbRef(), m_napiPartArrayRef()
+    {
+    }
+
+public:
+    // Creates a new job. This must be invoked in the main thread.
+static bvector<std::unique_ptr<ExportGraphicsJob>> Create(DgnDbR db, Napi::Object const& exportProps)
     {
     BeSQLite::CachedStatementPtr stmt = getSelectStatement(db);
     IFacetOptionsPtr facetOptions = createFacetOptions(exportProps);
@@ -1004,8 +988,14 @@ bvector<std::unique_ptr<ExportGraphicsJob>> startExportGraphicsJobsInMainThread(
     bvector<std::unique_ptr<ExportGraphicsJob>> jobs;
     jobs.reserve(elementIdArray.Length());
 
-    bool saveInstances = exportProps.Get("partInstanceArray").IsArray();
-    bool generateLines = exportProps.Get("onLineGraphics").IsFunction();
+    Napi::Function onGraphicsCb = exportProps.Get("onGraphics").As<Napi::Function>();
+    Napi::Function onLineGraphicsCb = exportProps.Get("onLineGraphics").As<Napi::Function>();
+    Napi::Array napiPartArray = exportProps.Get("partInstanceArray").As<Napi::Array>();
+
+    bool saveInstances = napiPartArray.IsArray();
+    bool generateLines = onLineGraphicsCb.IsFunction();
+
+    auto env = exportProps.Env();
 
     for (uint32_t i = 0; i < elementIdArray.Length(); ++i)
         {
@@ -1031,75 +1021,103 @@ bvector<std::unique_ptr<ExportGraphicsJob>> startExportGraphicsJobsInMainThread(
         job->m_geom.m_categoryId = stmt->GetValueId<DgnCategoryId>(0);
         job->m_geom.m_placement = getPlacement(*stmt);
         job->m_geom.m_geomStream = std::move(geomStream);
+
+        if (onGraphicsCb.IsFunction())
+            job->m_onGraphicsCbRef = Napi::Persistent(onGraphicsCb);
+        if (onLineGraphicsCb.IsFunction())
+            job->m_onLineGraphicsCbRef = Napi::Persistent(onLineGraphicsCb);
+        if (napiPartArray.IsArray())
+            job->m_napiPartArrayRef = Napi::Persistent(napiPartArray);
+
         jobs.emplace_back(job);
         }
 
     return jobs;
     }
 
-void finishExportGraphicsJobInMainThread(
-        Napi::Env& env,
-        const Napi::Function& onGraphicsCb,
-        const Napi::Function& onLineGraphicsCb,
-        Napi::Array& napiPartArray,
-        ExportGraphicsJob& job)
+    // Executes the job. This may be invoked in a worker thread.
+void Execute()
     {
-    if (job.m_caughtException)
+    try
+        {
+        m_context.SetDgnDb(m_db);
+        m_geom.Draw(m_context, 0);
+        }
+    catch (...)
+        { // Mimic TileContext::ProcessElement bomb-proofing. Necessary for Parasolid error handling at a minimum.
+        m_caughtException = true;
+        }
+    }
+
+    // Finishes the job after the Execute method has completed. This must be invoked in the main thread.
+void Finish(Napi::Env& env)
+    {
+    if (m_caughtException)
         {
         Utf8CP errorMsg = "Element 0x%llx caused uncaught exception, this may indicate problems with the source data.";
-        LOG.errorv(errorMsg, job.m_elementId.GetValueUnchecked());
+        LOG.errorv(errorMsg, m_elementId.GetValueUnchecked());
         return; // State is invalid - clean up and ignore this element.
         }
 
-    if (job.m_processor.m_gotBadPolyface)
+    if (m_processor.m_gotBadPolyface)
         {
         Utf8CP errorMsg = "Element 0x%llx generated invalid geometry, this may indicate problems with the source data.";
-        LOG.errorv(errorMsg, job.m_elementId.GetValueUnchecked());
+        LOG.errorv(errorMsg, m_elementId.GetValueUnchecked());
         // Bad polyface is handled gracefully, OK to continue in case other valid geometry was generated
         }
 
-    Napi::String elementIdString = createIdString(env, job.m_elementId);
-    for (auto& entry : job.m_processor.m_cachedEntries)
+    Napi::String elementIdString = createIdString(env, m_elementId);
+
+    Napi::Function onGraphicsCb = m_onGraphicsCbRef.Value();
+    if (onGraphicsCb.IsFunction())
         {
-            // Can happen if all triangles are degenerate
-        if (entry.mesh.indices.empty())
-            continue;
-        Napi::Object cbArgument = Napi::Object::New(env);
-        cbArgument.Set("elementId", elementIdString);
-        cbArgument.Set("mesh", convertMesh(env, entry.mesh, entry.isTwoSided));
-        cbArgument.Set("color", Napi::Number::New(env, entry.color.GetValue()));
-        cbArgument.Set("subCategory", createIdString(env, entry.subCategoryId));
-        cbArgument.Set("geometryClass", Napi::Number::New(env, static_cast<uint8_t>(entry.geometryClass)));
-        if (entry.materialId.IsValid())
-            cbArgument.Set("materialId", createIdString(env, entry.materialId));
-        if (entry.textureId.IsValid())
-            cbArgument.Set("textureId", createIdString(env, entry.textureId));
-        onGraphicsCb.Call({ cbArgument });
+        for (auto& entry : m_processor.m_cachedEntries)
+            {
+                // Can happen if all triangles are degenerate
+            if (entry.mesh.indices.empty())
+                continue;
+            Napi::Object cbArgument = Napi::Object::New(env);
+            cbArgument.Set("elementId", elementIdString);
+            cbArgument.Set("mesh", convertMesh(env, entry.mesh, entry.isTwoSided));
+            cbArgument.Set("color", Napi::Number::New(env, entry.color.GetValue()));
+            cbArgument.Set("subCategory", createIdString(env, entry.subCategoryId));
+            cbArgument.Set("geometryClass", Napi::Number::New(env, static_cast<uint8_t>(entry.geometryClass)));
+            if (entry.materialId.IsValid())
+                cbArgument.Set("materialId", createIdString(env, entry.materialId));
+            if (entry.textureId.IsValid())
+                cbArgument.Set("textureId", createIdString(env, entry.textureId));
+            onGraphicsCb.Call({ cbArgument });
+            }
         }
 
-    for (auto& entry : job.m_processor.m_cachedLineStrings)
+    Napi::Function onLineGraphicsCb = m_onLineGraphicsCbRef.Value();
+    if (onLineGraphicsCb.IsFunction())
         {
-        if (entry.indices.empty())
-            continue;
-        Napi::Object cbArgument = Napi::Object::New(env);
-        cbArgument.Set("elementId", elementIdString);
-        cbArgument.Set("subCategory", createIdString(env, entry.subCategoryId));
-        cbArgument.Set("geometryClass", Napi::Number::New(env, static_cast<uint8_t>(entry.geometryClass)));
-        cbArgument.Set("color", Napi::Number::New(env, entry.color.GetValue()));
-        cbArgument.Set("lines", convertLines(env, entry.indices, entry.points));
-        onLineGraphicsCb.Call({ cbArgument });
+        for (auto& entry : m_processor.m_cachedLineStrings)
+            {
+            if (entry.indices.empty())
+                continue;
+            Napi::Object cbArgument = Napi::Object::New(env);
+            cbArgument.Set("elementId", elementIdString);
+            cbArgument.Set("subCategory", createIdString(env, entry.subCategoryId));
+            cbArgument.Set("geometryClass", Napi::Number::New(env, static_cast<uint8_t>(entry.geometryClass)));
+            cbArgument.Set("color", Napi::Number::New(env, entry.color.GetValue()));
+            cbArgument.Set("lines", convertLines(env, entry.indices, entry.points));
+            onLineGraphicsCb.Call({ cbArgument });
+            }
         }
 
-    if (napiPartArray.IsArray() && !job.m_instances.empty())
-        convertPartInstances(env, napiPartArray, job.m_elementId, job.m_instances);
+    Napi::Array napiPartArray = m_napiPartArrayRef.Value();
+    if (napiPartArray.IsArray() && !m_instances.empty())
+        {
+        convertPartInstances(env, napiPartArray, m_elementId, m_instances);
+        }
     }
+};
 
 struct ExportGraphicsWorker : public DgnDbWorker {
 private:
     std::unique_ptr<ExportGraphicsJob> m_job;
-    Napi::FunctionReference m_onGraphicsCbRef;
-    Napi::FunctionReference m_onLineGraphicsCbRef;
-    Napi::Reference<Napi::Array> m_napiPartArrayRef;
 
 protected:
     void Execute() override
@@ -1110,33 +1128,14 @@ protected:
     void OnOK() override
         {
         auto env = Env();
-        auto partArray = m_napiPartArrayRef.Value();
-        finishExportGraphicsJobInMainThread(env, m_onGraphicsCbRef.Value(), m_onLineGraphicsCbRef.Value(), partArray, *m_job);
+        m_job->Finish(env);
         DgnDbWorker::OnOK();
         }
 
 public:
-    ExportGraphicsWorker(
-            DgnDbR db,
-            Napi::Env env,
-            Napi::Function onGraphicsCb,
-            Napi::Function onLineGraphicsCb,
-            Napi::Array napiPartArray,
-            std::unique_ptr<ExportGraphicsJob>&& job)
-        :
-            DgnDbWorker(db, env),
-            m_job(std::move(job)),
-            m_onGraphicsCbRef(),
-            m_onLineGraphicsCbRef(),
-            m_napiPartArrayRef()
+    ExportGraphicsWorker(DgnDbR db, Napi::Env env, std::unique_ptr<ExportGraphicsJob>&& job)
+        : DgnDbWorker(db, env), m_job(std::move(job))
         {
-        // These ensure the callbacks and array stay alive for the duration of the worker,
-        // even though the native function that receives them has returned. We create them here
-        // instead of in the member initializer list because we need to check that the values
-        // are valid. `Napi::Persistent` will throw if given an "undefined" value.
-        if (onGraphicsCb.IsFunction()) m_onGraphicsCbRef = Napi::Persistent(onGraphicsCb);
-        if (onLineGraphicsCb.IsFunction()) m_onLineGraphicsCbRef = Napi::Persistent(onLineGraphicsCb);
-        if (napiPartArray.IsArray()) m_napiPartArrayRef = Napi::Persistent(napiPartArray);
         }
 };
 
@@ -1147,11 +1146,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps)
     {
-    bvector<std::unique_ptr<ExportGraphicsJob>> jobs = startExportGraphicsJobsInMainThread(Env(), db, exportProps);
-
-    Napi::Array napiPartArray = exportProps.Get("partInstanceArray").As<Napi::Array>();
-    Napi::Function onLineGraphicsCb = exportProps.Get("onLineGraphics").As<Napi::Function>();
-    Napi::Function onGraphicsCb = exportProps.Get("onGraphics").As<Napi::Function>();
+    bvector<std::unique_ptr<ExportGraphicsJob>> jobs = ExportGraphicsJob::Create(db, exportProps);
 
     BeFolly::ThreadPool& threadPool = BeFolly::ThreadPool::GetCpuPool();
     bvector<folly::Future<folly::Unit>> jobHandles;
@@ -1161,14 +1156,19 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
     for (uint32_t i = 0; i < (uint32_t)jobs.size(); ++i)
         {
             auto job = jobs[i].get();
-            jobHandles.push_back(folly::via(&threadPool, [job]() { job->Execute(); }));
+            jobHandles.push_back(folly::via(&threadPool, [job]()
+                {
+                // Needed to handle errors and clear thread exclusion.
+                RefCountedPtr<IRefCounted> errorHandler = T_HOST.GetBRepGeometryAdmin()._CreateWorkerThreadErrorHandler();
+                job->Execute();
+                }));
         }
 
     // Wait for each job in turn, and process its results.
     for (uint32_t i = 0; i < (uint32_t)jobs.size(); ++i)
         {
             jobHandles[i].wait();
-            finishExportGraphicsJobInMainThread(Env(), onGraphicsCb, onLineGraphicsCb, napiPartArray, *jobs[i]);
+            jobs[i]->Finish(Env());
 
             // Cleaning these up now while they're still in cache is much faster
             jobs[i] = nullptr;
@@ -1182,17 +1182,13 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
 +---------------+---------------+---------------+---------------+---------------+------*/
 Napi::Value JsInterop::ExportGraphicsAsync(DgnDbR db, Napi::Object const& exportProps)
     {
-    bvector<std::unique_ptr<ExportGraphicsJob>> jobs = startExportGraphicsJobsInMainThread(Env(), db, exportProps);
-
-    Napi::Array napiPartArray = exportProps.Get("partInstanceArray").As<Napi::Array>();
-    Napi::Function onLineGraphicsCb = exportProps.Get("onLineGraphics").As<Napi::Function>();
-    Napi::Function onGraphicsCb = exportProps.Get("onGraphics").As<Napi::Function>();
+    bvector<std::unique_ptr<ExportGraphicsJob>> jobs = ExportGraphicsJob::Create(db, exportProps);
 
     // Run each job via a Node AsyncWorker.
     Napi::Array promises = Napi::Array::New(Env(), jobs.size());
     for (uint32_t i = 0; i < (uint32_t)jobs.size(); ++i)
         {
-        DgnDbWorkerPtr worker = new ExportGraphicsWorker(db, Env(), onGraphicsCb, onLineGraphicsCb, napiPartArray, std::move(jobs[i]));
+        DgnDbWorkerPtr worker = new ExportGraphicsWorker(db, Env(), std::move(jobs[i]));
         promises[i] = worker->Queue();
         }
 
@@ -1204,17 +1200,14 @@ Napi::Value JsInterop::ExportGraphicsAsync(DgnDbR db, Napi::Object const& export
     return all.Call(promiseConstructor, { promises });
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static uint64_t getIdFromNapiValue(Napi::Value const& napiVal)
+namespace {
+
+uint64_t getIdFromNapiValue(Napi::Value const& napiVal)
     {
     auto napiString = napiVal.As<Napi::String>();
     std::string utf8String = napiString.Utf8Value();
     return BeInt64Id::FromString(utf8String.c_str()).GetValueUnchecked();
     }
-
-namespace {
 
 struct ExportPartGraphicsJob
 {
@@ -1304,7 +1297,6 @@ void Execute()
         m_caughtException = true;
         }
     }
-
 
     // Finishes the job after the Execute method has completed. This must be invoked in the main thread.
 void Finish(Napi::Env& env)
