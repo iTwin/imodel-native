@@ -2931,6 +2931,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         for (size_t i = 0; i < txns.size(); ++i) {
             array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
         }
+        if(db.Txns().IsMergingSchemaAndDataChanges()) { // this signifies semantic rebase flag is on
+            db.ClearECDbCache(); // Clear the ECDb cache to ensure consistency after reversing local changes during a merge that includes schema changes.
+        }
         return array;
     }
 
