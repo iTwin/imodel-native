@@ -950,7 +950,6 @@ struct ExportGraphicsJob
 {
 private:
     ExportGeometrySource3d          m_geom;
-    DgnDbR                          m_db;
     ExportGraphicsProcessor         m_processor;
     ExportGraphicsContext           m_context;
     DgnElementId                    m_elementId;
@@ -961,7 +960,7 @@ private:
     Napi::Reference<Napi::Array>    m_napiPartArrayRef;
 
 ExportGraphicsJob(DgnDbR db, IFacetOptionsPtr fo, DgnElementId elId, bool saveInstances, double decimationTolerance, bool generateLines, double minLineStyleComponentSize)
-    : m_geom(db), m_db(db), m_processor(db, fo, decimationTolerance, generateLines, minLineStyleComponentSize), m_elementId(elId),
+    : m_geom(db), m_processor(db, fo, decimationTolerance, generateLines, minLineStyleComponentSize), m_elementId(elId),
     m_context(m_processor, saveInstances ? &m_instances : nullptr), m_caughtException(false),
     m_onGraphicsCbRef(), m_onLineGraphicsCbRef(), m_napiPartArrayRef()
     {
