@@ -1115,30 +1115,6 @@ void Finish(Napi::Env& env)
     }
 };
 
-struct ExportGraphicsWorker : public DgnDbWorker {
-private:
-    std::unique_ptr<ExportGraphicsJob> m_job;
-
-protected:
-    void Execute() override
-        {
-        m_job->Execute();
-        }
-
-    void OnOK() override
-        {
-        auto env = Env();
-        m_job->Finish(env);
-        DgnDbWorker::OnOK();
-        }
-
-public:
-    ExportGraphicsWorker(DgnDbR db, Napi::Env env, std::unique_ptr<ExportGraphicsJob>&& job)
-        : DgnDbWorker(db, env), m_job(std::move(job))
-        {
-        }
-};
-
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1155,49 +1131,26 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
     // Start all jobs
     for (uint32_t i = 0; i < (uint32_t)jobs.size(); ++i)
         {
-            auto job = jobs[i].get();
-            jobHandles.push_back(folly::via(&threadPool, [job]()
-                {
-                // Needed to handle errors and clear thread exclusion.
-                RefCountedPtr<IRefCounted> errorHandler = T_HOST.GetBRepGeometryAdmin()._CreateWorkerThreadErrorHandler();
-                job->Execute();
-                }));
+        auto job = jobs[i].get();
+        jobHandles.push_back(folly::via(&threadPool, [job]()
+            {
+            // Needed to handle errors and clear thread exclusion.
+            RefCountedPtr<IRefCounted> errorHandler = T_HOST.GetBRepGeometryAdmin()._CreateWorkerThreadErrorHandler();
+            job->Execute();
+            }));
         }
 
     // Wait for each job in turn, and process its results.
     for (uint32_t i = 0; i < (uint32_t)jobs.size(); ++i)
         {
-            jobHandles[i].wait();
-            jobs[i]->Finish(Env());
+        jobHandles[i].wait();
+        jobs[i]->Finish(Env());
 
-            // Cleaning these up now while they're still in cache is much faster
-            jobs[i] = nullptr;
+        // Cleaning these up now while they're still in cache is much faster
+        jobs[i] = nullptr;
         }
 
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Napi::Value JsInterop::ExportGraphicsAsync(DgnDbR db, Napi::Object const& exportProps)
-    {
-    bvector<std::unique_ptr<ExportGraphicsJob>> jobs = ExportGraphicsJob::Create(db, exportProps);
-
-    // Run each job via a Node AsyncWorker.
-    Napi::Array promises = Napi::Array::New(Env(), jobs.size());
-    for (uint32_t i = 0; i < (uint32_t)jobs.size(); ++i)
-        {
-        DgnDbWorkerPtr worker = new ExportGraphicsWorker(db, Env(), std::move(jobs[i]));
-        promises[i] = worker->Queue();
-        }
-
-    // The operation is complete when all jobs are complete.
-    Napi::Object global = Env().Global();
-    Napi::Object promiseConstructor = global.Get("Promise").As<Napi::Object>();
-    Napi::Function all = promiseConstructor.Get("all").As<Napi::Function>();
-
-    return all.Call(promiseConstructor, { promises });
     }
 
 namespace {
@@ -1371,44 +1324,72 @@ DgnDbStatus JsInterop::ExportPartGraphics(DgnDbR db, Napi::Object const& exportP
     }
 
 namespace {
-    
-struct ExportPartGraphicsWorker : public DgnDbWorker {
+
+// Adapts an ExportGraphicsJob or ExportPartGraphicsJob to a DgnDbWorker.
+template <typename TExportJob>
+struct ExportJobWorker : public DgnDbWorker {
 private:
-    std::unique_ptr<ExportPartGraphicsJob> m_job;
+    std::unique_ptr<TExportJob> m_job;
 
 protected:
-void Execute() override
-    {
-    m_job->Execute();
-    }
+    void Execute() override
+        {
+        m_job->Execute();
+        }
 
-void OnOK() override
-    {
-    auto env = Env();
-    m_job->Finish(env);
-    DgnDbWorker::OnOK();
-    }
+    void OnOK() override
+        {
+        auto env = Env();
+        m_job->Finish(env);
+        DgnDbWorker::OnOK();
+        }
 
 public:
-ExportPartGraphicsWorker(DgnDbR db, Napi::Env env, std::unique_ptr<ExportPartGraphicsJob>&& job)
+    ExportJobWorker(DgnDbR db, Napi::Env env, std::unique_ptr<TExportJob>&& job)
         : DgnDbWorker(db, env), m_job(std::move(job))
-    {
-    }
+        {
+        }
 };
 
 } // namespace
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Napi::Value JsInterop::ExportGraphicsAsync(DgnDbR db, Napi::Object const& exportProps)
+    {
+    bvector<std::unique_ptr<ExportGraphicsJob>> jobs = ExportGraphicsJob::Create(db, exportProps);
+
+    // Run each job via a Node AsyncWorker.
+    Napi::Array promises = Napi::Array::New(Env(), jobs.size());
+    for (uint32_t i = 0; i < (uint32_t)jobs.size(); ++i)
+        {
+        DgnDbWorkerPtr worker = new ExportJobWorker<ExportGraphicsJob>(db, Env(), std::move(jobs[i]));
+        promises[i] = worker->Queue();
+        }
+
+    // The operation is complete when all jobs are complete.
+    Napi::Object global = Env().Global();
+    Napi::Object promiseConstructor = global.Get("Promise").As<Napi::Object>();
+    Napi::Function all = promiseConstructor.Get("all").As<Napi::Function>();
+
+    return all.Call(promiseConstructor, { promises });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Napi::Value JsInterop::ExportPartGraphicsAsync(DgnDbR db, Napi::Object const& exportProps)
     {
     auto job = ExportPartGraphicsJob::Create(db, exportProps);
     if (!job)
         {
-            Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(Env());
-            deferred.Reject(Napi::Error::New(Env(), "Part elementId is invalid or does not refer to a GeometryPart").Value());
-            return deferred.Promise();
+        Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(Env());
+        deferred.Reject(Napi::Error::New(Env(), "Part elementId is invalid or does not refer to a GeometryPart").Value());
+        return deferred.Promise();
         }
 
-    auto worker = new ExportPartGraphicsWorker(db, Env(), std::move(job));
+    auto worker = new ExportJobWorker<ExportPartGraphicsJob>(db, Env(), std::move(job));
     return worker->Queue();
     }
 
