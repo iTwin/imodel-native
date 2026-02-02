@@ -40,11 +40,11 @@ double ds
         if (pCurve->rational)
             {
             bspcurv_chainRule (cDeriv, homogeneousPoles, dWeights);
-            memcpy (pXYZ, cDeriv, (1 + numEval) * sizeof(DPoint3d));
+            BeStringUtilities::Memcpy (pXYZ, (1 + numDerivativesRequested) * sizeof(DPoint3d), cDeriv, (1 + numEval) * sizeof(DPoint3d));
             }
         else
             {
-            memcpy (pXYZ, homogeneousPoles, (1 + numEval) * sizeof(DPoint3d));
+            BeStringUtilities::Memcpy (pXYZ, (1 + numDerivativesRequested) * sizeof(DPoint3d), homogeneousPoles, (1 + numEval) * sizeof(DPoint3d));
             }
         }
     else
