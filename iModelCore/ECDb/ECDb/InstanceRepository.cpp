@@ -11,11 +11,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsFormat inFmt, ECInstanceKeyR key) const {
+DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsFormat inFmt, ECInstanceKeyR key, bool forceUseECInstanceIdFromJson) const {
     BeMutexHolder _(m_mutex);
     m_lastError.clear();
     InstanceWriter::InsertOptions options;
     options.UseJsNames(inFmt == JsFormat::JsName);
+    if(forceUseECInstanceIdFromJson)
+        options.UseInstanceIdFromJs();
     ECN::ECClassId classId;
     if (!m_ecdb.GetInstanceWriter().TryGetClassId(classId, in, inFmt)) {
         m_lastError.Sprintf("Failed to get ECClassId/className/classFullName");
