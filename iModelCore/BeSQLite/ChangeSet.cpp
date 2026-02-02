@@ -829,8 +829,9 @@ int ChangeStream::ConflictCallback(void* pCtx, int cause, SqlChangesetIterP iter
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int ChangeStream::FilterTableCallback(void* pCtx, Utf8CP tableName) {
-    return (int)((ChangeStream*)pCtx)->_FilterTable(tableName);
+int ChangeStream::FilterChangeCallback(void* pCtx, SqlChangesetIterP iter) {
+    Changes::Change change(iter, true);
+    return (int)((ChangeStream*)pCtx)->_FilterChange(change);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -898,7 +899,7 @@ DbResult ChangeStream::ApplyChanges(DbR db, bool invert, bool ignoreNoop, bool f
     if(fkNoAction)
         flags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
     auto reader = _GetReader();
-    DbResult result = (DbResult) sqlite3changeset_apply_v2_strm(db.GetSqlDb(), Changes::Reader::ReadCallback, (void*) reader.get(), FilterTableCallback, ConflictCallback, (void*) this,
+    DbResult result = (DbResult) sqlite3changeset_apply_v3_strm(db.GetSqlDb(), Changes::Reader::ReadCallback, (void*) reader.get(), FilterChangeCallback, ConflictCallback, (void*) this,
         nullptr,  nullptr, flags);
     return result;
     }
@@ -918,11 +919,11 @@ DbResult ChangeStream::ApplyChanges(DbR db, ApplyChangesArgs const& args) const
     auto reader = _GetReader();
     m_args = &args;
 
-    DbResult result = (DbResult) sqlite3changeset_apply_v2_strm(
+    DbResult result = (DbResult) sqlite3changeset_apply_v3_strm(
         db.GetSqlDb(),
         Changes::Reader::ReadCallback,
         (void*) reader.get(),
-        ApplyChangesArgs::FilterTableCallback,
+        ApplyChangesArgs::FilterChangeCallback,
         ApplyChangesArgs::ConflictCallback,
         (void*) this,
         nullptr, nullptr,
@@ -1000,12 +1001,60 @@ int ApplyChangesArgs::ConflictCallback(void* pCtx, int cause, SqlChangesetIterP 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int ApplyChangesArgs::FilterTableCallback(void* pCtx, Utf8CP tableName) {
+int ApplyChangesArgs::FilterChangeCallback(void* pCtx, SqlChangesetIterP iter) {
     const auto changeStream = (ChangeStream*)pCtx;
-    if (changeStream->m_args && changeStream->m_args->HasFilterTable()){
-        return (int)(((ChangeStream*)pCtx)->m_args)->FilterTable(tableName);
+    Changes::Change change(iter, true);
+    if (changeStream->m_args && changeStream->m_args->HasFilterChange()){
+        return (int)(((ChangeStream*)pCtx)->m_args)->FilterChange(change)  ;
     }
-    return (int)changeStream->_FilterTable(tableName);
+    return (int)changeStream->_FilterChange(change);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ApplyChangesArgs::IsSchemaChange(Changes::Change const& change) {
+    const auto kBePropTableName = "be_Prop";
+    const auto kDgnDbNamespace = "dgndb_Db";
+    const auto kBeDbNamespace = "be_Db";
+    const auto kEcDbNamespace = "ec_Db";
+    const auto kSchemaVersion = "SchemaVersion";
+    const auto kLocalDbInfo = "localDbInfo";
+    const auto& tableName = change.GetTableName();
+
+    if (tableName.EqualsIAscii(kBePropTableName)) {
+        auto namespaceVal = change.GetOpcode() != DbOpcode::Insert ? change.GetOldValue(0) : change.GetNewValue(0);
+        auto nameVal = change.GetOpcode() != DbOpcode::Insert ? change.GetOldValue(1) : change.GetNewValue(1);
+        const auto ns = namespaceVal.IsValid() && namespaceVal.GetValueType() == DbValueType::TextVal ? namespaceVal.GetValueText() : nullptr;
+        const auto name = nameVal.IsValid() && nameVal.GetValueType() == DbValueType::TextVal ? nameVal.GetValueText() : nullptr;
+        if (ns && name){
+            if (0 == BeStringUtilities::StricmpAscii(ns, kDgnDbNamespace) && 0 == BeStringUtilities::StricmpAscii(name, kSchemaVersion) ) {
+                return true;
+            }
+            if (0 == BeStringUtilities::StricmpAscii(ns, kBeDbNamespace) && 0 == BeStringUtilities::StricmpAscii(name, kSchemaVersion) ) {
+                return true;
+            }
+            if (0 == BeStringUtilities::StricmpAscii(ns, kEcDbNamespace)) {
+                if (0 == BeStringUtilities::StricmpAscii(name, kSchemaVersion) || 0 == BeStringUtilities::StricmpAscii(name, kLocalDbInfo)) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    if (!tableName[0] || (tableName[0] != 'e' && tableName[0] != 'E'))  {
+        return false;
+    }
+
+    if (!tableName[1] || (tableName[1] != 'c' && tableName[1] != 'C')) {
+        return false;
+    }
+
+    if (!tableName[2] || tableName[2] != '_' ) {
+        return false;
+    }
+
+    return true;
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -1040,9 +1089,9 @@ bool ApplyChangesArgs::IsSchemaTable(Utf8CP tableName) {
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangeStream::ApplyChangesForTable ApplyChangesArgs::FilterTable(Utf8CP tableName) const {
-    auto rc = m_filterTable ? m_filterTable(tableName) : ChangeStream::ApplyChangesForTable::Yes;
-    if (rc == ChangeStream::ApplyChangesForTable::Yes ){
+ChangeStream::FilterChangeAction ApplyChangesArgs::FilterChange(Changes::Change const& change) const {
+    auto rc = m_filterChange ? m_filterChange(change) : ChangeStream::FilterChangeAction::Accept;
+    if (rc == ChangeStream::FilterChangeAction::Accept){
         ++m_filterRowCount;
     }
     return rc;
@@ -1056,5 +1105,21 @@ ChangeStream::ConflictResolution ApplyChangesArgs::OnConflict(ChangeStream::Conf
     ++m_conflictRowCount;
     return rc;
 }
-ApplyChangesArgs& ApplyChangesArgs::ApplyOnlySchemaChanges() { m_filterTable = [](Utf8CP tableName) { return ApplyChangesArgs::IsSchemaTable(tableName) ? ChangeStream::ApplyChangesForTable::Yes : ChangeStream::ApplyChangesForTable::No; }; return *this; }
-ApplyChangesArgs& ApplyChangesArgs::ApplyOnlyDataChanges() { m_filterTable = [](Utf8CP tableName) { return ApplyChangesArgs::IsSchemaTable(tableName) ? ChangeStream::ApplyChangesForTable::No : ChangeStream::ApplyChangesForTable::Yes; }; return *this; }
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ApplyChangesArgs& ApplyChangesArgs::ApplyOnlySchemaChanges() {
+    m_filterChange = [](Changes::Change const& change) {
+        return ApplyChangesArgs::IsSchemaChange(change) ? ChangeStream::FilterChangeAction::Accept : ChangeStream::FilterChangeAction::Skip;
+    }; return *this;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ApplyChangesArgs& ApplyChangesArgs::ApplyOnlyDataChanges() {
+    m_filterChange = [](Changes::Change const& change) {
+        return ApplyChangesArgs::IsSchemaChange(change) ? ChangeStream::FilterChangeAction::Skip : ChangeStream::FilterChangeAction::Accept;
+    }; return *this;
+}

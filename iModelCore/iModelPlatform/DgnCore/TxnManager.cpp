@@ -2367,17 +2367,24 @@ DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
     if (status == SUCCESS) {
         // Info message so we can look out if this issue has gone due to fix in the place which produce these changeset.
         LOG.info("[PATCH] Applying DDL patch for #292801 #281557");
-        result = m_dgndb.ExecuteSql(patchedDDL.c_str());
+        result = m_dgndb.TryExecuteSql(patchedDDL.c_str());
         if (result != BE_SQLITE_OK) {
+            LOG.warningv("ApplyDdlChanges() with SchemaSync: Failed to apply Patch DDLs changes. Error: %s (%s)", BeSQLiteLib::GetErrorName(result), patchedDDL.c_str());
             LOG.info("[PATCH] Failed to apply patch for #292801 #281557. Fallback to original DDL");
-            result = m_dgndb.ExecuteSql(originalDDL.c_str());
+            result = m_dgndb.TryExecuteSql(originalDDL.c_str());
+            if (result != BE_SQLITE_OK) {
+                LOG.warningv("ApplyDdlChanges() with SchemaSync: Failed to apply original DDL changes. Error: %s (%s)", BeSQLiteLib::GetErrorName(result), originalDDL.c_str());
+            }              
         }
     } else {
-        result = m_dgndb.ExecuteSql(originalDDL.c_str());
+        result = m_dgndb.TryExecuteSql(originalDDL.c_str());
+        if (result != BE_SQLITE_OK) {
+            LOG.warningv("ApplyDdlChanges() with SchemaSync: Failed to apply DDL changes. Error: %s (%s)", BeSQLiteLib::GetErrorName(result), originalDDL.c_str());
+        }        
     }
 
     EnableTracking(wasTracking);
-    return result;
+    return BE_SQLITE_OK;
 }
 
 /*---------------------------------------------------------------------------------**/ /**

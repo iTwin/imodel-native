@@ -6743,6 +6743,11 @@ DbResult Db::VacuumInto(Utf8CP newFileName) {
     return TryExecuteSql(SqlPrintfString("vacuum into '%s'", newFileName));
 }
 
+DbResult Db::Analyze() {
+    SuspendDefaultTxn noDefault(*this);
+    return TryExecuteSql("analyze");
+}
+
 /**
  * Commit and then re-start current Txn. This may only happen when no nested transactions are active.
  * It is useful for readonly connections to load changes made by other connections.
