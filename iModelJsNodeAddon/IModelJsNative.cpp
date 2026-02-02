@@ -5092,9 +5092,10 @@ public:
 
         REQUIRE_ARGUMENT_STRING(1, ecsql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
+        OPTIONAL_ARGUMENT_BOOL(3,persistent, false);
         IssueListener listener(*ecdb);
 
-        ECSqlStatus status = m_stmt.Prepare(*ecdb, ecsql.c_str(), logErrors);
+        ECSqlStatus status = m_stmt.Prepare(*ecdb, ecsql.c_str(), logErrors, persistent ? DbPrepareOptions::Persistent : DbPrepareOptions::None);
         return CreateErrorObject0(ToDbResult(status), !status.IsSuccess() ? listener.m_lastIssue.c_str() : nullptr, Env());
     }
 
@@ -5417,13 +5418,14 @@ public:
 
         REQUIRE_ARGUMENT_STRING(1, sql);
         OPTIONAL_ARGUMENT_BOOL(2,logErrors, true);
+        OPTIONAL_ARGUMENT_BOOL(3,persistent, false);
         // Prepare *without* the mutex held. So, if there's an error, potentially the error message will be wrong.
         // Oh well, it's just for debugging and it will be very rare that another thread causes an error here.
         DbResult status;
         if (logErrors)
-            status = m_stmt.Prepare(*db, sql.c_str());
+            status = m_stmt.Prepare(*db, sql.c_str(), persistent ? DbPrepareOptions::Persistent : DbPrepareOptions::None);
         else
-            status = m_stmt.TryPrepare(*db, sql.c_str());
+            status = m_stmt.TryPrepare(*db, sql.c_str(), persistent ? DbPrepareOptions::Persistent : DbPrepareOptions::None);
 
         if (status != BE_SQLITE_OK)
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), db->GetLastError().c_str(), status);
