@@ -490,7 +490,25 @@ describe("basic tests", () => {
       assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
   });
 
-  function createPhysicalElementWithPart(templateElementId: Id64String) {
+  function createPhysicalElementWithPart() {
+    const modelStmt = new iModelJsNative.ECSqlStatement();
+    modelStmt.prepare(dgndb, "SELECT ECInstanceId FROM bis.PhysicalModel LIMIT 1");
+    const modelId = DbResult.BE_SQLITE_ROW === modelStmt.step() ? modelStmt.getValue(0).getId() : undefined;
+    modelStmt.dispose();
+
+    if (modelId === undefined) {
+      throw new Error("No PhysicalModel found in database.");
+    }
+
+    const categoryStmt = new iModelJsNative.ECSqlStatement();
+    categoryStmt.prepare(dgndb, "SELECT ECInstanceId FROM bis.SpatialCategory LIMIT 1");
+    const categoryId = DbResult.BE_SQLITE_ROW === categoryStmt.step() ? categoryStmt.getValue(0).getId() : undefined;
+    categoryStmt.dispose();
+
+    if (categoryId === undefined) {
+      throw new Error("No SpatialCategory found in database.");
+    }
+
     // Create a GeometryPart and attach it to a new physical element.
     const geometryPartProps: GeometryPartProps = {
       classFullName: "BisCore:GeometryPart",
@@ -504,11 +522,10 @@ describe("basic tests", () => {
     const partId = dgndb.insertElement(geometryPartProps);
     assert(partId.length > 0, "Failed to create GeometryPart");
 
-    const templateElement = dgndb.getElement({ id: templateElementId }) as PhysicalElementProps;
     const elementProps: PhysicalElementProps = {
-      classFullName: "Generic:PhysicalObject", // Ensure Generic schema is imported
-      model: templateElement.model,
-      category: templateElement.category,
+      classFullName: "Generic:PhysicalObject",
+      model: modelId,
+      category: categoryId,
       code: Code.createEmpty(),
       placement: {
         origin: [100, 0, 0],
@@ -533,30 +550,16 @@ describe("basic tests", () => {
 
   it("exportGraphicsAsync enumerates parts directly if array is not provided", async () => {
     try {
-      // Find all 3D elements in the test file
-      const elementIdArray: Id64Array = [];
-      const statement = new iModelJsNative.ECSqlStatement();
-      statement.prepare(dgndb, "SELECT ECInstanceId FROM bis.GeometricElement3d");
-      while (DbResult.BE_SQLITE_ROW === statement.step())
-        elementIdArray.push(statement.getValue(0).getId());
-      statement.dispose();
+      const partDetails = createPhysicalElementWithPart();
 
-      assert(elementIdArray.length > 0, "No 3D elements in test file");
-
-      const partDetails = createPhysicalElementWithPart(elementIdArray[0]);
-      elementIdArray.push(partDetails.elementId);
-
-      // Expect a mesh to be generated for each element - valid for test.bim, maybe invalid for future test data
       const elementsWithGraphics: any = {};
       const onGraphics = (info: any) => {
         elementsWithGraphics[info.elementId] = true;
       };
 
-      await dgndb.exportGraphicsAsync({ elementIdArray, onGraphics });
+      await dgndb.exportGraphicsAsync({ elementIdArray: [partDetails.elementId], onGraphics });
 
-      for (const id of elementIdArray) {
-        assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
-      }
+      assert(elementsWithGraphics[partDetails.elementId]);
     } finally {
       dgndb.abandonChanges();
     }
@@ -564,18 +567,7 @@ describe("basic tests", () => {
 
   it("exportPartGraphics", async () => {
     try {
-      // Find all 3D elements in the test file
-      const elementIdArray: Id64Array = [];
-      const statement = new iModelJsNative.ECSqlStatement();
-      statement.prepare(dgndb, "SELECT ECInstanceId FROM bis.GeometricElement3d");
-      while (DbResult.BE_SQLITE_ROW === statement.step())
-        elementIdArray.push(statement.getValue(0).getId());
-      statement.dispose();
-
-      assert(elementIdArray.length > 0, "No 3D elements in test file");
-
-      const partDetails = createPhysicalElementWithPart(elementIdArray[0]);
-      elementIdArray.push(partDetails.elementId);
+      const partDetails = createPhysicalElementWithPart();
 
       // Expect a mesh to be generated for each element - valid for test.bim, maybe invalid for future test data
       const elementsWithGraphics: any = {};
@@ -585,16 +577,12 @@ describe("basic tests", () => {
 
       const partInstanceArray: any[] = [];
 
-      await dgndb.exportGraphicsAsync({ elementIdArray, onGraphics, partInstanceArray });
+      await dgndb.exportGraphicsAsync({ elementIdArray: [partDetails.elementId], onGraphics, partInstanceArray });
 
       assert(partInstanceArray.length === 1);
       assert(partInstanceArray[0].partId === partDetails.partId, "Part instance array does not contain expected part ID.");
       assert(partInstanceArray[0].partInstanceId === partDetails.elementId, "Part instance array does not contain expected instance ID.");
-
-      for (const id of elementIdArray) {
-        if (id === partDetails.elementId) continue;
-        assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
-      }
+      assert(!elementsWithGraphics[partDetails.elementId], `Graphics should not have been generated for part instance ${partDetails.elementId}`);
 
       let onPartGraphicsCalls = 0;
 
@@ -614,18 +602,7 @@ describe("basic tests", () => {
 
   it("exportPartGraphicsAsync", async () => {
     try {
-      // Find all 3D elements in the test file
-      const elementIdArray: Id64Array = [];
-      const statement = new iModelJsNative.ECSqlStatement();
-      statement.prepare(dgndb, "SELECT ECInstanceId FROM bis.GeometricElement3d");
-      while (DbResult.BE_SQLITE_ROW === statement.step())
-        elementIdArray.push(statement.getValue(0).getId());
-      statement.dispose();
-
-      assert(elementIdArray.length > 0, "No 3D elements in test file");
-
-      const partDetails = createPhysicalElementWithPart(elementIdArray[0]);
-      elementIdArray.push(partDetails.elementId);
+      const partDetails = createPhysicalElementWithPart();
 
       // Expect a mesh to be generated for each element - valid for test.bim, maybe invalid for future test data
       const elementsWithGraphics: any = {};
@@ -635,16 +612,12 @@ describe("basic tests", () => {
 
       const partInstanceArray: any[] = [];
 
-      await dgndb.exportGraphicsAsync({ elementIdArray, onGraphics, partInstanceArray });
+      await dgndb.exportGraphicsAsync({ elementIdArray: [partDetails.elementId], onGraphics, partInstanceArray });
 
       assert(partInstanceArray.length === 1);
       assert(partInstanceArray[0].partId === partDetails.partId, "Part instance array does not contain expected part ID.");
       assert(partInstanceArray[0].partInstanceId === partDetails.elementId, "Part instance array does not contain expected instance ID.");
-
-      for (const id of elementIdArray) {
-        if (id === partDetails.elementId) continue;
-        assert.isDefined(elementsWithGraphics[id], `No graphics generated for ${id}`);
-      }
+      assert(!elementsWithGraphics[partDetails.elementId], `Graphics should not have been generated for part instance ${partDetails.elementId}`);
 
       let onPartGraphicsCalls = 0;
 
