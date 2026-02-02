@@ -16122,11 +16122,11 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_NestedStruct) {
             [
                 "TestSchema:Element:ECClassId:ts_Element:ECClassId",
                 "TestSchema:Element:ECInstanceId:ts_Element:Id",
+                "TestSchema:Element:S.T_ARRAY:ts_Element:ps5",
                 "TestSchema:Element:S.T.I:ts_Element:ps1",
-                "TestSchema:Element:S.T.P2D.X:ts_Element:ps2",
-                "TestSchema:Element:S.T.P2D.Y:ts_Element:ps3",
                 "TestSchema:Element:S.T.P2D_ARRAY:ts_Element:ps4",
-                "TestSchema:Element:S.T_ARRAY:ts_Element:ps5"
+                "TestSchema:Element:S.T.P2D.X:ts_Element:ps2",
+                "TestSchema:Element:S.T.P2D.Y:ts_Element:ps3"
             ]
         )"_json;
         ASSERT_STRCASEEQ(expected.toStyledString().c_str(), actual.toStyledString().c_str());
