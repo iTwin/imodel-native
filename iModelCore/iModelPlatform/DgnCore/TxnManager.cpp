@@ -989,7 +989,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         }
     }
 
-    rc = SaveSchemaAndDataChanges(schemaChanges, dataChanges, operation);
+    rc = SaveSchemaAndDataTxns(schemaChanges, dataChanges, operation);
     if(rc != BE_SQLITE_OK) {
         LOG.errorv("failed to save schema and data changes: %s", BeSQLiteLib::GetErrorName(rc));
         return OnCommitStatus::Abort;
@@ -1008,10 +1008,10 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::SaveSchemaAndDataChanges(BeSQLite::ChangeSet& schemaChanges, BeSQLite::ChangeSet const& dataChanges, Utf8CP operation)
+DbResult TxnManager::SaveSchemaAndDataTxns(BeSQLite::ChangeSet& schemaChanges, BeSQLite::ChangeSet const& dataChanges, Utf8CP operation)
 {
     DbResult rc = BE_SQLITE_OK;
-    if(IsMergingSchemaAndDataChanges())
+    if(SquashSchemaAndDataChanges())
     {
         // If schema changes are non empty(indicating only schema change or schema and data change) 
         // put entire changes binary (including schema and data changes) into a single schema txn

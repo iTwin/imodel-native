@@ -487,7 +487,7 @@ private:
     void PullMergeSetTxnActive(TxnManager::TxnId txnId);
     void PullMergeAbortRebase(TxnManager::TxnId id, Utf8String err, BeSQLite::DbResult rc);
     bool PullMergeEraseTxn(TxnManager::TxnId txnId);
-    BeSQLite::DbResult SaveSchemaAndDataChanges(BeSQLite::ChangeSet& schemaChanges, BeSQLite::ChangeSet const& dataChanges, Utf8CP operation);
+    BeSQLite::DbResult SaveSchemaAndDataTxns(BeSQLite::ChangeSet& schemaChanges, BeSQLite::ChangeSet const& dataChanges, Utf8CP operation);
         
 public:
     void StartNewSession();
@@ -507,9 +507,9 @@ public:
     DGNPLATFORM_EXPORT void ForEachLocalChange(std::function<void(BeSQLite::EC::ECInstanceKey const&, BeSQLite::DbOpcode)>, bvector<Utf8String> const&, bool includeInMemoryChanges = false);
     void SaveParentChangeset(Utf8StringCR revisionId, int32_t changesetIndex);
     ChangesetPropsPtr CreateChangesetProps(BeFileNameCR pathName);
-    void EnableSchemaAndDataChangesMerging() { m_mergeSchemaAndDataChanges = true; }
-    void DisableSchemaAndDataChangesMerging() { m_mergeSchemaAndDataChanges = false; }
-    bool IsMergingSchemaAndDataChanges() const { return m_mergeSchemaAndDataChanges; }
+    void EnableSchemaAndDataChangesSquash() { m_mergeSchemaAndDataChanges = true; }
+    void DisableSchemaAndDataChangesSquash() { m_mergeSchemaAndDataChanges = false; }
+    bool SquashSchemaAndDataChanges() const { return m_mergeSchemaAndDataChanges; }
 
     // Changeset Health Statistics
     bool TrackChangesetHealthStats() const { return m_trackChangesetHealthStats; }

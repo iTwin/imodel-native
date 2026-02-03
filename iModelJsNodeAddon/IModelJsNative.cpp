@@ -2227,14 +2227,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
     }
 
-    void PullMergeRebaseImportSchemas(NapiInfoCR info)
+    void ImportSchemasDuringSemanticRebase(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
         OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
 
-        if (!db.Txns().IsMergingSchemaAndDataChanges()) // This flag is equivalent to checking wther semantic rebase is enabled
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "pullMergeRebaseImportSchemas requires high level rebase to be enabled", DgnDbStatus::BadRequest);
+        if (!db.Txns().SquashSchemaAndDataChanges()) // This flag is equivalent to checking wther semantic rebase is enabled
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "ImportSchemasDuringSemanticRebase requires semantic rebase to be enabled", DgnDbStatus::BadRequest);
 
         if (db.Txns().HasChanges()) // equivalent to hasUnsavedChanges()
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Cannot import schemas while rebasing if it has previous unsaved changes", DgnDbStatus::BadRequest);
@@ -2270,18 +2270,18 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
 
 
-    void EnableSchemaAndDataChangesMerging(NapiInfoCR info) {
+    void EnableSchemaAndDataChangesSquash(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        db.Txns().EnableSchemaAndDataChangesMerging();
+        db.Txns().EnableSchemaAndDataChangesSquash();
     }
 
-    void DisableSchemaAndDataChangesMerging(NapiInfoCR info) {
+    void DisableSchemaAndDataChangesSquash(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        db.Txns().DisableSchemaAndDataChangesMerging();
+        db.Txns().DisableSchemaAndDataChangesSquash();
     }
 
-    Napi::Value IsMergingSchemaAndDataChanges(NapiInfoCR info) {
-        return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsMergingSchemaAndDataChanges());
+    Napi::Value SquashSchemaAndDataChanges(NapiInfoCR info) {
+        return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().SquashSchemaAndDataChanges());
     }
 
     void ImportSchemas(NapiInfoCR info)
@@ -2931,7 +2931,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         for (size_t i = 0; i < txns.size(); ++i) {
             array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
         }
-        if(db.Txns().IsMergingSchemaAndDataChanges()) { // this signifies semantic rebase flag is on
+        if(db.Txns().SquashSchemaAndDataChanges()) { // this signifies semantic rebase flag is on
             db.ClearECDbCache(); // Clear the ECDb cache to ensure consistency after reversing local changes during a merge that includes schema changes.
         }
         return array;
@@ -3200,10 +3200,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("hasPendingTxns", &NativeDgnDb::HasPendingTxns),
             InstanceMethod("hasUnsavedChanges", &NativeDgnDb::HasUnsavedChanges),
             InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
-            InstanceMethod("pullMergeRebaseImportSchemas", &NativeDgnDb::PullMergeRebaseImportSchemas),
-            InstanceMethod("enableSchemaAndDataChangesMerging", &NativeDgnDb::EnableSchemaAndDataChangesMerging),
-            InstanceMethod("disableSchemaAndDataChangesMerging", &NativeDgnDb::DisableSchemaAndDataChangesMerging),
-            InstanceMethod("isMergingSchemaAndDataChanges", &NativeDgnDb::IsMergingSchemaAndDataChanges),
+            InstanceMethod("importSchemasDuringSemanticRebase", &NativeDgnDb::ImportSchemasDuringSemanticRebase),
+            InstanceMethod("enableSchemaAndDataChangesSquash", &NativeDgnDb::EnableSchemaAndDataChangesSquash),
+            InstanceMethod("disableSchemaAndDataChangesSquash", &NativeDgnDb::DisableSchemaAndDataChangesSquash),
+            InstanceMethod("squashSchemaAndDataChanges", &NativeDgnDb::SquashSchemaAndDataChanges),
             InstanceMethod("importSchemas", &NativeDgnDb::ImportSchemas),
             InstanceMethod("importXmlSchemas", &NativeDgnDb::ImportXmlSchemas),
             InstanceMethod("inlineGeometryPartReferences", &NativeDgnDb::InlineGeometryPartReferences),
