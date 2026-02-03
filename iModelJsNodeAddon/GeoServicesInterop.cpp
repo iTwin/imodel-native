@@ -69,10 +69,11 @@ BentleyStatus GeoServicesInterop::GetGeographicCRSInterpretation(BeJsValue resul
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
-// @param extent If provided, only return CRS's that contain the given extent. Minimum longitude and latitude correspond to extent.low.x and extent.low.y, respectively.
+// @param extent If provided, only return CRS that contain the given extent. Minimum longitude and latitude correspond to extent.low.x and extent.low.y, respectively.
 // Maximum longitude and latitude correspond to extent.high.x and extent.high.y, respectively.
+// @param unitFilter If provided, only return CRS that use the specified unit (case-insensitive comparison)
 //---------------------------------------------------------------------------------------
-bvector<CRSListResponseProps> GeoServicesInterop::GetListOfCRS(DRange2dCP extent, bool includeWorld)
+bvector<CRSListResponseProps> GeoServicesInterop::GetListOfCRS(DRange2dCP extent, bool includeWorld, Utf8CP unitFilter)
     {
     bvector<CRSListResponseProps> listOfCRS;
     char csKeyName[128];
@@ -101,10 +102,19 @@ bvector<CRSListResponseProps> GeoServicesInterop::GetListOfCRS(DRange2dCP extent
                 continue;
             }
 
+        Utf8String unitStr;
+        crs->GetUnits(unitStr);
+        
+        // Don't include CRS if it does not match the unit filter
+        if (unitFilter != nullptr && strlen(unitFilter) > 0 && !unitStr.EqualsIAscii(unitFilter))
+            continue;
+
         props.m_name = Utf8String(crs->GetName());
         props.m_description = Utf8String(crs->GetDescription());
         props.m_deprecated = crs->IsDeprecated();
         props.m_crsExtent = crsRange;
+        props.m_unit = unitStr;
+
         listOfCRS.push_back(props);
         }
     
