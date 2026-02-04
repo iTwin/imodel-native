@@ -1000,7 +1000,7 @@ Napi::Value JsInterop::InsertInstance(ECDbR db, NapiInfoCR info) {
     }
 
     ECInstanceKey newKey;
-    auto rc = args.isBoolMember("forceUseId") && args.asBool(false) ? repo.Insert(inst, args, fmt, newKey, true) : repo.Insert(inst, args, fmt, newKey, false); // We get to know from the args whether to use the id provided or not
+    auto rc = repo.Insert(inst, args, fmt, newKey);
     if (rc != BE_SQLITE_DONE) {
         if (repo.GetLastError().empty()) {
             THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to insert instance", rc);

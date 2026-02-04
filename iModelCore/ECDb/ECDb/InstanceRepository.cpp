@@ -11,12 +11,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsFormat inFmt, ECInstanceKeyR key, bool forceUseECInstanceIdFromJson) const {
+DbResult InstanceRepository::Insert(BeJsValue in, BeJsConst userOptions, JsFormat inFmt, ECInstanceKeyR key) const {
     BeMutexHolder _(m_mutex);
     m_lastError.clear();
     InstanceWriter::InsertOptions options;
     options.UseJsNames(inFmt == JsFormat::JsName);
-    if(forceUseECInstanceIdFromJson)
+    if(userOptions.isBoolMember("forceUseId") && userOptions["forceUseId"].asBool(false))
         options.UseInstanceIdFromJs();
     ECN::ECClassId classId;
     if (!m_ecdb.GetInstanceWriter().TryGetClassId(classId, in, inFmt)) {
