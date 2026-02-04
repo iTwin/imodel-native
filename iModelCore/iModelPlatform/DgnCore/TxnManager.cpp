@@ -988,20 +988,10 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         }
     }
 
-    if (!schemaChanges._IsEmpty()) {
-        rc = SaveTxn(schemaChanges, operation, TxnType::EcSchema);
-        if (rc != BE_SQLITE_OK) {
-            LOG.errorv("failed to save schema Txn: %s", BeSQLiteLib::GetErrorName(rc));
-            return OnCommitStatus::Abort;
-        }
-    }
-
-    if (!dataChanges._IsEmpty()) {
-        rc = SaveTxn(dataChanges, operation, TxnType::Data);
-        if (rc != BE_SQLITE_OK) {
-            LOG.errorv("failed to save data Txn: %s", BeSQLiteLib::GetErrorName(rc));
-            return OnCommitStatus::Abort;
-        }
+    rc = SaveSchemaAndDataTxns(schemaChanges, dataChanges, operation);
+    if(rc != BE_SQLITE_OK) {
+        LOG.errorv("failed to save schema and data changes: %s", BeSQLiteLib::GetErrorName(rc));
+        return OnCommitStatus::Abort;
     }
 
     // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
@@ -1012,6 +1002,35 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     }
 
     return OnCommitStatus::Commit;
+}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult TxnManager::SaveSchemaAndDataTxns(BeSQLite::ChangeSet& schemaChanges, BeSQLite::ChangeSet const& dataChanges, Utf8CP operation)
+{
+    DbResult rc = BE_SQLITE_OK;
+    // If schema changes are non empty(indicating only schema change or schema and data change) 
+    // put entire changes binary (including schema and data changes) into a single schema txn
+    if (!schemaChanges._IsEmpty()) {
+        rc = schemaChanges.ConcatenateWith(dataChanges);
+         if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+        rc = SaveTxn(schemaChanges, operation, TxnType::EcSchema);
+        if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+    }
+    // if schema change is empty and data changes are non empty(indicating only data change)
+    // put entire changes binary (including only data changes) into a single data txn
+    else if (!dataChanges._IsEmpty()) {
+        rc = SaveTxn(dataChanges, operation, TxnType::Data);
+        if (rc != BE_SQLITE_OK) {
+            return rc;
+        }
+    }
+    return rc;
 }
 
 /*---------------------------------------------------------------------------------**//**

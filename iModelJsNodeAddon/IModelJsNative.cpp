@@ -2226,6 +2226,46 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             }
         }
     }
+
+    void ImportSchemasDuringSemanticRebase(NapiInfoCR info)
+        {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
+        OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
+
+        if (db.Txns().HasChanges()) // equivalent to hasUnsavedChanges()
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Cannot import schemas during semantic rebase with existing unsaved changes.", DgnDbStatus::BadRequest);
+
+        if (db.Txns().PullMergeGetStage() != TxnManager::PullMergeStage::Rebasing) // equivalent to isRebasing()
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Should be called while rebasing", DgnDbStatus::BadRequest);
+
+        if (db.Txns().GetMode() == ChangeTracker::Mode::Indirect) // equivalent to isIndirectChange
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Cannot import schemas while in an indirect change scope", DgnDbStatus::BadRequest);
+        
+        ECSchemaReadContextPtr customContext = nullptr;
+
+        JsInterop::SchemaImportOptions options;
+        const auto maybeEcSchemaContextVal = jsOpts.Get(JsInterop::json_ecSchemaXmlContext());
+        options.m_schemaLockHeld = jsOpts.Get(JsInterop::json_schemaLockHeld()).ToBoolean();
+        if (!maybeEcSchemaContextVal.IsUndefined())
+            {
+            if (!NativeECSchemaXmlContext::HasInstance(maybeEcSchemaContextVal))
+                THROW_JS_TYPE_EXCEPTION("if SchemaImportOptions.ecSchemaXmlContext is defined, it must be an object of type NativeECSchemaXmlContext")
+            options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
+            }
+
+        LastErrorListener lastError(db);
+        DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
+        if (DbResult::BE_SQLITE_OK != result) // we will not save changes here as pull/merge/rebase will update existing txns for this
+            {
+                if (lastError.HasError()) {
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), result);
+                } else {
+                    THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), "Failed to import schemas", result);
+                }
+            }
+        }
+
     void ImportSchemas(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -2248,7 +2288,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
-        if (DbResult::BE_SQLITE_OK != result)
+        if (DbResult::BE_SQLITE_OK != result || DbResult::BE_SQLITE_OK != db.SaveChanges())
             {
                 if (lastError.HasError()) {
                     THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), result);
@@ -2271,7 +2311,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::XmlString, options);
-        if (DbResult::BE_SQLITE_OK != result)
+        if (DbResult::BE_SQLITE_OK != result || DbResult::BE_SQLITE_OK != db.SaveChanges())
             {
                 if (lastError.HasError()) {
                     THROW_JS_BE_SQLITE_EXCEPTION(info.Env(), lastError.GetLastError().c_str(), result);
@@ -2873,6 +2913,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         for (size_t i = 0; i < txns.size(); ++i) {
             array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
         }
+
+        db.ClearECDbCache(); // Clear the ECDb cache to ensure consistency after reversing local changes during a merge that includes schema changes.
         return array;
     }
 
@@ -3139,6 +3181,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("hasPendingTxns", &NativeDgnDb::HasPendingTxns),
             InstanceMethod("hasUnsavedChanges", &NativeDgnDb::HasUnsavedChanges),
             InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
+            InstanceMethod("importSchemasDuringSemanticRebase", &NativeDgnDb::ImportSchemasDuringSemanticRebase),
             InstanceMethod("importSchemas", &NativeDgnDb::ImportSchemas),
             InstanceMethod("importXmlSchemas", &NativeDgnDb::ImportXmlSchemas),
             InstanceMethod("inlineGeometryPartReferences", &NativeDgnDb::InlineGeometryPartReferences),
