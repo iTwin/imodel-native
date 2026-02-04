@@ -2233,11 +2233,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
         OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
 
-        if (!db.Txns().SquashSchemaAndDataChanges()) // This flag is equivalent to checking wther semantic rebase is enabled
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "ImportSchemasDuringSemanticRebase requires semantic rebase to be enabled", DgnDbStatus::BadRequest);
-
         if (db.Txns().HasChanges()) // equivalent to hasUnsavedChanges()
-            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Cannot import schemas while rebasing if it has previous unsaved changes", DgnDbStatus::BadRequest);
+            THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Cannot import schemas during semantic rebase with existing unsaved changes.", DgnDbStatus::BadRequest);
 
         if (db.Txns().PullMergeGetStage() != TxnManager::PullMergeStage::Rebasing) // equivalent to isRebasing()
             THROW_JS_DGN_DB_EXCEPTION(info.Env(), "Should be called while rebasing", DgnDbStatus::BadRequest);
@@ -2268,21 +2265,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
                 }
             }
         }
-
-
-    void EnableSchemaAndDataChangesSquash(NapiInfoCR info) {
-        auto& db = GetOpenedDb(info);
-        db.Txns().EnableSchemaAndDataChangesSquash();
-    }
-
-    void DisableSchemaAndDataChangesSquash(NapiInfoCR info) {
-        auto& db = GetOpenedDb(info);
-        db.Txns().DisableSchemaAndDataChangesSquash();
-    }
-
-    Napi::Value SquashSchemaAndDataChanges(NapiInfoCR info) {
-        return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().SquashSchemaAndDataChanges());
-    }
 
     void ImportSchemas(NapiInfoCR info)
         {
@@ -2931,9 +2913,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         for (size_t i = 0; i < txns.size(); ++i) {
             array[i] = Napi::String::New(Env(), BeInt64Id(txns[i].GetValue()).ToHexStr().c_str());
         }
-        if(db.Txns().SquashSchemaAndDataChanges()) { // this signifies semantic rebase flag is on
-            db.ClearECDbCache(); // Clear the ECDb cache to ensure consistency after reversing local changes during a merge that includes schema changes.
-        }
+
+        db.ClearECDbCache(); // Clear the ECDb cache to ensure consistency after reversing local changes during a merge that includes schema changes.
         return array;
     }
 
@@ -3201,9 +3182,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("hasUnsavedChanges", &NativeDgnDb::HasUnsavedChanges),
             InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
             InstanceMethod("importSchemasDuringSemanticRebase", &NativeDgnDb::ImportSchemasDuringSemanticRebase),
-            InstanceMethod("enableSchemaAndDataChangesSquash", &NativeDgnDb::EnableSchemaAndDataChangesSquash),
-            InstanceMethod("disableSchemaAndDataChangesSquash", &NativeDgnDb::DisableSchemaAndDataChangesSquash),
-            InstanceMethod("squashSchemaAndDataChanges", &NativeDgnDb::SquashSchemaAndDataChanges),
             InstanceMethod("importSchemas", &NativeDgnDb::ImportSchemas),
             InstanceMethod("importXmlSchemas", &NativeDgnDb::ImportXmlSchemas),
             InstanceMethod("inlineGeometryPartReferences", &NativeDgnDb::InlineGeometryPartReferences),

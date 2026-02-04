@@ -701,9 +701,6 @@ export declare namespace IModelJsNative {
     public hasUnsavedChanges(): boolean;
     public importFunctionalSchema(): DbResult;
     public importSchemasDuringSemanticRebase(schemaFileNames: string[], options?: SchemaImportOptions): void;
-    public enableSchemaAndDataChangesSquash(): void;
-    public disableSchemaAndDataChangesSquash(): void;
-    public squashSchemaAndDataChanges(): boolean;
     public importSchemas(schemaFileNames: string[], options?: SchemaImportOptions): DbResult;
     public importXmlSchemas(serializedXmlSchemas: string[], options?: SchemaImportOptions): DbResult;
     public inBulkOperation(): boolean;

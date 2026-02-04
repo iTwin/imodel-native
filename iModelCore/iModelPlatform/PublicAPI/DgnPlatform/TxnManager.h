@@ -419,7 +419,6 @@ private:
     TxnRelationshipLinkTables m_rlt;
     bool m_allowSaveChangesDuringRebase = false;
     int m_txnErrors = 0;
-     bool m_mergeSchemaAndDataChanges;
     bool m_fatalValidationError;
     bool m_initTableHandlers;
     bool m_inProfileUpgrade = false;
@@ -507,9 +506,6 @@ public:
     DGNPLATFORM_EXPORT void ForEachLocalChange(std::function<void(BeSQLite::EC::ECInstanceKey const&, BeSQLite::DbOpcode)>, bvector<Utf8String> const&, bool includeInMemoryChanges = false);
     void SaveParentChangeset(Utf8StringCR revisionId, int32_t changesetIndex);
     ChangesetPropsPtr CreateChangesetProps(BeFileNameCR pathName);
-    void EnableSchemaAndDataChangesSquash() { m_mergeSchemaAndDataChanges = true; }
-    void DisableSchemaAndDataChangesSquash() { m_mergeSchemaAndDataChanges = false; }
-    bool SquashSchemaAndDataChanges() const { return m_mergeSchemaAndDataChanges; }
 
     // Changeset Health Statistics
     bool TrackChangesetHealthStats() const { return m_trackChangesetHealthStats; }
