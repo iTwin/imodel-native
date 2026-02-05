@@ -1,0 +1,83 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+
+%ifdef __unix
+    GCC_DEFAULT_VISIBILITY = hidden
+%else
+    GCC_DEFAULT_VISIBILITY = default
+%endif
+
+#----------------------------------------------------------
+# Set up all the standard stuff.
+#----------------------------------------------------------
+%include  mdl.mki
+
+nameToDefine        = BUILDING_LIBCURL=1
+%include cdefapnd.mki
+
+%if defined (CREATE_STATIC_LIBRARIES)
+    nameToDefine    = CURL_STATICLIB=1
+    %include cdefapnd.mki
+%endif
+
+SourceDir           = $(_MakeFilePath)vendor/
+
+BeMsgPackCLibDir        = $(SourceDir)include/
+
+%if defined(iTwinNativeThirdParty)
+  appName = BeMsgPackC
+%else
+  appName = iTwinMsgPackC
+%endif
+
+o = $(OutBuildDir)$(appName)/
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------------------------
+#   Include search path
+#----------------------------------------------------------------------------------------
+dirToSearch = $(BeMsgPackCLibDir)
+%include cincapnd.mki
+
+#----------------------------------------------------------
+# MultiCompile sources
+#----------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)objectc$(oext) : $(SourceDir)src/objectc.c ${MultiCompileDepends}
+
+$(o)unpack$(oext) : $(SourceDir)src/unpack.c ${MultiCompileDepends}
+
+$(o)version$(oext) : $(SourceDir)src/version.c ${MultiCompileDepends}
+
+$(o)vrefbuffer$(oext) : $(SourceDir)src/vrefbuffer.c ${MultiCompileDepends}
+
+$(o)zone$(oext) : $(SourceDir)src/zone.c ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+objs =% $(MultiCompileObjectList)
+
+#---------------------------------------------------------------------------------------+
+#   Create the library
+#---------------------------------------------------------------------------------------+
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(objs)
+DLM_EXPORT_OBJS             = $(DLM_OBJECT_FILES)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_BENTLEY_LIB          = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%include $(sharedMki)linkLibrary.mki

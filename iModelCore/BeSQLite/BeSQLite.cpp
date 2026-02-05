@@ -17,6 +17,7 @@
 #include <Bentley/BeThreadLocalStorage.h>
 #include <Bentley/Logging.h>
 #include "snappy/snappy.h"
+
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <string>
@@ -28,7 +29,7 @@
 #include <unicode/ubrk.h>
 #include <unicode/ucol.h>
 #include <unicode/utf16.h>
-
+#include <msgpack/msgpack.h>
 static NativeLogging::CategoryLogger LOG("BeSQLite");
 static NativeLogging::CategoryLogger NativeSqliteLog("SQLite");
 
