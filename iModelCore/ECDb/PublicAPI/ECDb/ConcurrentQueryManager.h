@@ -609,5 +609,23 @@ struct ECSqlReader {
         ECDB_EXPORT bool Next();
 };
 
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct ECSqlRowReader final {
+    private:
+        ECSqlStatement m_stmt;
+        ECSqlParams m_params;
+        ECSqlRowAdaptor m_adaptor;
+        void PrepareAndBindStatement(ECDb const& db, std::string const& ecsql);
+        void BindStatement();
+    public:
+        ECSqlRowReader(ECDb const& db, std::string const& ecsql, ECSqlParams const& params) : m_params(params), m_adaptor(db) { PrepareAndBindStatement(db, ecsql); }
+        ~ECSqlRowReader() { m_stmt.Finalize(); }
+        bool Step(BeJsValue val);
+        void Reset();
+        ECSqlRowAdaptor& GetAdaptor() { return m_adaptor; }
+};
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
