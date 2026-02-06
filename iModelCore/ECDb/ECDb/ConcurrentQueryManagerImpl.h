@@ -61,24 +61,13 @@ struct ErrorListenerScope final: ECN::IIssueListener {
 //=======================================================================================
 struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor> {
     private:
-        ECSqlStatement m_stmt;
-        std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
-        std::string m_cachedString;
-        rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> m_allocator;
-        rapidjson::CrtAllocator m_stackAllocator;
-        rapidjson::Document m_cachedJsonDoc;
-        Db const* m_conn;
+        QueryAdaptor m_adaptor;
         bool m_usePrimaryConn;
     public:
-        CachedQueryAdaptor() :m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedJsonDoc.SetArray(); }
-        ECSqlStatement& GetStatement() { return m_stmt; }
-        ECSqlRowAdaptor& GetJsonAdaptor();
-        rapidjson::Document& ClearAndGetCachedJsonDocument() { m_cachedJsonDoc.Clear(); m_allocator.Clear(); return m_cachedJsonDoc; }
-        std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
+        CachedQueryAdaptor() :m_adaptor(), m_usePrimaryConn(false) {}
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }
-        Db const* GetWorkerConn() const { return m_conn; }
-        void SetWorkerConn(Db const& conn) { m_conn = &conn; }
+        QueryAdaptor& getAdaptor() { return m_adaptor; }
         std::shared_ptr<CachedQueryAdaptor> Shared() { return shared_from_this(); }
         static std::shared_ptr<CachedQueryAdaptor> Make() {
             return std::make_shared<CachedQueryAdaptor>();

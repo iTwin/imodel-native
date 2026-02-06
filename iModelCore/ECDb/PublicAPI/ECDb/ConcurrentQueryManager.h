@@ -609,5 +609,45 @@ struct ECSqlReader {
         ECDB_EXPORT bool Next();
 };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct QueryAdaptor final {
+    private:
+        ECSqlStatement m_stmt;
+        std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
+        std::string m_cachedString;
+        rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> m_allocator;
+        rapidjson::CrtAllocator m_stackAllocator;
+        rapidjson::Document m_cachedJsonDoc;
+        Db const* m_conn;
+    public:
+        QueryAdaptor() : m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator) { m_cachedJsonDoc.SetArray(); }
+        ECSqlStatement& GetStatement() { return m_stmt; }
+        ECSqlRowAdaptor& GetJsonAdaptor();
+        rapidjson::Document& ClearAndGetCachedJsonDocument() { m_cachedJsonDoc.Clear(); m_allocator.Clear(); return m_cachedJsonDoc; }
+        std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
+        Db const* GetWorkerConn() const { return m_conn; }
+        void SetWorkerConn(Db const& conn) { m_conn = &conn; }
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct ECSqlRowReader final {
+    using OnCompletion=std::function<void(QueryResponse::Ptr)>;
+    private:
+        QueryAdaptor m_adaptor;
+        std::string m_ecsql;
+        ECSqlParams m_args;
+        uint32_t m_rowsRead;
+        QueryResponse::Ptr ExecuteRequest(ECSqlRequest::Ptr request);
+    public:
+        ECSqlRowReader(ECDb const& db) : m_adaptor(), m_rowsRead(0) {m_adaptor.SetWorkerConn(db) ;};
+
+        void Step(QueryRequest::Ptr request, OnCompletion onCompletion);
+
+};
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

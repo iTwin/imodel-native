@@ -4682,6 +4682,49 @@ public:
 // Projects the IECSqlValueIterable interface into JS.
 //! @bsiclass
 //=======================================================================================
+struct NativeECSqlRowReader : BeObjectWrap<NativeECSqlRowReader>
+    {
+    private:
+        DEFINE_CONSTRUCTOR;
+        ECDb const* m_ecdb = nullptr;
+        std::unique_ptr<ECSSqlRowReader> m_queryReader;
+    public:
+        NativeECSqlRowReader(NapiInfoCR info) : BeObjectWrap<NativeECSqlRowReader>(info)
+            {
+            ECDb const* ecdb = info[0].As<Napi::External<ECDb>>().Data();
+            if (m_ecdb == nullptr)
+                THROW_JS_TYPE_EXCEPTION("Invalid first arg for NativeECSqlRowReader constructor. ECDb must not be nullptr");
+            m_queryReader = std::make_unique<ECSSqlRowReader>();
+            m_queryReader->SetWorkerConn(*m_ecdb);
+            }
+
+        ~NativeECSqlRowReader() {SetInDestructor(); m_queryReader->GetStatement().Finalize();}
+
+        //  Create projections
+        static void Init(Napi::Env& env, Napi::Object exports)
+            {
+            Napi::HandleScope scope(env);
+            Napi::Function t = DefineClass(env, "ECSqlRowReader", {
+            InstanceMethod("Step", &NativeECSqlRowReader::MoveNext),
+            InstanceMethod("getCurrent", &NativeECSqlRowReader::GetCurrent)});
+
+            exports.Set("ECSqlRowReader", t);
+
+            SET_CONSTRUCTOR(t);
+            }
+
+        void Step(NapiInfoCR info) 
+            {
+            REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
+            REQUIRE_ARGUMENT_FUNCTION(1, callback);
+            m_queryReader->Step(requestObj, callback);
+            }
+    };
+
+//=======================================================================================
+// Projects the IECSqlValueIterable interface into JS.
+//! @bsiclass
+//=======================================================================================
 struct NativeECSqlValueIterator : BeObjectWrap<NativeECSqlValueIterator>
     {
     private:

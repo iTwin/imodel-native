@@ -61,7 +61,7 @@ int QueryRetryHandler::_OnBusy(int count) const {
 std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue, bool& isShutDownInProgress) {
     auto const hashCode = ECSqlStatement::GetHashCode(ecsql);
     auto iter = std::find_if(m_cache.begin(), m_cache.end(), [&ecsql,&hashCode,&usePrimaryConn] (std::shared_ptr<CachedQueryAdaptor>& entry) {
-        return entry->GetUsePrimaryConn() == usePrimaryConn && entry->GetStatement().GetHashCode() == hashCode && strcmp(entry->GetStatement().GetECSql(), ecsql) == 0;
+        return entry->GetUsePrimaryConn() == usePrimaryConn && entry->getAdaptor().GetStatement().GetHashCode() == hashCode && strcmp(entry->getAdaptor().GetStatement().GetECSql(), ecsql) == 0;
     });
 
     if (iter != m_cache.end()) {
@@ -70,13 +70,13 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
             m_cache.erase(iter);
             m_cache.insert(m_cache.begin(), entry);
         }
-        entry->GetStatement().Reset();
-        entry->GetStatement().ClearBindings();
+        entry->getAdaptor().GetStatement().Reset();
+        entry->getAdaptor().GetStatement().ClearBindings();
         return entry;
     }
 
     auto newCachedAdaptor = CachedQueryAdaptor::Make();
-    newCachedAdaptor->SetWorkerConn(m_conn.GetDb());
+    newCachedAdaptor->getAdaptor().SetWorkerConn(m_conn.GetDb());
     newCachedAdaptor->SetUsePrimaryConn(usePrimaryConn);
     BeMutex& ecdbMutex = m_conn.GetPrimaryDb().GetImpl().GetMutex();
     while(!ecdbMutex.try_lock()) {
@@ -90,12 +90,12 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
     }
     ErrorListenerScope err_scope(const_cast<ECDb&>(m_conn.GetPrimaryDb()));
     if (usePrimaryConn)
-        status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
+        status = newCachedAdaptor->getAdaptor().GetStatement().Prepare(m_conn.GetPrimaryDb(), ecsql, !suppressLogError);
     else {
         if (m_doNotUsePrimaryConnToPrepare) {
-            status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
+            status = newCachedAdaptor->getAdaptor().GetStatement().Prepare(m_conn.GetDb(), ecsql, !suppressLogError);
         } else {
-            status = newCachedAdaptor->GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
+            status = newCachedAdaptor->getAdaptor().GetStatement().Prepare(m_conn.GetPrimaryDb().Schemas(), m_conn.GetDb(), ecsql, !suppressLogError);
         }
     }
     if (status != ECSqlStatus::Success) {
@@ -116,7 +116,7 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlRowAdaptor& CachedQueryAdaptor::GetJsonAdaptor() {
+ECSqlRowAdaptor& QueryAdaptor::GetJsonAdaptor() {
     if (!m_adaptor) {
          m_adaptor = std::unique_ptr<ECSqlRowAdaptor>(new ECSqlRowAdaptor(*m_stmt.GetECDb()));
     }
@@ -1164,10 +1164,10 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     const auto includeMetaData= request.GetIncludeMetaData();
     const auto classIdToClassNames = request.GetConvertClassIdsToClassNames();
     const auto doNotConvertClassIdsToClassNamesWhenAliased = request.GetDoNotConvertClassIdsToClassNamesWhenAliased();
-    auto& stmt = cachedAdaptor.GetStatement();
-    auto& adaptor = cachedAdaptor.GetJsonAdaptor();
+    auto& stmt = cachedAdaptor.getAdaptor().GetStatement();
+    auto& adaptor = cachedAdaptor.getAdaptor().GetJsonAdaptor();
     auto& options = adaptor.GetOptions();
-    auto conn = cachedAdaptor.GetWorkerConn();
+    auto conn = cachedAdaptor.getAdaptor().GetWorkerConn();
     options.SetAbbreviateBlobs(abbreviateBlobs);
     options.SetConvertClassIdsToClassNames(classIdToClassNames);
     options.SetUseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
@@ -1177,7 +1177,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
         adaptor.GetMetaData(props ,stmt);
     }
     uint32_t row_count = 0;
-    std::string& result = cachedAdaptor.ClearAndGetCachedString();
+    std::string& result = cachedAdaptor.getAdaptor().ClearAndGetCachedString();
     result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
     result.append("[");
     auto setResult = [&](status st) {
@@ -1212,7 +1212,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     // go over each row and serialize result
     auto rc = stmt.Step();
     while (rc == BE_SQLITE_ROW) {
-        auto& rowsDoc = cachedAdaptor.ClearAndGetCachedJsonDocument();
+        auto& rowsDoc = cachedAdaptor.getAdaptor().ClearAndGetCachedJsonDocument();
         BeJsValue rows(rowsDoc);
         if (adaptor.RenderRowAsArray(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
             setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
@@ -1237,7 +1237,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
         setResult(status::partial);
     } else if (rc != BE_SQLITE_DONE) {
         DbResult lastError;
-        std::string sqlStepError = cachedAdaptor.GetWorkerConn()->GetLastError(&lastError);
+        std::string sqlStepError = cachedAdaptor.getAdaptor().GetWorkerConn()->GetLastError(&lastError);
         if (lastError != BE_SQLITE_OK) {
             setError(QueryResponse::Status::Error_ECSql_StepFailed, SqlPrintfString("concurrent query step() failed: %s", sqlStepError.c_str()).GetUtf8CP());
         }
@@ -1346,12 +1346,12 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
             setError(QueryResponse::Status::Error_ECSql_PreparedFailed, err);
             return;
         }
-        if (!request.GetArgs().TryBindTo(adaptor->GetStatement(), err)) {
+        if (!request.GetArgs().TryBindTo(adaptor->getAdaptor().GetStatement(), err)) {
             recordPrepareTime();
             setError(QueryResponse::Status::Error_ECSql_BindingFailed, err);
             return;
         }
-        BindLimits(adaptor->GetStatement(), request.GetLimit());
+        BindLimits(adaptor->getAdaptor().GetStatement(), request.GetLimit());
         recordPrepareTime();
         QueryHelper::Execute(*adaptor, runnableRequest);
     } else {
@@ -2289,6 +2289,103 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::GetFromEnv() {
     }
 #endif
     return Config::GetDefault();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlRowReader::Step(QueryRequest::Ptr request, OnCompletion onCompletion) {
+
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+QueryResponse::Ptr ECSqlRowReader::ExecuteRequest(ECSqlRequest::Ptr request) {
+    enum class status { partial, done };
+    const auto abbreviateBlobs = request->GetAbbreviateBlobs();
+    const auto includeMetaData= request->GetIncludeMetaData();
+    const auto classIdToClassNames = request->GetConvertClassIdsToClassNames();
+    const auto doNotConvertClassIdsToClassNamesWhenAliased = request->GetDoNotConvertClassIdsToClassNamesWhenAliased();
+    auto& stmt = m_adaptor.GetStatement();
+    auto& adaptor = m_adaptor.GetJsonAdaptor();
+    auto& options = adaptor.GetOptions();
+    auto conn = m_adaptor.GetWorkerConn();
+    options.SetAbbreviateBlobs(abbreviateBlobs);
+    options.SetConvertClassIdsToClassNames(classIdToClassNames);
+    options.SetUseJsNames(request->GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
+    options.SetDoNotConvertClassIdsToClassNamesWhenAliased(doNotConvertClassIdsToClassNamesWhenAliased);
+    ECSqlRowProperty::List props;
+    if (includeMetaData) {
+        adaptor.GetMetaData(props ,stmt);
+    }
+    uint32_t row_count = 0;
+    std::string& result = m_adaptor.ClearAndGetCachedString();
+    result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
+    result.append("[");
+    auto setResult = [&](status st) {
+        result.append("]");
+        const auto memUsed = (uint32_t)(result.size());
+        return std::make_shared<ECSqlResponse>( QueryResponse::Stats(), st == status::done ? QueryResponse::Status::Done:QueryResponse::Status::Partial,
+        "",
+        result,
+        props,
+        row_count);
+    
+        if (conn->IsDbOpen())
+            conn->SetProgressHandler(nullptr);
+    };
+    auto setError = [&] (QueryResponse::Status status, std::string err) {
+        log_error("%s. (%s)", err.c_str(), QueryResponse::StatusToString(status));
+        return std::make_shared<QueryResponse>( ECSqlResponse::Kind::NoResult,QueryResponse::Stats(),status,err);
+    };
+
+    if(conn->IsDbOpen()) {
+        conn->SetProgressHandler([&](){
+            // if (runnableRequest.IsTimeExceeded()) {
+            //     log_trace("%s time exceeded for query [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableRequest.GetId());
+            //     return DbProgressAction::Interrupt;
+            // }
+            return DbProgressAction::Continue;
+        }, static_cast<int>(ConcurrentQueryMgr::Config::Get().GetProgressOpCount()));
+    }
+    // go over each row and serialize result
+    auto rc = stmt.Step();
+    if (rc == BE_SQLITE_ROW) {
+        auto& rowsDoc = m_adaptor.ClearAndGetCachedJsonDocument();
+        BeJsValue rows(rowsDoc);
+        if (adaptor.RenderRowAsArray(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
+            setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
+            return;
+        } else {
+            row_count = row_count + 1;
+            if (row_count == 1) {
+                result.append(rows.Stringify());
+            } else {
+                result.append(",").append(rows.Stringify());
+            }
+        }
+        // if (runnableRequest.IsTimeOrMemoryExceeded(result)) {
+        //     log_trace("%s time or memory exceeded for request [id=%" PRIu32 "]",GetTimestamp().c_str(), runnableRequest.GetId());
+        //     setResult(status::partial);
+        //     return;
+        // }
+    }
+
+    if (rc == BE_SQLITE_INTERRUPT || rc == BE_SQLITE_BUSY) {
+        setResult(status::partial);
+    } else if (rc != BE_SQLITE_DONE) {
+        DbResult lastError;
+        std::string sqlStepError = m_adaptor.GetWorkerConn()->GetLastError(&lastError);
+        if (lastError != BE_SQLITE_OK) {
+            setError(QueryResponse::Status::Error_ECSql_StepFailed, SqlPrintfString("concurrent query step() failed: %s", sqlStepError.c_str()).GetUtf8CP());
+        }
+        else {
+            setError(QueryResponse::Status::Error_ECSql_StepFailed, "concurrent query step() failed");
+        }
+    } else {
+        setResult(status::done);
+    }
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
