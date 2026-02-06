@@ -642,6 +642,7 @@ export declare namespace IModelJsNative {
     public exportGraphics(exportProps: any/* ExportGraphicsProps */): DbResult;
     public exportPartGraphics(exportProps: any/* ExportPartGraphicsProps */): DbResult;
     public exportGraphicsAsync(exportProps: any/* ExportGraphicsProps */): Promise<void>;
+    public exportPartGraphicsAsync(exportProps: any/* ExportPartGraphicsProps */): Promise<void>;
     public exportSchema(schemaName: string, exportDirectory: string, outFileName?: string): SchemaWriteStatus;
     public exportSchemas(exportDirectory: string): SchemaWriteStatus;
     public extractChangedInstanceIdsFromChangeSets(changeSetFileNames: string[]): ErrorStatusOrResult<IModelStatus, ChangedInstanceIdsProps>;
