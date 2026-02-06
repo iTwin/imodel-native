@@ -6580,6 +6580,7 @@ public:
             InstanceMethod("filterSubCategoryId", &NativeImportContext::FilterSubCategoryId),
             InstanceMethod("findCodeSpecId", &NativeImportContext::FindCodeSpecId),
             InstanceMethod("findElementId", &NativeImportContext::FindElementId),
+            InstanceMethod("findElementClassId", &NativeImportContext::FindElementClassId),
             InstanceMethod("hasSubCategoryFilter", &NativeImportContext::HasSubCategoryFilter),
             InstanceMethod("importCodeSpec", &NativeImportContext::ImportCodeSpec),
             InstanceMethod("importFont", &NativeImportContext::ImportFont),
@@ -6702,6 +6703,25 @@ public:
         REQUIRE_ARGUMENT_STRING_ID(0, sourceIdStr, DgnElementId, sourceId);
         DgnElementId targetId = m_importContext->FindElementId(sourceId);
         return toJsString(Env(), targetId);
+        }
+
+    Napi::Value FindElementClassId(NapiInfoCR info)
+        {
+        if (nullptr == m_importContext)
+            THROW_JS_EXCEPTION("Invalid NativeImportContext");
+ 
+        REQUIRE_ARGUMENT_STRING(0, sourceClassFullName);
+        bvector<Utf8String> sourceTokens;
+        BeStringUtilities::Split(sourceClassFullName.c_str(), ".:", sourceTokens);
+        if (2 != sourceTokens.size())
+            return toJsString(Env(), "");
+ 
+        DgnClassId sourceClassId = m_importContext->GetSourceDb().Schemas().GetClassId(sourceTokens[0].c_str(), sourceTokens[1].c_str());
+        if (!sourceClassId.IsValid())
+            return toJsString(Env(), "");
+ 
+        DgnClassId targetClass = m_importContext->FindClassId(sourceClassId);
+        return toJsString(Env(), targetClass);
         }
 
     Napi::Value CloneElement(NapiInfoCR info)

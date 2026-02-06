@@ -1538,6 +1538,7 @@ export declare namespace IModelJsNative {
     public removeElementId(sourceId: Id64String): BentleyStatus;
     public findCodeSpecId(sourceId: Id64String): Id64String;
     public findElementId(sourceId: Id64String): Id64String;
+    public findElementClassId(sourceClassFullName: string): string;
     public cloneElement(sourceId: Id64String, cloneOptions?: CloneElementOptions): ElementProps;
     public importCodeSpec(sourceId: Id64String): Id64String;
     public importFont(sourceId: number): number;
