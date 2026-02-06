@@ -62,7 +62,6 @@ struct ErrorListenerScope final: ECN::IIssueListener {
 struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor> {
     private:
         ECSqlStatement m_stmt;
-        ECSqlParams m_params;
         std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
         std::string m_cachedString;
         rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> m_allocator;
@@ -71,15 +70,13 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         Db const* m_conn;
         bool m_usePrimaryConn;
     public:
-        CachedQueryAdaptor() :m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false), m_params() { m_cachedJsonDoc.SetArray(); }
+        CachedQueryAdaptor() :m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedJsonDoc.SetArray(); }
         ECSqlStatement& GetStatement() { return m_stmt; }
         ECSqlRowAdaptor& GetJsonAdaptor();
         rapidjson::Document& ClearAndGetCachedJsonDocument() { m_cachedJsonDoc.Clear(); m_allocator.Clear(); return m_cachedJsonDoc; }
         std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }
-        void setQueryParams(const ECSqlParams& params) { m_params = params; }
-        ECSqlParams const& getQueryParams() const { return m_params; }
         Db const* GetWorkerConn() const { return m_conn; }
         void SetWorkerConn(Db const& conn) { m_conn = &conn; }
         std::shared_ptr<CachedQueryAdaptor> Shared() { return shared_from_this(); }
@@ -103,12 +100,10 @@ struct QueryAdaptorCache final {
             CachedConnection& m_conn;
             uint32_t m_maxEntries;
             bool m_doNotUsePrimaryConnToPrepare;
-            std::shared_ptr<CachedQueryAdaptor> Get(Utf8CP ecsql, RunnableRequestBase const& runnableRequest, ECSqlStatus& status, std::string& ecsql_error, bool& isShutDownInProgress);
     public:
         QueryAdaptorCache(CachedConnection& conn);
         ~QueryAdaptorCache(){}
-        std::pair<std::shared_ptr<CachedQueryAdaptor>, bool> TryGet(Utf8CP ecsql, RunnableRequestBase const& runnableRequest, ECSqlStatus& status, std::string& ecsql_error, bool& isShutDownInProgress);
-        
+        std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error, RunnableRequestQueue& queue, bool & isShutDownInProgress);
         void Reset() { m_cache.clear(); }
         void SetMaxCacheSize(uint32_t n) { if (n < QueryAdaptorCache::kDefaultCacheSize) return; m_maxEntries = n; }
         CachedConnection& GetConnection() {return m_conn;}
@@ -240,7 +235,7 @@ struct RunnableRequestBase {
         void SetResponse(QueryResponse::Ptr response);
         void SetPrepareTime(std::chrono::milliseconds time) { m_prepareTime = time; }
         bool IsCompleted() const {return m_isCompleted; }
-        RunnableRequestQueue& GetQueue() const { return m_queue;}
+        RunnableRequestQueue& GetQueue() { return m_queue;}
         bool IsInterrupted() const { return m_interrupted; }
         void Cancel() { m_cancelled.store(true); }
         bool IsReady() const { return GetTotalTime() >= m_request->GetDelay(); }
@@ -261,7 +256,7 @@ struct RunnableRequestBase {
         QueryResponse::Ptr CreateCancelResponse() const;
         QueryResponse::Ptr CreateBlobIOResponse(std::vector<uint8_t>& meta, bool done, uint32_t rawBlobSize) const;
         QueryResponse::Ptr CreateShutDownResponse() const;
-        QueryResponse::Ptr CreateECSqlResponse(std::string& result, ECSqlRowProperty::List& meta, uint32_t rowcount, QueryResponse::Status status) const;
+        QueryResponse::Ptr CreateECSqlResponse(std::string& result, ECSqlRowProperty::List& meta, uint32_t rowcount, bool done) const;
         static QueryResponse::Ptr CreateQueueFullResponse() ;
 
 };
@@ -365,8 +360,6 @@ struct QueryHelper final {
         static ECSqlRowProperty::List GetMetaInfo(CachedQueryAdaptor&,bool);
         static void Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& request);
         static void ReadBlob(ECDbCR conn, RunnableRequestBase& request);
-        static QueryResponse::Status ProcessSingleRow(ECSqlStatement& stmt, ECSqlRowAdaptor& adaptor, CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& runnableRequest, std::string& result, uint32_t& rowCount);
-        static QueryResponse::Status ProcessMultipleRows(ECSqlStatement& stmt, ECSqlRowAdaptor& adaptor, CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& runnableRequest, std::string& result, uint32_t& rowCount);
     public:
         static void Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& request);
 };

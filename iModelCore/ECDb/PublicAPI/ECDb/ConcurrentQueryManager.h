@@ -178,7 +178,6 @@ class ECSqlParams final {
             ECDB_EXPORT ECSqlParam& operator = (ECSqlParam && rhs);
             ECSqlParam(const ECSqlParam & rhs):m_val(rhs.m_val), m_type(rhs.m_type),m_name(rhs.m_name){}
             ECDB_EXPORT ECSqlParam& operator = (const ECSqlParam & rhs);
-            bool operator == (ECSqlParam const& rhs) const { return m_type == rhs.m_type && m_val == rhs.m_val && m_name == rhs.m_name; }
             ECSqlParam():m_type(Type::Null){}
             ECSqlParam(std::string const& name, Type type, Json::Value const& val): m_type(type),m_val(val), m_name(name){}
             ECSqlParam(std::string const& name): m_type(Type::Null),m_val(Json::ValueType::nullValue), m_name(name){}
@@ -221,7 +220,6 @@ class ECSqlParams final {
         ECSqlParams(const ECSqlParams& rhs): m_params(rhs.m_params) {}
         ECDB_EXPORT ECSqlParams& operator = (ECSqlParams && rhs);
         ECDB_EXPORT ECSqlParams& operator = (const ECSqlParams & rhs);
-        bool operator == (ECSqlParams const& rhs) const { return m_params == rhs.m_params; }
         explicit ECSqlParams(Json::Value const& v) { FromJs(v); }
         virtual ~ECSqlParams(){}
         bool IsEmpty() const { return m_params.size() == 0; }
@@ -379,7 +377,6 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
         Timeout = 4, // query time quota expired while it was in queue.
         QueueFull = 5, // could not submit the query as queue was full.
         ShuttingDown = 6, // shutdown in progress.
-        Step = 7, // stepped into a statement and returned the next row.
         Error = 100, // generic error
         Error_ECSql_PreparedFailed = Error + 1, // ecsql prepared failed
         Error_ECSql_StepFailed = Error + 2, // ecsql step failed
