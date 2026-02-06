@@ -1213,106 +1213,126 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
     DbResult rc;
     if (Enum::Contains<Checks>(checks, Checks::CheckDataColumns)) {
         StopWatch stopWatch(true);
-        rc = CheckDataColumns([](std::string, std::string) {
+        bool errorFound = false;
+        rc = CheckDataColumns([&errorFound](std::string, std::string) {
+			errorFound = true;
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-        callback(GetCheckName(Checks::CheckDataColumns), true, stopWatch.GetCurrent());
+        callback(GetCheckName(Checks::CheckDataColumns), !errorFound, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckEcProfile)) {
 		StopWatch stopWatch(true);
-        rc = CheckEcProfile([](std::string, std::string, std::string) {
+        bool errorFound = false;
+        rc = CheckEcProfile([&errorFound](std::string, std::string, std::string) {
+			errorFound = true;
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckEcProfile), true, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckEcProfile), !errorFound, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckNavClassIds)) {
 		StopWatch stopWatch(true);
-        rc = CheckNavClassIds([](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
+        bool errorFound = false;
+        rc = CheckNavClassIds([&errorFound](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
+			errorFound = true;
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckNavClassIds), true, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckNavClassIds), !errorFound, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckNavIds)) {
 		StopWatch stopWatch(true);
-        rc = CheckNavIds([](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
+        bool errorFound = false;
+        rc = CheckNavIds([&errorFound](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
+			errorFound = true;
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckNavIds), true, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckNavIds), !errorFound, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckLinkTableFkClassIds)) {
 		StopWatch stopWatch(true);
-        rc = CheckLinkTableFkClassIds([](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
+        bool errorFound = false;
+        rc = CheckLinkTableFkClassIds([&errorFound](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId) {
+			errorFound = true;
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckLinkTableFkClassIds), true, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckLinkTableFkClassIds), !errorFound, stopWatch.GetCurrent());
     }
-    if (Enum::Contains<Checks>(checks, Checks::CheckLinkTableFkIds)) {
+	if (Enum::Contains<Checks>(checks, Checks::CheckLinkTableFkIds)) {
 		StopWatch stopWatch(true);
-        rc = CheckLinkTableFkIds([](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
+		bool errorFound = false;
+		rc = CheckLinkTableFkIds([&errorFound](ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, Utf8CP) {
+			errorFound = true;
 			return false;
-        });
+		});
 		if (rc != BE_SQLITE_OK) {
-            return rc;
-        }
-		callback(GetCheckName(Checks::CheckLinkTableFkIds), true, stopWatch.GetCurrent());
-    }
+			return rc;
+		}
+		callback(GetCheckName(Checks::CheckLinkTableFkIds), !errorFound, stopWatch.GetCurrent());
+	}
     if (Enum::Contains<Checks>(checks, Checks::CheckClassIds)) {
 		StopWatch stopWatch(true);
-        rc = CheckClassIds([](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP) {
+        bool errorFound = false;
+        rc = CheckClassIds([&errorFound](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP) {
+			errorFound = true;
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckClassIds), true, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckClassIds), !errorFound, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckDataSchema)) {
 		StopWatch stopWatch(true);
-        rc = CheckDataSchema([](std::string, std::string) {
+        bool errorFound = false;
+        rc = CheckDataSchema([&errorFound](std::string, std::string) {
+			errorFound = true;
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckDataSchema), true, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckDataSchema), !errorFound, stopWatch.GetCurrent());
     }
     if (Enum::Contains<Checks>(checks, Checks::CheckSchemaLoad)) {
 		StopWatch stopWatch(true);
-        rc = CheckSchemaLoad([](Utf8CP) {
+        bool errorFound = false;
+        rc = CheckSchemaLoad([&errorFound](Utf8CP) {
+			errorFound = true;
 			return false;
         });
 		if (rc != BE_SQLITE_OK) {
             return rc;
         }
-		callback(GetCheckName(Checks::CheckSchemaLoad), true, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckSchemaLoad), !errorFound, stopWatch.GetCurrent());
     }
 	if (Enum::Contains<Checks>(checks, Checks::CheckMissingChildRows))
 		{
 		StopWatch stopWatch(true);
-        rc = CheckMissingChildRows([](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)
+        bool errorFound = false;
+        rc = CheckMissingChildRows([&errorFound](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)
 			{
+			errorFound = true;
 			return false;
         	});
 		if (rc != BE_SQLITE_OK)
 			{
             return rc;
         	}
-		callback(GetCheckName(Checks::CheckSchemaLoad), true, stopWatch.GetCurrent());
+		callback(GetCheckName(Checks::CheckMissingChildRows), !errorFound, stopWatch.GetCurrent());
     	}
     return BE_SQLITE_OK;
 }
