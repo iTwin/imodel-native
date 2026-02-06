@@ -1319,21 +1319,18 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
         }
 		callback(GetCheckName(Checks::CheckSchemaLoad), !errorFound, stopWatch.GetCurrent());
     }
-	if (Enum::Contains<Checks>(checks, Checks::CheckMissingChildRows))
-		{
+	if (Enum::Contains<Checks>(checks, Checks::CheckMissingChildRows)) {
 		StopWatch stopWatch(true);
         bool errorFound = false;
-        rc = CheckMissingChildRows([&errorFound](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)
-			{
+        rc = CheckMissingChildRows([&errorFound](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP) {
 			errorFound = true;
 			return false;
-        	});
-		if (rc != BE_SQLITE_OK)
-			{
+        });
+		if (rc != BE_SQLITE_OK)	{
             return rc;
-        	}
+        }
 		callback(GetCheckName(Checks::CheckMissingChildRows), !errorFound, stopWatch.GetCurrent());
-    	}
+    }
     return BE_SQLITE_OK;
 }
 
