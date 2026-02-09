@@ -2,12 +2,11 @@
  * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
  * See LICENSE.md in the repository root for full copyright notice.
  *--------------------------------------------------------------------------------------------*/
-#include <BeSQLite/CloudSqlite.h>
-#include <Bentley/SHA1.h>
-
 #include "SQLite/bcvutil.h"
 #include "SQLite/blockcachevfs.h"
 #include "SQLite/sqlite3.h"
+#include <BeSQLite/CloudSqlite.h>
+#include <Bentley/SHA1.h>
 
 // cspell:ignore bcvfs itwindb nrequest isdaemon ncleanup ifnot bcvconfig blockno npin
 
@@ -15,7 +14,7 @@
 
 void besqlite_bcv_set_cacert_path(const std::string& caFilename);
 
-#endif  // __APPLE__
+#endif // __APPLE__
 
 extern "C" {
 int besqlite_bcv_custom_init();
@@ -64,8 +63,8 @@ DbResult CloudVdb::Open(Utf8StringCR alias, Utf8StringCR vfsName) {
     params.AddQueryParam(vfsParam.c_str());
 
     Utf8String name = "/" + alias;
-    auto rc = OpenBeSQLiteDb(name.c_str(), params);
-    return BE_SQLITE_OK == rc ? (DbResult)sqlite3_bcvfs_register_vtab(GetDbFile()->GetSqlDb()) : rc;
+    auto rc =  OpenBeSQLiteDb(name.c_str(), params);
+    return BE_SQLITE_OK == rc ? (DbResult) sqlite3_bcvfs_register_vtab(GetDbFile()->GetSqlDb()) : rc;
 }
 
 /**
@@ -90,7 +89,7 @@ void CloudCache::ReadGuid() {
         BeAssert(stat == BE_SQLITE_OK);
         if (BE_SQLITE_ROW == stmt.Step()) {
             m_guid = stmt.GetValueText(0);
-            return;  // closes localStoreDb
+            return; // closes localStoreDb
         }
     }
     localStoreDb.CloseDb();
@@ -130,7 +129,7 @@ CloudResult CloudCache::InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64
         return ((CloudCache*)ctx)->FindToken(storageType, account, container, token);
     });
 
-    if (!IsDaemon()) {  // config and write lock only applies to daemonless mode.
+    if (!IsDaemon()) { // config and write lock only applies to daemonless mode.
         if (curlDiagnostics)
             sqlite3_bcvfs_config(m_vfs, SQLITE_BCV_CURLVERBOSE, 1);
 
@@ -143,7 +142,7 @@ CloudResult CloudCache::InitCache(Utf8StringCR name, Utf8StringCR rootDir, int64
             httpTimeout = DEFAULT_HTTP_TIMEOUT;
         sqlite3_bcvfs_config(m_vfs, SQLITE_BCV_HTTPTIMEOUT, httpTimeout);
 
-        ReadGuid();  // sets the m_guid member to either a new GUID or one from the localstore for write locks
+        ReadGuid(); // sets the m_guid member to either a new GUID or one from the localstore for write locks
     }
 
     return CloudResult(m_cloudDb.Open("", name));
@@ -195,7 +194,7 @@ Utf8String CloudCache::GetDatabaseHash(CloudContainer& container, Utf8StringCR d
     stmt.BindText(2, dbName, Statement::MakeCopy::No);
     SHA1 hash;
     hash.Add(dbName.c_str(), dbName.size());
-    int count = 0;
+    int count=0;
     for (; BE_SQLITE_ROW == stmt.Step(); ++count)
         hash.Add(stmt.GetValueBlob(0), stmt.GetColumnBytes(0));
     return count > 0 ? hash.GetHashString() : "";
@@ -231,7 +230,7 @@ bool CloudCache::IsAttached(CloudContainer& container) {
 CloudResult CloudCache::CallSqliteFn(std::function<int(Utf8P*)> fn, Utf8CP funcName) {
     Log(NativeLogging::SEVERITY::LOG_TRACE, funcName);
 
-    SQLiteMsg msg;  // frees message in dtor
+    SQLiteMsg msg; // frees message in dtor
     auto stat = fn(&msg.m_msg);
     return CloudResult(stat, stat == 0 ? "" : Utf8PrintfString("%s error: %s", funcName, msg.m_msg ? msg.m_msg : Db::InterpretDbResult((DbResult)stat)).c_str());
 }
@@ -265,21 +264,21 @@ CloudResult CloudContainer::Connect(CloudCache& cache) {
     if (nullptr != cache.FindMatching(m_baseUri.c_str(), m_containerId.c_str()))
         return CloudResult(1, "container with that name already attached");
 
-    cache.m_containers.push_back(this);  // needed for authorization from attach.
+    cache.m_containers.push_back(this); // needed for authorization from attach.
     auto attachFlags = SQLITE_BCV_ATTACH_IFNOT;
     if (m_secure)
         attachFlags |= SQLITE_BCV_ATTACH_SECURE;
     if (!cache.IsAttached(*this)) {
         auto result = cache.CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_attach(cache.m_vfs, GetOpenParams().c_str(), m_baseUri.c_str(), m_containerId.c_str(), m_alias.c_str(), attachFlags, msg); }, "attach");
         if (!result.IsSuccess()) {
-            cache.m_containers.pop_back();  // failed, remove from list
+            cache.m_containers.pop_back(); // failed, remove from list
             return result;
         }
     }
 
     auto stat = m_containerDb.Open(m_alias, cache.m_name);
     if (BE_SQLITE_OK != stat) {
-        cache.m_containers.pop_back();  // failed, remove from list
+        cache.m_containers.pop_back(); // failed, remove from list
         return CloudResult(stat, "can't open containerDb");
     }
     m_cache = &cache;
@@ -298,9 +297,9 @@ CloudResult CloudContainer::Disconnect(bool isDetach, bool fromCacheDtor) {
     // On macOS (and probably iOS), OnDisconnect() crashes when called from the cache destructor.
     if (!fromCacheDtor)
         OnDisconnect(isDetach);
-#else   // __APPLE__
+#else // __APPLE__
     OnDisconnect(isDetach);
-#endif  // __APPLE__
+#endif // __APPLE__
     m_onDisconnect.RaiseEvent(this);
 
     CloseDbIfOpen();
@@ -318,11 +317,11 @@ CloudResult CloudContainer::Disconnect(bool isDetach, bool fromCacheDtor) {
     // On macOS (and probably iOS), OnDisconnected() crashes when called from the cache destructor.
     if (!fromCacheDtor)
         OnDisconnected(isDetach);
-#else   // __APPLE__
+#else // __APPLE__
     OnDisconnected(isDetach);
-#endif  // __APPLE__
+#endif // __APPLE__
 
-    return isDetach ? thisCache->CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_detach(thisCache->m_vfs, m_alias.c_str(), msg); }, "detach") : CloudResult();
+    return isDetach ? thisCache->CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_detach(thisCache->m_vfs, m_alias.c_str(), msg); }, "detach") :  CloudResult();
 }
 
 static int uploadBusy(void* container, int nTries) {
@@ -382,7 +381,7 @@ void CloudUtil::Initialize(BeFileNameCR assetDir) {
     caFilename.AppendToPath(L"cacert.pem");
     // On macOS and iOS, use a CA file that is bundled with the native add-on.
     besqlite_bcv_set_cacert_path(caFilename.GetNameUtf8());
-#endif  // __APPLE__
+#endif // __APPLE__
     besqlite_bcv_custom_init();
 }
 
@@ -398,7 +397,7 @@ void CloudUtil::Close() {
  * Initialize a CloudPrefetch operation for a database. Note: no blocks are requested until Run is called.
  */
 DbResult CloudPrefetch::Init(CloudContainer& container, Utf8StringCR dbName) {
-    return (DbResult)sqlite3_bcvfs_prefetch_new(container.m_cache->m_vfs, container.m_containerId.c_str(), dbName.c_str(), &m_prefetch);
+    return (DbResult) sqlite3_bcvfs_prefetch_new(container.m_cache->m_vfs, container.m_containerId.c_str(), dbName.c_str(), &m_prefetch);
 }
 
 /**
@@ -426,8 +425,8 @@ CloudPrefetch::PrefetchStatus CloudPrefetch::Run(int nRequest, int timeout) {
     if (status.m_status != BE_SQLITE_OK) {
         status.m_error = sqlite3_bcvfs_prefetch_errmsg(m_prefetch);
     } else {
-        sqlite3_bcvfs_prefetch_status(m_prefetch, SQLITE_BCVFS_PFS_NOUTSTANDING, (sqlite3_int64*)&status.m_nOutstanding);
-        sqlite3_bcvfs_prefetch_status(m_prefetch, SQLITE_BCVFS_PFS_NDEMAND, (sqlite3_int64*)&status.m_nDemand);
+        sqlite3_bcvfs_prefetch_status(m_prefetch, SQLITE_BCVFS_PFS_NOUTSTANDING, (sqlite3_int64*) &status.m_nOutstanding);
+        sqlite3_bcvfs_prefetch_status(m_prefetch, SQLITE_BCVFS_PFS_NDEMAND, (sqlite3_int64*) &status.m_nDemand);
     }
     return status;
 }
@@ -441,7 +440,7 @@ CloudPrefetch::PrefetchStatus CloudPrefetch::Run(int nRequest, int timeout) {
 CloudResult CloudUtil::Init(CloudContainer const& container, int logLevel, int nRequest, int httpTimeout) {
     int stat = sqlite3_bcv_open(container.GetOpenParams().c_str(), container.m_baseUri.c_str(), container.m_accessToken.c_str(), container.m_containerId.c_str(), &m_handle);
     if (SQLITE_OK != stat)
-        return CloudResult(stat, Utf8PrintfString("cannot open CloudContainer: %s", sqlite3_bcv_errmsg(m_handle)).c_str());
+        return CloudResult(stat,  Utf8PrintfString("cannot open CloudContainer: %s", sqlite3_bcv_errmsg(m_handle)).c_str());
 
     sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_PROGRESS, this, ProgressCallback);
     sqlite3_bcv_config(m_handle, SQLITE_BCVCONFIG_LOG, this, LogCallback);
@@ -496,3 +495,4 @@ CloudResult CloudUtil::DownloadDatabase(Utf8StringCR dbName, Utf8StringCR localN
     auto stat = (DbResult)sqlite3_bcv_download(m_handle, dbName.c_str(), localName.c_str());
     return CloudResult(stat, sqlite3_bcv_errmsg(m_handle));
 }
+

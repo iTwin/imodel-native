@@ -1,18 +1,17 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #define _CRT_SECURE_NO_WARNINGS
-#include <assert.h>
-#include <curl/curl.h>
-
 #include "SQLite/sqlite3.h"
+#include <curl/curl.h>
+#include <assert.h>
 #if !defined(ANDROID) && !defined(__linux__)
 #define ENABLE_PROXYRES
-#endif  // !ANDROID
+#endif // !ANDROID
 #ifdef ENABLE_PROXYRES
 #include <proxyres/proxyres.h>
-#endif  // ENABLE_PROXYRES
+#endif // ENABLE_PROXYRES
 #include <cstdlib>
 #include <ctime>
 #include <map>
@@ -20,20 +19,19 @@
 #include <utility>
 #ifndef ITWIN_DAEMON
 #include <Bentley/Logging.h>
-#endif  // ITWIN_DAEMON
+#endif // ITWIN_DAEMON
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
-#endif  // __APPLE__
+#endif // __APPLE__
 
 static std::string s_empty;
 
 // RAII wrapper around a sqlite3_mutex.
 // Note: this is designed only for use in this file, so is very minimal.
 class SQLiteMutexLock {
-    sqlite3_mutex* m_mutex;
-
-   public:
-    explicit SQLiteMutexLock(sqlite3_mutex* mutex) : m_mutex(mutex) {
+    sqlite3_mutex *m_mutex;
+public:
+    explicit SQLiteMutexLock(sqlite3_mutex *mutex): m_mutex(mutex) {
         if (nullptr == m_mutex) {
             assert(false && "Mutex not initialized.");
             throw "Null mutex";
@@ -65,7 +63,7 @@ void logError(Utf8CP fmt, ...) {
     va_end(args);
 }
 
-#else  // ITWIN_DAEMON
+#else // ITWIN_DAEMON
 
 void logTrace(const char* /*fmt*/, ...) {
     // NativeLogging isn't available daemon mode
@@ -75,23 +73,23 @@ void logError(const char* /*fmt*/, ...) {
     // NativeLogging isn't available daemon mode
 }
 
-#endif  // !ITWIN_DAEMON
+#endif // !ITWIN_DAEMON
 
 #ifdef __APPLE__
 
 static std::string s_certsPath;
-static sqlite3_mutex* s_appleMutex = nullptr;
+static sqlite3_mutex *s_appleMutex = nullptr;
 
 static const void initAppleMutex() {
     s_appleMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
 }
 
-static std::string& getCACertPath() {
+static std::string &getCACertPath() {
     try {
         SQLiteMutexLock lock(s_appleMutex);
         if (s_certsPath.empty()) {
             uint32_t size = 0;
-            _NSGetExecutablePath(nullptr, &size);  // get the size needed
+            _NSGetExecutablePath(nullptr, &size); // get the size needed
             if (size == 0) {
                 return s_empty;
             }
@@ -120,13 +118,13 @@ void besqlite_bcv_set_cacert_path(const std::string& caFilename) {
     s_certsPath = caFilename;
 }
 
-#endif  // __APPLE__
+#endif // __APPLE__
 
 #ifdef ENABLE_PROXYRES
 
-static sqlite3_mutex* s_envMutex = nullptr;
-static sqlite3_mutex* s_proxyMapMutex = nullptr;
-static sqlite3_mutex* s_initMutex = nullptr;
+static sqlite3_mutex *s_envMutex = nullptr;
+static sqlite3_mutex *s_proxyMapMutex = nullptr;
+static sqlite3_mutex *s_initMutex = nullptr;
 
 static const void initProxyResMutexes() {
     s_envMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
@@ -182,7 +180,7 @@ static const std::string& getProxyForUrl(const std::string& url) {
         std::time_t now = std::time(nullptr);
         auto it = proxyMap.find(key);
         if (it != proxyMap.end()) {
-            if (now - it->second.first > 3600) {  // cache for 1 hour
+            if (now - it->second.first > 3600) { // cache for 1 hour
                 proxyMap.erase(it);
             } else {
                 return it->second.second;
@@ -194,7 +192,7 @@ static const std::string& getProxyForUrl(const std::string& url) {
         }
         proxy_resolver_get_proxies_for_url(pProxy, url.c_str());
         proxy_resolver_wait(pProxy, -1);
-        const char* list = proxy_resolver_get_list(pProxy);
+        const char *list = proxy_resolver_get_list(pProxy);
         std::string proxy;
         if (list != nullptr) {
             proxy = list;
@@ -220,7 +218,7 @@ static const std::string& getProxyForUrl(const std::string& url) {
     }
 }
 
-void setupCurlProxy(CURL* pCurl, const char* zUri) {
+void setupCurlProxy(CURL * pCurl, const char * zUri) {
     static int s_initialized = 0;
 
     try {
@@ -243,7 +241,7 @@ void setupCurlProxy(CURL* pCurl, const char* zUri) {
     }
 }
 
-#endif  // ENABLE_PROXYRES
+#endif // ENABLE_PROXYRES
 
 #ifdef __cplusplus
 extern "C" {
@@ -252,17 +250,17 @@ extern "C" {
 int besqlite_bcv_custom_init() {
 #ifdef ENABLE_PROXYRES
     initProxyResMutexes();
-#endif  // ENABLE_PROXYRES
+#endif // ENABLE_PROXYRES
 #ifdef __APPLE__
     initAppleMutex();
-#endif  // __APPLE__
+#endif // __APPLE__
     return SQLITE_OK;
 }
 
-int besqlite_bcv_curl_handle_config(CURL* pCurl, int /*eMethod*/, const char* zUri) {
+int besqlite_bcv_curl_handle_config(CURL * pCurl, int /*eMethod*/, const char * zUri) {
 #ifdef ENABLE_PROXYRES
     setupCurlProxy(pCurl, zUri);
-#endif  // ENABLE_PROXYRES
+#endif // ENABLE_PROXYRES
     curl_easy_setopt(pCurl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_REVOKE_BEST_EFFORT);
 #ifdef __APPLE__
     const std::string& certsPath = getCACertPath();
@@ -270,7 +268,7 @@ int besqlite_bcv_curl_handle_config(CURL* pCurl, int /*eMethod*/, const char* zU
         return SQLITE_ERROR;
     }
     curl_easy_setopt(pCurl, CURLOPT_CAINFO, certsPath.c_str());
-#endif  // __APPLE__
+#endif // __APPLE__
     return SQLITE_OK;
 }
 

@@ -1,12 +1,11 @@
 /*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the repository root for full copyright notice.
- *--------------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See LICENSE.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Bentley/BeEvent.h>
-
 #include "BeSQLite.h"
+#include <Bentley/BeEvent.h>
 
 // cspell:ignore bcvfs
 
@@ -96,7 +95,8 @@ struct CloudContainer {
 
     CloudContainer() {}
     virtual ~CloudContainer() { Disconnect(false, false); }
-    CloudContainer(Utf8StringCR storageType, Utf8StringCR baseUri, Utf8StringCR containerId, Utf8StringCR alias, Utf8StringCR accessToken) : m_storageType(storageType), m_baseUri(baseUri), m_containerId(containerId), m_alias(alias), m_accessToken(accessToken) {}
+    CloudContainer(Utf8StringCR storageType, Utf8StringCR baseUri, Utf8StringCR containerId, Utf8StringCR alias, Utf8StringCR accessToken) :
+        m_storageType(storageType), m_baseUri(baseUri), m_containerId(containerId), m_alias(alias), m_accessToken(accessToken) {}
 
     CloudResult CallSqliteFn(std::function<int(Utf8P*)> fn, Utf8CP fnName) { return m_cache->CallSqliteFn(fn, fnName); }
     bool IsContainerConnected() const { return nullptr != m_cache; }
@@ -132,7 +132,7 @@ struct CloudPrefetch {
     PrefetchP m_prefetch = nullptr;
 
     ~CloudPrefetch() { Stop(); }
-    bool IsRunning() { return m_prefetch != nullptr; }
+    bool IsRunning() { return m_prefetch!= nullptr; }
 
     BE_SQLITE_EXPORT DbResult Init(CloudContainer& container, Utf8StringCR dbName);
     BE_SQLITE_EXPORT void Stop();
@@ -143,10 +143,10 @@ struct CloudPrefetch {
  * Utilities for initializing CloudContainers, as well as to upload/download/copy/delete databases within CloudContainers
  */
 struct CloudUtil {
-   private:
+private:
     BCVHandle m_handle = nullptr;
 
-   public:
+public:
     BE_SQLITE_EXPORT static void Initialize(BeFileNameCR assetDir);
     static int ProgressCallback(void* util, uint64_t nDone, uint64_t nTotal) { return (int)((CloudUtil*)util)->_OnProgress(nDone, nTotal); }
     static void LogCallback(void* util, Utf8CP msg) { ((CloudUtil*)util)->_Log(msg); }
