@@ -1,26 +1,23 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "BeSQLiteNonPublishedTests.h"
 
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct FTS5Test : public ::testing::Test
-{
-    Db      m_db;
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsistruct
+ +---------------+---------------+---------------+---------------+---------------+------*/
+struct FTS5Test : public ::testing::Test {
+    Db m_db;
 
-    static BeFileName GetDbFilePath(WCharCP name)
-        {
+    static BeFileName GetDbFilePath(WCharCP name) {
         BeFileName dbFileName;
         BeTest::GetHost().GetOutputRoot(dbFileName);
         dbFileName.AppendToPath(name);
         return dbFileName;
-        }
+    }
 
-    void SetupDb(WCharCP name)
-        {
+    void SetupDb(WCharCP name) {
         BeFileName tempDir;
         BeTest::GetHost().GetOutputRoot(tempDir);
         BeSQLiteLib::Initialize(tempDir);
@@ -30,20 +27,19 @@ struct FTS5Test : public ::testing::Test
             BeFileName::BeDeleteFile(fullname);
 
         EXPECT_EQ(BE_SQLITE_OK, m_db.CreateNewDb(fullname.GetNameUtf8().c_str()));
-        }
+    }
 };
 
-/*---------------------------------------------------------------------------------**//**
-* Testing SQLite's FTS5 module using virtual table.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(FTS5Test, VirtualTable)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Testing SQLite's FTS5 module using virtual table.
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FTS5Test, VirtualTable) {
     SetupDb(L"VirtualTable.db");
 
     // Create a full-text-searchable table
     EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE VIRTUAL TABLE email USING fts5(sender, title, body, nosearch UNINDEXED)"));
-        // 'isabelle.lrastyu@baxi.nil'
+    // 'isabelle.lrastyu@baxi.nil'
     // Populate it
     EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO email (sender, title, body, nosearch) VALUES ('isabelle.lrastyu@baxi.nil', 'DgnDb06Dev', 'Sprint Review', 'this text is secret')"));
     EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO email (sender, title, body, nosearch) VALUES ('isabelle.lrasyyu@baxi.nil', 'Typo', 'Wrong Isabelle', 'not searchable')"));
@@ -51,53 +47,55 @@ TEST_F(FTS5Test, VirtualTable)
     EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO email (sender, title, body, nosearch) VALUES ('ingrid@retirement.nil', 'Your 401k', 'Isabelle Lrastyu, please call me.', 'secret unindexed text')"));
 
     // Search
-    struct SearchOp { int32_t count; Utf8CP where; bool excludeWhere; };
+    struct SearchOp {
+        int32_t count;
+        Utf8CP where;
+        bool excludeWhere;
+    };
 
     SearchOp searchOps[] =
         {
             // = operator
-            { 4, "email = 'isabelle'" },
-            { 2, "email = 'baxi'" },
-            { 0, "email = 'secret'" },  // only un-indexed columns match
-            { 2, "email = 'retirement'" },
+            {4, "email = 'isabelle'"},
+            {2, "email = 'baxi'"},
+            {0, "email = 'secret'"},  // only un-indexed columns match
+            {2, "email = 'retirement'"},
 
             // Following 3 syntaxes are supposed to be equivalent
-            { 1, "email = 'DgnDb06Dev'" },
-            { 1, "email MATCH 'DgnDb06Dev'" },
-            { 1, "('DgnDb06Dev')", true },
+            {1, "email = 'DgnDb06Dev'"},
+            {1, "email MATCH 'DgnDb06Dev'"},
+            {1, "('DgnDb06Dev')", true},
 
             // Match keyword
-            { 1, "email MATCH '\"401k\"'" },
-            { 0, "email MATCH 'sender : \"401k\"'" },
-            { 1, "email MATCH 'title : \"401k\"'" },
+            {1, "email MATCH '\"401k\"'"},
+            {0, "email MATCH 'sender : \"401k\"'"},
+            {1, "email MATCH 'title : \"401k\"'"},
 
             // multiple search phrases
-            { 2, "email MATCH '\"isabelle\" \"lrastyu\"'" },
-            { 3, "email MATCH '\"lrastyu\" OR \"lrasyyu\"'" },
+            {2, "email MATCH '\"isabelle\" \"lrastyu\"'"},
+            {3, "email MATCH '\"lrastyu\" OR \"lrasyyu\"'"},
 
             // prefix
-            { 2, "email MATCH 'sender : \"lras\" *'" },
+            {2, "email MATCH 'sender : \"lras\" *'"},
         };
 
-    for (auto const& searchOp : searchOps)
-        {
+    for (auto const& searchOp : searchOps) {
         SqlPrintfString sql("SELECT count(*) FROM email %s%s", searchOp.excludeWhere ? "" : "WHERE ", searchOp.where);
         Statement stmt;
         EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(m_db, sql));
         EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
         EXPECT_EQ(searchOp.count, stmt.GetValueInt(0)) << "Statement: " << sql.GetUtf8CP();
-        }
+    }
 
     m_db.SaveChanges();
     m_db.CloseDb();
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Testing SQLite's FTS5 module using external content table.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(FTS5Test, ExternalContentTable)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Testing SQLite's FTS5 module using external content table.
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FTS5Test, ExternalContentTable) {
     SetupDb(L"ExternalContentTable.db");
 
     // Create the content table
@@ -125,43 +123,46 @@ TEST_F(FTS5Test, ExternalContentTable)
     EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO email (sender, title, body, nosearch) VALUES ('ingrid@retirement.nil', 'Your 401k', 'Isabelle Lrastyu, please call me.', 'secret unindexed text')"));
 
     // Search
-    struct SearchOp { int32_t count; Utf8CP where; int32_t countAfterUpdate; };
+    struct SearchOp {
+        int32_t count;
+        Utf8CP where;
+        int32_t countAfterUpdate;
+    };
     SearchOp searchOps[] =
         {
             // = operator
-            { 4, "fts = 'isabelle'", 2 },
-            { 2, "fts = 'baxi'", 1 },
-            { 0, "fts = 'secret'", 0 },  // only un-indexed columns match
-            { 2, "fts = 'retirement'", 2 },
+            {4, "fts = 'isabelle'", 2},
+            {2, "fts = 'baxi'", 1},
+            {0, "fts = 'secret'", 0},  // only un-indexed columns match
+            {2, "fts = 'retirement'", 2},
 
             // Following 3 syntaxes are supposed to be equivalent
-            { 1, "fts = 'DgnDb06Dev'", 0 },
-            { 1, "fts MATCH 'DgnDb06Dev'", 0 },
+            {1, "fts = 'DgnDb06Dev'", 0},
+            {1, "fts MATCH 'DgnDb06Dev'", 0},
 
             // Match keyword
-            { 1, "fts MATCH '\"401k\"'", 1 },
-            { 0, "fts MATCH 'sender : \"401k\"'", 0 },
-            { 1, "fts MATCH 'title : \"401k\"'", 1 },
+            {1, "fts MATCH '\"401k\"'", 1},
+            {0, "fts MATCH 'sender : \"401k\"'", 0},
+            {1, "fts MATCH 'title : \"401k\"'", 1},
 
             // multiple search phrases
-            { 2, "fts MATCH '\"isabelle\" \"lrastyu\"'", 0 },
-            { 3, "fts MATCH '\"lrastyu\" OR \"lrasyyu\"'", 1 },
+            {2, "fts MATCH '\"isabelle\" \"lrastyu\"'", 0},
+            {3, "fts MATCH '\"lrastyu\" OR \"lrasyyu\"'", 1},
 
             // prefix
-            { 2, "fts MATCH 'sender : \"lras\" *'", 1 },
+            {2, "fts MATCH 'sender : \"lras\" *'", 1},
         };
 
-    for (auto const& searchOp : searchOps)
-        {
+    for (auto const& searchOp : searchOps) {
         SqlPrintfString sql("SELECT count(*) FROM fts WHERE %s", searchOp.where);
         Statement stmt;
         EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(m_db, sql));
         EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
         EXPECT_EQ(searchOp.count, stmt.GetValueInt(0)) << "Statement: " << sql.GetUtf8CP();
-        }
+    }
 
     // Modify content table
-        {
+    {
         Statement deleteStmt;
         EXPECT_EQ(BE_SQLITE_OK, deleteStmt.Prepare(m_db, "DELETE FROM email WHERE rowid=1"));
         EXPECT_EQ(BE_SQLITE_DONE, deleteStmt.Step());
@@ -169,28 +170,26 @@ TEST_F(FTS5Test, ExternalContentTable)
         Statement updateStmt;
         EXPECT_EQ(BE_SQLITE_OK, updateStmt.Prepare(m_db, "UPDATE email SET sender='enid@retirement.nil', title='Your 401k', body='never mind', nosearch='' WHERE rowid=4"));
         EXPECT_EQ(BE_SQLITE_DONE, updateStmt.Step());
-        }
+    }
 
     // Query on modified content
-    for (auto const& searchOp : searchOps)
-        {
+    for (auto const& searchOp : searchOps) {
         SqlPrintfString sql("SELECT count(*) FROM fts WHERE %s", searchOp.where);
         Statement stmt;
         EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(m_db, sql));
         EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
         EXPECT_EQ(searchOp.countAfterUpdate, stmt.GetValueInt(0)) << "Statement: " << sql.GetUtf8CP();
-        }
+    }
 
     m_db.SaveChanges();
     m_db.CloseDb();
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Testing features required for BeSQLite FTS5 API.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(FTS5Test, FilterExternalContentTable)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Testing features required for BeSQLite FTS5 API.
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FTS5Test, FilterExternalContentTable) {
     SetupDb(L"FilterExternalContentTable");
 
     // The content table consists of:
@@ -216,21 +215,24 @@ TEST_F(FTS5Test, FilterExternalContentTable)
                                             " END;"));
 
     // Populate the content table
-        {
-        struct Client { Utf8CP name; Utf8CP address; Utf8CP company; };
+    {
+        struct Client {
+            Utf8CP name;
+            Utf8CP address;
+            Utf8CP company;
+        };
         Client clients[] =
             {
-                { "John Doe", "123 Milky Way", "Things n Stuff Inc" },
-                { "Lisa Lin", "27 John Doe Ave", "Good Eats Bakery" },
-                { "Fred Fud", "622 Main Street", "Main Street Bakery" },
-                { "Edd Good", "123 Frankfurt Ave", "Good Stuff Home Furnishings" },
+                {"John Doe", "123 Milky Way", "Things n Stuff Inc"},
+                {"Lisa Lin", "27 John Doe Ave", "Good Eats Bakery"},
+                {"Fred Fud", "622 Main Street", "Main Street Bakery"},
+                {"Edd Good", "123 Frankfurt Ave", "Good Stuff Home Furnishings"},
             };
 
         Statement stmt;
         EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(m_db, "INSERT INTO fts (Type, Id, Text) VALUES(?,?,?)"));
         int32_t id = 1;
-        for (auto const& client : clients)
-            {
+        for (auto const& client : clients) {
             stmt.BindText(1, "Company", Statement::MakeCopy::No);
             stmt.BindInt(2, id++);
             stmt.BindText(3, client.company, Statement::MakeCopy::No);
@@ -247,39 +249,43 @@ TEST_F(FTS5Test, FilterExternalContentTable)
             EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
 
             stmt.Reset();
-            }
         }
+    }
 
-    struct DisableAssertionFailures
-        {
+    struct DisableAssertionFailures {
         DisableAssertionFailures() { BeTest::SetFailOnAssert(false); }
         ~DisableAssertionFailures() { BeTest::SetFailOnAssert(true); }
-        };
+    };
 
     // Verify primary key
-        {
+    {
         DisableAssertionFailures V_V_V_;
         EXPECT_EQ(BE_SQLITE_CONSTRAINT_PRIMARYKEY, m_db.ExecuteSql("INSERT INTO fts (Type, Id, Text) VALUES('Company', 1, 'my text')"));
-        }
+    }
 
     // Query
-    enum { kName=0, kAddress, kCompany, kMax };
-    struct SearchOp { Utf8CP text; int32_t count[kMax]; };
+    enum { kName = 0,
+           kAddress,
+           kCompany,
+           kMax };
+    struct SearchOp {
+        Utf8CP text;
+        int32_t count[kMax];
+    };
     SearchOp searchOps[] =
         {
             // text         name    address company
-            { "John Doe",   {1,      1,      0} },
-            { "Ave",        {0,      2,      0} },
-            { "Bakery",     {0,      0,      2} },
-            { "Good",       {1,      0,      2} },
-            { "Main Street",{0,      1,      1} },
+            {"John Doe", {1, 1, 0}},
+            {"Ave", {0, 2, 0}},
+            {"Bakery", {0, 0, 2}},
+            {"Good", {1, 0, 2}},
+            {"Main Street", {0, 1, 1}},
         };
 
-    Utf8CP searchTypes[] = { "Name", "Address", "Company" };
-    for (auto const& searchOp : searchOps)
-        {
+    Utf8CP searchTypes[] = {"Name", "Address", "Company"};
+    for (auto const& searchOp : searchOps) {
         Utf8PrintfString where("fts_idx MATCH '\"%s\"'", searchOp.text);
-        
+
         // unfiltered
         auto totalCount = searchOp.count[0] + searchOp.count[1] + searchOp.count[2];
         Statement stmt;
@@ -296,14 +302,13 @@ TEST_F(FTS5Test, FilterExternalContentTable)
         EXPECT_EQ(totalCount, stmt.GetValueInt(0)) << "Statement: " << selectAll.c_str();
 
         // Filter by each type
-        for (auto i = 0; i < kMax; i++)
-            {
+        for (auto i = 0; i < kMax; i++) {
             Utf8PrintfString sql("SELECT count(*) FROM fts_idx WHERE Type = '%s' AND %s", searchTypes[i], where.c_str());
             stmt.Finalize();
             EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(m_db, sql.c_str()));
             EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
             EXPECT_EQ(searchOp.count[i], stmt.GetValueInt(0)) << "Statement: " << sql.c_str();
-            }
+        }
 
         // Filter by two types
         stmt.Finalize();
@@ -330,9 +335,8 @@ TEST_F(FTS5Test, FilterExternalContentTable)
         EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(m_db, selectNone.c_str()));
         EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
         EXPECT_EQ(0, stmt.GetValueInt(0)) << selectNone.c_str();
-        }
+    }
 
     m_db.SaveChanges();
     m_db.CloseDb();
-    }
-
+}

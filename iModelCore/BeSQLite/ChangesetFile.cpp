@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include <BeSQLite/ChangesetFile.h>
 #include <Bentley/Logging.h>
 #include <Bentley/ScopedArray.h>
@@ -9,9 +9,9 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#define CHANGESET_FORMAT_VERSION  0x10
-#define CHANGESET_LZMA_MARKER   "ChangeSetLzma"
-#define JSON_PROP_DDL                   "DDL"
+#define CHANGESET_FORMAT_VERSION 0x10
+#define CHANGESET_LZMA_MARKER "ChangeSetLzma"
+#define JSON_PROP_DDL "DDL"
 #define JSON_PROP_ContainsSchemaChanges "ContainsSchemaChanges"
 
 #define LOG (NativeLogging::CategoryLogger("BeSQLite"))
@@ -39,13 +39,13 @@ uint32_t ByteArrayToUInt(Byte bytes[]) {
 // @bsiclass
 //=======================================================================================
 struct ChangesetLzmaHeader {
-private:
+   private:
     uint16_t m_sizeOfHeader;
     char m_idString[15];
     uint16_t m_formatVersionNumber;
     uint16_t m_compressionType;
 
-public:
+   public:
     static const int formatVersionNumber = CHANGESET_FORMAT_VERSION;
     enum CompressionType {
         LZMA2 = 2
@@ -85,7 +85,7 @@ DbResult ChangesetFileWriter::StartOutput() {
     m_outLzmaFileStream = new BeFileLzmaOutStream();
 
     BeFileName::CreateNewDirectory(m_pathname.GetDirectoryName());
-    BeFileStatus fileStatus = m_outLzmaFileStream->CreateOutputFile(m_pathname, true); // overwrites any existing file
+    BeFileStatus fileStatus = m_outLzmaFileStream->CreateOutputFile(m_pathname, true);  // overwrites any existing file
     if (fileStatus != BeFileStatus::Success) {
         LOG.fatalv(L"%ls - OutLzmaFileStream::CreateOutputFile failed", m_pathname.c_str());
         BeAssert(false);
@@ -168,7 +168,7 @@ DbResult ChangesetFileWriter::WritePrefix() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetFileWriter::ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const *dgnDb, BeSQLite::LzmaEncoder::LzmaParams const &lzmaParams) : m_pathname(pathname), m_prefix(""), m_db(dgnDb), m_outLzmaFileStream(nullptr), m_lzmaEncoder(lzmaParams) {
+ChangesetFileWriter::ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const* dgnDb, BeSQLite::LzmaEncoder::LzmaParams const& lzmaParams) : m_pathname(pathname), m_prefix(""), m_db(dgnDb), m_outLzmaFileStream(nullptr), m_lzmaEncoder(lzmaParams) {
     m_prefix = "";
     if (!containsEcSchemaChanges && ddlChanges._IsEmpty())
         return;
@@ -387,34 +387,29 @@ BentleyStatus RevisionUtility::ReadChangesetPrefix(BeSQLite::LzmaDecoder& lzmaDe
     return SUCCESS;
 }
 
-BentleyStatus RevisionUtility::OpenChangesetForReading(BeSQLite::LzmaDecoder& lzmaDecoder, BlockFilesLzmaInStream& inLzmaFileStream)
-    {
-    if (!inLzmaFileStream.IsReady())
-        {
+BentleyStatus RevisionUtility::OpenChangesetForReading(BeSQLite::LzmaDecoder& lzmaDecoder, BlockFilesLzmaInStream& inLzmaFileStream) {
+    if (!inLzmaFileStream.IsReady()) {
         BeAssert(false);
         return ERROR;
-        }
+    }
 
-    ChangesetLzmaHeader  header;
+    ChangesetLzmaHeader header;
     uint32_t actuallyRead;
     inLzmaFileStream._Read(&header, sizeof(header), actuallyRead);
-    if (actuallyRead != sizeof(header) || !header.IsValid())
-        {
+    if (actuallyRead != sizeof(header) || !header.IsValid()) {
         BeAssert(false && "Attempt to read an invalid revision version");
         return ERROR;
-        }
+    }
 
     ZipErrors zipStatus = lzmaDecoder.StartDecompress(inLzmaFileStream);
-    if (zipStatus != ZIP_SUCCESS)
-        {
+    if (zipStatus != ZIP_SUCCESS) {
         BeAssert(false);
         return ERROR;
-        }
+    }
 
     return SUCCESS;
-    }
-BentleyStatus RevisionUtility::ExportPrefixFile(BeFileName targetDir, Utf8StringCR changesetId, Utf8StringCR prefix)
-    {
+}
+BentleyStatus RevisionUtility::ExportPrefixFile(BeFileName targetDir, Utf8StringCR changesetId, Utf8StringCR prefix) {
     WString changesetIdW(changesetId.c_str(), true);
     if (!BeFileName::DoesPathExist(targetDir.GetName()))
         BeFileName::CreateNewDirectory(targetDir.GetDirectoryName());
@@ -423,32 +418,29 @@ BentleyStatus RevisionUtility::ExportPrefixFile(BeFileName targetDir, Utf8String
     outFilePath = outFilePath.Combine({targetDir.GetName(), (changesetIdW + L".cs-prefix").c_str()});
     BeFile prefixFile;
     prefixFile.Create(outFilePath.GetName(), true);
-    auto status = prefixFile.Write(nullptr, prefix.c_str(), (uint32_t)prefix.size()) == BeFileStatus::Success? SUCCESS : ERROR;
+    auto status = prefixFile.Write(nullptr, prefix.c_str(), (uint32_t)prefix.size()) == BeFileStatus::Success ? SUCCESS : ERROR;
     prefixFile.Close();
     return status;
-    }
-BentleyStatus RevisionUtility::GetUncompressSize(BeSQLite::LzmaDecoder& lzmaDecoder, uint32_t& uncompressSize)
-    {
+}
+BentleyStatus RevisionUtility::GetUncompressSize(BeSQLite::LzmaDecoder& lzmaDecoder, uint32_t& uncompressSize) {
     const int kMaxDecompressBytes = 1024 * 64;
     int decompressBytesRead;
     uncompressSize = 0;
     Byte buffer[kMaxDecompressBytes];
     ZipErrors zipStatus;
-    do
-        {
+    do {
         decompressBytesRead = kMaxDecompressBytes;
         zipStatus = lzmaDecoder.DecompressNextPage(buffer, &decompressBytesRead);
         if (zipStatus != ZIP_SUCCESS)
             return ERROR;
         uncompressSize += decompressBytesRead;
 
-        } while (zipStatus == ZIP_SUCCESS && decompressBytesRead > 0);
+    } while (zipStatus == ZIP_SUCCESS && decompressBytesRead > 0);
 
     return SUCCESS;
-    }
+}
 
-BentleyStatus RevisionUtility::ExportChangesetFile(BeFileName targetDir, Utf8StringCR changesetId, BeSQLite::LzmaDecoder& lzmaDecoder)
-    {
+BentleyStatus RevisionUtility::ExportChangesetFile(BeFileName targetDir, Utf8StringCR changesetId, BeSQLite::LzmaDecoder& lzmaDecoder) {
     WString changesetIdW(changesetId.c_str(), true);
     if (!BeFileName::DoesPathExist(targetDir.GetName()))
         BeFileName::CreateNewDirectory(targetDir.GetDirectoryName());
@@ -461,8 +453,7 @@ BentleyStatus RevisionUtility::ExportChangesetFile(BeFileName targetDir, Utf8Str
     int decompressBytesRead;
     Byte buffer[kMaxDecompressBytes];
     ZipErrors zipStatus;
-    do
-        {
+    do {
         decompressBytesRead = kMaxDecompressBytes;
         zipStatus = lzmaDecoder.DecompressNextPage(buffer, &decompressBytesRead);
         if (zipStatus != ZIP_SUCCESS)
@@ -471,17 +462,16 @@ BentleyStatus RevisionUtility::ExportChangesetFile(BeFileName targetDir, Utf8Str
         if (decompressBytesRead > 0 && rawChangesetFile.Write(nullptr, buffer, decompressBytesRead) != BeFileStatus::Success)
             return ERROR;
 
-        } while (zipStatus == ZIP_SUCCESS && decompressBytesRead > 0);
+    } while (zipStatus == ZIP_SUCCESS && decompressBytesRead > 0);
     rawChangesetFile.Close();
     return SUCCESS;
-    }
-BentleyStatus RevisionUtility::DisassembleRevision(Utf8CP sourceFile, Utf8CP targetDir)
-    {
+}
+BentleyStatus RevisionUtility::DisassembleRevision(Utf8CP sourceFile, Utf8CP targetDir) {
     BeFileName source, target;
     source.SetNameUtf8(sourceFile);
     target.SetNameUtf8(targetDir);
     BeSQLite::LzmaDecoder lzmaDecoder;
-    BlockFilesLzmaInStream inLzmaFileStream({ source });
+    BlockFilesLzmaInStream inLzmaFileStream({source});
     Utf8String changesetId = RevisionUtility::GetChangesetId(source);
 
     if (RevisionUtility::OpenChangesetForReading(lzmaDecoder, inLzmaFileStream) != SUCCESS)
@@ -499,14 +489,13 @@ BentleyStatus RevisionUtility::DisassembleRevision(Utf8CP sourceFile, Utf8CP tar
 
     lzmaDecoder.FinishDecompress();
     return SUCCESS;
-    }
+}
 
-BentleyStatus RevisionUtility::GetUncompressSize(Utf8CP sourceFile, uint32_t& compressSize, uint32_t &uncompressSize, uint32_t &prefixSize)
-    {
+BentleyStatus RevisionUtility::GetUncompressSize(Utf8CP sourceFile, uint32_t& compressSize, uint32_t& uncompressSize, uint32_t& prefixSize) {
     BeFileName source;
     source.SetNameUtf8(sourceFile);
     BeSQLite::LzmaDecoder lzmaDecoder;
-    BlockFilesLzmaInStream inLzmaFileStream({ source });
+    BlockFilesLzmaInStream inLzmaFileStream({source});
     uint64_t diskSize;
     source.GetFileSize(diskSize);
     compressSize = static_cast<uint32_t>(diskSize);
@@ -523,9 +512,8 @@ BentleyStatus RevisionUtility::GetUncompressSize(Utf8CP sourceFile, uint32_t& co
 
     lzmaDecoder.FinishDecompress();
     return SUCCESS;
-    }
-BentleyStatus RevisionUtility::AssembleRevision(Utf8CP inPrefixFile, Utf8CP inChangesetFile, Utf8CP outputFile, LzmaEncoder::LzmaParams params)
-    {
+}
+BentleyStatus RevisionUtility::AssembleRevision(Utf8CP inPrefixFile, Utf8CP inChangesetFile, Utf8CP outputFile, LzmaEncoder::LzmaParams params) {
     ZipErrors zipStatus;
     BeFileName inPrefixFileName, inChangesetFileName, outputFileName;
     const bool hasPrefix = Utf8String::IsNullOrEmpty(inPrefixFile);
@@ -542,31 +530,27 @@ BentleyStatus RevisionUtility::AssembleRevision(Utf8CP inPrefixFile, Utf8CP inCh
     BeSQLite::LzmaEncoder lzmaEncoder(params);
     BeFileLzmaOutStream outLzmaFileStream;
     BeFileStatus fileStatus = outLzmaFileStream.CreateOutputFile(outputFileName, true /* createAlways */);
-    if (fileStatus != BeFileStatus::Success)
-        {
+    if (fileStatus != BeFileStatus::Success) {
         BeAssert(false);
         return ERROR;
-        }
+    }
 
     uint32_t bytesWritten;
     zipStatus = outLzmaFileStream._Write(&header, sizeof(header), bytesWritten);
-    if (zipStatus != ZIP_SUCCESS)
-        {
+    if (zipStatus != ZIP_SUCCESS) {
         BeAssert(false);
         return ERROR;
-        }
+    }
 
     zipStatus = lzmaEncoder.StartCompress(outLzmaFileStream);
-    if (zipStatus != ZIP_SUCCESS)
-        {
+    if (zipStatus != ZIP_SUCCESS) {
         BeAssert(false);
         return ERROR;
-        }
+    }
 
     // prefix ==========================================================
     Utf8String prefix;
-    if (hasPrefix)
-        {
+    if (hasPrefix) {
         BeFile prefixFile;
         if (prefixFile.Open(inPrefixFileName.GetName(), BeFileAccess::Read) != BeFileStatus::Success)
             return ERROR;
@@ -577,7 +561,7 @@ BentleyStatus RevisionUtility::AssembleRevision(Utf8CP inPrefixFile, Utf8CP inCh
 
         prefixBuffer.Append('\0');
         prefix = reinterpret_cast<Utf8CP>(prefixBuffer.GetData());
-        }
+    }
 
     if (RevisionUtility::WritePrefix(lzmaEncoder, prefix) != SUCCESS)
         return ERROR;
@@ -587,10 +571,9 @@ BentleyStatus RevisionUtility::AssembleRevision(Utf8CP inPrefixFile, Utf8CP inCh
 
     lzmaEncoder.FinishCompress();
     return SUCCESS;
-    }
+}
 
-BentleyStatus RevisionUtility::WriteChangeset(BeSQLite::LzmaEncoder& lzmaEncoder, BeFileName inChangesetFileName)
-    {
+BentleyStatus RevisionUtility::WriteChangeset(BeSQLite::LzmaEncoder& lzmaEncoder, BeFileName inChangesetFileName) {
     const int kMaxDecompressBytes = 1024 * 64;
     uint32_t bytesRead;
     Byte buffer[kMaxDecompressBytes];
@@ -598,8 +581,7 @@ BentleyStatus RevisionUtility::WriteChangeset(BeSQLite::LzmaEncoder& lzmaEncoder
     BeFileStatus readStatus;
     if (rawChangesetFile.Open(inChangesetFileName.GetName(), BeFileAccess::Read) != BeFileStatus::Success)
         return ERROR;
-    do
-        {
+    do {
         readStatus = rawChangesetFile.Read(buffer, &bytesRead, kMaxDecompressBytes);
         if (readStatus != BeFileStatus::Success)
             return ERROR;
@@ -607,13 +589,12 @@ BentleyStatus RevisionUtility::WriteChangeset(BeSQLite::LzmaEncoder& lzmaEncoder
         if (bytesRead > 0 && lzmaEncoder.CompressNextPage(buffer, bytesRead) != ZIP_SUCCESS)
             return ERROR;
 
-        } while (readStatus == BeFileStatus::Success && bytesRead == kMaxDecompressBytes);
+    } while (readStatus == BeFileStatus::Success && bytesRead == kMaxDecompressBytes);
 
     return SUCCESS;
-    }
+}
 
-BentleyStatus RevisionUtility::WritePrefix(BeSQLite::LzmaEncoder& lzmaEncoder, Utf8StringCR prefix)
-    {
+BentleyStatus RevisionUtility::WritePrefix(BeSQLite::LzmaEncoder& lzmaEncoder, Utf8StringCR prefix) {
     Byte sizeBytes[4];
     uint32_t size = prefix.empty() ? 0 : (uint32_t)prefix.SizeInBytes();
     UIntToByteArray(sizeBytes, size);
@@ -622,102 +603,90 @@ BentleyStatus RevisionUtility::WritePrefix(BeSQLite::LzmaEncoder& lzmaEncoder, U
     if (zipStatus != ZIP_SUCCESS)
         return ERROR;
 
-    if (size > 0)
-        {
+    if (size > 0) {
         zipStatus = lzmaEncoder.CompressNextPage(prefix.c_str(), size);
         if (zipStatus != ZIP_SUCCESS)
             return ERROR;
-        }
-        return SUCCESS;
     }
+    return SUCCESS;
+}
 
 // --------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus RevisionUtility::RecompressRevision(Utf8CP sourceFile, Utf8CP targetFile, LzmaEncoder::LzmaParams params)
-    {
+BentleyStatus RevisionUtility::RecompressRevision(Utf8CP sourceFile, Utf8CP targetFile, LzmaEncoder::LzmaParams params) {
     BeFileName source, target;
     source.SetNameUtf8(sourceFile);
     target.SetNameUtf8(targetFile);
     ZipErrors zipStatus;
     BeSQLite::LzmaDecoder lzmaDecoder;
     BlockFilesLzmaInStream inLzmaFileStream({source});
-    if (!inLzmaFileStream.IsReady())
-        {
+    if (!inLzmaFileStream.IsReady()) {
         BeAssert(false);
         return ERROR;
-        }
+    }
 
-    ChangesetLzmaHeader  header;
+    ChangesetLzmaHeader header;
     uint32_t actuallyRead;
     inLzmaFileStream._Read(&header, sizeof(header), actuallyRead);
-    if (actuallyRead != sizeof(header) || !header.IsValid())
-        {
+    if (actuallyRead != sizeof(header) || !header.IsValid()) {
         BeAssert(false && "Attempt to read an invalid revision version");
         return ERROR;
-        }
+    }
 
     zipStatus = lzmaDecoder.StartDecompress(inLzmaFileStream);
-    if (zipStatus != ZIP_SUCCESS)
-        {
+    if (zipStatus != ZIP_SUCCESS) {
         BeAssert(false);
         return ERROR;
-        }
+    }
 
     Byte sizeBytes[4];
     int readSizeBytes = 4;
     zipStatus = lzmaDecoder.DecompressNextPage((Byte*)sizeBytes, &readSizeBytes);
-    if (zipStatus != ZIP_SUCCESS || readSizeBytes != 4)
-        {
+    if (zipStatus != ZIP_SUCCESS || readSizeBytes != 4) {
         BeAssert(false && "Couldn't read size of the schema changes");
         return ERROR;
-        }
+    }
     Utf8String prefix;
     const int prefixSizeRead = (int)ByteArrayToUInt(sizeBytes);
-    if (prefixSizeRead > 0)
-        {
+    if (prefixSizeRead > 0) {
         ScopedArray<Byte> prefixBytes(prefixSizeRead);
         int bytesRead = 0;
-        while (bytesRead < prefixSizeRead)
-            {
+        while (bytesRead < prefixSizeRead) {
             int readSize = prefixSizeRead - bytesRead;
             zipStatus = lzmaDecoder.DecompressNextPage((Byte*)prefixBytes.GetData() + bytesRead, &readSize);
-            if (zipStatus != ZIP_SUCCESS)
-                {
+            if (zipStatus != ZIP_SUCCESS) {
                 BeAssert(false && "Error reading revision prefix stream");
                 return ERROR;
-                }
+            }
 
             bytesRead += readSize;
-            }
+        }
         BeAssert(bytesRead == prefixSizeRead);
         prefix = (Utf8CP)prefixBytes.GetData();
-        }
+    }
     // write ========================================================================
     BeSQLite::LzmaEncoder lzmaEncoder(params);
     BeFileLzmaOutStream outLzmaFileStream;
     BeFileName::CreateNewDirectory(target.GetDirectoryName());
     BeFileStatus fileStatus = outLzmaFileStream.CreateOutputFile(target, true /* createAlways */);
-    if (fileStatus != BeFileStatus::Success)
-        {
+    if (fileStatus != BeFileStatus::Success) {
         BeAssert(false);
         return ERROR;
-        }
+    }
 
     uint32_t bytesWritten;
     zipStatus = outLzmaFileStream._Write(&header, sizeof(header), bytesWritten);
-    if (zipStatus != ZIP_SUCCESS)
-        {
+    if (zipStatus != ZIP_SUCCESS) {
         BeAssert(false);
         return ERROR;
-        }
+    }
 
     zipStatus = lzmaEncoder.StartCompress(outLzmaFileStream);
-    if (zipStatus != ZIP_SUCCESS)
-        {
+    if (zipStatus != ZIP_SUCCESS) {
         BeAssert(false);
         return ERROR;
-        }
+    }
 
     uint32_t prefixSizeWrite = prefix.empty() ? 0 : (uint32_t)prefix.SizeInBytes();
     UIntToByteArray(sizeBytes, prefixSizeWrite);
@@ -726,182 +695,169 @@ BentleyStatus RevisionUtility::RecompressRevision(Utf8CP sourceFile, Utf8CP targ
     if (zipStatus != ZIP_SUCCESS)
         return ERROR;
 
-    if (prefixSizeWrite > 0)
-        {
+    if (prefixSizeWrite > 0) {
         zipStatus = lzmaEncoder.CompressNextPage(prefix.c_str(), prefixSizeWrite);
         if (zipStatus != ZIP_SUCCESS)
             return ERROR;
-        }
+    }
     const int kMaxDecompressBytes = 1024 * 64;
     int decompressBytesRead;
     Byte buffer[kMaxDecompressBytes];
-    do
-        {
+    do {
         decompressBytesRead = kMaxDecompressBytes;
         zipStatus = lzmaDecoder.DecompressNextPage(buffer, &decompressBytesRead);
         if (zipStatus != ZIP_SUCCESS)
             return ERROR;
 
-        if (decompressBytesRead > 0 && lzmaEncoder.CompressNextPage(buffer, decompressBytesRead) != ZIP_SUCCESS )
+        if (decompressBytesRead > 0 && lzmaEncoder.CompressNextPage(buffer, decompressBytesRead) != ZIP_SUCCESS)
             return ERROR;
 
-        } while (zipStatus == ZIP_SUCCESS && decompressBytesRead > 0);
+    } while (zipStatus == ZIP_SUCCESS && decompressBytesRead > 0);
 
     lzmaDecoder.FinishDecompress();
     lzmaEncoder.FinishCompress();
     return SUCCESS;
+}
+struct OperationStatistics final : NonCopyableClass {
+   private:
+    DbOpcode m_op;
+    int m_cols;
+    uint32_t m_changes;
+    uint32_t m_indirect;
+    explicit OperationStatistics(DbOpcode op) : m_op(op), m_cols(0), m_changes(0), m_indirect(0) {}
+
+   public:
+    void Record(int cols, int indirect) {
+        m_changes++;
+        if (indirect)
+            m_indirect++;
+        if (m_cols < cols)
+            m_cols = cols;
     }
-struct OperationStatistics final : NonCopyableClass
-    {
-    private:
-        DbOpcode m_op;
-        int m_cols;
-        uint32_t m_changes;
-        uint32_t m_indirect;
-        explicit OperationStatistics(DbOpcode op) : m_op(op),m_cols(0),m_changes(0),m_indirect(0) {}
-    public:
-        void Record(int cols, int indirect)
-            {
-            m_changes++;
-            if (indirect)
-                m_indirect++;
-            if (m_cols < cols)
-                m_cols = cols;
-            }
-        int GetMaxColumns() const { return m_cols; }
-        uint32_t GetRowsChanged() const { return m_changes; }
-        uint32_t GetRowIndirectlyChanged() const { return m_indirect; }
-        Utf8CP GetOpName() const
-            {
-            switch (m_op)
-                {
-                case DbOpcode::Delete: return "deleted";
-                case DbOpcode::Insert: return "inserted";
-                case DbOpcode::Update: return "updated";
-                }
-            return nullptr;
-            }
-        void GetSummary(BeJsValue summary)
-            {
-            summary["changes"] = m_changes;
-            summary["columns"] = m_cols;
-            summary["indirect"] = m_indirect;
-            }
-        bool Empty() const {return m_changes==0;}
-        static std::unique_ptr<OperationStatistics> Create(DbOpcode op) { return std::unique_ptr<OperationStatistics>(new OperationStatistics(op)); }
-    };
-struct TableStatistics final : NonCopyableClass
-    {
-    private:
-        Utf8String m_name;
-        std::map<DbOpcode, std::unique_ptr<OperationStatistics>> m_opStats;
-        explicit TableStatistics(Utf8CP name) : m_name(name) {}
+    int GetMaxColumns() const { return m_cols; }
+    uint32_t GetRowsChanged() const { return m_changes; }
+    uint32_t GetRowIndirectlyChanged() const { return m_indirect; }
+    Utf8CP GetOpName() const {
+        switch (m_op) {
+            case DbOpcode::Delete:
+                return "deleted";
+            case DbOpcode::Insert:
+                return "inserted";
+            case DbOpcode::Update:
+                return "updated";
+        }
+        return nullptr;
+    }
+    void GetSummary(BeJsValue summary) {
+        summary["changes"] = m_changes;
+        summary["columns"] = m_cols;
+        summary["indirect"] = m_indirect;
+    }
+    bool Empty() const { return m_changes == 0; }
+    static std::unique_ptr<OperationStatistics> Create(DbOpcode op) { return std::unique_ptr<OperationStatistics>(new OperationStatistics(op)); }
+};
+struct TableStatistics final : NonCopyableClass {
+   private:
+    Utf8String m_name;
+    std::map<DbOpcode, std::unique_ptr<OperationStatistics>> m_opStats;
+    explicit TableStatistics(Utf8CP name) : m_name(name) {}
 
-    public:
-        Utf8StringCR GetName() const { return m_name; }
-        uint32_t GetTotalChanges()
-            {
-            return GetOp(DbOpcode::Insert)->GetRowsChanged() + GetOp(DbOpcode::Update)->GetRowsChanged() + GetOp(DbOpcode::Delete)->GetRowsChanged();
-            }
-        OperationStatistics* GetOp(DbOpcode op)
-            {
-            auto it = m_opStats.find(op);
-            if (it != m_opStats.end())
-                return it->second.get();
+   public:
+    Utf8StringCR GetName() const { return m_name; }
+    uint32_t GetTotalChanges() {
+        return GetOp(DbOpcode::Insert)->GetRowsChanged() + GetOp(DbOpcode::Update)->GetRowsChanged() + GetOp(DbOpcode::Delete)->GetRowsChanged();
+    }
+    OperationStatistics* GetOp(DbOpcode op) {
+        auto it = m_opStats.find(op);
+        if (it != m_opStats.end())
+            return it->second.get();
 
-            auto opCode = OperationStatistics::Create(op);
-            auto opCodeP = opCode.get();
-            m_opStats[op] = std::move(opCode);
-            return opCodeP;
-            }
-        void GetSummary(BeJsValue summary)
-            {
-            summary["table"] = m_name;
-            summary["rowsChanged"] = GetTotalChanges();
-            auto inserted = GetOp(DbOpcode::Insert);
-            if (!inserted->Empty())
-                inserted->GetSummary(summary[inserted->GetOpName()]);
+        auto opCode = OperationStatistics::Create(op);
+        auto opCodeP = opCode.get();
+        m_opStats[op] = std::move(opCode);
+        return opCodeP;
+    }
+    void GetSummary(BeJsValue summary) {
+        summary["table"] = m_name;
+        summary["rowsChanged"] = GetTotalChanges();
+        auto inserted = GetOp(DbOpcode::Insert);
+        if (!inserted->Empty())
+            inserted->GetSummary(summary[inserted->GetOpName()]);
 
-            auto updated = GetOp(DbOpcode::Update);
-            if (!updated->Empty())
-                updated->GetSummary(summary[updated->GetOpName()]);
+        auto updated = GetOp(DbOpcode::Update);
+        if (!updated->Empty())
+            updated->GetSummary(summary[updated->GetOpName()]);
 
-            auto deleted = GetOp(DbOpcode::Delete);
-            if (!deleted->Empty())
-                deleted->GetSummary(summary[deleted->GetOpName()]);
-            }
-        static std::unique_ptr<TableStatistics> Create(Utf8CP name) { return std::unique_ptr<TableStatistics>(new TableStatistics(name)); }
-    };
+        auto deleted = GetOp(DbOpcode::Delete);
+        if (!deleted->Empty())
+            deleted->GetSummary(summary[deleted->GetOpName()]);
+    }
+    static std::unique_ptr<TableStatistics> Create(Utf8CP name) { return std::unique_ptr<TableStatistics>(new TableStatistics(name)); }
+};
 
-struct ChangesetStatistics final : NonCopyableClass
-    {
-    private:
-        std::map<Utf8String, std::unique_ptr<TableStatistics>> m_tableStats;
-        bvector<TableStatistics *> GetTables(std::function<bool(TableStatistics *lhs, TableStatistics *rhs)> predicate = nullptr) const
-            {
-            bvector<TableStatistics*> tables;
-            for (auto const& kv: m_tableStats)
-                tables.push_back(kv.second.get());
-            if (predicate)
-                std::sort(tables.begin(), tables.end(), predicate);
-            return tables;
-            }
-    public:
-        void GetSummary(BeJsValue summary) const
-            {
-            uint32_t nInserted = 0;
-            uint32_t nUpdated = 0;
-            uint32_t nDeleted = 0;
-            uint32_t nTables = 0;
-            for (auto table: GetTables())
-                {
-                nTables++;
-                nInserted += table->GetOp(DbOpcode::Insert)->GetRowsChanged();
-                nUpdated += table->GetOp(DbOpcode::Update)->GetRowsChanged();
-                nDeleted += table->GetOp(DbOpcode::Delete)->GetRowsChanged();
-                }
-            const uint32_t nTotal = nInserted + nUpdated + nDeleted;
-            summary["rowsChanged"] = nTotal;
-            summary["tablesChanged"] = nTables;
+struct ChangesetStatistics final : NonCopyableClass {
+   private:
+    std::map<Utf8String, std::unique_ptr<TableStatistics>> m_tableStats;
+    bvector<TableStatistics*> GetTables(std::function<bool(TableStatistics* lhs, TableStatistics* rhs)> predicate = nullptr) const {
+        bvector<TableStatistics*> tables;
+        for (auto const& kv : m_tableStats)
+            tables.push_back(kv.second.get());
+        if (predicate)
+            std::sort(tables.begin(), tables.end(), predicate);
+        return tables;
+    }
 
-            auto byOp = summary["byOp"];
-            byOp["rowInserted"] = nInserted;
-            byOp["rowsUpdated"] = nUpdated;
-            byOp["rowDeleted"] = nDeleted;
+   public:
+    void GetSummary(BeJsValue summary) const {
+        uint32_t nInserted = 0;
+        uint32_t nUpdated = 0;
+        uint32_t nDeleted = 0;
+        uint32_t nTables = 0;
+        for (auto table : GetTables()) {
+            nTables++;
+            nInserted += table->GetOp(DbOpcode::Insert)->GetRowsChanged();
+            nUpdated += table->GetOp(DbOpcode::Update)->GetRowsChanged();
+            nDeleted += table->GetOp(DbOpcode::Delete)->GetRowsChanged();
+        }
+        const uint32_t nTotal = nInserted + nUpdated + nDeleted;
+        summary["rowsChanged"] = nTotal;
+        summary["tablesChanged"] = nTables;
 
-            auto byTables = summary["byTables"];
-            for(auto table : GetTables([](TableStatistics *lhs, TableStatistics *rhs) { return lhs->GetTotalChanges() > rhs->GetTotalChanges();}))
-                table->GetSummary(byTables.appendArray());
-            }
-        TableStatistics* GetTable(Utf8CP tableName)
-            {
-            auto it = m_tableStats.find(tableName);
-            if (it != m_tableStats.end())
-                return it->second.get();
+        auto byOp = summary["byOp"];
+        byOp["rowInserted"] = nInserted;
+        byOp["rowsUpdated"] = nUpdated;
+        byOp["rowDeleted"] = nDeleted;
 
-            m_tableStats[tableName] = TableStatistics::Create(tableName);
-            return GetTable(tableName);
-            }
-        static std::unique_ptr<ChangesetStatistics> Create() { return std::unique_ptr<ChangesetStatistics>(new ChangesetStatistics()); }
-    };
+        auto byTables = summary["byTables"];
+        for (auto table : GetTables([](TableStatistics* lhs, TableStatistics* rhs) { return lhs->GetTotalChanges() > rhs->GetTotalChanges(); }))
+            table->GetSummary(byTables.appendArray());
+    }
+    TableStatistics* GetTable(Utf8CP tableName) {
+        auto it = m_tableStats.find(tableName);
+        if (it != m_tableStats.end())
+            return it->second.get();
 
-BentleyStatus RevisionUtility::ComputeStatistics(Utf8CP changesetFile, bool addPrefix, BeJsValue out)
-    {
+        m_tableStats[tableName] = TableStatistics::Create(tableName);
+        return GetTable(tableName);
+    }
+    static std::unique_ptr<ChangesetStatistics> Create() { return std::unique_ptr<ChangesetStatistics>(new ChangesetStatistics()); }
+};
+
+BentleyStatus RevisionUtility::ComputeStatistics(Utf8CP changesetFile, bool addPrefix, BeJsValue out) {
     BeFileName input;
     input.AppendUtf8(changesetFile);
     ChangesetFileReaderBase reader({input});
     auto stats = ChangesetStatistics::Create();
     Utf8String changesetId = GetChangesetId(input);
-    for( const auto& change : reader.GetChanges())
-        {
+    for (const auto& change : reader.GetChanges()) {
         Utf8CP tableName;
-        int nCols,indirect;
+        int nCols, indirect;
         DbOpcode opcode;
         change.GetOperation(&tableName, &nCols, &opcode, &indirect);
         stats->GetTable(tableName)->GetOp(opcode)->Record(nCols, indirect);
-        }
+    }
 
-    DdlChanges  ddlChanges;
+    DdlChanges ddlChanges;
     bool hasSchemaChanges;
     reader.MakeReader()->GetSchemaChanges(hasSchemaChanges, ddlChanges);
 
@@ -918,30 +874,26 @@ BentleyStatus RevisionUtility::ComputeStatistics(Utf8CP changesetFile, bool addP
         out["schemaChanges"] = ddlChanges.ToString();
 
     return SUCCESS;
-    }
+}
 
-BentleyStatus RevisionUtility::DumpChangesetToDb(Utf8CP changesetFile, Utf8CP dbFile, bool includeCols)
-    {
+BentleyStatus RevisionUtility::DumpChangesetToDb(Utf8CP changesetFile, Utf8CP dbFile, bool includeCols) {
     BeFileName input;
     input.AppendUtf8(changesetFile);
 
     BeFileName output;
     Db db;
     output.AppendUtf8(dbFile);
-    if (output.DoesPathExist())
-        {
+    if (output.DoesPathExist()) {
         if (db.OpenBeSQLiteDb(output, Db::OpenParams(Db::OpenMode::ReadWrite)) != BE_SQLITE_OK)
             output.BeDeleteFile();
-        }
-    if (!db.IsDbOpen())
-        {
+    }
+    if (!db.IsDbOpen()) {
         BeFileName::CreateNewDirectory(output.GetDirectoryName());
         if (db.CreateNewDb(output) != BE_SQLITE_OK)
             return ERROR;
-        }
+    }
 
-    if (!db.TableExists("changeset"))
-        {
+    if (!db.TableExists("changeset")) {
         if (db.ExecuteDdl("CREATE TABLE changeset(Id INTEGER PRIMARY KEY, wsgId TEXT)") != BE_SQLITE_OK)
             return ERROR;
         if (db.ExecuteDdl("CREATE TABLE changeset_row(Id INTEGER PRIMARY KEY, changesetId INTEGER REFERENCES changeset(Id) ON DELETE CASCADE, PK INTEGER, tableName TEXT,op TEXT, indirect INTEGER)") != BE_SQLITE_OK)
@@ -950,7 +902,7 @@ BentleyStatus RevisionUtility::DumpChangesetToDb(Utf8CP changesetFile, Utf8CP db
             return ERROR;
         if (db.ExecuteDdl("CREATE TABLE changeset_col(Id INTEGER PRIMARY KEY, changedRowId INTEGER REFERENCES changeset_row(Id) ON DELETE CASCADE, oldVal, newVal)") != BE_SQLITE_OK)
             return ERROR;
-        }
+    }
     auto changesetExists = [&](Utf8String& wsgId) {
         auto stmt = db.GetCachedStatement("SELECT NULL FROM changeset WHERE wsgId = ?");
         stmt->BindText(1, wsgId.c_str(), Statement::MakeCopy::No);
@@ -979,7 +931,7 @@ BentleyStatus RevisionUtility::DumpChangesetToDb(Utf8CP changesetFile, Utf8CP db
 
         stmt->BindText(3, tableName, Statement::MakeCopy::No);
         stmt->BindInt(4, indirect);
-        stmt->BindText(5, op==DbOpcode::Delete ?"delete" :(op==DbOpcode::Insert? "insert" : "update") , Statement::MakeCopy::No);
+        stmt->BindText(5, op == DbOpcode::Delete ? "delete" : (op == DbOpcode::Insert ? "insert" : "update"), Statement::MakeCopy::No);
         if (stmt->Step() != BE_SQLITE_DONE)
             return (int64_t)0;
         return db.GetLastInsertRowId();
@@ -993,7 +945,7 @@ BentleyStatus RevisionUtility::DumpChangesetToDb(Utf8CP changesetFile, Utf8CP db
             stmt->BindDbValue(3, newValue);
     };
     Utf8String changesetIdStr = GetChangesetId(input);
-    if (changesetExists(changesetIdStr)){
+    if (changesetExists(changesetIdStr)) {
         return SUCCESS;
     }
 
@@ -1001,26 +953,22 @@ BentleyStatus RevisionUtility::DumpChangesetToDb(Utf8CP changesetFile, Utf8CP db
     if (changesetId == 0)
         return ERROR;
 
-
     ChangesetFileReaderBase reader({input});
     auto stats = ChangesetStatistics::Create();
     DbValue defaultVal(nullptr);
-    for( const auto& change : reader.GetChanges())
-        {
+    for (const auto& change : reader.GetChanges()) {
         Utf8CP tableName;
         int nCols, indirect, nPkCols;
         DbOpcode opcode;
         Byte* pPkCols;
         if (change.GetOperation(&tableName, &nCols, &opcode, &indirect) != BE_SQLITE_OK)
             return ERROR;
-        if(change.GetPrimaryKeyColumns(&pPkCols, &nPkCols) != BE_SQLITE_OK)
+        if (change.GetPrimaryKeyColumns(&pPkCols, &nPkCols) != BE_SQLITE_OK)
             return ERROR;
         int64_t pk = 0;
-        for (int i = 0; i < nPkCols; ++i)
-            {
-            if (pPkCols[i])
-                {
-                if (pk > 0 )
+        for (int i = 0; i < nPkCols; ++i) {
+            if (pPkCols[i]) {
+                if (pk > 0)
                     break;
 
                 DbValue v(nullptr);
@@ -1031,8 +979,8 @@ BentleyStatus RevisionUtility::DumpChangesetToDb(Utf8CP changesetFile, Utf8CP db
 
                 if (v.IsValid() && v.GetValueType() == DbValueType::IntegerVal)
                     pk = v.GetValueInt64();
-                }
             }
+        }
 
         auto changedRowId = insertChangesetRow(changesetId, tableName, indirect, pk, opcode);
         if (changedRowId == 0)
@@ -1041,24 +989,23 @@ BentleyStatus RevisionUtility::DumpChangesetToDb(Utf8CP changesetFile, Utf8CP db
         if (!includeCols)
             continue;
 
-        for (int i = 0; i < nPkCols; ++i)
-            {
+        for (int i = 0; i < nPkCols; ++i) {
             if (opcode == DbOpcode::Delete)
                 insertChangesetCol(changedRowId, change.GetOldValue(i), defaultVal);
             else if (opcode == DbOpcode::Insert)
                 insertChangesetCol(changedRowId, defaultVal, change.GetNewValue(i));
             else
                 insertChangesetCol(changedRowId, change.GetOldValue(i), change.GetNewValue(i));
-            }
         }
-
-        DdlChanges ddlChanges;
-        bool hasSchemaChanges;
-        reader.MakeReader()->GetSchemaChanges(hasSchemaChanges, ddlChanges);
-        if (hasSchemaChanges) {
-            auto ddl = ddlChanges.ToString();
-            insertChangesetSchema(changesetId, ddl);
-        }
-
-        return db.SaveChanges() == BE_SQLITE_OK? SUCCESS: ERROR;
     }
+
+    DdlChanges ddlChanges;
+    bool hasSchemaChanges;
+    reader.MakeReader()->GetSchemaChanges(hasSchemaChanges, ddlChanges);
+    if (hasSchemaChanges) {
+        auto ddl = ddlChanges.ToString();
+        insertChangesetSchema(changesetId, ddl);
+    }
+
+    return db.SaveChanges() == BE_SQLITE_OK ? SUCCESS : ERROR;
+}

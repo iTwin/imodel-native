@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <cstddef>
 #include <Bentley/Bentley.h>
@@ -110,11 +110,10 @@ methods to extract them into temporary locations.
 */
 
 #ifdef __BE_SQLITE_HOST_DLL__
-    #define BE_SQLITE_EXPORT EXPORT_ATTRIBUTE
+#define BE_SQLITE_EXPORT EXPORT_ATTRIBUTE
 #else
 #define BE_SQLITE_EXPORT IMPORT_ATTRIBUTE
 #endif
-
 
 #define TEMP_TABLE_Prefix "temp."
 #define TEMP_TABLE(name) TEMP_TABLE_Prefix name
@@ -123,13 +122,15 @@ methods to extract them into temporary locations.
 #define TEMP_TABLE_UniquePrefix TEMP_TABLE_Prefix "t_"
 #define TEMP_TABLE_UNIQUE(name) TEMP_TABLE_UniquePrefix name
 
-#define BEDB_TABLE_Local        "be_Local"
-#define BEDB_TABLE_Property     "be_Prop"
+#define BEDB_TABLE_Local "be_Local"
+#define BEDB_TABLE_Property "be_Prop"
 #define BEDB_TABLE_EmbeddedFile "be_EmbedFile"
-#define BEDB_MemoryDb           ":memory:"
+#define BEDB_MemoryDb ":memory:"
 
 #define BEGIN_BENTLEY_SQLITE_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace BeSQLite {
-#define END_BENTLEY_SQLITE_NAMESPACE   } END_BENTLEY_NAMESPACE
+#define END_BENTLEY_SQLITE_NAMESPACE \
+    }                                \
+    END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_SQLITE using namespace BentleyApi::BeSQLite;
 
 #include <Bentley/BeFile.h>
@@ -148,7 +149,9 @@ methods to extract them into temporary locations.
 // this is used to quiet compiler warnings for variables only used in asserts
 #define UNUSED_VARIABLE(x) (void)(x)
 
-#define BESQLITE_TYPEDEFS(_name_) BEGIN_BENTLEY_SQLITE_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_SQLITE_NAMESPACE
+#define BESQLITE_TYPEDEFS(_name_)                                         \
+    BEGIN_BENTLEY_SQLITE_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) \
+    END_BENTLEY_SQLITE_NAMESPACE
 
 BESQLITE_TYPEDEFS(BeGuid);
 BESQLITE_TYPEDEFS(Db);
@@ -156,15 +159,14 @@ BESQLITE_TYPEDEFS(DbFile);
 BESQLITE_TYPEDEFS(Statement);
 BESQLITE_TYPEDEFS(NamedParams);
 
-#if !defined (DOCUMENTATION_GENERATOR)
+#if !defined(DOCUMENTATION_GENERATOR)
 #ifndef GUID_DEFINED
 #define GUID_DEFINED
-typedef struct _GUID
-{
+typedef struct _GUID {
     uint32_t Data1;
     unsigned short Data2;
     unsigned short Data3;
-    unsigned char  Data4[8];
+    unsigned char Data4[8];
 } GUID;
 #endif
 
@@ -176,17 +178,17 @@ typedef struct sqlite3_session* SqlSessionP;
 typedef struct sqlite3_changeset_iter* SqlChangesetIterP;
 typedef struct sqlite3_value* SqlValueP;
 
-#endif // DOCUMENTATION_GENERATOR
+#endif  // DOCUMENTATION_GENERATOR
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
 namespace MemorySize {
-    enum : uint64_t {
-        K = 1024,
-        MEG = K * K,
-        GIG = K * MEG,
-        T = K * GIG,
-    };
+enum : uint64_t {
+    K = 1024,
+    MEG = K * K,
+    GIG = K * MEG,
+    T = K * GIG,
+};
 };
 
 typedef struct CloudContainer* CloudContainerP;
@@ -199,35 +201,52 @@ typedef ProfileVersion const& ProfileVersionCR;
 //! A 16-byte Globally Unique Id. A value of all zeros means "Invalid Id".
 // @bsiclass
 //=======================================================================================
-struct BeGuid
-{
-    union{struct _GUID g; uint64_t u[2]; uint32_t i[4]; uint8_t b[16];} m_guid;
+struct BeGuid {
+    union {
+        struct _GUID g;
+        uint64_t u[2];
+        uint32_t i[4];
+        uint8_t b[16];
+    } m_guid;
 
     //! Construct a new BeGuid. Optionally, initialize to a new unique value.
     //! @param[in] createValue if true, the BeGuid will hold a new globally unique value, otherwise the value is invalid (all zeros)
     //! @note The default constructor initializes the BeGuid to be invalid.
-    explicit BeGuid(bool createValue=false) {if (createValue) Create(); else Invalidate();}
+    explicit BeGuid(bool createValue = false) {
+        if (createValue)
+            Create();
+        else
+            Invalidate();
+    }
 
     //! Construct and initialize a BeGuid from two 64 bit values. Caller must ensure these values constitute a valid BeGuid.
-    BeGuid(uint64_t u0, uint64_t u1) {m_guid.u[0]=u0; m_guid.u[1]=u1;}
+    BeGuid(uint64_t u0, uint64_t u1) {
+        m_guid.u[0] = u0;
+        m_guid.u[1] = u1;
+    }
 
     //! Construct and initialize a BeGuid from four 32 bit values. Caller must ensure these values constitute a valid BeGuid.
-    BeGuid(uint32_t i0, uint32_t i1, uint32_t i2, uint32_t i3) {m_guid.i[0]=i0; m_guid.i[1]=i1; m_guid.i[2]=i2; m_guid.i[3]=i3;}
+    BeGuid(uint32_t i0, uint32_t i1, uint32_t i2, uint32_t i3) {
+        m_guid.i[0] = i0;
+        m_guid.i[1] = i1;
+        m_guid.i[2] = i2;
+        m_guid.i[3] = i3;
+    }
 
     //! Compare two BeGuids for equality
-    bool operator==(BeGuid const& rhs) const {return rhs.m_guid.u[0]==m_guid.u[0] && rhs.m_guid.u[1]==m_guid.u[1];}
+    bool operator==(BeGuid const& rhs) const { return rhs.m_guid.u[0] == m_guid.u[0] && rhs.m_guid.u[1] == m_guid.u[1]; }
 
     //! Compare two BeGuids for inequality
-    bool operator!=(BeGuid const& rhs) const {return !(*this==rhs);}
+    bool operator!=(BeGuid const& rhs) const { return !(*this == rhs); }
 
     //! Compare two BeGuids
-    bool operator<(BeGuid const& rhs) const {return m_guid.u[0] < rhs.m_guid.u[0] || (m_guid.u[0] == rhs.m_guid.u[0] && m_guid.u[1] < rhs.m_guid.u[1]);}
+    bool operator<(BeGuid const& rhs) const { return m_guid.u[0] < rhs.m_guid.u[0] || (m_guid.u[0] == rhs.m_guid.u[0] && m_guid.u[1] < rhs.m_guid.u[1]); }
 
     //! Set this BeGuid to the invalid id value (all zeros).
-    void Invalidate() {m_guid.u[0] = m_guid.u[1] = 0;}
+    void Invalidate() { m_guid.u[0] = m_guid.u[1] = 0; }
 
     //! Test to see whether this BeGuid is non-zero
-    bool IsValid() const {return 0!=m_guid.u[0] && 0!=m_guid.u[1];}
+    bool IsValid() const { return 0 != m_guid.u[0] && 0 != m_guid.u[1]; }
 
     //! Assign a new random (Version 4, see http://en.wikipedia.org/wiki/Universally_unique_identifier) id for this BeGuid. Old value is overwritten.
     //! @note This method requires that the BeSQLiteLib::Initialize be called prior to use.
@@ -251,36 +270,39 @@ struct BeGuid
 //! <p> This strategy relies on of uniqueness of BeBriefcaseId's, but that must be enforced by infrastructure outside of BeSQLite.
 // @bsiclass
 //=======================================================================================
-struct BeBriefcaseId
-{
-protected:
+struct BeBriefcaseId {
+   protected:
     uint32_t m_id;
 
-public:
+   public:
     //! BeBriefcaseIds must be less than this value
-    static uint32_t const MaxRepo() {return 1L<<24;}
+    static uint32_t const MaxRepo() { return 1L << 24; }
     //! A standalone Db. These files are not mergeable, and cannot generate changesets.
-    static uint32_t const Standalone() {return 0;} // was previously called "master"
-    static uint32_t const DeprecatedStandalone() {return 1;} // Note: this value was previously used for "standalone",
+    static uint32_t const Standalone() { return 0; }            // was previously called "master"
+    static uint32_t const DeprecatedStandalone() { return 1; }  // Note: this value was previously used for "standalone",
     //! the first valid briefcaseId
-    static uint32_t const FirstValidBriefcaseId() {return 2;}
+    static uint32_t const FirstValidBriefcaseId() { return 2; }
     //! the last valid briefcaseId
     // NOTE: The 10 largest valid BeBriefcaseIds will not be assigned by iModelHub, so are available to identify special kinds of iModels.
-    static uint32_t const LastValidBriefcaseId() {return MaxRepo() - 10;}
+    static uint32_t const LastValidBriefcaseId() { return MaxRepo() - 10; }
     //! An illegal value
-    static uint32_t const Illegal() {return (uint32_t)0xffffffff;}
+    static uint32_t const Illegal() { return (uint32_t)0xffffffff; }
 
-    BeBriefcaseId GetNextBriefcaseId() const {return BeBriefcaseId(m_id+1);}
-    BeBriefcaseId() {Invalidate();}             //!< Construct an invalid BeBriefcaseId.
+    BeBriefcaseId GetNextBriefcaseId() const { return BeBriefcaseId(m_id + 1); }
+    BeBriefcaseId() { Invalidate(); }  //!< Construct an invalid BeBriefcaseId.
     //! Construct a BeBriefcaseId from a 32 bit value. Sets to Invalid if value is greater than MaxRepo.
-    explicit BeBriefcaseId(uint32_t u) {m_id = (u >= MaxRepo()) ? Illegal() : u;}
-    void Invalidate() {m_id = Illegal();}  //!< Set this BeBriefcaseId to the invalid id value
-    bool IsValid() const {return Illegal() != m_id;}  //!< Test to see whether this BriefcaseId is valid.
-    bool IsBriefcase() const {return m_id >= FirstValidBriefcaseId() && m_id <=LastValidBriefcaseId();}
-    bool IsStandalone() const {return m_id == Standalone() || m_id == DeprecatedStandalone();} //!< Determine whether this is a standalone iModel.
-    uint32_t GetValue() const {BeAssert(IsValid()); BeAssert(m_id<MaxRepo()); return m_id;} //!< Get the briefcase id as a uint32_t
-    bool operator==(BeBriefcaseId const& rhs) const {return rhs.m_id==m_id;}
-    bool operator!=(BeBriefcaseId const& rhs) const {return !(*this == rhs);}
+    explicit BeBriefcaseId(uint32_t u) { m_id = (u >= MaxRepo()) ? Illegal() : u; }
+    void Invalidate() { m_id = Illegal(); }             //!< Set this BeBriefcaseId to the invalid id value
+    bool IsValid() const { return Illegal() != m_id; }  //!< Test to see whether this BriefcaseId is valid.
+    bool IsBriefcase() const { return m_id >= FirstValidBriefcaseId() && m_id <= LastValidBriefcaseId(); }
+    bool IsStandalone() const { return m_id == Standalone() || m_id == DeprecatedStandalone(); }  //!< Determine whether this is a standalone iModel.
+    uint32_t GetValue() const {
+        BeAssert(IsValid());
+        BeAssert(m_id < MaxRepo());
+        return m_id;
+    }  //!< Get the briefcase id as a uint32_t
+    bool operator==(BeBriefcaseId const& rhs) const { return rhs.m_id == m_id; }
+    bool operator!=(BeBriefcaseId const& rhs) const { return !(*this == rhs); }
 };
 
 //=======================================================================================
@@ -288,21 +310,23 @@ public:
 //! can be assumed to be unique for a given DgnDb. This provides a more efficient strategy for id values than using true 128-bit GUIDs.
 // @bsiclass
 //=======================================================================================
-struct BeBriefcaseBasedId : BeInt64Id
-{
-    BEINT64_ID_DECLARE_MEMBERS(BeBriefcaseBasedId,BeInt64Id)
+struct BeBriefcaseBasedId : BeInt64Id {
+    BEINT64_ID_DECLARE_MEMBERS(BeBriefcaseBasedId, BeInt64Id)
 
-public:
-    //!Top 24 bits are BeBriefcaseId.
-    //!Lower 40 bits are local id
-    static uint64_t const MaxLocal() {return 1LL<<40;}
-    static uint64_t const LocalMask() {return ~-(int64_t)MaxLocal();}
+   public:
+    //! Top 24 bits are BeBriefcaseId.
+    //! Lower 40 bits are local id
+    static uint64_t const MaxLocal() { return 1LL << 40; }
+    static uint64_t const LocalMask() { return ~-(int64_t)MaxLocal(); }
 
     //! CONSTRUCT a BeInt64Id from a BriefcaseId value and an id.
-    BeBriefcaseBasedId(BeBriefcaseId briefcaseId, uint64_t id) {BeAssert(id<MaxLocal()); m_id = ((briefcaseId.GetValue() * MaxLocal()) + id);}
+    BeBriefcaseBasedId(BeBriefcaseId briefcaseId, uint64_t id) {
+        BeAssert(id < MaxLocal());
+        m_id = ((briefcaseId.GetValue() * MaxLocal()) + id);
+    }
 
-    BeBriefcaseId GetBriefcaseId() const {return BeBriefcaseId((uint32_t) (m_id / MaxLocal()));} //!< Get the BeBriefcaseId of this BeBriefcaseBasedId
-    uint64_t GetLocalId() const {return m_id & LocalMask();} //!< Get the local id
+    BeBriefcaseId GetBriefcaseId() const { return BeBriefcaseId((uint32_t)(m_id / MaxLocal())); }  //!< Get the BeBriefcaseId of this BeBriefcaseBasedId
+    uint64_t GetLocalId() const { return m_id & LocalMask(); }                                     //!< Get the local id
 
     //! Increment this BeBriefcaseBasedId
     //! @note If this BeBriefcaseBasedId is not valid, this method does nothing.
@@ -316,64 +340,66 @@ public:
     //! this value will be invalid on return.
     BE_SQLITE_EXPORT BeBriefcaseBasedId(Db& db, Utf8CP tableName, Utf8CP columnName);
 
-    static BeBriefcaseBasedId CreateFromJson(BeJsConst val) {return BeBriefcaseBasedId(val.asUInt64());}
-    void FromJson(BeJsConst val) {m_id = val.asUInt64();}
+    static BeBriefcaseBasedId CreateFromJson(BeJsConst val) { return BeBriefcaseBasedId(val.asUInt64()); }
+    void FromJson(BeJsConst val) { m_id = val.asUInt64(); }
 };
 
-#define BEBRIEFCASEBASED_ID_SUBCLASS(classname,superclass) struct classname : superclass { \
-    classname(BeSQLite::BeBriefcaseId briefcaseId, uint64_t id) : superclass(briefcaseId,id){} \
-    classname(BeSQLite::Db& db, Utf8CP tableName, Utf8CP columnName) : superclass(db,tableName,columnName){} \
-    BEINT64_ID_DECLARE_MEMBERS(classname,superclass) };
+#define BEBRIEFCASEBASED_ID_SUBCLASS(classname, superclass)                                                         \
+    struct classname : superclass {                                                                                 \
+        classname(BeSQLite::BeBriefcaseId briefcaseId, uint64_t id) : superclass(briefcaseId, id) {}                \
+        classname(BeSQLite::Db& db, Utf8CP tableName, Utf8CP columnName) : superclass(db, tableName, columnName) {} \
+        BEINT64_ID_DECLARE_MEMBERS(classname, superclass)                                                           \
+    };
 
-#define BEBRIEFCASEBASED_ID_CLASS(classname) BEBRIEFCASEBASED_ID_SUBCLASS(classname,BeSQLite::BeBriefcaseBasedId)
+#define BEBRIEFCASEBASED_ID_CLASS(classname) BEBRIEFCASEBASED_ID_SUBCLASS(classname, BeSQLite::BeBriefcaseBasedId)
 
 //=======================================================================================
 //! An 8-byte Id value that must be requested from an external authority that enforces uniqueness.
 // @bsiclass
 //=======================================================================================
-struct BeServerIssuedId : BeInt64Id
-{
-    BEINT64_ID_DECLARE_MEMBERS(BeServerIssuedId,BeInt64Id)
+struct BeServerIssuedId : BeInt64Id {
+    BEINT64_ID_DECLARE_MEMBERS(BeServerIssuedId, BeInt64Id)
 };
 
-#define BESERVER_ISSUED_ID_SUBCLASS(classname,superclass) struct classname : superclass {BEINT64_ID_DECLARE_MEMBERS(classname,superclass)};
-#define BESERVER_ISSUED_ID_CLASS(classname) BESERVER_ISSUED_ID_SUBCLASS(classname,BeSQLite::BeServerIssuedId)
+#define BESERVER_ISSUED_ID_SUBCLASS(classname, superclass) \
+    struct classname : superclass {                        \
+        BEINT64_ID_DECLARE_MEMBERS(classname, superclass)  \
+    };
+#define BESERVER_ISSUED_ID_CLASS(classname) BESERVER_ISSUED_ID_SUBCLASS(classname, BeSQLite::BeServerIssuedId)
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
 enum class NoCaseCollation {
     ASCII,
-    Latin1 //! Latin-1 (ISO-8859-1: Western European) https://www.charset.org/charsets/iso-8859-1
+    Latin1  //! Latin-1 (ISO-8859-1: Western European) https://www.charset.org/charsets/iso-8859-1
 };
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-enum DbConstants
-{
-    DbUserVersion           = 10,  //!< the "user" version of SQLite databases created by this version of the BeSQLite library
-    NoCompressionLevel      = 0,   //!< do not compress data
-    FastCompressionLevel    = 1,   //!< use the fastest compression level (see Zlib documentation for explanation).
-    DefaultCompressionLevel = 3,   //!< use the default compression level. This is pretty good tradeoff for size vs. speed.
-    MaxCompressionLevel     = 9,   //!< the maximum compression level. Can be very slow but results in smallest size.
+enum DbConstants {
+    DbUserVersion = 10,           //!< the "user" version of SQLite databases created by this version of the BeSQLite library
+    NoCompressionLevel = 0,       //!< do not compress data
+    FastCompressionLevel = 1,     //!< use the fastest compression level (see Zlib documentation for explanation).
+    DefaultCompressionLevel = 3,  //!< use the default compression level. This is pretty good tradeoff for size vs. speed.
+    MaxCompressionLevel = 9,      //!< the maximum compression level. Can be very slow but results in smallest size.
 };
 
 //=======================================================================================
 // The profile version for BeSQLite database files created by this version of the BeSQLite library
 // @bsiclass
 //=======================================================================================
-enum DbProfileValues
-    {
+enum DbProfileValues {
     BEDB_CURRENT_VERSION_Major = 3,
     BEDB_CURRENT_VERSION_Minor = 1,
-    BEDB_CURRENT_VERSION_Sub1  = 0,
-    BEDB_CURRENT_VERSION_Sub2  = 2,
+    BEDB_CURRENT_VERSION_Sub1 = 0,
+    BEDB_CURRENT_VERSION_Sub2 = 2,
 
     BEDB_SUPPORTED_VERSION_Major = BEDB_CURRENT_VERSION_Major,  // oldest version of the db schema supported by current api
     BEDB_SUPPORTED_VERSION_Minor = 1,
-    BEDB_SUPPORTED_VERSION_Sub1  = 0,
-    BEDB_SUPPORTED_VERSION_Sub2  = 0,
-    };
+    BEDB_SUPPORTED_VERSION_Sub1 = 0,
+    BEDB_SUPPORTED_VERSION_Sub2 = 0,
+};
 
 //=======================================================================================
 // These constants define the current transaction state of a database file.
@@ -387,10 +413,10 @@ enum DbTxnState {
 };
 
 enum class WalCheckpointMode {
-    Passive=0,  /* Do as much as possible w/o blocking */
-    Full=1,     /* Wait for writers, then checkpoint */
-    Restart=2,  /* Like FULL but wait for for readers */
-    Truncate=3, /* Like RESTART but also truncate WAL */
+    Passive = 0,  /* Do as much as possible w/o blocking */
+    Full = 1,     /* Wait for writers, then checkpoint */
+    Restart = 2,  /* Like FULL but wait for for readers */
+    Truncate = 3, /* Like RESTART but also truncate WAL */
 };
 
 enum class AttachFileType {
@@ -402,7 +428,7 @@ enum class AttachFileType {
 };
 
 struct AttachFileInfo final {
-public:
+   public:
     Utf8String m_fileName;
     Utf8String m_alias;
     AttachFileType m_type;
@@ -412,11 +438,10 @@ public:
 //! A 4-digit number that specifies the version of the "profile" (schema) of a Db
 // @bsiclass
 //=======================================================================================
-struct ProfileVersion : BeVersion
-{
-public:
+struct ProfileVersion : BeVersion {
+   public:
     ProfileVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : BeVersion(major, minor, sub1, sub2) {}
-    explicit ProfileVersion(Utf8CP json) {FromJson(json);}
+    explicit ProfileVersion(Utf8CP json) { FromJson(json); }
     bool operator==(BeVersionCR rhs) const { return CompareTo(rhs) == 0; }
     bool operator!=(BeVersionCR rhs) const { return CompareTo(rhs) != 0; }
     bool operator==(ProfileVersionCR rhs) const { return CompareTo(rhs) == 0; }
@@ -431,13 +456,12 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-enum class DbTrace
-{
+enum class DbTrace {
     None = 0,
     Stmt = 0x01,
     Profile = 0x02,
     Row = 0x04,
-    Close= 0x08,
+    Close = 0x08,
 };
 ENUM_IS_FLAGS(DbTrace)
 
@@ -452,217 +476,211 @@ ENUM_IS_FLAGS(DbDeserializeOptions)
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-enum class StatementState
-{
+enum class StatementState {
     // The first four values are in accordance with sqlite3.c
-    Init          = 0,   //!< Prepared statement under construction
-    Ready         = 1,   //!< Ready to run but not yet started
-    Run           = 2,   //!< Run in progress
-    Halt          = 3,   //!< Finished.  Need reset() or finalize()
+    Init = 0,   //!< Prepared statement under construction
+    Ready = 1,  //!< Ready to run but not yet started
+    Run = 2,    //!< Run in progress
+    Halt = 3,   //!< Finished.  Need reset() or finalize()
 };
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-enum DbResult
-{
-    BE_SQLITE_OK          = 0,   //!< Successful result
-    BE_SQLITE_ERROR       = 1,   //!< SQL error or missing database
-    BE_SQLITE_INTERNAL    = 2,   //!< Internal logic error
-    BE_SQLITE_PERM        = 3,   //!< Access permission denied
-    BE_SQLITE_ABORT       = 4,   //!< Callback routine requested an abort
-    BE_SQLITE_BUSY        = 5,   //!< The database file is locked
-    BE_SQLITE_LOCKED      = 6,   //!< A table in the database is locked
-    BE_SQLITE_NOMEM       = 7,   //!< A malloc() failed
-    BE_SQLITE_READONLY    = 8,   //!< Attempt to write a readonly database
-    BE_SQLITE_INTERRUPT   = 9,   //!< Operation terminated by interrupt
-    BE_SQLITE_IOERR       = 10,  //!< Some kind of disk I/O error occurred
-    BE_SQLITE_CORRUPT     = 11,  //!< The database disk image is malformed
-    BE_SQLITE_NOTFOUND    = 12,  //!< NOT USED. Table or record not found
-    BE_SQLITE_FULL        = 13,  //!< Insertion failed because database is full or write operation failed because disk is full
-    BE_SQLITE_CANTOPEN    = 14,  //!< Unable to open the database file
-    BE_SQLITE_PROTOCOL    = 15,  //!< Database lock protocol error
-    BE_SQLITE_EMPTY       = 16,  //!< Database is empty
-    BE_SQLITE_SCHEMA      = 17,  //!< The database schema changed
-    BE_SQLITE_TOOBIG      = 18,  //!< String or BLOB exceeds size limit
-    BE_SQLITE_CONSTRAINT  = 19,  //!< Abort due to constraint violation. See extended error values.
-    BE_SQLITE_MISMATCH    = 20,  //!< Data type mismatch
-    BE_SQLITE_MISUSE      = 21,  //!< Library used incorrectly
-    BE_SQLITE_NOLFS       = 22,  //!< Uses OS features not supported on host
-    BE_SQLITE_AUTH        = 23,  //!< Authorization denied
-    BE_SQLITE_FORMAT      = 24,  //!< Auxiliary database format error
-    BE_SQLITE_RANGE       = 25,  //!< 2nd parameter to Bind out of range
-    BE_SQLITE_NOTADB      = 26,  //!< File opened that is not a database file
-    BE_SQLITE_NOTICE      = 27,  //!< Notifications from sqlite3_log()
-    BE_SQLITE_WARNING     = 28,  //!< Warnings from sqlite3_log()
-    BE_SQLITE_ROW         = 100, //!< Step() has another row ready
-    BE_SQLITE_DONE        = 101, //!< Step() has finished executing
+enum DbResult {
+    BE_SQLITE_OK = 0,           //!< Successful result
+    BE_SQLITE_ERROR = 1,        //!< SQL error or missing database
+    BE_SQLITE_INTERNAL = 2,     //!< Internal logic error
+    BE_SQLITE_PERM = 3,         //!< Access permission denied
+    BE_SQLITE_ABORT = 4,        //!< Callback routine requested an abort
+    BE_SQLITE_BUSY = 5,         //!< The database file is locked
+    BE_SQLITE_LOCKED = 6,       //!< A table in the database is locked
+    BE_SQLITE_NOMEM = 7,        //!< A malloc() failed
+    BE_SQLITE_READONLY = 8,     //!< Attempt to write a readonly database
+    BE_SQLITE_INTERRUPT = 9,    //!< Operation terminated by interrupt
+    BE_SQLITE_IOERR = 10,       //!< Some kind of disk I/O error occurred
+    BE_SQLITE_CORRUPT = 11,     //!< The database disk image is malformed
+    BE_SQLITE_NOTFOUND = 12,    //!< NOT USED. Table or record not found
+    BE_SQLITE_FULL = 13,        //!< Insertion failed because database is full or write operation failed because disk is full
+    BE_SQLITE_CANTOPEN = 14,    //!< Unable to open the database file
+    BE_SQLITE_PROTOCOL = 15,    //!< Database lock protocol error
+    BE_SQLITE_EMPTY = 16,       //!< Database is empty
+    BE_SQLITE_SCHEMA = 17,      //!< The database schema changed
+    BE_SQLITE_TOOBIG = 18,      //!< String or BLOB exceeds size limit
+    BE_SQLITE_CONSTRAINT = 19,  //!< Abort due to constraint violation. See extended error values.
+    BE_SQLITE_MISMATCH = 20,    //!< Data type mismatch
+    BE_SQLITE_MISUSE = 21,      //!< Library used incorrectly
+    BE_SQLITE_NOLFS = 22,       //!< Uses OS features not supported on host
+    BE_SQLITE_AUTH = 23,        //!< Authorization denied
+    BE_SQLITE_FORMAT = 24,      //!< Auxiliary database format error
+    BE_SQLITE_RANGE = 25,       //!< 2nd parameter to Bind out of range
+    BE_SQLITE_NOTADB = 26,      //!< File opened that is not a database file
+    BE_SQLITE_NOTICE = 27,      //!< Notifications from sqlite3_log()
+    BE_SQLITE_WARNING = 28,     //!< Warnings from sqlite3_log()
+    BE_SQLITE_ROW = 100,        //!< Step() has another row ready
+    BE_SQLITE_DONE = 101,       //!< Step() has finished executing
 
     //! Extended errors
-    BE_SQLITE_IOERR_READ              = (BE_SQLITE_IOERR      | (1<<8)),
-    BE_SQLITE_IOERR_SHORT_READ        = (BE_SQLITE_IOERR      | (2<<8)),
-    BE_SQLITE_IOERR_WRITE             = (BE_SQLITE_IOERR      | (3<<8)),
-    BE_SQLITE_IOERR_FSYNC             = (BE_SQLITE_IOERR      | (4<<8)),
-    BE_SQLITE_IOERR_DIR_FSYNC         = (BE_SQLITE_IOERR      | (5<<8)),
-    BE_SQLITE_IOERR_TRUNCATE          = (BE_SQLITE_IOERR      | (6<<8)),
-    BE_SQLITE_IOERR_FSTAT             = (BE_SQLITE_IOERR      | (7<<8)),
-    BE_SQLITE_IOERR_UNLOCK            = (BE_SQLITE_IOERR      | (8<<8)),
-    BE_SQLITE_IOERR_RDLOCK            = (BE_SQLITE_IOERR      | (9<<8)),
-    BE_SQLITE_IOERR_DELETE            = (BE_SQLITE_IOERR      | (10<<8)),
-    BE_SQLITE_IOERR_BLOCKED           = (BE_SQLITE_IOERR      | (11<<8)),
-    BE_SQLITE_IOERR_NOMEM             = (BE_SQLITE_IOERR      | (12<<8)),
-    BE_SQLITE_IOERR_ACCESS            = (BE_SQLITE_IOERR      | (13<<8)),
-    BE_SQLITE_IOERR_CHECKRESERVEDLOCK = (BE_SQLITE_IOERR      | (14<<8)),
-    BE_SQLITE_IOERR_LOCK              = (BE_SQLITE_IOERR      | (15<<8)),
-    BE_SQLITE_IOERR_CLOSE             = (BE_SQLITE_IOERR      | (16<<8)),
-    BE_SQLITE_IOERR_DIR_CLOSE         = (BE_SQLITE_IOERR      | (17<<8)),
-    BE_SQLITE_IOERR_SHMOPEN           = (BE_SQLITE_IOERR      | (18<<8)),
-    BE_SQLITE_IOERR_SHMSIZE           = (BE_SQLITE_IOERR      | (19<<8)),
-    BE_SQLITE_IOERR_SHMLOCK           = (BE_SQLITE_IOERR      | (20<<8)),
-    BE_SQLITE_IOERR_SHMMAP            = (BE_SQLITE_IOERR      | (21<<8)),
-    BE_SQLITE_IOERR_SEEK              = (BE_SQLITE_IOERR      | (22<<8)),
-    BE_SQLITE_IOERR_DELETE_NOENT      = (BE_SQLITE_IOERR      | (23<<8)),
-    BE_SQLITE_IOERR_MMAP              = (BE_SQLITE_IOERR      | (24<<8)),
-    BE_SQLITE_IOERR_GETTEMPPATH       = (BE_SQLITE_IOERR      | (25<<8)),
-    BE_SQLITE_IOERR_CONVPATH          = (BE_SQLITE_IOERR      | (26<<8)),
-    BE_SQLITE_IOERR_VNODE             = (BE_SQLITE_IOERR      | (27<<8)),
-    BE_SQLITE_IOERR_AUTH              = (BE_SQLITE_IOERR      | (28<<8)),
-    BE_SQLITE_IOERR_BEGIN_ATOMIC      = (BE_SQLITE_IOERR      | (29<<8)),
-    BE_SQLITE_IOERR_COMMIT_ATOMIC     = (BE_SQLITE_IOERR      | (30<<8)),
-    BE_SQLITE_IOERR_ROLLBACK_ATOMIC   = (BE_SQLITE_IOERR      | (31<<8)),
-    BE_SQLITE_IOERR_DATA              = (BE_SQLITE_IOERR      | (32<<8)),
-    BE_SQLITE_IOERR_CORRUPTFS         = (BE_SQLITE_IOERR      | (33<<8)),
+    BE_SQLITE_IOERR_READ = (BE_SQLITE_IOERR | (1 << 8)),
+    BE_SQLITE_IOERR_SHORT_READ = (BE_SQLITE_IOERR | (2 << 8)),
+    BE_SQLITE_IOERR_WRITE = (BE_SQLITE_IOERR | (3 << 8)),
+    BE_SQLITE_IOERR_FSYNC = (BE_SQLITE_IOERR | (4 << 8)),
+    BE_SQLITE_IOERR_DIR_FSYNC = (BE_SQLITE_IOERR | (5 << 8)),
+    BE_SQLITE_IOERR_TRUNCATE = (BE_SQLITE_IOERR | (6 << 8)),
+    BE_SQLITE_IOERR_FSTAT = (BE_SQLITE_IOERR | (7 << 8)),
+    BE_SQLITE_IOERR_UNLOCK = (BE_SQLITE_IOERR | (8 << 8)),
+    BE_SQLITE_IOERR_RDLOCK = (BE_SQLITE_IOERR | (9 << 8)),
+    BE_SQLITE_IOERR_DELETE = (BE_SQLITE_IOERR | (10 << 8)),
+    BE_SQLITE_IOERR_BLOCKED = (BE_SQLITE_IOERR | (11 << 8)),
+    BE_SQLITE_IOERR_NOMEM = (BE_SQLITE_IOERR | (12 << 8)),
+    BE_SQLITE_IOERR_ACCESS = (BE_SQLITE_IOERR | (13 << 8)),
+    BE_SQLITE_IOERR_CHECKRESERVEDLOCK = (BE_SQLITE_IOERR | (14 << 8)),
+    BE_SQLITE_IOERR_LOCK = (BE_SQLITE_IOERR | (15 << 8)),
+    BE_SQLITE_IOERR_CLOSE = (BE_SQLITE_IOERR | (16 << 8)),
+    BE_SQLITE_IOERR_DIR_CLOSE = (BE_SQLITE_IOERR | (17 << 8)),
+    BE_SQLITE_IOERR_SHMOPEN = (BE_SQLITE_IOERR | (18 << 8)),
+    BE_SQLITE_IOERR_SHMSIZE = (BE_SQLITE_IOERR | (19 << 8)),
+    BE_SQLITE_IOERR_SHMLOCK = (BE_SQLITE_IOERR | (20 << 8)),
+    BE_SQLITE_IOERR_SHMMAP = (BE_SQLITE_IOERR | (21 << 8)),
+    BE_SQLITE_IOERR_SEEK = (BE_SQLITE_IOERR | (22 << 8)),
+    BE_SQLITE_IOERR_DELETE_NOENT = (BE_SQLITE_IOERR | (23 << 8)),
+    BE_SQLITE_IOERR_MMAP = (BE_SQLITE_IOERR | (24 << 8)),
+    BE_SQLITE_IOERR_GETTEMPPATH = (BE_SQLITE_IOERR | (25 << 8)),
+    BE_SQLITE_IOERR_CONVPATH = (BE_SQLITE_IOERR | (26 << 8)),
+    BE_SQLITE_IOERR_VNODE = (BE_SQLITE_IOERR | (27 << 8)),
+    BE_SQLITE_IOERR_AUTH = (BE_SQLITE_IOERR | (28 << 8)),
+    BE_SQLITE_IOERR_BEGIN_ATOMIC = (BE_SQLITE_IOERR | (29 << 8)),
+    BE_SQLITE_IOERR_COMMIT_ATOMIC = (BE_SQLITE_IOERR | (30 << 8)),
+    BE_SQLITE_IOERR_ROLLBACK_ATOMIC = (BE_SQLITE_IOERR | (31 << 8)),
+    BE_SQLITE_IOERR_DATA = (BE_SQLITE_IOERR | (32 << 8)),
+    BE_SQLITE_IOERR_CORRUPTFS = (BE_SQLITE_IOERR | (33 << 8)),
 
-    BE_SQLITE_ERROR_MISSING_COLLSEQ   = (BE_SQLITE_ERROR      | (1<<8)),
-    BE_SQLITE_ERROR_RETRY             = (BE_SQLITE_ERROR      | (2<<8)),
-    BE_SQLITE_ERROR_SNAPSHOT          = (BE_SQLITE_ERROR      | (3<<8)),
+    BE_SQLITE_ERROR_MISSING_COLLSEQ = (BE_SQLITE_ERROR | (1 << 8)),
+    BE_SQLITE_ERROR_RETRY = (BE_SQLITE_ERROR | (2 << 8)),
+    BE_SQLITE_ERROR_SNAPSHOT = (BE_SQLITE_ERROR | (3 << 8)),
 
-    BE_SQLITE_LOCKED_SHAREDCACHE      = (BE_SQLITE_LOCKED     | (1<<8)),
-    BE_SQLITE_LOCKED_VTAB             = (BE_SQLITE_LOCKED     | (2<<8)),
+    BE_SQLITE_LOCKED_SHAREDCACHE = (BE_SQLITE_LOCKED | (1 << 8)),
+    BE_SQLITE_LOCKED_VTAB = (BE_SQLITE_LOCKED | (2 << 8)),
 
-    BE_SQLITE_CANTOPEN_NOTEMPDIR      = (BE_SQLITE_CANTOPEN   | (1<<8)),
-    BE_SQLITE_CANTOPEN_ISDIR          = (BE_SQLITE_CANTOPEN   | (2<<8)),
-    BE_SQLITE_CANTOPEN_FULLPATH       = (BE_SQLITE_CANTOPEN   | (3<<8)),
-    BE_SQLITE_CANTOPEN_CONVPATH       = (BE_SQLITE_CANTOPEN   | (4<<8)),
-    BE_SQLITE_CANTOPEN_DIRTYWAL       = (BE_SQLITE_CANTOPEN   | (5<<8)),
-    BE_SQLITE_CANTOPEN_SYMLINK        = (BE_SQLITE_CANTOPEN   | (6<<8)),
+    BE_SQLITE_CANTOPEN_NOTEMPDIR = (BE_SQLITE_CANTOPEN | (1 << 8)),
+    BE_SQLITE_CANTOPEN_ISDIR = (BE_SQLITE_CANTOPEN | (2 << 8)),
+    BE_SQLITE_CANTOPEN_FULLPATH = (BE_SQLITE_CANTOPEN | (3 << 8)),
+    BE_SQLITE_CANTOPEN_CONVPATH = (BE_SQLITE_CANTOPEN | (4 << 8)),
+    BE_SQLITE_CANTOPEN_DIRTYWAL = (BE_SQLITE_CANTOPEN | (5 << 8)),
+    BE_SQLITE_CANTOPEN_SYMLINK = (BE_SQLITE_CANTOPEN | (6 << 8)),
 
-    BE_SQLITE_CORRUPT_VTAB            = (BE_SQLITE_CORRUPT    | (1<<8)),
-    BE_SQLITE_CORRUPT_SEQUENCE        = (BE_SQLITE_CORRUPT    | (2<<8)),
-    BE_SQLITE_CORRUPT_INDEX           = (BE_SQLITE_CORRUPT    | (3<<8)),
+    BE_SQLITE_CORRUPT_VTAB = (BE_SQLITE_CORRUPT | (1 << 8)),
+    BE_SQLITE_CORRUPT_SEQUENCE = (BE_SQLITE_CORRUPT | (2 << 8)),
+    BE_SQLITE_CORRUPT_INDEX = (BE_SQLITE_CORRUPT | (3 << 8)),
 
-    BE_SQLITE_READONLY_RECOVERY       = (BE_SQLITE_READONLY   | (1<<8)),
-    BE_SQLITE_READONLY_CANTLOCK       = (BE_SQLITE_READONLY   | (2<<8)),
-    BE_SQLITE_READONLY_ROLLBACK       = (BE_SQLITE_READONLY   | (3<<8)),
-    BE_SQLITE_READONLY_DBMOVED        = (BE_SQLITE_READONLY   | (4<<8)),
-    BE_SQLITE_READONLY_CANTINIT       = (BE_SQLITE_READONLY   | (5<<8)),
-    BE_SQLITE_READONLY_DIRECTORY      = (BE_SQLITE_READONLY   | (6<<8)),
+    BE_SQLITE_READONLY_RECOVERY = (BE_SQLITE_READONLY | (1 << 8)),
+    BE_SQLITE_READONLY_CANTLOCK = (BE_SQLITE_READONLY | (2 << 8)),
+    BE_SQLITE_READONLY_ROLLBACK = (BE_SQLITE_READONLY | (3 << 8)),
+    BE_SQLITE_READONLY_DBMOVED = (BE_SQLITE_READONLY | (4 << 8)),
+    BE_SQLITE_READONLY_CANTINIT = (BE_SQLITE_READONLY | (5 << 8)),
+    BE_SQLITE_READONLY_DIRECTORY = (BE_SQLITE_READONLY | (6 << 8)),
 
-    BE_SQLITE_ABORT_ROLLBACK          = (BE_SQLITE_ABORT      | (2<<8)),
+    BE_SQLITE_ABORT_ROLLBACK = (BE_SQLITE_ABORT | (2 << 8)),
 
-    BE_SQLITE_CONSTRAINT_CHECK        = (BE_SQLITE_CONSTRAINT | (1<<8)),
-    BE_SQLITE_CONSTRAINT_COMMITHOOK   = (BE_SQLITE_CONSTRAINT | (2<<8)),
-    BE_SQLITE_CONSTRAINT_FOREIGNKEY   = (BE_SQLITE_CONSTRAINT | (3<<8)),
-    BE_SQLITE_CONSTRAINT_FUNCTION     = (BE_SQLITE_CONSTRAINT | (4<<8)),
-    BE_SQLITE_CONSTRAINT_NOTNULL      = (BE_SQLITE_CONSTRAINT | (5<<8)),
-    BE_SQLITE_CONSTRAINT_PRIMARYKEY   = (BE_SQLITE_CONSTRAINT | (6<<8)),
-    BE_SQLITE_CONSTRAINT_TRIGGER      = (BE_SQLITE_CONSTRAINT | (7<<8)),
-    BE_SQLITE_CONSTRAINT_UNIQUE       = (BE_SQLITE_CONSTRAINT | (8<<8)),
-    BE_SQLITE_CONSTRAINT_VTAB         = (BE_SQLITE_CONSTRAINT | (9<<8)),
-    BE_SQLITE_CONSTRAINT_ROWID        = (BE_SQLITE_CONSTRAINT | (10<<8)),
-    BE_SQLITE_CONSTRAINT_PINNED       = (BE_SQLITE_CONSTRAINT | (11<<8)),
-    BE_SQLITE_CONSTRAINT_DATATYPE     = (BE_SQLITE_CONSTRAINT | (12<<8)),
+    BE_SQLITE_CONSTRAINT_CHECK = (BE_SQLITE_CONSTRAINT | (1 << 8)),
+    BE_SQLITE_CONSTRAINT_COMMITHOOK = (BE_SQLITE_CONSTRAINT | (2 << 8)),
+    BE_SQLITE_CONSTRAINT_FOREIGNKEY = (BE_SQLITE_CONSTRAINT | (3 << 8)),
+    BE_SQLITE_CONSTRAINT_FUNCTION = (BE_SQLITE_CONSTRAINT | (4 << 8)),
+    BE_SQLITE_CONSTRAINT_NOTNULL = (BE_SQLITE_CONSTRAINT | (5 << 8)),
+    BE_SQLITE_CONSTRAINT_PRIMARYKEY = (BE_SQLITE_CONSTRAINT | (6 << 8)),
+    BE_SQLITE_CONSTRAINT_TRIGGER = (BE_SQLITE_CONSTRAINT | (7 << 8)),
+    BE_SQLITE_CONSTRAINT_UNIQUE = (BE_SQLITE_CONSTRAINT | (8 << 8)),
+    BE_SQLITE_CONSTRAINT_VTAB = (BE_SQLITE_CONSTRAINT | (9 << 8)),
+    BE_SQLITE_CONSTRAINT_ROWID = (BE_SQLITE_CONSTRAINT | (10 << 8)),
+    BE_SQLITE_CONSTRAINT_PINNED = (BE_SQLITE_CONSTRAINT | (11 << 8)),
+    BE_SQLITE_CONSTRAINT_DATATYPE = (BE_SQLITE_CONSTRAINT | (12 << 8)),
 
-    BE_SQLITE_NOTICE_RECOVER_WAL      = (BE_SQLITE_NOTICE     | (1<<8)),
-    BE_SQLITE_NOTICE_RECOVER_ROLLBACK = (BE_SQLITE_NOTICE     | (2<<8)),
+    BE_SQLITE_NOTICE_RECOVER_WAL = (BE_SQLITE_NOTICE | (1 << 8)),
+    BE_SQLITE_NOTICE_RECOVER_ROLLBACK = (BE_SQLITE_NOTICE | (2 << 8)),
 
-    BE_SQLITE_BUSY_RECOVERY           = (BE_SQLITE_BUSY       | (1<<8)),
-    BE_SQLITE_BUSY_SNAPSHOT           = (BE_SQLITE_BUSY       | (2<<8)),
-    BE_SQLITE_BUSY_TIMEOUT            = (BE_SQLITE_BUSY       | (3<<8)),
+    BE_SQLITE_BUSY_RECOVERY = (BE_SQLITE_BUSY | (1 << 8)),
+    BE_SQLITE_BUSY_SNAPSHOT = (BE_SQLITE_BUSY | (2 << 8)),
+    BE_SQLITE_BUSY_TIMEOUT = (BE_SQLITE_BUSY | (3 << 8)),
 
-    BE_SQLITE_WARNING_AUTOINDEX       = (BE_SQLITE_WARNING    | (1<<8)),
-    BE_SQLITE_AUTH_USER               = (BE_SQLITE_AUTH       | (1<<8)),
-    BE_SQLITE_OK_LOAD_PERMANENTLY     = (BE_SQLITE_OK         | (1<<8)),
+    BE_SQLITE_WARNING_AUTOINDEX = (BE_SQLITE_WARNING | (1 << 8)),
+    BE_SQLITE_AUTH_USER = (BE_SQLITE_AUTH | (1 << 8)),
+    BE_SQLITE_OK_LOAD_PERMANENTLY = (BE_SQLITE_OK | (1 << 8)),
 
     //! iModelPlatform custom errors
-    BE_SQLITE_ERROR_FileExists                  = (BE_SQLITE_IOERR | (1<<24)),  //!< Attempt to create a new file when a file by that name already exists
-    BE_SQLITE_ERROR_AlreadyOpen                 = (BE_SQLITE_IOERR | (2<<24)),  //!< Attempt to open a BeSQLite::Db that is already in use somewhere.
-    BE_SQLITE_ERROR_NoPropertyTable             = (BE_SQLITE_IOERR | (3<<24)),  //!< Attempt to open a BeSQLite::Db that doesn't have a property table.
-    BE_SQLITE_ERROR_FileNotFound                = (BE_SQLITE_IOERR | (4<<24)),  //!< The database name is not a file.
-    BE_SQLITE_ERROR_NoTxnActive                 = (BE_SQLITE_IOERR | (5<<24)),  //!< There is no transaction active and the database was opened with AllowImplicitTransactions=false
-    BE_SQLITE_ERROR_BadDbProfile                = (BE_SQLITE_IOERR | (6<<24)),  //!< Wrong BeSQLite profile version
-    BE_SQLITE_ERROR_InvalidProfileVersion       = (BE_SQLITE_IOERR | (7<<24)),  //!< Profile of file could not be determined.
-    BE_SQLITE_ERROR_ProfileUpgradeFailed        = (BE_SQLITE_IOERR | (8<<24)),  //!< Upgrade of profile of file failed.
-    BE_SQLITE_ERROR_ProfileTooOldForReadWrite   = (BE_SQLITE_IOERR | (9<<24)),  //!< Profile of file is too old for read-write access. Therefore file can only be opened read-only.
-    BE_SQLITE_ERROR_ProfileTooOld               = (BE_SQLITE_IOERR | (10<<24)), //!< Profile of file is too old. Therefore file cannot be opened.
-    BE_SQLITE_ERROR_ProfileTooNewForReadWrite   = (BE_SQLITE_IOERR | (11<<24)), //!< Profile of file is too new for read-write access. Therefore file can only be opened read-only.
-    BE_SQLITE_ERROR_ProfileTooNew               = (BE_SQLITE_IOERR | (12<<24)), //!< Profile of file is too new. Therefore file cannot be opened.
-    BE_SQLITE_ERROR_ChangeTrackError            = (BE_SQLITE_IOERR | (13<<24)), //!< Attempt to commit with active change tracking
-    BE_SQLITE_ERROR_InvalidChangeSetVersion     = (BE_SQLITE_IOERR | (14<<24)), //!< Invalid version of the revision file is being imported
-    BE_SQLITE_ERROR_SchemaUpgradeRequired       = (BE_SQLITE_IOERR | (15<<24)), //!< The schemas found in the database need to be upgraded.
-    BE_SQLITE_ERROR_SchemaTooNew                = (BE_SQLITE_IOERR | (16<<24)), //!< The schemas found in the database are too new, and the application needs to be upgraded.
-    BE_SQLITE_ERROR_SchemaTooOld                = (BE_SQLITE_IOERR | (17<<24)), //!< The schemas found in the database are too old, and the DgnDb needs to be recreated after extensive data transformations ("teleported").
-    BE_SQLITE_ERROR_SchemaLockFailed            = (BE_SQLITE_IOERR | (18<<24)), //!< Error acquiring a lock on the schemas before upgrade.
-    BE_SQLITE_ERROR_SchemaUpgradeFailed         = (BE_SQLITE_IOERR | (19<<24)), //!< Error upgrading the schemas in the database.
-    BE_SQLITE_ERROR_SchemaImportFailed          = (BE_SQLITE_IOERR | (20<<24)), //!< Error importing the schemas into the database.
-    BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes = (BE_SQLITE_IOERR | (21<<24)), //!< Error acquiring locks or codes
-    BE_SQLITE_ERROR_SchemaUpgradeRecommended    = (BE_SQLITE_IOERR | (22<<24)), //!< Recommended that the schemas found in the database be upgraded
-    BE_SQLITE_ERROR_DataTransformRequired       = (BE_SQLITE_IOERR | (23<<24)), //!< Schema update need to update data.
+    BE_SQLITE_ERROR_FileExists = (BE_SQLITE_IOERR | (1 << 24)),                    //!< Attempt to create a new file when a file by that name already exists
+    BE_SQLITE_ERROR_AlreadyOpen = (BE_SQLITE_IOERR | (2 << 24)),                   //!< Attempt to open a BeSQLite::Db that is already in use somewhere.
+    BE_SQLITE_ERROR_NoPropertyTable = (BE_SQLITE_IOERR | (3 << 24)),               //!< Attempt to open a BeSQLite::Db that doesn't have a property table.
+    BE_SQLITE_ERROR_FileNotFound = (BE_SQLITE_IOERR | (4 << 24)),                  //!< The database name is not a file.
+    BE_SQLITE_ERROR_NoTxnActive = (BE_SQLITE_IOERR | (5 << 24)),                   //!< There is no transaction active and the database was opened with AllowImplicitTransactions=false
+    BE_SQLITE_ERROR_BadDbProfile = (BE_SQLITE_IOERR | (6 << 24)),                  //!< Wrong BeSQLite profile version
+    BE_SQLITE_ERROR_InvalidProfileVersion = (BE_SQLITE_IOERR | (7 << 24)),         //!< Profile of file could not be determined.
+    BE_SQLITE_ERROR_ProfileUpgradeFailed = (BE_SQLITE_IOERR | (8 << 24)),          //!< Upgrade of profile of file failed.
+    BE_SQLITE_ERROR_ProfileTooOldForReadWrite = (BE_SQLITE_IOERR | (9 << 24)),     //!< Profile of file is too old for read-write access. Therefore file can only be opened read-only.
+    BE_SQLITE_ERROR_ProfileTooOld = (BE_SQLITE_IOERR | (10 << 24)),                //!< Profile of file is too old. Therefore file cannot be opened.
+    BE_SQLITE_ERROR_ProfileTooNewForReadWrite = (BE_SQLITE_IOERR | (11 << 24)),    //!< Profile of file is too new for read-write access. Therefore file can only be opened read-only.
+    BE_SQLITE_ERROR_ProfileTooNew = (BE_SQLITE_IOERR | (12 << 24)),                //!< Profile of file is too new. Therefore file cannot be opened.
+    BE_SQLITE_ERROR_ChangeTrackError = (BE_SQLITE_IOERR | (13 << 24)),             //!< Attempt to commit with active change tracking
+    BE_SQLITE_ERROR_InvalidChangeSetVersion = (BE_SQLITE_IOERR | (14 << 24)),      //!< Invalid version of the revision file is being imported
+    BE_SQLITE_ERROR_SchemaUpgradeRequired = (BE_SQLITE_IOERR | (15 << 24)),        //!< The schemas found in the database need to be upgraded.
+    BE_SQLITE_ERROR_SchemaTooNew = (BE_SQLITE_IOERR | (16 << 24)),                 //!< The schemas found in the database are too new, and the application needs to be upgraded.
+    BE_SQLITE_ERROR_SchemaTooOld = (BE_SQLITE_IOERR | (17 << 24)),                 //!< The schemas found in the database are too old, and the DgnDb needs to be recreated after extensive data transformations ("teleported").
+    BE_SQLITE_ERROR_SchemaLockFailed = (BE_SQLITE_IOERR | (18 << 24)),             //!< Error acquiring a lock on the schemas before upgrade.
+    BE_SQLITE_ERROR_SchemaUpgradeFailed = (BE_SQLITE_IOERR | (19 << 24)),          //!< Error upgrading the schemas in the database.
+    BE_SQLITE_ERROR_SchemaImportFailed = (BE_SQLITE_IOERR | (20 << 24)),           //!< Error importing the schemas into the database.
+    BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes = (BE_SQLITE_IOERR | (21 << 24)),  //!< Error acquiring locks or codes
+    BE_SQLITE_ERROR_SchemaUpgradeRecommended = (BE_SQLITE_IOERR | (22 << 24)),     //!< Recommended that the schemas found in the database be upgraded
+    BE_SQLITE_ERROR_DataTransformRequired = (BE_SQLITE_IOERR | (23 << 24)),        //!< Schema update need to update data.
 
-    BE_SQLITE_ERROR_NOTOPEN                     = (BE_SQLITE_ERROR | (1<<24)),  //!< Db not open
-    BE_SQLITE_ERROR_PropagateChangesFailed      = (BE_SQLITE_ERROR | (2<<24)),  //!< Error propagating changes during commit
+    BE_SQLITE_ERROR_NOTOPEN = (BE_SQLITE_ERROR | (1 << 24)),                 //!< Db not open
+    BE_SQLITE_ERROR_PropagateChangesFailed = (BE_SQLITE_ERROR | (2 << 24)),  //!< Error propagating changes during commit
 };
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-enum class DbLimits : int
-{
-    Length=0,
-    SqlLength=1,
-    Column=2,
-    ExprDepth=3,
-    CompoundSelect=4,
-    VdbeOp=5,
-    FunctionArg=6,
-    Attached=7,
-    LikePatternLength=8,
-    VariableNumber=9,
-    TriggerDepth=10,
-    WorkerThreads=11,
+enum class DbLimits : int {
+    Length = 0,
+    SqlLength = 1,
+    Column = 2,
+    ExprDepth = 3,
+    CompoundSelect = 4,
+    VdbeOp = 5,
+    FunctionArg = 6,
+    Attached = 7,
+    LikePatternLength = 8,
+    VariableNumber = 9,
+    TriggerDepth = 10,
+    WorkerThreads = 11,
 };
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-enum class DbOpcode : int
-{
-    Delete  = 9,
-    Insert  = 18,
-    Update  = 23,
+enum class DbOpcode : int {
+    Delete = 9,
+    Insert = 18,
+    Update = 23,
 };
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-enum class DbValueType : int
-{
-    IntegerVal  = 1,
-    FloatVal    = 2,
-    TextVal     = 3,
-    BlobVal     = 4,
-    NullVal     = 5,
+enum class DbValueType : int {
+    IntegerVal = 1,
+    FloatVal = 2,
+    TextVal = 3,
+    BlobVal = 4,
+    NullVal = 5,
 };
 
 //=======================================================================================
 // Utility class to initialize the BeSQLite library and directly use a few SQLite APIs.
 // @bsiclass
 //=======================================================================================
-struct BeSQLiteLib
-{
-public:
-
-    enum class LogErrors : bool {Yes=1, No=0};
+struct BeSQLiteLib {
+   public:
+    enum class LogErrors : bool { Yes = 1,
+                                  No = 0 };
 
     //! This method MUST be called once per process before any other SQLite methods are called, and should never be called again.
     //! @param[in] tempDir The path for BeSQLite to use to store temporary files. Must be an existing directory.
@@ -670,7 +688,7 @@ public:
     //! Turn this option on only for limited debugging purposes.
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise, e.g. if @p tempDir does not exist
     //! @see sqlite3_initialize
-    BE_SQLITE_EXPORT static DbResult Initialize(BeFileNameCR tempDir, LogErrors wantLogging=LogErrors::No);
+    BE_SQLITE_EXPORT static DbResult Initialize(BeFileNameCR tempDir, LogErrors wantLogging = LogErrors::No);
 
     //! Generate a sequence of pseudo-random bytes
     //! @param[in] numBytes number of bytes of randomness to generate.
@@ -704,9 +722,9 @@ public:
     //! Return a log message (ErrorString, GetErrorName) for a DbResult
     BE_SQLITE_EXPORT static Utf8String GetLogError(DbResult rc);
 
-    static int GetBaseDbResult(DbResult val) {return 0xff & val;}
-    static bool TestBaseDbResult(DbResult val1, DbResult val2) {return GetBaseDbResult(val1) == GetBaseDbResult(val2);}
-    static bool IsConstraintDbResult(DbResult val1) {return GetBaseDbResult(val1) == BE_SQLITE_CONSTRAINT;}
+    static int GetBaseDbResult(DbResult val) { return 0xff & val; }
+    static bool TestBaseDbResult(DbResult val1, DbResult val2) { return GetBaseDbResult(val1) == GetBaseDbResult(val2); }
+    static bool IsConstraintDbResult(DbResult val1) { return GetBaseDbResult(val1) == BE_SQLITE_CONSTRAINT; }
 
     BE_SQLITE_EXPORT static bool ZlibCompress(bvector<Byte>& compressedBuffer, const bvector<Byte>& sourceBuffer);
     BE_SQLITE_EXPORT static bool ZlibDecompress(bvector<Byte>& uncompressedBuffer, const bvector<Byte>& compressedBuffer, unsigned long uncompressSize);
@@ -716,12 +734,12 @@ public:
 //! Trace context provided during trace
 // @bsiclass
 //=======================================================================================
-struct TraceContext : NonCopyableClass
-{
-private:
+struct TraceContext : NonCopyableClass {
+   private:
     SqlStatementP m_stmt;
-public:
-    explicit TraceContext(SqlStatementP stmt) {m_stmt=stmt;}
+
+   public:
+    explicit TraceContext(SqlStatementP stmt) { m_stmt = stmt; }
 
     //! Get a saved copy of the original SQL text used to prepare this Statement
     //! @see sqlite3_sql
@@ -735,45 +753,47 @@ public:
     //! @see sqlite3_normalized_sql
     BE_SQLITE_EXPORT Utf8CP GetNormalizedSql() const;
 
-    SqlStatementP GetSqlStatementP() const {return m_stmt;}  // for direct use of sqlite3 api
-    operator SqlStatementP(){return m_stmt;}
+    SqlStatementP GetSqlStatementP() const { return m_stmt; }  // for direct use of sqlite3 api
+    operator SqlStatementP() { return m_stmt; }
 
     BE_SQLITE_EXPORT bool IsReadonly() const;
 };
 
-
 using TraceStmtEvent = BeEvent<TraceContext const&, Utf8CP>;
-using TraceProfileEvent = BeEvent<TraceContext const &, int64_t>;
-using TraceRowEvent = BeEvent<TraceContext const &>;
-using TraceCloseEvent = BeEvent<SqlDbP,Utf8CP>;
+using TraceProfileEvent = BeEvent<TraceContext const&, int64_t>;
+using TraceRowEvent = BeEvent<TraceContext const&>;
+using TraceCloseEvent = BeEvent<SqlDbP, Utf8CP>;
 
 //=======================================================================================
 //! A wrapper for a SQLite Prepared Statement. Every BeSQLite::Statement object associated with a BeSQLite::Db must be deleted
 //! before the database is closed.
 // @bsiclass
 //=======================================================================================
-struct Statement : NonCopyableClass
-{
-private:
+struct Statement : NonCopyableClass {
+   private:
     SqlStatementP m_stmt;
 
     DbResult DoPrepare(DbFileCR, Utf8CP sql);
 
-public:
-    enum class MakeCopy : bool {No=0, Yes=1};
-    explicit Statement(SqlStatementP stmt) {m_stmt=stmt;}
+   public:
+    enum class MakeCopy : bool { No = 0,
+                                 Yes = 1 };
+    explicit Statement(SqlStatementP stmt) { m_stmt = stmt; }
 
     //! construct a new blank Statement.
-    Statement() {m_stmt=nullptr;}
-    Statement(DbCR db, Utf8CP sql) {m_stmt=nullptr; Prepare(db, sql);}
-    ~Statement() {Finalize();}
+    Statement() { m_stmt = nullptr; }
+    Statement(DbCR db, Utf8CP sql) {
+        m_stmt = nullptr;
+        Prepare(db, sql);
+    }
+    ~Statement() { Finalize(); }
 
-    SqlStatementP& GetStmtR() {return m_stmt;} //! @private internal use only
-    DbResult Prepare(DbFileCR, Utf8CP sql, bool suppressDiagnostics = false); //! @private internal use only
+    SqlStatementP& GetStmtR() { return m_stmt; }                               //! @private internal use only
+    DbResult Prepare(DbFileCR, Utf8CP sql, bool suppressDiagnostics = false);  //! @private internal use only
     DbResult TryPrepare(DbFileCR, Utf8CP sql);
 
     //! Determine whether this Statement has already been prepared.
-    bool IsPrepared() const {return nullptr != m_stmt;}
+    bool IsPrepared() const { return nullptr != m_stmt; }
 
     //! Destroy this Statement. If the Statement was Prepared, releases all memory associated it.
     BE_SQLITE_EXPORT void Finalize();
@@ -824,17 +844,17 @@ public:
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] value the value to bind.
     //! @see sqlite3_bind_int64
-    DbResult BindUInt64(int paramNum, uint64_t value) {return BindInt64(paramNum, (int64_t) value);}
+    DbResult BindUInt64(int paramNum, uint64_t value) { return BindInt64(paramNum, (int64_t)value); }
 
     //! Bind a Boolean value to a parameter of this (previously prepared) Statement (1-based)
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] value the value to bind.
-    DbResult BindBoolean(int paramNum, bool value) {return BindInt(paramNum, value ? 1 : 0);}
+    DbResult BindBoolean(int paramNum, bool value) { return BindInt(paramNum, value ? 1 : 0); }
 
     //! Bind a BeBriefcaseBasedId value to a parameter of this (previously prepared) Statement (1-based). Binds NULL if the id is not valid.
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] value the value to bind.
-    DbResult BindId(int paramNum, BeInt64Id value) {return value.IsValid() ? BindUInt64(paramNum,value.GetValue()) : BindNull(paramNum);}
+    DbResult BindId(int paramNum, BeInt64Id value) { return value.IsValid() ? BindUInt64(paramNum, value.GetValue()) : BindNull(paramNum); }
 
     //! Bind a double value to a parameter of this (previously prepared) Statement (1-based)
     //! @param[in] paramNum the SQL parameter number to bind.
@@ -847,7 +867,7 @@ public:
     //! @param[in] stringValue the value to bind.
     //! @param[in] makeCopy Make a private copy of the string in the Statement. Only pass Statement::MakeCopy::No if stringValue will remain valid until the Statement's bindings are cleared.
     //! @see sqlite3_bind_text
-    DbResult BindText(int paramNum, Utf8StringCR stringValue, MakeCopy makeCopy) {return BindText(paramNum, stringValue.c_str(), makeCopy, (int)stringValue.size());}
+    DbResult BindText(int paramNum, Utf8StringCR stringValue, MakeCopy makeCopy) { return BindText(paramNum, stringValue.c_str(), makeCopy, (int)stringValue.size()); }
 
     //! Bind the value of a Utf8CP to a parameter of this (previously prepared) Statement (1-based)
     //! @param[in] paramNum the SQL parameter number to bind.
@@ -855,7 +875,7 @@ public:
     //! @param[in] makeCopy Make a private copy of the string in the Statement. Only pass Statement::MakeCopy::No if stringValue will remain valid until the Statement's bindings are cleared.
     //! @param[in] nBytes The number of bytes (not characters) in @p stringValue. If negative, it will be calculated from stringValue. Passing this value is only an optimization.
     //! @see sqlite3_bind_text
-    BE_SQLITE_EXPORT DbResult BindText(int paramNum, Utf8CP stringValue, MakeCopy makeCopy, int nBytes=-1);
+    BE_SQLITE_EXPORT DbResult BindText(int paramNum, Utf8CP stringValue, MakeCopy makeCopy, int nBytes = -1);
 
     //! Bind a BeGuid to a parameter of this (previously prepared) Statement (1-based)
     //! @param[in] paramNum the SQL parameter number to bind.
@@ -895,7 +915,7 @@ public:
     //! @private internal use only
     //! Bind a DbValue from a BeSQLite function (1-based)
     BE_SQLITE_EXPORT DbResult BindValueFrom(int col, Statement& fromStmt, int fromCol);
-    
+
     //! @private internal use only
     //! Set value to NULL but also Bind a pointer. This is used by sql function ro virtual tables.
     BE_SQLITE_EXPORT DbResult BindPointer(int col, void* ptr, const char* name, void (*destroy)(void*));
@@ -909,9 +929,9 @@ public:
     //! @see sqlite3_column_type
     BE_SQLITE_EXPORT DbValueType GetColumnType(int col);
 
-    //!Get the table name from which a column of the result of Step originates (0-based)
-    //! @param[in] col The column of interest
-    //! @see sqlite3_column_table_name
+    //! Get the table name from which a column of the result of Step originates (0-based)
+    //!  @param[in] col The column of interest
+    //!  @see sqlite3_column_table_name
     BE_SQLITE_EXPORT Utf8CP GetColumnTableName(int col);
 
     //! Get the declared type for a column of the result of Step (0-based)
@@ -920,7 +940,7 @@ public:
     BE_SQLITE_EXPORT Utf8CP GetColumnDeclaredType(int col);
 
     //! Determine whether the column value is NULL. (0-based)
-    bool IsColumnNull(int col) {return DbValueType::NullVal == GetColumnType(col);}
+    bool IsColumnNull(int col) { return DbValueType::NullVal == GetColumnType(col); }
 
     //! Get the name of a column of the result of Step (0-based)
     //! @param[in] col The column of interest
@@ -960,14 +980,14 @@ public:
     //! Get a UInt64 value from a column returned from Step (0-based)
     //! @param[in] col The column of interest
     //! @see sqlite3_column_int64
-    uint64_t GetValueUInt64(int col) {return (uint64_t) GetValueInt64(col);}
+    uint64_t GetValueUInt64(int col) { return (uint64_t)GetValueInt64(col); }
 
     //! Get a Boolean value from a column returned from Step (0-based)
     //! @remark As SQLite per-se doesn't have a Boolean type, this
     //! method returns true if the value is not 0 and false if it is 0.
     //! This is consistent with Statement::BindBoolean.
     //! @param[in] col The column of interest
-    bool GetValueBoolean(int col) {return GetValueInt(col) != 0;}
+    bool GetValueBoolean(int col) { return GetValueInt(col) != 0; }
 
     //! Get a double value from a column returned from Step (0-based)
     //! @param[in] col The column of interest
@@ -976,7 +996,13 @@ public:
 
     //! Get a BeBriefcaseBasedId value from a column returned from Step (0-based)
     //! @param[in] col The column of interest
-    template <class T_Id> T_Id GetValueId(int col) {if (!IsColumnNull(col)) {return T_Id(GetValueUInt64(col));} return T_Id();}
+    template <class T_Id>
+    T_Id GetValueId(int col) {
+        if (!IsColumnNull(col)) {
+            return T_Id(GetValueUInt64(col));
+        }
+        return T_Id();
+    }
 
     //! Get a BeGuid value from a column returned from Step (0-based)
     //! @param[in] col The column of interest
@@ -1020,8 +1046,8 @@ public:
     //! If the returned value is true, the state value is stored in the passed reference argument.
     BE_SQLITE_EXPORT bool TryGetStatementState(StatementState&);
 
-    SqlStatementP GetSqlStatementP() const {return m_stmt;}  // for direct use of sqlite3 api
-    operator SqlStatementP(){return m_stmt;}                 // for direct use of sqlite3 api
+    SqlStatementP GetSqlStatementP() const { return m_stmt; }  // for direct use of sqlite3 api
+    operator SqlStatementP() { return m_stmt; }                // for direct use of sqlite3 api
 };
 
 #define DIAGNOSTICS_PREPARE_LOGGER_NAME "Diagnostics.BeSQLite.Prepare"
@@ -1065,12 +1091,11 @@ public:
 //!    in the diagnostics output
 // @bsiclass
 //=======================================================================================
-struct StatementDiagnostics
-    {
-private:
+struct StatementDiagnostics {
+   private:
     StatementDiagnostics();
 
-public:
+   public:
     //! Globally turn on or off statement diagnostics. If turned on, the logging configuration
     //! determines what is actually logged and what not. So use this method to globally disable
     //! diagnostics from code which you are not interested in.
@@ -1079,22 +1104,21 @@ public:
 
     //! @param[in] comment Comment to add to diagnostics output
     BE_SQLITE_EXPORT static void LogComment(Utf8CP comment);
-    };
+};
 #endif
 
 //=======================================================================================
 //! A Blob handle for incremental I/O. See sqlite3_blob_open for details.
 // @bsiclass
 //=======================================================================================
-struct BlobIO
-{
-private:
+struct BlobIO {
+   private:
     SqlDbBlobP m_blob;
 
-public:
-    SqlDbBlobP GetBlobP() {return m_blob;}
-    BlobIO() {m_blob=0;}
-    ~BlobIO() {Close();}
+   public:
+    SqlDbBlobP GetBlobP() { return m_blob; }
+    BlobIO() { m_blob = 0; }
+    ~BlobIO() { Close(); }
 
     //! Open a Blob for incremental I/O.
     //! @param[in] db The database that holds the blob to be opened.
@@ -1105,7 +1129,7 @@ public:
     //! @param[in] dbName The name of the database attachment to open. If nullptr, use "main".
     //! @return BE_SQLITE_OK on success, error status otherwise.
     //! @see sqlite3_blob_open
-    BE_SQLITE_EXPORT DbResult Open(DbR db, Utf8CP tableName, Utf8CP columnName, uint64_t row, bool writable, Utf8CP dbName=0);
+    BE_SQLITE_EXPORT DbResult Open(DbR db, Utf8CP tableName, Utf8CP columnName, uint64_t row, bool writable, Utf8CP dbName = 0);
 
     //! Move an existing opened BlobIO to a new row in the same table.
     //! @param[in] row The new rowId
@@ -1140,41 +1164,41 @@ public:
     BE_SQLITE_EXPORT int GetNumBytes() const;
 
     //! Determine whether this BlobIO was successfully opened.
-    bool IsValid() const {return nullptr != m_blob;}
+    bool IsValid() const { return nullptr != m_blob; }
 };
 
 //=======================================================================================
 //! A "value" from a BeSQLite function.
 // @bsiclass
 //=======================================================================================
-struct DbValue
-{
-protected:
+struct DbValue {
+   protected:
     SqlValueP m_val;
 
-public:
+   public:
     DbValue(SqlValueP val) : m_val(val) {}
 
-    bool IsValid() const {return nullptr != m_val;}                    //!< return true if this value is valid
-    bool IsNull()  const {return DbValueType::NullVal == GetValueType();} //!< return true if this value is null
-    SqlValueP GetSqlValueP() const {return m_val;}  //!< for direct use of sqlite3 api
+    bool IsValid() const { return nullptr != m_val; }                       //!< return true if this value is valid
+    bool IsNull() const { return DbValueType::NullVal == GetValueType(); }  //!< return true if this value is null
+    SqlValueP GetSqlValueP() const { return m_val; }                        //!< for direct use of sqlite3 api
 
-    BE_SQLITE_EXPORT bool        FromBinding() const;              //!< see sqlite3_value_frombind
-    BE_SQLITE_EXPORT DbValueType GetValueType() const;      //!< see sqlite3_value_type
-    BE_SQLITE_EXPORT DbValueType GetNumericType() const;    //!< see sqlite3_value_numeric_type
-    BE_SQLITE_EXPORT int         GetValueBytes() const;     //!< see sqlite3_value_bytes
-    BE_SQLITE_EXPORT void const* GetValueBlob() const;      //!< see sqlite3_value_blob
-    BE_SQLITE_EXPORT Utf8CP      GetValueText() const;      //!< see sqlite3_value_text
-    BE_SQLITE_EXPORT int         GetValueInt() const;       //!< see sqlite3_value_int
-    BE_SQLITE_EXPORT int64_t     GetValueInt64() const;     //!< see sqlite3_value_int64
-    uint64_t GetValueUInt64() const {return (uint64_t) GetValueInt64();}
-    BE_SQLITE_EXPORT double      GetValueDouble() const;    //!< see sqlite3_value_double
-    BE_SQLITE_EXPORT BeGuid      GetValueGuid() const;      //!< get the value as a GUID
-    BE_SQLITE_EXPORT unsigned int GetSubType() const; //!< see sqlite3_value_subtype
-    BE_SQLITE_EXPORT void*       GetValuePointer(Utf8CP name) const;      //!< get pointer
-    template <class T_Id> T_Id   GetValueId() const {return T_Id(GetValueUInt64());}
+    BE_SQLITE_EXPORT bool FromBinding() const;            //!< see sqlite3_value_frombind
+    BE_SQLITE_EXPORT DbValueType GetValueType() const;    //!< see sqlite3_value_type
+    BE_SQLITE_EXPORT DbValueType GetNumericType() const;  //!< see sqlite3_value_numeric_type
+    BE_SQLITE_EXPORT int GetValueBytes() const;           //!< see sqlite3_value_bytes
+    BE_SQLITE_EXPORT void const* GetValueBlob() const;    //!< see sqlite3_value_blob
+    BE_SQLITE_EXPORT Utf8CP GetValueText() const;         //!< see sqlite3_value_text
+    BE_SQLITE_EXPORT int GetValueInt() const;             //!< see sqlite3_value_int
+    BE_SQLITE_EXPORT int64_t GetValueInt64() const;       //!< see sqlite3_value_int64
+    uint64_t GetValueUInt64() const { return (uint64_t)GetValueInt64(); }
+    BE_SQLITE_EXPORT double GetValueDouble() const;             //!< see sqlite3_value_double
+    BE_SQLITE_EXPORT BeGuid GetValueGuid() const;               //!< get the value as a GUID
+    BE_SQLITE_EXPORT unsigned int GetSubType() const;           //!< see sqlite3_value_subtype
+    BE_SQLITE_EXPORT void* GetValuePointer(Utf8CP name) const;  //!< get pointer
+    template <class T_Id>
+    T_Id GetValueId() const { return T_Id(GetValueUInt64()); }
 
-    BE_SQLITE_EXPORT Utf8String Format(int detailLevel) const; //!< for debugging purposes.
+    BE_SQLITE_EXPORT Utf8String Format(int detailLevel) const;  //!< for debugging purposes.
 };
 
 //=======================================================================================
@@ -1183,10 +1207,9 @@ public:
 //! be protected by duplication. @see sqlite3_value_dup
 // @bsiclass
 //=======================================================================================
-struct DbDupValue : DbValue, NonCopyableClass
-{
+struct DbDupValue : DbValue, NonCopyableClass {
     BE_SQLITE_EXPORT DbDupValue(SqlValueP val);
-    DbDupValue(DbDupValue&& other) : DbValue(other.m_val) {other.m_val = nullptr;}
+    DbDupValue(DbDupValue&& other) : DbValue(other.m_val) { other.m_val = nullptr; }
     BE_SQLITE_EXPORT DbDupValue& operator=(DbDupValue&& other);
     BE_SQLITE_EXPORT ~DbDupValue();
 };
@@ -1199,53 +1222,52 @@ struct DbDupValue : DbValue, NonCopyableClass
 //! the sqlite mutex and the StatementCache mutex.
 // @bsiclass
 //=======================================================================================
-struct DbFunction : NonCopyableClass
-{
-public:
+struct DbFunction : NonCopyableClass {
+   public:
     //=======================================================================================
     //! The "context" supplied to DbFunctions that can be used to set result values.
     // @bsiclass
     //=======================================================================================
-    struct Context
-        {
-        enum class CopyData : int {No = 0, Yes = -1};                                     //!< see sqlite3_destructor_type
-        BE_SQLITE_EXPORT void SetResultBlob(void const* value, int length, CopyData copy=CopyData::Yes); //!< see sqlite3_result_blob
-        BE_SQLITE_EXPORT void SetResultDouble(double);                                //!< see sqlite3_result_double
-        BE_SQLITE_EXPORT void SetResultError(Utf8CP, int len=-1);                     //!< see sqlite3_result_error
-        BE_SQLITE_EXPORT void SetResultError_toobig();                                //!< see sqlite3_result_error_toobig
-        BE_SQLITE_EXPORT void SetResultError_nomem();                                 //!< see sqlite3_result_error_nomem
-        BE_SQLITE_EXPORT void SetResultError_code(int);                               //!< see sqlite3_result_error_code
-        BE_SQLITE_EXPORT void SetResultInt(int);                                      //!< see sqlite3_result_int
-        BE_SQLITE_EXPORT void SetResultInt64(int64_t);                                //!< see sqlite3_result_int64
-        BE_SQLITE_EXPORT void SetResultNull();                                        //!< see sqlite3_result_null
-        BE_SQLITE_EXPORT void SetResultText(Utf8CP value, int length, CopyData);      //!< see sqlite3_result_text
-        BE_SQLITE_EXPORT void SetResultZeroblob(int length);                          //!< see sqlite3_result_zeroblob
-        BE_SQLITE_EXPORT void SetResultValue(DbValue);                                //!< see sqlite3_result_value
+    struct Context {
+        enum class CopyData : int { No = 0,
+                                    Yes = -1 };                                                             //!< see sqlite3_destructor_type
+        BE_SQLITE_EXPORT void SetResultBlob(void const* value, int length, CopyData copy = CopyData::Yes);  //!< see sqlite3_result_blob
+        BE_SQLITE_EXPORT void SetResultDouble(double);                                                      //!< see sqlite3_result_double
+        BE_SQLITE_EXPORT void SetResultError(Utf8CP, int len = -1);                                         //!< see sqlite3_result_error
+        BE_SQLITE_EXPORT void SetResultError_toobig();                                                      //!< see sqlite3_result_error_toobig
+        BE_SQLITE_EXPORT void SetResultError_nomem();                                                       //!< see sqlite3_result_error_nomem
+        BE_SQLITE_EXPORT void SetResultError_code(int);                                                     //!< see sqlite3_result_error_code
+        BE_SQLITE_EXPORT void SetResultInt(int);                                                            //!< see sqlite3_result_int
+        BE_SQLITE_EXPORT void SetResultInt64(int64_t);                                                      //!< see sqlite3_result_int64
+        BE_SQLITE_EXPORT void SetResultNull();                                                              //!< see sqlite3_result_null
+        BE_SQLITE_EXPORT void SetResultText(Utf8CP value, int length, CopyData);                            //!< see sqlite3_result_text
+        BE_SQLITE_EXPORT void SetResultZeroblob(int length);                                                //!< see sqlite3_result_zeroblob
+        BE_SQLITE_EXPORT void SetResultValue(DbValue);                                                      //!< see sqlite3_result_value
         BE_SQLITE_EXPORT void* GetAggregateContext(int nbytes);
-        };
+    };
 
-private:
-    Utf8String  m_name;
-    int         m_nArgs;
+   private:
+    Utf8String m_name;
+    int m_nArgs;
     DbValueType m_returnType;
 
-protected:
+   protected:
     //! Initializes a new DbFunction instance
     //! @param[in] name Function name
     //! @param[in] nArgs Number of function args
     //! @param[in] returnType Function return type. DbValueType::NullVal means that the return type is unspecified.
     DbFunction(Utf8CP name, int nArgs, DbValueType returnType) : m_name(name), m_nArgs(nArgs), m_returnType(returnType) {}
 
-public:
-    virtual bool _IsAggregate() {return false;}
+   public:
+    virtual bool _IsAggregate() { return false; }
     virtual ~DbFunction() {}
 
-    Utf8CP GetName() const {return m_name.c_str();} //!< Get the name of this function
-    int GetNumArgs() const {return m_nArgs;}    //!< Get the number of arguments to this function
-    DbValueType GetReturnType() const {return m_returnType;}//!< Gets the return type of the function.
+    Utf8CP GetName() const { return m_name.c_str(); }           //!< Get the name of this function
+    int GetNumArgs() const { return m_nArgs; }                  //!< Get the number of arguments to this function
+    DbValueType GetReturnType() const { return m_returnType; }  //!< Gets the return type of the function.
 
     //! Set the result of this function to: error due to illegal input.
-    void SetInputError(Context& ctx) {ctx.SetResultError(Utf8PrintfString("Illegal input to %s", GetName()).c_str());}
+    void SetInputError(Context& ctx) { ctx.SetResultError(Utf8PrintfString("Illegal input to %s", GetName()).c_str()); }
 };
 
 //=======================================================================================
@@ -1253,12 +1275,11 @@ public:
 //! This object is must survive as long as the Db to which it is added survives, or until it is removed.
 // @bsiclass
 //=======================================================================================
-struct ScalarFunction : DbFunction
-{
+struct ScalarFunction : DbFunction {
     //! WARNING: The implementation of _ComputeScalar is forbidden from creating or using
     //! a CachedStatement. Doing so can easily result in deadlock due to contention between
     //! the sqlite mutex and the StatementCache mutex.
-    virtual void _ComputeScalar(Context&, int nArgs, DbValue* args) = 0;   //<! see "xFunc" in sqlite3_create_function
+    virtual void _ComputeScalar(Context&, int nArgs, DbValue* args) = 0;  //<! see "xFunc" in sqlite3_create_function
 
     //! Initializes a new ScalarFunction instance
     //! @param[in] name Function name
@@ -1271,15 +1292,14 @@ struct ScalarFunction : DbFunction
 //! This object is must survive as long as the Db to which it is added survives, or until it is removed.
 // @bsiclass
 //=======================================================================================
-struct AggregateFunction : DbFunction
-{
-    bool _IsAggregate() override {return true;}
+struct AggregateFunction : DbFunction {
+    bool _IsAggregate() override { return true; }
 
     //! WARNING: The implementations of _StepAggregate and _FinishAggregate are forbidden from creating or using
     //! a CachedStatement. Doing so can easily result in deadlock due to contention between
     //! the sqlite mutex and the StatementCache mutex.
-    virtual void _StepAggregate(Context&, int nArgs, DbValue* args) = 0; //<! see "xStep" in sqlite3_create_function
-    virtual void _FinishAggregate(Context&) = 0;                         //<! see "xFinal" in sqlite3_create_function
+    virtual void _StepAggregate(Context&, int nArgs, DbValue* args) = 0;  //<! see "xStep" in sqlite3_create_function
+    virtual void _FinishAggregate(Context&) = 0;                          //<! see "xFinal" in sqlite3_create_function
 
     //! Initializes a new AggregateFunction instance
     //! @param[in] name Function name
@@ -1293,10 +1313,8 @@ struct AggregateFunction : DbFunction
 //! See https://www.sqlite.org/rtree.html for implementation details.
 // @bsiclass
 //=======================================================================================
-struct RTreeMatchFunction : DbFunction
-{
-    enum class Within : int
-    {
+struct RTreeMatchFunction : DbFunction {
+    enum class Within : int {
         Outside = 0,
         Partly = 1,
         Inside = 2,
@@ -1306,24 +1324,23 @@ struct RTreeMatchFunction : DbFunction
     //! This is a copy of sqlite3_rtree_query_info
     // @bsiclass
     //=======================================================================================
-    struct QueryInfo
-    {
-        void*   m_context;
-        int     m_nParam;
+    struct QueryInfo {
+        void* m_context;
+        int m_nParam;
         double* m_param;
-        void*   m_user;
-        void    (*m_xDelUser)(void*);
+        void* m_user;
+        void (*m_xDelUser)(void*);
         double* m_coords;
         unsigned int* m_nQueue;
-        int     m_nCoord;
-        int     m_level;
-        int     m_maxLevel;
+        int m_nCoord;
+        int m_level;
+        int m_maxLevel;
         int64_t m_rowid;
-        double  m_parentScore;
-        Within  m_parentWithin;
+        double m_parentScore;
+        Within m_parentWithin;
         mutable Within m_within;
         mutable double m_score;
-        DbValue* m_args;       // SQL values of parameters
+        DbValue* m_args;  // SQL values of parameters
     };
 
     //! this method is called for every internal and leaf node in an sqlite rtree vtable.
@@ -1344,8 +1361,7 @@ struct RTreeMatchFunction : DbFunction
 //! to an object that implements this interface, returning true for _IsInSet for the desired vendors.
 // @bsiclass
 //=======================================================================================
-struct VirtualSet
-{
+struct VirtualSet {
     //! Test whether a value, or combination of values, is in the virtual set. Implementation should be as efficient as possible.
     //! @param[in] nVals The number of entries in vals array holding the values supplied as the second and later arguments to the "inVirtualSet" SQL function.
     //! For example, with  "SELECT * FROM MyTable WHERE InVirtualSet(@myset,Cost,Vendor)" the values of the Cost and Vendor columns will be passed
@@ -1359,36 +1375,37 @@ struct VirtualSet
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct BeIdSet : bset<BeInt64Id>
-{
-private:
+struct BeIdSet : bset<BeInt64Id> {
+   private:
     Utf8String ToReadableString() const;
     void FromCompactString(Utf8StringCR);
     void FromReadableString(Utf8StringCR);
 
     BE_SQLITE_EXPORT static void SaveCompactRange(Utf8StringR str, int64_t increment, int64_t len);
-public:
-    enum class StringFormat {Compact=0, Readable=1};
+
+   public:
+    enum class StringFormat { Compact = 0,
+                              Readable = 1 };
 
     BE_SQLITE_EXPORT void FromString(Utf8StringCR in);
     BE_SQLITE_EXPORT Utf8String ToString() const;
     Utf8String ToCompactString() const { return ToCompactString(*this); }
 
-    /*---------------------------------------------------------------------------------**//**
-    * Convert a set of BeInt64Ids to a compact string representation. IDs are often quite large values
-    * due to inclusion of briefcase ID and sequences of IDs often follow a particular
-    * pattern (e.g. [x,x+2,x+4,x+6,x+8] is common with sets of DgnCategoryIds). IdSets are
-    * ordered and the deltas between two consecutive values tend to be small with occasional
-    * larger jumps between IDs with different briefcase IDs.
-    * Given that, we can reduce the length of the string and the complexity of parsing it by:
-    *   - Using base-16 representation
-    *   - Writing the actual value of only the first element
-    *   - Writing each subsequent value in terms of the positive delta from the preceding value
-    *   - Collapsing ranges of identical deltas
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    template<typename T_Id> static Utf8String ToCompactString(bset<T_Id> const& ids)
-        {
+    /*---------------------------------------------------------------------------------**/ /**
+     * Convert a set of BeInt64Ids to a compact string representation. IDs are often quite large values
+     * due to inclusion of briefcase ID and sequences of IDs often follow a particular
+     * pattern (e.g. [x,x+2,x+4,x+6,x+8] is common with sets of DgnCategoryIds). IdSets are
+     * ordered and the deltas between two consecutive values tend to be small with occasional
+     * larger jumps between IDs with different briefcase IDs.
+     * Given that, we can reduce the length of the string and the complexity of parsing it by:
+     *   - Using base-16 representation
+     *   - Writing the actual value of only the first element
+     *   - Writing each subsequent value in terms of the positive delta from the preceding value
+     *   - Collapsing ranges of identical deltas
+     * @bsimethod
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    template <typename T_Id>
+    static Utf8String ToCompactString(bset<T_Id> const& ids) {
         Utf8String str;
 
         int64_t prevId = 0;
@@ -1397,62 +1414,54 @@ public:
 
         auto iter = ids.begin();
         if (iter != ids.end() && !iter->IsValid())
-            ++iter; // omit invalid Ids
+            ++iter;  // omit invalid Ids
 
-        for (/**/ ; iter != ids.end(); ++iter)
-            {
+        for (/**/; iter != ids.end(); ++iter) {
             auto elem = *iter;
             int64_t curId = elem.GetValue();
             int64_t curIncrement = curId - prevId;
             prevId = curId;
 
-            if (0 == rangeLen)
-                {
+            if (0 == rangeLen) {
                 rangeIncrement = curIncrement;
                 rangeLen = 1;
-                }
-            else if (curIncrement == rangeIncrement)
-                {
+            } else if (curIncrement == rangeIncrement) {
                 ++rangeLen;
-                }
-            else
-                {
+            } else {
                 SaveCompactRange(str, rangeIncrement, rangeLen);
                 rangeIncrement = curIncrement;
                 rangeLen = 1;
-                }
             }
+        }
 
         if (0 < rangeLen)
             SaveCompactRange(str, rangeIncrement, rangeLen);
 
         return str;
-        }
+    }
 };
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-template<typename IdType> struct IdSet : VirtualSet
-{
-private:
+template <typename IdType>
+struct IdSet : VirtualSet {
+   private:
     BeIdSet m_set;
 
-    virtual bool _IsInSet(int nVals, DbValue const* vals) const override
-        {
+    virtual bool _IsInSet(int nVals, DbValue const* vals) const override {
         BeAssert(nVals == 1);
         return Contains(IdType(vals[0].GetValueUInt64()));
-        }
-public:
-    IdSet()
-        {
-        static_assert(std::is_base_of<BeInt64Id, IdType>::value && sizeof(BeInt64Id) == sizeof(IdType), "IdSet may only contain BeInt64Ids or subclasses of it of the same size.");
-        }
+    }
 
-    explicit IdSet(BeIdSet&& ids) : m_set(std::move(ids))
-        {
+   public:
+    IdSet() {
         static_assert(std::is_base_of<BeInt64Id, IdType>::value && sizeof(BeInt64Id) == sizeof(IdType), "IdSet may only contain BeInt64Ids or subclasses of it of the same size.");
-        }
+    }
+
+    explicit IdSet(BeIdSet&& ids) : m_set(std::move(ids)) {
+        static_assert(std::is_base_of<BeInt64Id, IdType>::value && sizeof(BeInt64Id) == sizeof(IdType), "IdSet may only contain BeInt64Ids or subclasses of it of the same size.");
+    }
 
     virtual ~IdSet() {}
 
@@ -1461,23 +1470,26 @@ public:
     typedef typename T_SetType::const_iterator const_iterator;
     typedef typename T_SetType::iterator iterator;
 
-    const_iterator begin() const {return ((T_SetType const&)m_set).begin();}
-    const_iterator end() const {return ((T_SetType const&)m_set).end();}
-    const_iterator find(IdType id) const {return ((T_SetType const&)m_set).find(id);}
-    bool operator==(T_Self const& other) const {return m_set==other.m_set;}
-    bool operator!=(T_Self const& other) const {return m_set!=other.m_set;}
-    bool empty() const {return m_set.empty();}
-    void clear() {m_set.clear();}
-    size_t size() const {return m_set.size();}
-    bpair<iterator,bool> insert(IdType const& val) {BeAssert(val.IsValid()); return ((T_SetType&)m_set).insert(val);}
-    void insert(const_iterator first, const_iterator last) {((T_SetType&)m_set).insert(first,last);}
-    size_t erase(IdType const& val) {return ((T_SetType&)m_set).erase(val);}
-    iterator erase(iterator it) {return ((T_SetType&)m_set).erase(it);}
-    bool Contains(IdType id) const {return end() != find(id);}
-    void FromString(Utf8StringCR in) {m_set.FromString(in);}
-    Utf8String ToString() const {return m_set.ToString();}
+    const_iterator begin() const { return ((T_SetType const&)m_set).begin(); }
+    const_iterator end() const { return ((T_SetType const&)m_set).end(); }
+    const_iterator find(IdType id) const { return ((T_SetType const&)m_set).find(id); }
+    bool operator==(T_Self const& other) const { return m_set == other.m_set; }
+    bool operator!=(T_Self const& other) const { return m_set != other.m_set; }
+    bool empty() const { return m_set.empty(); }
+    void clear() { m_set.clear(); }
+    size_t size() const { return m_set.size(); }
+    bpair<iterator, bool> insert(IdType const& val) {
+        BeAssert(val.IsValid());
+        return ((T_SetType&)m_set).insert(val);
+    }
+    void insert(const_iterator first, const_iterator last) { ((T_SetType&)m_set).insert(first, last); }
+    size_t erase(IdType const& val) { return ((T_SetType&)m_set).erase(val); }
+    iterator erase(iterator it) { return ((T_SetType&)m_set).erase(it); }
+    bool Contains(IdType id) const { return end() != find(id); }
+    void FromString(Utf8StringCR in) { m_set.FromString(in); }
+    Utf8String ToString() const { return m_set.ToString(); }
 
-    BeIdSet const& GetBeIdSet() const {return m_set;}
+    BeIdSet const& GetBeIdSet() const { return m_set; }
 };
 
 //=======================================================================================
@@ -1487,20 +1499,18 @@ public:
 //! @see https://sqlite.org/c3ref/update_hook.html for details
 // @bsiclass
 //=======================================================================================
-struct DataUpdateCallback : NonCopyableClass
-    {
-public:
-    enum class SqlType
-        {
-        Insert, //!< Row, for which callback was invoked, was inserted
-        Update, //!< Row, for which callback was invoked, was updated
-        Delete //!< Row, for which callback was invoked, was deleted
-        };
+struct DataUpdateCallback : NonCopyableClass {
+   public:
+    enum class SqlType {
+        Insert,  //!< Row, for which callback was invoked, was inserted
+        Update,  //!< Row, for which callback was invoked, was updated
+        Delete   //!< Row, for which callback was invoked, was deleted
+    };
 
-protected:
+   protected:
     DataUpdateCallback() {}
 
-public:
+   public:
     virtual ~DataUpdateCallback() {}
 
     //! Called by SQLite when a row is updated, inserted or deleted.
@@ -1510,38 +1520,39 @@ public:
     //! @param[in] rowid Rowid of the affected row. In case of SqlType::Update, this is the rowid after the update
     //! takes place
     virtual void _OnRowModified(SqlType sqlType, Utf8CP dbName, Utf8CP tableName, BeInt64Id rowid) = 0;
-    };
+};
 
 //=======================================================================================
 //! Wraps sqlite3_mprintf. Adds convenience that destructor frees memory.
 // @bsiclass
 //=======================================================================================
-struct SqlPrintfString final
-{
-private:
+struct SqlPrintfString final {
+   private:
     Utf8P m_str;
-public:
+
+   public:
     //! @see sqlite3_mprintf
     BE_SQLITE_EXPORT SqlPrintfString(Utf8CP fmt, ...);
     BE_SQLITE_EXPORT ~SqlPrintfString();
-    operator Utf8CP(){return m_str;}
-    Utf8CP GetUtf8CP() {return m_str;}
+    operator Utf8CP() { return m_str; }
+    Utf8CP GetUtf8CP() { return m_str; }
 };
 
 //=======================================================================================
 //! Holds a mutex to synchronize multi-thread access to data.
 // @bsiclass
 //=======================================================================================
-struct BeDbMutex : NonCopyableClass
-{
-private:
-    void*  m_mux;
-public:
-    enum class MutexType : bool {Fast=0, Recursive=1};
-    BE_SQLITE_EXPORT BeDbMutex(MutexType mutexType=MutexType::Fast);       //!< create a new SQLite mutex, see sqlite3_mutex_alloc
-    BE_SQLITE_EXPORT ~BeDbMutex();      //!< free mutex
-    BE_SQLITE_EXPORT void Enter();      //!< acquire mutex's lock
-    BE_SQLITE_EXPORT void Leave();      //!< release mutex's lock
+struct BeDbMutex : NonCopyableClass {
+   private:
+    void* m_mux;
+
+   public:
+    enum class MutexType : bool { Fast = 0,
+                                  Recursive = 1 };
+    BE_SQLITE_EXPORT BeDbMutex(MutexType mutexType = MutexType::Fast);  //!< create a new SQLite mutex, see sqlite3_mutex_alloc
+    BE_SQLITE_EXPORT ~BeDbMutex();                                      //!< free mutex
+    BE_SQLITE_EXPORT void Enter();                                      //!< acquire mutex's lock
+    BE_SQLITE_EXPORT void Leave();                                      //!< release mutex's lock
 #ifndef NDEBUG
     BE_SQLITE_EXPORT bool IsHeld();
 #endif
@@ -1551,25 +1562,24 @@ public:
 //! A convenience class for acquiring and releasing a mutex lock. Lock is acquired on construction and released on destruction.
 // @bsiclass
 //=======================================================================================
-struct BeDbMutexHolder final : NonCopyableClass
-{
+struct BeDbMutexHolder final : NonCopyableClass {
     BeDbMutex& m_mutex;
-    BeDbMutexHolder(BeDbMutex& mutex) : m_mutex(mutex) {m_mutex.Enter();}
-    ~BeDbMutexHolder() {m_mutex.Leave();}
+    BeDbMutexHolder(BeDbMutex& mutex) : m_mutex(mutex) { m_mutex.Enter(); }
+    ~BeDbMutexHolder() { m_mutex.Leave(); }
 };
 
 //=======================================================================================
 //! Holds a mutex to synchronize multi-thread access to data.
 // @bsiclass
 //=======================================================================================
-struct BeSqliteDbMutex final : NonCopyableClass
-{
-private:
-    void*  m_mux;
-public:
+struct BeSqliteDbMutex final : NonCopyableClass {
+   private:
+    void* m_mux;
+
+   public:
     BE_SQLITE_EXPORT BeSqliteDbMutex(Db& db);
-    BE_SQLITE_EXPORT void Enter();      //!< acquire mutex's lock
-    BE_SQLITE_EXPORT void Leave();      //!< release mutex's lock
+    BE_SQLITE_EXPORT void Enter();  //!< acquire mutex's lock
+    BE_SQLITE_EXPORT void Leave();  //!< release mutex's lock
 #ifndef NDEBUG
     BE_SQLITE_EXPORT bool IsHeld();
 #endif
@@ -1579,35 +1589,34 @@ public:
 //! A convenience class for acquiring and releasing the Db's mutex.
 // @bsiclass
 //=======================================================================================
-struct BeSqliteDbMutexHolder final : NonCopyableClass
-{
+struct BeSqliteDbMutexHolder final : NonCopyableClass {
     BeSqliteDbMutex m_mutex;
-    BeSqliteDbMutexHolder(Db& db) : m_mutex(db) {m_mutex.Enter();}
-    ~BeSqliteDbMutexHolder() {m_mutex.Leave();}
+    BeSqliteDbMutexHolder(Db& db) : m_mutex(db) { m_mutex.Enter(); }
+    ~BeSqliteDbMutexHolder() { m_mutex.Leave(); }
 };
 
 //=======================================================================================
 //! A reference-counted Statement. Statement is freed when last reference is Released.
 // @bsiclass
 //=======================================================================================
-struct CachedStatement final : Statement
-{
+struct CachedStatement final : Statement {
     friend struct StatementCache;
-private:
+
+   private:
     mutable BeAtomic<uint32_t> m_refCount;
     bool m_inCache;
     struct StatementCache const& m_myCache;
-    Utf8CP  m_sql;
+    Utf8CP m_sql;
     CachedStatement(Utf8CP sql, struct StatementCache const&);
     ~CachedStatement();
 
-public:
+   public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-    uint32_t AddRef() const {return m_refCount.IncrementAtomicPre();}
-    uint32_t GetRefCount() const {return m_refCount.load();}
+    uint32_t AddRef() const { return m_refCount.IncrementAtomicPre(); }
+    uint32_t GetRefCount() const { return m_refCount.load(); }
     BE_SQLITE_EXPORT uint32_t Release();
-    Utf8CP GetSQL() const {return m_sql;}
+    Utf8CP GetSQL() const { return m_sql; }
 
     //! CachedStatements can never be Finalized externally. That will corrupt the cache.
     void Finalize() = delete;
@@ -1622,11 +1631,10 @@ typedef RefCountedPtr<CachedStatement> CachedStatementPtr;
 //! By default, the cache holds 20 SharedStatements and releases the oldest statement when a new entry is added to a full cache.
 // @bsiclass
 //=======================================================================================
-struct StatementCache final: NonCopyableClass
-{
+struct StatementCache final : NonCopyableClass {
     friend struct CachedStatement;
-private:
 
+   private:
     typedef std::list<CachedStatementPtr> Entries;
     mutable BeMutex* m_mutex;
     bool m_ownMutex;
@@ -1636,14 +1644,14 @@ private:
     BE_SQLITE_EXPORT void AddStatement(CachedStatementPtr& newEntry, Utf8CP sql) const;
     BE_SQLITE_EXPORT void FindStatement(CachedStatementPtr&, Utf8CP) const;
 
-public:
+   public:
     BE_SQLITE_EXPORT explicit StatementCache(uint32_t size, BeMutex* inheritedMutex = nullptr);
     BE_SQLITE_EXPORT ~StatementCache();
 
     BE_SQLITE_EXPORT DbResult GetPreparedStatement(CachedStatementPtr&, DbFile const& dbFile, Utf8CP sqlString, bool logError = true) const;
     BE_SQLITE_EXPORT void Dump() const;
     BE_SQLITE_EXPORT void Empty();
-    bool IsEmpty() const {return m_entries.empty();}
+    bool IsEmpty() const { return m_entries.empty(); }
 };
 
 //=======================================================================================
@@ -1663,26 +1671,24 @@ public:
 //! @endcode
 // @bsiclass
 //=======================================================================================
-struct NamedParams
-{
-public:
-    struct SqlParameter : RefCountedBase
-    {
+struct NamedParams {
+   public:
+    struct SqlParameter : RefCountedBase {
         Utf8String m_name;
         SqlParameter(Utf8CP name) : m_name(name) {}
         virtual void _Bind(Statement&) = 0;
     };
 
-private:
+   private:
     typedef RefCountedPtr<SqlParameter> SqlParameterPtr;
     Utf8String m_where;
-    bvector<SqlParameterPtr>  m_params;
+    bvector<SqlParameterPtr> m_params;
 
-public:
+   public:
     //! Add a parameter value to this set of NamedParams.
     //! @param[in] param the parameter to add
     //! @note If more than one parameter exist with the same parameter name, the last one is used.
-    void AddSqlParameter(SqlParameter* param) {m_params.push_back(param);}
+    void AddSqlParameter(SqlParameter* param) { m_params.push_back(param); }
 
     //! Add a String parameter value to this NamedParams.
     //! @param[in] name The name of the parameter (including the "@" or ":" used in the SQL).
@@ -1708,7 +1714,7 @@ public:
 
     //! ctor for NamedParams
     //! @param[in] where an optional part of the where clause for a SELECT statement.
-    NamedParams(Utf8CP where=nullptr) {SetWhere(where);}
+    NamedParams(Utf8CP where = nullptr) { SetWhere(where); }
 
     //! Change the value of the SQL Where clause for this NamedParam.
     //! @param[in] where the new WHERE clause
@@ -1718,7 +1724,7 @@ public:
     BE_SQLITE_EXPORT void SetWhere(Utf8CP where);
 
     //! Get the Where clause for this NamedParam
-    Utf8StringCR GetWhere() const {return m_where;}
+    Utf8StringCR GetWhere() const { return m_where; }
 
     //! Bind all of the added parameters to the supplied statement.
     //! @param[in] stmt the statement containing the named parameters to which these values are to be bound.
@@ -1740,9 +1746,8 @@ public:
 //! and make sure the DbTableIterator is valid for the lifetime of its Entries.
 // @bsiclass
 //=======================================================================================
-struct DbTableIterator  : NonCopyableClass
-{
-protected:
+struct DbTableIterator : NonCopyableClass {
+   protected:
     mutable DbP m_db;
     mutable CachedStatementPtr m_stmt;
     NamedParams m_params;
@@ -1752,33 +1757,38 @@ protected:
     //! Move ctor. DbTableIterator are not copyable, but they are movable.
     DbTableIterator(DbTableIterator&& rhs) : m_db(rhs.m_db), m_stmt(std::move(rhs.m_stmt)), m_params(rhs.m_params) {}
 
-    BE_SQLITE_EXPORT Utf8String MakeSqlString(Utf8CP sql, bool hasWhere=false) const;
+    BE_SQLITE_EXPORT Utf8String MakeSqlString(Utf8CP sql, bool hasWhere = false) const;
 
-public:
-    struct Entry
-    {
-    protected:
-        bool  m_isValid;
+   public:
+    struct Entry {
+       protected:
+        bool m_isValid;
         StatementP m_sql;
-        Entry(StatementP sql, bool isValid) {m_sql=sql; m_isValid=isValid;}
-        void Verify() const {BeAssert(nullptr != m_sql->GetSqlStatementP());}
+        Entry(StatementP sql, bool isValid) {
+            m_sql = sql;
+            m_isValid = isValid;
+        }
+        void Verify() const { BeAssert(nullptr != m_sql->GetSqlStatementP()); }
 
-    public:
-        bool IsValid() const {return m_isValid && (nullptr!=m_sql->GetSqlStatementP());}
-        void Invalidate() {m_isValid=false;}
+       public:
+        bool IsValid() const { return m_isValid && (nullptr != m_sql->GetSqlStatementP()); }
+        void Invalidate() { m_isValid = false; }
 
-        Entry& operator++() {m_isValid=(BeSQLite::BE_SQLITE_ROW == m_sql->Step()); return *this;}
-        Entry const& operator* () const {return *this;}
-        bool operator!=(Entry const& rhs) const {return (m_isValid != rhs.m_isValid);}
-        bool operator==(Entry const& rhs) const {return (m_isValid == rhs.m_isValid);}
+        Entry& operator++() {
+            m_isValid = (BeSQLite::BE_SQLITE_ROW == m_sql->Step());
+            return *this;
+        }
+        Entry const& operator*() const { return *this; }
+        bool operator!=(Entry const& rhs) const { return (m_isValid != rhs.m_isValid); }
+        bool operator==(Entry const& rhs) const { return (m_isValid == rhs.m_isValid); }
     };
 
     //! Get the prepared statement for this iterator. This can be used to bind parameters before calling /c begin.
-    Statement* GetStatement() {return m_stmt.get();}
+    Statement* GetStatement() { return m_stmt.get(); }
 
     //! Get a reference to the NamedParams for this iterator. This is useful for adding additional WHERE clause
     //! filtering to the iterator.
-    NamedParams& Params() {return m_params;}
+    NamedParams& Params() { return m_params; }
 };
 
 //=======================================================================================
@@ -1786,8 +1796,7 @@ public:
 //! decompress operation.
 // @bsiclass
 //=======================================================================================
-struct ICompressProgressTracker
-{
+struct ICompressProgressTracker {
     //! @param[in] inSize size of the source file
     //! @param[in] outSize size of the output; -1 if no valid information is available.
     //! Returning anything other than BSISUCCESS causes the operation to abort.
@@ -1800,11 +1809,14 @@ struct ICompressProgressTracker
 //=======================================================================================
 struct ChunkedArray {
     using Chunk = bvector<Byte>;
-    int m_maxSize; // when Append is called and the current chunk is already larger than this, start a new chunk.
-    size_t m_size = 0; // total number of bytes in all chunks
+    int m_maxSize;      // when Append is called and the current chunk is already larger than this, start a new chunk.
+    size_t m_size = 0;  // total number of bytes in all chunks
     bvector<Chunk> m_chunks;
 
-    void Clear() { m_size = 0; m_chunks.clear(); }
+    void Clear() {
+        m_size = 0;
+        m_chunks.clear();
+    }
     bool IsEmpty() const { return m_size == 0; }
     ChunkedArray(int maxSize = 64 * 1024) { m_maxSize = maxSize; }
     ChunkedArray(ChunkedArray&& other) { *this = std::move(other); }
@@ -1828,7 +1840,7 @@ struct ChunkedArray {
         int m_chunkNum = 0;
         size_t m_currPos = 0;
         Reader(ChunkedArray const& array) : m_array(array) {}
-        BE_SQLITE_EXPORT void Read(Byte* data, int *pSize);
+        BE_SQLITE_EXPORT void Read(Byte* data, int* pSize);
         BE_SQLITE_EXPORT int Seek(int64_t offset, bool fromBeginning = true);
     };
 };
@@ -1844,55 +1856,53 @@ struct ChunkedArray {
 //! <p> Optionally, entries can have a description string and a type string for filtering.
 // @bsiclass
 //=======================================================================================
-struct DbEmbeddedFileTable
-{
-private:
+struct DbEmbeddedFileTable {
+   private:
     friend struct Db;
     DbR m_db;
     DbEmbeddedFileTable(DbR db) : m_db(db) {}
 
-    BeBriefcaseBasedId GetNextEmbedFileId() const; //!< @private
+    BeBriefcaseBasedId GetNextEmbedFileId() const;  //!< @private
 
-public:
+   public:
     //=======================================================================================
     //! An Iterator over the entries of a DbEmbeddedFileTable.
     // @bsiclass
     //=======================================================================================
-    struct Iterator : DbTableIterator
-    {
-    public:
+    struct Iterator : DbTableIterator {
+       public:
         explicit Iterator(DbCR db) : DbTableIterator(db) {}
 
-        struct Entry : DbTableIterator::Entry
-        {
-            using iterator_category=std::input_iterator_tag;
-            using value_type=Entry const;
-            using difference_type=std::ptrdiff_t;
-            using pointer=Entry const*;
-            using reference=Entry const&;
+        struct Entry : DbTableIterator::Entry {
+            using iterator_category = std::input_iterator_tag;
+            using value_type = Entry const;
+            using difference_type = std::ptrdiff_t;
+            using pointer = Entry const*;
+            using reference = Entry const&;
 
-        private:
+           private:
             friend struct Iterator;
-            Entry(StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
-        public:
-            BE_SQLITE_EXPORT Utf8CP GetNameUtf8() const;          //!< the name of this embedded file.
-            BE_SQLITE_EXPORT Utf8CP GetDescriptionUtf8() const;   //!< the description of this embedded file.
-            BE_SQLITE_EXPORT Utf8CP GetTypeUtf8() const;          //!< the type of this embedded file.
-            BE_SQLITE_EXPORT uint64_t GetFileSize() const;        //!< the total size, in bytes, of this embedded file.
-            BE_SQLITE_EXPORT uint32_t GetChunkSize() const;       //!< the chunk size used to embed this file.
-            BE_SQLITE_EXPORT DateTime GetLastModified() const;    //!< the time the file was last modified.
+            Entry(StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
+
+           public:
+            BE_SQLITE_EXPORT Utf8CP GetNameUtf8() const;         //!< the name of this embedded file.
+            BE_SQLITE_EXPORT Utf8CP GetDescriptionUtf8() const;  //!< the description of this embedded file.
+            BE_SQLITE_EXPORT Utf8CP GetTypeUtf8() const;         //!< the type of this embedded file.
+            BE_SQLITE_EXPORT uint64_t GetFileSize() const;       //!< the total size, in bytes, of this embedded file.
+            BE_SQLITE_EXPORT uint32_t GetChunkSize() const;      //!< the chunk size used to embed this file.
+            BE_SQLITE_EXPORT DateTime GetLastModified() const;   //!< the time the file was last modified.
             BE_SQLITE_EXPORT BeBriefcaseBasedId GetId() const;   //!< the id of this embedded file.
-            Entry const& operator* () const {return *this;}
+            Entry const& operator*() const { return *this; }
         };
 
         typedef Entry const_iterator;
         typedef const_iterator iterator;
         BE_SQLITE_EXPORT const_iterator begin() const;
-        const_iterator end() const {return Entry(nullptr, false);}
+        const_iterator end() const { return Entry(nullptr, false); }
         BE_SQLITE_EXPORT size_t QueryCount() const;
     };
     //! return an iterator over this embedded file table.
-    Iterator MakeIterator() const {return Iterator(m_db);}
+    Iterator MakeIterator() const { return Iterator(m_db); }
 
     //! Query the values for an embedded file, by name.
     //! @param[in] name the (case insensitive) name by which the file was embedded.
@@ -1903,7 +1913,7 @@ public:
     //! @param[out] lastModified the time the file was last modified. May be nullptr.
     //! @return the id  of the file, if found. If there is no entry of the given name, id will be invalid.
     BE_SQLITE_EXPORT BeBriefcaseBasedId QueryFile(Utf8CP name, uint64_t* totalSize = nullptr, DateTime* lastModified = nullptr,
-        uint32_t* chunkSize = nullptr, Utf8StringP descr = nullptr, Utf8StringP typeStr = nullptr );
+                                                  uint32_t* chunkSize = nullptr, Utf8StringP descr = nullptr, Utf8StringP typeStr = nullptr);
     BE_SQLITE_EXPORT BeBriefcaseBasedId ImportDbFile(DbResult& stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024, bool supportRandomAccess = true);
 
     //! Import a copy of an existing file from the local filesystem into this BeSQLite::Db.
@@ -1919,15 +1929,15 @@ public:
     //! @param[in] supportRandomAccess if true, ignore the specified chunkSize and calculate it instead.  Generally, the default should be used.
     //! @return Id of the embedded file
     BE_SQLITE_EXPORT BeBriefcaseBasedId Import(DbResult* stat, bool compress, Utf8CP name, Utf8CP localFileName, DateTime const* lastModified = nullptr,
-        Utf8CP typeStr = nullptr, Utf8CP description = nullptr, uint32_t chunkSize = 500 * 1024, bool supportRandomAccess = true);
-    BE_SQLITE_EXPORT DbResult ExportDbFile(Utf8CP localFileName, Utf8CP name, ICompressProgressTracker* progress=nullptr);
+                                               Utf8CP typeStr = nullptr, Utf8CP description = nullptr, uint32_t chunkSize = 500 * 1024, bool supportRandomAccess = true);
+    BE_SQLITE_EXPORT DbResult ExportDbFile(Utf8CP localFileName, Utf8CP name, ICompressProgressTracker* progress = nullptr);
 
     //! Create a new file on the local file system with a copy of the content of an embedded file, by name.
     //! @param[in] localFileName the name for the new file. This method will fail if the file already exists or cannot be created.
     //! @param[in] name the name by which the file was embedded.
     //! @param[in] progress the interface to call to report progress.  May be nullptr.
     //! @return BE_SQLITE_OK if the file was successfully exported, and error status otherwise.
-    BE_SQLITE_EXPORT DbResult Export(Utf8CP localFileName, Utf8CP name, ICompressProgressTracker* progress=nullptr);
+    BE_SQLITE_EXPORT DbResult Export(Utf8CP localFileName, Utf8CP name, ICompressProgressTracker* progress = nullptr);
 
     //! Extract and de-compress the specified embedded file to the supplied bvector.
     //! @param[in] buffer where to store the extracted bytes
@@ -1942,7 +1952,7 @@ public:
     //! choosing a good chunkSize, so be careful to test for optimal size. Generally, the default is fine.
     //! @param[in] lastModified the time the file was last modified. May be nullptr.
     //! @return BE_SQLITE_OK if the new file was successfully replaced, and error status otherwise.
-    BE_SQLITE_EXPORT DbResult Replace(Utf8CP name, Utf8CP localFileName, DateTime const* lastModified = nullptr, uint32_t chunkSize=500*1024);
+    BE_SQLITE_EXPORT DbResult Replace(Utf8CP name, Utf8CP localFileName, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024);
 
     //! Add a new entry into this embedded file table. This merely creates an entry and id for the file, it will have no content. This method is used to subsequently
     //! add data from an in-memory buffer via Save.
@@ -1964,8 +1974,7 @@ public:
     //! @param[in] chunkSize the maximum number of bytes that are saved in a single blob to hold this file. There are many tradeoffs involved in
     //! choosing a good chunkSize, so be careful to test for optimal size. Generally, the default is fine.
     //! @return BE_SQLITE_OK if the entry was successfully saved, and error status otherwise.
-    BE_SQLITE_EXPORT DbResult Save(void const* data, uint64_t size, Utf8CP name, DateTime const* lastModified = nullptr, bool compress=true, uint32_t chunkSize=500*1024);
-
+    BE_SQLITE_EXPORT DbResult Save(void const* data, uint64_t size, Utf8CP name, DateTime const* lastModified = nullptr, bool compress = true, uint32_t chunkSize = 500 * 1024);
 
     //! Remove an entry from this embedded file table, by name. All of its data will be deleted from the Db.
     //! @param[in] name the name by which the file was embedded.
@@ -1977,24 +1986,27 @@ public:
 };
 
 //! SQLite Transaction modes corresponding to https://www.sqlite.org/lang_transaction.html
-enum class BeSQLiteTxnMode : int {None=0, Deferred=1, Immediate=2, Exclusive=3,};
+enum class BeSQLiteTxnMode : int { None = 0,
+                                   Deferred = 1,
+                                   Immediate = 2,
+                                   Exclusive = 3,
+};
 
 //! Determines whether and how the default transaction should be started when a Db is created or opened.
-enum class DefaultTxn : int
-{
+enum class DefaultTxn : int {
     //! Do not start a default transaction. This is generally not a good idea except for very specialized cases. All access to a database requires a transaction.
     //! So, unless you start a "default" transaction, you must wrap all SQL statements with a \ref Savepoint.
-    No = (int) BeSQLiteTxnMode::None,
+    No = (int)BeSQLiteTxnMode::None,
     //! Create a default "normal" transaction. SQLite will acquire locks as they are needed.
-    Yes = (int) BeSQLiteTxnMode::Deferred,
+    Yes = (int)BeSQLiteTxnMode::Deferred,
     //! Create a default transaction using SQLite "immediate" mode. This acquires the "reserved" locks on the database (see http://www.sqlite.org/lang_transaction.html)
     //! when the file is opened and then attempts to reacquire them every time the default transaction is committed.
-    Immediate = (int) BeSQLiteTxnMode::Immediate,
+    Immediate = (int)BeSQLiteTxnMode::Immediate,
     //! Create a default transaction using SQLite "exclusive" mode. This acquires all locks on the database (see http://www.sqlite.org/lang_transaction.html)
     //! when the file is opened. The locks are never released until the database is closed. Only exclusive access guarantees that no other process will be able to
     //! gain access (and thereby block access from this connection) to the file when the default transaction is committed. Use of DefaultTxn_Exclusive requires
     //! that the database be opened for read+write access and the open will fail if you attempt to use it on a readonly connection.
-    Exclusive = (int) BeSQLiteTxnMode::Exclusive
+    Exclusive = (int)BeSQLiteTxnMode::Exclusive
 };
 
 //=======================================================================================
@@ -2011,50 +2023,52 @@ enum class DefaultTxn : int
 //! Savepoint::Cancel() on it before it is destroyed.
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Savepoint : NonCopyableClass
-{
-#if !defined (DOCUMENTATION_GENERATOR)
-protected:
+struct EXPORT_VTABLE_ATTRIBUTE Savepoint : NonCopyableClass {
+#if !defined(DOCUMENTATION_GENERATOR)
+   protected:
     friend struct DbFile;
-    Db*         m_db;
-    DbFile*     m_dbFile;
-    int32_t     m_depth;
-    BeSQLiteTxnMode  m_txnMode;
-    Utf8String  m_name;
+    Db* m_db;
+    DbFile* m_dbFile;
+    int32_t m_depth;
+    BeSQLiteTxnMode m_txnMode;
+    Utf8String m_name;
 
-    virtual void _OnDeactivate(bool isCommit) {m_depth=-1;}
+    virtual void _OnDeactivate(bool isCommit) { m_depth = -1; }
     BE_SQLITE_EXPORT virtual DbResult _Begin(BeSQLiteTxnMode);
     BE_SQLITE_EXPORT virtual DbResult _Commit(Utf8CP operation);
     BE_SQLITE_EXPORT virtual DbResult _Cancel();
 
-    Savepoint(DbFile& db, Utf8CP name, BeSQLiteTxnMode txnMode) : m_dbFile(&db), m_name(name), m_txnMode(txnMode) {m_db=nullptr; m_depth = -1;}
+    Savepoint(DbFile& db, Utf8CP name, BeSQLiteTxnMode txnMode) : m_dbFile(&db), m_name(name), m_txnMode(txnMode) {
+        m_db = nullptr;
+        m_depth = -1;
+    }
 #endif
 
-public:
+   public:
     //! Construct a Savepoint against a BeSQLite::Db. Savepoints must have a name and can be nested. Optionally, the savepoint can be started (via Begin)
     //! @param[in] db the database for this Savepoint.
     //! @param[in] name the name of this Savepoint. Does not have to be unique, but must not be nullptr.
     //! @param[in] beginTxn if true Begin() is called in constructor. To see if Begin was successful, check IsActive.
     //! @param[in] txnMode the default transaction mode for this Savepoint
-    BE_SQLITE_EXPORT Savepoint(Db& db, Utf8CP name, bool beginTxn=true, BeSQLiteTxnMode txnMode=BeSQLiteTxnMode::Deferred);
+    BE_SQLITE_EXPORT Savepoint(Db& db, Utf8CP name, bool beginTxn = true, BeSQLiteTxnMode txnMode = BeSQLiteTxnMode::Deferred);
 
     //! dtor for Savepoint. If the Savepoint is still active, it is committed.
     BE_SQLITE_EXPORT virtual ~Savepoint();
 
     //! Determine whether this Savepoint is active or not.
-    bool IsActive() const {return GetDepth() >= 0;}
+    bool IsActive() const { return GetDepth() >= 0; }
 
     //! Get the savepoint depth for this Savepoint. This will always be a number >= 0 if the savepoint is active.
-    int32_t GetDepth() const {return m_depth;}
+    int32_t GetDepth() const { return m_depth; }
 
     //! Get the name of this Savepoint.
-    Utf8CP GetName() const {return m_name.c_str();}
+    Utf8CP GetName() const { return m_name.c_str(); }
 
     //! Get the default transaction mode for this SavePoint
-    BeSQLiteTxnMode GetTxnMode() const {return m_txnMode;}
+    BeSQLiteTxnMode GetTxnMode() const { return m_txnMode; }
 
     //! Sets the default transaction mode for this Savepoint.
-    void SetTxnMode(BeSQLiteTxnMode mode) {m_txnMode = mode;}
+    void SetTxnMode(BeSQLiteTxnMode mode) { m_txnMode = mode; }
 
     //! Begin a transaction against the database. Fails if this Savepoint is already active.
     //! See SQLite "BEGIN" and "SAVEPOINT" documentation for other conditions.
@@ -2062,7 +2076,7 @@ public:
     BE_SQLITE_EXPORT DbResult Begin(BeSQLiteTxnMode mode);
 
     //! Begin a transaction against the database with the default transaction mode
-    DbResult Begin() {return Begin(m_txnMode);}
+    DbResult Begin() { return Begin(m_txnMode); }
 
     //! Commit this Savepoint, if active. Executes the SQLite "RELEASE" command. If this is the outermost transaction, this will save changes
     //! to the disk.
@@ -2070,7 +2084,7 @@ public:
     //! changeset to identify it.
     //! @note After Commit, the Savepoint is not active. If you mean to save your changes but leave this Savepoint open, call Save.
     //! @note If a Savepoint is active when it is destroyed, it is automatically committed.
-    BE_SQLITE_EXPORT DbResult Commit(Utf8CP operation=nullptr);
+    BE_SQLITE_EXPORT DbResult Commit(Utf8CP operation = nullptr);
 
     //! Commit this transaction and then restart it. If this is the outermost Savepoint, this will save changes to disk but leave
     //! a new transaction active.
@@ -2091,67 +2105,74 @@ struct DbBuffer final {
     using SqlMemCP = const void*;
     using ByteP = uint8_t*;
     using ByteCP = const uint8_t*;
-    private:
-        SqlMemP m_buff;
-        uint64_t m_size;
 
-        void EnsureCapacity(uint64_t);
-        void Realloc(uint64_t);
+   private:
+    SqlMemP m_buff;
+    uint64_t m_size;
 
-        BE_SQLITE_EXPORT void Free();
-        BE_SQLITE_EXPORT void Alloc(uint64_t);
-        BE_SQLITE_EXPORT void CopyFrom(SqlMemCP, uint64_t);
-        BE_SQLITE_EXPORT void MoveFrom(DbBuffer& buff);
-        BE_SQLITE_EXPORT void TakeOwnership(SqlMemP, uint64_t);
+    void EnsureCapacity(uint64_t);
+    void Realloc(uint64_t);
 
-    public:
-        DbBuffer(): m_size(0),m_buff(0){}
-        explicit DbBuffer(uint64_t size): m_size(0),m_buff(0) { Alloc(size); }
-        DbBuffer(SqlMemCP buff, uint64_t sz): m_size(0),m_buff(0) { CopyFrom(buff, sz); }
-        DbBuffer(SqlMemP buff, uint64_t sz): m_size(0),m_buff(0) { TakeOwnership(buff, sz); }
-        DbBuffer(DbBuffer&& rhs): m_size(0),m_buff(0) { MoveFrom(rhs); };
-        DbBuffer(DbBuffer const& rhs): m_size(0),m_buff(0) { CopyFrom(rhs.m_buff, rhs.m_size); };
-        DbBuffer& operator = (DbBuffer&& rhs) { MoveFrom(rhs); return *this;}
-        DbBuffer& operator = (DbBuffer const& rhs) { CopyFrom(rhs.m_buff, rhs.m_size); return *this;}
-        ~DbBuffer() { Free(); }
+    BE_SQLITE_EXPORT void Free();
+    BE_SQLITE_EXPORT void Alloc(uint64_t);
+    BE_SQLITE_EXPORT void CopyFrom(SqlMemCP, uint64_t);
+    BE_SQLITE_EXPORT void MoveFrom(DbBuffer& buff);
+    BE_SQLITE_EXPORT void TakeOwnership(SqlMemP, uint64_t);
 
-        explicit operator SqlMemCP() const { return m_buff; }
-        explicit operator SqlMemP() { return const_cast<SqlMemP>(m_buff); }
-        explicit operator ByteCP() const { return (ByteCP)(SqlMemCP)*this;  }
-        explicit operator ByteP () { return (ByteP)(SqlMemP)*this;  }
+   public:
+    DbBuffer() : m_size(0), m_buff(0) {}
+    explicit DbBuffer(uint64_t size) : m_size(0), m_buff(0) { Alloc(size); }
+    DbBuffer(SqlMemCP buff, uint64_t sz) : m_size(0), m_buff(0) { CopyFrom(buff, sz); }
+    DbBuffer(SqlMemP buff, uint64_t sz) : m_size(0), m_buff(0) { TakeOwnership(buff, sz); }
+    DbBuffer(DbBuffer&& rhs) : m_size(0), m_buff(0) { MoveFrom(rhs); };
+    DbBuffer(DbBuffer const& rhs) : m_size(0), m_buff(0) { CopyFrom(rhs.m_buff, rhs.m_size); };
+    DbBuffer& operator=(DbBuffer&& rhs) {
+        MoveFrom(rhs);
+        return *this;
+    }
+    DbBuffer& operator=(DbBuffer const& rhs) {
+        CopyFrom(rhs.m_buff, rhs.m_size);
+        return *this;
+    }
+    ~DbBuffer() { Free(); }
 
-        //! return ptr to allocated memory
-        SqlMemP DataP() const { return const_cast<SqlMemP>(m_buff); }
+    explicit operator SqlMemCP() const { return m_buff; }
+    explicit operator SqlMemP() { return const_cast<SqlMemP>(m_buff); }
+    explicit operator ByteCP() const { return (ByteCP)(SqlMemCP) * this; }
+    explicit operator ByteP() { return (ByteP)(SqlMemP) * this; }
 
-        //! return const ptr to allocated memory
-        SqlMemCP Data() const { return m_buff; }
+    //! return ptr to allocated memory
+    SqlMemP DataP() const { return const_cast<SqlMemP>(m_buff); }
 
-        //! return size of buffer which can be less or equal to Capacity()
-        uint64_t Size() const { return m_size; }
+    //! return const ptr to allocated memory
+    SqlMemCP Data() const { return m_buff; }
 
-        //! check if buffer has been allocated
-        bool Empty() const { return m_buff == nullptr && m_size == 0; }
+    //! return size of buffer which can be less or equal to Capacity()
+    uint64_t Size() const { return m_size; }
 
-        //! return total size of allocated memory which can be larger then what returned by Size()
-        BE_SQLITE_EXPORT uint64_t Capacity() const;
+    //! check if buffer has been allocated
+    bool Empty() const { return m_buff == nullptr && m_size == 0; }
 
-        //! fill buffer with zeros
-        BE_SQLITE_EXPORT void Zero();
+    //! return total size of allocated memory which can be larger then what returned by Size()
+    BE_SQLITE_EXPORT uint64_t Capacity() const;
 
-        //! detach from memory making someone else responsible to free it.
-        BE_SQLITE_EXPORT std::pair<SqlMemP,uint64_t> Detach();
+    //! fill buffer with zeros
+    BE_SQLITE_EXPORT void Zero();
 
-        //! see sqlite3_free in https://www.sqlite.org/c3ref/free.html
-        BE_SQLITE_EXPORT static void SqliteFree(SqlMemP);
+    //! detach from memory making someone else responsible to free it.
+    BE_SQLITE_EXPORT std::pair<SqlMemP, uint64_t> Detach();
 
-        //! see sqlite3_malloc64 in https://www.sqlite.org/c3ref/free.html
-        BE_SQLITE_EXPORT static SqlMemP SqliteAlloc(uint64_t);
+    //! see sqlite3_free in https://www.sqlite.org/c3ref/free.html
+    BE_SQLITE_EXPORT static void SqliteFree(SqlMemP);
 
-        //! see sqlite3_realloc64 in https://www.sqlite.org/c3ref/free.html
-        BE_SQLITE_EXPORT static SqlMemP SqliteRealloc(SqlMemP, uint64_t);
+    //! see sqlite3_malloc64 in https://www.sqlite.org/c3ref/free.html
+    BE_SQLITE_EXPORT static SqlMemP SqliteAlloc(uint64_t);
 
-        //! see sqlite3_msize in https://www.sqlite.org/c3ref/free.html
-        BE_SQLITE_EXPORT static uint64_t SqliteMSize(SqlMemP);
+    //! see sqlite3_realloc64 in https://www.sqlite.org/c3ref/free.html
+    BE_SQLITE_EXPORT static SqlMemP SqliteRealloc(SqlMemP, uint64_t);
+
+    //! see sqlite3_msize in https://www.sqlite.org/c3ref/free.html
+    BE_SQLITE_EXPORT static uint64_t SqliteMSize(SqlMemP);
 };
 
 //=======================================================================================
@@ -2172,30 +2193,30 @@ struct DbBuffer final {
 //! used judiciously, and reserved for only the few properties that warrant it.
 // @bsiclass
 //=======================================================================================
-struct PropertySpec
-{
-public:
+struct PropertySpec {
+   public:
     //! Determine whether a property's data may be compressed.
-    enum class Compress
-    {
+    enum class Compress {
         //! never compress this property
-        No=0,
+        No = 0,
 
         //! the property value may be compressed before it is saved. The property won't necessarily be compressed unless its size is large enough
         //! (usually 100 bytes) and the actual compression results in a net savings.
-        Yes=1
+        Yes = 1
     };
 
-    enum class Mode {Normal=0, Cached=2,};
+    enum class Mode { Normal = 0,
+                      Cached = 2,
+    };
 
-private:
+   private:
     Mode m_mode;
     Compress m_compress;
-    bool   m_saveIfNull;
+    bool m_saveIfNull;
     Utf8CP m_name;
     Utf8CP m_namespace;
 
-public:
+   public:
     //! Construct an instance of a PropertySpec with values for name and namespace
     //! @param[in] name The Name part of this Property specification
     //! @param[in] nameSpace The Namespace part of this Property specification.
@@ -2204,17 +2225,20 @@ public:
     //!            its size is large enough (usually 100 bytes) and the actual compression results in a net savings.
     //! @param[in] saveIfNull If true, this property will be saved even if its value is nullptr. Otherwise it is deleted if its value is Null.
     //! @note name and namespace should always point to static strings.
-    PropertySpec(Utf8CP name, Utf8CP nameSpace, Mode mode=Mode::Normal, Compress compress=Compress::Yes, bool saveIfNull=false) : m_name(name), m_namespace(nameSpace), m_compress(compress), m_mode(mode), m_saveIfNull(saveIfNull){}
+    PropertySpec(Utf8CP name, Utf8CP nameSpace, Mode mode = Mode::Normal, Compress compress = Compress::Yes, bool saveIfNull = false) : m_name(name), m_namespace(nameSpace), m_compress(compress), m_mode(mode), m_saveIfNull(saveIfNull) {}
 
     //! Copy a PropertySpec, changing only the mode
-    PropertySpec(PropertySpec const& other, Mode mode) {*this = other; m_mode=mode;}
+    PropertySpec(PropertySpec const& other, Mode mode) {
+        *this = other;
+        m_mode = mode;
+    }
 
-    Utf8CP GetName() const {return m_name;}
-    Utf8CP GetNamespace() const {return m_namespace;}
+    Utf8CP GetName() const { return m_name; }
+    Utf8CP GetNamespace() const { return m_namespace; }
 
-    bool IsCached()  const {return Mode::Cached == m_mode;}     //!< Determine whether this PropertySpec is cached or not.
-    bool SaveIfNull() const {return m_saveIfNull;}              //!< Determine whether this PropertySpec saves NULL values or not.
-    bool IsCompress() const {return Compress::Yes==m_compress;} //!< Determine whether this PropertySpec requests to compress or not.
+    bool IsCached() const { return Mode::Cached == m_mode; }         //!< Determine whether this PropertySpec is cached or not.
+    bool SaveIfNull() const { return m_saveIfNull; }                 //!< Determine whether this PropertySpec saves NULL values or not.
+    bool IsCompress() const { return Compress::Yes == m_compress; }  //!< Determine whether this PropertySpec requests to compress or not.
 };
 
 typedef PropertySpec const& PropertySpecCR;
@@ -2224,11 +2248,11 @@ typedef PropertySpec const& PropertySpecCR;
 // @bsiclass
 //=======================================================================================
 struct BusyRetry : RefCountedBase {
-private:
+   private:
     uint32_t m_timeout;
     int m_retries;
 
-public:
+   public:
     BusyRetry(int retries = 5, uint32_t timeout = 1000) : m_retries(retries), m_timeout(timeout) {}
 
     //! Called when SQLite is blocked by another connection to a database. The default implementation performs 5 retries
@@ -2243,22 +2267,27 @@ public:
 //! @private
 // @bsiclass
 //=======================================================================================
-struct CachedBLV
-{
-private:
-    Utf8String   m_name;
-    bool         m_isUnset;
+struct CachedBLV {
+   private:
+    Utf8String m_name;
+    bool m_isUnset;
     mutable bool m_dirty;
-    uint64_t     m_value;
+    uint64_t m_value;
 
-public:
+   public:
     explicit CachedBLV(Utf8CP name);
-    Utf8CP GetName() const {return m_name.c_str();}
-    uint64_t GetValue() const {BeAssert(!m_isUnset); return m_value;}
+    Utf8CP GetName() const { return m_name.c_str(); }
+    uint64_t GetValue() const {
+        BeAssert(!m_isUnset);
+        return m_value;
+    }
     void ChangeValue(uint64_t value, bool initializing = false);
     uint64_t Increment();
-    bool IsUnset() const {return m_isUnset;}
-    bool IsDirty() const {BeAssert(!m_isUnset); return m_dirty;}
+    bool IsUnset() const { return m_isUnset; }
+    bool IsDirty() const {
+        BeAssert(!m_isUnset);
+        return m_dirty;
+    }
     void SetIsNotDirty() const;
     void Reset();
 };
@@ -2270,9 +2299,8 @@ public:
 //! @private
 // @bsiclass
 //=======================================================================================
-struct BriefcaseLocalValueCache : NonCopyableClass
-{
-private:
+struct BriefcaseLocalValueCache : NonCopyableClass {
+   private:
     friend struct DbFile;
     friend struct Db;
     bvector<CachedBLV> m_cache;
@@ -2282,7 +2310,7 @@ private:
     void Clear();
     bool TryQuery(CachedBLV*&, size_t rlvIndex);
 
-public:
+   public:
     BriefcaseLocalValueCache(DbFile& dbFile) : m_dbFile(dbFile) {}
 
     //! Register a BriefcaseLocalValue name with the Db.
@@ -2331,51 +2359,49 @@ public:
 //! The Db file's profile version compared to what the current software expects.
 // @bsiclass
 //=======================================================================================
-struct ProfileState final
-    {
-    enum class Age
-        {
+struct ProfileState final {
+    enum class Age {
         Newer,
         UpToDate,
         Older
-        };
-
-    enum class CanOpen
-        {
-        Readwrite, //<! File can be opened without restrictions
-        Readonly, //<! File can only be opened read-only
-        No //<! File cannot be opened
-        };
-
-    private:
-        Age m_age = Age::UpToDate;
-        CanOpen m_canOpen = CanOpen::Readwrite;
-        bool m_isUpgradable = false;
-
-        ProfileState(Age age, CanOpen canOpen, bool isUpgradable) : m_age(age), m_canOpen(canOpen), m_isUpgradable(isUpgradable) {}
-    public:
-        static ProfileState UpToDate() { return ProfileState(Age::UpToDate, CanOpen::Readwrite, false); }
-        static ProfileState Newer(CanOpen canOpen) { return ProfileState(Age::Newer, canOpen, false); }
-        static ProfileState Older(CanOpen canOpen, bool isUpgradable) { return ProfileState(Age::Older, canOpen, isUpgradable); }
-        static ProfileState Error() { return ProfileState(Age::UpToDate, CanOpen::No, false); }
-
-        bool operator==(ProfileState const& rhs) const { return m_age == rhs.m_age && m_canOpen == rhs.m_canOpen && m_isUpgradable == rhs.m_isUpgradable; }
-        bool operator!=(ProfileState const& rhs) const { return !(*this == rhs); }
-
-        bool IsError() const { return m_age == Age::UpToDate && m_canOpen == CanOpen::No; }
-        bool IsUpToDate() const { return m_age == Age::UpToDate; }
-        bool IsOlder() const { return m_age == Age::Older; }
-        bool IsNewer() const { return m_age == Age::Newer; }
-
-        //! Indicates whether the file is up-to-date or older or newer than what the software expects.
-        Age GetAge() const { return m_age; }
-        CanOpen GetCanOpen() const { return m_canOpen; }
-        //! Indicates whether the file can be upgraded. If yes, open the file with ProfileUpgradeOptions::Upgrade.
-        bool IsUpgradable() const { return m_isUpgradable; }
-
-        BE_SQLITE_EXPORT DbResult ToDbResult() const;
-        BE_SQLITE_EXPORT ProfileState Merge(ProfileState const& rhs) const;
     };
+
+    enum class CanOpen {
+        Readwrite,  //<! File can be opened without restrictions
+        Readonly,   //<! File can only be opened read-only
+        No          //<! File cannot be opened
+    };
+
+   private:
+    Age m_age = Age::UpToDate;
+    CanOpen m_canOpen = CanOpen::Readwrite;
+    bool m_isUpgradable = false;
+
+    ProfileState(Age age, CanOpen canOpen, bool isUpgradable) : m_age(age), m_canOpen(canOpen), m_isUpgradable(isUpgradable) {}
+
+   public:
+    static ProfileState UpToDate() { return ProfileState(Age::UpToDate, CanOpen::Readwrite, false); }
+    static ProfileState Newer(CanOpen canOpen) { return ProfileState(Age::Newer, canOpen, false); }
+    static ProfileState Older(CanOpen canOpen, bool isUpgradable) { return ProfileState(Age::Older, canOpen, isUpgradable); }
+    static ProfileState Error() { return ProfileState(Age::UpToDate, CanOpen::No, false); }
+
+    bool operator==(ProfileState const& rhs) const { return m_age == rhs.m_age && m_canOpen == rhs.m_canOpen && m_isUpgradable == rhs.m_isUpgradable; }
+    bool operator!=(ProfileState const& rhs) const { return !(*this == rhs); }
+
+    bool IsError() const { return m_age == Age::UpToDate && m_canOpen == CanOpen::No; }
+    bool IsUpToDate() const { return m_age == Age::UpToDate; }
+    bool IsOlder() const { return m_age == Age::Older; }
+    bool IsNewer() const { return m_age == Age::Newer; }
+
+    //! Indicates whether the file is up-to-date or older or newer than what the software expects.
+    Age GetAge() const { return m_age; }
+    CanOpen GetCanOpen() const { return m_canOpen; }
+    //! Indicates whether the file can be upgraded. If yes, open the file with ProfileUpgradeOptions::Upgrade.
+    bool IsUpgradable() const { return m_isUpgradable; }
+
+    BE_SQLITE_EXPORT DbResult ToDbResult() const;
+    BE_SQLITE_EXPORT ProfileState Merge(ProfileState const& rhs) const;
+};
 
 //=======================================================================================
 // @bsiclass
@@ -2389,32 +2415,30 @@ enum class DbProgressAction {
 //! A physical Db file.
 // @bsiclass
 //=======================================================================================
-struct DbFile : NonCopyableClass
-{
+struct DbFile : NonCopyableClass {
     friend struct Db;
     friend struct Statement;
     friend struct Savepoint;
 
-protected:
+   protected:
     typedef RefCountedPtr<struct ChangeTracker> ChangeTrackerPtr;
     typedef RefCountedPtr<BusyRetry> BusyRetryPtr;
     typedef bvector<Savepoint*> DbTxns;
     typedef DbTxns::iterator DbTxnIter;
-    struct TraceEvents: NonCopyableClass
-        {
+    struct TraceEvents : NonCopyableClass {
         DbTrace m_traceFlags;
         TraceRowEvent m_traceRowEvent;
         TraceStmtEvent m_traceStmtEvent;
         TraceProfileEvent m_traceProfileEvent;
         TraceCloseEvent m_traceCloseEvent;
-        };
+    };
 
     mutable std::unique_ptr<TraceEvents> m_traceEvents;
     TraceEvents& GetTraceEvents() const;
     bool m_allowImplicitTxns;
     bool m_inCommit;
     mutable bool m_readonly;
-    uint64_t m_dataVersion; // for detecting changes from another process
+    uint64_t m_dataVersion;  // for detecting changes from another process
     SqlDbP m_sqlDb;
     BusyRetryPtr m_retry;
     ChangeTrackerPtr m_tracker;
@@ -2451,12 +2475,12 @@ protected:
     NoCaseCollation GetNoCaseCollation() const { return m_noCaseCollation; }
     BE_SQLITE_EXPORT DbResult GetFileDataVersion(uint32_t& version) const;
     BE_SQLITE_EXPORT void SetProgressHandler(std::function<DbProgressAction()>, int) const;
-    BE_SQLITE_EXPORT DbResult SaveProperty(PropertySpecCR spec, Utf8CP strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0);
-    BE_SQLITE_EXPORT bool HasProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
-    BE_SQLITE_EXPORT DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
-    BE_SQLITE_EXPORT DbResult QueryProperty(void* value, uint32_t propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
-    BE_SQLITE_EXPORT DbResult QueryProperty(Utf8StringR value, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
-    BE_SQLITE_EXPORT DbResult DeleteProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0);
+    BE_SQLITE_EXPORT DbResult SaveProperty(PropertySpecCR spec, Utf8CP strData, void const* value, uint32_t propsize, uint64_t majorId = 0, uint64_t subId = 0);
+    BE_SQLITE_EXPORT bool HasProperty(PropertySpecCR spec, uint64_t majorId = 0, uint64_t subId = 0) const;
+    BE_SQLITE_EXPORT DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId = 0, uint64_t subId = 0) const;
+    BE_SQLITE_EXPORT DbResult QueryProperty(void* value, uint32_t propsize, PropertySpecCR spec, uint64_t majorId = 0, uint64_t subId = 0) const;
+    BE_SQLITE_EXPORT DbResult QueryProperty(Utf8StringR value, PropertySpecCR spec, uint64_t majorId = 0, uint64_t subId = 0) const;
+    BE_SQLITE_EXPORT DbResult DeleteProperty(PropertySpecCR spec, uint64_t majorId = 0, uint64_t subId = 0);
     BE_SQLITE_EXPORT DbResult DeleteProperties(PropertySpecCR spec, uint64_t* majorId);
     BE_SQLITE_EXPORT int AddFunction(DbFunction& function) const;
     BE_SQLITE_EXPORT int AddRTreeMatchFunction(RTreeMatchFunction& function) const;
@@ -2467,12 +2491,13 @@ protected:
     void AddDataUpdateCallback(DataUpdateCallback&) const;
     void RemoveDataUpdateCallback() const;
     static int TraceCallback(unsigned, void*, void*, void*);
-public:
+
+   public:
     Utf8String ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagnostics) const;
     int OnCommit();
 
-    bool CheckImplicitTxn() const {return m_allowImplicitTxns || m_txns.size() > 0;}
-    SqlDbP GetSqlDb() const {return m_sqlDb;}
+    bool CheckImplicitTxn() const { return m_allowImplicitTxns || m_txns.size() > 0; }
+    SqlDbP GetSqlDb() const { return m_sqlDb; }
     BE_SQLITE_EXPORT DbTxnState GetTxnState(Utf8CP schema = nullptr) const;
 };
 
@@ -2482,35 +2507,36 @@ public:
 //! @nosubgrouping
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Db : NonCopyableClass
-{
+struct EXPORT_VTABLE_ATTRIBUTE Db : NonCopyableClass {
     friend struct DbFile;
-public:
-    enum class Encoding {Utf8=0, Utf16=1};
-    enum class PageSize : int
-    {
-        PAGESIZE_1K  = 1024,
+
+   public:
+    enum class Encoding { Utf8 = 0,
+                          Utf16 = 1 };
+    enum class PageSize : int {
+        PAGESIZE_1K = 1024,
         PAGESIZE_512 = PAGESIZE_1K / 2,
-        PAGESIZE_2K  = PAGESIZE_1K * 2,
-        PAGESIZE_4K  = PAGESIZE_1K * 4,
-        PAGESIZE_8K  = PAGESIZE_1K * 8,
+        PAGESIZE_2K = PAGESIZE_1K * 2,
+        PAGESIZE_4K = PAGESIZE_1K * 4,
+        PAGESIZE_8K = PAGESIZE_1K * 8,
         PAGESIZE_16K = PAGESIZE_1K * 16,
         PAGESIZE_32K = PAGESIZE_1K * 32,
         PAGESIZE_64K = PAGESIZE_1K * 64
     };
 
     //! Whether to open an BeSQLite::Db readonly or readwrite.
-    enum class OpenMode {Readonly = 1<<0, ReadWrite = 1<<1, Create = ReadWrite|(1<<2)};
+    enum class OpenMode { Readonly = 1 << 0,
+                          ReadWrite = 1 << 1,
+                          Create = ReadWrite | (1 << 2) };
 
     //=======================================================================================
     //! Options that control whether a profile upgrade should be performed when opening a file
     // @bsienum                                                     06/18
     //=======================================================================================
-    enum class ProfileUpgradeOptions
-        {
-        None, //<! No profile upgrade will be performed. If a profile upgrade was required, opening the file will fail
-        Upgrade, //<! Profile upgrade will be performed if necessary.
-        };
+    enum class ProfileUpgradeOptions {
+        None,     //<! No profile upgrade will be performed. If a profile upgrade was required, opening the file will fail
+        Upgrade,  //<! Profile upgrade will be performed if necessary.
+    };
 
     //=======================================================================================
     //! Parameters for controlling aspects of the opening of a Db.
@@ -2612,11 +2638,11 @@ public:
     //! Parameters for controlling aspects of creating and then opening a Db.
     // @bsiclass
     //=======================================================================================
-    struct CreateParams : OpenParams
-    {
+    struct CreateParams : OpenParams {
         Encoding m_encoding;
         PageSize m_pagesize;
-        enum ApplicationId : uint64_t {APPLICATION_ID_BeSQLiteDb='BeDb',} m_applicationId;
+        enum ApplicationId : uint64_t { APPLICATION_ID_BeSQLiteDb = 'BeDb',
+        } m_applicationId;
         bool m_failIfDbExists;
         DateTime m_expirationDate;
 
@@ -2628,70 +2654,75 @@ public:
         //!                  The default is to not attempt retries Note, many BeSQLite applications (e.g. Bim) rely on a single non-shared connection
         //!                  to the database and do not permit sharing.
         //! @param[in] dbType Option to create a standalone or a master database.
-        explicit CreateParams(PageSize pagesize=PageSize::PAGESIZE_4K, Encoding encoding=Encoding::Utf8, bool failIfDbExists=true,
-                DefaultTxn defaultTxn=DefaultTxn::Yes, BusyRetry* retry=nullptr)
-                : OpenParams(OpenMode::Create, defaultTxn, retry), m_encoding(encoding), m_pagesize(pagesize),
-                m_failIfDbExists(failIfDbExists), m_applicationId(APPLICATION_ID_BeSQLiteDb)
-            {}
+        explicit CreateParams(PageSize pagesize = PageSize::PAGESIZE_4K, Encoding encoding = Encoding::Utf8, bool failIfDbExists = true,
+                              DefaultTxn defaultTxn = DefaultTxn::Yes, BusyRetry* retry = nullptr)
+            : OpenParams(OpenMode::Create, defaultTxn, retry), m_encoding(encoding), m_pagesize(pagesize), m_failIfDbExists(failIfDbExists), m_applicationId(APPLICATION_ID_BeSQLiteDb) {}
 
         //! Set the page size for the newly created database.
-        void SetPageSize(PageSize pagesize) {m_pagesize = pagesize;}
+        void SetPageSize(PageSize pagesize) { m_pagesize = pagesize; }
         //! Set the text encoding for the newly created database.
-        void SetEncoding(Encoding encoding) {m_encoding = encoding;}
+        void SetEncoding(Encoding encoding) { m_encoding = encoding; }
         //! Determine whether the create should fail if a file exists with the specified name.
-        void SetFailIfDbExist(bool val) {m_failIfDbExists = val;}
+        void SetFailIfDbExist(bool val) { m_failIfDbExists = val; }
         //! Set Application Id to be stored at offset 68 of the SQLite file
-        void SetApplicationId(ApplicationId applicationId) {m_applicationId=applicationId;}
+        void SetApplicationId(ApplicationId applicationId) { m_applicationId = applicationId; }
         //! Set expiration date for the newly created database.
-        void SetExpirationDate(DateTime xdate) {m_expirationDate=xdate;}
+        void SetExpirationDate(DateTime xdate) { m_expirationDate = xdate; }
     };
     //=======================================================================================
     //! Applications subclass from this class to store in-memory data on a Db via AddAppData.
     // @bsiclass
     //=======================================================================================
-    struct AppData : RefCountedBase
-    {
+    struct AppData : RefCountedBase {
         struct Key : NonCopyableClass {};
     };
 
     using AppDataPtr = RefCountedPtr<AppData>;
 
-protected:
-
+   protected:
     //=======================================================================================
     // @bsistruct
     //=======================================================================================
-    struct AppDataCollection
-    {
+    struct AppDataCollection {
         using AppData = Db::AppData;
         using AppDataPtr = Db::AppDataPtr;
-    private:
+
+       private:
         typedef bmap<AppData::Key const*, AppDataPtr, std::less<AppData::Key const*>, 8> Map;
 
-        BeMutex     m_mutex;
-        Map         m_map;
+        BeMutex m_mutex;
+        Map m_map;
 
         BE_SQLITE_EXPORT void AddInternal(AppData::Key const& key, AppData* data);
         BE_SQLITE_EXPORT AppData* FindInternal(AppData::Key const& key);
-    public:
-        void Add(AppData::Key const& key, AppData* data) { BeMutexHolder lock(m_mutex); return AddInternal(key, data); }
+
+       public:
+        void Add(AppData::Key const& key, AppData* data) {
+            BeMutexHolder lock(m_mutex);
+            return AddInternal(key, data);
+        }
         StatusInt Drop(AppData::Key const& key);
-        AppData* FindRaw(AppData::Key const& key) { BeMutexHolder lock(m_mutex); return FindInternal(key); }
+        AppData* FindRaw(AppData::Key const& key) {
+            BeMutexHolder lock(m_mutex);
+            return FindInternal(key);
+        }
         AppDataPtr Find(AppData::Key const& key) { return FindRaw(key); }
-        template<typename T> AppDataPtr FindOrAdd(AppData::Key const& key, T createAppData)
-            {
+        template <typename T>
+        AppDataPtr FindOrAdd(AppData::Key const& key, T createAppData) {
             BeMutexHolder lock(m_mutex);
             AppData* data = FindInternal(key);
-            if (nullptr == data)
-                {
+            if (nullptr == data) {
                 data = createAppData();
                 AddInternal(key, data);
-                }
-
-            return data;
             }
 
-        void Clear() { BeMutexHolder lock(m_mutex); m_map.clear(); }
+            return data;
+        }
+
+        void Clear() {
+            BeMutexHolder lock(m_mutex);
+            m_map.clear();
+        }
     };
 
     DbFile* m_dbFile;
@@ -2711,12 +2742,12 @@ protected:
     //! @param[in] params - Create parameter used to create the Db.
     //! @return BE_SQLITE_OK on success, error status otherwise
     //! @note implementers should always forward this call to their superclass.
-    virtual DbResult _OnDbCreated(CreateParams const& params) {return BE_SQLITE_OK;}
+    virtual DbResult _OnDbCreated(CreateParams const& params) { return BE_SQLITE_OK; }
 
     //! override to perform additional processing when Db is opened
     //! @note implementers should always forward this call to their superclass.
     //! @note this function is invoked before _CheckProfileVersion() and _UpgradeProfile() and therefore should not attempt to access data which depends on the schema version
-    virtual DbResult _OnDbOpening() {return QueryDbIds();}
+    virtual DbResult _OnDbOpening() { return QueryDbIds(); }
 
     //! override to perform additional processing when Db is opened
     //! @param[in] params Open parameters
@@ -2776,7 +2807,7 @@ protected:
     virtual DbResult _OnAfterProfileUpgrade() { return BE_SQLITE_OK; }
     virtual DbResult _OnDbAttached(Utf8CP filename, Utf8CP dbAlias) const { return BE_SQLITE_OK; }
     virtual DbResult _OnDbDetached(Utf8CP dbAlias) const { return BE_SQLITE_OK; }
-    virtual int _OnAddFunction(DbFunction& func) const {return 0;}
+    virtual int _OnAddFunction(DbFunction& func) const { return 0; }
     virtual void _OnRemoveFunction(DbFunction& func) const {}
     BE_SQLITE_EXPORT DbResult DoProfileUpgrade(OpenParams const& params);
 
@@ -2784,7 +2815,7 @@ protected:
     friend struct Savepoint;
     friend struct BeSQLiteProfileManager;
 
-private:
+   private:
     BE_SQLITE_EXPORT DbResult QueryDbIds();
     DbResult SaveBeDbGuid();
     DbResult SaveBriefcaseId();
@@ -2795,12 +2826,11 @@ private:
     DbResult ExecBlvQueryStmt(Statement& stmt, Utf8CP name) const;
     BE_SQLITE_EXPORT DbResult DropTable(Utf8CP tableName, bool requireExists) const;
 
-public:
+   public:
     BE_SQLITE_EXPORT Db();
     BE_SQLITE_EXPORT virtual ~Db();
-    DbFile* GetDbFile() {return m_dbFile;}
+    DbFile* GetDbFile() { return m_dbFile; }
 
-    
     //! SQLite supports the concept of an "implicit" transaction. That is, if no explicit transaction is active when you execute an SQL statement,
     //! SQLite will create an implicit transaction whose scope is the execution of the statement. However, it is rarely a good idea to rely on that behavior,
     //! since the overhead of starting/stopping a transaction can be very large, often much larger than the execution of the statement itself.
@@ -2810,7 +2840,7 @@ public:
     void SetAllowImplicitTransactions(bool val) { m_dbFile->m_allowImplicitTxns = val; }
 
     //! Get the StatementCache for this Db.
-    StatementCache& GetStatementCache() const {return const_cast<StatementCache&>(m_statements);}
+    StatementCache& GetStatementCache() const { return const_cast<StatementCache&>(m_statements); }
     void SetProgressHandler(std::function<DbProgressAction()> cb, int n = 500) const { m_dbFile->SetProgressHandler(cb, n); }
     //! Get a CachedStatement for this Db. If the SQL string has already been prepared and a CachedStatement exists for it in the cache, it will
     //! be Reset (see Statement::Reset) and returned without the need to re-Prepare it. If, however, the SQL string has not been used before (or maybe just
@@ -2852,7 +2882,7 @@ public:
     DbResult GetFileDataVersion(uint32_t& version) const { return m_dbFile->GetFileDataVersion(version); }
     BE_SQLITE_EXPORT void ClearDbCache();
     //! Determine whether there is an active transaction against this Db.
-    bool IsTransactionActive() const {return 0 < GetCurrentSavepointDepth();}
+    bool IsTransactionActive() const { return 0 < GetCurrentSavepointDepth(); }
 
     //! Open an existing BeSQLite::Db file.
     //!
@@ -2884,7 +2914,7 @@ public:
     BE_SQLITE_EXPORT DbResult OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& openParams);
 
     //! @copydoc Db::OpenBeSQLiteDb(Utf8CP, OpenParams const&)
-    DbResult OpenBeSQLiteDb(BeFileNameCR dbName, OpenParams const& openParams) {return OpenBeSQLiteDb(dbName.GetNameUtf8().c_str(),openParams);}
+    DbResult OpenBeSQLiteDb(BeFileNameCR dbName, OpenParams const& openParams) { return OpenBeSQLiteDb(dbName.GetNameUtf8().c_str(), openParams); }
 
     //! Open another connection to this Db. Uses the queryParams which were used to open the original connection to the database.
     //! @see Db::OpenBeSQLiteDb
@@ -2919,7 +2949,7 @@ public:
     //! @param[in] params Parameters about how the database should be created.
     //! @return BE_SQLITE_OK if the database was successfully created, error code otherwise.
     //! @note If the database file exists before this call, its page size and encoding are not changed.
-    BE_SQLITE_EXPORT DbResult CreateNewDb(Utf8CP dbName,CreateParams const& params=CreateParams(),  BeGuid dbGuid=BeGuid() );
+    BE_SQLITE_EXPORT DbResult CreateNewDb(Utf8CP dbName, CreateParams const& params = CreateParams(), BeGuid dbGuid = BeGuid());
 
     DbResult CreateNewDb(BeFileNameCR dbName, CreateParams const& params = CreateParams(), BeGuid dbGuid = BeGuid()) { return CreateNewDb(dbName.GetNameUtf8().c_str(), params, dbGuid); }
 
@@ -2937,7 +2967,6 @@ public:
     // Get the "base" name that can be used for creating a temporary file related to this Db. Callers should append a unique string to this value (e.g "-tiles")
     // to form a full path for a temporary file. The path is guaranteed to be a filename in an existing writable directory.
     Utf8String GetTempFileBaseName() const { return m_tempfileBase.empty() ? GetDbFileName() : m_tempfileBase; }
-
 
     //! Save a BeProjectGuid for this Db.
     BE_SQLITE_EXPORT void SaveProjectGuid(BeGuid);
@@ -2975,13 +3004,13 @@ public:
     //! but is more convenient.
     //! This method also enforces logs the statement and error if the statement fails. Use TryExecuteSql if you consider failures to be non-exceptional.
     //! @see sqlite3_exec
-    BE_SQLITE_EXPORT DbResult ExecuteSql(Utf8CP sql, int(*callback)(void*,int,char**,char**)=0, void* arg=0, char** errmsg=0) const;
+    BE_SQLITE_EXPORT DbResult ExecuteSql(Utf8CP sql, int (*callback)(void*, int, char**, char**) = 0, void* arg = 0, char** errmsg = 0) const;
 
     //! Identical to ExecuteSql, but does not log errors nor check implicit transactions
-    BE_SQLITE_EXPORT DbResult TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,char**,char**)=0, void* arg=0, char** errmsg=0) const;
+    BE_SQLITE_EXPORT DbResult TryExecuteSql(Utf8CP sql, int (*callback)(void*, int, char**, char**) = 0, void* arg = 0, char** errmsg = 0) const;
 
     //! return a string that describes the query plan for the specified SQL, or an error message if the SQL is invalid
-    BE_SQLITE_EXPORT Utf8String ExplainQuery(Utf8CP sql, bool plan=true) const;
+    BE_SQLITE_EXPORT Utf8String ExplainQuery(Utf8CP sql, bool plan = true) const;
 
     //! Execute tracked DDL which is captured by changetracker.
     BE_SQLITE_EXPORT DbResult ExecuteDdl(Utf8CP ddl) const;
@@ -3045,7 +3074,7 @@ public:
     //! @{
 
     //! @private
-    DbResult SaveProperty(PropertySpecCR spec, Utf8StringCR strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0) {return m_dbFile->SaveProperty(spec, strData.c_str(), value, propsize, majorId, subId);}
+    DbResult SaveProperty(PropertySpecCR spec, Utf8StringCR strData, void const* value, uint32_t propsize, uint64_t majorId = 0, uint64_t subId = 0) { return m_dbFile->SaveProperty(spec, strData.c_str(), value, propsize, majorId, subId); }
 
     //! Save a property value in this Db.
     //! @param[in] spec The PropertySpec of the property to save.
@@ -3054,7 +3083,7 @@ public:
     //! @param[in] majorId The major id of the property.
     //! @param[in] subId The subId of the property. The combination of majorId/subId forms a 2 dimensional array of properties of a given PropertySpec,
     //! @return BE_SQLITE_OK if the property was successfully saved, error code otherwise.
-    DbResult SaveProperty(PropertySpecCR spec, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0) {return m_dbFile->SaveProperty(spec, nullptr, value, propsize, majorId, subId);}
+    DbResult SaveProperty(PropertySpecCR spec, void const* value, uint32_t propsize, uint64_t majorId = 0, uint64_t subId = 0) { return m_dbFile->SaveProperty(spec, nullptr, value, propsize, majorId, subId); }
 
     //! Save a (Utf8) text string as a property value in this Db.
     //! @param[in] spec The PropertySpec of the property to save.
@@ -3062,7 +3091,7 @@ public:
     //! @param[in] majorId The majorId of the property.
     //! @param[in] subId The subId of the property. The combination of majorId/subId forms a 2 dimensional array of properties of a given PropertySpec,
     //! @return BE_SQLITE_OK if the property was successfully saved, error code otherwise.
-    DbResult SavePropertyString(PropertySpecCR spec, Utf8CP value, uint64_t majorId=0, uint64_t subId=0) {return m_dbFile->SaveProperty(spec, value, nullptr, 0, majorId, subId);}
+    DbResult SavePropertyString(PropertySpecCR spec, Utf8CP value, uint64_t majorId = 0, uint64_t subId = 0) { return m_dbFile->SaveProperty(spec, value, nullptr, 0, majorId, subId); }
 
     //! Save a Utf8String as a property value in this Db.
     //! @param[in] spec The PropertySpec of the property to save.
@@ -3070,14 +3099,14 @@ public:
     //! @param[in] majorId The majorId of the property.
     //! @param[in] subId The subId of the property. The combination of majorId/subId forms a 2 dimensional array of properties of a given PropertySpec,
     //! @return BE_SQLITE_OK if the property was successfully saved, error code otherwise.
-    DbResult SavePropertyString(PropertySpecCR spec, Utf8StringCR value, uint64_t majorId=0, uint64_t subId=0) {return SavePropertyString(spec, value.c_str(), majorId, subId);}
+    DbResult SavePropertyString(PropertySpecCR spec, Utf8StringCR value, uint64_t majorId = 0, uint64_t subId = 0) { return SavePropertyString(spec, value.c_str(), majorId, subId); }
 
     //! Determine whether a property exists in the Db.
     //! @param[in] spec The PropertySpec of the property to query.
     //! @param[in] majorId The majorId of the property.
     //! @param[in] subId The subId of the property.
     //! @return true if the property exists in the Db.
-    bool HasProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const {return m_dbFile->HasProperty(spec, majorId, subId);}
+    bool HasProperty(PropertySpecCR spec, uint64_t majorId = 0, uint64_t subId = 0) const { return m_dbFile->HasProperty(spec, majorId, subId); }
 
     //! Determine the size in bytes of the blob part of a property in the Db.
     //! @param[out] propsize The number of bytes in the property.
@@ -3086,7 +3115,7 @@ public:
     //! @param[in] subId The subId of the property.
     //! @return BE_SQLITE_ROW if the property exists and propsize is valid, error code otherwise.
     //! @note Success is indicated by BE_SQLITE_ROW, *not* BE_SQLITE_OK.
-    DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const {return m_dbFile->QueryPropertySize(propsize, spec, majorId, subId);}
+    DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId = 0, uint64_t subId = 0) const { return m_dbFile->QueryPropertySize(propsize, spec, majorId, subId); }
 
     //! Query the value of the blob part a property from the Db.
     //! @param[out] value A pointer to buffer of propsize bytes to hold the property. On success, the number of bytes of valid data in value will be the
@@ -3097,7 +3126,7 @@ public:
     //! @param[in] subId The subId of the property.
     //! @return BE_SQLITE_ROW if the property exists and value is valid, error code otherwise.
     //! @note Success is indicated by BE_SQLITE_ROW, *not* BE_SQLITE_OK.
-    DbResult QueryProperty(void* value, uint32_t propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const {return m_dbFile->QueryProperty(value, propsize, spec, majorId, subId);}
+    DbResult QueryProperty(void* value, uint32_t propsize, PropertySpecCR spec, uint64_t majorId = 0, uint64_t subId = 0) const { return m_dbFile->QueryProperty(value, propsize, spec, majorId, subId); }
 
     //! Query the value of the string part of a property from the Db.
     //! @param[out] value A Utf8String to fill with the value of the property.
@@ -3106,20 +3135,20 @@ public:
     //! @param[in] subId The subId of the property.
     //! @return BE_SQLITE_ROW if the property exists and value is valid, error code otherwise.
     //! @note Success is indicated by BE_SQLITE_ROW, *not* BE_SQLITE_OK.
-    DbResult QueryProperty(Utf8StringR value, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const {return m_dbFile->QueryProperty(value, spec, majorId, subId);}
+    DbResult QueryProperty(Utf8StringR value, PropertySpecCR spec, uint64_t majorId = 0, uint64_t subId = 0) const { return m_dbFile->QueryProperty(value, spec, majorId, subId); }
 
     //! Delete a property from the Db.
     //! @param[in] spec The PropertySpec of the property to delete.
     //! @param[in] majorId The majorId of the property.
     //! @param[in] subId The subId of the property.
     //! @return BE_SQLITE_DONE if the property was either deleted or did not exist, error code otherwise.
-    DbResult DeleteProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) {return m_dbFile->DeleteProperty(spec, majorId, subId);}
+    DbResult DeleteProperty(PropertySpecCR spec, uint64_t majorId = 0, uint64_t subId = 0) { return m_dbFile->DeleteProperty(spec, majorId, subId); }
 
     //! Delete one or more properties from the Db.
     //! @param[in] spec The PropertySpec of the property to delete.
     //! @param[in] majorId A pointer to the majorId of the properties to delete. If nullptr, all properties of spec are deleted. If non-nullptr, all properties of spec with the supplied majorid are deleted.
     //! @return BE_SQLITE_DONE if the property was either deleted or did not exist, error code otherwise.
-    DbResult DeleteProperties(PropertySpecCR spec, uint64_t* majorId) {return m_dbFile->DeleteProperties(spec, majorId);}
+    DbResult DeleteProperties(PropertySpecCR spec, uint64_t* majorId) { return m_dbFile->DeleteProperties(spec, majorId); }
 
     //! @name BriefcaseLocalValue
     //! @{
@@ -3127,7 +3156,7 @@ public:
     //! BriefcaseLocalValues are stored is not change tracked or change merged.
 
     //! Get a reference to the BriefcaseLocalValueCache for this Db.
-    BriefcaseLocalValueCache& GetBLVCache() {return m_dbFile->GetBLVCache();}
+    BriefcaseLocalValueCache& GetBLVCache() { return m_dbFile->GetBLVCache(); }
 
     //! Query the current value of a Briefcase Local Value of type string.
     //! @param[out] value On success, the value of the BLV.
@@ -3176,8 +3205,8 @@ public:
     //! @param[in] changesetName The name of the operation that generated these changes. If transaction tracking is enabled,
     //! this will be saved with the changeset and reported as the operation that is "undone/redone" if this changeset is reversed or reinstated.
     //! @note, this will commit any nested transactions.
-    BE_SQLITE_EXPORT DbResult SaveChanges(Utf8CP changesetName=nullptr);
-    DbResult SaveChanges(Utf8StringCR changesetName) {return SaveChanges(changesetName.c_str());}
+    BE_SQLITE_EXPORT DbResult SaveChanges(Utf8CP changesetName = nullptr);
+    DbResult SaveChanges(Utf8StringCR changesetName) { return SaveChanges(changesetName.c_str()); }
 
     //! Abandon (cancel) the outermost transaction, discarding all changes since last save. Then, restart the transaction.
     //! @note, this will cancel any nested transactions.
@@ -3190,14 +3219,14 @@ public:
     BE_SQLITE_EXPORT BeGuid GetDbGuid() const;
 
     //! Get the (local) BeBriefcaseId of this Db. Every copy of the Db must have a unique BeBriefcaseId.
-    BeBriefcaseId GetBriefcaseId() const {return m_dbFile->m_briefcaseId;}
+    BeBriefcaseId GetBriefcaseId() const { return m_dbFile->m_briefcaseId; }
 
     //! Get a new value for a BeServerIssuedId from the server
     //! @param [in,out] value the new value of the BeServerIssuedId
     //! @param [in] tableName the name of the table holding the BeServerIssuedId
     //! @param [in] columnName the name of the column holding the BeServerIssuedId
     //! @param [in] json parameters that the server can use to create the new row in the specified table.
-    BE_SQLITE_EXPORT DbResult GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP columnName, Utf8CP json=nullptr);
+    BE_SQLITE_EXPORT DbResult GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP columnName, Utf8CP json = nullptr);
 
     //! Determine whether this Db was opened readonly.
     bool IsReadonly() const { return m_dbFile->m_readonly; }
@@ -3227,11 +3256,11 @@ public:
     //! @note This function is thread-safe.
     BE_SQLITE_EXPORT AppDataPtr FindAppData(AppData::Key const& key) const;
 
-    template<typename T> RefCountedPtr<T> FindAppDataOfType(AppData::Key const& key) const
-        {
+    template <typename T>
+    RefCountedPtr<T> FindAppDataOfType(AppData::Key const& key) const {
         auto found = FindAppData(key);
         return dynamic_cast<T*>(found.get());
-        }
+    }
 
     //! Search for the Db::AppData on this Db with \c key. If no such AppData yet exists, the supplied \c createAppData function
     //! will be invoked to create it, and the returned AppData* will be added to the Db.
@@ -3239,7 +3268,8 @@ public:
     //! @param[in] createAppData A function object taking no arguments and returning a Db::AppData*, to be invoked if the specified key does not yet exist.
     //! @return The existing or newly-added Db::AppData*
     //! @note This function is thread-safe and avoids race conditions between FindAppData() and AddAppData().
-    template<typename T> AppDataPtr FindOrAddAppData(AppData::Key const& key, T createAppData) const { return m_appData.FindOrAdd(key, createAppData); }
+    template <typename T>
+    AppDataPtr FindOrAddAppData(AppData::Key const& key, T createAppData) const { return m_appData.FindOrAdd(key, createAppData); }
 
     //! Search for the Db::AppData on this Db with \c key. If no such AppData yet exists, the supplied \c createAppData function
     //! will be invoked to create it, and the returned AppData* will be added to the Db.
@@ -3247,12 +3277,12 @@ public:
     //! @param[in] createAppData A function object taking no arguments and returning a Db::AppData*, to be invoked if the specified key does not yet exist.
     //! @return A ref-counted pointer to the existing or newly-added Db::AppData, as the derived type returned by invoking createAppData().
     //! @note This function is thread-safe and avoids race conditions between FindAppData() and AddAppData().
-    template<typename T> auto ObtainAppData(AppData::Key const& key, T createAppData) const -> RefCountedPtr<typename std::remove_pointer<decltype(createAppData())>::type>
-        {
+    template <typename T>
+    auto ObtainAppData(AppData::Key const& key, T createAppData) const -> RefCountedPtr<typename std::remove_pointer<decltype(createAppData())>::type> {
         using U = decltype(createAppData());
         AppDataPtr data = FindOrAddAppData(key, createAppData);
         return static_cast<U>(data.get());
-        }
+    }
 
     //! Dump statement results to stdout (for debugging purposes, only, e.g. to examine data in a temp table)
     BE_SQLITE_EXPORT void DumpSqlResults(Utf8CP sql);
@@ -3266,7 +3296,6 @@ public:
 
     BE_SQLITE_EXPORT DbResult EnableWalMode(bool yesNo);
     BE_SQLITE_EXPORT bool IsWalMode() const;
-
 
     // perform a checkpoint operation if this database is in WAL mode
     BE_SQLITE_EXPORT DbResult PerformCheckpoint(WalCheckpointMode mode, int* pnLog = nullptr, int* pnCkpt = nullptr);
@@ -3300,7 +3329,7 @@ public:
     //! @note If this Db already has a ChangeTracker active, the new one replaces it.
     BE_SQLITE_EXPORT void SetChangeTracker(ChangeTracker* tracker);
 
-    Savepoint* GetDefaultTransaction() const {return (m_dbFile != nullptr) ? &m_dbFile->m_defaultTxn : nullptr;}
+    Savepoint* GetDefaultTransaction() const { return (m_dbFile != nullptr) ? &m_dbFile->m_defaultTxn : nullptr; }
 
     //! Check if the Db is at or beyond its expiration date.
     //! @see QueryExpirationDate, CreateParams::SetExpirationDate
@@ -3337,9 +3366,9 @@ public:
     //! Opens the specified database, performs a sqlite integrity check, and closes it. Returns BE_SQLITE_OK if the check was successful, otherwise BE_SQLITE_CORRUPT or other chained errors if there was a failure.
     BE_SQLITE_EXPORT static DbResult CheckDbIntegrity(BeFileNameCR dbFileName);
     BE_SQLITE_EXPORT DbResult SetBusyTimeout(int ms);
-    BE_SQLITE_EXPORT DbBuffer Serialize(const char *zSchema = nullptr) const;
+    BE_SQLITE_EXPORT DbBuffer Serialize(const char* zSchema = nullptr) const;
 
-    BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);
+    BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char* zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);
     BE_SQLITE_EXPORT DbResult SetNoCaseCollation(NoCaseCollation col) { return m_dbFile->SetNoCaseCollation(col); }
     BE_SQLITE_EXPORT NoCaseCollation GetNoCaseCollation() const { return m_dbFile->GetNoCaseCollation(); }
 };
@@ -3347,37 +3376,35 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct SQLiteTraceScope final: NonCopyableClass
-    {
-    private:
-        std::vector<cancel_callback_type> m_cancelCbList;
-        bmap<Utf8String, std::pair<int64_t, int64_t>> m_profile;
+struct SQLiteTraceScope final : NonCopyableClass {
+   private:
+    std::vector<cancel_callback_type> m_cancelCbList;
+    bmap<Utf8String, std::pair<int64_t, int64_t>> m_profile;
 
-    public:
-        BE_SQLITE_EXPORT  SQLiteTraceScope(DbTrace categories, DbCR db, Utf8CP loggerName = "SQLite");
-        BE_SQLITE_EXPORT ~SQLiteTraceScope();
-    };
+   public:
+    BE_SQLITE_EXPORT SQLiteTraceScope(DbTrace categories, DbCR db, Utf8CP loggerName = "SQLite");
+    BE_SQLITE_EXPORT ~SQLiteTraceScope();
+};
 
 //=======================================================================================
 //! Error values returned from the ZLib functions. See ZLib documentation for details.
 // @bsiclass
 //=======================================================================================
-enum ZipErrors
-{
+enum ZipErrors {
     ZIP_SUCCESS = 0,
-    ZIP_ERROR_BASE              = 0x15000,
-    ZIP_ERROR_WRITE_ERROR       = ZIP_ERROR_BASE + 0x01,
+    ZIP_ERROR_BASE = 0x15000,
+    ZIP_ERROR_WRITE_ERROR = ZIP_ERROR_BASE + 0x01,
     ZIP_ERROR_COMPRESSION_ERROR = ZIP_ERROR_BASE + 0x02,
-    ZIP_ERROR_END_OF_DATA       = ZIP_ERROR_BASE + 0x03,
-    ZIP_ERROR_BUFFER_FULL       = ZIP_ERROR_BASE + 0x04,
-    ZIP_ERROR_BLOB_READ_ERROR   = ZIP_ERROR_BASE + 0x05,
+    ZIP_ERROR_END_OF_DATA = ZIP_ERROR_BASE + 0x03,
+    ZIP_ERROR_BUFFER_FULL = ZIP_ERROR_BASE + 0x04,
+    ZIP_ERROR_BLOB_READ_ERROR = ZIP_ERROR_BASE + 0x05,
     ZIP_ERROR_FILE_DOES_NOT_EXIST = ZIP_ERROR_BASE + 0x06,
     ZIP_ERROR_CANNOT_OPEN_OUTPUT = ZIP_ERROR_BASE + 0x07,
-    ZIP_ERROR_UNKNOWN            = ZIP_ERROR_BASE + 0x08,
-    ZIP_ERROR_BAD_DATA           = ZIP_ERROR_BASE + 0x09,
-    ZIP_ERROR_CANNOT_OPEN_INPUT  = ZIP_ERROR_BASE + 0x0A,
-    ZIP_ERROR_ABORTED            = ZIP_ERROR_BASE + 0x0B,
-    ZIP_ERROR_READ_ERROR         = ZIP_ERROR_BASE + 0x0C,
+    ZIP_ERROR_UNKNOWN = ZIP_ERROR_BASE + 0x08,
+    ZIP_ERROR_BAD_DATA = ZIP_ERROR_BASE + 0x09,
+    ZIP_ERROR_CANNOT_OPEN_INPUT = ZIP_ERROR_BASE + 0x0A,
+    ZIP_ERROR_ABORTED = ZIP_ERROR_BASE + 0x0B,
+    ZIP_ERROR_READ_ERROR = ZIP_ERROR_BASE + 0x0C,
 };
 
 //=======================================================================================
@@ -3386,33 +3413,31 @@ enum ZipErrors
 //! (see http://code.google.com/p/snappy)
 // @bsiclass
 //=======================================================================================
-struct SnappyToBlob
-{
-private:
-    struct SnappyChunk
-    {
-        uint16_t*  m_data;
-        SnappyChunk(uint32_t size) {m_data = (uint16_t*) BeSQLiteLib::MallocMem(size + 2);} // 2 bytes for compressed size at start of data
-        uint16_t GetChunkSize() {return m_data[0];}
-        ~SnappyChunk() {BeSQLiteLib::FreeMem(m_data);}
+struct SnappyToBlob {
+   private:
+    struct SnappyChunk {
+        uint16_t* m_data;
+        SnappyChunk(uint32_t size) { m_data = (uint16_t*)BeSQLiteLib::MallocMem(size + 2); }  // 2 bytes for compressed size at start of data
+        uint16_t GetChunkSize() { return m_data[0]; }
+        ~SnappyChunk() { BeSQLiteLib::FreeMem(m_data); }
     };
 
     bvector<SnappyChunk*> m_chunks;
-    Byte*   m_rawBuf;
+    Byte* m_rawBuf;
     uint32_t m_currChunk;
     uint32_t m_rawSize;
     uint32_t m_rawCurr;
     uint32_t m_rawAvail;
     uint32_t m_unsnappedSize;
 
-public:
+   public:
     BE_SQLITE_EXPORT SnappyToBlob();
     BE_SQLITE_EXPORT ~SnappyToBlob();
-    uint32_t GetCurrChunk() {return m_currChunk;}
-    Byte*  GetChunkData(int i) {return (Byte*) m_chunks[i]->m_data;}
+    uint32_t GetCurrChunk() { return m_currChunk; }
+    Byte* GetChunkData(int i) { return (Byte*)m_chunks[i]->m_data; }
 
     //! Get the number of bytes in the raw (uncompressed) stream.
-    uint32_t GetUnCompressedSize() const {return m_unsnappedSize;}
+    uint32_t GetUnCompressedSize() const { return m_unsnappedSize; }
 
     //! Finish the compression and get the number of bytes required to store the compressed stream. This becomes the size of the blob.
     BE_SQLITE_EXPORT uint32_t GetCompressedSize();
@@ -3428,7 +3453,11 @@ public:
     //! Finish the compression. After this call, no additional data may be written to this blob until #Init is called.
     BE_SQLITE_EXPORT void Finish();
 
-    void DoSnappy(Byte const* data, uint32_t size) {Init(); Write(data,size); Finish();}
+    void DoSnappy(Byte const* data, uint32_t size) {
+        Init();
+        Write(data, size);
+        Finish();
+    }
 
     //! Save this compressed value as a blob in a Db.
     //! @param[in] db the SQLite database to write
@@ -3451,40 +3480,38 @@ public:
 
     //! Obtain a thread-local SnappyToBlob. The returned object is deleted when the calling thread exits and should never be shared between threads.
     BE_SQLITE_EXPORT static SnappyToBlob& GetForThread();
-    };
+};
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct SnappyReader
-{
-    static const uint32_t SNAPPY_UNCOMPRESSED_BUFFER_SIZE = (34*1024);
+struct SnappyReader {
+    static const uint32_t SNAPPY_UNCOMPRESSED_BUFFER_SIZE = (34 * 1024);
 
     virtual ~SnappyReader() {}
     virtual ZipErrors _Read(Byte* data, uint32_t size, uint32_t& actuallyRead) = 0;
 
-    static uint32_t GetUncompressedBufferSize() {return SNAPPY_UNCOMPRESSED_BUFFER_SIZE;}
+    static uint32_t GetUncompressedBufferSize() { return SNAPPY_UNCOMPRESSED_BUFFER_SIZE; }
 };
 
 //=======================================================================================
 //! Utility to read Snappy-compressed data from memory, typically from an image of a blob.
 // @bsiclass
 //=======================================================================================
-struct SnappyFromMemory final: SnappyReader
-{
-private:
-    Byte*    m_uncompressed;
-    Byte*    m_uncompressCurr;
+struct SnappyFromMemory final : SnappyReader {
+   private:
+    Byte* m_uncompressed;
+    Byte* m_uncompressCurr;
     uint16_t m_uncompressAvail;
     uint16_t m_uncompressSize;
-    Byte*    m_blobData;
+    Byte* m_blobData;
     uint32_t m_blobOffset;
     uint32_t m_blobBytesLeft;
-    bool     m_ownsUncompressedBuffer;
+    bool m_ownsUncompressedBuffer;
     ZipErrors ReadNextChunk();
     ZipErrors TransferFromBlob(void* data, uint32_t numBytes, int offset);
 
-public:
+   public:
     BE_SQLITE_EXPORT SnappyFromMemory(void* uncompressedBuffer, uint32_t uncompressedBufferSize);
     BE_SQLITE_EXPORT SnappyFromMemory();
     BE_SQLITE_EXPORT ~SnappyFromMemory();
@@ -3499,13 +3526,12 @@ public:
 //! Utility to read Snappy-compressed data from a blob in a database.
 // @bsiclass
 //=======================================================================================
-struct SnappyFromBlob final: SnappyReader
-{
-private:
-    Byte*    m_uncompressed;
-    Byte*    m_uncompressCurr;
-    Byte*    m_blobData;
-    BlobIO   m_blobIO;
+struct SnappyFromBlob final : SnappyReader {
+   private:
+    Byte* m_uncompressed;
+    Byte* m_uncompressCurr;
+    Byte* m_blobData;
+    BlobIO m_blobIO;
     uint32_t m_blobBufferSize;
     uint32_t m_blobOffset;
     uint32_t m_blobBytesLeft;
@@ -3513,13 +3539,17 @@ private:
 
     ZipErrors ReadNextChunk();
 
-public:
+   public:
     BE_SQLITE_EXPORT SnappyFromBlob();
     BE_SQLITE_EXPORT ZipErrors Init(DbCR db, Utf8CP tableName, Utf8CP column, int64_t rowId);
     BE_SQLITE_EXPORT ~SnappyFromBlob();
     BE_SQLITE_EXPORT virtual ZipErrors _Read(Byte* data, uint32_t size, uint32_t& actuallyRead) override;
-    BE_SQLITE_EXPORT void Finish() ;
-    ZipErrors ReadAndFinish(Byte* data, uint32_t bufSize, uint32_t& bytesActuallyRead) {auto stat=_Read(data, bufSize, bytesActuallyRead); Finish(); return stat;}
+    BE_SQLITE_EXPORT void Finish();
+    ZipErrors ReadAndFinish(Byte* data, uint32_t bufSize, uint32_t& bytesActuallyRead) {
+        auto stat = _Read(data, bufSize, bytesActuallyRead);
+        Finish();
+        return stat;
+    }
     BE_SQLITE_EXPORT ZipErrors ReadToChunkedArray(ChunkedArray& array, uint32_t bufSize);
 
     //! Obtain a thread-local SnappyFromBlob. The returned object is deleted when the calling thread exits and should never be shared between threads.
@@ -3533,8 +3563,7 @@ public:
 //! created by the BeSQLite::Db API itself and should not be used by other software layers.
 // @bsiclass
 //=======================================================================================
-struct PropSpec : PropertySpec
-{
+struct PropSpec : PropertySpec {
     PropSpec(Utf8CP name, PropertySpec::Compress compress = PropertySpec::Compress::Yes) : PropertySpec(name, BEDB_PROPSPEC_NAMESPACE, Mode::Normal, compress) {}
 };
 
@@ -3544,25 +3573,23 @@ struct PropSpec : PropertySpec
 //! and should not be used by other software layers.
 // @bsiclass
 //=======================================================================================
-struct Properties
-{
-    static PropSpec DbGuid()            {return PropSpec("DbGuid");}
-    static PropSpec ProfileVersion()    {return PropSpec("SchemaVersion");}
-    static PropSpec ProjectGuid()       {return PropSpec("ProjectGuid");}
-    static PropSpec EmbeddedFileBlob()  {return PropSpec(BEDB_PROPSPEC_EMBEDBLOB_NAME, PropertySpec::Compress::No);}
-    static PropSpec CreationDate()      {return PropSpec("CreationDate");}
-    static PropSpec ExpirationDate()    {return PropSpec("ExpirationDate");}
+struct Properties {
+    static PropSpec DbGuid() { return PropSpec("DbGuid"); }
+    static PropSpec ProfileVersion() { return PropSpec("SchemaVersion"); }
+    static PropSpec ProjectGuid() { return PropSpec("ProjectGuid"); }
+    static PropSpec EmbeddedFileBlob() { return PropSpec(BEDB_PROPSPEC_EMBEDBLOB_NAME, PropertySpec::Compress::No); }
+    static PropSpec CreationDate() { return PropSpec("CreationDate"); }
+    static PropSpec ExpirationDate() { return PropSpec("ExpirationDate"); }
 
     //! Build version of BeSqlite (e.g. 06.10.00.00) used to create this database; useful for diagnostics.
-    static PropSpec BeSQLiteBuild()     {return PropSpec("BeSQLiteBuild");}
+    static PropSpec BeSQLiteBuild() { return PropSpec("BeSQLiteBuild"); }
 };
 
 //=======================================================================================
 //! Utility to compress/decompress Db-s
 // @bsiclass
 //=======================================================================================
-struct LzmaUtility
-{
+struct LzmaUtility {
     //! Compress a Db file
     static BE_SQLITE_EXPORT ZipErrors CompressDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* progressTracker, uint32_t dictionarySize, bool supportRandomAccess);
 
@@ -3571,7 +3598,7 @@ struct LzmaUtility
 
     //! Decompress the blob of an EmbeddedFile in the Db. It is assumed that the blob does not have its own header and trailer, but rather the standard EmbeddedFile headers.
     //! @remarks To be deprecated
-    static ZipErrors DecompressEmbeddedBlob(bvector<Byte>&out, uint32_t expectedSize, void const*inputBuffer, uint32_t inputSize, Byte*header, uint32_t headerSize); //!< @private
+    static ZipErrors DecompressEmbeddedBlob(bvector<Byte>& out, uint32_t expectedSize, void const* inputBuffer, uint32_t inputSize, Byte* header, uint32_t headerSize);  //!< @private
 };
 
 // Allow query sqlite meta data & diff schema to create patch that will upgrade schema on another db
@@ -3580,71 +3607,71 @@ struct LzmaUtility
 // If the schema was evolved using other means, then the patch will not be generated or fails.
 // Other mean include dropping table and recreating it, or using PRAGMA writable_schema to modify schema.
 namespace MetaData {
-    struct ColumnInfo {
-        Utf8String name;
-        Utf8String dataType;
-        Utf8String collSeq;
-        bool notNull;
-        bool primaryKey;
-        bool autoIncrement;
-        bool hidden;
-        std::optional<Utf8String> defaultValue;
-        int cid;
-    };
-    struct TriggerInfo {
-        Utf8String name;
-        Utf8String sql;
-    };
-    struct IndexColumnInfo {
-        Utf8String name;
-        Utf8String collSeq;
-        int cid;
-        bool desc;
-        bool key;
-    };
-    struct IndexInfo {
-        Utf8String name;
-        Utf8String sql;
-        bool partial;
-        bool unique;
-        Utf8String origin; // "c" if the index was created by a CREATE INDEX statement, "u" if the index was created by a UNIQUE constraint, or "pk" if the index was created by a PRIMARY KEY constraint.
-        std::vector<IndexColumnInfo> columns;
-    };
-    struct ForeignKeyInfo {
-        Utf8String table;
-        std::vector<Utf8String> fromColumns;
-        std::vector<Utf8String> toColumns;
-        Utf8String onUpdate;
-        Utf8String onDelete;
-        Utf8String match;
-    };
-    struct TableInfo {
-        Utf8String schema;
-        Utf8String name;
-        Utf8String type; // "shadow" or "table" or "virtual"
-        int nColumns;
-        bool hasRowId;
-        bool isStrict;
-        bool operator==(TableInfo const& other) const {return schema == other.schema && name == other.name;}
-        bool operator<(TableInfo const& other) const {
-            return schema.CompareToI(other.schema) < 0 || (schema == other.schema && name.CompareToI(other.name) < 0);
-        }
-    };
-    struct CompleteTableInfo : public TableInfo{
-        Utf8String sql;
-        std::vector<ColumnInfo> columns;
-        std::vector<ForeignKeyInfo> foreignKeys;
-        std::vector<IndexInfo> indexes;
-        std::vector<TriggerInfo> triggers;
-        bool operator==(CompleteTableInfo const& other) const {return TableInfo::operator==(other);}
-    };
+struct ColumnInfo {
+    Utf8String name;
+    Utf8String dataType;
+    Utf8String collSeq;
+    bool notNull;
+    bool primaryKey;
+    bool autoIncrement;
+    bool hidden;
+    std::optional<Utf8String> defaultValue;
+    int cid;
+};
+struct TriggerInfo {
+    Utf8String name;
+    Utf8String sql;
+};
+struct IndexColumnInfo {
+    Utf8String name;
+    Utf8String collSeq;
+    int cid;
+    bool desc;
+    bool key;
+};
+struct IndexInfo {
+    Utf8String name;
+    Utf8String sql;
+    bool partial;
+    bool unique;
+    Utf8String origin;  // "c" if the index was created by a CREATE INDEX statement, "u" if the index was created by a UNIQUE constraint, or "pk" if the index was created by a PRIMARY KEY constraint.
+    std::vector<IndexColumnInfo> columns;
+};
+struct ForeignKeyInfo {
+    Utf8String table;
+    std::vector<Utf8String> fromColumns;
+    std::vector<Utf8String> toColumns;
+    Utf8String onUpdate;
+    Utf8String onDelete;
+    Utf8String match;
+};
+struct TableInfo {
+    Utf8String schema;
+    Utf8String name;
+    Utf8String type;  // "shadow" or "table" or "virtual"
+    int nColumns;
+    bool hasRowId;
+    bool isStrict;
+    bool operator==(TableInfo const& other) const { return schema == other.schema && name == other.name; }
+    bool operator<(TableInfo const& other) const {
+        return schema.CompareToI(other.schema) < 0 || (schema == other.schema && name.CompareToI(other.name) < 0);
+    }
+};
+struct CompleteTableInfo : public TableInfo {
+    Utf8String sql;
+    std::vector<ColumnInfo> columns;
+    std::vector<ForeignKeyInfo> foreignKeys;
+    std::vector<IndexInfo> indexes;
+    std::vector<TriggerInfo> triggers;
+    bool operator==(CompleteTableInfo const& other) const { return TableInfo::operator==(other); }
+};
 
-    BE_SQLITE_EXPORT void ToJson(CompleteTableInfo const&, BeJsValue);
-    BE_SQLITE_EXPORT DbResult QueryTable(DbCR&, Utf8StringCR dbName, Utf8StringCR tableName, CompleteTableInfo&);
-    BE_SQLITE_EXPORT DbResult QueryTable(DbCR&, TableInfo const&, CompleteTableInfo&);
-    BE_SQLITE_EXPORT std::vector<TableInfo> QueryTableNames(DbCR& db, std::optional<Utf8String> dbName, DbResult& rc);
-    BE_SQLITE_EXPORT std::vector<TableInfo> QueryTableNames(DbCR& db, std::optional<Utf8String> dbName);
-    BE_SQLITE_EXPORT DbResult SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::vector<Utf8String>& patches, bool allowDrop = true);
-    BE_SQLITE_EXPORT DbResult SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(MetaData::TableInfo const&)> excludeFilter, std::vector<Utf8String>& patches, bool allowDrop = true);
-}
+BE_SQLITE_EXPORT void ToJson(CompleteTableInfo const&, BeJsValue);
+BE_SQLITE_EXPORT DbResult QueryTable(DbCR&, Utf8StringCR dbName, Utf8StringCR tableName, CompleteTableInfo&);
+BE_SQLITE_EXPORT DbResult QueryTable(DbCR&, TableInfo const&, CompleteTableInfo&);
+BE_SQLITE_EXPORT std::vector<TableInfo> QueryTableNames(DbCR& db, std::optional<Utf8String> dbName, DbResult& rc);
+BE_SQLITE_EXPORT std::vector<TableInfo> QueryTableNames(DbCR& db, std::optional<Utf8String> dbName);
+BE_SQLITE_EXPORT DbResult SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::vector<Utf8String>& patches, bool allowDrop = true);
+BE_SQLITE_EXPORT DbResult SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(MetaData::TableInfo const&)> excludeFilter, std::vector<Utf8String>& patches, bool allowDrop = true);
+}  // namespace MetaData
 END_BENTLEY_SQLITE_NAMESPACE
