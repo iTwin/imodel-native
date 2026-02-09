@@ -1,12 +1,13 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
-#include "BeSQLiteNonPublishedTests.h"
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include <BeSQLite/ChangeSet.h>
-#include <Bentley/BeDirectoryIterator.h>
 #include <BeSQLite/Profiler.h>
 #include <BeSQLite/VirtualTab.h>
+#include <Bentley/BeDirectoryIterator.h>
+
+#include "BeSQLiteNonPublishedTests.h"
 using namespace MemorySize;
 
 #define MEM_THRESHOLD (100 * MEG)
@@ -14,59 +15,55 @@ using namespace MemorySize;
 //=======================================================================================
 // @bsistruct
 //=======================================================================================
-struct BeIdSetTests : public ::testing::Test
-{
-public:
+struct BeIdSetTests : public ::testing::Test {
+   public:
     void ExpectRoundTrip(BeIdSet const& ids, Utf8CP expected);
     Utf8String ExpectCompressed(BeIdSet const& ids, Utf8CP expected);
-    template<typename T> BeIdSet MakeIdSet(std::initializer_list<T> values)
-        {
+    template <typename T>
+    BeIdSet MakeIdSet(std::initializer_list<T> values) {
         BeIdSet ids;
         for (auto value : values)
             ids.insert(BeInt64Id(static_cast<int64_t>(value)));
 
         return ids;
-        }
+    }
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BeIdSetTests::ExpectRoundTrip(BeIdSet const& ids, Utf8CP expected)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void BeIdSetTests::ExpectRoundTrip(BeIdSet const& ids, Utf8CP expected) {
     Utf8String actual = ExpectCompressed(ids, expected);
     BeIdSet roundtripped;
     roundtripped.FromString(actual);
     EXPECT_TRUE(roundtripped == ids) << " Expected: " << ids.ToString().c_str() << " Actual: " << roundtripped.ToString().c_str();
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BeIdSetTests::ExpectCompressed(BeIdSet const& ids, Utf8CP expected)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String BeIdSetTests::ExpectCompressed(BeIdSet const& ids, Utf8CP expected) {
     Utf8String actual = ids.ToCompactString();
     EXPECT_TRUE(actual.Equals(expected)) << "Expected: " << expected << " Actual: " << actual.c_str();
     return actual;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BeIdSetTests, ToString)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeIdSetTests, ToString) {
     ExpectRoundTrip(MakeIdSet({2}), "+2");
-    ExpectRoundTrip(MakeIdSet({1,5}), "+1+4");
-    ExpectRoundTrip(MakeIdSet({3,7,8,10}), "+3+4+1+2");
+    ExpectRoundTrip(MakeIdSet({1, 5}), "+1+4");
+    ExpectRoundTrip(MakeIdSet({3, 7, 8, 10}), "+3+4+1+2");
     ExpectRoundTrip(MakeIdSet({0xFF, 0x150}), "+FF+51");
 
-    ExpectRoundTrip(MakeIdSet({1,2,3,4,5}), "+1*5");
-    ExpectRoundTrip(MakeIdSet({2,4,6,8}), "+2*4");
-    ExpectRoundTrip(MakeIdSet({1,2,3,4,8,12,16}), "+1*4+4*3");
-    ExpectRoundTrip(MakeIdSet({1,2,3,4,8,12,16,17}), "+1*4+4*3+1");
+    ExpectRoundTrip(MakeIdSet({1, 2, 3, 4, 5}), "+1*5");
+    ExpectRoundTrip(MakeIdSet({2, 4, 6, 8}), "+2*4");
+    ExpectRoundTrip(MakeIdSet({1, 2, 3, 4, 8, 12, 16}), "+1*4+4*3");
+    ExpectRoundTrip(MakeIdSet({1, 2, 3, 4, 8, 12, 16, 17}), "+1*4+4*3+1");
 
-    ExpectRoundTrip(MakeIdSet({100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100,2200,2300}), "+64*17");
-    ExpectRoundTrip(MakeIdSet({1,10001,20001,30001,40001,50001,60001,70001,80001,90001,100001,110001,120001,130001,140001,150001,160001,170001,180001,190001,200001,210001,220001,230001, 230002}), "+1+2710*17+1");
+    ExpectRoundTrip(MakeIdSet({100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300}), "+64*17");
+    ExpectRoundTrip(MakeIdSet({1, 10001, 20001, 30001, 40001, 50001, 60001, 70001, 80001, 90001, 100001, 110001, 120001, 130001, 140001, 150001, 160001, 170001, 180001, 190001, 200001, 210001, 220001, 230001, 230002}), "+1+2710*17+1");
     ExpectRoundTrip(MakeIdSet({0x21234567890, 0x31234567890, 0x41234567890, 0x61234567890}), "+21234567890+10000000000*2+20000000000");
     ExpectRoundTrip(MakeIdSet({0xabcdef0123456789, 0xabcdef1123456789}), "+ABCDEF0123456789+1000000000");
     ExpectRoundTrip(MakeIdSet({0xf0a0000000100, 0xf0a0000000120, 0xf0a0000000140, 0xf0a0000000202}), "+F0A0000000100+20*2+C2");
@@ -77,11 +74,11 @@ TEST_F(BeIdSetTests, ToString)
 
     ExpectCompressed(MakeIdSet({0}), "");
     ExpectCompressed(MakeIdSet({0, 0x1, 0x4, 0x5abc}), "+1+3+5AB8");
-    }
+}
 
-    enum {
-        TEST_DATA_SIZE = 160 * K,
-    };
+enum {
+    TEST_DATA_SIZE = 160 * K,
+};
 
 static void verifySeek(ChunkedArray const& array, int totalSize) {
     ChunkedArray::Reader reader(array);
@@ -100,43 +97,43 @@ static void verifySeek(ChunkedArray const& array, int totalSize) {
 }
 
 static void verifyRead(ChunkedArray const& array, int numInts, int totalSize) {
-        bvector<int> bytes(numInts, 333);
-        int* data = bytes.data();
+    bvector<int> bytes(numInts, 333);
+    int* data = bytes.data();
 
-        ChunkedArray::Reader reader(array);
-        int index = 0;
-        int total = 0;
-        int size = 0;
-        do {
-            size = (int)bytes.size() * sizeof(int);
-            reader.Read((Byte*)data, &size);
-            total += size;
-            for (int i = 0; i < (size / sizeof(int)); ++i)
-                EXPECT_TRUE(data[i] == index++);
-        } while (size > 0);
+    ChunkedArray::Reader reader(array);
+    int index = 0;
+    int total = 0;
+    int size = 0;
+    do {
+        size = (int)bytes.size() * sizeof(int);
+        reader.Read((Byte*)data, &size);
+        total += size;
+        for (int i = 0; i < (size / sizeof(int)); ++i)
+            EXPECT_TRUE(data[i] == index++);
+    } while (size > 0);
 
-        EXPECT_TRUE(total == totalSize);
-    }
+    EXPECT_TRUE(total == totalSize);
+}
 
 static void verifyReadSizes(ChunkedArray const& array, int totalSize) {
     verifySeek(array, totalSize);
     verifyRead(array, 22, totalSize);
     verifyRead(array, 100, totalSize);
     verifyRead(array, 1024, totalSize);
-    verifyRead(array, 16*K, totalSize);
-    verifyRead(array, 2*MEG, totalSize);
+    verifyRead(array, 16 * K, totalSize);
+    verifyRead(array, 2 * MEG, totalSize);
 }
 
 static void fillArray(ChunkedArray& array, int const* from, int chunkSize, int numInts) {
     int curr = 0;
     while (curr < numInts) {
-        array.Append((Byte const*)(from+curr), chunkSize*sizeof(int));
+        array.Append((Byte const*)(from + curr), chunkSize * sizeof(int));
         curr += chunkSize;
     }
 }
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeIdSetTests, ChunkedArray) {
     int totalSize = TEST_DATA_SIZE * sizeof(int);
     auto ptr = std::make_unique<int[]>(totalSize);
@@ -156,7 +153,7 @@ TEST_F(BeIdSetTests, ChunkedArray) {
     verifyReadSizes(t2.m_data, totalSize);
     EXPECT_TRUE(test1._IsEmpty());
     EXPECT_EQ(test1.m_data.m_chunks.size(), 0);
-    EXPECT_EQ(savePtr, t2.m_data.m_chunks[0].data()); // make sure we did a move, not a copy
+    EXPECT_EQ(savePtr, t2.m_data.m_chunks[0].data());  // make sure we did a move, not a copy
     EXPECT_FALSE(t2.m_data.IsEmpty());
     t2.Clear();
 
@@ -184,37 +181,37 @@ TEST_F(BeIdSetTests, ChunkedArray) {
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct TestChangeSet : BeSQLite::ChangeSet
-    {
-    ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override { BeAssert(false && "Unexpected conflict"); return ConflictResolution::Skip; }
-    };
+struct TestChangeSet : BeSQLite::ChangeSet {
+    ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override {
+        BeAssert(false && "Unexpected conflict");
+        return ConflictResolution::Skip;
+    }
+};
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct TestChangeTracker : BeSQLite::ChangeTracker
-    {
+struct TestChangeTracker : BeSQLite::ChangeTracker {
     TestChangeTracker(BeSQLite::DbR db) { SetDb(&db); }
 
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override { return OnCommitStatus::Commit; }
-
-    };
+};
 
 //=======================================================================================
 // @bsistruct
 //=======================================================================================
 struct BeSQliteTestFixture : public ::testing::Test {
-protected:
+   protected:
     static std::unique_ptr<Db> Create(Utf8CP fileName) {
         BeFileName outputPath;
         BeTest::GetHost().GetOutputRoot(outputPath);
         outputPath.AppendUtf8(fileName);
         if (outputPath.DoesPathExist())
-                outputPath.BeDeleteFile();
+            outputPath.BeDeleteFile();
 
         std::unique_ptr<Db> db = std::unique_ptr<Db>(new Db());
         if (db->CreateNewDb(outputPath) != BE_SQLITE_OK)
-                return nullptr;
+            return nullptr;
 
         db->SaveChanges();
         return db;
@@ -225,20 +222,20 @@ protected:
         BeTest::GetHost().GetOutputRoot(existingFilePath);
         existingFilePath.AppendUtf8(existingFile);
         if (!existingFilePath.DoesPathExist())
-                return BeFileNameStatus::FileNotFound;
+            return BeFileNameStatus::FileNotFound;
 
         BeFileName outputPathB;
         BeTest::GetHost().GetOutputRoot(outputPathB);
         outputPathB.AppendUtf8(out);
 
         if (outputPathB.DoesPathExist())
-                if (!override)
-                    return BeFileNameStatus::AlreadyExists;
-                else {
-                    BeFileNameStatus r = outputPathB.BeDeleteFile();
-                    if (r != BeFileNameStatus::Success)
-                        return r;
-                }
+            if (!override)
+                return BeFileNameStatus::AlreadyExists;
+            else {
+                BeFileNameStatus r = outputPathB.BeDeleteFile();
+                if (r != BeFileNameStatus::Success)
+                    return r;
+            }
 
         return BeFileName::BeCopyFile(existingFilePath, outputPathB);
     }
@@ -247,11 +244,11 @@ protected:
         BeTest::GetHost().GetOutputRoot(outputPath);
         outputPath.AppendUtf8(fileName);
         if (!outputPath.DoesPathExist())
-                return nullptr;
+            return nullptr;
 
         std::unique_ptr<Db> db = std::unique_ptr<Db>(new Db());
         if (db->OpenBeSQLiteDb(outputPath, Db::OpenParams(openMode)) != BE_SQLITE_OK)
-                return nullptr;
+            return nullptr;
 
         return db;
     }
@@ -271,21 +268,21 @@ protected:
         TestChangeTracker tracker(db);
         tracker.EnableTracking(true);
         if (!task(db, userObj)) {
-                tracker.EnableTracking(false);
-                return nullptr;
+            tracker.EnableTracking(false);
+            return nullptr;
         }
 
         if (!tracker.HasChanges())
-                return nullptr;
+            return nullptr;
 
         std::unique_ptr<BeSQLite::ChangeSet> changeset = std::unique_ptr<BeSQLite::ChangeSet>(new TestChangeSet());
         if (BE_SQLITE_OK != changeset->FromChangeTrack(tracker))
-                return nullptr;
+            return nullptr;
 
         return changeset;
     }
 
-public:
+   public:
     BeSQliteTestFixture() : ::testing::Test() {
         BeFileName tempDir;
         BeTest::GetHost().GetTempDir(tempDir);
@@ -310,7 +307,6 @@ TEST_F(BeSQliteTestFixture, sqlite_stmt) {
 
     Statement stmt2;
     ASSERT_EQ(BE_SQLITE_OK, stmt2.Prepare(*db1, "SELECT [sql] FROM [sqlite_stmt]"));
-
 
     ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
 
@@ -399,8 +395,7 @@ TEST_F(BeSQliteTestFixture, WAL_basic_test) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, sqlite_stat1)
-    {
+TEST_F(BeSQliteTestFixture, sqlite_stat1) {
     auto db1 = Create("first.db");
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create table foo1(id integer primary key, a,b)"));
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create table foo2(id integer primary key, a,b)"));
@@ -411,7 +406,6 @@ TEST_F(BeSQliteTestFixture, sqlite_stat1)
 
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create unique index uidx_foo1_a_b on foo1(a)"));
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("create unique index uidx_foo2_a_b on foo2(a)"));
-
 
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into foo1(id,a,b) values(1,'aa1','bb1')"));
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("insert into foo1(id,a,b) values(2,'aa2','bb2')"));
@@ -438,35 +432,31 @@ TEST_F(BeSQliteTestFixture, sqlite_stat1)
     ASSERT_EQ(0, GetRowCount(*db1, "sqlite_stat1"));
     ASSERT_EQ(0, GetRowCount(*db2, "sqlite_stat1"));
 
-    //Make sure change is that system table can be tracked.
-    std::unique_ptr< BeSQLite::ChangeSet> cs = Capture(*db1, [] (DbR db, void*) {
-        return db.ExecuteSql("analyze") == BE_SQLITE_OK;
-        }, nullptr);
-
+    // Make sure change is that system table can be tracked.
+    std::unique_ptr<BeSQLite::ChangeSet> cs = Capture(*db1, [](DbR db, void*) { return db.ExecuteSql("analyze") == BE_SQLITE_OK; }, nullptr);
 
     const int expectedRowCount = GetRowCount(*db1, "sqlite_stat1");
     ASSERT_NE(expectedRowCount, 0);
     db1->SaveChanges();
 
-    //apply the change set to a new db
+    // apply the change set to a new db
     ASSERT_EQ(BE_SQLITE_OK, cs->ApplyChanges(*db2));
     db2->SaveChanges();
     ASSERT_EQ(expectedRowCount, GetRowCount(*db2, "sqlite_stat1"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, variable_limit)
-    {
+TEST_F(BeSQliteTestFixture, variable_limit) {
     auto db1 = Create("first.db");
     BeTest::SetFailOnAssert(false);
     ASSERT_EQ(BE_SQLITE_ERROR, db1->ExecuteSql("SELECT ?20002")) << db1->GetLastError();
     ASSERT_EQ(BE_SQLITE_ERROR, db1->ExecuteSql("SELECT ?20001")) << db1->GetLastError();
-    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("SELECT ?20000")) << db1->GetLastError(); //MAX that can fit into 16bits
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("SELECT ?20000")) << db1->GetLastError();  // MAX that can fit into 16bits
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("SELECT ?19999")) << db1->GetLastError();
     BeTest::SetFailOnAssert(true);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -474,7 +464,7 @@ TEST_F(BeSQliteTestFixture, variable_limit)
 TEST_F(BeSQliteTestFixture, regexp_basic) {
     auto db = Create("regex.db");
     db->SaveChanges();
-    auto test = [&] (Utf8CP exp) {
+    auto test = [&](Utf8CP exp) {
         auto stmt = db->GetCachedStatement(SqlPrintfString("select %s", exp));
         auto rc = stmt->Step();
         if (BE_SQLITE_ROW == rc)
@@ -483,16 +473,16 @@ TEST_F(BeSQliteTestFixture, regexp_basic) {
         return -1;
     };
 
-    ASSERT_EQ( 1, test("'test'   REGEXP  'test'      ")); // default case sensitive
-    ASSERT_EQ( 1, test("'test'   REGEXP  '(?i:TEST)' ")); // case insensitive
-    ASSERT_EQ( 1, test("'test'   REGEXP  '.est'      ")); // simple dot wild card
-    ASSERT_EQ( 1, test("'1234'   REGEXP  '\\d+'      ")); // class specifier
-    ASSERT_EQ(-1, test("'1234'   REGEXP  '(AA'       ")); // error
+    ASSERT_EQ(1, test("'test'   REGEXP  'test'      "));   // default case sensitive
+    ASSERT_EQ(1, test("'test'   REGEXP  '(?i:TEST)' "));   // case insensitive
+    ASSERT_EQ(1, test("'test'   REGEXP  '.est'      "));   // simple dot wild card
+    ASSERT_EQ(1, test("'1234'   REGEXP  '\\d+'      "));   // class specifier
+    ASSERT_EQ(-1, test("'1234'   REGEXP  '(AA'       "));  // error
     ASSERT_STRCASEEQ("regex:missing ): (AA (BE_SQLITE_ERROR)", db->GetLastError().c_str());
 
     // use cached & compiled regexp pattern.
-    for (int i =0;i< 10;++i) {
-        ASSERT_EQ( 1, test("'test'   REGEXP  '(?i:TEST)' ")); // case insensitive
+    for (int i = 0; i < 10; ++i) {
+        ASSERT_EQ(1, test("'test'   REGEXP  '(?i:TEST)' "));  // case insensitive
     }
 }
 
@@ -501,7 +491,7 @@ TEST_F(BeSQliteTestFixture, regexp_basic) {
 //---------------------------------------------------------------------------------------
 TEST_F(BeSQliteTestFixture, regexp_extract_basic) {
     auto db = Create("first.db");
-    auto test = [&] (Utf8CP exp) {
+    auto test = [&](Utf8CP exp) {
         auto stmt = db->GetCachedStatement(SqlPrintfString("select %s", exp));
         auto rc = stmt->Step();
         if (BE_SQLITE_ROW == rc && !stmt->IsColumnNull(0))
@@ -510,13 +500,13 @@ TEST_F(BeSQliteTestFixture, regexp_extract_basic) {
         return Utf8String();
     };
 
-    ASSERT_STRCASEEQ( "test", test(R"(REGEXP_EXTRACT('test', '\w+', '\0'))").c_str());
-    ASSERT_STRCASEEQ( "test", test(R"(REGEXP_EXTRACT('test', '\w+'))").c_str());
-    ASSERT_STRCASEEQ( "villa, amiyah", test(R"(REGEXP_EXTRACT('amiyah, villa', '^(\w+)\s*,\s*(\w+)$', '\2, \1'))").c_str());
+    ASSERT_STRCASEEQ("test", test(R"(REGEXP_EXTRACT('test', '\w+', '\0'))").c_str());
+    ASSERT_STRCASEEQ("test", test(R"(REGEXP_EXTRACT('test', '\w+'))").c_str());
+    ASSERT_STRCASEEQ("villa, amiyah", test(R"(REGEXP_EXTRACT('amiyah, villa', '^(\w+)\s*,\s*(\w+)$', '\2, \1'))").c_str());
 
     // use cached & compiled regexp pattern.
-    for (int i =0;i< 10;++i) {
-        ASSERT_STRCASEEQ( "villa, amiyah", test(R"(REGEXP_EXTRACT('amiyah, villa', '^(\w+)\s*,\s*(\w+)$', '\2, \1'))").c_str());
+    for (int i = 0; i < 10; ++i) {
+        ASSERT_STRCASEEQ("villa, amiyah", test(R"(REGEXP_EXTRACT('amiyah, villa', '^(\w+)\s*,\s*(\w+)$', '\2, \1'))").c_str());
     }
 }
 //---------------------------------------------------------------------------------------
@@ -524,11 +514,11 @@ TEST_F(BeSQliteTestFixture, regexp_extract_basic) {
 //---------------------------------------------------------------------------------------
 TEST_F(BeSQliteTestFixture, regexp_extract_boundary_cond) {
     auto db = Create("first.db");
-    db->ExecuteSql("create table foo(strCol, intCol, binCol)") ;
-    db->ExecuteSql("insert into foo values ('hello, world', 1023, X'123abc')") ;
-    db->ExecuteSql("insert into foo values ('world', 2033, null)") ;
-    db->ExecuteSql("insert into foo values ('every, one', 2445, null)") ;
-    db->ExecuteSql("insert into foo values (null, null, null)") ;
+    db->ExecuteSql("create table foo(strCol, intCol, binCol)");
+    db->ExecuteSql("insert into foo values ('hello, world', 1023, X'123abc')");
+    db->ExecuteSql("insert into foo values ('world', 2033, null)");
+    db->ExecuteSql("insert into foo values ('every, one', 2445, null)");
+    db->ExecuteSql("insert into foo values (null, null, null)");
     db->SaveChanges();
 
     // extract or return null, with all three parameters
@@ -587,11 +577,11 @@ TEST_F(BeSQliteTestFixture, regexp_extract_boundary_cond) {
 //---------------------------------------------------------------------------------------
 TEST_F(BeSQliteTestFixture, regexp_boundary_cond) {
     auto db = Create("first.db");
-    db->ExecuteSql("create table foo(strCol, intCol, binCol)") ;
-    db->ExecuteSql("insert into foo values ('hello', 1023, X'123abc')") ;
-    db->ExecuteSql("insert into foo values ('world', 2033, null)") ;
-    db->ExecuteSql("insert into foo values ('every', 2445, null)") ;
-    db->ExecuteSql("insert into foo values (null, null, null)") ;
+    db->ExecuteSql("create table foo(strCol, intCol, binCol)");
+    db->ExecuteSql("insert into foo values ('hello', 1023, X'123abc')");
+    db->ExecuteSql("insert into foo values ('world', 2033, null)");
+    db->ExecuteSql("insert into foo values ('every', 2445, null)");
+    db->ExecuteSql("insert into foo values (null, null, null)");
     db->SaveChanges();
     // data or regex null return null
     auto stmt = db->GetCachedStatement("select count(*) from foo where regexp(null,strCol)");
@@ -652,18 +642,17 @@ TEST_F(BeSQliteTestFixture, base36) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, Trace)
-    {
+TEST_F(BeSQliteTestFixture, Trace) {
     auto db1 = Create("first.db");
     int nStmt = 0;
     int nProfile = 0;
     int nRow = 0;
-    int nClose =0;
+    int nClose = 0;
     auto cancel_profile = db1->GetTraceProfileEvent().AddListener([&](TraceContext const& ctx, int64_t nanoseconds) { nProfile++; });
     auto cancel_stmt = db1->GetTraceStmtEvent().AddListener([&](TraceContext const& ctx, Utf8CP sql) { nStmt++; });
     auto cancel_row = db1->GetTraceRowEvent().AddListener([&](TraceContext const& ctx) { nRow++; });
     auto cancel_close = db1->GetTraceCloseEvent().AddListener([&](SqlDbP, Utf8CP) { nClose++; });
-    db1->ConfigTraceEvents(DbTrace::Profile| DbTrace::Stmt | DbTrace::Row | DbTrace::Close, true);
+    db1->ConfigTraceEvents(DbTrace::Profile | DbTrace::Stmt | DbTrace::Row | DbTrace::Close, true);
 
     db1->ExecuteSql("create table test(Id integer primary key, c0);");
     Statement stmt;
@@ -686,14 +675,12 @@ TEST_F(BeSQliteTestFixture, Trace)
     db1->CloseDb();
 
     ASSERT_EQ(nClose, 1);
-
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, TraceScope)
-    {
+TEST_F(BeSQliteTestFixture, TraceScope) {
     auto db1 = Create("first.db");
     SQLiteTraceScope scope(DbTrace::Stmt | DbTrace::Profile | DbTrace::Row, *db1, "SQLiteTrace");
     db1->ExecuteSql("create table test(Id integer primary key, c0);");
@@ -704,13 +691,12 @@ TEST_F(BeSQliteTestFixture, TraceScope)
     stmt.Step();
     stmt.Finalize();
     db1->SaveChanges();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, TxnState)
-    {
+TEST_F(BeSQliteTestFixture, TxnState) {
     auto db = Create("first.db");
     db->ExecuteSql("create table test(Id integer primary key, c0);");
 
@@ -729,13 +715,12 @@ TEST_F(BeSQliteTestFixture, TxnState)
     ASSERT_EQ(db->GetDbFile()->GetTxnState(), BE_SQLITE_TXN_WRITE);
     db->SaveChanges();
     ASSERT_EQ(db->GetDbFile()->GetTxnState(), BE_SQLITE_TXN_NONE);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, ReadonlyNoCommit)
-    {
+TEST_F(BeSQliteTestFixture, ReadonlyNoCommit) {
     auto db = Create("readonly_commit_test.db");
     db->SaveChanges();
     db = nullptr;
@@ -745,13 +730,12 @@ TEST_F(BeSQliteTestFixture, ReadonlyNoCommit)
     ASSERT_EQ(stmt->Step(), BE_SQLITE_ROW);
     ASSERT_EQ(db->GetDbFile()->GetTxnState(), BE_SQLITE_TXN_READ);
     ASSERT_EQ(db->IsReadonly(), true);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, SerializeMainDb)
-    {
+TEST_F(BeSQliteTestFixture, SerializeMainDb) {
     auto db = Create("first.db");
 
     db->ExecuteSql("create table test1(Id integer primary key, c0);");
@@ -776,13 +760,12 @@ TEST_F(BeSQliteTestFixture, SerializeMainDb)
     ASSERT_TRUE(db_snapshot1.TableExists("test1"));
     ASSERT_TRUE(db_snapshot1.TableExists("test2"));
     ASSERT_TRUE(snapshot1.Empty());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, SerializeTempDb)
-    {
+TEST_F(BeSQliteTestFixture, SerializeTempDb) {
     auto db = Create("first.db");
 
     db->ExecuteSql("create table temp.test(Id integer primary key, c0);");
@@ -806,27 +789,25 @@ TEST_F(BeSQliteTestFixture, SerializeTempDb)
     ASSERT_EQ(Db::Deserialize(snapshot1, db_snapshot1), BE_SQLITE_OK);
     ASSERT_TRUE(db_snapshot1.TableExists("test"));
     ASSERT_TRUE(snapshot1.Empty());
-    }
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, WriteCommitWithAssert)
-    {
+TEST_F(BeSQliteTestFixture, WriteCommitWithAssert) {
     auto db = Create("first.db");
     db->ExecuteSql("create table test(Id integer primary key, c0);");
 
     ASSERT_EQ(db->GetDbFile()->GetTxnState(), BE_SQLITE_TXN_WRITE);
     ASSERT_EQ(db->IsReadonly(), false);
     BeTest::SetFailOnAssert(false);
-    db = nullptr; // Cause assert
+    db = nullptr;  // Cause assert
 
     BeTest::SetFailOnAssert(true);
-    }
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, Profiler)
-    {
+TEST_F(BeSQliteTestFixture, Profiler) {
     auto db1 = Create("first.db");
     ASSERT_EQ(BE_SQLITE_OK, Profiler::InitScope(*db1, "test scope", "test", Profiler::Params()));
     db1->ExecuteSql("create table test(Id integer primary key, c0);");
@@ -836,7 +817,7 @@ TEST_F(BeSQliteTestFixture, Profiler)
 
     Statement stmt;
     stmt.Prepare(*db1, "insert into test (id,c0) values(?,?)");
-    for (int i=0; i< 100; ++i) {
+    for (int i = 0; i < 100; ++i) {
         stmt.BindInt(1, i);
         stmt.BindText(2, "Hello World", Statement::MakeCopy::No);
         stmt.Step();
@@ -858,12 +839,14 @@ TEST_F(BeSQliteTestFixture, Profiler)
 
     ASSERT_EQ(BE_SQLITE_ROW, stats->Step());
     ASSERT_EQ(100, stats->GetValueInt(0));
-    ASSERT_STREQ( "insert into test (id,c0) values(?,?)", stats->GetValueText(1));;
+    ASSERT_STREQ("insert into test (id,c0) values(?,?)", stats->GetValueText(1));
+    ;
 
     ASSERT_EQ(BE_SQLITE_ROW, stats->Step());
     ASSERT_EQ(100, stats->GetValueInt(0));
-    ASSERT_STREQ( "COMMIT", stats->GetValueText(1));;
-    }
+    ASSERT_STREQ("COMMIT", stats->GetValueText(1));
+    ;
+}
 
 //=======================================================================================
 //! Virtual Table to generate series
@@ -872,168 +855,182 @@ TEST_F(BeSQliteTestFixture, Profiler)
 struct SeriesModule : DbModule {
     struct SeriesTable : DbVirtualTable {
         struct SeriesCursor : DbCursor {
-            enum class Columns{
+            enum class Columns {
                 Value = 0,
                 Start = 1,
                 Stop = 2,
                 Step = 3,
             };
-            private:
-                int m_isDesc = 0;
-                int64_t m_iRowid = 0;
-                int64_t m_iValue = 0;
-                int64_t m_mnValue = 0;
-                int64_t m_mxValue = 0;
-                int64_t m_iStep = 0;
-            public:
-                SeriesCursor(SeriesTable& vt): DbCursor(vt){}
-                bool Eof() final {
-                    if (m_isDesc ) {
-                        return m_iValue < m_mnValue;
-                    }else{
-                        return m_iValue > m_mxValue;
-                    }
+
+           private:
+            int m_isDesc = 0;
+            int64_t m_iRowid = 0;
+            int64_t m_iValue = 0;
+            int64_t m_mnValue = 0;
+            int64_t m_mxValue = 0;
+            int64_t m_iStep = 0;
+
+           public:
+            SeriesCursor(SeriesTable& vt) : DbCursor(vt) {}
+            bool Eof() final {
+                if (m_isDesc) {
+                    return m_iValue < m_mnValue;
+                } else {
+                    return m_iValue > m_mxValue;
                 }
-                DbResult Next() final {
-                    if (m_isDesc) {
-                        m_iValue -= m_iStep;
-                    } else {
-                        m_iValue += m_iStep;
-                    }
-                    m_iRowid++;
-                    return BE_SQLITE_OK;
+            }
+            DbResult Next() final {
+                if (m_isDesc) {
+                    m_iValue -= m_iStep;
+                } else {
+                    m_iValue += m_iStep;
                 }
-                DbResult GetColumn(int i, Context& ctx) final {
-                    int64_t x = 0;
-                    switch( (Columns)i ){
-                        case Columns::Start: x = m_mnValue; break;
-                        case Columns::Stop: x = m_mxValue; break;
-                        case Columns::Step: x = m_iStep;   break;
-                        default: x = m_iValue;  break;
-                    }
-                    ctx.SetResultInt64(x);
-                    return BE_SQLITE_OK;
-                }
-                DbResult GetRowId(int64_t& rowId) final {
-                    rowId = m_iRowid;
-                    return BE_SQLITE_OK;
-                }
-                DbResult Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) final {
-                    int i = 0;
-                    if( idxNum & 1 ){
-                        m_mnValue = argv[i++].GetValueInt64();
-                    }else{
-                        m_mnValue = 0;
-                    }
-                    if( idxNum & 2 ){
-                        m_mxValue = argv[i++].GetValueInt64();
-                    }else{
-                        m_mxValue = 0xff;
-                    }
-                    if( idxNum & 4 ){
-                        m_iStep = argv[i++].GetValueInt64();
-                        if( m_iStep==0 ){
-                        m_iStep = 1;
-                        }else if( m_iStep<0 ){
-                        m_iStep = -m_iStep;
-                        if( (idxNum & 16)==0 ) idxNum |= 8;
-                        }
-                    }else{
-                        m_iStep = 1;
-                    }
-                    for(i=0; i<argc; i++){
-                        if( argv[i].IsNull() ){
-                        m_mnValue = 1;
-                        m_mxValue =  0;
-                        break;
-                        }
-                    }
-                    if( idxNum & 8 ){
-                        m_isDesc = 1;
-                        m_iValue = m_mxValue;
-                        if( m_iStep>0 ){
-                        m_iValue -= (m_mxValue - m_mnValue)%m_iStep;
-                        }
-                    }else{
-                        m_isDesc = 0;
-                        m_iValue = m_mnValue;
-                    }
-                    m_iRowid = 1;
-                    return BE_SQLITE_OK;
-                }
-        };
-        public:
-            SeriesTable(SeriesModule& module): DbVirtualTable(module) {}
-            DbResult Open(DbCursor*& cur) override {
-                cur = new SeriesCursor(*this);
+                m_iRowid++;
                 return BE_SQLITE_OK;
             }
-             DbResult BestIndex(IndexInfo& indexInfo) final {
-                int i, j;              /* Loop over constraints */
-                int idxNum = 0;        /* The query plan bitmask */
-                int unusableMask = 0;  /* Mask of unusable constraints */
-                int nArg = 0;          /* Number of arguments that seriesFilter() expects */
-                int aIdx[3];           /* Constraints on start, stop, and step */
-                const int SQLITE_SERIES_CONSTRAINT_VERIFY = 0;
-                aIdx[0] = aIdx[1] = aIdx[2] = -1;
+            DbResult GetColumn(int i, Context& ctx) final {
+                int64_t x = 0;
+                switch ((Columns)i) {
+                    case Columns::Start:
+                        x = m_mnValue;
+                        break;
+                    case Columns::Stop:
+                        x = m_mxValue;
+                        break;
+                    case Columns::Step:
+                        x = m_iStep;
+                        break;
+                    default:
+                        x = m_iValue;
+                        break;
+                }
+                ctx.SetResultInt64(x);
+                return BE_SQLITE_OK;
+            }
+            DbResult GetRowId(int64_t& rowId) final {
+                rowId = m_iRowid;
+                return BE_SQLITE_OK;
+            }
+            DbResult Filter(int idxNum, const char* idxStr, int argc, DbValue* argv) final {
+                int i = 0;
+                if (idxNum & 1) {
+                    m_mnValue = argv[i++].GetValueInt64();
+                } else {
+                    m_mnValue = 0;
+                }
+                if (idxNum & 2) {
+                    m_mxValue = argv[i++].GetValueInt64();
+                } else {
+                    m_mxValue = 0xff;
+                }
+                if (idxNum & 4) {
+                    m_iStep = argv[i++].GetValueInt64();
+                    if (m_iStep == 0) {
+                        m_iStep = 1;
+                    } else if (m_iStep < 0) {
+                        m_iStep = -m_iStep;
+                        if ((idxNum & 16) == 0)
+                            idxNum |= 8;
+                    }
+                } else {
+                    m_iStep = 1;
+                }
+                for (i = 0; i < argc; i++) {
+                    if (argv[i].IsNull()) {
+                        m_mnValue = 1;
+                        m_mxValue = 0;
+                        break;
+                    }
+                }
+                if (idxNum & 8) {
+                    m_isDesc = 1;
+                    m_iValue = m_mxValue;
+                    if (m_iStep > 0) {
+                        m_iValue -= (m_mxValue - m_mnValue) % m_iStep;
+                    }
+                } else {
+                    m_isDesc = 0;
+                    m_iValue = m_mnValue;
+                }
+                m_iRowid = 1;
+                return BE_SQLITE_OK;
+            }
+        };
 
-                for(i=0; i<indexInfo.GetConstraintCount(); i++){
-                    auto pConstraint = indexInfo.GetConstraint(i);
-                    int iCol;    /* 0 for start, 1 for stop, 2 for step */
-                    int iMask;   /* bitmask for those column */
-                    if( pConstraint->GetColumn()< (int)SeriesCursor::Columns::Start ) continue;
-                    iCol = pConstraint->GetColumn() - (int)SeriesCursor::Columns::Start;
-                    iMask = 1 << iCol;
-                    if (!pConstraint->IsUsable()){
-                        unusableMask |=  iMask;
-                        continue;
-                    } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ ){
-                        idxNum |= iMask;
-                        aIdx[iCol] = i;
-                    }
+       public:
+        SeriesTable(SeriesModule& module) : DbVirtualTable(module) {}
+        DbResult Open(DbCursor*& cur) override {
+            cur = new SeriesCursor(*this);
+            return BE_SQLITE_OK;
+        }
+        DbResult BestIndex(IndexInfo& indexInfo) final {
+            int i, j;             /* Loop over constraints */
+            int idxNum = 0;       /* The query plan bitmask */
+            int unusableMask = 0; /* Mask of unusable constraints */
+            int nArg = 0;         /* Number of arguments that seriesFilter() expects */
+            int aIdx[3];          /* Constraints on start, stop, and step */
+            const int SQLITE_SERIES_CONSTRAINT_VERIFY = 0;
+            aIdx[0] = aIdx[1] = aIdx[2] = -1;
+
+            for (i = 0; i < indexInfo.GetConstraintCount(); i++) {
+                auto pConstraint = indexInfo.GetConstraint(i);
+                int iCol;  /* 0 for start, 1 for stop, 2 for step */
+                int iMask; /* bitmask for those column */
+                if (pConstraint->GetColumn() < (int)SeriesCursor::Columns::Start)
+                    continue;
+                iCol = pConstraint->GetColumn() - (int)SeriesCursor::Columns::Start;
+                iMask = 1 << iCol;
+                if (!pConstraint->IsUsable()) {
+                    unusableMask |= iMask;
+                    continue;
+                } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ) {
+                    idxNum |= iMask;
+                    aIdx[iCol] = i;
                 }
-                for( i = 0; i < 3; i++) {
-                    if( (j = aIdx[i])>=0 ) {
-                        indexInfo.GetConstraintUsage(j)->SetArgvIndex(++nArg);
-                        indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
-                    }
+            }
+            for (i = 0; i < 3; i++) {
+                if ((j = aIdx[i]) >= 0) {
+                    indexInfo.GetConstraintUsage(j)->SetArgvIndex(++nArg);
+                    indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
                 }
-                if( (unusableMask & ~idxNum)!=0 ){
-                    /* The start, stop, and step columns are inputs.  Therefore if there
-                    ** are unusable constraints on any of start, stop, or step then
-                    ** this plan is unusable */
-                    return BE_SQLITE_CONSTRAINT;
-                }
-                if( (idxNum & 3) == 3){
-                    /* Both start= and stop= boundaries are available.  This is the
-                    ** the preferred case */
-                    indexInfo.SetEstimatedCost((double)(2 - ((idxNum&4)!=0)));
-                    indexInfo.SetEstimatedRows(1000);
-                    if( indexInfo.GetIndexOrderByCount() >= 1 && indexInfo.GetOrderBy(0)->GetColumn() == 0 ){
-                    if( indexInfo.GetOrderBy(0) ->GetDesc()){
+            }
+            if ((unusableMask & ~idxNum) != 0) {
+                /* The start, stop, and step columns are inputs.  Therefore if there
+                ** are unusable constraints on any of start, stop, or step then
+                ** this plan is unusable */
+                return BE_SQLITE_CONSTRAINT;
+            }
+            if ((idxNum & 3) == 3) {
+                /* Both start= and stop= boundaries are available.  This is the
+                ** the preferred case */
+                indexInfo.SetEstimatedCost((double)(2 - ((idxNum & 4) != 0)));
+                indexInfo.SetEstimatedRows(1000);
+                if (indexInfo.GetIndexOrderByCount() >= 1 && indexInfo.GetOrderBy(0)->GetColumn() == 0) {
+                    if (indexInfo.GetOrderBy(0)->GetDesc()) {
                         idxNum |= 8;
-                    }else{
+                    } else {
                         idxNum |= 16;
                     }
                     indexInfo.SetOrderByConsumed(true);
-                    }
-                } else {
-                    /* If either boundary is missing, we have to generate a huge span
-                    ** of numbers.  Make this case very expensive so that the query
-                    ** planner will work hard to avoid it. */
-                    indexInfo.SetEstimatedRows(2147483647);
                 }
-                indexInfo.SetIdxNum(idxNum);
-                return BE_SQLITE_OK;
-             }
-    };
-    public:
-        SeriesModule(DbR db): DbModule(db, "generate_series", "CREATE TABLE x(value,start hidden,stop hidden,step hidden)") {}
-        DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
-            out = new SeriesTable(*this);
-            conf.SetTag(Config::Tags::Innocuous);
+            } else {
+                /* If either boundary is missing, we have to generate a huge span
+                ** of numbers.  Make this case very expensive so that the query
+                ** planner will work hard to avoid it. */
+                indexInfo.SetEstimatedRows(2147483647);
+            }
+            indexInfo.SetIdxNum(idxNum);
             return BE_SQLITE_OK;
         }
+    };
+
+   public:
+    SeriesModule(DbR db) : DbModule(db, "generate_series", "CREATE TABLE x(value,start hidden,stop hidden,step hidden)") {}
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
+        out = new SeriesTable(*this);
+        conf.SetTag(Config::Tags::Innocuous);
+        return BE_SQLITE_OK;
+    }
 };
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1045,12 +1042,11 @@ TEST_F(BeSQliteTestFixture, TableValueFunction_SeriesModule) {
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db1, "SELECT value FROM generate_series(0,100,10)"));
     int expected[] = {0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
     int i = 0;
-    while(stmt.Step() == BE_SQLITE_ROW) {
+    while (stmt.Step() == BE_SQLITE_ROW) {
         ASSERT_EQ(expected[i++], stmt.GetValueInt(0));
     }
     ASSERT_EQ(i, 11);
 }
-
 
 //=======================================================================================
 //! Virtual Table to tokenize string
@@ -1059,124 +1055,134 @@ TEST_F(BeSQliteTestFixture, TableValueFunction_SeriesModule) {
 struct TokenizeModule : DbModule {
     struct TokenizeTable : DbVirtualTable {
         struct TokenizeCursor : DbCursor {
-            enum class Columns{
+            enum class Columns {
                 Token = 0,
                 Text = 1,
-                Delimiter =2,
+                Delimiter = 2,
             };
-            private:
-                int64_t m_iRowid = 0;
-                Utf8String m_text;
-                Utf8String m_delimiter;
-                bvector<Utf8String> m_tokens;
 
-            public:
-                TokenizeCursor(TokenizeTable& vt): DbCursor(vt){}
-                bool Eof() final { return m_iRowid < 1 || m_iRowid > (int64_t)m_tokens.size() ; }
-                DbResult Next() final {
-                    ++m_iRowid;
-                    return BE_SQLITE_OK;
-                }
-                DbResult GetColumn(int i, Context& ctx) final {
-                    Utf8CP x = 0;
-                    switch( (Columns)i ){
-                        case Columns::Text: x = m_text.c_str(); break;
-                        case Columns::Delimiter: x = m_delimiter.c_str(); break;
-                        default: x = m_tokens[m_iRowid - 1].c_str(); break;
-                    }
-                    ctx.SetResultText(x, (int)strlen(x), Context::CopyData::Yes);
-                    return BE_SQLITE_OK;
-                }
-                DbResult GetRowId(int64_t& rowId) final {
-                    rowId = m_iRowid;
-                    return BE_SQLITE_OK;
-                }
-                DbResult Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) final {
-                    int i = 0;
-                    if( idxNum & 1 ){
-                        m_text = argv[i++].GetValueText();
-                    }else{
-                        m_text = "";
-                    }
-                    if( idxNum & 2 ){
-                        m_delimiter = argv[i++].GetValueText();
-                    }else{
-                        m_delimiter = ";";
-                    }
-                    m_tokens.clear();
-                    BeStringUtilities::Split(m_text.c_str(), m_delimiter.c_str(), m_tokens);
-                    if (idxNum & 8)
-                        std:: sort(m_tokens.begin(), m_tokens.end(), std::greater <>());
-                    else if (idxNum & 16)
-                        std:: sort(m_tokens.begin(), m_tokens.end(), std::less <>());
+           private:
+            int64_t m_iRowid = 0;
+            Utf8String m_text;
+            Utf8String m_delimiter;
+            bvector<Utf8String> m_tokens;
 
-                    m_iRowid = 1;
-                    return BE_SQLITE_OK;
-                }
-        };
-        public:
-            TokenizeTable(TokenizeModule& module): DbVirtualTable(module) {}
-            DbResult Open(DbCursor*& cur) override {
-                cur = new TokenizeCursor(*this);
+           public:
+            TokenizeCursor(TokenizeTable& vt) : DbCursor(vt) {}
+            bool Eof() final { return m_iRowid < 1 || m_iRowid > (int64_t)m_tokens.size(); }
+            DbResult Next() final {
+                ++m_iRowid;
                 return BE_SQLITE_OK;
             }
-             DbResult BestIndex(IndexInfo& indexInfo) final {
-                 int i, j;              /* Loop over constraints */
-                int idxNum = 0;        /* The query plan bitmask */
-                int unusableMask = 0;  /* Mask of unusable constraints */
-                int nArg = 0;          /* Number of arguments that seriesFilter() expects */
-                int aIdx[2];           /* Constraints on start, stop, and step */
-                const int SQLITE_SERIES_CONSTRAINT_VERIFY = 0;
-                aIdx[0] = aIdx[1] = -1;
-                int nConstraint = indexInfo.GetConstraintCount();
-
-                for(i=0; i<nConstraint; i++){
-                    auto pConstraint = indexInfo.GetConstraint(i);
-                    int iCol;    /* 0 for start, 1 for stop, 2 for step */
-                    int iMask;   /* bitmask for those column */
-                    if( pConstraint->GetColumn()< (int)TokenizeCursor::Columns::Text) continue;
-                    iCol = pConstraint->GetColumn() - (int)TokenizeCursor::Columns::Text;
-                    iMask = 1 << iCol;
-                    if (!pConstraint->IsUsable()){
-                        unusableMask |=  iMask;
-                        continue;
-                    } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ ){
-                        idxNum |= iMask;
-                        aIdx[iCol] = i;
-                    }
+            DbResult GetColumn(int i, Context& ctx) final {
+                Utf8CP x = 0;
+                switch ((Columns)i) {
+                    case Columns::Text:
+                        x = m_text.c_str();
+                        break;
+                    case Columns::Delimiter:
+                        x = m_delimiter.c_str();
+                        break;
+                    default:
+                        x = m_tokens[m_iRowid - 1].c_str();
+                        break;
                 }
-                for( i = 0; i < 2; i++) {
-                    if( (j = aIdx[i]) >= 0 ) {
-                        indexInfo.GetConstraintUsage(j)->SetArgvIndex(++nArg);
-                        indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
-                    }
-                }
-
-                if ((unusableMask & ~idxNum)!=0 ){
-                    return BE_SQLITE_CONSTRAINT;
-                }
-
-                indexInfo.SetEstimatedCost(2.0);
-                indexInfo.SetEstimatedRows(1000);
-                if( indexInfo.GetIndexOrderByCount() >= 1 && indexInfo.GetOrderBy(0)->GetColumn() == 0 ) {
-                    if( indexInfo.GetOrderBy(0) ->GetDesc()){
-                        idxNum |= 8;
-                    } else {
-                        idxNum |= 16;
-                    }
-                    indexInfo.SetOrderByConsumed(true);
-                }
-                indexInfo.SetIdxNum(idxNum);
+                ctx.SetResultText(x, (int)strlen(x), Context::CopyData::Yes);
                 return BE_SQLITE_OK;
-             }
-    };
-    public:
-        TokenizeModule(DbR db): DbModule(db, "tokenize_text", "CREATE TABLE x(token,buffer hidden,delimiter hidden)") {}
-        DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
-            out = new TokenizeTable(*this);
-            conf.SetTag(Config::Tags::Innocuous);
+            }
+            DbResult GetRowId(int64_t& rowId) final {
+                rowId = m_iRowid;
+                return BE_SQLITE_OK;
+            }
+            DbResult Filter(int idxNum, const char* idxStr, int argc, DbValue* argv) final {
+                int i = 0;
+                if (idxNum & 1) {
+                    m_text = argv[i++].GetValueText();
+                } else {
+                    m_text = "";
+                }
+                if (idxNum & 2) {
+                    m_delimiter = argv[i++].GetValueText();
+                } else {
+                    m_delimiter = ";";
+                }
+                m_tokens.clear();
+                BeStringUtilities::Split(m_text.c_str(), m_delimiter.c_str(), m_tokens);
+                if (idxNum & 8)
+                    std::sort(m_tokens.begin(), m_tokens.end(), std::greater<>());
+                else if (idxNum & 16)
+                    std::sort(m_tokens.begin(), m_tokens.end(), std::less<>());
+
+                m_iRowid = 1;
+                return BE_SQLITE_OK;
+            }
+        };
+
+       public:
+        TokenizeTable(TokenizeModule& module) : DbVirtualTable(module) {}
+        DbResult Open(DbCursor*& cur) override {
+            cur = new TokenizeCursor(*this);
             return BE_SQLITE_OK;
         }
+        DbResult BestIndex(IndexInfo& indexInfo) final {
+            int i, j;             /* Loop over constraints */
+            int idxNum = 0;       /* The query plan bitmask */
+            int unusableMask = 0; /* Mask of unusable constraints */
+            int nArg = 0;         /* Number of arguments that seriesFilter() expects */
+            int aIdx[2];          /* Constraints on start, stop, and step */
+            const int SQLITE_SERIES_CONSTRAINT_VERIFY = 0;
+            aIdx[0] = aIdx[1] = -1;
+            int nConstraint = indexInfo.GetConstraintCount();
+
+            for (i = 0; i < nConstraint; i++) {
+                auto pConstraint = indexInfo.GetConstraint(i);
+                int iCol;  /* 0 for start, 1 for stop, 2 for step */
+                int iMask; /* bitmask for those column */
+                if (pConstraint->GetColumn() < (int)TokenizeCursor::Columns::Text)
+                    continue;
+                iCol = pConstraint->GetColumn() - (int)TokenizeCursor::Columns::Text;
+                iMask = 1 << iCol;
+                if (!pConstraint->IsUsable()) {
+                    unusableMask |= iMask;
+                    continue;
+                } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ) {
+                    idxNum |= iMask;
+                    aIdx[iCol] = i;
+                }
+            }
+            for (i = 0; i < 2; i++) {
+                if ((j = aIdx[i]) >= 0) {
+                    indexInfo.GetConstraintUsage(j)->SetArgvIndex(++nArg);
+                    indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
+                }
+            }
+
+            if ((unusableMask & ~idxNum) != 0) {
+                return BE_SQLITE_CONSTRAINT;
+            }
+
+            indexInfo.SetEstimatedCost(2.0);
+            indexInfo.SetEstimatedRows(1000);
+            if (indexInfo.GetIndexOrderByCount() >= 1 && indexInfo.GetOrderBy(0)->GetColumn() == 0) {
+                if (indexInfo.GetOrderBy(0)->GetDesc()) {
+                    idxNum |= 8;
+                } else {
+                    idxNum |= 16;
+                }
+                indexInfo.SetOrderByConsumed(true);
+            }
+            indexInfo.SetIdxNum(idxNum);
+            return BE_SQLITE_OK;
+        }
+    };
+
+   public:
+    TokenizeModule(DbR db) : DbModule(db, "tokenize_text", "CREATE TABLE x(token,buffer hidden,delimiter hidden)") {}
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
+        out = new TokenizeTable(*this);
+        conf.SetTag(Config::Tags::Innocuous);
+        return BE_SQLITE_OK;
+    }
 };
 
 //---------------------------------------------------------------------------------------
@@ -1190,7 +1196,7 @@ TEST_F(BeSQliteTestFixture, TableValueFunction_TokenizeModule) {
         ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db1, "SELECT token FROM tokenize_text('The quick brown fox jumps over the lazy dog', ' ')"));
         auto expected = std::vector<std::string>{"The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"};
         int i = 0;
-        while(stmt.Step() == BE_SQLITE_ROW) {
+        while (stmt.Step() == BE_SQLITE_ROW) {
             ASSERT_STREQ(expected[i++].c_str(), stmt.GetValueText(0));
         }
         ASSERT_EQ(i, 9);
@@ -1200,7 +1206,7 @@ TEST_F(BeSQliteTestFixture, TableValueFunction_TokenizeModule) {
         ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db1, "SELECT token FROM tokenize_text('the quick brown fox jumps over the lazy dog', ' ') ORDER BY token"));
         auto expected = std::vector<std::string>{"brown", "dog", "fox", "jumps", "lazy", "over", "quick", "the", "the"};
         int i = 0;
-        while(stmt.Step() == BE_SQLITE_ROW) {
+        while (stmt.Step() == BE_SQLITE_ROW) {
             ASSERT_STREQ(expected[i++].c_str(), stmt.GetValueText(0));
         }
         ASSERT_EQ(i, 9);
@@ -1210,7 +1216,7 @@ TEST_F(BeSQliteTestFixture, TableValueFunction_TokenizeModule) {
         ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db1, "SELECT token FROM tokenize_text('the quick brown fox jumps over the lazy dog', ' ') ORDER BY token DESC"));
         auto expected = std::vector<std::string>{"the", "the", "quick", "over", "lazy", "jumps", "fox", "dog", "brown"};
         int i = 0;
-        while(stmt.Step() == BE_SQLITE_ROW) {
+        while (stmt.Step() == BE_SQLITE_ROW) {
             ASSERT_STREQ(expected[i++].c_str(), stmt.GetValueText(0));
         }
         ASSERT_EQ(i, 9);
@@ -1238,11 +1244,8 @@ TEST_F(BeSQliteTestFixture, IntegrityCheckShouldRunOnReadOnlyFileWithFTS5) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void SqliteMemoryTest(bool stmtjournalInMemory, bool useNestedTransaction, const int threadshold, bool testMustPass)
-    {
-    std::function<std::unique_ptr<Db>(Utf8CP)> create
-        = [] (Utf8CP fileName)
-        {
+void SqliteMemoryTest(bool stmtjournalInMemory, bool useNestedTransaction, const int threadshold, bool testMustPass) {
+    std::function<std::unique_ptr<Db>(Utf8CP)> create = [](Utf8CP fileName) {
         BeFileName outputPath;
         BeTest::GetHost().GetOutputRoot(outputPath);
         outputPath.AppendUtf8(fileName);
@@ -1254,17 +1257,13 @@ void SqliteMemoryTest(bool stmtjournalInMemory, bool useNestedTransaction, const
             db = nullptr;
 
         return db;
-        };
+    };
 
-    std::function<std::unique_ptr< BeSQLite::ChangeSet>(DbR db, std::function<bool(DbR)>)> captureChangeset
-        = [] (DbR db, std::function<bool(DbR db)> task)
-        {
-        struct MemmoryTestChangeTracker : BeSQLite::ChangeTracker
-            {
+    std::function<std::unique_ptr<BeSQLite::ChangeSet>(DbR db, std::function<bool(DbR)>)> captureChangeset = [](DbR db, std::function<bool(DbR db)> task) {
+        struct MemmoryTestChangeTracker : BeSQLite::ChangeTracker {
             MemmoryTestChangeTracker(BeSQLite::DbR db) { SetDb(&db); }
             OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override { return OnCommitStatus::Commit; }
-            TrackChangesForTable _FilterTable(Utf8CP tableName) override
-                {
+            TrackChangesForTable _FilterTable(Utf8CP tableName) override {
                 if (BeStringUtilities::StricmpAscii(tableName, "t1") == 0)
                     return TrackChangesForTable::No;
 
@@ -1275,27 +1274,26 @@ void SqliteMemoryTest(bool stmtjournalInMemory, bool useNestedTransaction, const
                     return TrackChangesForTable::No;
 
                 return TrackChangesForTable::Yes;
-                }
-            };
+            }
+        };
 
-        std::unique_ptr< BeSQLite::ChangeSet> changeset;
+        std::unique_ptr<BeSQLite::ChangeSet> changeset;
         MemmoryTestChangeTracker tracker(db);
         tracker.EnableTracking(true);
-        if (!task(db))
-            {
+        if (!task(db)) {
             tracker.EnableTracking(false);
             return changeset;
-            }
+        }
 
         if (!tracker.HasChanges())
             return changeset;
 
-        changeset = std::unique_ptr< BeSQLite::ChangeSet>(new TestChangeSet());
+        changeset = std::unique_ptr<BeSQLite::ChangeSet>(new TestChangeSet());
         if (BE_SQLITE_OK != changeset->FromChangeTrack(tracker))
             changeset = nullptr;
 
         return changeset;
-        };
+    };
 
     Utf8CP schemaDb = R"(
         create table if not exists T0(Id integer primary key, c0, c1, c2, c3);
@@ -1324,23 +1322,19 @@ void SqliteMemoryTest(bool stmtjournalInMemory, bool useNestedTransaction, const
                     values(null, new.c0, new.c1, new.c2, new.c3);
         end; )";
 
-
     BeFileName changesetFile;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(changesetFile);
     changesetFile.AppendUtf8("BeSQLiteTestData\\mem_test.changeset");
 
-    if (!changesetFile.DoesPathExist())
-        {
+    if (!changesetFile.DoesPathExist()) {
         auto db1 = create("mem_check.db");
         ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql(schemaDb));
         ASSERT_EQ(BE_SQLITE_OK, db1->SaveChanges());
-        std::unique_ptr< BeSQLite::ChangeSet> cs = captureChangeset(*db1, [] (DbR db)
-            {
+        std::unique_ptr<BeSQLite::ChangeSet> cs = captureChangeset(*db1, [](DbR db) {
             Statement stmt;
             EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "insert into t0 values(null, ?1, ?2, ?3, ?4)"));
             const int max = 10000;
-            for (int i = 0; i < max; i++)
-                {
+            for (int i = 0; i < max; i++) {
                 stmt.Reset();
                 stmt.ClearBindings();
                 stmt.BindDouble(1, (rand() / static_cast<float>(RAND_MAX)));
@@ -1348,10 +1342,10 @@ void SqliteMemoryTest(bool stmtjournalInMemory, bool useNestedTransaction, const
                 stmt.BindDouble(3, (rand() / static_cast<float>(RAND_MAX)));
                 stmt.BindDouble(4, (rand() / static_cast<float>(RAND_MAX)));
                 EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
-                }
+            }
 
             return true;
-            });
+        });
 
         db1->CloseDb();
         LOG.debugv("Writing Changeset ... %s [size=%d bytes]", changesetFile.GetNameUtf8().c_str(), cs->GetSize());
@@ -1359,54 +1353,49 @@ void SqliteMemoryTest(bool stmtjournalInMemory, bool useNestedTransaction, const
         BeFile file;
         ASSERT_EQ(BeFileStatus::Success, file.Create(changesetFile.GetName()));
         for (auto& chunk : cs->m_data.m_chunks) {
-            ASSERT_EQ(BeFileStatus::Success, file.Write(nullptr, chunk.data(), (uint32_t) chunk.size()));
+            ASSERT_EQ(BeFileStatus::Success, file.Write(nullptr, chunk.data(), (uint32_t)chunk.size()));
         }
         ASSERT_EQ(BeFileStatus::Success, file.Flush());
         ASSERT_EQ(BeFileStatus::Success, file.Close());
-        }
+    }
 
     int64_t currentMemBefore, highMemBefore;
     BeSQLiteLib::GetMemoryUsed(currentMemBefore, highMemBefore);
     LOG.debugv("Before  Current=%lld, High= %lld\n", currentMemBefore, highMemBefore);
 
     TestChangeSet cs;
-    if (true)
-        {
+    if (true) {
         BeFile file;
         ASSERT_EQ(BeFileStatus::Success, file.Open(changesetFile.GetName(), BeFileAccess::Read));
         ByteStream stream;
         ASSERT_EQ(BeFileStatus::Success, file.ReadEntireFile(stream));
         cs.m_data.Append(stream.GetData(), stream.GetSize());
         LOG.debugv("Reading Changeset ... %s [size=%d bytes]", changesetFile.GetNameUtf8().c_str(), cs.GetSize());
-        }
+    }
 
     auto db2 = create("mem_check2.db");
 
-    if (stmtjournalInMemory)
-        {
+    if (stmtjournalInMemory) {
         ASSERT_EQ(BE_SQLITE_OK, db2->ExecuteSql("PRAGMA temp_store=2;"));
-        }
+    }
 
     ASSERT_EQ(BE_SQLITE_OK, db2->ExecuteSql(schemaDb));
     ASSERT_EQ(BE_SQLITE_OK, db2->SaveChanges());
     std::unique_ptr<Savepoint> sp;
-    if (useNestedTransaction)
-        {
+    if (useNestedTransaction) {
         sp = std::unique_ptr<Savepoint>(new Savepoint(*db2, "foo"));
-        }
+    }
 
     ASSERT_EQ(BE_SQLITE_OK, cs.ApplyChanges(*db2));
-    if (useNestedTransaction)
-        {
+    if (useNestedTransaction) {
         ASSERT_EQ(BE_SQLITE_OK, sp->Commit());
-        }
+    }
 
     int64_t currentMemAfter, highMemAfter;
     BeSQLiteLib::GetMemoryUsed(currentMemAfter, highMemAfter);
     LOG.debugv("After  Current=%lld, High= %lld\n", currentMemAfter - currentMemBefore, highMemAfter - highMemBefore, true /* reset stats*/);
 
-    if (!stmtjournalInMemory && useNestedTransaction)
-        {
+    if (!stmtjournalInMemory && useNestedTransaction) {
         BeFileName tempDir;
         BeTest::GetHost().GetTempDir(tempDir);
         bvector<BeFileName> tempFiles;
@@ -1416,58 +1405,48 @@ void SqliteMemoryTest(bool stmtjournalInMemory, bool useNestedTransaction, const
         ASSERT_EQ(BeFileNameStatus::Success, tempFiles.front().GetFileSize(fsz));
         LOG.debugv("Best Guess at 'Statement Journal File' : %s (%lld Bytes)", tempFiles.front().GetNameUtf8().c_str(), fsz);
 
-        if (testMustPass)
-            {
+        if (testMustPass) {
             ASSERT_GT(fsz, threadshold);
             ASSERT_LT(highMemAfter - highMemBefore, threadshold);
-            }
-        else
-            {
+        } else {
             ASSERT_LT(fsz, threadshold);
             ASSERT_GT(highMemAfter - highMemBefore, threadshold);
-            }
         }
-    else
-        {
+    } else {
         if (testMustPass)
             ASSERT_LT(highMemAfter - highMemBefore, threadshold);
         else
             ASSERT_GT(highMemAfter - highMemBefore, threadshold);
-        }
+    }
 
     ASSERT_EQ(BE_SQLITE_OK, db2->SaveChanges());
-
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseDiskJournal_NoNestedTransaction)
-    {
+TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseDiskJournal_NoNestedTransaction) {
     SqliteMemoryTest(false, false, MEM_THRESHOLD, true);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseInMemoryJournal_NoNestedTransaction)
-    {
+TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseInMemoryJournal_NoNestedTransaction) {
     SqliteMemoryTest(true, false, MEM_THRESHOLD, true);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseInMemoryJournal_UseNestedTransaction)
-    {
+TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseInMemoryJournal_UseNestedTransaction) {
     SqliteMemoryTest(true, true, MEM_THRESHOLD, false);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseInDiskJournal_UseNestedTransaction)
-    {
+TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseInDiskJournal_UseNestedTransaction) {
     SqliteMemoryTest(false, true, MEM_THRESHOLD, true);
-    }
+}
 #endif

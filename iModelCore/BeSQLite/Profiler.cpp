@@ -1,24 +1,24 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 
 #include <BeSQLite/Profiler.h>
-#include <Bentley/BeFileName.h>
 #include <Bentley/BeAssert.h>
-#include <Bentley/Logging.h>
+#include <Bentley/BeFileName.h>
 #include <Bentley/BeStringUtilities.h>
-#include <string>
-#include <unordered_map>
+#include <Bentley/Logging.h>
+
 #include <list>
 #include <regex>
+#include <string>
+#include <unordered_map>
 
 #define LOG (NativeLogging::CategoryLogger("BeSQLite"))
 
 using namespace std;
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
-
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
@@ -40,10 +40,10 @@ size_t Profiler::Scope::HashChar::operator()(Utf8CP str) const {
     size_t hash = 14695981039346656037ull;
     hash ^= l;
     hash *= 1099511628211ull;
-    for (auto i = 0; i < l ;++i) {
-            hash ^= (size_t)str[i];
-            hash *= 1099511628211ull;
-        }
+    for (auto i = 0; i < l; ++i) {
+        hash ^= (size_t)str[i];
+        hash *= 1099511628211ull;
+    }
     return hash;
 }
 
@@ -58,8 +58,8 @@ RefCountedPtr<Profiler::Scope> Profiler::Scope::Create(DbCR db, Utf8CP scopeName
 // @bsimethod
 //---------------------------------------------------------------------------------------
 Profiler::Scope::Scope(DbCR db, Utf8CP scopeName, Utf8CP scenarioName, Profiler::Params param)
-    : m_db(db), m_running(false),m_paused(false),m_param(param), m_scopeName(scopeName),m_scenarioName(scenarioName),m_scopeId(0) {
-    }
+    : m_db(db), m_running(false), m_paused(false), m_param(param), m_scopeName(scopeName), m_scenarioName(scenarioName), m_scopeId(0) {
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -142,9 +142,9 @@ DbResult Profiler::Scope::Start() const {
             return BE_SQLITE_ERROR;
         }
     } else {
-       rc = m_profileDb.OpenBeSQLiteDb(m_fileName, Db::OpenParams(Db::OpenMode::ReadWrite));
-       if (BE_SQLITE_OK != rc) {
-           return rc;
+        rc = m_profileDb.OpenBeSQLiteDb(m_fileName, Db::OpenParams(Db::OpenMode::ReadWrite));
+        if (BE_SQLITE_OK != rc) {
+            return rc;
         }
     }
     rc = BeginSession();
@@ -159,7 +159,7 @@ DbResult Profiler::Scope::Start() const {
 //---------------------------------------------------------------------------------------
 DbResult Profiler::Scope::InstallListener() const {
     m_cancelCb = m_db.GetTraceProfileEvent().AddListener(
-        [&](TraceContext const &ctx, int64_t nanoseconds) {
+        [&](TraceContext const& ctx, int64_t nanoseconds) {
             if (m_paused) {
                 return;
             }
@@ -302,7 +302,7 @@ DbResult Profiler::Scope::InitProfileDb() const {
         m_profileDb.CloseDb();
         m_fileName.BeDeleteFile();
         return BE_SQLITE_ERROR;
-        }
+    }
     return m_profileDb.SaveChanges();
 }
 
@@ -314,7 +314,7 @@ DbResult Profiler::Scope::BeginSession() const {
     Statement stmt;
     DbResult rc;
     rc = stmt.Prepare(m_profileDb, "insert into sql_scope([id], name, file_guid, elapsed_ms, memory_diff, memory_high, file_path) values(null,?, ?, ?, ?, null,?)");
-    if(rc != BE_SQLITE_OK) {
+    if (rc != BE_SQLITE_OK) {
         m_lastError = m_profileDb.GetLastError();
         return rc;
     }
@@ -340,11 +340,11 @@ DbResult Profiler::Scope::BeginSession() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult Profiler::Scope::EndSession() const{
+DbResult Profiler::Scope::EndSession() const {
     auto elapsedTime = GetElapsedTime();
     Statement stmt;
     DbResult rc = stmt.Prepare(m_profileDb, "update sql_scope set elapsed_ms=?, memory_diff=?-memory_diff, memory_high=? where id=?");
-    if(rc != BE_SQLITE_OK) {
+    if (rc != BE_SQLITE_OK) {
         m_lastError = m_profileDb.GetLastError();
         return rc;
     }
@@ -389,12 +389,12 @@ DbResult Profiler::Scope::Stop() const {
 
     Statement idStmt;
     rc = idStmt.Prepare(m_profileDb, "select [id] from [sql_list] where  [sql]=?");
-    if(rc != BE_SQLITE_OK) {
+    if (rc != BE_SQLITE_OK) {
         m_lastError = m_profileDb.GetLastError();
         return rc;
     }
 
-    for (auto& sql: m_sqlList) {
+    for (auto& sql : m_sqlList) {
         QueryStats& stats = m_profile[sql.c_str()];
         int64_t sqlId = 0;
         idStmt.ClearBindings();
@@ -456,10 +456,10 @@ void Profiler::Scope::ComputeExecutionPlan(Utf8CP sql, Utf8StringR plan, int& sc
     scans = 0;
     plan.clear();
     if (stmt.Prepare(m_db, explainQuery.c_str()) == BE_SQLITE_OK) {
-        while(stmt.Step() == BE_SQLITE_ROW) {
+        while (stmt.Step() == BE_SQLITE_ROW) {
             Utf8String str = stmt.GetValueText(3);
             plan.append(str).append("\n");
-            if(plan.StartsWithIAscii("SCAN"))
+            if (plan.StartsWithIAscii("SCAN"))
                 scans++;
         }
     }
@@ -487,7 +487,7 @@ DbResult Profiler::InitScope(DbCR db, Utf8CP scopeName, Utf8CP sessionName, Prof
 //---------------------------------------------------------------------------------------
 Profiler::Scope const* Profiler::GetScope(DbCR db) {
     BeSQLite::Db::AppDataPtr appdata = db.FindAppData(s_key);
-        return static_cast<Scope*>(appdata.get());
+    return static_cast<Scope*>(appdata.get());
     return nullptr;
 }
 
@@ -496,7 +496,7 @@ BeJsDocument Profiler::Scope::GetDetailedSqlStats() const {
 
     Statement stmt;
     if (stmt.Prepare(m_profileDb, sql.GetUtf8CP()) != BE_SQLITE_OK)
-            return BeJsDocument();
+        return BeJsDocument();
 
     struct SqlSessionStats {
         unsigned int elapsedMs = 0;

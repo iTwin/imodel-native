@@ -1,11 +1,12 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <cstddef>
 #include <functional>
+
 #include "BeSQLite.h"
 
 BESQLITE_TYPEDEFS(ChangeGroup);
@@ -13,7 +14,6 @@ BESQLITE_TYPEDEFS(ChangeSet);
 BESQLITE_TYPEDEFS(ChangeStream);
 BESQLITE_TYPEDEFS(DdlChanges);
 BESQLITE_TYPEDEFS(ApplyChangesArgs);
-
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
@@ -23,20 +23,19 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 // @bsiclass
 //=======================================================================================
 struct Changes {
-
     struct Reader : RefCountedBase {
         static int ReadCallback(void* reader, void* data, int* pSize) { return (int)((Reader*)reader)->_Read((Byte*)data, pSize); }
         virtual DbResult _Read(Byte* data, int* pSize) = 0;
     };
 
-private:
+   private:
     ChangeStreamCR m_changeStream;
     mutable RefCountedPtr<Reader> m_reader;
     mutable SqlChangesetIterP m_iter = 0;
     bool m_invert;
     void Finalize() const;
 
-public:
+   public:
     //! Construct an iterator for a ChangeStream
     //! @remarks The ChangeStream needs to implement _Read to send the stream
     explicit Changes(ChangeStream const& changeStream, bool invert) : m_changeStream(changeStream), m_invert(invert) {}
@@ -49,26 +48,29 @@ public:
     //! A single change to a database row.
     struct Change {
         friend struct ChangeGroup;
-        using iterator_category=std::input_iterator_tag;
-        using value_type=Change const;
-        using difference_type=std::ptrdiff_t;
-        using pointer=Change const*;
-        using reference=Change const&;
+        using iterator_category = std::input_iterator_tag;
+        using value_type = Change const;
+        using difference_type = std::ptrdiff_t;
+        using pointer = Change const*;
+        using reference = Change const&;
         struct ArrayView {
-            private:
-                Byte const* m_data;
-                int m_size;
-            public:
-                ArrayView(Byte const* data, int size) : m_data(data), m_size(size) {}
-                bool operator[](int i) const {
-                    if (i < 0 || i >= m_size) return false;
-                    if(m_data == nullptr) return false;
-                    return !m_data[i];
-                };
-                int Length() const { return m_size; }
+           private:
+            Byte const* m_data;
+            int m_size;
+
+           public:
+            ArrayView(Byte const* data, int size) : m_data(data), m_size(size) {}
+            bool operator[](int i) const {
+                if (i < 0 || i >= m_size)
+                    return false;
+                if (m_data == nullptr)
+                    return false;
+                return !m_data[i];
+            };
+            int Length() const { return m_size; }
         };
 
-    private:
+       private:
         bool m_isValid;
         mutable SqlChangesetIterP m_iter;
         mutable Utf8String m_tableName;
@@ -81,7 +83,7 @@ public:
         Utf8String FormatChange(Db const& db, Utf8CP tableName, DbOpcode opcode, int indirect, int detailLevel) const;
         void LoadOperation() const;
 
-    public:
+       public:
         BE_SQLITE_EXPORT Change(SqlChangesetIterP iter, bool isValid);
         Utf8StringCR GetTableName() const { return m_tableName; }
         DbOpcode GetOpcode() const { return m_opcode; }
@@ -119,7 +121,8 @@ public:
         //! For SQLITE_UPDATE, any column that was not affected by the change will be invalid.
         BE_SQLITE_EXPORT DbValue GetNewValue(int colNum) const;
 
-        enum class Stage : bool { Old = 0, New = 1 };
+        enum class Stage : bool { Old = 0,
+                                  New = 1 };
         DbValue GetValue(int colNum, Stage stage) const { return (stage == Stage::Old) ? GetOldValue(colNum) : GetNewValue(colNum); }
 
         //! Get the total number of foreign key violations in the database (if there's a ForeignKey conflict)
@@ -166,11 +169,11 @@ struct ChangeGroup : NonCopyableClass {
     friend struct ChangeSet;
     friend struct ChangeStream;
 
-private:
+   private:
     void* m_changegroup;
     bool m_containsEcSchemaChanges = false;
 
-public:
+   public:
     bool ContainsEcSchemaChanges() const { return m_containsEcSchemaChanges; }
     void SetContainsEcSchemaChanges() { m_containsEcSchemaChanges = true; }
     BE_SQLITE_EXPORT ChangeGroup();
@@ -209,8 +212,6 @@ public:
     ~ChangeGroup() { Finalize(); }
 };
 
-
-
 //=======================================================================================
 //! A base class for a streaming version of the ChangeSet. ChangeSets require that their
 //! entire contents be stored in large memory buffers. This streaming version is meant to
@@ -221,12 +222,20 @@ struct ChangeStream : NonCopyableClass {
     friend struct Changes;
     friend struct ApplyChangesArgs;
 
-    enum class SetType : bool { Full = 0, Patch = 1 };
-    enum class FilterChangeAction : bool { Accept = 1, Skip = 0 };
-    enum class ConflictCause : int { Data = 1, NotFound = 2, Conflict = 3, Constraint = 4, ForeignKey = 5 };
-    enum class ConflictResolution : int { Skip = 0, Replace = 1, Abort = 2 };
+    enum class SetType : bool { Full = 0,
+                                Patch = 1 };
+    enum class FilterChangeAction : bool { Accept = 1,
+                                           Skip = 0 };
+    enum class ConflictCause : int { Data = 1,
+                                     NotFound = 2,
+                                     Conflict = 3,
+                                     Constraint = 4,
+                                     ForeignKey = 5 };
+    enum class ConflictResolution : int { Skip = 0,
+                                          Replace = 1,
+                                          Abort = 2 };
 
-protected:
+   protected:
     mutable ApplyChangesArgs const* m_args = nullptr;
     static int ConflictCallback(void* pCtx, int cause, SqlChangesetIterP iter);
     static int FilterChangeCallback(void* pCtx, SqlChangesetIterP iter);
@@ -240,9 +249,9 @@ protected:
     virtual DbResult _Append(Byte const* pData, int nData) = 0;
     static int AppendCallback(void* pOut, const void* pData, int nData) { return (int)((ChangeStream*)pOut)->_Append((Byte const*)pData, nData); }
 
-public:
+   public:
     virtual bool _IsEmpty() const = 0;
-    virtual ~ChangeStream(){}
+    virtual ~ChangeStream() {}
     Changes GetChanges(bool invert = false) { return Changes(*this, invert); }
     BE_SQLITE_EXPORT DbResult FromChangeTrack(ChangeTracker& tracker, SetType setType = SetType::Full);
     BE_SQLITE_EXPORT DbResult FromChangeGroup(ChangeGroupCR changeGroup);
@@ -290,44 +299,66 @@ public:
 //=======================================================================================
 struct ApplyChangesArgs {
     friend struct ChangeStream;
-    private:
-        bool m_invert;
-        bool m_ignoreNoop;
-        bool m_fkNoAction;
-        bool m_abortOnAnyConflict;
-        mutable int64_t m_filterRowCount;
-        mutable int64_t m_conflictRowCount;
-        std::function<ChangeStream::FilterChangeAction(Changes::Change const&)> m_filterChange;
-        std::function<ChangeStream::ConflictResolution(ChangeStream::ConflictCause, Changes::Change)> m_conflictHandler;
 
-    protected:
-        static int ConflictCallback(void*, int, SqlChangesetIterP);
-        static int FilterChangeCallback(void*, SqlChangesetIterP);
-        ChangeStream::FilterChangeAction FilterChange(Changes::Change const& change) const;
-        ChangeStream::ConflictResolution OnConflict(ChangeStream::ConflictCause cause, Changes::Change iter) const;
+   private:
+    bool m_invert;
+    bool m_ignoreNoop;
+    bool m_fkNoAction;
+    bool m_abortOnAnyConflict;
+    mutable int64_t m_filterRowCount;
+    mutable int64_t m_conflictRowCount;
+    std::function<ChangeStream::FilterChangeAction(Changes::Change const&)> m_filterChange;
+    std::function<ChangeStream::ConflictResolution(ChangeStream::ConflictCause, Changes::Change)> m_conflictHandler;
 
-    public:
-        ApplyChangesArgs() :m_invert(false), m_ignoreNoop(false), m_fkNoAction(false), m_filterChange(nullptr),m_conflictHandler(nullptr),m_filterRowCount(0),m_conflictRowCount(0), m_abortOnAnyConflict(false){}
-        ApplyChangesArgs& SetAbortOnAnyConflict(bool abortOnAnyConflict) { m_abortOnAnyConflict = abortOnAnyConflict; return *this; }
-        ApplyChangesArgs& SetInvert(bool invert) { m_invert = invert; return *this; }
-        ApplyChangesArgs& SetIgnoreNoop(bool ignoreNoop) { m_ignoreNoop = ignoreNoop; return *this; }
-        ApplyChangesArgs& SetFkNoAction(bool fkNoAction) { m_fkNoAction = fkNoAction; return *this; }
-        ApplyChangesArgs& SetFilterChange(std::function<ChangeStream::FilterChangeAction(Changes::Change const&)> filterChange) { m_filterChange = filterChange; return *this; }
-        BE_SQLITE_EXPORT ApplyChangesArgs& ApplyOnlySchemaChanges();
-        BE_SQLITE_EXPORT ApplyChangesArgs& ApplyOnlyDataChanges();
-        ApplyChangesArgs& ApplyAnyChanges() { m_filterChange = nullptr; return *this; }
-        ApplyChangesArgs& SetConflictHandler(std::function<ChangeStream::ConflictResolution(ChangeStream::ConflictCause, Changes::Change)> conflictHandler) { m_conflictHandler = conflictHandler; return *this; }
-        bool GetInvert() const { return m_invert; }
-        bool GetAbortOnAnyConflict() const { return m_abortOnAnyConflict; }
-        bool GetIgnoreNoop() const { return m_ignoreNoop; }
-        bool GetFkNoAction() const { return m_fkNoAction; }
-        int64_t GetFilterRowCount() const { return m_filterRowCount; }
-        int64_t GetConflictRowCount() const { return m_conflictRowCount; }
-        bool HasFilterChange() const { return m_filterChange != nullptr; }
-        bool HasConflictHandler() const { return m_conflictHandler != nullptr; }
-        static ApplyChangesArgs Default() { return ApplyChangesArgs(); }
-        BE_SQLITE_EXPORT static bool IsSchemaTable(Utf8CP tableName);
-        BE_SQLITE_EXPORT static bool IsSchemaChange(Changes::Change const& change);
+   protected:
+    static int ConflictCallback(void*, int, SqlChangesetIterP);
+    static int FilterChangeCallback(void*, SqlChangesetIterP);
+    ChangeStream::FilterChangeAction FilterChange(Changes::Change const& change) const;
+    ChangeStream::ConflictResolution OnConflict(ChangeStream::ConflictCause cause, Changes::Change iter) const;
+
+   public:
+    ApplyChangesArgs() : m_invert(false), m_ignoreNoop(false), m_fkNoAction(false), m_filterChange(nullptr), m_conflictHandler(nullptr), m_filterRowCount(0), m_conflictRowCount(0), m_abortOnAnyConflict(false) {}
+    ApplyChangesArgs& SetAbortOnAnyConflict(bool abortOnAnyConflict) {
+        m_abortOnAnyConflict = abortOnAnyConflict;
+        return *this;
+    }
+    ApplyChangesArgs& SetInvert(bool invert) {
+        m_invert = invert;
+        return *this;
+    }
+    ApplyChangesArgs& SetIgnoreNoop(bool ignoreNoop) {
+        m_ignoreNoop = ignoreNoop;
+        return *this;
+    }
+    ApplyChangesArgs& SetFkNoAction(bool fkNoAction) {
+        m_fkNoAction = fkNoAction;
+        return *this;
+    }
+    ApplyChangesArgs& SetFilterChange(std::function<ChangeStream::FilterChangeAction(Changes::Change const&)> filterChange) {
+        m_filterChange = filterChange;
+        return *this;
+    }
+    BE_SQLITE_EXPORT ApplyChangesArgs& ApplyOnlySchemaChanges();
+    BE_SQLITE_EXPORT ApplyChangesArgs& ApplyOnlyDataChanges();
+    ApplyChangesArgs& ApplyAnyChanges() {
+        m_filterChange = nullptr;
+        return *this;
+    }
+    ApplyChangesArgs& SetConflictHandler(std::function<ChangeStream::ConflictResolution(ChangeStream::ConflictCause, Changes::Change)> conflictHandler) {
+        m_conflictHandler = conflictHandler;
+        return *this;
+    }
+    bool GetInvert() const { return m_invert; }
+    bool GetAbortOnAnyConflict() const { return m_abortOnAnyConflict; }
+    bool GetIgnoreNoop() const { return m_ignoreNoop; }
+    bool GetFkNoAction() const { return m_fkNoAction; }
+    int64_t GetFilterRowCount() const { return m_filterRowCount; }
+    int64_t GetConflictRowCount() const { return m_conflictRowCount; }
+    bool HasFilterChange() const { return m_filterChange != nullptr; }
+    bool HasConflictHandler() const { return m_conflictHandler != nullptr; }
+    static ApplyChangesArgs Default() { return ApplyChangesArgs(); }
+    BE_SQLITE_EXPORT static bool IsSchemaTable(Utf8CP tableName);
+    BE_SQLITE_EXPORT static bool IsSchemaChange(Changes::Change const& change);
 };
 
 //=======================================================================================
@@ -426,7 +457,6 @@ struct ChangesetFile : ChangeStream {
 // @bsiclass
 //=======================================================================================
 struct DdlChanges : ChangeSet {
-
     void Append(Utf8CP ddl) {
         if (ddl)
             _Append((Byte const*)ddl, (int)strlen(ddl));
@@ -442,7 +472,7 @@ struct DdlChanges : ChangeSet {
     BE_SQLITE_EXPORT Utf8String ToString() const;
 
     //! Return the contents of the schema change set
-    BE_SQLITE_EXPORT  bvector<Utf8String> GetDDLs() const;
+    BE_SQLITE_EXPORT bvector<Utf8String> GetDDLs() const;
 
     //! Dump the contents
     BE_SQLITE_EXPORT void Dump(Utf8CP label) const;
@@ -464,18 +494,25 @@ struct ChangeTracker : RefCountedBase {
     friend struct Db;
     friend struct DbFile;
 
-private:
+   private:
     DbResult RecordDbSchemaChange(Utf8CP ddl);
     mutable int m_enableChangesetSizeStats;
-protected:
+
+   protected:
     DdlChanges m_ddlChanges;
     bool m_isTracking;
     Db* m_db;
     SqlSessionP m_session;
     Utf8String m_name;
 
-    enum class OnCommitStatus { Commit = 0, Abort=1, Completed=2, NoChanges=3, RebaseInProgress=4, PropagateChangesFailed=5 };
-    enum class TrackChangesForTable : bool { No = 0, Yes = 1 };
+    enum class OnCommitStatus { Commit = 0,
+                                Abort = 1,
+                                Completed = 2,
+                                NoChanges = 3,
+                                RebaseInProgress = 4,
+                                PropagateChangesFailed = 5 };
+    enum class TrackChangesForTable : bool { No = 0,
+                                             Yes = 1 };
 
     BE_SQLITE_EXPORT DbResult CreateSession();
     virtual OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) = 0;
@@ -484,7 +521,7 @@ protected:
     Db* GetDb() { return m_db; }
     Utf8CP GetName() const { return m_name.c_str(); }
 
-public:
+   public:
     ChangeTracker(Utf8CP name = NULL) : m_name(name), m_enableChangesetSizeStats(0) {
         m_session = 0;
         m_db = 0;
@@ -511,8 +548,8 @@ public:
 
     //! All changes are marked as either direct or indirect according to the mode in which the ChangeTracker is currently operating.
     enum class Mode {
-        Direct = 0,   //!< All changes are marked as "direct".
-        Indirect = 1, //!< All changes are marked as "indirect".
+        Direct = 0,    //!< All changes are marked as "direct".
+        Indirect = 1,  //!< All changes are marked as "indirect".
     };
 
     //! Query the current state of the "indirect changes" flag. All changes are marked as either direct or indirect according to the state of this flag.
@@ -542,7 +579,7 @@ public:
      *  UPDATE: Only old values are recored in session extension.
      *  INSERT: Only primary key is recored in session extension.
      * When changeset is created the new values for Update and Insert are taken from db so actual size of changeset might be very different from session extension.
-    **/
+     **/
     BE_SQLITE_EXPORT int64_t GetMemoryUsed() const;
 
     //! Determine whether any ddl changes have been tracked by this ChangeTracker
