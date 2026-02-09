@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ECDb.h>
 
@@ -31,54 +31,49 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define ECDBSYS_PROP_PointY "Y"
 #define ECDBSYS_PROP_PointZ "Z"
 
-
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECSqlSystemPropertyInfo final
-    {
-public:
-    enum class Type
-        {
+struct ECSqlSystemPropertyInfo final {
+   public:
+    enum class Type {
         None,
         Class,
         Relationship,
         Point,
         Navigation
-        };
+    };
 
-    enum class Class
-        {
+    enum class Class {
         ECInstanceId,
         ECClassId
-        };
+    };
 
-    enum class Relationship
-        {
+    enum class Relationship {
         SourceECInstanceId,
         SourceECClassId,
         TargetECInstanceId,
         TargetECClassId
-        };
+    };
 
-    enum class Point
-        {
-        X, Y, Z
-        };
+    enum class Point {
+        X,
+        Y,
+        Z
+    };
 
-    enum class Navigation
-        {
-        Id, RelECClassId
-        };
+    enum class Navigation {
+        Id,
+        RelECClassId
+    };
 
-    struct LessThan
-        {
-        bool operator()(ECSqlSystemPropertyInfo const& lhs, ECSqlSystemPropertyInfo const& rhs) const
-            {
+    struct LessThan {
+        bool operator()(ECSqlSystemPropertyInfo const& lhs, ECSqlSystemPropertyInfo const& rhs) const {
             return ECSqlSystemPropertyInfo::Compare(lhs, rhs) < 0;
-            }
-        };
-private:
+        }
+    };
+
+   private:
     static const ECSqlSystemPropertyInfo s_noSystemProperty;
     static const ECSqlSystemPropertyInfo s_ecinstanceId;
     static const ECSqlSystemPropertyInfo s_ecclassid;
@@ -93,13 +88,12 @@ private:
     static const ECSqlSystemPropertyInfo s_pointZ;
 
     Type m_type;
-    union
-        {
+    union {
         Class m_classKind;
         Relationship m_relKind;
         Point m_pointKind;
         Navigation m_navKind;
-        };
+    };
 
     ECSqlSystemPropertyInfo() : m_type(Type::None) {}
     explicit ECSqlSystemPropertyInfo(Class kind) : m_type(Type::Class), m_classKind(kind) {}
@@ -109,18 +103,30 @@ private:
 
     static int Compare(ECSqlSystemPropertyInfo const& lhs, ECSqlSystemPropertyInfo const& rhs);
 
-public:
+   public:
     bool operator==(ECSqlSystemPropertyInfo const& rhs) const { return Compare(*this, rhs) == 0; }
     bool operator!=(ECSqlSystemPropertyInfo const& rhs) const { return !(*this == rhs); }
 
     bool IsSystemProperty() const { return m_type != Type::None; }
     Type GetType() const { return m_type; }
 
-    Class GetClass() const { BeAssert(m_type == Type::Class); return m_classKind; }
-    Relationship GetRelationship() const { BeAssert(m_type == Type::Relationship); return m_relKind; }
-    Point GetPoint() const { BeAssert(m_type == Type::Point); return m_pointKind; }
-    Navigation GetNavigation() const { BeAssert(m_type == Type::Navigation); return m_navKind; }
-    //Indicates whether the system property is of an id type
+    Class GetClass() const {
+        BeAssert(m_type == Type::Class);
+        return m_classKind;
+    }
+    Relationship GetRelationship() const {
+        BeAssert(m_type == Type::Relationship);
+        return m_relKind;
+    }
+    Point GetPoint() const {
+        BeAssert(m_type == Type::Point);
+        return m_pointKind;
+    }
+    Navigation GetNavigation() const {
+        BeAssert(m_type == Type::Navigation);
+        return m_navKind;
+    }
+    // Indicates whether the system property is of an id type
     bool IsId() const { return IsSystemProperty() && m_type != Type::Point; }
 
     static ECSqlSystemPropertyInfo const& ECInstanceId() { return s_ecinstanceId; }
@@ -135,34 +141,32 @@ public:
     static ECSqlSystemPropertyInfo const& PointY() { return s_pointY; }
     static ECSqlSystemPropertyInfo const& PointZ() { return s_pointZ; }
     static ECSqlSystemPropertyInfo const& NoSystemProperty() { return s_noSystemProperty; }
-    };
+};
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECDbSystemSchemaHelper final
-    {
-    public:
-        ECDb const& m_ecdb;
-        mutable bmap<ECN::ECPropertyId, ECSqlSystemPropertyInfo const*> m_byPropIdCache;
+struct ECDbSystemSchemaHelper final {
+   public:
+    ECDb const& m_ecdb;
+    mutable bmap<ECN::ECPropertyId, ECSqlSystemPropertyInfo const*> m_byPropIdCache;
 
-        //not copyable
-        ECDbSystemSchemaHelper(ECDbSystemSchemaHelper const&) = delete;
-        ECDbSystemSchemaHelper& operator=(ECDbSystemSchemaHelper const&) = delete;
+    // not copyable
+    ECDbSystemSchemaHelper(ECDbSystemSchemaHelper const&) = delete;
+    ECDbSystemSchemaHelper& operator=(ECDbSystemSchemaHelper const&) = delete;
 
-        BentleyStatus InitializeCache() const;
+    BentleyStatus InitializeCache() const;
 
-        SchemaManager const& Schemas() const { return m_ecdb.Schemas(); }
+    SchemaManager const& Schemas() const { return m_ecdb.Schemas(); }
 
-    public:
-        explicit ECDbSystemSchemaHelper(ECDb const& ecdb) : m_ecdb(ecdb) {}
+   public:
+    explicit ECDbSystemSchemaHelper(ECDb const& ecdb) : m_ecdb(ecdb) {}
 
-        //! @return System property or nullptr in case of errors
-        ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo const&) const;
-        ECSqlSystemPropertyInfo const& GetSystemPropertyInfo(ECN::ECPropertyCR) const;
-        void ClearCache() const { m_byPropIdCache.clear(); }
-    };
-
+    //! @return System property or nullptr in case of errors
+    ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo const&) const;
+    ECSqlSystemPropertyInfo const& GetSystemPropertyInfo(ECN::ECPropertyCR) const;
+    void ClearCache() const { m_byPropIdCache.clear(); }
+};
 
 //=======================================================================================
 // @bsiclass
@@ -170,16 +174,16 @@ struct ECDbSystemSchemaHelper final
 struct ExtendedTypeHelper final {
     enum ExtendedType {
         Unknown = 0x0,
-        Id=0x1,
-        ClassId=0x2,
+        Id = 0x1,
+        ClassId = 0x2,
         SourceId = 0x4,
         TargetId = 0x8,
-        SourceClassId =0x10,
+        SourceClassId = 0x10,
         TargetClassId = 0x20,
-        NavId =0x40,
-        NavRelClassId=0x80,
+        NavId = 0x40,
+        NavRelClassId = 0x80,
         BeGuid = 0x100,
-        GeometryStream= 0x200,
+        GeometryStream = 0x200,
         Json = 0x400,
         // group for filtering
         ClassIds = ClassId | SourceClassId | TargetClassId | NavRelClassId,

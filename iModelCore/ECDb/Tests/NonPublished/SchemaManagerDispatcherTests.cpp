@@ -1,22 +1,19 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include <set>
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-
-struct SchemaManagerDispatcherTests : ECDbTestFixture
-    {};
+struct SchemaManagerDispatcherTests : ECDbTestFixture {};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaManagerDispatcherTests, Bug556748ImportSeparateSchemaWithMixinWithOnlyMixinBases)
-    {
+TEST_F(SchemaManagerDispatcherTests, Bug556748ImportSeparateSchemaWithMixinWithOnlyMixinBases) {
     // iModelCore/DgnPlatform/DgnCore/DgnDbSchema.cpp::PickSchemasToImport drops the BisCore
     // schema from import during the ifc converter run. Previously, iModelCore/ECDb/ECDb/SchemaManagerDispatcher.cpp::GatherRootClasses
     // would never consider that a class with only mixin bases could itself be a mixin. So if you
@@ -97,6 +94,6 @@ TEST_F(SchemaManagerDispatcherTests, Bug556748ImportSeparateSchemaWithMixinWithO
     ECSchemaPtr schema3;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema3, schema3Xml, *readContext));
     ASSERT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
-    }
+}
 
 END_ECDBUNITTESTS_NAMESPACE

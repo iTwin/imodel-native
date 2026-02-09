@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -16,42 +16,37 @@ SchemaManager::SchemaManager(ECDbCR ecdb, BeMutex& mutex) : m_dispatcher(new Dis
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-SchemaManager::~SchemaManager()
-    {
-    if (m_dispatcher != nullptr)
-        {
+SchemaManager::~SchemaManager() {
+    if (m_dispatcher != nullptr) {
         delete m_dispatcher;
         m_dispatcher = nullptr;
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaSync& SchemaManager::GetSchemaSync() const
-    {
+SchemaSync& SchemaManager::GetSchemaSync() const {
     return Main().GetSchemaSync();
-
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token, SchemaSync::SyncDbUri syncDbUri) const
-    {
+SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token, SchemaSync::SyncDbUri syncDbUri) const {
     return Main().ImportSchemas(schemas, options, token, syncDbUri);
-    }
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool SchemaManager::IsSubClassOf(Utf8StringCR subClassECSqlName, Utf8StringCR parentClassECSqlName, Utf8CP tableSpace) const {
-      return m_dispatcher->IsSubClassOf(subClassECSqlName, parentClassECSqlName, tableSpace);
+    return m_dispatcher->IsSubClassOf(subClassECSqlName, parentClassECSqlName, tableSpace);
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool SchemaManager::IsSubClassOf(ECN::ECClassId subClassId, ECN::ECClassId parentClassId, Utf8CP tableSpace) const {
-      return m_dispatcher->IsSubClassOf(subClassId, parentClassId, tableSpace);
+    return m_dispatcher->IsSubClassOf(subClassId, parentClassId, tableSpace);
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -71,13 +66,12 @@ bvector<ECSchemaCP> SchemaManager::GetSchemas(bool loadSchemaEntities, Utf8CP ta
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SchemaManager::ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode, Utf8CP tableSpace)  const { return m_dispatcher->ContainsSchema(schemaNameOrAlias, mode, tableSpace); }
+bool SchemaManager::ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode, Utf8CP tableSpace) const { return m_dispatcher->ContainsSchema(schemaNameOrAlias, mode, tableSpace); }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP SchemaManager::GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities, SchemaLookupMode mode, Utf8CP tableSpace) const { return m_dispatcher->GetSchema(schemaNameOrAlias, loadSchemaEntities, mode, tableSpace); }
-
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod
@@ -111,15 +105,13 @@ bool SchemaManager::OwnsSchema(ECN::ECSchemaCR schema) const { return m_dispatch
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECDerivedClassesList const& SchemaManager::GetDerivedClasses(ECClassCR ecClass, Utf8CP tableSpace) const
-    {
-    if (GetDerivedClassesInternal(ecClass, tableSpace) == nullptr)
-        {
+ECDerivedClassesList const& SchemaManager::GetDerivedClasses(ECClassCR ecClass, Utf8CP tableSpace) const {
+    if (GetDerivedClassesInternal(ecClass, tableSpace) == nullptr) {
         BeAssert(false && "SchemaManager::GetDerivedClasses failed");
-        }
+    }
 
     return ecClass.GetDerivedClasses();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -189,12 +181,12 @@ BentleyStatus SchemaManager::CreateClassViewsInDb(bvector<ECN::ECClassId> const&
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-SchemaChangeEvent& SchemaManager::OnBeforeSchemaChanges() const { return Main().OnBeforeSchemaChanges();}
+SchemaChangeEvent& SchemaManager::OnBeforeSchemaChanges() const { return Main().OnBeforeSchemaChanges(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-SchemaChangeEvent& SchemaManager::OnAfterSchemaChanges() const { return Main().OnAfterSchemaChanges();};
+SchemaChangeEvent& SchemaManager::OnAfterSchemaChanges() const { return Main().OnAfterSchemaChanges(); };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -209,7 +201,10 @@ BentleyStatus SchemaManager::UpgradeECInstances() const { return Main().UpgradeE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-SchemaManager::Dispatcher const& SchemaManager::GetDispatcher() const { BeAssert(m_dispatcher != nullptr); return *m_dispatcher; }
+SchemaManager::Dispatcher const& SchemaManager::GetDispatcher() const {
+    BeAssert(m_dispatcher != nullptr);
+    return *m_dispatcher;
+}
 
 MainSchemaManager const& SchemaManager::Main() const { return GetDispatcher().Main(); }
 
@@ -218,97 +213,83 @@ MainSchemaManager const& SchemaManager::Main() const { return GetDispatcher().Ma
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-template<
+template <
     typename LookupFunc,
     typename LookupResult = decltype(std::declval<LookupFunc>()(std::declval<ECSchemaCP>(), "", true)),
-    typename NonConstResult = std::remove_const_t<std::remove_pointer_t<LookupResult>>*
->
+    typename NonConstResult = std::remove_const_t<std::remove_pointer_t<LookupResult>>*>
 static auto SchemaManagerUnitsContextGenericLookup(
     SchemaManager const& manager,
     Utf8CP name,
     bool useFullName,
-    LookupFunc lookupFunc // e.g.: ECN::ECUnitCP(ECSchemaCP, Utf8CP, bool)
-) -> NonConstResult
-{
+    LookupFunc lookupFunc  // e.g.: ECN::ECUnitCP(ECSchemaCP, Utf8CP, bool)
+    ) -> NonConstResult {
     bvector<Utf8String> nameParts;
     BeStringUtilities::Split(name, ":", nameParts);
-    if (nameParts.size() == 2)
-        {
+    if (nameParts.size() == 2) {
         auto const& schemaRef = nameParts[0];
         auto const& unqualifiedName = nameParts[1];
         auto const& schemaObject = manager.GetSchema(schemaRef, true, SchemaLookupMode::AutoDetect);
         if (schemaObject == nullptr) return nullptr;
         //! const_cast is safe because we know SchemaUnitsContext is over the non-const returning _Lookup
         return const_cast<NonConstResult>(lookupFunc(schemaObject, unqualifiedName.c_str(), useFullName));
-        }
-    else
+    } else
         LOG.errorv("bad or unqualified unit reference syntax, '%s'", name);
     return nullptr;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECN::ECUnitP SchemaManager::SchemaManagerUnitsContext::_LookupUnitP(Utf8CP name, bool useFullName) const
-    {
+ECN::ECUnitP SchemaManager::SchemaManagerUnitsContext::_LookupUnitP(Utf8CP name, bool useFullName) const {
     return SchemaManagerUnitsContextGenericLookup(m_ref, name, useFullName,
-        [&](ECSchemaCP schemaObject, Utf8CP unqualifiedName, bool useFullName) {
-            return schemaObject->GetUnitsContext().LookupUnit(unqualifiedName, useFullName);
-        }
-    );
-    }
+                                                  [&](ECSchemaCP schemaObject, Utf8CP unqualifiedName, bool useFullName) {
+                                                      return schemaObject->GetUnitsContext().LookupUnit(unqualifiedName, useFullName);
+                                                  });
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECN::PhenomenonP SchemaManager::SchemaManagerUnitsContext::_LookupPhenomenonP(Utf8CP name, bool useFullName) const
-    {
+ECN::PhenomenonP SchemaManager::SchemaManagerUnitsContext::_LookupPhenomenonP(Utf8CP name, bool useFullName) const {
     return SchemaManagerUnitsContextGenericLookup(m_ref, name, useFullName,
-        [&](ECSchemaCP schemaObject, Utf8CP unqualifiedName, bool useFullName) {
-            return schemaObject->GetUnitsContext().LookupPhenomenon(unqualifiedName, useFullName);
-        }
-    );
-    }
+                                                  [&](ECSchemaCP schemaObject, Utf8CP unqualifiedName, bool useFullName) {
+                                                      return schemaObject->GetUnitsContext().LookupPhenomenon(unqualifiedName, useFullName);
+                                                  });
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECN::UnitSystemP SchemaManager::SchemaManagerUnitsContext::_LookupUnitSystemP(Utf8CP name, bool useFullName) const
-    {
+ECN::UnitSystemP SchemaManager::SchemaManagerUnitsContext::_LookupUnitSystemP(Utf8CP name, bool useFullName) const {
     return SchemaManagerUnitsContextGenericLookup(m_ref, name, useFullName,
-        [&](ECSchemaCP schemaObject, Utf8CP unqualifiedName, bool useFullName) {
-            return schemaObject->GetUnitsContext().LookupUnitSystem(unqualifiedName, useFullName);
-        }
-    );
-    }
+                                                  [&](ECSchemaCP schemaObject, Utf8CP unqualifiedName, bool useFullName) {
+                                                      return schemaObject->GetUnitsContext().LookupUnitSystem(unqualifiedName, useFullName);
+                                                  });
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void SchemaManager::SchemaManagerUnitsContext::_AllPhenomena(bvector<Units::PhenomenonCP>& allPhenomena) const
-    {
+void SchemaManager::SchemaManagerUnitsContext::_AllPhenomena(bvector<Units::PhenomenonCP>& allPhenomena) const {
     for (auto const& schema : m_ref.GetSchemas())
         schema->GetUnitsContext().AllPhenomena(allPhenomena);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void SchemaManager::SchemaManagerUnitsContext::_AllUnits(bvector<Units::UnitCP>& allUnits) const
-    {
+void SchemaManager::SchemaManagerUnitsContext::_AllUnits(bvector<Units::UnitCP>& allUnits) const {
     for (auto const& schema : m_ref.GetSchemas())
         schema->GetUnitsContext().AllUnits(allUnits);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void SchemaManager::SchemaManagerUnitsContext::_AllSystems(bvector<Units::UnitSystemCP>& allUnitSystems) const
-    {
+void SchemaManager::SchemaManagerUnitsContext::_AllSystems(bvector<Units::UnitSystemCP>& allUnitSystems) const {
     for (auto const& schema : m_ref.GetSchemas())
         schema->GetUnitsContext().AllSystems(allUnitSystems);
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -343,74 +324,73 @@ void InstanceFinder::SearchResults::ToJson(BeJsValue v, LinkTableRelation const&
     ToJson(v["target"], key.GetTargetKey(), options);
 }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void InstanceFinder::SearchResults::ToJson(BeJsValue& v, JsonFormatOptions const* options) const {
-        if (IsEmpty()) {
-            v.SetEmptyObject();
-            return;
-        }
-        v.toObject();
-        if (!m_entityKeyMap.empty()) {
-            auto jCol = v["entities"];
-            for (auto& kp: m_entityKeyMap) {
-                const auto classId = kp.first;
-                const auto& instances = kp.second;
-                auto jObj = jCol.appendValue();
-                if (options && options->GetUseClassNameForBaseClass()) {
-                    auto cls = options->GetECDb().Schemas().GetClass(classId);
-                    if (cls != nullptr)
-                        jObj["baseClass"] = cls->GetFullName();
-                } else
-                    jObj["baseClass"] = classId.ToString(BeInt64Id::UseHex::Yes);
+    if (IsEmpty()) {
+        v.SetEmptyObject();
+        return;
+    }
+    v.toObject();
+    if (!m_entityKeyMap.empty()) {
+        auto jCol = v["entities"];
+        for (auto& kp : m_entityKeyMap) {
+            const auto classId = kp.first;
+            const auto& instances = kp.second;
+            auto jObj = jCol.appendValue();
+            if (options && options->GetUseClassNameForBaseClass()) {
+                auto cls = options->GetECDb().Schemas().GetClass(classId);
+                if (cls != nullptr)
+                    jObj["baseClass"] = cls->GetFullName();
+            } else
+                jObj["baseClass"] = classId.ToString(BeInt64Id::UseHex::Yes);
 
-                auto jInstances = jObj["instances"];
-                for (auto& inst: instances) {
-                    SearchResults::ToJson(jInstances.appendValue(), inst, options);
-                }
-            }
-        }
-        if (!m_linktableRelMap.empty()) {
-            auto jCol = v["linkTableRelations"];
-            for (auto& kp: m_linktableRelMap) {
-                const auto classId = kp.first;
-                const auto& instances = kp.second;
-                auto jObj = jCol.appendValue();
-                if (options && options->GetUseClassNameForBaseClass()) {
-                    auto cls = options->GetECDb().Schemas().GetClass(classId);
-                    if (cls != nullptr)
-                        jObj["baseClass"] = cls->GetFullName();
-                } else
-                    jObj["baseClass"] = classId.ToString(BeInt64Id::UseHex::Yes);
-
-                auto jInstances = jObj["instances"];
-                for (auto& inst: instances) {
-                    SearchResults::ToJson(jInstances.appendValue(), inst, options);
-                }
-            }
-        }
-        if (!m_foreignKeyMap.empty()) {
-            auto jCol = v["foreignKeyRelations"];
-            for (auto& kp: m_foreignKeyMap) {
-                const auto classId = kp.first;
-                const auto& instances = kp.second;
-                auto jObj = jCol.appendValue();
-                if (options && options->GetUseClassNameForBaseClass()) {
-                    auto cls = options->GetECDb().Schemas().GetClass(classId);
-                    if (cls != nullptr)
-                        jObj["baseClass"] = cls->GetFullName();
-                } else
-                    jObj["baseClass"] = classId.ToString(BeInt64Id::UseHex::Yes);
-
-                auto jInstances = jObj["instances"];
-                for (auto& inst: instances) {
-                    SearchResults::ToJson(jInstances.appendValue(), inst, options);
-                }
+            auto jInstances = jObj["instances"];
+            for (auto& inst : instances) {
+                SearchResults::ToJson(jInstances.appendValue(), inst, options);
             }
         }
     }
+    if (!m_linktableRelMap.empty()) {
+        auto jCol = v["linkTableRelations"];
+        for (auto& kp : m_linktableRelMap) {
+            const auto classId = kp.first;
+            const auto& instances = kp.second;
+            auto jObj = jCol.appendValue();
+            if (options && options->GetUseClassNameForBaseClass()) {
+                auto cls = options->GetECDb().Schemas().GetClass(classId);
+                if (cls != nullptr)
+                    jObj["baseClass"] = cls->GetFullName();
+            } else
+                jObj["baseClass"] = classId.ToString(BeInt64Id::UseHex::Yes);
+
+            auto jInstances = jObj["instances"];
+            for (auto& inst : instances) {
+                SearchResults::ToJson(jInstances.appendValue(), inst, options);
+            }
+        }
+    }
+    if (!m_foreignKeyMap.empty()) {
+        auto jCol = v["foreignKeyRelations"];
+        for (auto& kp : m_foreignKeyMap) {
+            const auto classId = kp.first;
+            const auto& instances = kp.second;
+            auto jObj = jCol.appendValue();
+            if (options && options->GetUseClassNameForBaseClass()) {
+                auto cls = options->GetECDb().Schemas().GetClass(classId);
+                if (cls != nullptr)
+                    jObj["baseClass"] = cls->GetFullName();
+            } else
+                jObj["baseClass"] = classId.ToString(BeInt64Id::UseHex::Yes);
+
+            auto jInstances = jObj["instances"];
+            for (auto& inst : instances) {
+                SearchResults::ToJson(jInstances.appendValue(), inst, options);
+            }
+        }
+    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -420,20 +400,20 @@ void InstanceFinder::SearchResults::Debug(ECDbCR ecdb) {
         return ecdb.Schemas().GetClass(baseClassId)->GetFullName();
     };
     printf("[entity instances]\n");
-    for(auto kp : m_entityKeyMap) {
+    for (auto kp : m_entityKeyMap) {
         auto baseClassId = kp.first;
         auto& instanceKeys = kp.second;
         printf("\t[baseClass: %s]\n", getName(baseClassId));
-        for (auto& inst: instanceKeys) {
+        for (auto& inst : instanceKeys) {
             printf("\t\t[class: %s, id: %s]\n", getName(inst.GetClassId()), inst.GetInstanceId().ToString(BeInt64Id::UseHex::Yes).c_str());
         }
     }
     printf("[link table relationships]\n");
-    for(auto kp : m_linktableRelMap) {
+    for (auto kp : m_linktableRelMap) {
         auto baseClassId = kp.first;
         auto& instanceKeys = kp.second;
         printf("\t[baseClass: %s]\n", getName(baseClassId));
-        for (auto& inst: instanceKeys) {
+        for (auto& inst : instanceKeys) {
             printf(
                 "\t\t[relation: %s, id: %s] [source: %s, id: %s] [target: %s, id: %s]\n",
                 getName(inst.GetRelationKey().GetClassId()),
@@ -445,11 +425,11 @@ void InstanceFinder::SearchResults::Debug(ECDbCR ecdb) {
         }
     }
     printf("[foreign key relationships]\n");
-    for(auto kp : m_foreignKeyMap) {
+    for (auto kp : m_foreignKeyMap) {
         auto baseClassId = kp.first;
         auto& instanceKeys = kp.second;
         printf("\t[baseClass: %s]\n", getName(baseClassId));
-        for (auto& inst: instanceKeys) {
+        for (auto& inst : instanceKeys) {
             printf(
                 "\t\t[thisEnd: %s, id: %s] [otherEnd: %s, id: %s]\n",
                 getName(inst.GetThisEndKey().GetClassId()),
@@ -464,7 +444,7 @@ void InstanceFinder::SearchResults::Debug(ECDbCR ecdb) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 std::vector<ECClassCP> InstanceFinder::GetRootEntityAndRelationshipClasses(ECDbCR ecdb) {
-    const auto  sql = R"(
+    const auto sql = R"(
         SELECT
                 [cc].[Id]
         FROM   [ec_Class] [cc]
@@ -492,12 +472,11 @@ std::vector<ECClassCP> InstanceFinder::GetRootEntityAndRelationshipClasses(ECDbC
     return classes;
 }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 std::vector<NavigationECPropertyCP> InstanceFinder::GetNavigationProps(ECDbCR ecdb) {
-    const auto  sql = R"(
+    const auto sql = R"(
         SELECT
                 [pp].[ClassId],
                 [pp].[Name]
@@ -527,13 +506,14 @@ std::vector<NavigationECPropertyCP> InstanceFinder::GetNavigationProps(ECDbCR ec
 // @bsimethod
 //---------------------------------------------------------------------------------------
 InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, ECSchemaId schemaId, bool polymorphic) {
-    const auto sql = polymorphic? R"(
+    const auto sql = polymorphic ? R"(
         SELECT [cc].[ClassId]
         FROM   [ec_cache_ClassHierarchy] [cc]
                 JOIN [ec_ClassMap] [mm] ON [mm].[ClassId] = [cc].[ClassId]
                 JOIN [ec_Class] [ss] ON [ss].[Id] = [cc].[BaseClassId]
         WHERE  [ss].[SchemaId] = ? AND [mm].[MapStrategy] NOT IN (10, 11, 3)
-        GROUP BY [cc].[ClassId]; )" : R"(
+        GROUP BY [cc].[ClassId]; )"
+                                 : R"(
         SELECT [cc].[Id]
         FROM   [ec_class] [cc]
                 JOIN [ec_ClassMap] [mm] ON [mm].[ClassId] = [cc].[Id]
@@ -572,13 +552,11 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, ECClass
         while (stmt->Step() == BE_SQLITE_ROW) {
             classIds.insert(stmt->GetValueId<ECClassId>(0));
         }
-    }
-    else {
+    } else {
         classIds.insert(classId);
     }
     return InstanceFinder::FindInstances(ecdb, std::move(classIds));
 }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -600,18 +578,18 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, BeIdSet
         baseClassStmt.BindId(1, baseClassId);
         baseClassStmt.BindVirtualSet(2, *classIdsVir);
         BeIdSet filteredIds;
-        while(baseClassStmt.Step() == BE_SQLITE_ROW){
+        while (baseClassStmt.Step() == BE_SQLITE_ROW) {
             filteredIds.insert(baseClassStmt.GetValueId<BeInt64Id>(0));
         }
         return std::make_shared<IdSet<BeInt64Id>>(std::move(filteredIds));
     };
 
-    //1. record entity first
-    //2. link table relationship with classes in source or target
-    //3. fk with nav property classid in listed classes
+    // 1. record entity first
+    // 2. link table relationship with classes in source or target
+    // 3. fk with nav property classid in listed classes
     for (auto entityClass : rootClasses) {
         auto searchClasses = filterByBaseClasses(entityClass->GetId());
-        if (!searchClasses->empty()){
+        if (!searchClasses->empty()) {
             const std::string entitySql = "SELECT ECClassId, ECInstanceId FROM " + std::string(entityClass->GetFullName()) + " WHERE InVirtualSet(?, ECClassId)";
             auto entityStmt = stmtCache.GetPreparedStatement(ecdb, entitySql.c_str());
             auto& entityKeys = entityKeyMap[entityClass->GetId()];
@@ -630,9 +608,7 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, BeIdSet
                 !filterByBaseClasses(linkTableRel->GetTarget().GetConstraintClasses().front()->GetId())->empty()) {
                 auto& relationKeys = linkTableKeyMap[entityClass->GetId()];
                 const std::string linkTableSql =
-                        "SELECT ECClassId, ECInstanceId, SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId FROM "
-                    +   std::string(entityClass->GetFullName())
-                    +   " WHERE InVirtualSet(:idset, SourceECClassId) OR InVirtualSet(:idset, TargetECClassId)";
+                    "SELECT ECClassId, ECInstanceId, SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId FROM " + std::string(entityClass->GetFullName()) + " WHERE InVirtualSet(:idset, SourceECClassId) OR InVirtualSet(:idset, TargetECClassId)";
 
                 auto linkTableStmt = stmtCache.GetPreparedStatement(ecdb, linkTableSql.c_str());
                 linkTableStmt->BindVirtualSet(1, classIdsVir);
@@ -658,14 +634,15 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, BeIdSet
         auto rel = navProp->GetRelationshipClass();
         auto targetClassCP = rel->GetTarget().GetAbstractConstraint() ? rel->GetTarget().GetAbstractConstraint() : rel->GetTarget().GetConstraintClasses().front();
         auto sourceClassCP = rel->GetSource().GetAbstractConstraint() ? rel->GetSource().GetAbstractConstraint() : rel->GetSource().GetConstraintClasses().front();
-        auto otherClass = navProp->GetDirection() == ECRelatedInstanceDirection::Forward ? targetClassCP: sourceClassCP;
+        auto otherClass = navProp->GetDirection() == ECRelatedInstanceDirection::Forward ? targetClassCP : sourceClassCP;
         auto searchClasses = filterByBaseClasses(otherClass->GetId());
-        if (searchClasses->empty()){
+        if (searchClasses->empty()) {
             continue;
         }
 
         std::string navPropSql = SqlPrintfString("SELECT aa.ECClassId, aa.ECInstanceId, cc.ECClassId, aa.%s.Id FROM %s aa JOIN %s cc ON cc.ECInstanceId=aa.%s.Id WHERE InVirtualSet(?, cc.ECClassId)",
-            navProp->GetName().c_str(), navProp->GetClass().GetFullName(), otherClass->GetFullName(), navProp->GetName().c_str()).GetUtf8CP();
+                                                 navProp->GetName().c_str(), navProp->GetClass().GetFullName(), otherClass->GetFullName(), navProp->GetName().c_str())
+                                     .GetUtf8CP();
         auto navPropStmt = stmtCache.GetPreparedStatement(ecdb, navPropSql.c_str());
         navPropStmt->BindVirtualSet(1, searchClasses);
         auto& relationKeys = foreignKeyMap[rel->GetId()];
@@ -689,7 +666,7 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, BeIdSet
 // @bsimethod
 //---------------------------------------------------------------------------------------
 Utf8CP DropSchemaResult::GetStatusAsString() const {
-    switch(m_status) {
+    switch (m_status) {
         case Status::Success:
             return "schema drop successfully";
         case Status::ErrorSchemaNotFound:
@@ -711,5 +688,3 @@ Utf8CP DropSchemaResult::GetStatusAsString() const {
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-
-

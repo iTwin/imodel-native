@@ -42,7 +42,7 @@ Formatting is automatically applied:
 clang-format -i --style=file path/to/file.cpp
 
 # Format all C/C++ files in a directory
-find iModelCore/ECDb -type f \( -name "*.cpp" -o -name "*.h" \) -exec clang-format -i --style=file {} +
+find iModelCore/ECDb -type f \( -name "*.cpp" -o -name "*.h" \) -exec clang-format -i --style="{BasedOnStyle: Google, ColumnLimit: 0, IndentWidth: 4, SortIncludes: false}" {} +
 ```
 
 ## Requirements

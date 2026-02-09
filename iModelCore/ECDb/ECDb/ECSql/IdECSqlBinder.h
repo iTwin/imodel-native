@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
 #include "ECSqlBinder.h"
@@ -11,22 +11,20 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct IdECSqlBinder final : public ECSqlBinder
-    {
-private:
+struct IdECSqlBinder final : public ECSqlBinder {
+   private:
     bool m_isNoop;
     BinderInfo m_binderInfo;
 
-    int GetSqlParamIndex() const 
-        { 
-        if (m_isNoop) 
-            return -1; 
-        
+    int GetSqlParamIndex() const {
+        if (m_isNoop)
+            return -1;
+
         BeAssert(GetMappedSqlParameterNames().size() == 1 && !GetMappedSqlParameterNames()[0].empty());
         return GetSqliteStatement().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
-        }
+    }
 
-public:
+   public:
     ECSqlStatus _BindNull() override;
     ECSqlStatus _BindBoolean(bool value) override;
     ECSqlStatus _BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) override;
@@ -48,9 +46,9 @@ public:
 
     BinderInfo const& _GetBinderInfo() override;
 
-    public:
-        IdECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, bool isNoop, SqlParamNameGenerator&);
-        ~IdECSqlBinder() { OnClearBindings(); }
-    };
+   public:
+    IdECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, bool isNoop, SqlParamNameGenerator&);
+    ~IdECSqlBinder() { OnClearBindings(); }
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

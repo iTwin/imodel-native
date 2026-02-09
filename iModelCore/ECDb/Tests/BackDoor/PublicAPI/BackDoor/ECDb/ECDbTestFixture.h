@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
 #include "ECDbTests.h"
@@ -16,122 +16,110 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //! the FailOnAssert state when the ScopedDisableFailOnAssertion object goes out of scope
 // @bsiclass
 //=======================================================================================
-struct ScopedDisableFailOnAssertion final
-    {
-private:
+struct ScopedDisableFailOnAssertion final {
+   private:
     bool m_isNoop = false;
 
-public:
-    explicit ScopedDisableFailOnAssertion(bool disable = true) : m_isNoop(!BeTest::GetFailOnAssert() || !disable)
-        {
+   public:
+    explicit ScopedDisableFailOnAssertion(bool disable = true) : m_isNoop(!BeTest::GetFailOnAssert() || !disable) {
         if (!m_isNoop)
             BeTest::SetFailOnAssert(false);
-        }
+    }
 
-    ~ScopedDisableFailOnAssertion()
-        {
+    ~ScopedDisableFailOnAssertion() {
         if (!m_isNoop)
             BeTest::SetFailOnAssert(true);
-        }
-    };
+    }
+};
 
 //=======================================================================================
 //! ECDb that requires a schema import token. For testing the schema import token feature
 // @bsiclass
 //=======================================================================================
-struct RestrictedSchemaImportECDb : ECDb
-    {
-    public:
-        explicit RestrictedSchemaImportECDb(bool requiresSchemaImportToken = true) : ECDb()
-            {
-            ApplyECDbSettings(false, requiresSchemaImportToken);
-            }
+struct RestrictedSchemaImportECDb : ECDb {
+   public:
+    explicit RestrictedSchemaImportECDb(bool requiresSchemaImportToken = true) : ECDb() {
+        ApplyECDbSettings(false, requiresSchemaImportToken);
+    }
 
-        ~RestrictedSchemaImportECDb() {}
+    ~RestrictedSchemaImportECDb() {}
 
-        SchemaImportToken const* GetSchemaImportToken() const { return GetECDbSettingsManager().GetSchemaImportToken(); }
-    };
+    SchemaImportToken const* GetSchemaImportToken() const { return GetECDbSettingsManager().GetSchemaImportToken(); }
+};
 
 //=======================================================================================
 //! All non-static methods operate on ECDb held by the test fixture. The test fixture's ECDb
 //! is created by using SetupECDb.
 // @bsiclass
 //=======================================================================================
-struct ECDbTestFixture : public ::testing::Test
-    {
-public:
+struct ECDbTestFixture : public ::testing::Test {
+   public:
+   private:
+    struct FixtureECDb final : ECDb {
+       private:
+        //! The test fixture's ECDb file's test helper. Any test assertions that operate on m_ecdb can be executed
+        //! using this object
+        TestHelper m_testHelper;
 
-private:
-    struct FixtureECDb final : ECDb
-        {
-        private:
-            //! The test fixture's ECDb file's test helper. Any test assertions that operate on m_ecdb can be executed
-            //! using this object
-            TestHelper m_testHelper;
+       public:
+        FixtureECDb() : ECDb(), m_testHelper(*this) {}
+        ~FixtureECDb() {}
+        void UsingSavepointWithCommit(std::function<void()> func) {
+            Savepoint sp(*this, "");
+            func();
+            sp.Commit();
+        }
 
-        public:
-            FixtureECDb() : ECDb(), m_testHelper(*this) {}
-            ~FixtureECDb() {}
-            void UsingSavepointWithCommit(std::function<void()> func){
-                Savepoint sp(*this,"");
-                func();
-                sp.Commit();
-            }
+        void UsingSavepointWithCancel(std::function<void()> func) {
+            Savepoint sp(*this, "");
+            func();
+            sp.Cancel();
+        }
+        TestHelper const& GetTestHelper() const { return m_testHelper; }
+    };
 
-            void UsingSavepointWithCancel(std::function<void()> func){
-                Savepoint sp(*this,"");
-                func();
-                sp.Cancel();
-            }
-            TestHelper const& GetTestHelper() const { return m_testHelper; }
-        };
-
-    struct SeedECDbManager final
-        {
-    private:
+    struct SeedECDbManager final {
+       private:
         bmap<BeFileName, BeFileName> m_seedFilePathsBySchemaFileName;
 
-        //not copyable
+        // not copyable
         SeedECDbManager(SeedECDbManager const&) = delete;
         SeedECDbManager& operator=(SeedECDbManager const&) = delete;
 
-    public:
+       public:
         SeedECDbManager() {}
         ~SeedECDbManager() {}
 
-        bool TryGet(BeFileName& seedPath, BeFileNameCR schemaFileName) const
-            {
+        bool TryGet(BeFileName& seedPath, BeFileNameCR schemaFileName) const {
             auto it = m_seedFilePathsBySchemaFileName.find(schemaFileName);
             if (it == m_seedFilePathsBySchemaFileName.end())
                 return false;
 
             seedPath = it->second;
             return true;
-            }
+        }
 
-        BeFileNameCR Add(BeFileNameCR schemaFileName, BeFileNameCR seedPath)
-            {
+        BeFileNameCR Add(BeFileNameCR schemaFileName, BeFileNameCR seedPath) {
             BeAssert(m_seedFilePathsBySchemaFileName.find(schemaFileName) == m_seedFilePathsBySchemaFileName.end());
             auto ret = m_seedFilePathsBySchemaFileName.insert(bpair<BeFileName, BeFileName>(schemaFileName, seedPath));
-            //return the inserted seed path
+            // return the inserted seed path
             return ret.first->second;
-            }
-
-        };
+        }
+    };
 
     static bool s_isInitialized;
     static SeedECDbManager* s_seedECDbManager;
 
     static SeedECDbManager& SeedECDbs();
 
-protected:
+   protected:
     //! The test's ECDb file. Any non-static methods of the ECDbTestFixture operate on it.
     FixtureECDb m_ecdb;
     DbResult SetupECDbForCurrentTest();
     BentleyStatus SetupECDbForCurrentTest(SchemaItem const&, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     DbResult SetupECDb(Utf8CP ecdbFileName);
     BentleyStatus SetupECDb(Utf8CP ecdbFileName, SchemaItem const&, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
-    BentleyStatus SetupECDb(Utf8CP ecdbFileName, void *fileData, uint32_t fileSize, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    BentleyStatus SetupECDb(Utf8CP ecdbFileName, void* fileData, uint32_t fileSize, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     DbResult OpenECDb(BeFileNameCR filePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     void CloseECDb();
     DbResult ReopenECDb();
@@ -141,20 +129,35 @@ protected:
     BentleyStatus PopulateECDb(ECN::ECSchemaCR, int instanceCountPerClass);
     BentleyStatus PopulateECDb(int instanceCountPerClass);
 
-    BentleyStatus ImportSchema(SchemaItem const& schema) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchema(schema); }
-    BentleyStatus ImportSchema(SchemaItem const& schema, SchemaManager::SchemaImportOptions const& options) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchema(schema, options); }
-    BentleyStatus ImportSchemas(std::vector<SchemaItem> const& schemas) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchemas(schemas); }
-    BentleyStatus ImportSchemas(std::vector<SchemaItem> const& schemas, SchemaManager::SchemaImportOptions const& options) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchemas(schemas, options); }
+    BentleyStatus ImportSchema(SchemaItem const& schema) {
+        EXPECT_TRUE(m_ecdb.IsDbOpen());
+        return GetHelper().ImportSchema(schema);
+    }
+    BentleyStatus ImportSchema(SchemaItem const& schema, SchemaManager::SchemaImportOptions const& options) {
+        EXPECT_TRUE(m_ecdb.IsDbOpen());
+        return GetHelper().ImportSchema(schema, options);
+    }
+    BentleyStatus ImportSchemas(std::vector<SchemaItem> const& schemas) {
+        EXPECT_TRUE(m_ecdb.IsDbOpen());
+        return GetHelper().ImportSchemas(schemas);
+    }
+    BentleyStatus ImportSchemas(std::vector<SchemaItem> const& schemas, SchemaManager::SchemaImportOptions const& options) {
+        EXPECT_TRUE(m_ecdb.IsDbOpen());
+        return GetHelper().ImportSchemas(schemas, options);
+    }
     BentleyStatus GetInstances(bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
-    ECSqlStatus PrepareECSql(Utf8CP ecsql) { ECSqlStatement stmt; return stmt.Prepare(m_ecdb, ecsql); }
+    ECSqlStatus PrepareECSql(Utf8CP ecsql) {
+        ECSqlStatement stmt;
+        return stmt.Prepare(m_ecdb, ecsql);
+    }
     TestHelper const& GetHelper() const { return m_ecdb.GetTestHelper(); }
     DbResult OpenECDbTestDataFile(Utf8CP name);
 
-private:
+   private:
     static ECN::ECSchemaPtr s_unitsSchema;
     static ECN::ECSchemaPtr s_formatsSchema;
 
-public:
+   public:
     ECDbTestFixture() : ::testing::Test() {}
     virtual ~ECDbTestFixture() {}
     void SetUp() override { Initialize(); }
@@ -174,7 +177,7 @@ public:
     static bool IsECSqlExperimentalFeaturesEnabled(ECDbCR);
     static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     static DbResult CloneECDb(ECDbR clone, BeFileNameCR cloneFilePath, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
-    };
+};
 
 SchemaItem operator"" _schema(const char* s, size_t n);
 Json::Value operator"" _json(const char* s, size_t n);
@@ -188,69 +191,58 @@ void DeleteInstance(ECDbCR ecdb, ECInstanceKey key);
 //! Used in combination with LogCatcher to capture log messages
 // @bsiclass
 //=======================================================================================
-struct TestLogger : NativeLogging::Logger 
-    {
+struct TestLogger : NativeLogging::Logger {
     std::vector<std::pair<NativeLogging::SEVERITY, Utf8String>> m_messages;
 
     void LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg) override { m_messages.emplace_back(sev, msg); }
     bool IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev) override { return true; }
     void Clear() { m_messages.clear(); }
 
-    bool ValidateMessageAtIndex(size_t index, NativeLogging::SEVERITY expectedSeverity, const Utf8String& expectedMessage) const 
-        {
-        if (index < m_messages.size()) 
-            {
+    bool ValidateMessageAtIndex(size_t index, NativeLogging::SEVERITY expectedSeverity, const Utf8String& expectedMessage) const {
+        if (index < m_messages.size()) {
             const auto& [severity, message] = m_messages[index];
             return severity == expectedSeverity && message.Equals(expectedMessage);
-            }
-        return false; // Return false on index out of bounds
         }
+        return false;  // Return false on index out of bounds
+    }
 
-    const std::pair<NativeLogging::SEVERITY, Utf8String>* GetLastMessage() const 
-        {
-        if (!m_messages.empty()) 
-            {
+    const std::pair<NativeLogging::SEVERITY, Utf8String>* GetLastMessage() const {
+        if (!m_messages.empty()) {
             return &m_messages.back();
-            }
-        return nullptr; // Return nullptr if there are no messages
         }
+        return nullptr;  // Return nullptr if there are no messages
+    }
 
-    const std::pair<NativeLogging::SEVERITY, Utf8String>* GetLastMessage(NativeLogging::SEVERITY severity) const 
-        {
-        for (auto it = m_messages.rbegin(); it != m_messages.rend(); ++it) 
-            {
-            if (it->first == severity) 
-                {
+    const std::pair<NativeLogging::SEVERITY, Utf8String>* GetLastMessage(NativeLogging::SEVERITY severity) const {
+        for (auto it = m_messages.rbegin(); it != m_messages.rend(); ++it) {
+            if (it->first == severity) {
                 return &(*it);
-                }
             }
-        return nullptr; // Return nullptr if no messages with the specified severity are found
         }
-    };
+        return nullptr;  // Return nullptr if no messages with the specified severity are found
+    }
+};
 
 //=======================================================================================
 //! Until destruction, captures log messages and redirects them to the TestLogger
 // @bsiclass
 //=======================================================================================
-struct LogCatcher
-    {
+struct LogCatcher {
     NativeLogging::Logger& m_previousLogger;
     TestLogger& m_testLogger;
 
-    LogCatcher(TestLogger& testLogger) : m_testLogger(testLogger), m_previousLogger(NativeLogging::Logging::GetLogger()) 
-        {
+    LogCatcher(TestLogger& testLogger) : m_testLogger(testLogger), m_previousLogger(NativeLogging::Logging::GetLogger()) {
         NativeLogging::Logging::SetLogger(&m_testLogger);
-        }
+    }
 
     ~LogCatcher() { NativeLogging::Logging::SetLogger(&m_previousLogger); }
-    };
+};
 
 //=======================================================================================
 //! Until destruction, captures log messages and redirects them to the TestLogger
 // @bsiclass
 //=======================================================================================
-struct ReportedIssue
-    {
+struct ReportedIssue {
     ECN::IssueSeverity severity;
     ECN::IssueCategory category;
     ECN::IssueType type;
@@ -259,26 +251,24 @@ struct ReportedIssue
 
     ReportedIssue(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message)
         : severity(severity), category(category), type(type), id(id), message(message) {}
-    };
+};
 
 //=======================================================================================
 //! Until destruction, captures log messages and redirects them to the TestLogger
 // @bsiclass
 //=======================================================================================
-struct TestIssueListener : ECN::IIssueListener 
-    {
+struct TestIssueListener : ECN::IIssueListener {
     mutable std::vector<ReportedIssue> m_issues;
 
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override 
-        {
+    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override {
         m_issues.emplace_back(severity, category, type, id, message);
-        }
+    }
 
     void CompareIssues(bvector<Utf8String> const& expectedIssues);
     void CompareIssues(const std::vector<ReportedIssue>& expectedIssues);
     Utf8String GetLastMessage() const { return IsEmpty() ? Utf8String() : m_issues.back().message; }
     void ClearIssues() { m_issues.clear(); }
     bool IsEmpty() const { return m_issues.empty(); }
-    };
+};
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECSqlField.h"
 
@@ -10,9 +10,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct PointECSqlField final : public ECSqlField
-    {
-private:
+struct PointECSqlField final : public ECSqlField {
+   private:
     int m_xColumnIndex;
     int m_yColumnIndex;
     int m_zColumnIndex;
@@ -39,12 +38,11 @@ private:
 
     bool IsPoint3d() const { return m_zColumnIndex >= 0; }
 
-public:
+   public:
     PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
-        : ECSqlField(stmt, colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
-        {}
-    PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex) : PointECSqlField (stmt, colInfo, xColumnIndex, yColumnIndex, -1) {}
+        : ECSqlField(stmt, colInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex) {}
+    PointECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex) : PointECSqlField(stmt, colInfo, xColumnIndex, yColumnIndex, -1) {}
     ~PointECSqlField() {}
-    };
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

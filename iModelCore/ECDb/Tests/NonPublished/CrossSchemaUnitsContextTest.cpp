@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -14,8 +14,7 @@ struct CrossSchemaUnitsContextTest : ECDbTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatSameSchema)
-    {
+TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatSameSchema) {
     Utf8CP schema1Xml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema1" alias="ts1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <UnitSystem typeName="TEST_UNITSYSTEM" />
@@ -44,7 +43,8 @@ TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatSameSchema)
                     { "name": "TestSchema1.UNIT_A", "label": "aa" }
                 ]
             }
-    })json", &m_ecdb.Schemas().GetSchema("TestSchema1")->GetUnitsContext()));
+    })json",
+                                             &m_ecdb.Schemas().GetSchema("TestSchema1")->GetUnitsContext()));
 
     ECSchemaPtr formatHavingSchema;
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(formatHavingSchema, "FormatHavingSchema", "fhs", 1, 0, 0));
@@ -52,13 +52,12 @@ TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatSameSchema)
     formatHavingSchema->CreateFormat(testFormatNode, "TestFormat", nullptr, nullptr, testFormat.GetNumericSpec(), testFormat.GetCompositeSpec());
 
     EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(formatHavingSchema));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatSameSchemaManagerContext)
-    {
+TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatSameSchemaManagerContext) {
     Utf8CP schema1Xml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema1" alias="ts1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <UnitSystem typeName="TEST_UNITSYSTEM" />
@@ -88,7 +87,8 @@ TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatSameSchemaManagerContext)
                     { "name": "TestSchema1.UNIT_A", "label": "aa" }
                 ]
             }
-    })json", &unitsContext));
+    })json",
+                                             &unitsContext));
 
     ECSchemaPtr formatHavingSchema;
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(formatHavingSchema, "FormatHavingSchema", "fhs", 1, 0, 0));
@@ -96,16 +96,15 @@ TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatSameSchemaManagerContext)
     formatHavingSchema->CreateFormat(testFormatNode, "TestFormat", nullptr, nullptr, testFormat.GetNumericSpec(), testFormat.GetCompositeSpec());
 
     EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(formatHavingSchema));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatDifferentSchema)
-    {
-    enum class Cases { UseSchema1UnitsContext, UseSchemaManagerUnitsContext };
-    auto inner = [&](Cases case_)
-        {
+TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatDifferentSchema) {
+    enum class Cases { UseSchema1UnitsContext,
+                       UseSchemaManagerUnitsContext };
+    auto inner = [&](Cases case_) {
         Utf8CP schema1Xml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema schemaName="TestSchema1" alias="ts1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <UnitSystem typeName="TEST_UNITSYSTEM" />
@@ -159,14 +158,13 @@ TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatDifferentSchema)
             default:
                 ASSERT_EQ(true, false) << "unreachable case";
         }
-        };
+    };
 
     inner(Cases::UseSchema1UnitsContext);
     inner(Cases::UseSchemaManagerUnitsContext);
-    }
+}
 
-TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatUnknownUnit)
-    {
+TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatUnknownUnit) {
     Utf8CP schema1Xml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema1" alias="ts1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <UnitSystem typeName="TEST_UNITSYSTEM" />
@@ -194,11 +192,11 @@ TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatUnknownUnit)
                     { "name": "TestSchema1.UNIT_C", "label": "cc" }
                 ]
             }
-    })json", &m_ecdb.Schemas().GetSchema("TestSchema1")->GetUnitsContext()));
-    }
+    })json",
+                                              &m_ecdb.Schemas().GetSchema("TestSchema1")->GetUnitsContext()));
+}
 
-TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatUnknownUnitManagerContext)
-    {
+TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatUnknownUnitManagerContext) {
     Utf8CP schema1Xml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema1" alias="ts1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <UnitSystem typeName="TEST_UNITSYSTEM" />
@@ -227,11 +225,11 @@ TEST_F(CrossSchemaUnitsContextTest, LoadJsonFormatUnknownUnitManagerContext)
                     { "name": "TestSchema1.UNIT_C", "label": "cc" }
                 ]
             }
-    })json", &unitsContext));
-    }
+    })json",
+                                              &unitsContext));
+}
 
-TEST_F(CrossSchemaUnitsContextTest, CrossSchemaUnitsContextLookupsMustBeQualified)
-    {
+TEST_F(CrossSchemaUnitsContextTest, CrossSchemaUnitsContextLookupsMustBeQualified) {
     Utf8CP schema1Xml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema1" alias="ts1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <UnitSystem typeName="TEST_UNITSYSTEM" />
@@ -268,6 +266,6 @@ TEST_F(CrossSchemaUnitsContextTest, CrossSchemaUnitsContextLookupsMustBeQualifie
 
     EXPECT_EQ(nullptr, unitsContext.LookupUnit("ts2:UNIT_A"));
     EXPECT_EQ(nullptr, unitsContext.LookupUnit("ts1:UNIT_B"));
-    }
+}
 
 END_ECDBUNITTESTS_NAMESPACE

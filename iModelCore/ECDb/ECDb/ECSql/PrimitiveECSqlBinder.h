@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
 #include "ECSqlBinder.h"
@@ -11,9 +11,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveECSqlBinder final : public ECSqlBinder
-    {
-private:
+struct PrimitiveECSqlBinder final : public ECSqlBinder {
+   private:
     BinderInfo m_binderInfo;
 
     ECSqlStatus CanBind(ECN::PrimitiveType requestedType) const;
@@ -27,8 +26,8 @@ private:
     ECSqlStatus _BindDouble(double value) override;
     ECSqlStatus _BindInt(int value) override;
     ECSqlStatus _BindInt64(int64_t value) override;
-    ECSqlStatus _BindPoint2d (DPoint2dCR value) override;
-    ECSqlStatus _BindPoint3d (DPoint3dCR value) override;
+    ECSqlStatus _BindPoint2d(DPoint2dCR value) override;
+    ECSqlStatus _BindPoint3d(DPoint3dCR value) override;
     ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
     ECSqlStatus _BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet) override;
 
@@ -38,16 +37,15 @@ private:
     IECSqlBinder& _AddArrayElement() override;
     BinderInfo const& _GetBinderInfo() override;
 
-    int GetSqlParameterIndex() const 
-        { 
-        BeAssert(GetMappedSqlParameterNames().size() == 1); 
+    int GetSqlParameterIndex() const {
+        BeAssert(GetMappedSqlParameterNames().size() == 1);
         BeAssert(!GetMappedSqlParameterNames()[0].empty());
         return GetSqliteStatement().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
-        }
+    }
 
-public:
+   public:
     PrimitiveECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen) : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, false, false), m_binderInfo(BinderInfo::BinderType::Primitive) {}
     ~PrimitiveECSqlBinder() { OnClearBindings(); }
-    };
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

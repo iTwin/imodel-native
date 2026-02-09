@@ -1,13 +1,12 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <Bentley/SHA1.h>
 #include <ECDb/ECSqlStatement.h>
 #include "PragmaECSqlPreparedStatement.h"
-
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -15,23 +14,23 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct PragmaExplainQuery : PragmaManager::GlobalHandler {
-    PragmaExplainQuery():GlobalHandler("explain_query","explain query plan"){}
-    ~PragmaExplainQuery(){}
+    PragmaExplainQuery() : GlobalHandler("explain_query", "explain query plan") {}
+    ~PragmaExplainQuery() {}
     DbResult ToResultSet(Statement&, StaticPragmaResult&);
-    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&,  PragmaManager::OptionsMap const&) override;
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaExplainQuery>(); }
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaExplainQuery>(); }
 };
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct PragmaDbList : PragmaManager::GlobalHandler {
-    PragmaDbList():GlobalHandler("db_list","List all attach dbs"){}
-    ~PragmaDbList(){}
-    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&,  PragmaManager::OptionsMap const&) override;
+    PragmaDbList() : GlobalHandler("db_list", "List all attach dbs") {}
+    ~PragmaDbList() {}
+    virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaDbList>(); }
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaDbList>(); }
 };
 
 //=======================================================================================
@@ -39,62 +38,62 @@ struct PragmaDbList : PragmaManager::GlobalHandler {
 //+===============+===============+===============+===============+===============+======
 struct DisqualifyTypeIndex : PragmaManager::ClassHandler {
     std::set<ECClassId> m_disqualifiedClassSet;
-    DisqualifyTypeIndex():ClassHandler("disqualify_type_index","set/get disqualify_type_index flag for a given ECClass"){}
-    ~DisqualifyTypeIndex(){}
+    DisqualifyTypeIndex() : ClassHandler("disqualify_type_index", "set/get disqualify_type_index flag for a given ECClass") {}
+    ~DisqualifyTypeIndex() {}
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, ECClassCR, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, ECClassCR, PragmaManager::OptionsMap const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<DisqualifyTypeIndex>(); }
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<DisqualifyTypeIndex>(); }
 };
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct PragmaECDbVersion : PragmaManager::GlobalHandler {
-    PragmaECDbVersion():GlobalHandler("ecdb_ver","return current and file profile versions"){}
-    ~PragmaECDbVersion(){}
+    PragmaECDbVersion() : GlobalHandler("ecdb_ver", "return current and file profile versions") {}
+    ~PragmaECDbVersion() {}
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaECDbVersion>(); }
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaECDbVersion>(); }
 };
 
 //=======================================================================================
 // @bsiclass PragmaChecksum
 //+===============+===============+===============+===============+===============+======
 struct PragmaChecksum : PragmaManager::GlobalHandler {
-    PragmaChecksum():GlobalHandler("checksum", "checksum([ec_schema|ec_map|db_schema]) return sha1 checksum for data."){}
-    ~PragmaChecksum(){}
+    PragmaChecksum() : GlobalHandler("checksum", "checksum([ec_schema|ec_map|db_schema]) return sha1 checksum for data.") {}
+    ~PragmaChecksum() {}
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaChecksum>(); }
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaChecksum>(); }
 };
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct PragmaExperimentalFeatures : PragmaManager::GlobalHandler {
-    PragmaExperimentalFeatures():GlobalHandler("experimental_features_enabled","enable/disable experimental features"){}
-    ~PragmaExperimentalFeatures(){}
+    PragmaExperimentalFeatures() : GlobalHandler("experimental_features_enabled", "enable/disable experimental features") {}
+    ~PragmaExperimentalFeatures() {}
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaExperimentalFeatures>(); }
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaExperimentalFeatures>(); }
 };
 
 //=======================================================================================
 // @bsiclass PragmaParseTree
 //+===============+===============+===============+===============+===============+======
 struct PragmaParseTree : PragmaManager::GlobalHandler {
-    PragmaParseTree():GlobalHandler("parse_tree", "parse_tree(ecsql) return parse tree of ecsql."){}
-    ~PragmaParseTree(){}
+    PragmaParseTree() : GlobalHandler("parse_tree", "parse_tree(ecsql) return parse tree of ecsql.") {}
+    ~PragmaParseTree() {}
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaParseTree>(); }
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaParseTree>(); }
 };
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
-    PragmaIntegrityCheck():GlobalHandler("integrity_check","performs integrity checks on ECDb"){}
+    PragmaIntegrityCheck() : GlobalHandler("integrity_check", "performs integrity checks on ECDb") {}
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     DbResult CheckAll(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
     DbResult CheckSchemaLoad(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
@@ -108,30 +107,29 @@ struct PragmaIntegrityCheck : PragmaManager::GlobalHandler {
     DbResult CheckClassIds(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
     DbResult CheckMissingChildRows(IntegrityChecker&, StaticPragmaResult&, ECDbCR);
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaIntegrityCheck>(); }
-
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaIntegrityCheck>(); }
 };
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct PragmaPurgeOrphanRelationships : PragmaManager::GlobalHandler {
-    PragmaPurgeOrphanRelationships():GlobalHandler("purge_orphan_relationships","removes orphaned link-table relationships from ECDb"){}
-    ~PragmaPurgeOrphanRelationships(){}
+    PragmaPurgeOrphanRelationships() : GlobalHandler("purge_orphan_relationships", "removes orphaned link-table relationships from ECDb") {}
+    ~PragmaPurgeOrphanRelationships() {}
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaPurgeOrphanRelationships>(); }
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaPurgeOrphanRelationships>(); }
 };
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct PragmaCheckECSqlWriteValues : PragmaManager::GlobalHandler {
-    PragmaCheckECSqlWriteValues():GlobalHandler("validate_ecsql_writes", "validate values in ECSql insert statements."){}
-    ~PragmaCheckECSqlWriteValues(){}
+    PragmaCheckECSqlWriteValues() : GlobalHandler("validate_ecsql_writes", "validate values in ECSql insert statements.") {}
+    ~PragmaCheckECSqlWriteValues() {}
     virtual DbResult Read(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
     virtual DbResult Write(PragmaManager::RowSet&, ECDbCR, PragmaVal const&, PragmaManager::OptionsMap const&) override;
-    static std::unique_ptr<PragmaManager::Handler> Create () { return std::make_unique<PragmaCheckECSqlWriteValues>(); }
+    static std::unique_ptr<PragmaManager::Handler> Create() { return std::make_unique<PragmaCheckECSqlWriteValues>(); }
 };
 
 //=======================================================================================
@@ -150,12 +148,12 @@ struct SHA3Helper final {
         SQLITE_SCHEMA,
     };
 
-
-private:
+   private:
     static bool TableExists(DbCR, Utf8CP, Utf8CP);
-    static DbResult ComputeHash(Utf8String&, DbCR, std::vector<std::string> const &, Utf8CP, HashSize, bool);
+    static DbResult ComputeHash(Utf8String&, DbCR, std::vector<std::string> const&, Utf8CP, HashSize, bool);
     static DbResult ComputeSQLiteSchemaHash(Utf8String&, DbCR, Utf8CP, HashSize);
-public:
+
+   public:
     static DbResult ComputeHash(Utf8StringR, DbCR, SourceType, Utf8CP dbAlias = "main", HashSize hashSize = HashSize::SHA3_256);
 };
 

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "ComputedExp.h"
 #include "ValueExp.h"
@@ -11,100 +11,87 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//NOTE: The code in this file is sorted by the class names. This should make maintenance easier as there are too many types in this single file
-
+// NOTE: The code in this file is sorted by the class names. This should make maintenance easier as there are too many types in this single file
 
 //*************************** BooleanBinaryExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BinaryBooleanExp::BinaryBooleanExp(std::unique_ptr<ComputedExp> left, BooleanSqlOperator op, std::unique_ptr<ComputedExp> right)
-    : BooleanExp(Type::BinaryBoolean), m_op(op)
-    {
+    : BooleanExp(Type::BinaryBoolean), m_op(op) {
     m_leftOperandExpIndex = AddChild(std::move(left));
     m_rightOperandExpIndex = AddChild(std::move(right));
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus BinaryBooleanExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
-    {
+Exp::FinalizeParseStatus BinaryBooleanExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
-    if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren)
-        {
+    if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren) {
         auto lhs = GetLeftOperand();
         auto rhs = GetRightOperand();
 
         ComputedExp const* expWithVaryingTypeInfo = nullptr;
         ComputedExp const* expWithRegularTypeInfo = nullptr;
-        if (lhs->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Varies)
-            {
+        if (lhs->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Varies) {
             expWithVaryingTypeInfo = lhs;
             expWithRegularTypeInfo = rhs;
-            }
+        }
 
-        if (rhs->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Varies)
-            {
-            //only one side can be of Kind::Varies. If lhs is Varies, expWithVaryingTypeInfo was already set and no longer is null
-            if (expWithVaryingTypeInfo != nullptr)
-                {
+        if (rhs->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Varies) {
+            // only one side can be of Kind::Varies. If lhs is Varies, expWithVaryingTypeInfo was already set and no longer is null
+            if (expWithVaryingTypeInfo != nullptr) {
                 ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0456, "Only one operand of the expression '%s' can be an expression list.", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
-                }
+            }
 
             expWithVaryingTypeInfo = rhs;
             expWithRegularTypeInfo = lhs;
-            }
+        }
 
         _Analysis_assume_(expWithRegularTypeInfo != nullptr);
         _Analysis_assume_(expWithVaryingTypeInfo != nullptr);
 
-        if (expWithVaryingTypeInfo != nullptr)
-            {
-            for (Exp const* child : expWithVaryingTypeInfo->GetChildren())
-                {
+        if (expWithVaryingTypeInfo != nullptr) {
+            for (Exp const* child : expWithVaryingTypeInfo->GetChildren()) {
                 ComputedExp const& childComputedExp = child->GetAs<ComputedExp>();
 
                 Exp::FinalizeParseStatus stat = CanCompareTypes(ctx, *expWithRegularTypeInfo, childComputedExp);
                 if (stat != Exp::FinalizeParseStatus::Completed)
                     return stat;
-                }
+            }
 
             return Exp::FinalizeParseStatus::Completed;
-            }
-        else
+        } else
             return CanCompareTypes(ctx, *lhs, *rhs);
-        }
+    }
 
     BeAssert(false);
     return FinalizeParseStatus::Error;
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool IsInHierarchy(Exp const& rootExp, Exp const& candidateExp)
-    {
+bool IsInHierarchy(Exp const& rootExp, Exp const& candidateExp) {
     if (&rootExp == &candidateExp)
         return true;
 
-    for (Exp const* childExp : rootExp.GetChildren())
-        {
+    for (Exp const* childExp : rootExp.GetChildren()) {
         if (IsInHierarchy(*childExp, candidateExp))
             return true;
-        }
+    }
 
     return false;
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool BinaryBooleanExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
-    {
+bool BinaryBooleanExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const {
     ComputedExp const* lhs = GetLeftOperand();
     ComputedExp const* rhs = GetRightOperand();
     ComputedExp const* targetExp = nullptr;
@@ -112,47 +99,44 @@ bool BinaryBooleanExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Par
         targetExp = rhs;
     else if (IsInHierarchy(*rhs, parameterExp))
         targetExp = lhs;
-    else
-        {
+    else {
         BeAssert(false && "Expected to find parameter exp in either LHS or RHS exp hierarchy of BinaryBooleanExp");
         return false;
-        }
+    }
 
     parameterExp.SetTargetExpInfo(*targetExp);
     return true;
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ctx, ComputedExp const& lhs, ComputedExp const& rhs) const
-    {
-    //The parser imposes as little comparability restrictions on top of the ECSQL grammar as possible.
-    //It is the aim of the parser to control comparability either by the grammar or by SQLite
+Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ctx, ComputedExp const& lhs, ComputedExp const& rhs) const {
+    // The parser imposes as little comparability restrictions on top of the ECSQL grammar as possible.
+    // It is the aim of the parser to control comparability either by the grammar or by SQLite
 
     ECSqlTypeInfo const& lhsTypeInfo = lhs.GetTypeInfo();
     ECSqlTypeInfo const& rhsTypeInfo = rhs.GetTypeInfo();
     const ECSqlTypeInfo::Kind lhsTypeKind = lhsTypeInfo.GetKind();
     const ECSqlTypeInfo::Kind rhsTypeKind = rhsTypeInfo.GetKind();
 
-    //first check whether types on both sides match generally for comparisons
+    // first check whether types on both sides match generally for comparisons
     Utf8String canCompareErrorMessage;
-    //parameter types are determined later, so exclude them from type checking
-    if (!lhs.Contains(Exp::Type::Parameter) && !rhs.Contains(Exp::Type::Parameter) && !lhsTypeInfo.CanCompare(rhsTypeInfo, &canCompareErrorMessage))
-        {
+    // parameter types are determined later, so exclude them from type checking
+    if (!lhs.Contains(Exp::Type::Parameter) && !rhs.Contains(Exp::Type::Parameter) && !lhsTypeInfo.CanCompare(rhsTypeInfo, &canCompareErrorMessage)) {
         if (canCompareErrorMessage.empty())
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0457, "Type mismatch in expression '%s'.", ToECSql().c_str());
         else
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0458, "Type mismatch in expression '%s': %s", ToECSql().c_str(), canCompareErrorMessage.c_str());
 
         return FinalizeParseStatus::Error;
-        }
+    }
 
     const bool lhsIsStructWithStructArray = (lhsTypeKind == ECSqlTypeInfo::Kind::Struct && ContainsStructArrayProperty(lhsTypeInfo.GetStructType()));
     const bool rhsIsStructWithStructArray = (rhsTypeKind == ECSqlTypeInfo::Kind::Struct && ContainsStructArrayProperty(rhsTypeInfo.GetStructType()));
 
-    //Limit operators for non-primitive types
-    //cannot assume both sides have same types as one can still represent the SQL NULL or a parameter
+    // Limit operators for non-primitive types
+    // cannot assume both sides have same types as one can still represent the SQL NULL or a parameter
     if (lhsTypeInfo.IsPoint() || rhsTypeInfo.IsPoint() ||
         lhsTypeInfo.IsGeometry() || rhsTypeInfo.IsGeometry() ||
         (lhsTypeKind == ECSqlTypeInfo::Kind::Struct && !lhsIsStructWithStructArray) ||
@@ -160,65 +144,59 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
         lhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray ||
         rhsTypeKind == ECSqlTypeInfo::Kind::PrimitiveArray ||
         lhsTypeKind == ECSqlTypeInfo::Kind::Navigation ||
-        rhsTypeKind == ECSqlTypeInfo::Kind::Navigation)
-        {
-        switch (m_op)
-            {
-                case BooleanSqlOperator::EqualTo:
-                case BooleanSqlOperator::NotEqualTo:
-                case BooleanSqlOperator::In:
-                case BooleanSqlOperator::NotIn:
-                case BooleanSqlOperator::Is:
-                case BooleanSqlOperator::IsNot:
-                    return FinalizeParseStatus::Completed;
+        rhsTypeKind == ECSqlTypeInfo::Kind::Navigation) {
+        switch (m_op) {
+            case BooleanSqlOperator::EqualTo:
+            case BooleanSqlOperator::NotEqualTo:
+            case BooleanSqlOperator::In:
+            case BooleanSqlOperator::NotIn:
+            case BooleanSqlOperator::Is:
+            case BooleanSqlOperator::IsNot:
+                return FinalizeParseStatus::Completed;
 
-                default:
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0459,
-                        "Type mismatch in expression '%s'. Operator not supported with point, geometry, navigation properties, struct or primitive array operands.", ToECSql().c_str());
-                    return FinalizeParseStatus::Error;
-            }
+            default:
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0459,
+                                     "Type mismatch in expression '%s'. Operator not supported with point, geometry, navigation properties, struct or primitive array operands.", ToECSql().c_str());
+                return FinalizeParseStatus::Error;
         }
+    }
 
     // For structs and structs array no operator supported for now
-    //cannot assume both sides have same types as one can still represent the SQL NULL
+    // cannot assume both sides have same types as one can still represent the SQL NULL
     if (lhsTypeKind == ECSqlTypeInfo::Kind::StructArray || lhsIsStructWithStructArray ||
-        rhsTypeKind == ECSqlTypeInfo::Kind::StructArray || rhsIsStructWithStructArray)
-        {
-        //structs and arrays not supported in where expressions for now
+        rhsTypeKind == ECSqlTypeInfo::Kind::StructArray || rhsIsStructWithStructArray) {
+        // structs and arrays not supported in where expressions for now
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0460,
-            "Type mismatch in expression '%s'. Operator not supported with struct arrays or structs that contain struct arrays.", ToECSql().c_str());
+                             "Type mismatch in expression '%s'. Operator not supported with struct arrays or structs that contain struct arrays.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
-        }
+    }
 
     return FinalizeParseStatus::Completed;
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool BinaryBooleanExp::ContainsStructArrayProperty(ECClassCR ecclass)
-    {
-    for (ECPropertyCP prop : ecclass.GetProperties(true))
-        {
+bool BinaryBooleanExp::ContainsStructArrayProperty(ECClassCR ecclass) {
+    for (ECPropertyCP prop : ecclass.GetProperties(true)) {
         StructArrayECPropertyCP arrayProp = prop->GetAsStructArrayProperty();
         if (arrayProp != nullptr)
             return true;
 
         StructECPropertyCP structProp = prop->GetAsStructProperty();
-        if (structProp != nullptr)
-            {
+        if (structProp != nullptr) {
             if (ContainsStructArrayProperty(structProp->GetType()))
                 return true;
-            }
         }
+    }
 
     return false;
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void BinaryBooleanExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+void BinaryBooleanExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const {
     //! ITWINJS_PARSE_TREE: BinaryBooleanExp
     val["id"] = "BinaryBooleanExp";
     val["op"] = ExpHelper::ToSql(m_op);
@@ -229,8 +207,7 @@ void BinaryBooleanExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-void BinaryBooleanExp::_ToECSql(ECSqlRenderContext& ctx) const
-    {
+void BinaryBooleanExp::_ToECSql(ECSqlRenderContext& ctx) const {
     if (HasParentheses())
         ctx.AppendToECSql("(");
 
@@ -238,39 +215,36 @@ void BinaryBooleanExp::_ToECSql(ECSqlRenderContext& ctx) const
 
     if (HasParentheses())
         ctx.AppendToECSql(")");
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String BinaryBooleanExp::_ToString() const
-    {
+Utf8String BinaryBooleanExp::_ToString() const {
     Utf8String str("BinaryBoolean [Operator: ");
     str.append(ExpHelper::ToSql(m_op)).append("]");
     return str;
-    }
+}
 
 //*************************** BooleanFactorExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 BooleanFactorExp::BooleanFactorExp(std::unique_ptr<BooleanExp> operand, bool notOperator)
-    : BooleanExp(Type::BooleanFactor), m_notOperator(notOperator)
-    {
+    : BooleanExp(Type::BooleanFactor), m_notOperator(notOperator) {
     m_operandExpIndex = AddChild(std::move(operand));
-    }
-
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void BooleanFactorExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+void BooleanFactorExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const {
     //! ITWINJS_PARSE_TREE: BooleanFactorExp
     if (m_notOperator) {
         val.SetEmptyObject();
         val["id"] = "BooleanFactorExp",
         val["op"] = "NOT";
-         GetOperand()->ToJson(val["exp"], fmt);
+        GetOperand()->ToJson(val["exp"], fmt);
     } else {
         GetOperand()->ToJson(val, fmt);
     }
@@ -279,8 +253,7 @@ void BooleanFactorExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-void BooleanFactorExp::_ToECSql(ECSqlRenderContext& ctx) const
-    {
+void BooleanFactorExp::_ToECSql(ECSqlRenderContext& ctx) const {
     if (HasParentheses())
         ctx.AppendToECSql("(");
 
@@ -291,13 +264,12 @@ void BooleanFactorExp::_ToECSql(ECSqlRenderContext& ctx) const
 
     if (HasParentheses())
         ctx.AppendToECSql(")");
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String BooleanFactorExp::_ToString() const
-    {
+Utf8String BooleanFactorExp::_ToString() const {
     Utf8String str("BooleanFactor [Operator: ");
     if (m_notOperator)
         str.append("NOT");
@@ -306,48 +278,43 @@ Utf8String BooleanFactorExp::_ToString() const
 
     str.append("]");
     return str;
-    }
+}
 
 //*************************** UnaryPredicateExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-UnaryPredicateExp::UnaryPredicateExp(std::unique_ptr<ValueExp> booleanValueExp) : BooleanExp(Type::UnaryPredicate)
-    {
+UnaryPredicateExp::UnaryPredicateExp(std::unique_ptr<ValueExp> booleanValueExp) : BooleanExp(Type::UnaryPredicate) {
     m_booleanValueExpIndex = AddChild(std::move(booleanValueExp));
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
-    {
+Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) {
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
     ValueExp const* valueExp = GetValueExp();
-    if (valueExp->IsParameterExp())
-        {
+    if (valueExp->IsParameterExp()) {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0461, "Type mismatch in expression '%s'. Unary predicates cannot be parametrized.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
-        }
-
+    }
 
     return FinalizeParseStatus::Completed;
-    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void UnaryPredicateExp::_ToJson(BeJsValue val, JsonFormat const& fmt ) const {
+void UnaryPredicateExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const {
     //! ITWINJS_PARSE_TREE: UnaryPredicateExp
     GetValueExp()->ToJson(val, fmt);
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-void UnaryPredicateExp::_ToECSql(ECSqlRenderContext& ctx) const
-    {
+void UnaryPredicateExp::_ToECSql(ECSqlRenderContext& ctx) const {
     if (HasParentheses())
         ctx.AppendToECSql("(");
 
@@ -355,6 +322,6 @@ void UnaryPredicateExp::_ToECSql(ECSqlRenderContext& ctx) const
 
     if (HasParentheses())
         ctx.AppendToECSql(")");
-    }
+}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

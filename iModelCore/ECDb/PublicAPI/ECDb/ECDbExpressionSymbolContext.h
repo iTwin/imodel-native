@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ECDb.h>
 #include <ECObjects/ECExpressions.h>
@@ -9,7 +9,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-//! Sets up ECDb ECExpression symbol provider that's available for the lifetime of this 
+//! Sets up ECDb ECExpression symbol provider that's available for the lifetime of this
 //! class object. The registered symbol provider provides such ECExpression symbols:
 //! - ECDb.Path - Returns the path to ECDb.
 //! - ECDb.Name - Returns the name of the ECDb.
@@ -27,13 +27,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! safe. If thread safety is needed, use `ECDbExpressionSymbolProvider`.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECDbExpressionSymbolContext final
-{
-private:
+struct ECDbExpressionSymbolContext final {
+   private:
     ECN::IECSymbolProvider* m_provider;
     ECSqlStatementCache const* m_statementCache;
     bool m_ownsStatementCache;
-public:
+
+   public:
     //! Constructor. Registers the symbol provider for the specified ECDb.
     ECDB_EXPORT explicit ECDbExpressionSymbolContext(ECDbCR ecdb, ECSqlStatementCache const* statementCache = nullptr);
 
@@ -49,11 +49,10 @@ public:
 // it published symbols to.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECDbExpressionSymbolProvider final : ECN::IECSymbolProvider
-{
+struct ECDbExpressionSymbolProvider final : ECN::IECSymbolProvider {
     struct ECDbExpressionEvaluationContext;
 
-private:
+   private:
     ECDbExpressionEvaluationContext* m_context;
 
     static ECN::ExpressionStatus GetRelatedInstanceQueryFormatOld(Utf8StringR, ECN::ECEntityClassCP&, ECDbExpressionEvaluationContext const&, ECN::ECInstanceListCR, ECN::EvaluationResult const&);
@@ -64,10 +63,10 @@ private:
     static ECN::ExpressionStatus GetClassId(ECN::EvaluationResult& evalResult, void* context, ECN::EvaluationResultVector& args);
     static BentleyStatus FindRelationshipAndClassInfo(ECDbExpressionEvaluationContext const&, ECN::ECRelationshipClassCP&, Utf8CP relationshipName, ECN::ECEntityClassCP&, Utf8CP className);
 
-    Utf8CP _GetName() const override {return "ECDbExpressionSymbolProvider";}
+    Utf8CP _GetName() const override { return "ECDbExpressionSymbolProvider"; }
     void _PublishSymbols(ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
 
-public:
+   public:
     ECDB_EXPORT ECDbExpressionSymbolProvider(ECDbCR, ECSqlStatementCache const&);
     ECDB_EXPORT ECDbExpressionSymbolProvider(SchemaManagerCR, BeSQLite::DbCR, ECSqlStatementCache const&);
     ECDB_EXPORT ~ECDbExpressionSymbolProvider();

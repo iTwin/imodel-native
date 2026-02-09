@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
 using namespace connectivity;
@@ -53,33 +53,30 @@ BentleyStatus ECSqlParseTreeFormatter::NormalizeECSql(Utf8StringR out, ECDbCR ec
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(Utf8StringR parseNodeTreeString, ECDbCR ecdb, Utf8CP ecsql)
-    {
+BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(Utf8StringR parseNodeTreeString, ECDbCR ecdb, Utf8CP ecsql) {
     if (Utf8String::IsNullOrEmpty(ecsql))
         return ERROR;
 
     OSQLParser parser;
     Utf8String error;
     auto parseNode = parser.parseTree(error, ecsql);
-    if (parseNode == nullptr)
-        {
+    if (parseNode == nullptr) {
         if (!error.empty())
             ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0497, error.c_str());
 
         return ERROR;
-        }
+    }
 
     parseNode->showParseTree(parseNodeTreeString);
     return SUCCESS;
-    }
+}
 
 void GenerateExpTree(Json::Value& expTree, Exp const& exp);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(Json::Value& expTree, Utf8StringR ecsqlFromExpTree, ECDbCR ecdb, Utf8CP ecsql)
-    {
+BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(Json::Value& expTree, Utf8StringR ecsqlFromExpTree, ECDbCR ecdb, Utf8CP ecsql) {
     if (Utf8String::IsNullOrEmpty(ecsql))
         return ERROR;
 
@@ -91,13 +88,12 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(Json::Value& e
     ecsqlFromExpTree = exp->ToECSql();
     GenerateExpTree(expTree, *exp);
     return SUCCESS;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void GenerateExpTree(Json::Value& expTree, Exp const& exp)
-    {
+void GenerateExpTree(Json::Value& expTree, Exp const& exp) {
     expTree = Json::Value(Json::objectValue);
     expTree["Exp"] = Json::Value(exp.ToString());
 
@@ -105,13 +101,12 @@ void GenerateExpTree(Json::Value& expTree, Exp const& exp)
         return;
 
     Json::Value& children = expTree["Children"] = Json::Value(Json::arrayValue);
-    for (Exp const* childExp : exp.GetChildren())
-        {
+    for (Exp const* childExp : exp.GetChildren()) {
         BeAssert(childExp != nullptr);
         Json::Value child;
         GenerateExpTree(child, *childExp);
         children.append(child);
-        }
     }
+}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

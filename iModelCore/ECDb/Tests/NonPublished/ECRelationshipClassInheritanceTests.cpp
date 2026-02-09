@@ -1,139 +1,136 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-//=======================================================================================    
+//=======================================================================================
 // @bsiclass
-//=======================================================================================    
-struct ECRelationshipInheritanceTestFixture : ECDbTestFixture
-    {};
-
+//=======================================================================================
+struct ECRelationshipInheritanceTestFixture : ECDbTestFixture {};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
-    {
+TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbrelationshipinheritance.ecdb", SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                                                                "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                                                                                "  <ECEntityClass typeName='Model' >"
-                                                                                "    <ECProperty propertyName='Name' typeName='string' />"
-                                                                                "  </ECEntityClass>"
-                                                                                "  <ECEntityClass typeName='Element' modifier='Abstract' >"
-                                                                                "    <ECCustomAttributes>"
-                                                                                "         <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                                "        </ClassMap>"
-                                                                                "    </ECCustomAttributes>"
-                                                                                "    <ECProperty propertyName='Code' typeName='string' />"
-                                                                                "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
-                                                                                "  </ECEntityClass>"
-                                                                                "  <ECEntityClass typeName='InformationElement' modifier='Abstract'>"
-                                                                                "     <BaseClass>Element</BaseClass>"
-                                                                                "     <ECCustomAttributes>"
-                                                                                "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                                                                                "     </ECCustomAttributes>"
-                                                                                "  </ECEntityClass>"
-                                                                                "  <ECEntityClass typeName='LinkElement' modifier='Abstract'>"
-                                                                                "     <BaseClass>InformationElement</BaseClass>"
-                                                                                "     <ECCustomAttributes>"
-                                                                                "         <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                                "              <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>"
-                                                                                "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                                "         </ShareColumns>"
-                                                                                "     </ECCustomAttributes>"
-                                                                                "  </ECEntityClass>"
-                                                                                "  <ECEntityClass typeName='UrlLink' modifier='Sealed'>"
-                                                                                "     <BaseClass>LinkElement</BaseClass>"
-                                                                                "    <ECProperty propertyName='Url' typeName='string' />"
-                                                                                "  </ECEntityClass>"
-                                                                                "  <ECEntityClass typeName='EmbeddedLink' modifier='Sealed'>"
-                                                                                "     <BaseClass>LinkElement</BaseClass>"
-                                                                                "    <ECProperty propertyName='Name' typeName='string' />"
-                                                                                "  </ECEntityClass>"
-                                                                                "  <ECEntityClass typeName='GeometricElement' modifier='Abstract'>"
-                                                                                "     <ECCustomAttributes>"
-                                                                                "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-                                                                                "     </ECCustomAttributes>"
-                                                                                "    <BaseClass>Element</BaseClass>"
-                                                                                "  </ECEntityClass>"
-                                                                                "  <ECEntityClass typeName='Geometric3dElement' modifier='Abstract'>"
-                                                                                "     <ECCustomAttributes>"
-                                                                                "         <ShareColumns xmlns='ECDbMap.02.00'>"
-                                                                                "              <MaxSharedColumnsBeforeOverflow>16</MaxSharedColumnsBeforeOverflow>"
-                                                                                "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-                                                                                "         </ShareColumns>"
-                                                                                "     </ECCustomAttributes>"
-                                                                                "    <BaseClass>GeometricElement</BaseClass>"
-                                                                                "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
-                                                                                "  </ECEntityClass>"
-                                                                                "  <ECEntityClass typeName='VolumeElement'>"
-                                                                                "    <BaseClass>Geometric3dElement</BaseClass>"
-                                                                                "    <ECProperty propertyName='Name' typeName='string' />"
-                                                                                "  </ECEntityClass>"
-                                                                                "  <ECEntityClass typeName='Annotation3dElement'>"
-                                                                                "    <BaseClass>Geometric3dElement</BaseClass>"
-                                                                                "    <ECProperty propertyName='Font' typeName='string' />"
-                                                                                "  </ECEntityClass>"
-                                                                                "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-                                                                                "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Model Has Elements'>"
-                                                                                "      <Class class='Model' />"
-                                                                                "    </Source>"
-                                                                                "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
-                                                                                "      <Class class='Element' />"
-                                                                                "    </Target>"
-                                                                                "  </ECRelationshipClass>"
-                                                                                "  <ECRelationshipClass typeName='ModelHasGeometric3dElements' strength='embedding' modifier='Sealed'>"
-                                                                                "   <BaseClass>ModelHasElements</BaseClass>"
-                                                                                "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Model Has Geometric 3d Elements'>"
-                                                                                "      <Class class='Model' />"
-                                                                                "    </Source>"
-                                                                                "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Geometric 3d Elements (Reversed)'>"
-                                                                                "      <Class class='Geometric3dElement' />"
-                                                                                "    </Target>"
-                                                                                "  </ECRelationshipClass>"
-                                                                                "  <ECRelationshipClass typeName='ModelHasLinkElements' strength='embedding' modifier='Sealed'>"
-                                                                                "   <BaseClass>ModelHasElements</BaseClass>"
-                                                                                "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Model Has Link Elements'>"
-                                                                                "      <Class class='Model' />"
-                                                                                "    </Source>"
-                                                                                "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Link Elements (Reversed)'>"
-                                                                                "      <Class class='LinkElement' />"
-                                                                                "    </Target>"
-                                                                                "  </ECRelationshipClass>"
-                                                                                "  <ECRelationshipClass typeName='ElementDrivesElement' strength='referencing' modifier='Abstract'>"
-                                                                                "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Element Drives Element'>"
-                                                                                "      <Class class='Element' />"
-                                                                                "    </Source>"
-                                                                                "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Element Drives Element (Reversed)'>"
-                                                                                "      <Class class='Element' />"
-                                                                                "    </Target>"
-                                                                                "  </ECRelationshipClass>"
-                                                                                "  <ECRelationshipClass typeName='InformationElementDrivesInformationElement' strength='referencing' modifier='Sealed'>"
-                                                                                "   <BaseClass>ElementDrivesElement</BaseClass>"
-                                                                                "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Information Element Drives Information Element'>"
-                                                                                "      <Class class='InformationElement' />"
-                                                                                "    </Source>"
-                                                                                "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Information Element Drives Information Element (Reversed)'>"
-                                                                                "      <Class class='InformationElement' />"
-                                                                                "    </Target>"
-                                                                                "  </ECRelationshipClass>"
-                                                                                "  <ECRelationshipClass typeName='UrlLinkDrivesAnnotation3dElement' strength='referencing' modifier='Sealed'>"
-                                                                                "   <BaseClass>ElementDrivesElement</BaseClass>"
-                                                                                "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Url Link Drives Annotation 3d Element'>"
-                                                                                "      <Class class='UrlLink' />"
-                                                                                "    </Source>"
-                                                                                "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Url Link Drives Annotation 3d Element (Reversed)'>"
-                                                                                "      <Class class='Annotation3dElement' />"
-                                                                                "    </Target>"
-                                                                                "  </ECRelationshipClass>"
-                                                                                "</ECSchema>")));
+                                                                                               "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                                                               "  <ECEntityClass typeName='Model' >"
+                                                                                               "    <ECProperty propertyName='Name' typeName='string' />"
+                                                                                               "  </ECEntityClass>"
+                                                                                               "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                                                                                               "    <ECCustomAttributes>"
+                                                                                               "         <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                                               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                                                               "        </ClassMap>"
+                                                                                               "    </ECCustomAttributes>"
+                                                                                               "    <ECProperty propertyName='Code' typeName='string' />"
+                                                                                               "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
+                                                                                               "  </ECEntityClass>"
+                                                                                               "  <ECEntityClass typeName='InformationElement' modifier='Abstract'>"
+                                                                                               "     <BaseClass>Element</BaseClass>"
+                                                                                               "     <ECCustomAttributes>"
+                                                                                               "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                                                                                               "     </ECCustomAttributes>"
+                                                                                               "  </ECEntityClass>"
+                                                                                               "  <ECEntityClass typeName='LinkElement' modifier='Abstract'>"
+                                                                                               "     <BaseClass>InformationElement</BaseClass>"
+                                                                                               "     <ECCustomAttributes>"
+                                                                                               "         <ShareColumns xmlns='ECDbMap.02.00'>"
+                                                                                               "              <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>"
+                                                                                               "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+                                                                                               "         </ShareColumns>"
+                                                                                               "     </ECCustomAttributes>"
+                                                                                               "  </ECEntityClass>"
+                                                                                               "  <ECEntityClass typeName='UrlLink' modifier='Sealed'>"
+                                                                                               "     <BaseClass>LinkElement</BaseClass>"
+                                                                                               "    <ECProperty propertyName='Url' typeName='string' />"
+                                                                                               "  </ECEntityClass>"
+                                                                                               "  <ECEntityClass typeName='EmbeddedLink' modifier='Sealed'>"
+                                                                                               "     <BaseClass>LinkElement</BaseClass>"
+                                                                                               "    <ECProperty propertyName='Name' typeName='string' />"
+                                                                                               "  </ECEntityClass>"
+                                                                                               "  <ECEntityClass typeName='GeometricElement' modifier='Abstract'>"
+                                                                                               "     <ECCustomAttributes>"
+                                                                                               "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                                                                                               "     </ECCustomAttributes>"
+                                                                                               "    <BaseClass>Element</BaseClass>"
+                                                                                               "  </ECEntityClass>"
+                                                                                               "  <ECEntityClass typeName='Geometric3dElement' modifier='Abstract'>"
+                                                                                               "     <ECCustomAttributes>"
+                                                                                               "         <ShareColumns xmlns='ECDbMap.02.00'>"
+                                                                                               "              <MaxSharedColumnsBeforeOverflow>16</MaxSharedColumnsBeforeOverflow>"
+                                                                                               "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+                                                                                               "         </ShareColumns>"
+                                                                                               "     </ECCustomAttributes>"
+                                                                                               "    <BaseClass>GeometricElement</BaseClass>"
+                                                                                               "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+                                                                                               "  </ECEntityClass>"
+                                                                                               "  <ECEntityClass typeName='VolumeElement'>"
+                                                                                               "    <BaseClass>Geometric3dElement</BaseClass>"
+                                                                                               "    <ECProperty propertyName='Name' typeName='string' />"
+                                                                                               "  </ECEntityClass>"
+                                                                                               "  <ECEntityClass typeName='Annotation3dElement'>"
+                                                                                               "    <BaseClass>Geometric3dElement</BaseClass>"
+                                                                                               "    <ECProperty propertyName='Font' typeName='string' />"
+                                                                                               "  </ECEntityClass>"
+                                                                                               "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+                                                                                               "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+                                                                                               "      <Class class='Model' />"
+                                                                                               "    </Source>"
+                                                                                               "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+                                                                                               "      <Class class='Element' />"
+                                                                                               "    </Target>"
+                                                                                               "  </ECRelationshipClass>"
+                                                                                               "  <ECRelationshipClass typeName='ModelHasGeometric3dElements' strength='embedding' modifier='Sealed'>"
+                                                                                               "   <BaseClass>ModelHasElements</BaseClass>"
+                                                                                               "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Model Has Geometric 3d Elements'>"
+                                                                                               "      <Class class='Model' />"
+                                                                                               "    </Source>"
+                                                                                               "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Geometric 3d Elements (Reversed)'>"
+                                                                                               "      <Class class='Geometric3dElement' />"
+                                                                                               "    </Target>"
+                                                                                               "  </ECRelationshipClass>"
+                                                                                               "  <ECRelationshipClass typeName='ModelHasLinkElements' strength='embedding' modifier='Sealed'>"
+                                                                                               "   <BaseClass>ModelHasElements</BaseClass>"
+                                                                                               "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Model Has Link Elements'>"
+                                                                                               "      <Class class='Model' />"
+                                                                                               "    </Source>"
+                                                                                               "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Link Elements (Reversed)'>"
+                                                                                               "      <Class class='LinkElement' />"
+                                                                                               "    </Target>"
+                                                                                               "  </ECRelationshipClass>"
+                                                                                               "  <ECRelationshipClass typeName='ElementDrivesElement' strength='referencing' modifier='Abstract'>"
+                                                                                               "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Element Drives Element'>"
+                                                                                               "      <Class class='Element' />"
+                                                                                               "    </Source>"
+                                                                                               "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Element Drives Element (Reversed)'>"
+                                                                                               "      <Class class='Element' />"
+                                                                                               "    </Target>"
+                                                                                               "  </ECRelationshipClass>"
+                                                                                               "  <ECRelationshipClass typeName='InformationElementDrivesInformationElement' strength='referencing' modifier='Sealed'>"
+                                                                                               "   <BaseClass>ElementDrivesElement</BaseClass>"
+                                                                                               "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Information Element Drives Information Element'>"
+                                                                                               "      <Class class='InformationElement' />"
+                                                                                               "    </Source>"
+                                                                                               "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Information Element Drives Information Element (Reversed)'>"
+                                                                                               "      <Class class='InformationElement' />"
+                                                                                               "    </Target>"
+                                                                                               "  </ECRelationshipClass>"
+                                                                                               "  <ECRelationshipClass typeName='UrlLinkDrivesAnnotation3dElement' strength='referencing' modifier='Sealed'>"
+                                                                                               "   <BaseClass>ElementDrivesElement</BaseClass>"
+                                                                                               "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Url Link Drives Annotation 3d Element'>"
+                                                                                               "      <Class class='UrlLink' />"
+                                                                                               "    </Source>"
+                                                                                               "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Url Link Drives Annotation 3d Element (Reversed)'>"
+                                                                                               "      <Class class='Annotation3dElement' />"
+                                                                                               "    </Target>"
+                                                                                               "  </ECRelationshipClass>"
+                                                                                               "</ECSchema>")));
 
     ECClassId modelHasGeom3dElementsRelClassId, modelHasLinkElementsRelClassId;
 
@@ -143,7 +140,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     std::vector<ECInstanceKey> volumeElKeys;
     std::vector<ECInstanceKey> annotationElKeys;
 
-    //insert test data
+    // insert test data
     modelHasGeom3dElementsRelClassId = m_ecdb.Schemas().GetClassId("TestSchema", "ModelHasGeometric3dElements");
     ASSERT_TRUE(modelHasGeom3dElementsRelClassId.IsValid());
     modelHasLinkElementsRelClassId = m_ecdb.Schemas().GetClassId("TestSchema", "ModelHasLinkElements");
@@ -151,7 +148,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
 
     ECSqlStatement stmt;
 
-    //Model
+    // Model
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Model(Name) VALUES(?)"));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Model1", IECSqlBinder::MakeCopy::No));
@@ -166,7 +163,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     modelKeys.push_back(key);
     stmt.Finalize();
 
-    //VolumeElement
+    // VolumeElement
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.VolumeElement(Code, Model.Id, Model.RelECClassId, Name) VALUES(?,?,?, 'Volume')"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "VolumeElement 1", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetInstanceId()));
@@ -191,7 +188,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     volumeElKeys.push_back(key);
     stmt.Finalize();
 
-    //AnnotationElement
+    // AnnotationElement
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Annotation3dElement(Code, Model.Id, Model.RelECClassId, Font) VALUES(?,?,?, 'Consolas Sans Serif')"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Annotation3dElement 1", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetInstanceId()));
@@ -216,7 +213,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     annotationElKeys.push_back(key);
     stmt.Finalize();
 
-    //UrlLink
+    // UrlLink
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.UrlLink(Code, Model.Id,Model.RelECClassId, Url) VALUES(?,?,?, 'http://www.staufen.de')"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "UrlLinkElement 1", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetInstanceId()));
@@ -233,7 +230,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     urlLinkKeys.push_back(key);
     stmt.Finalize();
 
-    //EmbeddedLink
+    // EmbeddedLink
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.EmbeddedLink(Code, Model.Id, Model.RelECClassId, Name) VALUES(?,?,?, 'bliblablub')"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "EmbeddedLinkElement 1", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetInstanceId()));
@@ -250,7 +247,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     embeddedLinkKeys.push_back(key);
     stmt.Finalize();
 
-    //InformationElementDrivesInformationElement
+    // InformationElementDrivesInformationElement
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.InformationElementDrivesInformationElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[0].GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[0].GetClassId()));
@@ -267,7 +264,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << m_ecdb.GetLastError().c_str();
     stmt.Finalize();
 
-    //UrlLinkDrivesAnnotationElement
+    // UrlLinkDrivesAnnotationElement
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.UrlLinkDrivesAnnotation3dElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetClassId()));
@@ -329,92 +326,92 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
     ASSERT_EQ(3, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
-    {
+TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases) {
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-    "  <ECEntityClass typeName='Model' >"
-    "    <ECProperty propertyName='Name' typeName='string' />"
-    "  </ECEntityClass>"
-    "  <ECEntityClass typeName='Element' modifier='Abstract' >"
-    "    <ECCustomAttributes>"
-    "         <ClassMap xmlns='ECDbMap.02.00'>"
-    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-    "        </ClassMap>"
-    "    </ECCustomAttributes>"
-    "    <ECProperty propertyName='Code' typeName='string' />"
-    "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
-    "  </ECEntityClass>"
-    "  <ECEntityClass typeName='PhysicalElement'>"
-    "    <BaseClass>Element</BaseClass>"
-    "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
-    "  </ECEntityClass>"
-    "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='referencing'>"
-    "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Model Has Elements'>"
-    "      <Class class='Model' />"
-    "    </Source>"
-    "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
-    "      <Class class='Element' />"
-    "    </Target>"
-    "  </ECRelationshipClass>"
-    "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='referencing' modifier='Sealed'>"
-    "   <BaseClass>ModelHasElements</BaseClass>"
-    "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
-    "      <Class class='Model' />"
-    "    </Source>"
-    "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
-    "      <Class class='PhysicalElement' />"
-    "    </Target>"
-    "  </ECRelationshipClass>"
-    "</ECSchema>"))) << "Subclass must not imply link table if base class has logical FK mapping";
+                                                            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                            "  <ECEntityClass typeName='Model' >"
+                                                            "    <ECProperty propertyName='Name' typeName='string' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                                                            "    <ECCustomAttributes>"
+                                                            "         <ClassMap xmlns='ECDbMap.02.00'>"
+                                                            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                            "        </ClassMap>"
+                                                            "    </ECCustomAttributes>"
+                                                            "    <ECProperty propertyName='Code' typeName='string' />"
+                                                            "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECEntityClass typeName='PhysicalElement'>"
+                                                            "    <BaseClass>Element</BaseClass>"
+                                                            "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='referencing'>"
+                                                            "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+                                                            "      <Class class='Model' />"
+                                                            "    </Source>"
+                                                            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+                                                            "      <Class class='Element' />"
+                                                            "    </Target>"
+                                                            "  </ECRelationshipClass>"
+                                                            "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='referencing' modifier='Sealed'>"
+                                                            "   <BaseClass>ModelHasElements</BaseClass>"
+                                                            "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
+                                                            "      <Class class='Model' />"
+                                                            "    </Source>"
+                                                            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
+                                                            "      <Class class='PhysicalElement' />"
+                                                            "    </Target>"
+                                                            "  </ECRelationshipClass>"
+                                                            "</ECSchema>")))
+        << "Subclass must not imply link table if base class has logical FK mapping";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "  <ECEntityClass typeName='Model' >"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='Element' modifier='Abstract' >"
-        "    <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='Code' typeName='string' />"
-        "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' >"
-        "       <ECCustomAttributes>"
-        "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-        "        </ECCustomAttributes>"
-        "    </ECNavigationProperty>"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='PhysicalElement'>"
-        "    <BaseClass>Element</BaseClass>"
-        "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='referencing'>"
-        "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Model Has Elements'>"
-        "      <Class class='Model' />"
-        "    </Source>"
-        "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
-        "      <Class class='Element' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='referencing' modifier='Sealed'>"
-        "   <BaseClass>ModelHasElements</BaseClass>"
-        "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
-        "      <Class class='Model' />"
-        "    </Source>"
-        "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
-        "      <Class class='PhysicalElement' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"))) << "Subclass must not imply link table if base class has physical FK mapping";
+                         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                         "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                         "  <ECEntityClass typeName='Model' >"
+                         "    <ECProperty propertyName='Name' typeName='string' />"
+                         "  </ECEntityClass>"
+                         "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                         "    <ECCustomAttributes>"
+                         "         <ClassMap xmlns='ECDbMap.02.00'>"
+                         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                         "        </ClassMap>"
+                         "    </ECCustomAttributes>"
+                         "    <ECProperty propertyName='Code' typeName='string' />"
+                         "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' >"
+                         "       <ECCustomAttributes>"
+                         "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                         "        </ECCustomAttributes>"
+                         "    </ECNavigationProperty>"
+                         "  </ECEntityClass>"
+                         "  <ECEntityClass typeName='PhysicalElement'>"
+                         "    <BaseClass>Element</BaseClass>"
+                         "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+                         "  </ECEntityClass>"
+                         "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='referencing'>"
+                         "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+                         "      <Class class='Model' />"
+                         "    </Source>"
+                         "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+                         "      <Class class='Element' />"
+                         "    </Target>"
+                         "  </ECRelationshipClass>"
+                         "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='referencing' modifier='Sealed'>"
+                         "   <BaseClass>ModelHasElements</BaseClass>"
+                         "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
+                         "      <Class class='Model' />"
+                         "    </Source>"
+                         "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
+                         "      <Class class='PhysicalElement' />"
+                         "    </Target>"
+                         "  </ECRelationshipClass>"
+                         "</ECSchema>")))
+        << "Subclass must not imply link table if base class has physical FK mapping";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -452,7 +449,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                         </Target>
                        <ECProperty propertyName="MyRelProp" typeName="double" />
                      </ECRelationshipClass>
-                   </ECSchema>)xml"))) << "Subclass must not imply link table (because of additional ECProperty) if base class has logical FK mapping";
+                   </ECSchema>)xml")))
+        << "Subclass must not imply link table (because of additional ECProperty) if base class has logical FK mapping";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -492,7 +490,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                             <Class class="Child"/>
                         </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml"))) << "Subclass must not have LinkTableRelationshipMap CA if base class has logical FK mapping";
+                   </ECSchema>)xml")))
+        << "Subclass must not have LinkTableRelationshipMap CA if base class has logical FK mapping";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -529,7 +528,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                             <Class class="ChildSub1"/>
                         </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml"))) << "Subclass must not have navigation property if base class maps to link table";
+                   </ECSchema>)xml")))
+        << "Subclass must not have navigation property if base class maps to link table";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -566,7 +566,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                             <Class class="Child"/>
                         </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml"))) << "Subclass must not have FK on other end as base class";
+                   </ECSchema>)xml")))
+        << "Subclass must not have FK on other end as base class";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -603,7 +604,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                             <Class class="Child"/>
                         </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml"))) << "Subclass must not have FK on other end as base class (here implied from strength direction)";
+                   </ECSchema>)xml")))
+        << "Subclass must not have FK on other end as base class (here implied from strength direction)";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -640,46 +642,48 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                             <Class class="Child"/>
                         </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml"))) << "Subclass must not have another strength as base class";
+                   </ECSchema>)xml")))
+        << "Subclass must not have another strength as base class";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-    "  <ECEntityClass typeName='Model' >"
-    "    <ECProperty propertyName='Name' typeName='string' />"
-    "  </ECEntityClass>"
-    "  <ECEntityClass typeName='Element' modifier='Abstract' >"
-    "    <ECCustomAttributes>"
-    "         <ClassMap xmlns='ECDbMap.02.00'>"
-    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-    "        </ClassMap>"
-    "    </ECCustomAttributes>"
-    "    <ECProperty propertyName='Code' typeName='string' />"
-    "  </ECEntityClass>"
-    "  <ECEntityClass typeName='PhysicalElement'>"
-    "    <BaseClass>Element</BaseClass>"
-    "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
-    "  </ECEntityClass>"
-    "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='referencing'>"
-    "    <Source multiplicity='(1..*)' polymorphic='True' roleLabel='Model Has Elements'>"
-    "      <Class class='Model' />"
-    "    </Source>"
-    "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
-    "      <Class class='Element' />"
-    "    </Target>"
-    "  </ECRelationshipClass>"
-    "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='referencing' modifier='Sealed'>"
-    "    <ECCustomAttributes>"
-    "        <LinkTableRelationshipMap xmlns='ECDbMap.02.00'/>"
-    "    </ECCustomAttributes>"
-    "   <BaseClass>ModelHasElements</BaseClass>"
-    "    <Source multiplicity='(1..*)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
-    "      <Class class='Model' />"
-    "    </Source>"
-    "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
-    "      <Class class='PhysicalElement' />"
-    "    </Target>"
-    "  </ECRelationshipClass>"
-    "</ECSchema>"))) << "Subclasses must not have LinkTableRelationshipMap even if it doesn't violate the base class mapping";
+                                                            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                            "  <ECEntityClass typeName='Model' >"
+                                                            "    <ECProperty propertyName='Name' typeName='string' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                                                            "    <ECCustomAttributes>"
+                                                            "         <ClassMap xmlns='ECDbMap.02.00'>"
+                                                            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                            "        </ClassMap>"
+                                                            "    </ECCustomAttributes>"
+                                                            "    <ECProperty propertyName='Code' typeName='string' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECEntityClass typeName='PhysicalElement'>"
+                                                            "    <BaseClass>Element</BaseClass>"
+                                                            "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='referencing'>"
+                                                            "    <Source multiplicity='(1..*)' polymorphic='True' roleLabel='Model Has Elements'>"
+                                                            "      <Class class='Model' />"
+                                                            "    </Source>"
+                                                            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+                                                            "      <Class class='Element' />"
+                                                            "    </Target>"
+                                                            "  </ECRelationshipClass>"
+                                                            "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='referencing' modifier='Sealed'>"
+                                                            "    <ECCustomAttributes>"
+                                                            "        <LinkTableRelationshipMap xmlns='ECDbMap.02.00'/>"
+                                                            "    </ECCustomAttributes>"
+                                                            "   <BaseClass>ModelHasElements</BaseClass>"
+                                                            "    <Source multiplicity='(1..*)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
+                                                            "      <Class class='Model' />"
+                                                            "    </Source>"
+                                                            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
+                                                            "      <Class class='PhysicalElement' />"
+                                                            "    </Target>"
+                                                            "  </ECRelationshipClass>"
+                                                            "</ECSchema>")))
+        << "Subclasses must not have LinkTableRelationshipMap even if it doesn't violate the base class mapping";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -723,137 +727,135 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                             <Class class="Child"/>
                         </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml"))) << "Subclass must not have LinkTableRelationshipMap CA if base class has physical FK mapping";
-    
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                   "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                   "  <ECEntityClass typeName='Model' >"
-                   "    <ECProperty propertyName='Name' typeName='string' />"
-                   "  </ECEntityClass>"
-                   "  <ECEntityClass typeName='Element' modifier='Abstract' >"
-                   "    <ECCustomAttributes>"
-                   "         <ClassMap xmlns='ECDbMap.02.00'>"
-                   "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                   "        </ClassMap>"
-                   "    </ECCustomAttributes>"
-                   "    <ECProperty propertyName='Code' typeName='string' />"
-                   "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
-                   "  </ECEntityClass>"
-                   "  <ECEntityClass typeName='PhysicalElement'>"
-                   "    <BaseClass>Element</BaseClass>"
-                   "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
-                   "  </ECEntityClass>"
-                   "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-                   "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
-                   "      <Class class='Model' />"
-                   "    </Source>"
-                   "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
-                   "      <Class class='Element' />"
-                   "    </Target>"
-                   "  </ECRelationshipClass>"
-                   "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
-                   "    <ECCustomAttributes>"
-                   "        <ClassMap xmlns='ECDbMap.02.00'>"
-                   "               <MapStrategy>OwnTable</MapStrategy>"
-                   "        </ClassMap>"
-                   "    </ECCustomAttributes>"
-                   "   <BaseClass>ModelHasElements</BaseClass>"
-                   "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
-                   "      <Class class='Model' />"
-                   "    </Source>"
-                   "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
-                   "      <Class class='PhysicalElement' />"
-                   "    </Target>"
-                   "  </ECRelationshipClass>"
-                   "</ECSchema>"))) << "Subclass must not have ClassMap CA if base class has FK mapping";
-
+                   </ECSchema>)xml")))
+        << "Subclass must not have LinkTableRelationshipMap CA if base class has physical FK mapping";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                   "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                   "  <ECEntityClass typeName='Model' >"
-                   "    <ECProperty propertyName='Name' typeName='string' />"
-                   "  </ECEntityClass>"
-                   "  <ECEntityClass typeName='Element' >"
-                   "    <ECProperty propertyName='Code' typeName='string' />"
-                   "  </ECEntityClass>"
-                   "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-                   "    <ECCustomAttributes>"
-                   "        <ClassMap xmlns='ECDbMap.02.00'>"
-                   "            <MapStrategy>NotMapped</MapStrategy>"
-                   "        </ClassMap>"
-                   "    </ECCustomAttributes>"
-                   "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
-                   "      <Class class='Model' />"
-                   "    </Source>"
-                   "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
-                   "      <Class class='Element' />"
-                   "    </Target>"
-                   "  </ECRelationshipClass>"
-                   "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
-                   "    <ECCustomAttributes>"
-                   "        <ClassMap xmlns='ECDbMap.02.00'>"
-                   "            <MapStrategy>NotMapped</MapStrategy>"
-                   "        </ClassMap>"
-                   "    </ECCustomAttributes>"
-                   "   <BaseClass>ModelHasElements</BaseClass>"
-                   "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
-                   "      <Class class='Model' />"
-                   "    </Source>"
-                   "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
-                   "      <Class class='PhysicalElement' />"
-                   "    </Target>"
-                   "  </ECRelationshipClass>"
-                   "  <ECRelationshipClass typeName='ModelHasPhysicalElements2' strength='embedding' modifier='Sealed'>"
-                   "   <BaseClass>ModelHasElements</BaseClass>"
-                   "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
-                   "      <Class class='Model' />"
-                   "    </Source>"
-                   "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
-                   "      <Class class='PhysicalElement' />"
-                   "    </Target>"
-                   "  </ECRelationshipClass>"
-                   "</ECSchema>"))) << "Subclass must not have define NotMapped if base class did already";
-
+                                                            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                            "  <ECEntityClass typeName='Model' >"
+                                                            "    <ECProperty propertyName='Name' typeName='string' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                                                            "    <ECCustomAttributes>"
+                                                            "         <ClassMap xmlns='ECDbMap.02.00'>"
+                                                            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                            "        </ClassMap>"
+                                                            "    </ECCustomAttributes>"
+                                                            "    <ECProperty propertyName='Code' typeName='string' />"
+                                                            "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECEntityClass typeName='PhysicalElement'>"
+                                                            "    <BaseClass>Element</BaseClass>"
+                                                            "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+                                                            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+                                                            "      <Class class='Model' />"
+                                                            "    </Source>"
+                                                            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+                                                            "      <Class class='Element' />"
+                                                            "    </Target>"
+                                                            "  </ECRelationshipClass>"
+                                                            "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
+                                                            "    <ECCustomAttributes>"
+                                                            "        <ClassMap xmlns='ECDbMap.02.00'>"
+                                                            "               <MapStrategy>OwnTable</MapStrategy>"
+                                                            "        </ClassMap>"
+                                                            "    </ECCustomAttributes>"
+                                                            "   <BaseClass>ModelHasElements</BaseClass>"
+                                                            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
+                                                            "      <Class class='Model' />"
+                                                            "    </Source>"
+                                                            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
+                                                            "      <Class class='PhysicalElement' />"
+                                                            "    </Target>"
+                                                            "  </ECRelationshipClass>"
+                                                            "</ECSchema>")))
+        << "Subclass must not have ClassMap CA if base class has FK mapping";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                   "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                   "  <ECEntityClass typeName='Model' >"
-                   "    <ECProperty propertyName='Name' typeName='string' />"
-                   "  </ECEntityClass>"
-                   "  <ECEntityClass typeName='Element' >"
-                   "    <ECProperty propertyName='Code' typeName='string' />"
-                   "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
-                   "  </ECEntityClass>"
-                   "  <ECEntityClass typeName='PhysicalElement'>"
-                   "    <BaseClass>Element</BaseClass>"
-                   "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
-                   "  </ECEntityClass>"
-                   "  <ECRelationshipClass typeName='ModelHasElements' modifier='Sealed' strength='embedding'>"
-                   "    <Source multiplicity='(0..1)' polymorphic='True'>"
-                   "      <Class class='Model' />"
-                   "    </Source>"
-                   "    <Target multiplicity='(0..*)' polymorphic='True'>"
-                   "      <Class class='Element' />"
-                   "    </Target>"
-                   "  </ECRelationshipClass>"
-                   "</ECSchema>"))) << "FK end maps to multiple primary tables";
-    }
+                                                            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                            "  <ECEntityClass typeName='Model' >"
+                                                            "    <ECProperty propertyName='Name' typeName='string' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECEntityClass typeName='Element' >"
+                                                            "    <ECProperty propertyName='Code' typeName='string' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+                                                            "    <ECCustomAttributes>"
+                                                            "        <ClassMap xmlns='ECDbMap.02.00'>"
+                                                            "            <MapStrategy>NotMapped</MapStrategy>"
+                                                            "        </ClassMap>"
+                                                            "    </ECCustomAttributes>"
+                                                            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+                                                            "      <Class class='Model' />"
+                                                            "    </Source>"
+                                                            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+                                                            "      <Class class='Element' />"
+                                                            "    </Target>"
+                                                            "  </ECRelationshipClass>"
+                                                            "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
+                                                            "    <ECCustomAttributes>"
+                                                            "        <ClassMap xmlns='ECDbMap.02.00'>"
+                                                            "            <MapStrategy>NotMapped</MapStrategy>"
+                                                            "        </ClassMap>"
+                                                            "    </ECCustomAttributes>"
+                                                            "   <BaseClass>ModelHasElements</BaseClass>"
+                                                            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
+                                                            "      <Class class='Model' />"
+                                                            "    </Source>"
+                                                            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
+                                                            "      <Class class='PhysicalElement' />"
+                                                            "    </Target>"
+                                                            "  </ECRelationshipClass>"
+                                                            "  <ECRelationshipClass typeName='ModelHasPhysicalElements2' strength='embedding' modifier='Sealed'>"
+                                                            "   <BaseClass>ModelHasElements</BaseClass>"
+                                                            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
+                                                            "      <Class class='Model' />"
+                                                            "    </Source>"
+                                                            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
+                                                            "      <Class class='PhysicalElement' />"
+                                                            "    </Target>"
+                                                            "  </ECRelationshipClass>"
+                                                            "</ECSchema>")))
+        << "Subclass must not have define NotMapped if base class did already";
 
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                            "  <ECEntityClass typeName='Model' >"
+                                                            "    <ECProperty propertyName='Name' typeName='string' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECEntityClass typeName='Element' >"
+                                                            "    <ECProperty propertyName='Code' typeName='string' />"
+                                                            "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECEntityClass typeName='PhysicalElement'>"
+                                                            "    <BaseClass>Element</BaseClass>"
+                                                            "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+                                                            "  </ECEntityClass>"
+                                                            "  <ECRelationshipClass typeName='ModelHasElements' modifier='Sealed' strength='embedding'>"
+                                                            "    <Source multiplicity='(0..1)' polymorphic='True'>"
+                                                            "      <Class class='Model' />"
+                                                            "    </Source>"
+                                                            "    <Target multiplicity='(0..*)' polymorphic='True'>"
+                                                            "      <Class class='Element' />"
+                                                            "    </Target>"
+                                                            "  </ECRelationshipClass>"
+                                                            "</ECSchema>")))
+        << "FK end maps to multiple primary tables";
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
-    {
-    enum class RelClassIdExistenceMode
-        {
+TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId) {
+    enum class RelClassIdExistenceMode {
         Persisted,
         Virtual,
         DoesNotExist
-        };
+    };
 
-    auto assertRelECClassId = [this] (ECDbCR ecdb, Utf8CP tableName, Utf8CP relClassIdColumnName, RelClassIdExistenceMode expectedExistenceMode, bool expectedNotNull, bool expectedHasIndex)
-        {
+    auto assertRelECClassId = [this](ECDbCR ecdb, Utf8CP tableName, Utf8CP relClassIdColumnName, RelClassIdExistenceMode expectedExistenceMode, bool expectedNotNull, bool expectedHasIndex) {
         Utf8String ddl = TestHelper(ecdb).GetDdl(tableName);
         ASSERT_FALSE(ddl.empty());
 
@@ -861,16 +863,15 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
         ASSERT_TRUE(stmt != nullptr);
         ASSERT_EQ(BE_SQLITE_OK, stmt->BindText(1, tableName, Statement::MakeCopy::No));
         ASSERT_EQ(BE_SQLITE_OK, stmt->BindText(2, relClassIdColumnName, Statement::MakeCopy::No));
-        if (expectedExistenceMode == RelClassIdExistenceMode::DoesNotExist)
-            {
+        if (expectedExistenceMode == RelClassIdExistenceMode::DoesNotExist) {
             ASSERT_FALSE(ddl.ContainsI(relClassIdColumnName)) << "Table: " << tableName << " Column: " << relClassIdColumnName;
             ASSERT_EQ(BE_SQLITE_DONE, stmt->Step());
             return;
-            }
+        }
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
 
-        const Column::Kind actualKind = (Column::Kind) stmt->GetValueInt(0);
+        const Column::Kind actualKind = (Column::Kind)stmt->GetValueInt(0);
         const bool actualIsVirtual = stmt->GetValueInt(1) != 0;
         const bool actualIsNotNull = stmt->GetValueInt(2) != 0;
         stmt = nullptr;
@@ -881,559 +882,562 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
         if (expectedExistenceMode == RelClassIdExistenceMode::Virtual)
             ASSERT_FALSE(ddl.ContainsI(relClassIdColumnName)) << "Table: " << tableName << " Column: " << relClassIdColumnName;
-        else
-            {
+        else {
             Utf8String columnDdl("[");
             columnDdl.append(relClassIdColumnName).append("] INTEGER");
             if (expectedNotNull)
                 columnDdl.append(" NOT NULL");
 
             ASSERT_TRUE(ddl.ContainsI(columnDdl.c_str())) << "Table: " << tableName << " Column: " << relClassIdColumnName << " Expected DDL: " << columnDdl.c_str();
-            }
+        }
 
         Utf8String indexName;
         indexName.Sprintf("ix_%s_%s", tableName, relClassIdColumnName);
 
-        if (expectedExistenceMode == RelClassIdExistenceMode::Virtual)
-            {
+        if (expectedExistenceMode == RelClassIdExistenceMode::Virtual) {
             ASSERT_FALSE(TestHelper(ecdb).IndexExists(indexName));
             return;
-            }
+        }
 
-        if (expectedHasIndex)
-            {
-            if (expectedNotNull)
-                {
+        if (expectedHasIndex) {
+            if (expectedNotNull) {
                 ASSERT_STRCASEEQ(IndexInfo(indexName, false, tableName, relClassIdColumnName).ToDdl().c_str(),
-                                TestHelper(ecdb).GetIndexDdl(indexName).c_str()) << indexName;
-                }
-            else
-                {
+                                 TestHelper(ecdb).GetIndexDdl(indexName).c_str())
+                    << indexName;
+            } else {
                 ASSERT_STRCASEEQ(IndexInfo(indexName, false, tableName, relClassIdColumnName, IndexInfo::WhereClause(true, {relClassIdColumnName})).ToDdl().c_str(),
-                                 TestHelper(ecdb).GetIndexDdl(indexName).c_str()) << indexName;
-                }
+                                 TestHelper(ecdb).GetIndexDdl(indexName).c_str())
+                    << indexName;
             }
-        };
+        }
+    };
 
     {
-    #define SCHEMAALIAS "ts1"
+#define SCHEMAALIAS "ts1"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                          "  <ECEntityClass typeName='A' >"
-                          "    <ECProperty propertyName='Name' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='B' >"
-                          "    <ECProperty propertyName='Code' typeName='string' />"
-                          "    <ECNavigationProperty propertyName='A' relationshipName='AHasB' direction='Backward' />"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
-                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='B' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "  <ECEntityClass typeName='C' >"
-                          "    <ECProperty propertyName='Name' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='D' >"
-                          "    <ECProperty propertyName='Code' typeName='string' />"
-                          "    <ECNavigationProperty propertyName='C' relationshipName='CHasD' direction='Backward' />"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='CHasD' modifier='Sealed' strength='embedding'>"
-                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='C Has D'>"
-                          "      <Class class='C' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='C Has D (Reversed)'>"
-                          "      <Class class='D' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "</ECSchema>");
+        SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS
+                              "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                              "  <ECEntityClass typeName='A' >"
+                              "    <ECProperty propertyName='Name' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='B' >"
+                              "    <ECProperty propertyName='Code' typeName='string' />"
+                              "    <ECNavigationProperty propertyName='A' relationshipName='AHasB' direction='Backward' />"
+                              "  </ECEntityClass>"
+                              "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
+                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='B' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "  <ECEntityClass typeName='C' >"
+                              "    <ECProperty propertyName='Name' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='D' >"
+                              "    <ECProperty propertyName='Code' typeName='string' />"
+                              "    <ECNavigationProperty propertyName='C' relationshipName='CHasD' direction='Backward' />"
+                              "  </ECEntityClass>"
+                              "  <ECRelationshipClass typeName='CHasD' modifier='Sealed' strength='embedding'>"
+                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='C Has D'>"
+                              "      <Class class='C' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='C Has D (Reversed)'>"
+                              "      <Class class='D' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema)) << "Logical FK";
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema)) << "Logical FK";
 
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "ARelECClassId", RelClassIdExistenceMode::Persisted, false, false);
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_D", "CRelECClassId", RelClassIdExistenceMode::Virtual, false, false);
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "ARelECClassId", RelClassIdExistenceMode::Persisted, false, false);
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_D", "CRelECClassId", RelClassIdExistenceMode::Virtual, false, false);
     }
 
     {
-    #undef SCHEMAALIAS
-    #define SCHEMAALIAS "ts2"
+#undef SCHEMAALIAS
+#define SCHEMAALIAS "ts2"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                          "  <ECEntityClass typeName='A' >"
-                          "    <ECProperty propertyName='Name' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='B' >"
-                          "    <ECProperty propertyName='Code' typeName='string' />"
-                          "    <ECNavigationProperty propertyName='A' relationshipName='AHasB' direction='Backward' >"
-                          "       <ECCustomAttributes>"
-                          "           <ForeignKeyConstraint xlmns='ECDbMap.02.00'/>"
-                          "       </ECCustomAttributes>"
-                          "    </ECNavigationProperty>"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
-                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='B' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "  <ECEntityClass typeName='C' >"
-                          "    <ECProperty propertyName='Name' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='D' >"
-                          "    <ECProperty propertyName='Code' typeName='string' />"
-                          "    <ECNavigationProperty propertyName='C' relationshipName='CHasD' direction='Backward' >"
-                          "       <ECCustomAttributes>"
-                          "           <ForeignKeyConstraint xlmns='ECDbMap.02.00'/>"
-                          "       </ECCustomAttributes>"
-                          "    </ECNavigationProperty>"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='CHasD' modifier='Sealed' strength='embedding'>"
-                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='C Has D'>"
-                          "      <Class class='C' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='C Has D (Reversed)'>"
-                          "      <Class class='D' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "</ECSchema>");
+        SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS
+                              "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                              "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                              "  <ECEntityClass typeName='A' >"
+                              "    <ECProperty propertyName='Name' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='B' >"
+                              "    <ECProperty propertyName='Code' typeName='string' />"
+                              "    <ECNavigationProperty propertyName='A' relationshipName='AHasB' direction='Backward' >"
+                              "       <ECCustomAttributes>"
+                              "           <ForeignKeyConstraint xlmns='ECDbMap.02.00'/>"
+                              "       </ECCustomAttributes>"
+                              "    </ECNavigationProperty>"
+                              "  </ECEntityClass>"
+                              "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
+                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='B' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "  <ECEntityClass typeName='C' >"
+                              "    <ECProperty propertyName='Name' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='D' >"
+                              "    <ECProperty propertyName='Code' typeName='string' />"
+                              "    <ECNavigationProperty propertyName='C' relationshipName='CHasD' direction='Backward' >"
+                              "       <ECCustomAttributes>"
+                              "           <ForeignKeyConstraint xlmns='ECDbMap.02.00'/>"
+                              "       </ECCustomAttributes>"
+                              "    </ECNavigationProperty>"
+                              "  </ECEntityClass>"
+                              "  <ECRelationshipClass typeName='CHasD' modifier='Sealed' strength='embedding'>"
+                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='C Has D'>"
+                              "      <Class class='C' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='C Has D (Reversed)'>"
+                              "      <Class class='D' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema)) << "Physical FK";
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema)) << "Physical FK";
 
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "ARelECClassId", RelClassIdExistenceMode::Persisted, false, true);
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_D", "CRelECClassId", RelClassIdExistenceMode::Virtual, false, false);
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "ARelECClassId", RelClassIdExistenceMode::Persisted, false, true);
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_D", "CRelECClassId", RelClassIdExistenceMode::Virtual, false, false);
     }
 
     {
-    #undef SCHEMAALIAS
-    #define SCHEMAALIAS "ts3"
+#undef SCHEMAALIAS
+#define SCHEMAALIAS "ts3"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                          "  <ECEntityClass typeName='A' >"
-                          "    <ECProperty propertyName='Name' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
-                          "    <ECCustomAttributes>"
-                          "         <ClassMap xmlns='ECDbMap.02.00'>"
-                          "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                          "        </ClassMap>"
-                          "    </ECCustomAttributes>"
-                          "    <ECProperty propertyName='Code' typeName='string' />"
-                          "    <ECNavigationProperty propertyName='A1' relationshipName='AHasB' direction='Backward' />"
-                          "    <ECNavigationProperty propertyName='A2' relationshipName='AHasB1N' direction='Backward' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
-                          "    <BaseClass>B</BaseClass>"
-                          "    <ECProperty propertyName='Prop1' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
-                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='B' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "  <ECRelationshipClass typeName='AHasB1N' modifier='Abstract' strength='embedding'>"
-                          "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='B' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "</ECSchema>");
+        SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS
+                              "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                              "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                              "  <ECEntityClass typeName='A' >"
+                              "    <ECProperty propertyName='Name' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                              "    <ECCustomAttributes>"
+                              "         <ClassMap xmlns='ECDbMap.02.00'>"
+                              "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                              "        </ClassMap>"
+                              "    </ECCustomAttributes>"
+                              "    <ECProperty propertyName='Code' typeName='string' />"
+                              "    <ECNavigationProperty propertyName='A1' relationshipName='AHasB' direction='Backward' />"
+                              "    <ECNavigationProperty propertyName='A2' relationshipName='AHasB1N' direction='Backward' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                              "    <BaseClass>B</BaseClass>"
+                              "    <ECProperty propertyName='Prop1' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
+                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='B' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "  <ECRelationshipClass typeName='AHasB1N' modifier='Abstract' strength='embedding'>"
+                              "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='B' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema)) << "logical FK";
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema)) << "logical FK";
 
-
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
     }
 
     {
 #undef SCHEMAALIAS
 #define SCHEMAALIAS "ts4"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                          "  <ECEntityClass typeName='A' >"
-                          "    <ECProperty propertyName='Name' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
-                          "    <ECCustomAttributes>"
-                          "         <ClassMap xmlns='ECDbMap.02.00'>"
-                          "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                          "        </ClassMap>"
-                          "    </ECCustomAttributes>"
-                          "    <ECProperty propertyName='Code' typeName='string' />"
-                          "    <ECNavigationProperty propertyName='A1' relationshipName='AHasB' direction='Backward' />"
-                          "    <ECNavigationProperty propertyName='A2' relationshipName='AHasB1N' direction='Backward' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
-                          "    <BaseClass>B</BaseClass>"
-                          "    <ECProperty propertyName='Prop1' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
-                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='B' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='embedding'>"
-                          "    <BaseClass>AHasB</BaseClass>"
-                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='BSub' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "  <ECRelationshipClass typeName='AHasB1N' modifier='Abstract' strength='embedding'>"
-                          "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='B' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "  <ECRelationshipClass typeName='AHasB1NSub' modifier='Sealed' strength='embedding'>"
-                          "    <BaseClass>AHasB1N</BaseClass>"
-                          "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='BSub' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "</ECSchema>");
+        SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS
+                              "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                              "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                              "  <ECEntityClass typeName='A' >"
+                              "    <ECProperty propertyName='Name' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                              "    <ECCustomAttributes>"
+                              "         <ClassMap xmlns='ECDbMap.02.00'>"
+                              "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                              "        </ClassMap>"
+                              "    </ECCustomAttributes>"
+                              "    <ECProperty propertyName='Code' typeName='string' />"
+                              "    <ECNavigationProperty propertyName='A1' relationshipName='AHasB' direction='Backward' />"
+                              "    <ECNavigationProperty propertyName='A2' relationshipName='AHasB1N' direction='Backward' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                              "    <BaseClass>B</BaseClass>"
+                              "    <ECProperty propertyName='Prop1' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
+                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='B' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='embedding'>"
+                              "    <BaseClass>AHasB</BaseClass>"
+                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='BSub' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "  <ECRelationshipClass typeName='AHasB1N' modifier='Abstract' strength='embedding'>"
+                              "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='B' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "  <ECRelationshipClass typeName='AHasB1NSub' modifier='Sealed' strength='embedding'>"
+                              "    <BaseClass>AHasB1N</BaseClass>"
+                              "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='BSub' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
 
-    Utf8CP tableName = SCHEMAALIAS "_B";
-    assertRelECClassId(m_ecdb, tableName, "A1RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
-    assertRelECClassId(m_ecdb, tableName, "A2RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
+        Utf8CP tableName = SCHEMAALIAS "_B";
+        assertRelECClassId(m_ecdb, tableName, "A1RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
+        assertRelECClassId(m_ecdb, tableName, "A2RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
     }
 
     {
 #undef SCHEMAALIAS
 #define SCHEMAALIAS "ts5"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                          "  <ECEntityClass typeName='A' >"
-                          "    <ECProperty propertyName='Name' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
-                          "    <ECCustomAttributes>"
-                          "         <ClassMap xmlns='ECDbMap.02.00'>"
-                          "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                          "        </ClassMap>"
-                          "    </ECCustomAttributes>"
-                          "    <ECProperty propertyName='Code' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
-                          "    <BaseClass>B</BaseClass>"
-                          "    <ECProperty propertyName='Prop1' typeName='string' />"
-                          "    <ECNavigationProperty propertyName='A1' relationshipName='AHasBSub' direction='Backward' />"
-                          "    <ECNavigationProperty propertyName='A2' relationshipName='AHasBSub1N' direction='Backward' />"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='AHasBSub' modifier='Abstract' strength='embedding'>"
-                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='BSub' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "  <ECRelationshipClass typeName='AHasBSub1N' modifier='Abstract' strength='embedding'>"
-                          "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='BSub' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "</ECSchema>");
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));    
+        SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS
+                              "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                              "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                              "  <ECEntityClass typeName='A' >"
+                              "    <ECProperty propertyName='Name' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                              "    <ECCustomAttributes>"
+                              "         <ClassMap xmlns='ECDbMap.02.00'>"
+                              "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                              "        </ClassMap>"
+                              "    </ECCustomAttributes>"
+                              "    <ECProperty propertyName='Code' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                              "    <BaseClass>B</BaseClass>"
+                              "    <ECProperty propertyName='Prop1' typeName='string' />"
+                              "    <ECNavigationProperty propertyName='A1' relationshipName='AHasBSub' direction='Backward' />"
+                              "    <ECNavigationProperty propertyName='A2' relationshipName='AHasBSub1N' direction='Backward' />"
+                              "  </ECEntityClass>"
+                              "  <ECRelationshipClass typeName='AHasBSub' modifier='Abstract' strength='embedding'>"
+                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='BSub' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "  <ECRelationshipClass typeName='AHasBSub1N' modifier='Abstract' strength='embedding'>"
+                              "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='BSub' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "</ECSchema>");
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
 
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
-    //cardinality would imply NOT NULL on rel class id, but the column is shared by other base class rows, so no enforcement of NOT NULL.
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
+        // cardinality would imply NOT NULL on rel class id, but the column is shared by other base class rows, so no enforcement of NOT NULL.
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
     }
 
     {
 #undef SCHEMAALIAS
 #define SCHEMAALIAS "ts6a"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                          "  <ECEntityClass typeName='A' >"
-                          "    <ECProperty propertyName='Name' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
-                          "    <ECCustomAttributes>"
-                          "         <ClassMap xmlns='ECDbMap.02.00'>"
-                          "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                          "        </ClassMap>"
-                          "    </ECCustomAttributes>"
-                          "    <ECProperty propertyName='Code' typeName='string' />"
-                          "    <ECNavigationProperty propertyName='A1' relationshipName='AHasB1N' direction='Backward' >"
-                          "       <ECCustomAttributes>"
-                          "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                          "       </ECCustomAttributes>"
-                          "    </ECNavigationProperty>"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
-                          "    <BaseClass>B</BaseClass>"
-                          "    <ECProperty propertyName='Prop1' typeName='string' />"
-                          "    <ECNavigationProperty propertyName='A2' relationshipName='AHasBSub' direction='Backward' >"
-                          "       <ECCustomAttributes>"
-                          "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                          "       </ECCustomAttributes>"
-                          "    </ECNavigationProperty>"
-                          "    <ECNavigationProperty propertyName='A3' relationshipName='AHasBSub1N' direction='Backward' >"
-                          "       <ECCustomAttributes>"
-                          "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
-                          "       </ECCustomAttributes>"
-                          "    </ECNavigationProperty>"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='embedding'>"
-                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='BSub' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "  <ECRelationshipClass typeName='AHasB1N' modifier='Sealed' strength='embedding'>"
-                          "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='B' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "  <ECRelationshipClass typeName='AHasBSub1N' modifier='Sealed' strength='embedding'>"
-                          "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='BSub' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "</ECSchema>");
+        SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS
+                              "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                              "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                              "  <ECEntityClass typeName='A' >"
+                              "    <ECProperty propertyName='Name' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                              "    <ECCustomAttributes>"
+                              "         <ClassMap xmlns='ECDbMap.02.00'>"
+                              "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                              "        </ClassMap>"
+                              "    </ECCustomAttributes>"
+                              "    <ECProperty propertyName='Code' typeName='string' />"
+                              "    <ECNavigationProperty propertyName='A1' relationshipName='AHasB1N' direction='Backward' >"
+                              "       <ECCustomAttributes>"
+                              "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                              "       </ECCustomAttributes>"
+                              "    </ECNavigationProperty>"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                              "    <BaseClass>B</BaseClass>"
+                              "    <ECProperty propertyName='Prop1' typeName='string' />"
+                              "    <ECNavigationProperty propertyName='A2' relationshipName='AHasBSub' direction='Backward' >"
+                              "       <ECCustomAttributes>"
+                              "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                              "       </ECCustomAttributes>"
+                              "    </ECNavigationProperty>"
+                              "    <ECNavigationProperty propertyName='A3' relationshipName='AHasBSub1N' direction='Backward' >"
+                              "       <ECCustomAttributes>"
+                              "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                              "       </ECCustomAttributes>"
+                              "    </ECNavigationProperty>"
+                              "  </ECEntityClass>"
+                              "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='embedding'>"
+                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='BSub' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "  <ECRelationshipClass typeName='AHasB1N' modifier='Sealed' strength='embedding'>"
+                              "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='B' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "  <ECRelationshipClass typeName='AHasBSub1N' modifier='Sealed' strength='embedding'>"
+                              "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='BSub' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Virtual, true, false);
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
-    //nullable because there are base classes of the end class mapped to the same table (for which the FK remains NULL)
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A3RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Virtual, true, false);
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
+        // nullable because there are base classes of the end class mapped to the same table (for which the FK remains NULL)
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A3RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
     }
     {
 #undef SCHEMAALIAS
 #define SCHEMAALIAS "ts6b"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                          "  <ECEntityClass typeName='A' >"
-                          "    <ECProperty propertyName='Name' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
-                          "    <ECCustomAttributes>"
-                          "         <ClassMap xmlns='ECDbMap.02.00'>"
-                          "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-                          "        </ClassMap>"
-                          "    </ECCustomAttributes>"
-                          "    <ECProperty propertyName='Code' typeName='string' />"
-                          "    <ECNavigationProperty propertyName='A1' relationshipName='AHasB1N' direction='Backward' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
-                          "    <BaseClass>B</BaseClass>"
-                          "    <ECProperty propertyName='Prop1' typeName='string' />"
-                          "    <ECNavigationProperty propertyName='A2' relationshipName='AHasBSub' direction='Backward' />"
-                          "    <ECNavigationProperty propertyName='A3' relationshipName='AHasBSub1N' direction='Backward' />"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='embedding'>"
-                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='BSub' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "  <ECRelationshipClass typeName='AHasB1N' modifier='Sealed' strength='embedding'>"
-                          "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='B' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "  <ECRelationshipClass typeName='AHasBSub1N' modifier='Sealed' strength='embedding'>"
-                          "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='BSub' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "</ECSchema>");
+        SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS
+                              "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                              "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                              "  <ECEntityClass typeName='A' >"
+                              "    <ECProperty propertyName='Name' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                              "    <ECCustomAttributes>"
+                              "         <ClassMap xmlns='ECDbMap.02.00'>"
+                              "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                              "        </ClassMap>"
+                              "    </ECCustomAttributes>"
+                              "    <ECProperty propertyName='Code' typeName='string' />"
+                              "    <ECNavigationProperty propertyName='A1' relationshipName='AHasB1N' direction='Backward' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                              "    <BaseClass>B</BaseClass>"
+                              "    <ECProperty propertyName='Prop1' typeName='string' />"
+                              "    <ECNavigationProperty propertyName='A2' relationshipName='AHasBSub' direction='Backward' />"
+                              "    <ECNavigationProperty propertyName='A3' relationshipName='AHasBSub1N' direction='Backward' />"
+                              "  </ECEntityClass>"
+                              "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='embedding'>"
+                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='BSub' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "  <ECRelationshipClass typeName='AHasB1N' modifier='Sealed' strength='embedding'>"
+                              "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='B' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "  <ECRelationshipClass typeName='AHasBSub1N' modifier='Sealed' strength='embedding'>"
+                              "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='BSub' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
-    //nullable because there are base classes of the end class mapped to the same table (for which the FK remains NULL)
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A3RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
+        // nullable because there are base classes of the end class mapped to the same table (for which the FK remains NULL)
+        assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A3RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
     }
 
     {
-    //LinkTable
+        // LinkTable
 #undef SCHEMAALIAS
 #define SCHEMAALIAS "ts7"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                          "  <ECEntityClass typeName='A' >"
-                          "    <ECProperty propertyName='Name' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
-                          "    <ECProperty propertyName='Code' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
-                          "    <BaseClass>B</BaseClass>"
-                          "    <ECProperty propertyName='Prop1' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='AHasB' modifier='Sealed' strength='referencing'>"
-                          "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='B' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "</ECSchema>");
+        SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS
+                              "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                              "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                              "  <ECEntityClass typeName='A' >"
+                              "    <ECProperty propertyName='Name' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                              "    <ECProperty propertyName='Code' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                              "    <BaseClass>B</BaseClass>"
+                              "    <ECProperty propertyName='Prop1' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECRelationshipClass typeName='AHasB' modifier='Sealed' strength='referencing'>"
+                              "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='B' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
 
-    ASSERT_TRUE(GetHelper().TableExists(SCHEMAALIAS "_AHasB"));
-    ASSERT_FALSE(m_ecdb.ColumnExists(SCHEMAALIAS "_AHasB", "ECClassId"));
-   }
+        ASSERT_TRUE(GetHelper().TableExists(SCHEMAALIAS "_AHasB"));
+        ASSERT_FALSE(m_ecdb.ColumnExists(SCHEMAALIAS "_AHasB", "ECClassId"));
+    }
 
     {
-    //LinkTable
+        // LinkTable
 #undef SCHEMAALIAS
 #define SCHEMAALIAS "ts8"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                          "  <ECEntityClass typeName='A' >"
-                          "    <ECProperty propertyName='Name' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
-                          "    <ECProperty propertyName='Code' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
-                          "    <BaseClass>B</BaseClass>"
-                          "    <ECProperty propertyName='Prop1' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='referencing'>"
-                          "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='B' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='referencing'>"
-                          "    <BaseClass>AHasB</BaseClass>"
-                          "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B'>"
-                          "      <Class class='A' />"
-                          "    </Source>"
-                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
-                          "      <Class class='B' />"
-                          "    </Target>"
-                          "  </ECRelationshipClass>"
-                          "</ECSchema>");
+        SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS
+                              "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                              "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                              "  <ECEntityClass typeName='A' >"
+                              "    <ECProperty propertyName='Name' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                              "    <ECProperty propertyName='Code' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                              "    <BaseClass>B</BaseClass>"
+                              "    <ECProperty propertyName='Prop1' typeName='string' />"
+                              "  </ECEntityClass>"
+                              "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='referencing'>"
+                              "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='B' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='referencing'>"
+                              "    <BaseClass>AHasB</BaseClass>"
+                              "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B'>"
+                              "      <Class class='A' />"
+                              "    </Source>"
+                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                              "      <Class class='B' />"
+                              "    </Target>"
+                              "  </ECRelationshipClass>"
+                              "</ECSchema>");
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
-    ASSERT_TRUE(GetHelper().TableExists(SCHEMAALIAS "_AHasB"));
-    ASSERT_TRUE(m_ecdb.ColumnExists(SCHEMAALIAS "_AHasB", "ECClassId"));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
+        ASSERT_TRUE(GetHelper().TableExists(SCHEMAALIAS "_AHasB"));
+        ASSERT_TRUE(m_ecdb.ColumnExists(SCHEMAALIAS "_AHasB", "ECClassId"));
     }
 
 #undef SCHEMAALIAS
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
-    {
+TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("narrowingsemanticsrelinheritance_fkmapping.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                                                                               "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                                                                               "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                                                                                               "  <ECEntityClass typeName='Element' modifier='Abstract' >"
-                                                                                               "    <ECCustomAttributes>"
-                                                                                               "       <ClassMap xmlns='ECDbMap.02.00'>"
-                                                                                               "            <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                                                                               "       </ClassMap>"
-                                                                                               "    </ECCustomAttributes>"
-                                                                                               "    <ECProperty propertyName='Code' typeName='string' />"
-                                                                                               "  <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='Backward'> "
-                                                                                               "      <ECCustomAttributes> "
-                                                                                               "           <ForeignKeyConstraint xmlns='ECDbMap.02.00'/> "
-                                                                                               "      </ECCustomAttributes> "
-                                                                                               "  </ECNavigationProperty> "
-                                                                                               "  </ECEntityClass>"
-                                                                                               "  <ECEntityClass typeName='BoltElement'>"
-                                                                                               "    <BaseClass>Element</BaseClass>"
-                                                                                               "    <ECProperty propertyName='BoltType' typeName='string' />"
-                                                                                               "  </ECEntityClass>"
-                                                                                               "  <ECEntityClass typeName='ConnectionElement' modifier='Abstract' >"
-                                                                                               "    <BaseClass>Element</BaseClass>"
-                                                                                               "    <ECProperty propertyName='ConnectionType' typeName='string' />"
-                                                                                               "  </ECEntityClass>"
-                                                                                               "  <ECEntityClass typeName='SteelBeamConnectionElement'>"
-                                                                                               "    <BaseClass>ConnectionElement</BaseClass>"
-                                                                                               "  </ECEntityClass>"
-                                                                                               "  <ECEntityClass typeName='PipeFlangeConnectionElement'>"
-                                                                                               "    <BaseClass>ConnectionElement</BaseClass>"
-                                                                                               "  </ECEntityClass>"
-                                                                                               "  <ECRelationshipClass typeName='ElementOwnsChildElements' modifier='Abstract' strength='embedding'>"
-                                                                                               "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Element Owns Child Elements'>"
-                                                                                               "      <Class class='Element' />"
-                                                                                               "    </Source>"
-                                                                                               "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Element Owns Child Elements (Reversed)'>"
-                                                                                               "      <Class class='Element' />"
-                                                                                               "    </Target>"
-                                                                                               "  </ECRelationshipClass>"
-                                                                                               "  <ECRelationshipClass typeName='SteelBeamConnectionHasBolts' strength='embedding' modifier='Sealed'>"
-                                                                                               "   <BaseClass>ElementOwnsChildElements</BaseClass>"
-                                                                                               "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Steel Beam Connection Has Bolts'>"
-                                                                                               "      <Class class='SteelBeamConnectionElement' />"
-                                                                                               "    </Source>"
-                                                                                               "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Steel Beam Connection Has Bolts (Reversed)'>"
-                                                                                               "      <Class class='BoltElement' />"
-                                                                                               "    </Target>"
-                                                                                               "  </ECRelationshipClass>"
-                                                                                               "  <ECRelationshipClass typeName='PipeFlangeConnectionHasBolts' strength='embedding' modifier='Sealed'>"
-                                                                                               "   <BaseClass>ElementOwnsChildElements</BaseClass>"
-                                                                                               "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Pipe Flange Connection Has Bolts'>"
-                                                                                               "      <Class class='PipeFlangeConnectionElement' />"
-                                                                                               "    </Source>"
-                                                                                               "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Pipe Flange Connection Has Bolts (Reversed)'>"
-                                                                                               "      <Class class='BoltElement' />"
-                                                                                               "    </Target>"
-                                                                                               "  </ECRelationshipClass>"
-                                                                                               "</ECSchema>")));
+                                                                                                              "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                                                              "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                                                                              "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                                                                                                              "    <ECCustomAttributes>"
+                                                                                                              "       <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                                                              "            <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                                                                              "       </ClassMap>"
+                                                                                                              "    </ECCustomAttributes>"
+                                                                                                              "    <ECProperty propertyName='Code' typeName='string' />"
+                                                                                                              "  <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='Backward'> "
+                                                                                                              "      <ECCustomAttributes> "
+                                                                                                              "           <ForeignKeyConstraint xmlns='ECDbMap.02.00'/> "
+                                                                                                              "      </ECCustomAttributes> "
+                                                                                                              "  </ECNavigationProperty> "
+                                                                                                              "  </ECEntityClass>"
+                                                                                                              "  <ECEntityClass typeName='BoltElement'>"
+                                                                                                              "    <BaseClass>Element</BaseClass>"
+                                                                                                              "    <ECProperty propertyName='BoltType' typeName='string' />"
+                                                                                                              "  </ECEntityClass>"
+                                                                                                              "  <ECEntityClass typeName='ConnectionElement' modifier='Abstract' >"
+                                                                                                              "    <BaseClass>Element</BaseClass>"
+                                                                                                              "    <ECProperty propertyName='ConnectionType' typeName='string' />"
+                                                                                                              "  </ECEntityClass>"
+                                                                                                              "  <ECEntityClass typeName='SteelBeamConnectionElement'>"
+                                                                                                              "    <BaseClass>ConnectionElement</BaseClass>"
+                                                                                                              "  </ECEntityClass>"
+                                                                                                              "  <ECEntityClass typeName='PipeFlangeConnectionElement'>"
+                                                                                                              "    <BaseClass>ConnectionElement</BaseClass>"
+                                                                                                              "  </ECEntityClass>"
+                                                                                                              "  <ECRelationshipClass typeName='ElementOwnsChildElements' modifier='Abstract' strength='embedding'>"
+                                                                                                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Element Owns Child Elements'>"
+                                                                                                              "      <Class class='Element' />"
+                                                                                                              "    </Source>"
+                                                                                                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Element Owns Child Elements (Reversed)'>"
+                                                                                                              "      <Class class='Element' />"
+                                                                                                              "    </Target>"
+                                                                                                              "  </ECRelationshipClass>"
+                                                                                                              "  <ECRelationshipClass typeName='SteelBeamConnectionHasBolts' strength='embedding' modifier='Sealed'>"
+                                                                                                              "   <BaseClass>ElementOwnsChildElements</BaseClass>"
+                                                                                                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Steel Beam Connection Has Bolts'>"
+                                                                                                              "      <Class class='SteelBeamConnectionElement' />"
+                                                                                                              "    </Source>"
+                                                                                                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Steel Beam Connection Has Bolts (Reversed)'>"
+                                                                                                              "      <Class class='BoltElement' />"
+                                                                                                              "    </Target>"
+                                                                                                              "  </ECRelationshipClass>"
+                                                                                                              "  <ECRelationshipClass typeName='PipeFlangeConnectionHasBolts' strength='embedding' modifier='Sealed'>"
+                                                                                                              "   <BaseClass>ElementOwnsChildElements</BaseClass>"
+                                                                                                              "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Pipe Flange Connection Has Bolts'>"
+                                                                                                              "      <Class class='PipeFlangeConnectionElement' />"
+                                                                                                              "    </Source>"
+                                                                                                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Pipe Flange Connection Has Bolts (Reversed)'>"
+                                                                                                              "      <Class class='BoltElement' />"
+                                                                                                              "    </Target>"
+                                                                                                              "  </ECRelationshipClass>"
+                                                                                                              "</ECSchema>")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SteelBeamConnectionElement(Code,ConnectionType) VALUES('SteelBeamConnection1','Steel')"));
@@ -1465,7 +1469,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
     stmt.Finalize();
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
-    //verify equality between leaf and base rel class
+    // verify equality between leaf and base rel class
     Utf8String ecsql;
     ecsql.Sprintf("SELECT ECInstanceId, ECClassId FROM ONLY ts.ElementOwnsChildElements WHERE SourceECInstanceId=%s AND TargetECInstanceId=%s",
                   stealbeamConnKey.GetInstanceId().ToString().c_str(), bolt1Key.GetInstanceId().ToString().c_str());
@@ -1480,72 +1484,70 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, pipeFlangeConnectionHasBolts->GetId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, pipeflangeConnKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "The particular Bolt has already an ElementOwnsChildElement rel";
-
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // we actually want to disallow non-abstract base classes, but might need them for legacy schemas
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping_NonAbstractRelBaseClass)
-    {
+TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping_NonAbstractRelBaseClass) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("narrowingsemanticsrelinheritance_fkmapping_nonabstractrelbaseclass.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                    "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                                    "  <ECEntityClass typeName='Element' modifier='Abstract' >"
-                                    "    <ECCustomAttributes>"
-                                    "       <ClassMap xmlns='ECDbMap.02.00'>"
-                                    "            <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                    "       </ClassMap>"
-                                    "    </ECCustomAttributes>"
-                                    "    <ECProperty propertyName='Code' typeName='string' />"
-                                    "  <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='Backward'> "
-                                    "      <ECCustomAttributes> "
-                                    "           <ForeignKeyConstraint xmlns='ECDbMap.02.00'/> "
-                                    "      </ECCustomAttributes> "
-                                    "  </ECNavigationProperty> "
-                                    "  </ECEntityClass>"
-                                    "  <ECEntityClass typeName='BoltElement'>"
-                                    "    <BaseClass>Element</BaseClass>"
-                                    "    <ECProperty propertyName='BoltType' typeName='string' />"
-                                    "  </ECEntityClass>"
-                                    "  <ECEntityClass typeName='ConnectionElement' modifier='Abstract' >"
-                                    "    <BaseClass>Element</BaseClass>"
-                                    "    <ECProperty propertyName='ConnectionType' typeName='string' />"
-                                    "  </ECEntityClass>"
-                                    "  <ECEntityClass typeName='SteelBeamConnectionElement'>"
-                                    "    <BaseClass>ConnectionElement</BaseClass>"
-                                    "  </ECEntityClass>"
-                                    "  <ECEntityClass typeName='PipeFlangeConnectionElement'>"
-                                    "    <BaseClass>ConnectionElement</BaseClass>"
-                                    "  </ECEntityClass>"
-                                    "  <ECRelationshipClass typeName='ElementOwnsChildElements' modifier='None' strength='embedding'>"
-                                    "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Element Owns Child Elements'>"
-                                    "      <Class class='Element' />"
-                                    "    </Source>"
-                                    "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Element Owns Child Elements (Reversed)'>"
-                                    "      <Class class='Element' />"
-                                    "    </Target>"
-                                    "  </ECRelationshipClass>"
-                                    "  <ECRelationshipClass typeName='SteelBeamConnectionHasBolts' strength='embedding' modifier='Sealed'>"
-                                    "   <BaseClass>ElementOwnsChildElements</BaseClass>"
-                                    "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Steel Beam Connection Has Bolts'>"
-                                    "      <Class class='SteelBeamConnectionElement' />"
-                                    "    </Source>"
-                                    "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Steel Beam Connection Has Bolts (Reversed)'>"
-                                    "      <Class class='BoltElement' />"
-                                    "    </Target>"
-                                    "  </ECRelationshipClass>"
-                                    "  <ECRelationshipClass typeName='PipeFlangeConnectionHasBolts' strength='embedding' modifier='Sealed'>"
-                                    "   <BaseClass>ElementOwnsChildElements</BaseClass>"
-                                    "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Pipe Flange Connection Has Bolts'>"
-                                    "      <Class class='PipeFlangeConnectionElement' />"
-                                    "    </Source>"
-                                    "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Pipe Flange Connection Has Bolts (Reversed)'>"
-                                    "      <Class class='BoltElement' />"
-                                    "    </Target>"
-                                    "  </ECRelationshipClass>"
-                                    "</ECSchema>")));
+                                                                                                                                      "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                                                                                      "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                                                                                                      "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                                                                                                                                      "    <ECCustomAttributes>"
+                                                                                                                                      "       <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                                                                                      "            <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                                                                                                      "       </ClassMap>"
+                                                                                                                                      "    </ECCustomAttributes>"
+                                                                                                                                      "    <ECProperty propertyName='Code' typeName='string' />"
+                                                                                                                                      "  <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='Backward'> "
+                                                                                                                                      "      <ECCustomAttributes> "
+                                                                                                                                      "           <ForeignKeyConstraint xmlns='ECDbMap.02.00'/> "
+                                                                                                                                      "      </ECCustomAttributes> "
+                                                                                                                                      "  </ECNavigationProperty> "
+                                                                                                                                      "  </ECEntityClass>"
+                                                                                                                                      "  <ECEntityClass typeName='BoltElement'>"
+                                                                                                                                      "    <BaseClass>Element</BaseClass>"
+                                                                                                                                      "    <ECProperty propertyName='BoltType' typeName='string' />"
+                                                                                                                                      "  </ECEntityClass>"
+                                                                                                                                      "  <ECEntityClass typeName='ConnectionElement' modifier='Abstract' >"
+                                                                                                                                      "    <BaseClass>Element</BaseClass>"
+                                                                                                                                      "    <ECProperty propertyName='ConnectionType' typeName='string' />"
+                                                                                                                                      "  </ECEntityClass>"
+                                                                                                                                      "  <ECEntityClass typeName='SteelBeamConnectionElement'>"
+                                                                                                                                      "    <BaseClass>ConnectionElement</BaseClass>"
+                                                                                                                                      "  </ECEntityClass>"
+                                                                                                                                      "  <ECEntityClass typeName='PipeFlangeConnectionElement'>"
+                                                                                                                                      "    <BaseClass>ConnectionElement</BaseClass>"
+                                                                                                                                      "  </ECEntityClass>"
+                                                                                                                                      "  <ECRelationshipClass typeName='ElementOwnsChildElements' modifier='None' strength='embedding'>"
+                                                                                                                                      "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Element Owns Child Elements'>"
+                                                                                                                                      "      <Class class='Element' />"
+                                                                                                                                      "    </Source>"
+                                                                                                                                      "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Element Owns Child Elements (Reversed)'>"
+                                                                                                                                      "      <Class class='Element' />"
+                                                                                                                                      "    </Target>"
+                                                                                                                                      "  </ECRelationshipClass>"
+                                                                                                                                      "  <ECRelationshipClass typeName='SteelBeamConnectionHasBolts' strength='embedding' modifier='Sealed'>"
+                                                                                                                                      "   <BaseClass>ElementOwnsChildElements</BaseClass>"
+                                                                                                                                      "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Steel Beam Connection Has Bolts'>"
+                                                                                                                                      "      <Class class='SteelBeamConnectionElement' />"
+                                                                                                                                      "    </Source>"
+                                                                                                                                      "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Steel Beam Connection Has Bolts (Reversed)'>"
+                                                                                                                                      "      <Class class='BoltElement' />"
+                                                                                                                                      "    </Target>"
+                                                                                                                                      "  </ECRelationshipClass>"
+                                                                                                                                      "  <ECRelationshipClass typeName='PipeFlangeConnectionHasBolts' strength='embedding' modifier='Sealed'>"
+                                                                                                                                      "   <BaseClass>ElementOwnsChildElements</BaseClass>"
+                                                                                                                                      "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Pipe Flange Connection Has Bolts'>"
+                                                                                                                                      "      <Class class='PipeFlangeConnectionElement' />"
+                                                                                                                                      "    </Source>"
+                                                                                                                                      "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Pipe Flange Connection Has Bolts (Reversed)'>"
+                                                                                                                                      "      <Class class='BoltElement' />"
+                                                                                                                                      "    </Target>"
+                                                                                                                                      "  </ECRelationshipClass>"
+                                                                                                                                      "</ECSchema>")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SteelBeamConnectionElement(Code,ConnectionType) VALUES('SteelBeamConnection1','Steel')"));
@@ -1577,13 +1579,13 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping_NonAbst
     stmt.Finalize();
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
-    //verify equality between leaf and base rel class
-    //ECInstanceId ECClassId SourceECInstanceId SourceECClassId TargetECInstanceId TargetECClassId
-    //    ------------ -------- - ------------------ -------------- - ------------------ -------------- -
-    //    1            62        3                  61              1                  61
+    // verify equality between leaf and base rel class
+    // ECInstanceId ECClassId SourceECInstanceId SourceECClassId TargetECInstanceId TargetECClassId
+    //     ------------ -------- - ------------------ -------------- - ------------------ -------------- -
+    //     1            62        3                  61              1                  61
     Utf8String ecsql;
     ecsql.Sprintf("SELECT ECInstanceId, ECClassId FROM  ts.ElementOwnsChildElements WHERE SourceECInstanceId=%s AND TargetECInstanceId=%s",
-                    stealbeamConnKey.GetInstanceId().ToString().c_str(), bolt1Key.GetInstanceId().ToString().c_str());
+                  stealbeamConnKey.GetInstanceId().ToString().c_str(), bolt1Key.GetInstanceId().ToString().c_str());
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -1597,74 +1599,73 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping_NonAbst
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, pipeFlangeConnectionHasBolts->GetId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, pipeflangeConnKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "The particular Bolt has already an ElementOwnsChildElement rel";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
-    {
+TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("narrowingsemanticsrelinheritance_linktable.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                  "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                  "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                                  "  <ECEntityClass typeName='Element' modifier='Abstract' >"
-                                  "    <ECCustomAttributes>"
-                                  "       <ClassMap xmlns='ECDbMap.02.00'>"
-                                  "            <MapStrategy>TablePerHierarchy</MapStrategy>"
-                                  "       </ClassMap>"
-                                  "    </ECCustomAttributes>"
-                                  "    <ECProperty propertyName='Code' typeName='string' />"
-                                  "  </ECEntityClass>"
-                                  "  <ECEntityClass typeName='BoltElement'>"
-                                  "    <BaseClass>Element</BaseClass>"
-                                  "    <ECProperty propertyName='BoltType' typeName='string' />"
-                                  "  </ECEntityClass>"
-                                  "  <ECEntityClass typeName='ConnectionElement' modifier='Abstract' >"
-                                  "    <BaseClass>Element</BaseClass>"
-                                  "    <ECProperty propertyName='ConnectionType' typeName='string' />"
-                                  "  </ECEntityClass>"
-                                  "  <ECEntityClass typeName='SteelBeamConnectionElement'>"
-                                  "    <BaseClass>ConnectionElement</BaseClass>"
-                                  "  </ECEntityClass>"
-                                  "  <ECEntityClass typeName='PipeFlangeConnectionElement'>"
-                                  "    <BaseClass>ConnectionElement</BaseClass>"
-                                  "  </ECEntityClass>"
-                                  "  <ECRelationshipClass typeName='ElementDrivesChildElements' modifier='Abstract' strength='referencing'>"
-                                  "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Element Drives Child Elements'>"
-                                  "      <Class class='Element' />"
-                                  "    </Source>"
-                                  "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Element Drives Child Elements (Reversed)'>"
-                                  "      <Class class='Element' />"
-                                  "    </Target>"
-                                  "  </ECRelationshipClass>"
-                                  "  <ECRelationshipClass typeName='SteelBeamConnectionDrivesBolt' modifier='Sealed' strength='referencing'>"
-                                  "   <BaseClass>ElementDrivesChildElements</BaseClass>"
-                                  "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Steel Beam Connection Drives Bolt'>"
-                                  "      <Class class='SteelBeamConnectionElement' />"
-                                  "    </Source>"
-                                  "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Steel Beam Connection Drives Bolt (Reversed)'>"
-                                  "      <Class class='BoltElement' />"
-                                  "    </Target>"
-                                  "  </ECRelationshipClass>"
-                                  "  <ECRelationshipClass typeName='SteelBeamConnectionDrivesBolt2' modifier='Sealed' strength='referencing'>"
-                                  "   <BaseClass>ElementDrivesChildElements</BaseClass>"
-                                  "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Steel Beam Connection Drives Bolt'>"
-                                  "      <Class class='SteelBeamConnectionElement' />"
-                                  "    </Source>"
-                                  "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Steel Beam Connection Drives Bolt (Reversed)'>"
-                                  "      <Class class='BoltElement' />"
-                                  "    </Target>"
-                                  "  </ECRelationshipClass>"
-                                  "  <ECRelationshipClass typeName='PipeFlangeConnectionDrivesBolt' modifier='Sealed' strength='referencing'>"
-                                  "   <BaseClass>ElementDrivesChildElements</BaseClass>"
-                                  "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Pipe Flange Connection Drives Bolt'>"
-                                  "      <Class class='PipeFlangeConnectionElement' />"
-                                  "    </Source>"
-                                  "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Pipe Flange Connection Drives Bolt (Reversed)'>"
-                                  "      <Class class='BoltElement' />"
-                                  "    </Target>"
-                                  "  </ECRelationshipClass>"
-                                  "</ECSchema>")));
+                                                                                                              "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                                                              "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                                                                              "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                                                                                                              "    <ECCustomAttributes>"
+                                                                                                              "       <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                                                              "            <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                                                                              "       </ClassMap>"
+                                                                                                              "    </ECCustomAttributes>"
+                                                                                                              "    <ECProperty propertyName='Code' typeName='string' />"
+                                                                                                              "  </ECEntityClass>"
+                                                                                                              "  <ECEntityClass typeName='BoltElement'>"
+                                                                                                              "    <BaseClass>Element</BaseClass>"
+                                                                                                              "    <ECProperty propertyName='BoltType' typeName='string' />"
+                                                                                                              "  </ECEntityClass>"
+                                                                                                              "  <ECEntityClass typeName='ConnectionElement' modifier='Abstract' >"
+                                                                                                              "    <BaseClass>Element</BaseClass>"
+                                                                                                              "    <ECProperty propertyName='ConnectionType' typeName='string' />"
+                                                                                                              "  </ECEntityClass>"
+                                                                                                              "  <ECEntityClass typeName='SteelBeamConnectionElement'>"
+                                                                                                              "    <BaseClass>ConnectionElement</BaseClass>"
+                                                                                                              "  </ECEntityClass>"
+                                                                                                              "  <ECEntityClass typeName='PipeFlangeConnectionElement'>"
+                                                                                                              "    <BaseClass>ConnectionElement</BaseClass>"
+                                                                                                              "  </ECEntityClass>"
+                                                                                                              "  <ECRelationshipClass typeName='ElementDrivesChildElements' modifier='Abstract' strength='referencing'>"
+                                                                                                              "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Element Drives Child Elements'>"
+                                                                                                              "      <Class class='Element' />"
+                                                                                                              "    </Source>"
+                                                                                                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Element Drives Child Elements (Reversed)'>"
+                                                                                                              "      <Class class='Element' />"
+                                                                                                              "    </Target>"
+                                                                                                              "  </ECRelationshipClass>"
+                                                                                                              "  <ECRelationshipClass typeName='SteelBeamConnectionDrivesBolt' modifier='Sealed' strength='referencing'>"
+                                                                                                              "   <BaseClass>ElementDrivesChildElements</BaseClass>"
+                                                                                                              "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Steel Beam Connection Drives Bolt'>"
+                                                                                                              "      <Class class='SteelBeamConnectionElement' />"
+                                                                                                              "    </Source>"
+                                                                                                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Steel Beam Connection Drives Bolt (Reversed)'>"
+                                                                                                              "      <Class class='BoltElement' />"
+                                                                                                              "    </Target>"
+                                                                                                              "  </ECRelationshipClass>"
+                                                                                                              "  <ECRelationshipClass typeName='SteelBeamConnectionDrivesBolt2' modifier='Sealed' strength='referencing'>"
+                                                                                                              "   <BaseClass>ElementDrivesChildElements</BaseClass>"
+                                                                                                              "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Steel Beam Connection Drives Bolt'>"
+                                                                                                              "      <Class class='SteelBeamConnectionElement' />"
+                                                                                                              "    </Source>"
+                                                                                                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Steel Beam Connection Drives Bolt (Reversed)'>"
+                                                                                                              "      <Class class='BoltElement' />"
+                                                                                                              "    </Target>"
+                                                                                                              "  </ECRelationshipClass>"
+                                                                                                              "  <ECRelationshipClass typeName='PipeFlangeConnectionDrivesBolt' modifier='Sealed' strength='referencing'>"
+                                                                                                              "   <BaseClass>ElementDrivesChildElements</BaseClass>"
+                                                                                                              "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Pipe Flange Connection Drives Bolt'>"
+                                                                                                              "      <Class class='PipeFlangeConnectionElement' />"
+                                                                                                              "    </Source>"
+                                                                                                              "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Pipe Flange Connection Drives Bolt (Reversed)'>"
+                                                                                                              "      <Class class='BoltElement' />"
+                                                                                                              "    </Target>"
+                                                                                                              "  </ECRelationshipClass>"
+                                                                                                              "</ECSchema>")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SteelBeamConnectionElement(Code,ConnectionType) VALUES('SteelBeamConnection1','Steel')"));
@@ -1700,7 +1701,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, stealbeamConnKey.GetClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetClassId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()); //this should actually fail, but narrowing is not enforced for link tables (yet)
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());  // this should actually fail, but narrowing is not enforced for link tables (yet)
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.PipeFlangeConnectionDrivesBolt(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
@@ -1711,32 +1712,31 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    //verify equality between leaf and base rel class
+    // verify equality between leaf and base rel class
     Utf8String ecsql;
     ecsql.Sprintf("SELECT ECInstanceId, ECClassId FROM ONLY ts.ElementDrivesChildElements WHERE SourceECInstanceId=%s AND TargetECInstanceId=%s",
                   stealbeamConnKey.GetInstanceId().ToString().c_str(), bolt1Key.GetInstanceId().ToString().c_str());
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()); //For link tables ECDb doesn't enforce equality between base and leaf instances. They are standalone classes like regular classes
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());  // For link tables ECDb doesn't enforce equality between base and leaf instances. They are standalone classes like regular classes
     stmt.Finalize();
 
-    //now do polymorphic query to see whether we catch the subclass instances
+    // now do polymorphic query to see whether we catch the subclass instances
     ecsql.Sprintf("SELECT count(*) FROM ts.ElementDrivesChildElements WHERE SourceECInstanceId=%s AND TargetECInstanceId=%s",
                   stealbeamConnKey.GetInstanceId().ToString().c_str(), bolt1Key.GetInstanceId().ToString().c_str());
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(2, stmt.GetValueInt(0)); //one for SteelBeamConnectionDrivesBolt and one for SteelBeamConnectionDrivesBolt2
+    ASSERT_EQ(2, stmt.GetValueInt(0));  // one for SteelBeamConnectionDrivesBolt and one for SteelBeamConnectionDrivesBolt2
     stmt.Finalize();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipInheritanceTestFixture, AddingPropertyToLinkTableSubclass)
-    {
+TEST_F(ECRelationshipInheritanceTestFixture, AddingPropertyToLinkTableSubclass) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("narrowingsemanticsrelinheritance_linktable.ecdb",
-                                 SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                      <ECEntityClass typeName="A" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -1765,74 +1765,72 @@ TEST_F(ECRelationshipInheritanceTestFixture, AddingPropertyToLinkTableSubclass)
 
     ASSERT_FALSE(GetHelper().TableExists("LinkTableRelSub")) << "Link table subclassing always amounts to TablePerHierarachy";
 
-    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "ECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "ECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","SourceId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "SourceECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_A","ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "SourceECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","TargetId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "TargetECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_B","ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "TargetECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel", "SourceId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "SourceECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "SourceECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel", "TargetId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "TargetECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "TargetECClassId")));
 
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel", "SourceId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "SourceECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "SourceECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel", "TargetId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "TargetECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "TargetECClassId")));
 
-    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "ECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "ECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","SourceId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "SourceECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_A","ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "SourceECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","TargetId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "TargetECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_B","ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "TargetECClassId")));
-
-    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","Priority"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "Priority")));
-    }
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel", "Priority"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "Priority")));
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationships)
-    {
+TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationships) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecrelinheritance_allowduplicaterelationships.ecdb", SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-               "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-               "  <ECEntityClass typeName='A' >"
-               "    <ECProperty propertyName='Name' typeName='string' />"
-               "  </ECEntityClass>"
-               "  <ECEntityClass typeName='B' >"
-               "    <ECProperty propertyName='Code' typeName='string' />"
-               "  </ECEntityClass>"
-               "  <ECRelationshipClass typeName='BaseRel' modifier='Abstract' strength='referencing'>"
-               "    <ECCustomAttributes>"
-               "        <LinkTableRelationshipMap xmlns='ECDbMap.02.00'>"
-               "             <AllowDuplicateRelationships>True</AllowDuplicateRelationships>"
-               "        </LinkTableRelationshipMap>"
-               "    </ECCustomAttributes>"
-               "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='BaseRel'>"
-               "      <Class class='A' />"
-               "    </Source>"
-               "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='BaseRel (Reversed)'>"
-               "      <Class class='B' />"
-               "    </Target>"
-               "  </ECRelationshipClass>"
-               "  <ECRelationshipClass typeName='SubRel' modifier='Sealed' strength='referencing'>"
-               "   <BaseClass>BaseRel</BaseClass>"
-               "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='SubRel'>"
-               "      <Class class='A' />"
-               "    </Source>"
-               "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='SubRel (Reversed)'>"
-               "      <Class class='B' />"
-               "    </Target>"
-               "  </ECRelationshipClass>"
-               "</ECSchema>")));
+                                                                                                                "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                                                                                "  <ECEntityClass typeName='A' >"
+                                                                                                                "    <ECProperty propertyName='Name' typeName='string' />"
+                                                                                                                "  </ECEntityClass>"
+                                                                                                                "  <ECEntityClass typeName='B' >"
+                                                                                                                "    <ECProperty propertyName='Code' typeName='string' />"
+                                                                                                                "  </ECEntityClass>"
+                                                                                                                "  <ECRelationshipClass typeName='BaseRel' modifier='Abstract' strength='referencing'>"
+                                                                                                                "    <ECCustomAttributes>"
+                                                                                                                "        <LinkTableRelationshipMap xmlns='ECDbMap.02.00'>"
+                                                                                                                "             <AllowDuplicateRelationships>True</AllowDuplicateRelationships>"
+                                                                                                                "        </LinkTableRelationshipMap>"
+                                                                                                                "    </ECCustomAttributes>"
+                                                                                                                "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='BaseRel'>"
+                                                                                                                "      <Class class='A' />"
+                                                                                                                "    </Source>"
+                                                                                                                "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='BaseRel (Reversed)'>"
+                                                                                                                "      <Class class='B' />"
+                                                                                                                "    </Target>"
+                                                                                                                "  </ECRelationshipClass>"
+                                                                                                                "  <ECRelationshipClass typeName='SubRel' modifier='Sealed' strength='referencing'>"
+                                                                                                                "   <BaseClass>BaseRel</BaseClass>"
+                                                                                                                "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='SubRel'>"
+                                                                                                                "      <Class class='A' />"
+                                                                                                                "    </Source>"
+                                                                                                                "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='SubRel (Reversed)'>"
+                                                                                                                "      <Class class='B' />"
+                                                                                                                "    </Target>"
+                                                                                                                "  </ECRelationshipClass>"
+                                                                                                                "</ECSchema>")));
     ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
     ECInstanceKey a, b;
     {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, ECInstanceId FROM ts.A LIMIT 1"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    a = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
-    ASSERT_TRUE(a.IsValid());
-    stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, ECInstanceId FROM ts.B LIMIT 1"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    b = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
-    ASSERT_TRUE(b.IsValid());
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, ECInstanceId FROM ts.A LIMIT 1"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        a = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
+        ASSERT_TRUE(a.IsValid());
+        stmt.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, ECInstanceId FROM ts.B LIMIT 1"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        b = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
+        ASSERT_TRUE(b.IsValid());
     }
 
     ECSqlStatement stmt;
@@ -1844,12 +1842,12 @@ TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationshi
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Insert of first relationship: " << m_ecdb.GetLastError().c_str();
     stmt.Reset();
     stmt.ClearBindings();
-    //now insert same rel again.
+    // now insert same rel again.
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, a.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, a.GetClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, b.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, b.GetClassId()));
     ASSERT_NE(BE_SQLITE_DONE, stmt.Step()) << "Insert of duplicate relationship: " << m_ecdb.GetLastError().c_str();
-    }
+}
 
 END_ECDBUNITTESTS_NAMESPACE
