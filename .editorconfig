@@ -1,0 +1,45 @@
+# EditorConfig is awesome: https://EditorConfig.org
+# Cross-platform editor configuration for iModel Native
+
+# top-most EditorConfig file
+root = true
+
+# All files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C/C++ files
+[*.{c,cpp,h,hpp,cc,cxx,hxx}]
+indent_style = space
+indent_size = 4
+
+# Makefiles and shell scripts
+[{Makefile,*.mke,*.sh}]
+indent_style = tab
+
+# Python files
+[*.py]
+indent_style = space
+indent_size = 4
+
+# JavaScript/TypeScript files
+[*.{js,ts,json}]
+indent_style = space
+indent_size = 2
+
+# XML files
+[*.{xml,PartFile.xml}]
+indent_style = space
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
