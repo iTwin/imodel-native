@@ -4682,6 +4682,59 @@ public:
 // Projects the IECSqlValueIterable interface into JS.
 //! @bsiclass
 //=======================================================================================
+struct NativeECSqlRowReader : BeObjectWrap<NativeECSqlRowReader>
+    {
+    private:
+        DEFINE_CONSTRUCTOR;
+        ECDb const* m_ecdb = nullptr;
+        std::unique_ptr<ECSqlRowReader> m_queryReader;
+    public:
+        NativeECSqlRowReader(NapiInfoCR info) : BeObjectWrap<NativeECSqlRowReader>(info)
+            {
+            ECDb const* ecdb = info[0].As<Napi::External<ECDb>>().Data();
+            if (m_ecdb == nullptr)
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid first arg for NativeECSqlRowReader constructor. ECDb must not be nullptr", IModelJsNativeErrorKey::BadArg);
+            m_queryReader = std::make_unique<ECSqlRowReader>(*(m_ecdb));
+            }
+
+        ~NativeECSqlRowReader() {SetInDestructor();}
+
+        //  Create projections
+        static void Init(Napi::Env& env, Napi::Object exports)
+            {
+            Napi::HandleScope scope(env);
+            Napi::Function t = DefineClass(env, "ECSqlRowReader", {
+            InstanceMethod("step", &NativeECSqlRowReader::Step)
+            });
+
+            exports.Set("ECSqlRowReader", t);
+
+            SET_CONSTRUCTOR(t);
+            }
+
+        Napi::Object Step(NapiInfoCR info) 
+            {
+            REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
+
+            BeJsValue beJsReq(requestObj);
+            auto request = QueryRequest::Deserialize(beJsReq);
+            if(request == nullptr)
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid request object passed to Step function of NativeECSqlRowReader.", IModelJsNativeErrorKey::BadArg);
+            if(request->GetKind() != QueryRequest::Kind::ECSql)
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "Invalid request type passed to Step function of NativeECSqlRowReader. Expected an ECSql request.", IModelJsNativeErrorKey::BadArg);
+            auto resp = m_queryReader->Step(request->GetAsConst<ECSqlRequest>());
+            if(resp->GetKind() == QueryResponse::Kind::BlobIO)
+                THROW_JS_IMODEL_NATIVE_EXCEPTION(info.Env(), "BlobIO response is not supported from Step function of NativeECSqlRowReader. Something went wrong", IModelJsNativeErrorKey::BadArg);
+            Napi::Object jsResp = Napi::Object::New(info.Env());
+            JsInterop::HandleQueryResponseToJson(info.Env(), jsResp, resp);
+            return jsResp;
+            }
+    };
+
+//=======================================================================================
+// Projects the IECSqlValueIterable interface into JS.
+//! @bsiclass
+//=======================================================================================
 struct NativeECSqlValueIterator : BeObjectWrap<NativeECSqlValueIterator>
     {
     private:
