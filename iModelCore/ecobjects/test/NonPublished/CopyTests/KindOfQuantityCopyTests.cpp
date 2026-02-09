@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 
 #include "../../ECObjectsTestPCH.h"
 #include "../../TestFixture/TestFixture.h"
@@ -13,29 +13,27 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct KindOfQuantityCopyTest : ECTestFixture {};
 
-void copyKOQ_TargetRefSchemasAreUsedToLookUpReferencedUnitsAndFormats(ECSchemaCP testSchemaSource, ECSchemaP testSchemaTarget, ECSchemaP unitsSchemaTarget, bool copyReferences)
-    {
+void copyKOQ_TargetRefSchemasAreUsedToLookUpReferencedUnitsAndFormats(ECSchemaCP testSchemaSource, ECSchemaP testSchemaTarget, ECSchemaP unitsSchemaTarget, bool copyReferences) {
     testSchemaTarget->AddReferencedSchema(*unitsSchemaTarget);
     KindOfQuantityCP koqSource = testSchemaSource->GetKindOfQuantityCP("myLength");
     KindOfQuantityP koqTarget;
     ASSERT_EQ(ECObjectsStatus::Success, testSchemaTarget->CopyKindOfQuantity(koqTarget, *koqSource, false));
-    
+
     auto const unitTarget = koqTarget->GetPersistenceUnit();
     ASSERT_NE(nullptr, unitTarget);
     ASSERT_STREQ(unitsSchemaTarget->GetFullSchemaName().c_str(), unitTarget->GetSchema().GetFullSchemaName().c_str());
     auto const presentationTarget = koqTarget->GetDefaultPresentationFormat();
     ASSERT_NE(nullptr, presentationTarget);
     ASSERT_STREQ(unitsSchemaTarget->GetFullSchemaName().c_str(), presentationTarget->GetParentFormat()->GetSchema().GetFullSchemaName().c_str());
-    
+
     auto const presentationSource = koqSource->GetDefaultPresentationFormat();
     ASSERT_NE(presentationSource, presentationTarget);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(KindOfQuantityCopyTest, TargetRefSchemasAreUsedToLookUpReferencedUnitsAndFormats)
-    {
+TEST_F(KindOfQuantityCopyTest, TargetRefSchemasAreUsedToLookUpReferencedUnitsAndFormats) {
     Utf8CP unitsSchema = R"**(
         <ECSchema schemaName="TestUnits" alias="tu" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <UnitSystem typeName="SI" />
@@ -70,7 +68,6 @@ TEST_F(KindOfQuantityCopyTest, TargetRefSchemasAreUsedToLookUpReferencedUnitsAnd
     auto schemaContextTarget = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(unitsSchemaTarget, unitsXmlTarget, *schemaContextTarget));
 
-
     // Copy References set to false
     ECSchemaPtr testSchemaTarget;
     ECSchema::CreateSchema(testSchemaTarget, "testSchema", "ts", 1, 0, 0);
@@ -95,32 +92,30 @@ TEST_F(KindOfQuantityCopyTest, TargetRefSchemasAreUsedToLookUpReferencedUnitsAnd
     // The referenced schema is a different major version
     ECSchema::CreateSchema(testSchemaTarget, "testSchema", "ts", 1, 0, 0);
     copyKOQ_TargetRefSchemasAreUsedToLookUpReferencedUnitsAndFormats(testSchemaSource.get(), testSchemaTarget.get(), units2SchemaTarget.get(), false);
-    }
+}
 
-void copyKOQ_LocallyDefinedUnitAndFormatRefsAreCopiedProperly (ECSchemaCP sourceSchema, ECSchemaP targetSchema, Utf8CP testCase)
-    {
+void copyKOQ_LocallyDefinedUnitAndFormatRefsAreCopiedProperly(ECSchemaCP sourceSchema, ECSchemaP targetSchema, Utf8CP testCase) {
     KindOfQuantityCP koqSource = sourceSchema->GetKindOfQuantityCP("myLength");
     KindOfQuantityP koqTarget;
     ASSERT_EQ(ECObjectsStatus::NotFound, targetSchema->CopyKindOfQuantity(koqTarget, *koqSource, false)) << testCase;
-    ASSERT_EQ(nullptr, targetSchema->GetKindOfQuantityCP("myLength")) << testCase; // Ensure failed copy removed partial KOQ
+    ASSERT_EQ(nullptr, targetSchema->GetKindOfQuantityCP("myLength")) << testCase;  // Ensure failed copy removed partial KOQ
 
     ASSERT_EQ(ECObjectsStatus::Success, targetSchema->CopyKindOfQuantity(koqTarget, *koqSource, true)) << testCase;
 
     ASSERT_EQ(0, targetSchema->GetReferencedSchemas().size()) << testCase;
-    
+
     auto const unitTarget = koqTarget->GetPersistenceUnit();
     ASSERT_NE(nullptr, unitTarget) << testCase;
     ASSERT_NE(sourceSchema, &unitTarget->GetSchema()) << testCase;
     auto const presentationTarget = koqTarget->GetDefaultPresentationFormat();
     ASSERT_NE(nullptr, presentationTarget) << testCase;
     ASSERT_NE(sourceSchema, &presentationTarget->GetParentFormat()->GetSchema()) << testCase;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(KindOfQuantityCopyTest, LocallyDefinedUnitAndFormatRefsAreCopiedProperly)
-    {
+TEST_F(KindOfQuantityCopyTest, LocallyDefinedUnitAndFormatRefsAreCopiedProperly) {
     Utf8CP schemaString = R"**(
         <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <UnitSystem typeName="SI" />
@@ -151,7 +146,7 @@ TEST_F(KindOfQuantityCopyTest, LocallyDefinedUnitAndFormatRefsAreCopiedProperly)
     KindOfQuantityP koqTarget;
     ASSERT_EQ(ECObjectsStatus::Success, someOtherSchema->CopyKindOfQuantity(koqTarget, *koqSource, false));
     ASSERT_EQ(1, someOtherSchema->GetReferencedSchemas().size());
-    
+
     auto unitTarget = koqTarget->GetPersistenceUnit();
     ASSERT_NE(nullptr, unitTarget);
     ASSERT_STREQ(sourceSchema->GetFullSchemaName().c_str(), unitTarget->GetSchema().GetFullSchemaName().c_str());
@@ -165,20 +160,19 @@ TEST_F(KindOfQuantityCopyTest, LocallyDefinedUnitAndFormatRefsAreCopiedProperly)
     ASSERT_EQ(ECObjectsStatus::Success, someOtherSchema2->CopyKindOfQuantity(koqTarget, *koqSource, true));
 
     ASSERT_EQ(0, someOtherSchema2->GetReferencedSchemas().size());
-    
+
     unitTarget = koqTarget->GetPersistenceUnit();
     ASSERT_NE(nullptr, unitTarget);
     ASSERT_STREQ(someOtherSchema2->GetFullSchemaName().c_str(), unitTarget->GetSchema().GetFullSchemaName().c_str());
     presentationTarget = koqTarget->GetDefaultPresentationFormat();
     ASSERT_NE(nullptr, presentationTarget);
     ASSERT_STREQ(someOtherSchema2->GetFullSchemaName().c_str(), presentationTarget->GetParentFormat()->GetSchema().GetFullSchemaName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity)
-    {
+TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity) {
     ECSchemaPtr sourceSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(sourceSchema, "TestSchema", "ts", 1, 0, 0));
 
@@ -209,7 +203,7 @@ TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity)
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
 
     EXPECT_STREQ("M", targetKoq->GetPersistenceUnit()->GetName().c_str());
-    
+
     const auto& formats = targetKoq->GetPresentationFormats();
     EXPECT_EQ(2, formats.size());
 
@@ -220,13 +214,12 @@ TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity)
     EXPECT_EQ(ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), formats.at(1).GetParentFormat());
     EXPECT_NE(nullptr, formats.at(1).GetCompositeMajorUnit());
     EXPECT_EQ(ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), formats.at(1).GetCompositeMajorUnit());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity_NoPresentationFormats)
-    {
+TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity_NoPresentationFormats) {
     ECSchemaPtr sourceSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(sourceSchema, "TestSchema", "ts", 1, 0, 0));
 
@@ -251,13 +244,12 @@ TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity_NoPresentationFormats)
     EXPECT_STREQ("M", targetKoq->GetPersistenceUnit()->GetName().c_str());
     EXPECT_FALSE(targetKoq->HasPresentationFormats());
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity_PersistenceUnitDefinedInSchema)
-    {
+TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity_PersistenceUnitDefinedInSchema) {
     ECSchemaPtr sourceSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(sourceSchema, "TestSchema", "ts", 1, 0, 0));
 
@@ -292,14 +284,12 @@ TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity_PersistenceUnitDefinedInSchema
     ASSERT_TRUE(nullptr != targetSmoot);
     EXPECT_STREQ(koq->GetPersistenceUnit()->GetName().c_str(), targetKoq->GetPersistenceUnit()->GetName().c_str());
     EXPECT_NE(koq->GetPersistenceUnit(), targetSmoot);
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity_UnitAndFormaDefinedInSchemaHasSameNameAsReferencedUsedInKOQ)
-    {
+TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity_UnitAndFormaDefinedInSchemaHasSameNameAsReferencedUsedInKOQ) {
     ECSchemaPtr sourceSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(sourceSchema, "TestSchema", "ts", 1, 0, 0));
     const auto unitsSchema = ECTestFixture::GetUnitsSchema();
@@ -316,7 +306,6 @@ TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity_UnitAndFormaDefinedInSchemaHas
 
     sourceSchema->AddReferencedSchema(*unitsSchema);
     sourceSchema->AddReferencedSchema(*formatSchema);
-
 
     KindOfQuantityP koq;
     ECUnitP meterDupe;
@@ -350,21 +339,19 @@ TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity_UnitAndFormaDefinedInSchemaHas
     const auto targetFormats = targetKoq->GetPresentationFormats();
     ASSERT_EQ(2, targetFormats.size());
 
-    for (auto targetFormat : targetFormats)
-        {
+    for (auto targetFormat : targetFormats) {
         ASSERT_STREQ(formatSchema->GetFullSchemaName().c_str(), targetFormat.GetParentFormat()->GetSchema().GetFullSchemaName().c_str());
         if (!targetFormat.GetParentFormat()->GetName().Equals("DefaultRealU"))
             targetFormat = *targetFormat.GetParentFormat();
         ASSERT_EQ(1, targetFormat.GetCompositeUnitCount()) << targetFormat.GetName().c_str();
-        ASSERT_STREQ(unitsSchema->GetFullSchemaName().c_str(), (static_cast<ECUnitCP> (targetFormat.GetCompositeMajorUnit()))->GetSchema().GetFullSchemaName().c_str());
-        }
+        ASSERT_STREQ(unitsSchema->GetFullSchemaName().c_str(), (static_cast<ECUnitCP>(targetFormat.GetCompositeMajorUnit()))->GetSchema().GetFullSchemaName().c_str());
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity_PresentationFormatDefinedInSchema)
-    {
+TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity_PresentationFormatDefinedInSchema) {
     ECSchemaPtr sourceSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(sourceSchema, "TestSchema", "ts", 1, 0, 0));
 
@@ -402,13 +389,12 @@ TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantity_PresentationFormatDefinedInSch
     EXPECT_STREQ("SMOOT_FORMAT[SMOOT_SQUARED]", targetKoq->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_TRUE(targetKoq->HasPresentationFormats());
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantityIncludingReferences)
-    {
+TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantityIncludingReferences) {
     Utf8CP schemaString = R"(
         <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -441,13 +427,12 @@ TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantityIncludingReferences)
     EXPECT_EQ(schemaCopyTo->GetUnitCP("Unit"), schemaCopyTo->GetKindOfQuantityCP("KindOfQuantity")->GetPersistenceUnit());
 
     EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantityWithReferencedPresentationUnitSchema)
-    {
+TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantityWithReferencedPresentationUnitSchema) {
     Utf8CP referenceSchemaString = R"(
         <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -490,13 +475,12 @@ TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantityWithReferencedPresentationUnitS
 
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *referenceSchema));
     EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantityWithReferencedSourceSchema)
-    {
+TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantityWithReferencedSourceSchema) {
     Utf8CP schemaString = R"(
         <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -528,6 +512,6 @@ TEST_F(KindOfQuantityCopyTest, CopyKindOfQuantityWithReferencedSourceSchema)
     EXPECT_EQ(schemaCopyFrom->GetUnitCP("Unit"), schemaCopyTo->GetKindOfQuantityCP("KindOfQuantity")->GetPersistenceUnit());
 
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "PerformanceTestFixture.h"
 
@@ -12,20 +12,17 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct UnitsPerformanceTest : PerformanceTestFixture {};
 
-void GetUnitsByName(SchemaUnitContextCR context, bvector<Utf8String>& unitNames)
-    {
-    for (auto const& unitName : unitNames)
-        {
+void GetUnitsByName(SchemaUnitContextCR context, bvector<Utf8String>& unitNames) {
+    for (auto const& unitName : unitNames) {
         auto unit = context.LookupUnit(unitName.c_str());
         ASSERT_TRUE(unit != nullptr) << "Failed to get unit: " << unitName;
-        }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsPerformanceTest, LoadUnitsSchema)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UnitsPerformanceTest, LoadUnitsSchema) {
     StopWatch timer("Load Units Schema", false);
 
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -47,13 +44,12 @@ TEST_F(UnitsPerformanceTest, LoadUnitsSchema)
     PERFORMANCELOG.infov("Time to load the Standard Units Schema with %lu units: %.17g", unitsSchema->GetUnitCount(), timer.GetElapsedSeconds());
 
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), 1, "Loading the Units Schema");
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsPerformanceTest, GetEveryUnitByName)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UnitsPerformanceTest, GetEveryUnitByName) {
     StopWatch timer("Get every unit by name", false);
 
     SchemaUnitContextCR context = GetUnitsSchema()->GetUnitsContext();
@@ -76,44 +72,40 @@ TEST_F(UnitsPerformanceTest, GetEveryUnitByName)
     PERFORMANCELOG.infov("Time to get %lu units by name: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
 
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), 1, "Get all Unit names from the Standard Units Schema");
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsPerformanceTest, GenerateEveryConversionValue)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UnitsPerformanceTest, GenerateEveryConversionValue) {
     StopWatch timer("Evaluate every unit", false);
-    
+
     bvector<Units::PhenomenonCP> allPhenomena;
     GetUnitsSchema()->GetUnitsContext().AllPhenomena(allPhenomena);
 
     int numConversions = 0;
     timer.Start();
-    for (auto const& phenomenon : allPhenomena)
-        {
+    for (auto const& phenomenon : allPhenomena) {
         if (!phenomenon->HasUnits())
             continue;
         Units::UnitCP firstUnit = *phenomenon->GetUnits().begin();
-        for (auto const& unit : phenomenon->GetUnits())
-            {
+        for (auto const& unit : phenomenon->GetUnits()) {
             double converted;
             firstUnit->Convert(converted, 42, unit);
             ASSERT_FALSE(BeNumerical::BeIsnan(converted)) << "Generated conversion factor is invalid from " << firstUnit->GetName() << " to " << unit->GetName();
             ++numConversions;
-            }
         }
+    }
     timer.Stop();
     PERFORMANCELOG.infov("Time to Generate %d conversion factors: %.17g", numConversions, timer.GetElapsedSeconds());
 
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), 1, "Generate conversion factors for all Units within the Phenomena");
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsPerformanceTest, ConvertManyValues)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UnitsPerformanceTest, ConvertManyValues) {
     StopWatch timer("Do Many Conversions", false);
     SchemaUnitContextCR context = GetUnitsSchema()->GetUnitsContext();
     ECUnitCP unitA = context.LookupUnit("CUB_M_PER_SQ_M_DAY");
@@ -129,6 +121,6 @@ TEST_F(UnitsPerformanceTest, ConvertManyValues)
     PERFORMANCELOG.infov("Time to convert between %s and %s %d times: %.15g", unitA->GetName().c_str(), unitB->GetName().c_str(), numTimes, timer.GetElapsedSeconds());
 
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), numTimes, "Convert between two units. (Conversion is not cached)");
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

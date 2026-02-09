@@ -1,19 +1,18 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 #include <ctype.h>
 #include <regex>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-ECObjectsStatus SchemaParseUtils::ParseBooleanXmlString(bool& booleanValue, Utf8CP booleanString)
-    {
+ECObjectsStatus SchemaParseUtils::ParseBooleanXmlString(bool& booleanValue, Utf8CP booleanString) {
     if (0 == BeStringUtilities::StricmpAscii(booleanString, ECXML_TRUE))
         booleanValue = true;
     else if (0 == BeStringUtilities::StricmpAscii(booleanString, ECXML_FALSE))
@@ -22,85 +21,76 @@ ECObjectsStatus SchemaParseUtils::ParseBooleanXmlString(bool& booleanValue, Utf8
         return ECObjectsStatus::ParseError;
 
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-ECObjectsStatus SchemaParseUtils::ParseCardinalityString(uint32_t &lowerLimit, uint32_t &upperLimit, Utf8StringCR cardinalityString)
-    {
+ECObjectsStatus SchemaParseUtils::ParseCardinalityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR cardinalityString) {
     // Note to future maintainers: the code in this function can lead to semantically incorrect parsing of a
     // cardinality string (see unit tests for examples). "Fixing" the function could potentially cause more
     // problems than it fixes so it has been decided that the function will be left alone.
     ECObjectsStatus status = ECObjectsStatus::Success;
-    if (0 == cardinalityString.compare("1"))
-        {
+    if (0 == cardinalityString.compare("1")) {
         lowerLimit = 1;
         upperLimit = 1;
         return status;
-        }
+    }
 
     if ((0 == cardinalityString.compare("UNBOUNDED")) || (0 == cardinalityString.compare("Unbounded")) ||
-             (0 == cardinalityString.compare("unbounded")) || (0 == cardinalityString.compare("n")) ||
-             (0 == cardinalityString.compare("N")))
-        {
+        (0 == cardinalityString.compare("unbounded")) || (0 == cardinalityString.compare("n")) ||
+        (0 == cardinalityString.compare("N"))) {
         lowerLimit = 0;
         upperLimit = INT_MAX;
         return status;
-        }
+    }
 
     Utf8String cardinalityWithoutSpaces = cardinalityString;
     cardinalityWithoutSpaces.erase(std::remove_if(cardinalityWithoutSpaces.begin(), cardinalityWithoutSpaces.end(), ::isspace), cardinalityWithoutSpaces.end());
     size_t openParenIndex = cardinalityWithoutSpaces.find('(');
-    if (openParenIndex == std::string::npos)
-        {
+    if (openParenIndex == std::string::npos) {
         if (0 == Utf8String::Sscanf_safe(cardinalityWithoutSpaces.c_str(), "%d", &upperLimit))
             return ECObjectsStatus::ParseError;
         lowerLimit = 0;
         return status;
-        }
+    }
 
-    if (openParenIndex != 0 && cardinalityWithoutSpaces.find(')') != cardinalityWithoutSpaces.length() - 1)
-        {
+    if (openParenIndex != 0 && cardinalityWithoutSpaces.find(')') != cardinalityWithoutSpaces.length() - 1) {
         LOG.errorv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
         return ECObjectsStatus::ParseError;
-        }
+    }
 
     int scanned = Utf8String::Sscanf_safe(cardinalityWithoutSpaces.c_str(), "(%d,%d)", &lowerLimit, &upperLimit);
     if (2 == scanned)
         return ECObjectsStatus::Success;
 
-    if (0 == scanned)
-        {
+    if (0 == scanned) {
         LOG.errorv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
         return ECObjectsStatus::ParseError;
-        }
+    }
 
     // Otherwise, we just assume the upper limit is 'n' or 'N' and is unbounded
     upperLimit = INT_MAX;
     return status;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-ECObjectsStatus SchemaParseUtils::ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString)
-    {
-    if (Utf8String::IsNullOrEmpty(typeString.c_str()))
-        {
+ECObjectsStatus SchemaParseUtils::ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString) {
+    if (Utf8String::IsNullOrEmpty(typeString.c_str())) {
         LOG.error("Unable to parse CustomAttributeContianerType from input string because it is empty");
         return ECObjectsStatus::ParseError;
-        }
+    }
 
     bvector<Utf8String> typeTokens;
     BeStringUtilities::Split(typeString.c_str(), ",;|", typeTokens);
 
     containerType = static_cast<CustomAttributeContainerType>(0);
 
-    for (Utf8StringCR typeToken : typeTokens)
-        {
+    for (Utf8StringCR typeToken : typeTokens) {
         if (typeToken.empty())
             continue;
 
@@ -136,22 +126,20 @@ ECObjectsStatus SchemaParseUtils::ParseContainerString(CustomAttributeContainerT
             containerType = containerType | CustomAttributeContainerType::AnyRelationshipConstraint;
         else if (typeToken.EqualsI("Any"))
             containerType = CustomAttributeContainerType::Any;
-        else
-            {
+        else {
             LOG.errorv("'%s' is not a valid CustomAttributeContainerType value.", typeToken.c_str());
             return ECObjectsStatus::ParseError;
-            }
         }
-
-    return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+    return ECObjectsStatus::Success;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-ECObjectsStatus SchemaParseUtils::ParseDirectionString(ECRelatedInstanceDirection& direction, Utf8StringCR directionString)
-    {
+ECObjectsStatus SchemaParseUtils::ParseDirectionString(ECRelatedInstanceDirection& direction, Utf8StringCR directionString) {
     if (0 == directionString.length())
         return ECObjectsStatus::ParseError;
     if (0 == directionString.CompareToI(ECXML_DIRECTION_BACKWARD))
@@ -162,31 +150,27 @@ ECObjectsStatus SchemaParseUtils::ParseDirectionString(ECRelatedInstanceDirectio
         return ECObjectsStatus::ParseError;
 
     return ECObjectsStatus::Success;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-ECObjectsStatus SchemaParseUtils::ParseXmlFullyQualifiedName(Utf8StringR alias, Utf8StringR typeName, Utf8StringCR stringToParse)
-    {
-    if (0 == stringToParse.length())
-        {
+ECObjectsStatus SchemaParseUtils::ParseXmlFullyQualifiedName(Utf8StringR alias, Utf8StringR typeName, Utf8StringCR stringToParse) {
+    if (0 == stringToParse.length()) {
         return ECObjectsStatus::ParseError;
-        }
+    }
 
     Utf8String::size_type colonIndex = stringToParse.find(':');
-    if (Utf8String::npos == colonIndex)
-        {
+    if (Utf8String::npos == colonIndex) {
         alias.clear();
         typeName = stringToParse;
         return ECObjectsStatus::Success;
-        }
+    }
 
-    if (stringToParse.length() == colonIndex + 1)
-        {
+    if (stringToParse.length() == colonIndex + 1) {
         return ECObjectsStatus::ParseError;
-        }
+    }
 
     if (0 == colonIndex)
         alias.clear();
@@ -196,31 +180,29 @@ ECObjectsStatus SchemaParseUtils::ParseXmlFullyQualifiedName(Utf8StringR alias, 
     typeName = stringToParse.substr(colonIndex + 1);
 
     return ECObjectsStatus::Success;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-ECObjectsStatus SchemaParseUtils::ParseModifierXmlString(ECClassModifier& modifier, Utf8StringCR modifierString)
-    {
+ECObjectsStatus SchemaParseUtils::ParseModifierXmlString(ECClassModifier& modifier, Utf8StringCR modifierString) {
     if (0 == modifierString.CompareToI(MODIFIER_ABSTRACT))
         modifier = ECClassModifier::Abstract;
     else if (0 == modifierString.CompareToI(MODIFIER_SEALED))
         modifier = ECClassModifier::Sealed;
     else if (0 == modifierString.CompareToI(MODIFIER_NONE))
         modifier = ECClassModifier::None;
-    else
-        {
+    else {
         LOG.errorv("Invalid value for Modifier attribute: %s.", modifierString.c_str());
         return ECObjectsStatus::ParseError;
-        }
-    return ECObjectsStatus::Success;
     }
+    return ECObjectsStatus::Success;
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 // static
 //
 // Prior to EC3.2 multiplicity strings were parsed with scanf using the format string "(%d..%d)" and would "pass" if the first integer was parsed
@@ -230,41 +212,36 @@ ECObjectsStatus SchemaParseUtils::ParseModifierXmlString(ECClassModifier& modifi
 //      "(3banana)"
 // Would all be parsed as if they were "(3..*)". For schemas with ECVersion 3.2 or later, this bug was fixed and the restrictions on valid
 // multiplicity strings were tightened. The ParseLegacyMultiplicityString method exists solely for comparability with old EC versions.
-ECObjectsStatus SchemaParseUtils::ParseLegacyMultiplicityString(uint32_t &lowerLimit, uint32_t &upperLimit, Utf8StringCR multiplicityString)
-    {
+ECObjectsStatus SchemaParseUtils::ParseLegacyMultiplicityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString) {
     ECObjectsStatus status = ECObjectsStatus::Success;
 
     Utf8String multiplicityWithoutSpaces = multiplicityString;
     multiplicityWithoutSpaces.erase(std::remove_if(multiplicityWithoutSpaces.begin(), multiplicityWithoutSpaces.end(), ::isspace), multiplicityWithoutSpaces.end());
 
     size_t openParenIndex = multiplicityWithoutSpaces.find('(');
-    if (openParenIndex == std::string::npos
-        || (openParenIndex != 0 && multiplicityWithoutSpaces.find(')') != multiplicityWithoutSpaces.length() - 1))
-        {
+    if (openParenIndex == std::string::npos || (openParenIndex != 0 && multiplicityWithoutSpaces.find(')') != multiplicityWithoutSpaces.length() - 1)) {
         LOG.errorv("Multiplicity string '%s' is invalid.", multiplicityString.c_str());
         return ECObjectsStatus::ParseError;
-        }
+    }
 
     int scanned = Utf8String::Sscanf_safe(multiplicityWithoutSpaces.c_str(), "(%d..%d)", &lowerLimit, &upperLimit);
     if (2 == scanned)
         return ECObjectsStatus::Success;
 
-    if (0 == scanned)
-        {
+    if (0 == scanned) {
         LOG.errorv("Multiplicity string '%s' is invalid.", multiplicityString.c_str());
         return ECObjectsStatus::ParseError;
-        }
+    }
 
     // Otherwise, we just assume the upper limit is '*' and is unbounded
     upperLimit = INT_MAX;
     return status;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus SchemaParseUtils::ParseMultiplicityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString)
-    {
+ECObjectsStatus SchemaParseUtils::ParseMultiplicityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString) {
     static std::regex rgx("\\(([0-9]+)\\s*\\.\\.\\s*([0-9]+|\\*)\\)", std::regex::optimize);
     // For the multiplicity string in the form (lowerLimit..upperLimit) described by the above regex string.
     // match[0] : entire string
@@ -272,28 +249,26 @@ ECObjectsStatus SchemaParseUtils::ParseMultiplicityString(uint32_t& lowerLimit, 
     // match[2] : upperLimit
     std::cmatch match;
 
-    if (!std::regex_match(multiplicityString.c_str(), match, rgx))
-        {
+    if (!std::regex_match(multiplicityString.c_str(), match, rgx)) {
         LOG.errorv("Multiplicity string '%s' is invalid.", multiplicityString.c_str());
         return ECObjectsStatus::ParseError;
-        }
+    }
 
     lowerLimit = (uint32_t)BeStringUtilities::ParseUInt64(match[1].str().c_str());
     upperLimit = match[2].str() == "*" ? INT_MAX : (uint32_t)BeStringUtilities::ParseUInt64(match[2].str().c_str());
 
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-ECObjectsStatus SchemaParseUtils::ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName)
-    {
+ECObjectsStatus SchemaParseUtils::ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName) {
     if (typeName.empty())
         return ECObjectsStatus::ParseError;
 
-    if (typeName.EqualsIAscii (EC_PRIMITIVE_TYPENAME_STRING))
+    if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_STRING))
         primitiveType = PRIMITIVETYPE_String;
     else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_INTEGER))
         primitiveType = PRIMITIVETYPE_Integer;
@@ -321,14 +296,13 @@ ECObjectsStatus SchemaParseUtils::ParsePrimitiveType(PrimitiveType& primitiveTyp
         return ECObjectsStatus::ParseError;
 
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-ECObjectsStatus SchemaParseUtils::ParseStrengthType(StrengthType& strength, Utf8StringCR strengthString)
-    {
+ECObjectsStatus SchemaParseUtils::ParseStrengthType(StrengthType& strength, Utf8StringCR strengthString) {
     if (0 == strengthString.length())
         return ECObjectsStatus::ParseError;
     if (0 == strengthString.CompareToI(ECXML_STRENGTH_EMBEDDING))
@@ -341,104 +315,91 @@ ECObjectsStatus SchemaParseUtils::ParseStrengthType(StrengthType& strength, Utf8
         return ECObjectsStatus::ParseError;
 
     return ECObjectsStatus::Success;
-    }
+}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-----
-bool SchemaParseUtils::IsFullSchemaNameFormatValidForVersion(Utf8CP schemaFullName, uint32_t xmlMajorVersion, uint32_t xmlMinorVersion)
-    {
+bool SchemaParseUtils::IsFullSchemaNameFormatValidForVersion(Utf8CP schemaFullName, uint32_t xmlMajorVersion, uint32_t xmlMinorVersion) {
     if (Utf8String::IsNullOrEmpty(schemaFullName))
         return false;
 
-    Utf8CP firstDot = strchr (schemaFullName, '.');
+    Utf8CP firstDot = strchr(schemaFullName, '.');
     if (Utf8String::IsNullOrEmpty(firstDot))
         return false;
 
-    static const auto countDots = [](Utf8CP versionString) -> int
-        {
+    static const auto countDots = [](Utf8CP versionString) -> int {
         int count = 0;
-        const int maxVersionSize = 10; //If we somehow got a non terminated string the max a version can be is xx.xx.xx\0
+        const int maxVersionSize = 10;  // If we somehow got a non terminated string the max a version can be is xx.xx.xx\0
         int iter = 0;
-        while (versionString[iter] != '\0' && iter < maxVersionSize)
-            {
+        while (versionString[iter] != '\0' && iter < maxVersionSize) {
             if (versionString[iter] == '.')
                 ++count;
             ++iter;
-            }
+        }
         return count;
-        };
+    };
 
     SchemaKey key;
-    auto dots = countDots(firstDot+1);
-    if ((xmlMajorVersion >= 3 && xmlMinorVersion >= 2) || xmlMajorVersion > 3)
-        {
+    auto dots = countDots(firstDot + 1);
+    if ((xmlMajorVersion >= 3 && xmlMinorVersion >= 2) || xmlMajorVersion > 3) {
         if (dots < 2)
             return false;
-        }
-    else
-        {
+    } else {
         if (dots < 1)
             return false;
-        }
-    return true;
     }
+    return true;
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-Utf8CP SchemaParseUtils::DirectionToXmlString(ECRelatedInstanceDirection direction)
-    {
-    switch (direction)
-        {
+Utf8CP SchemaParseUtils::DirectionToXmlString(ECRelatedInstanceDirection direction) {
+    switch (direction) {
         case ECRelatedInstanceDirection::Forward:
             return ECXML_DIRECTION_FORWARD;
         case ECRelatedInstanceDirection::Backward:
             return ECXML_DIRECTION_BACKWARD;
         default:
             return EMPTY_STRING;
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-Utf8CP SchemaParseUtils::DirectionToJsonString(ECRelatedInstanceDirection direction)
-    {
-    switch (direction)
-        {
+Utf8CP SchemaParseUtils::DirectionToJsonString(ECRelatedInstanceDirection direction) {
+    switch (direction) {
         case ECRelatedInstanceDirection::Forward:
             return ECJSON_DIRECTION_FORWARD;
         case ECRelatedInstanceDirection::Backward:
             return ECJSON_DIRECTION_BACKWARD;
         default:
             return EMPTY_STRING;
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-Utf8CP SchemaParseUtils::ModifierToString(ECClassModifier modifier)
-    {
+Utf8CP SchemaParseUtils::ModifierToString(ECClassModifier modifier) {
     if (ECClassModifier::Abstract == modifier)
         return MODIFIER_ABSTRACT;
     if (ECClassModifier::Sealed == modifier)
         return MODIFIER_SEALED;
     return MODIFIER_NONE;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-Utf8CP SchemaParseUtils::PrimitiveTypeToString(PrimitiveType primitiveType)
-    {
-    switch (primitiveType)
-        {
+Utf8CP SchemaParseUtils::PrimitiveTypeToString(PrimitiveType primitiveType) {
+    switch (primitiveType) {
         case PRIMITIVETYPE_Binary:
             return EC_PRIMITIVE_TYPENAME_BINARY;
         case PRIMITIVETYPE_Boolean:
@@ -461,18 +422,16 @@ Utf8CP SchemaParseUtils::PrimitiveTypeToString(PrimitiveType primitiveType)
             return EC_PRIMITIVE_TYPENAME_IGEOMETRY;
         default:
             return EMPTY_STRING;
-        }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-Utf8CP SchemaParseUtils::StrengthToXmlString(StrengthType strength)
-    {
-    switch (strength)
-        {
-        case StrengthType::Referencing :
+Utf8CP SchemaParseUtils::StrengthToXmlString(StrengthType strength) {
+    switch (strength) {
+        case StrengthType::Referencing:
             return ECXML_STRENGTH_REFERENCING;
         case StrengthType::Holding:
             return ECXML_STRENGTH_HOLDING;
@@ -480,18 +439,16 @@ Utf8CP SchemaParseUtils::StrengthToXmlString(StrengthType strength)
             return ECXML_STRENGTH_EMBEDDING;
         default:
             return EMPTY_STRING;
-        }
     }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
 // static
-Utf8CP SchemaParseUtils::StrengthToJsonString(StrengthType strength)
-    {
-    switch (strength)
-        {
-        case StrengthType::Referencing :
+Utf8CP SchemaParseUtils::StrengthToJsonString(StrengthType strength) {
+    switch (strength) {
+        case StrengthType::Referencing:
             return ECJSON_STRENGTH_REFERENCING;
         case StrengthType::Holding:
             return ECJSON_STRENGTH_HOLDING;
@@ -499,17 +456,15 @@ Utf8CP SchemaParseUtils::StrengthToJsonString(StrengthType strength)
             return ECJSON_STRENGTH_EMBEDDING;
         default:
             return EMPTY_STRING;
-        }
     }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
 // static
-Utf8CP SchemaParseUtils::SchemaElementTypeToString(ECSchemaElementType elementType)
-    {
-    switch (elementType)
-        {
+Utf8CP SchemaParseUtils::SchemaElementTypeToString(ECSchemaElementType elementType) {
+    switch (elementType) {
         case ECSchemaElementType::ECClass:
             return EC_CLASS_ELEMENT;
         case ECSchemaElementType::ECEnumeration:
@@ -528,50 +483,44 @@ Utf8CP SchemaParseUtils::SchemaElementTypeToString(ECSchemaElementType elementTy
             return INVERTED_UNIT_ELEMENT;
         case ECSchemaElementType::Constant:
             return CONSTANT_ELEMENT;
-        }
+    }
 
     return EMPTY_STRING;
-    }
+}
 
-static void SetOrAppendValue(Utf8StringR str, Utf8CP val)
-    {
+static void SetOrAppendValue(Utf8StringR str, Utf8CP val) {
     if (Utf8String::IsNullOrEmpty(str.c_str()))
         str = val;
-    else
-        {
+    else {
         str.append(", ");
         str.append(val);
-        }
     }
+}
 
-static bool TestValue(CustomAttributeContainerType compareType, CustomAttributeContainerType& myType)
-    {
+static bool TestValue(CustomAttributeContainerType compareType, CustomAttributeContainerType& myType) {
     if (compareType == (compareType & myType))
         return true;
     return false;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-Utf8String SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType containerType)
-    {
+Utf8String SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType containerType) {
     Utf8String str;
 
-    if (TestValue(CustomAttributeContainerType::Any, containerType))
-        {
+    if (TestValue(CustomAttributeContainerType::Any, containerType)) {
         str = "Any";
         return str;
-        }
+    }
 
     if (TestValue(CustomAttributeContainerType::Schema, containerType))
         SetOrAppendValue(str, "Schema");
 
     if (TestValue(CustomAttributeContainerType::AnyClass, containerType))
         SetOrAppendValue(str, "AnyClass");
-    else
-        {
+    else {
         if (TestValue(CustomAttributeContainerType::EntityClass, containerType))
             SetOrAppendValue(str, "EntityClass");
         if (TestValue(CustomAttributeContainerType::CustomAttributeClass, containerType))
@@ -580,12 +529,11 @@ Utf8String SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType 
             SetOrAppendValue(str, "StructClass");
         if (TestValue(CustomAttributeContainerType::RelationshipClass, containerType))
             SetOrAppendValue(str, "RelationshipClass");
-        }
+    }
 
     if (TestValue(CustomAttributeContainerType::AnyProperty, containerType))
         SetOrAppendValue(str, "AnyProperty");
-    else
-        {
+    else {
         if (TestValue(CustomAttributeContainerType::PrimitiveProperty, containerType))
             SetOrAppendValue(str, "PrimitiveProperty");
         if (TestValue(CustomAttributeContainerType::StructProperty, containerType))
@@ -596,27 +544,25 @@ Utf8String SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType 
             SetOrAppendValue(str, "StructArrayProperty");
         if (TestValue(CustomAttributeContainerType::NavigationProperty, containerType))
             SetOrAppendValue(str, "NavigationProperty");
-        }
+    }
 
     if (TestValue(CustomAttributeContainerType::AnyRelationshipConstraint, containerType))
         SetOrAppendValue(str, "AnyRelationshipConstraint");
-    else
-        {
+    else {
         if (TestValue(CustomAttributeContainerType::SourceRelationshipConstraint, containerType))
             SetOrAppendValue(str, "SourceRelationshipConstraint");
         if (TestValue(CustomAttributeContainerType::TargetRelationshipConstraint, containerType))
             SetOrAppendValue(str, "TargetRelationshipConstraint");
-        }
+    }
 
     return str;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-Utf8String SchemaParseUtils::MultiplicityToLegacyString(RelationshipMultiplicity multiplicity)
-    {
+Utf8String SchemaParseUtils::MultiplicityToLegacyString(RelationshipMultiplicity multiplicity) {
     Utf8Char legacyString[32];
 
     if (multiplicity.IsUpperLimitUnbounded())
@@ -625,14 +571,13 @@ Utf8String SchemaParseUtils::MultiplicityToLegacyString(RelationshipMultiplicity
         BeStringUtilities::Snprintf(legacyString, "(%d,%d)", multiplicity.GetLowerLimit(), multiplicity.GetUpperLimit());
 
     return legacyString;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-Utf8String SchemaParseUtils::GetJsonFormatString(NamedFormatCR format, ECSchemaCR primarySchema)
-    {
+Utf8String SchemaParseUtils::GetJsonFormatString(NamedFormatCR format, ECSchemaCR primarySchema) {
     Utf8String name;
     Nullable<int32_t> precision;
     bvector<Utf8String> unitNames;
@@ -643,54 +588,48 @@ Utf8String SchemaParseUtils::GetJsonFormatString(NamedFormatCR format, ECSchemaC
     auto& parentSchema = format.GetParentFormat()->GetSchema();
     Utf8String qualifiedFormatName = parentSchema.GetName() + "." + name;
 
-    if (precision.IsValid())
-        {
+    if (precision.IsValid()) {
         qualifiedFormatName += "(";
         qualifiedFormatName += std::to_string(precision.Value()).c_str();
         qualifiedFormatName += ")";
-        }
+    }
 
-    for(int i = 0; i < unitNames.size(); i++)
-        {
+    for (int i = 0; i < unitNames.size(); i++) {
         qualifiedFormatName += "[";
         qualifiedFormatName += ECJsonUtilities::ECNameToJsonName(*primarySchema.LookupUnit(unitNames[i].c_str()));
 
-        if (unitLabels[i].IsValid()) // We want to override a label
-            {
+        if (unitLabels[i].IsValid())  // We want to override a label
+        {
             qualifiedFormatName += "|";
             qualifiedFormatName += unitLabels[i].Value();
-            }
-        qualifiedFormatName += "]";
         }
-    return qualifiedFormatName;
+        qualifiedFormatName += "]";
     }
+    return qualifiedFormatName;
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
 // static
-ECObjectsStatus SchemaParseUtils::ParseName(Utf8StringR alias, Utf8StringR itemName, Utf8StringCR stringToParse)
-    {
-    if (0 == stringToParse.length())
-        {
+ECObjectsStatus SchemaParseUtils::ParseName(Utf8StringR alias, Utf8StringR itemName, Utf8StringCR stringToParse) {
+    if (0 == stringToParse.length()) {
         LOG.error("Failed to parse an alias and schema item name from a qualified name because the string is empty.");
         return ECObjectsStatus::ParseError;
-        }
+    }
 
     Utf8String::size_type colonIndex = stringToParse.find(':');
-    if (Utf8String::npos == colonIndex)
-        {
+    if (Utf8String::npos == colonIndex) {
         alias.clear();
         itemName = stringToParse;
         return ECObjectsStatus::Success;
-        }
+    }
 
-    if (stringToParse.length() == colonIndex + 1)
-        {
+    if (stringToParse.length() == colonIndex + 1) {
         LOG.errorv("Failed to parse an alias and schema item name from the qualified name '%s' because the string ends with a colon. There must be characters after the colon.",
-            stringToParse.c_str());
+                   stringToParse.c_str());
         return ECObjectsStatus::ParseError;
-        }
+    }
 
     if (0 == colonIndex)
         alias.clear();
@@ -700,6 +639,6 @@ ECObjectsStatus SchemaParseUtils::ParseName(Utf8StringR alias, Utf8StringR itemN
     itemName = stringToParse.substr(colonIndex + 1);
 
     return ECObjectsStatus::Success;
-    }
+}
 
 END_BENTLEY_ECOBJECT_NAMESPACE

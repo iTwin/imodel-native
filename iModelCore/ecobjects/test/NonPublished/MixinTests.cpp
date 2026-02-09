@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -9,13 +9,12 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct MixinTest : ECTestFixture { };
+struct MixinTest : ECTestFixture {};
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, MixinClassMayOnlyHaveMixinAsBaseClass_AddBaseClass)
-    {
+TEST_F(MixinTest, MixinClassMayOnlyHaveMixinAsBaseClass_AddBaseClass) {
     ECSchemaPtr schema;
     ECEntityClassP entity0;
     ECEntityClassP entity1;
@@ -32,18 +31,16 @@ TEST_F(MixinTest, MixinClassMayOnlyHaveMixinAsBaseClass_AddBaseClass)
     schema->CreateMixinClass(mixin0, "Mixin0", *entity0, *schemaContext);
     schema->CreateMixinClass(mixin1, "Mixin1", *entity0, *schemaContext);
 
-
     ASSERT_EQ(ECObjectsStatus::BaseClassUnacceptable, mixin0->AddBaseClass(*entity1)) << "Should fail when adding an entity class as a base class for a mixin";
     ASSERT_EQ(ECObjectsStatus::Success, mixin0->AddBaseClass(*mixin1)) << "Should succeed when adding a mixin class as a base class for a mixin";
     ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*mixin0)) << "Should be able to add a mixin as a base class of a normal class if applies to constraint is met";
     ASSERT_EQ(ECObjectsStatus::BaseClassUnacceptable, entity2->AddBaseClass(*mixin0)) << "Shoudl not be able to add a mixin as a base class of a normal class if applies to constraint is not met";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, MixinClassMayOnlyOneBaseClass_AddBaseClass)
-    {
+TEST_F(MixinTest, MixinClassMayOnlyOneBaseClass_AddBaseClass) {
     ECSchemaPtr schema;
     ECEntityClassP entity0;
     ECEntityClassP mixin0;
@@ -59,13 +56,12 @@ TEST_F(MixinTest, MixinClassMayOnlyOneBaseClass_AddBaseClass)
 
     ASSERT_EQ(ECObjectsStatus::Success, mixin0->AddBaseClass(*mixin1)) << "Should succeed when adding a mixin class as a base class for a mixin";
     ASSERT_EQ(ECObjectsStatus::BaseClassUnacceptable, mixin0->AddBaseClass(*mixin2)) << "Should not be able to add mixin as a base class because the mixin already has a base class.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, MixinClassMayOnlyOneBaseClass_XmlDeserialization)
-    {
+TEST_F(MixinTest, MixinClassMayOnlyOneBaseClass_XmlDeserialization) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
@@ -99,13 +95,12 @@ TEST_F(MixinTest, MixinClassMayOnlyOneBaseClass_XmlDeserialization)
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseClass)
-    {
+TEST_F(MixinTest, MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseClass) {
     ECSchemaPtr schema;
     ECEntityClassP entity0;
     ECEntityClassP entity1;
@@ -126,18 +121,16 @@ TEST_F(MixinTest, MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseCla
     schema->CreateMixinClass(mixin2, "Mixin2", *entity2, *schemaContext);
     schema->CreateMixinClass(mixin3, "Mixin3", *entity1, *schemaContext);
 
-
     ASSERT_EQ(ECObjectsStatus::BaseClassUnacceptable, mixin0->AddBaseClass(*mixin1)) << "Should fail when adding mixin as base class when mixins have 'AppliesTo' constraints that are not in the same hierarchy";
     ASSERT_EQ(ECObjectsStatus::BaseClassUnacceptable, mixin1->AddBaseClass(*mixin2)) << "Should fail when adding mixin as base class when base mixin has 'AppliesTo' constraint which derives from derived mixin 'AppliesTo' constraint";
     ASSERT_EQ(ECObjectsStatus::Success, mixin2->AddBaseClass(*mixin1)) << "Should succeed when adding mixin as base class when base mixin has 'AppliesTo' constaint which is a base class for the derived mixins 'AppliesTo' constraint";
     ASSERT_EQ(ECObjectsStatus::Success, mixin1->AddBaseClass(*mixin3)) << "Shoudl succeed when adding mixin as base class when both mixins have the same 'AppliesTo' constraint";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, MixinClassMayOnlyHaveMixinAsBaseClass_XmlDeserialization)
-    {
+TEST_F(MixinTest, MixinClassMayOnlyHaveMixinAsBaseClass_XmlDeserialization) {
     Utf8CP schemaXmlBad = R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="BadTestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
@@ -215,7 +208,8 @@ TEST_F(MixinTest, MixinClassMayOnlyHaveMixinAsBaseClass_XmlDeserialization)
         </ECEntityClass>
     </ECSchema>)xml";
 
-    Utf8CP schemaXmlGood3 = "<ECSchema schemaName='GoodTestSchema3' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    Utf8CP schemaXmlGood3 =
+        "<ECSchema schemaName='GoodTestSchema3' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
         "  <ECEntityClass typeName='Equipment'  modifier='Abstract'>"
         "      <ECProperty propertyName='Code' typeName='string' />"
@@ -265,13 +259,12 @@ TEST_F(MixinTest, MixinClassMayOnlyHaveMixinAsBaseClass_XmlDeserialization)
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(ecSchema, schemaXmlGood, *schemaContext)) << "Deserialization should succeed because 'Mixin0' as a mixin class as a base class";
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(ecSchema, schemaXmlGood2, *schemaContext)) << "Deserialization should succeed";
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(ecSchema, schemaXmlGood3, *schemaContext)) << "Deserialization should succeed";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, MixinBaseClassMustHaveCompatibleAppliesToConstraint_XmlDeserialization)
-    {
+TEST_F(MixinTest, MixinBaseClassMustHaveCompatibleAppliesToConstraint_XmlDeserialization) {
     Utf8CP schemaXmlBad0 = R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
@@ -350,13 +343,12 @@ TEST_F(MixinTest, MixinBaseClassMustHaveCompatibleAppliesToConstraint_XmlDeseria
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(ecSchema, schemaXmlBad0, *schemaContext)) << "Deserialization should fail when a mixin has base class and mixins have 'AppliesTo' constraints that are not in the same hierarchy";
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(ecSchema, schemaXmlBad1, *schemaContext)) << "Deserialization should fail when a mixin has base class and base mixin has 'AppliesTo' constraint which derives from derived mixin 'AppliesTo' constraint";
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(ecSchema, schemaXmlGood, *schemaContext)) << "Deserialization should succeed when a mixin has base class and base mixin has 'AppliesTo' constaint which is a base class for the derived mixins 'AppliesTo' constraint";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, IsMixinReturnsTrueOnlyForClassWithAttributeLocallyDefined)
-    {
+TEST_F(MixinTest, IsMixinReturnsTrueOnlyForClassWithAttributeLocallyDefined) {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     SchemaKey key = SchemaKey("CoreCustomAttributes", 1, 0, 0);
     ECSchemaPtr coreCA = context->LocateSchema(key, SchemaMatchType::LatestWriteCompatible);
@@ -388,13 +380,12 @@ TEST_F(MixinTest, IsMixinReturnsTrueOnlyForClassWithAttributeLocallyDefined)
     IECInstancePtr mixinCA1 = isMixinClass->GetDefaultStandaloneEnabler()->CreateInstance();
     candiedPecans->SetCustomAttribute(*mixinCA1);
     EXPECT_TRUE(candiedPecans->IsMixin()) << "The class 'CandiedPecans' returned false to IsMixin but the IsMixin custom attribute is applied locally";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, TestMixinClass)
-    {
+TEST_F(MixinTest, TestMixinClass) {
     ECSchemaPtr ecSchema;
     ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
 
@@ -424,13 +415,12 @@ TEST_F(MixinTest, TestMixinClass)
     notSupportedClass->AddBaseClass(*classA);
 
     EXPECT_TRUE(notSupportedClass->CanApply(*mixinClass)) << "The ECEntityClass '" << notSupportedClass->GetFullName() << "' does not support the mixin class '" << mixinClass->GetFullName() << "' even though it is now derived from the appliesTo class.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, TestMixinClassInReferencedSchema)
-    {
+TEST_F(MixinTest, TestMixinClassInReferencedSchema) {
     ECSchemaPtr ecSchema;
     ECSchemaPtr schemaWithMixin;
     ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
@@ -459,13 +449,12 @@ TEST_F(MixinTest, TestMixinClassInReferencedSchema)
     classA->AddBaseClass(*baseClass);
 
     EXPECT_TRUE(classA->CanApply(*mixinClass)) << "The ECEntityClass '" << classA->GetFullName() << "' does not support the mixin class '" << mixinClass->GetFullName() << "' even though it is the appliesTo class in the mixin.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, TestFailureWhenMixinClassHasCircular)
-    {
+TEST_F(MixinTest, TestFailureWhenMixinClassHasCircular) {
     ECSchemaPtr ecSchema;
     ECSchemaPtr refSchema;
 
@@ -482,13 +471,12 @@ TEST_F(MixinTest, TestFailureWhenMixinClassHasCircular)
     ecSchema->CreateMixinClass(mixinClass, "Mixin", *appliesTo, *schemaContext);
 
     EXPECT_FALSE(appliesTo->CanApply(*mixinClass)) << "This should be false since the mixin class '" << mixinClass->GetFullName() << "' already references the schema " << refSchema->GetFullSchemaName().c_str() << " and adding the class as a mixin to the '" << appliesTo->GetFullName() << "' class would create a circular reference.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint)
-    {
+TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint) {
     ECSchemaPtr maceSchema;
     ECSchema::CreateSchema(maceSchema, "MixinsAsConstraintEndpoints", "MACE", 1, 9, 92);
 
@@ -505,14 +493,12 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint)
 
     ECRelationshipClassP relClassWithMixin;
     maceSchema->CreateRelationshipClass(relClassWithMixin, "MixinRel", *mixinSource, "Source", *mixinSource, "Target");
-    EXPECT_EQ(ECObjectsStatus::BaseClassUnacceptable, relClassWithMixin->AddBaseClass(*baseRelClass)) <<
-        "Should not have been able to add base relationship because target constraint is a mixin whose apply to constraint isn't compatible with the base relationship";
+    EXPECT_EQ(ECObjectsStatus::BaseClassUnacceptable, relClassWithMixin->AddBaseClass(*baseRelClass)) << "Should not have been able to add base relationship because target constraint is a mixin whose apply to constraint isn't compatible with the base relationship";
 
     relClassWithMixin->GetTarget().RemoveConstraintClasses();
     relClassWithMixin->GetTarget().AddClass(*baseTargetConstraint);
-    EXPECT_EQ(ECObjectsStatus::Success, relClassWithMixin->AddBaseClass(*baseRelClass)) << 
-        "Should have been able to add base relationship because source constraint is a mixin whose apply to constraint is compatible with the base constraint";
-    
+    EXPECT_EQ(ECObjectsStatus::Success, relClassWithMixin->AddBaseClass(*baseRelClass)) << "Should have been able to add base relationship because source constraint is a mixin whose apply to constraint is compatible with the base constraint";
+
     ECEntityClassP sourceConstraint;
     maceSchema->CreateEntityClass(sourceConstraint, "Source");
     sourceConstraint->AddBaseClass(*baseSourceConstraint);
@@ -523,23 +509,21 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint)
 
     ECRelationshipClassP relClass2;
     maceSchema->CreateRelationshipClass(relClass2, "MixinRel2", *mixinSource2, "Source2", *baseTargetConstraint, "Target");
-    EXPECT_EQ(ECObjectsStatus::Success, relClass2->AddBaseClass(*relClassWithMixin)) << 
-        "Should have been able to add base rel because source constraint is a mixin whose applies to constraint narrows the base constraint";
+    EXPECT_EQ(ECObjectsStatus::Success, relClass2->AddBaseClass(*relClassWithMixin)) << "Should have been able to add base rel because source constraint is a mixin whose applies to constraint narrows the base constraint";
 
     // TODO: if the base constraint class is a mixin then the derived mixin must sub class it
-    //ECEntityClassP mixinSource3;
-    //maceSchema->CreateMixinClass(mixinSource3, "MixinSource3", *baseSourceConstraint, *schemaContext);
-    //ECRelationshipClassP relClass3;
-    //maceSchema->CreateRelationshipClass(relClass3, "MixinRel3", *mixinSource3, "Source3", *baseTargetConstraint, "Target");
-    //EXPECT_EQ(ECObjectsStatus::BaseClassUnacceptable, relClass2->AddBaseClass(*relClassWithMixin)) <<
+    // ECEntityClassP mixinSource3;
+    // maceSchema->CreateMixinClass(mixinSource3, "MixinSource3", *baseSourceConstraint, *schemaContext);
+    // ECRelationshipClassP relClass3;
+    // maceSchema->CreateRelationshipClass(relClass3, "MixinRel3", *mixinSource3, "Source3", *baseTargetConstraint, "Target");
+    // EXPECT_EQ(ECObjectsStatus::BaseClassUnacceptable, relClass2->AddBaseClass(*relClassWithMixin)) <<
     //    "Should not have been able to add base rel because source constraint is a mixin whose applies to constraint narrows the base constraint";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByMixinInheritance)
-    {
+TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByMixinInheritance) {
     ECSchemaPtr maceSchema;
     ECSchema::CreateSchema(maceSchema, "MixinsAsConstraintEndpoints", "MACE", 2, 0, 01);
 
@@ -559,29 +543,24 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByMixinInheritance)
 
     ECRelationshipClassP relClassWithMixin;
     maceSchema->CreateRelationshipClass(relClassWithMixin, "MixinRel", *mixinSource2, "Source", *baseTargetConstraint, "Target");
-    EXPECT_EQ(ECObjectsStatus::Success, relClassWithMixin->AddBaseClass(*baseRelClass)) <<
-        "Should have been able to add base relationship because source constraint is a mixin whose apply to constraint is compatible with the base constraint";
-
+    EXPECT_EQ(ECObjectsStatus::Success, relClassWithMixin->AddBaseClass(*baseRelClass)) << "Should have been able to add base relationship because source constraint is a mixin whose apply to constraint is compatible with the base constraint";
 
     ECRelationshipClassP relClass2;
     maceSchema->CreateRelationshipClass(relClass2, "MixinRel2", *mixinSource, "Source2", *baseTargetConstraint, "Target");
     // TODO: if the base constraint class is a mixin then the derived mixin must sub class it
-    //EXPECT_EQ(ECObjectsStatus::BaseClassUnacceptable, relClass2->AddBaseClass(*relClassWithMixin)) <<
+    // EXPECT_EQ(ECObjectsStatus::BaseClassUnacceptable, relClass2->AddBaseClass(*relClassWithMixin)) <<
     //    "Should not have been able to add base rel because source constraint is a mixin which is a base class of the base source constraint mixin";
 
     relClassWithMixin->RemoveBaseClass(*baseRelClass);
     relClass2->RemoveBaseClass(*relClassWithMixin);
     relClass2->AddBaseClass(*baseRelClass);
-    EXPECT_EQ(ECObjectsStatus::Success, relClassWithMixin->AddBaseClass(*relClass2)) <<
-        "Should have been able to add base relationship because source constraint is a mixin that derives from the base constraint class";
-
-    }
+    EXPECT_EQ(ECObjectsStatus::Success, relClassWithMixin->AddBaseClass(*relClass2)) << "Should have been able to add base relationship because source constraint is a mixin that derives from the base constraint class";
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint_XmlDeserialization)
-    {
+TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint_XmlDeserialization) {
     Utf8CP schemaXmlBad = R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
           <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
@@ -666,18 +645,16 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint_XmlD
         </ECSchema>
         )xml";
 
-
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr ecSchema;
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(ecSchema, schemaXmlBad, *schemaContext)) << "Deserialization should fail because 'Mixin1' applies to 'Entity2' but is used on a constraint which must narrow 'Entity0'";
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(ecSchema, schemaXmlGood, *schemaContext)) << "Deserialization should succeed because 'Mixin0' applies to 'Entity1' but is used on a constraint which must narrow 'Entity0', 'Entity1' derives from 'Entity0'";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MixinTest, SerializeStandaloneMixin)
-    {
+TEST_F(MixinTest, SerializeStandaloneMixin) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
@@ -697,7 +674,6 @@ TEST_F(MixinTest, SerializeStandaloneMixin)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE
-

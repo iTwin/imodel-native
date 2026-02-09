@@ -1,10 +1,9 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
-
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -15,8 +14,7 @@ struct InstanceQuantityTests : ECTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(InstanceQuantityTests, GetQuantityFromDoubleWithKoqDefined)
-    {
+TEST_F(InstanceQuantityTests, GetQuantityFromDoubleWithKoqDefined) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Pipe">
@@ -54,14 +52,12 @@ TEST_F(InstanceQuantityTests, GetQuantityFromDoubleWithKoqDefined)
     ASSERT_EQ(ECObjectsStatus::Success, instance->GetQuantity(oq, "LengthArray", 0));
     ASSERT_EQ(42, oq.GetMagnitude()) << "LengthArray";
     ASSERT_STREQ("CM", oq.GetUnitName()) << "LengthArray";
-
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(InstanceQuantityTests, GetQuantityFromUnsupportedProperties)
-    {
+TEST_F(InstanceQuantityTests, GetQuantityFromUnsupportedProperties) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Pipe">
@@ -96,7 +92,6 @@ TEST_F(InstanceQuantityTests, GetQuantityFromUnsupportedProperties)
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("StringHasKOQ", vs));
     ASSERT_EQ(ECObjectsStatus::DataTypeNotSupported, instance->GetQuantity(q, "StringHasKOQ"));
 
-
     ASSERT_EQ(ECObjectsStatus::PropertyNotFound, instance->GetQuantity(q, "NotAPropertyNameArray", 1));
     ASSERT_EQ(ECObjectsStatus::PropertyHasNoKindOfQuantity, instance->GetQuantity(q, "DoubleArrayNoKOQ", 1));
 
@@ -113,13 +108,12 @@ TEST_F(InstanceQuantityTests, GetQuantityFromUnsupportedProperties)
     ECValue vas("Banana");
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetValue("StringArrayHasKOQ", vas, 1));
     ASSERT_EQ(ECObjectsStatus::DataTypeNotSupported, instance->GetQuantity(q, "StringArrayHasKOQ", 1));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(InstanceQuantityTests, SetQuantityToDoubleWithKoqDefined)
-    {
+TEST_F(InstanceQuantityTests, SetQuantityToDoubleWithKoqDefined) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Pipe">
@@ -151,7 +145,6 @@ TEST_F(InstanceQuantityTests, SetQuantityToDoubleWithKoqDefined)
     ASSERT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, instance->SetQuantity("Length", Units::Quantity(42, *acreUnit)));
     ASSERT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, instance->SetQuantity("Length", Units::Quantity()));
 
-
     ASSERT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("LengthArray", 3));
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetQuantity("LengthArray", q, 2));
     ASSERT_EQ(ECObjectsStatus::Success, instance->GetQuantity(oq, "LengthArray", 2));
@@ -160,13 +153,12 @@ TEST_F(InstanceQuantityTests, SetQuantityToDoubleWithKoqDefined)
 
     ASSERT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, instance->SetQuantity("LengthArray", Units::Quantity(42, *acreUnit), 2));
     ASSERT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, instance->SetQuantity("LengthArray", Units::Quantity(), 2));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(InstanceQuantityTests, SetQuantityToUnsupportedProperties)
-    {
+TEST_F(InstanceQuantityTests, SetQuantityToUnsupportedProperties) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Pipe">
@@ -197,7 +189,6 @@ TEST_F(InstanceQuantityTests, SetQuantityToUnsupportedProperties)
     ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, instance->SetQuantity("IntHasKOQ", q));
     ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, instance->SetQuantity("StringHasKOQ", q));
 
-
     ASSERT_EQ(ECObjectsStatus::PropertyNotFound, instance->SetQuantity("NotAPropertyNameArray", q, 0));
     ASSERT_EQ(ECObjectsStatus::PropertyHasNoKindOfQuantity, instance->SetQuantity("DoubleArrayNoKOQ", q, 0));
 
@@ -205,6 +196,5 @@ TEST_F(InstanceQuantityTests, SetQuantityToUnsupportedProperties)
     ASSERT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("StringArrayHasKOQ", 1));
     ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, instance->SetQuantity("IntArrayHasKOQ", q, 0));
     ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, instance->SetQuantity("StringArrayHasKOQ", q, 0));
-    }
+}
 END_BENTLEY_ECN_TEST_NAMESPACE
-

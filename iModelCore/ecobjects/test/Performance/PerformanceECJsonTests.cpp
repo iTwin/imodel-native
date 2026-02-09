@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "PerformanceTestFixture.h"
 
@@ -11,85 +11,73 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct PerformanceTestsECJson : PerformanceTestFixture
-{
+struct PerformanceTestsECJson : PerformanceTestFixture {
+    void SerializeSchemaToJson(ECSchemaPtr schema, bool useDescription = true) {
+        size_t repeats = PerformanceTestFixture::MinimumRepeats;
+        std::vector<double> results;
 
-void SerializeSchemaToJson(ECSchemaPtr schema, bool useDescription = true)
-    {
-    size_t repeats = PerformanceTestFixture::MinimumRepeats;
-    std::vector<double> results; 
+        for (size_t i = 0; i < repeats; i++) {
+            StopWatch serializationTimer("Serialization to JSON", true);
+            BeJsDocument schemaJson;
+            EXPECT_TRUE(schema->WriteToJsonValue(schemaJson));
+            serializationTimer.Stop();
+            results.push_back(serializationTimer.GetElapsedSeconds());
 
-    for(size_t i = 0; i < repeats; i++)
-        {
-        StopWatch serializationTimer("Serialization to JSON", true);
-        BeJsDocument schemaJson;
-        EXPECT_TRUE(schema->WriteToJsonValue(schemaJson));
-        serializationTimer.Stop();
-        results.push_back(serializationTimer.GetElapsedSeconds());
-
-        if(i == 0)
-            { //after the first run, recalculate number of repeats
-            repeats = CalculateNumberOfRepeats(results[0]);
+            if (i == 0) {  // after the first run, recalculate number of repeats
+                repeats = CalculateNumberOfRepeats(results[0]);
             }
         }
 
-    double median;
-    Utf8String resultJson = GenerateResultJson(results, median);
-    LOGPERFDB(TEST_FIXTURE_NAME, (useDescription ? schema->GetDescription().c_str() : schema->GetFullSchemaName().c_str()), median, resultJson.c_str());
+        double median;
+        Utf8String resultJson = GenerateResultJson(results, median);
+        LOGPERFDB(TEST_FIXTURE_NAME, (useDescription ? schema->GetDescription().c_str() : schema->GetFullSchemaName().c_str()), median, resultJson.c_str());
     }
 
-void SerializeBisSchemaToJson(WString schemaPath)
-    {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false, true);
-    schemaContext->AddSchemaPath(GetAssetsGDataPath({L"ECSchemas", L"ECDb"}).c_str());
-    schemaContext->AddSchemaPath(GetAssetsGDataPath({L"ECSchemas", L"Dgn"}).c_str());
-    schemaContext->AddSchemaPath(GetAssetsGDataPath({L"ECSchemas", L"Domain"}).c_str());
-    ECSchemaPtr schema;
-    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, schemaPath.c_str(), *schemaContext)) << schemaPath.c_str();
+    void SerializeBisSchemaToJson(WString schemaPath) {
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false, true);
+        schemaContext->AddSchemaPath(GetAssetsGDataPath({L"ECSchemas", L"ECDb"}).c_str());
+        schemaContext->AddSchemaPath(GetAssetsGDataPath({L"ECSchemas", L"Dgn"}).c_str());
+        schemaContext->AddSchemaPath(GetAssetsGDataPath({L"ECSchemas", L"Domain"}).c_str());
+        ECSchemaPtr schema;
+        EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, schemaPath.c_str(), *schemaContext)) << schemaPath.c_str();
 
-    SerializeSchemaToJson(schema, false);
+        SerializeSchemaToJson(schema, false);
     }
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceTestsECJson, SerializeFlatSchemasToJson)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceTestsECJson, SerializeFlatSchemasToJson) {
     SerializeSchemaToJson(GenerateSchema20000Classes1PropsPerClass());
     SerializeSchemaToJson(GenerateSchema2000Classes10PropsPerClass());
     SerializeSchemaToJson(GenerateSchema100Classes200PropsPerClass());
     SerializeSchemaToJson(GenerateSchema10Classes2000PropsPerClass());
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceTestsECJson, SerializeDeepHierarchySchemasToJson)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceTestsECJson, SerializeDeepHierarchySchemasToJson) {
     ECSchemaReadContextPtr schemaContext1 = ECSchemaReadContext::CreateContext();
     SerializeSchemaToJson(GenerateSchema10Root15Deep3Mixin5PropsAndOverrides(schemaContext1));
 
     ECSchemaReadContextPtr schemaContext2 = ECSchemaReadContext::CreateContext();
     SerializeSchemaToJson(GenerateSchema300Root3Deep200Props(schemaContext2));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceTestsECJson, SerializeWithCustomAttributes)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceTestsECJson, SerializeWithCustomAttributes) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SerializeSchemaToJson(GenerateSchema50Root5Deep3Mixin5Props(schemaContext));
-    }
-
+}
 
 //-------------------------------------------------------------------------------------
 //* @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceTestsECJson, SerializeBisSchemas)
-    {
-
+TEST_F(PerformanceTestsECJson, SerializeBisSchemas) {
     SerializeBisSchemaToJson(GetStandardsPath(L"Units.01.00.09.ecschema.xml"));
     SerializeBisSchemaToJson(GetStandardsPath(L"Formats.01.00.00.ecschema.xml"));
 
@@ -109,6 +97,6 @@ TEST_F(PerformanceTestsECJson, SerializeBisSchemas)
     SerializeBisSchemaToJson(GetAssetsGSchemaPath(L"Domain", L"CifSubsurface.ecschema.xml"));
     SerializeBisSchemaToJson(GetAssetsGSchemaPath(L"Domain", L"CifSubsurfaceConflictAnalysis.ecschema.xml"));
     SerializeBisSchemaToJson(GetAssetsGSchemaPath(L"Domain", L"CifUnits.ecschema.xml"));
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

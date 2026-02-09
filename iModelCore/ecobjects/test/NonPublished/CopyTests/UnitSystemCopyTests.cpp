@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 
 #include "../../ECObjectsTestPCH.h"
 #include "../../TestFixture/TestFixture.h"
@@ -18,8 +18,7 @@ struct UnitSystemCopyTest : ECTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(UnitSystemCopyTest, BasicCopy)
-    {
+TEST_F(UnitSystemCopyTest, BasicCopy) {
     ECSchemaPtr ecSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(ecSchema, "Dole", "d", 42, 42, 42));
     UnitSystemP system;
@@ -34,13 +33,12 @@ TEST_F(UnitSystemCopyTest, BasicCopy)
     EXPECT_STREQ(system->GetName().c_str(), targetSystem->GetName().c_str());
     EXPECT_STREQ(system->GetDisplayLabel().c_str(), targetSystem->GetDisplayLabel().c_str());
     EXPECT_STREQ(system->GetDescription().c_str(), targetSystem->GetDescription().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(UnitSystemCopyTest, NameConflict)
-    {
+TEST_F(UnitSystemCopyTest, NameConflict) {
     ECSchemaPtr ecSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(ecSchema, "Dole", "d", 42, 42, 42));
     UnitSystemP doleSystem;
@@ -57,5 +55,5 @@ TEST_F(UnitSystemCopyTest, NameConflict)
     EXPECT_STREQ("Banana", targetSystem->GetName().c_str());
     EXPECT_STREQ("Del Monte Banana!", targetSystem->GetDisplayLabel().c_str());
     EXPECT_STREQ("Measurements used for Bananas at Del Monte", targetSystem->GetDescription().c_str());
-    }
+}
 END_BENTLEY_ECN_TEST_NAMESPACE

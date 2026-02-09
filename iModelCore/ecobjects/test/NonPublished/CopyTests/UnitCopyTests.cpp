@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 
 #include "../../ECObjectsTestPCH.h"
 #include "../../TestFixture/TestFixture.h"
@@ -15,8 +15,7 @@ struct UnitCopyTest : ECTestFixture {};
 
 // NOTE: A lot of testing is done through copy tests for entire schemas and schema items which reference units
 
-void validateUnitAttributes(ECUnitCP expected, ECUnitCP actual)
-    {
+void validateUnitAttributes(ECUnitCP expected, ECUnitCP actual) {
     EXPECT_STREQ(expected->GetName().c_str(), actual->GetName().c_str());
     // NOTE: This is true today but won't always be true when we properly update definition when references are not copied.
     EXPECT_STREQ(expected->GetDefinition().c_str(), actual->GetDefinition().c_str());
@@ -25,13 +24,12 @@ void validateUnitAttributes(ECUnitCP expected, ECUnitCP actual)
     EXPECT_EQ(expected->GetDenominator(), actual->GetDenominator());
     EXPECT_EQ(expected->GetNumerator(), actual->GetNumerator());
     EXPECT_EQ(expected->GetOffset(), actual->GetOffset());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(UnitCopyTest, BasicCopy)
-    {
+TEST_F(UnitCopyTest, BasicCopy) {
     ECSchemaPtr ecSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(ecSchema, "Dole", "d", 42, 42, 42));
     PhenomenonP phen;
@@ -73,17 +71,15 @@ TEST_F(UnitCopyTest, BasicCopy)
     EXPECT_EQ(system, targetSuperSmidgePerSmidgeInv->GetUnitSystem());
     EXPECT_EQ(smidgePerSuperSmidge, targetSuperSmidgePerSmidgeInv->GetInvertingUnit());
 
-
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(targetSchema, "Dole", "d", 43, 44, 45));
     EXPECT_EQ(ECObjectsStatus::NotFound, targetSchema->CopyUnit(targetSuperSmidgePerSmidgeInv, *superSmidgePerSmidgeInv, false));
     EXPECT_EQ(nullptr, targetSchema->GetUnitCP("InverseSuperSmidgePerSmidge"));
-
 
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(targetSchema, "Chiquita", "c", 1, 2, 3));
     EC_ASSERT_SUCCESS(targetSchema->CopyUnit(targetSuperSmidgePerSmidgeInv, *superSmidgePerSmidgeInv, true));
     validateUnitAttributes(superSmidgePerSmidgeInv, targetSuperSmidgePerSmidgeInv);
     EXPECT_EQ(0, targetSchema->GetReferencedSchemas().size());
-    EXPECT_EQ(2, targetSchema->GetUnitCount());      // NOTE: Should be 4, units referenced via the definition are not currently copied, they should be copied when copyReferences is true 
+    EXPECT_EQ(2, targetSchema->GetUnitCount());        // NOTE: Should be 4, units referenced via the definition are not currently copied, they should be copied when copyReferences is true
     EXPECT_EQ(1, targetSchema->GetPhenomenonCount());  // NOTE: Should be 2, phen referenced via the definition are not currently copied, they should be copied when copyReferences is true
     EXPECT_EQ(1, targetSchema->GetUnitSystemCount());
     EXPECT_NE(bananaSlope, targetSuperSmidgePerSmidgeInv->GetPhenomenon());
@@ -92,19 +88,18 @@ TEST_F(UnitCopyTest, BasicCopy)
 
     EC_ASSERT_SUCCESS(targetSchema->CopyUnit(targetSmidge, *smidgen, true));
     EXPECT_EQ(0, targetSchema->GetReferencedSchemas().size());
-    EXPECT_EQ(3, targetSchema->GetUnitCount());      // NOTE: this is a base unit so it does not need to copy any references based on it's definition
+    EXPECT_EQ(3, targetSchema->GetUnitCount());  // NOTE: this is a base unit so it does not need to copy any references based on it's definition
     EXPECT_EQ(2, targetSchema->GetPhenomenonCount());
     EXPECT_EQ(1, targetSchema->GetUnitSystemCount());
     validateUnitAttributes(smidgen, targetSmidge);
     EXPECT_NE(phen, targetSmidge->GetPhenomenon());
     EXPECT_NE(system, targetSmidge->GetUnitSystem());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(UnitCopyTest, NameConflict)
-    {
+TEST_F(UnitCopyTest, NameConflict) {
     ECSchemaPtr ecSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(ecSchema, "Dole", "d", 42, 42, 42));
     PhenomenonP phen;
@@ -125,5 +120,5 @@ TEST_F(UnitCopyTest, NameConflict)
     targetSmidgen = targetSchema->GetUnitP("Smidgen");
     ASSERT_EQ(nullptr, targetSmidgen);
     EXPECT_NE(nullptr, targetSchema->GetPhenomenonCP("Smidgen"));
-    }
+}
 END_BENTLEY_ECN_TEST_NAMESPACE

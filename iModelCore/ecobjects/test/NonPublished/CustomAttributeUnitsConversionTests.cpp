@@ -1,12 +1,12 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 #include "../../PrivateApi/ECObjects/LegacyUnits.h"
 
-#include <Units/Units.h> // Maybe need??
+#include <Units/Units.h>  // Maybe need??
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -14,19 +14,18 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct UnitSpecificationConversionTest : ECTestFixture {};
 
-struct UnitsCustomAttributesConversionTests : ECTestFixture
-    {
-    ECSchemaPtr     m_schema;
+struct UnitsCustomAttributesConversionTests : ECTestFixture {
+    ECSchemaPtr m_schema;
     void CreateTestSchema();
-    void SerializeAndCheck(ECSchemaPtr &outputSchema, ECSchemaPtr inputSchema, bvector<Utf8CP> customAttributeNames, bvector<Utf8CP> customAttributeNamesInMemory);
+    void SerializeAndCheck(ECSchemaPtr& outputSchema, ECSchemaPtr inputSchema, bvector<Utf8CP> customAttributeNames, bvector<Utf8CP> customAttributeNamesInMemory);
 
     //---------------------------------------------------------------------------------------//
     // Stores the format of the reference schema xml as a string
     // @bsimethod
     //+---------------+---------------+---------------+---------------+---------------+------//
-    static Utf8CP   TestSchemaXmlString()
-        {
-        Utf8CP format = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+    static Utf8CP TestSchemaXmlString() {
+        Utf8CP format =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
             "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
             "  <ECSchemaReference name=\"Unit_Attributes\" version=\"01.00.00\" prefix=\"units_attribs\" />"
             "  <ECCustomAttributes>"
@@ -64,39 +63,31 @@ struct UnitsCustomAttributesConversionTests : ECTestFixture
             "</ECSchema>";
 
         return format;
-        }
+    }
+};
 
-    };
-
-void verifyReferencedSchemas(ECSchemaR convertedSchema, bvector<Utf8String> expectedReferenceNames)
-    {
+void verifyReferencedSchemas(ECSchemaR convertedSchema, bvector<Utf8String> expectedReferenceNames) {
     EXPECT_EQ(expectedReferenceNames.size(), convertedSchema.GetReferencedSchemas().size());
 
-    for (auto const& schemaReference : convertedSchema.GetReferencedSchemas())
-        {
+    for (auto const& schemaReference : convertedSchema.GetReferencedSchemas()) {
         Utf8String refSchemaName = schemaReference.first.GetName();
         auto it = std::find(expectedReferenceNames.begin(), expectedReferenceNames.end(), refSchemaName);
         EXPECT_NE(expectedReferenceNames.end(), it) << "Found unexpected schema reference: " << refSchemaName.c_str();
         if (expectedReferenceNames.end() != it)
             expectedReferenceNames.erase(it);
-        }
-    if (0 != expectedReferenceNames.size())
-        {
+    }
+    if (0 != expectedReferenceNames.size()) {
         Utf8String referencesNotFound = BeStringUtilities::Join(expectedReferenceNames, ", ");
         EXPECT_EQ(0, expectedReferenceNames.size()) << "Did not find expected reference schemas: " << referencesNotFound.c_str();
-        }
     }
+}
 
-void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR originalSchema)
-    {
-    for (const auto& ecClass : originalSchema.GetClasses())
-        {
+void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR originalSchema) {
+    for (const auto& ecClass : originalSchema.GetClasses()) {
         ECClassP convertedClass = convertedSchema.GetClassP(ecClass->GetName().c_str());
-        for (const auto& ecProp : ecClass->GetProperties(true))
-            {
+        for (const auto& ecProp : ecClass->GetProperties(true)) {
             Utf8String originalUnitName;
-            if (LegacyUnits::GetUnitForECProperty(originalUnitName, *ecProp))
-                {
+            if (LegacyUnits::GetUnitForECProperty(originalUnitName, *ecProp)) {
                 ECPropertyP convertedProp = convertedClass->GetPropertyP(ecProp->GetName().c_str());
                 KindOfQuantityCP koq = convertedProp->GetKindOfQuantity();
                 ASSERT_NE(nullptr, koq) << "Could not find KOQ for property " << ecClass->GetName().c_str() << ":" << ecProp->GetName().c_str();
@@ -115,22 +106,21 @@ void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR origina
                 Units::UnitCP convertedUnit = unitShouldBeConvertedToSI ? originalUnitInNewSystem->GetPhenomenon()->GetSIUnit() : originalUnitInNewSystem;
                 ASSERT_NE(nullptr, convertedUnit) << "Could not find SI unit for original unit " << originalUnitInNewSystem->GetName();
 
-                if (unitShouldBeConvertedToSI)
-                    {
+                if (unitShouldBeConvertedToSI) {
                     auto oldUnitCA = convertedProp->GetCustomAttribute("ECv3ConversionAttributes", "OldPersistenceUnit");
-                    ASSERT_TRUE(oldUnitCA.IsValid()) << convertedClass->GetName().c_str() << "." << convertedProp->GetName().c_str() 
-                                                        << " the unit should have been converted to SI so expected the OldPersistenceUnit CA to be applied to the property";
+                    ASSERT_TRUE(oldUnitCA.IsValid()) << convertedClass->GetName().c_str() << "." << convertedProp->GetName().c_str()
+                                                     << " the unit should have been converted to SI so expected the OldPersistenceUnit CA to be applied to the property";
                     ECValue oldName;
                     ASSERT_EQ(ECObjectsStatus::Success, oldUnitCA->GetValue(oldName, "Name"));
                     ASSERT_STREQ(originalUnitName.c_str(), oldName.GetUtf8CP()) << "Old unit name not persisted correctly";
-                    }
-
-                EXPECT_EQ(0, strcmp(convertedUnit->GetName().c_str(), koq->GetPersistenceUnit()->GetName().c_str())) 
-                    << "Converted unit not correct for " << convertedProp->GetName().c_str() << " Expected: " << convertedUnit->GetName() << " Actual: " << koq->GetPersistenceUnit()->GetName();
                 }
+
+                EXPECT_EQ(0, strcmp(convertedUnit->GetName().c_str(), koq->GetPersistenceUnit()->GetName().c_str()))
+                    << "Converted unit not correct for " << convertedProp->GetName().c_str() << " Expected: " << convertedUnit->GetName() << " Actual: " << koq->GetPersistenceUnit()->GetName();
             }
         }
     }
+}
 
 //=======================================================================================
 //! UnitSpecificationConversionTest
@@ -140,8 +130,7 @@ void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR origina
 //@bsimethod
 // Test that references are properly removed when there is no schema level 'UnitSpecifications' CA, only property level ones
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnArrayProperty)
-    {
+TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnArrayProperty) {
     Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="OldUnits" version="01.00" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
         <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -159,7 +148,7 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnArrayPr
         </ECClass>
     </ECSchema>)xml";
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
     ECSchemaPtr originalSchema;
@@ -172,14 +161,13 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnArrayPr
     expectedRefSchemas.push_back("Units");
     expectedRefSchemas.push_back("Formats");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 // Test that references are properly removed when there is no schema level 'UnitSpecifications' CA, only property level ones
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnlyOnProperty)
-    {
+TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnlyOnProperty) {
     Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="OldUnits" version="01.00" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
         <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -197,7 +185,7 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnlyOnPro
         </ECClass>
     </ECSchema>)xml";
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
     ECSchemaPtr originalSchema;
@@ -210,16 +198,13 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnlyOnPro
     expectedRefSchemas.push_back("Units");
     expectedRefSchemas.push_back("Formats");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, UnitSpecificationWithInvalidUnitNameValues)
-    {
-    for (const auto& unitName 
-    : std::vector<std::string>{"<UnitName>SILLYMETER</UnitName>", "", "<UnitName></UnitName>", "<UnitName> </UnitName>", "<UnitName />", "<UnitName xsi:nil='true'/>"})
-        {
+TEST_F(UnitSpecificationConversionTest, UnitSpecificationWithInvalidUnitNameValues) {
+    for (const auto& unitName : std::vector<std::string>{"<UnitName>SILLYMETER</UnitName>", "", "<UnitName></UnitName>", "<UnitName> </UnitName>", "<UnitName />", "<UnitName xsi:nil='true'/>"}) {
         Utf8String schemaXml = Utf8PrintfString(R"xml(<?xml version='1.0' encoding='UTF-8'?>
         <ECSchema schemaName='OldUnits' version='01.00' nameSpacePrefix='outs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
             <ECSchemaReference name='Unit_Attributes' version='01.00' prefix='units_attribs' />
@@ -235,28 +220,26 @@ TEST_F(UnitSpecificationConversionTest, UnitSpecificationWithInvalidUnitNameValu
                     </ECCustomAttributes>
                 </ECProperty>
             </ECClass>
-        </ECSchema>)xml", unitName.c_str());
+        </ECSchema>)xml",
+                                                unitName.c_str());
 
-        ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
         ECSchemaPtr schema;
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
         ECSchemaPtr originalSchema;
         ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
 
         ASSERT_TRUE(ECSchemaConverter::Convert(*schema, *schemaContext)) << "Failed to convert schema";
-    
+
         EXPECT_EQ(0, schema->GetKindOfQuantityCount()) << "No KOQ should have been created when unit is unknown. Unit name used in test case: " << unitName;
         EXPECT_FALSE(schema->GetClassCP("TestClass")->GetPropertyP("Length")->GetKindOfQuantity()) << "No KOQ should have been added to the property when the unit is unknown. Unit name used in test case: " << unitName;
 
         EXPECT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema. Unit name used in test case: " << unitName;
     }
-    }
+}
 
-TEST_F(UnitSpecificationConversionTest, UnitSpecificationWithInvalidUnitNameValuesForPrimitiveArray)
-    {
-    for (const auto& unitName 
-    : std::vector<std::string>{"<UnitName>SILLYMETER</UnitName>", "", "<UnitName></UnitName>", "<UnitName> </UnitName>", "<UnitName />", "<UnitName xsi:nil='true'/>"})
-        {
+TEST_F(UnitSpecificationConversionTest, UnitSpecificationWithInvalidUnitNameValuesForPrimitiveArray) {
+    for (const auto& unitName : std::vector<std::string>{"<UnitName>SILLYMETER</UnitName>", "", "<UnitName></UnitName>", "<UnitName> </UnitName>", "<UnitName />", "<UnitName xsi:nil='true'/>"}) {
         Utf8String schemaXml = Utf8PrintfString(R"xml("<?xml version='1.0' encoding='UTF-8'?>
         <ECSchema schemaName='OldUnits' version='01.00' nameSpacePrefix='outs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
             <ECSchemaReference name='Unit_Attributes' version='01.00' prefix='units_attribs' />
@@ -272,7 +255,8 @@ TEST_F(UnitSpecificationConversionTest, UnitSpecificationWithInvalidUnitNameValu
                     </ECCustomAttributes>
                 </ECArrayProperty>
             </ECClass>
-        </ECSchema>)xml", unitName.c_str());
+        </ECSchema>)xml",
+                                                unitName.c_str());
         auto schemaContext = ECSchemaReadContext::CreateContext();
         ECSchemaPtr schema;
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
@@ -280,20 +264,19 @@ TEST_F(UnitSpecificationConversionTest, UnitSpecificationWithInvalidUnitNameValu
         ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
 
         ASSERT_TRUE(ECSchemaConverter::Convert(*schema, *schemaContext)) << "Failed to convert schema";
-    
+
         EXPECT_EQ(0, schema->GetKindOfQuantityCount()) << "No KOQ should have been created when unit is unknown. Unit name used in test case: " << unitName;
         EXPECT_FALSE(schema->GetClassCP("TestClass")->GetPropertyP("Length")->GetKindOfQuantity()) << "No KOQ should have been added to the property when the unit is unknown. Unit name used in test case: " << unitName;
 
         EXPECT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema. Unit name used in test case: " << unitName;
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecifications)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecifications) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     WString testSchemaPath = ECTestFixture::GetTestDataPath(L"OldUnits.01.00.ecschema.xml");
 
@@ -302,7 +285,7 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecifications)
     ASSERT_EQ(SchemaReadStatus::Success, status);
 
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), *schemaContext)) << "Failed to convert schema";
-    
+
     ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
     ECSchemaPtr originalSchema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(originalSchema, testSchemaPath.c_str(), *context2));
@@ -312,13 +295,12 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecifications)
     expectedRefSchemas.push_back("Units");
     expectedRefSchemas.push_back("Formats");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, PersistenceAndPresentationUnitsNotCompatibleDropsPresentationUnit)
-    {
+TEST_F(UnitSpecificationConversionTest, PersistenceAndPresentationUnitsNotCompatibleDropsPresentationUnit) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -355,13 +337,12 @@ TEST_F(UnitSpecificationConversionTest, PersistenceAndPresentationUnitsNotCompat
     ASSERT_EQ(1, schema->GetReferencedSchemas().size()) << "Expected a single schema references after conversion because the standard Units schema ia added";
 
     ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *ECTestFixture::GetUnitsSchema()));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, BaseAndDerivedUnitsNotCompatibleFailsConversion)
-    {
+TEST_F(UnitSpecificationConversionTest, BaseAndDerivedUnitsNotCompatibleFailsConversion) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -400,13 +381,12 @@ TEST_F(UnitSpecificationConversionTest, BaseAndDerivedUnitsNotCompatibleFailsCon
     ASSERT_TRUE(schema.IsValid());
 
     ASSERT_FALSE(ECSchemaConverter::Convert(*schema.get(), *context.get())) << "Converted a schema with incompatible units";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
-    {
+TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -459,7 +439,7 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
     pipeLength = pipe->GetPropertyP("Length");
     EXPECT_NE(pipeLength, nullptr);
     EXPECT_TRUE(pipeLength->IsKindOfQuantityDefinedLocally());
-    
+
     lengthKOQ = pipeLength->GetKindOfQuantity();
 
     specialPipe = schema->GetClassCP("SpecialPipe");
@@ -472,7 +452,7 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
     specialLengthKOQ = specialPipeLength->GetKindOfQuantity();
 
     EXPECT_EQ(2, schema->GetKindOfQuantityCount());
-    EXPECT_NE(lengthKOQ, specialLengthKOQ); 
+    EXPECT_NE(lengthKOQ, specialLengthKOQ);
 
     EXPECT_STREQ(lengthKOQ->GetPersistenceUnit()->GetName().c_str(), specialLengthKOQ->GetPersistenceUnit()->GetName().c_str());
     EXPECT_STRNE(lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str(), specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
@@ -483,13 +463,12 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
     ECValue oldUnitName;
     oldPersistenceUnit->GetValue(oldUnitName, "Name");
     EXPECT_STREQ("FOOT", oldUnitName.GetUtf8CP());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, SameKOQMultiplePersistenceUnits)
-    {
+TEST_F(UnitSpecificationConversionTest, SameKOQMultiplePersistenceUnits) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -563,13 +542,12 @@ TEST_F(UnitSpecificationConversionTest, SameKOQMultiplePersistenceUnits)
     EXPECT_STREQ("LENGTH_SpecialPipe", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetName().c_str());
     EXPECT_TRUE(schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
     EXPECT_EQ(2, schema->GetKindOfQuantityCount());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUnits)
-    {
+TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUnits) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -628,7 +606,7 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUn
     pipeLength = pipe->GetPropertyP("Length");
     EXPECT_NE(pipeLength, nullptr);
     EXPECT_TRUE(pipeLength->IsKindOfQuantityDefinedLocally());
-    
+
     lengthKOQ = pipeLength->GetKindOfQuantity();
 
     specialPipe = schema->GetClassCP("SpecialPipe");
@@ -641,7 +619,7 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUn
     specialLengthKOQ = specialPipeLength->GetKindOfQuantity();
 
     EXPECT_EQ(2, schema->GetKindOfQuantityCount());
-    EXPECT_NE(lengthKOQ, specialLengthKOQ); 
+    EXPECT_NE(lengthKOQ, specialLengthKOQ);
 
     EXPECT_STREQ(lengthKOQ->GetPersistenceUnit()->GetName().c_str(), specialLengthKOQ->GetPersistenceUnit()->GetName().c_str());
     EXPECT_STRNE(lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str(), specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
@@ -654,13 +632,12 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUn
     ECValue oldUnitName;
     oldPersistenceUnit->GetValue(oldUnitName, "Name");
     EXPECT_STREQ("FOOT", oldUnitName.GetUtf8CP());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, DollarsUnitsPassThroughWithoutChangeToSI)
-    {
+TEST_F(UnitSpecificationConversionTest, DollarsUnitsPassThroughWithoutChangeToSI) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -687,13 +664,12 @@ TEST_F(UnitSpecificationConversionTest, DollarsUnitsPassThroughWithoutChangeToSI
 
     EXPECT_STREQ("MONEY", schema->GetClassCP("Pipe")->GetPropertyP("Cost")->GetKindOfQuantity()->GetName().c_str());
     EXPECT_STREQ("US_DOLLAR", schema->GetClassCP("Pipe")->GetPropertyP("Cost")->GetKindOfQuantity()->GetPersistenceUnit()->GetName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, PercentUnitsPassThroughWithoutChangeToSI)
-    {
+TEST_F(UnitSpecificationConversionTest, PercentUnitsPassThroughWithoutChangeToSI) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -752,7 +728,7 @@ TEST_F(UnitSpecificationConversionTest, PercentUnitsPassThroughWithoutChangeToSI
     ECValue oldUnitName;
     ASSERT_EQ(ECObjectsStatus::Success, schema->GetClassCP("DerivedRatios")->GetPropertyP("Percent")->GetCustomAttributeLocal("OldPersistenceUnit")->GetValue(oldUnitName, "Name"));
     EXPECT_STREQ("UNITLESS_PERCENT", oldUnitName.GetUtf8CP());
-    }
+}
 
 //=======================================================================================
 //! UnitsCustomAttributesConversionTests
@@ -762,48 +738,45 @@ TEST_F(UnitSpecificationConversionTest, PercentUnitsPassThroughWithoutChangeToSI
 // Creates the test schema using the TestSchemaXml string
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-void UnitsCustomAttributesConversionTests::CreateTestSchema()
-    {
-    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+void UnitsCustomAttributesConversionTests::CreateTestSchema() {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(m_schema, TestSchemaXmlString(), *schemaContext))
-            << "Failed to read the test reference schema from xml string";
+        << "Failed to read the test reference schema from xml string";
     ASSERT_TRUE(m_schema.IsValid()) << "Test Schema is not valid";
-    }
+}
 
 //---------------------------------------------------------------------------------------//
-// Serializes the schema, checks for the presence/absence of strings in the serialized xml 
+// Serializes the schema, checks for the presence/absence of strings in the serialized xml
 // and that the schema can be loaded again
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-void UnitsCustomAttributesConversionTests::SerializeAndCheck(ECSchemaPtr &outputSchema, ECSchemaPtr inputSchema, bvector<Utf8CP> customAttributeNames, bvector<Utf8CP> customAttributeNamesInMemory)
-    {
+void UnitsCustomAttributesConversionTests::SerializeAndCheck(ECSchemaPtr& outputSchema, ECSchemaPtr inputSchema, bvector<Utf8CP> customAttributeNames, bvector<Utf8CP> customAttributeNamesInMemory) {
     Utf8String schemaXmlString;
     ASSERT_EQ(SchemaWriteStatus::Success, inputSchema->WriteToXmlString(schemaXmlString, ECVersion::V3_0))
-           << "Cannot serialize the schema";
+        << "Cannot serialize the schema";
 
     for (auto customAttributeName : customAttributeNames)
         ASSERT_NE(Utf8String::npos, schemaXmlString.find(customAttributeName));
     for (auto inMemoryName : customAttributeNamesInMemory)
         ASSERT_EQ(Utf8String::npos, schemaXmlString.find(inMemoryName));
 
-    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(outputSchema, schemaXmlString.c_str(), *schemaContext))
-           << "Failed to read the test reference schema from xml string";
-    }
+        << "Failed to read the test reference schema from xml string";
+}
 
 //---------------------------------------------------------------------------------------//
-// Tests that Custom Attributes are not lost due to the  'Attr' name swizzling we do to 
-// load CAs for classes which were marked as both CA and Struct in EC2 
+// Tests that Custom Attributes are not lost due to the  'Attr' name swizzling we do to
+// load CAs for classes which were marked as both CA and Struct in EC2
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(UnitsCustomAttributesConversionTests, TestUnitsCustomAttributesAreNotLostOnRoundTrip)
-    {
+TEST_F(UnitsCustomAttributesConversionTests, TestUnitsCustomAttributesAreNotLostOnRoundTrip) {
     CreateTestSchema();
 
     ASSERT_TRUE(m_schema->IsDefined("Unit_Attributes", "IsUnitSystemSchema"))
-             << "IsUnitSystemSchema custom attribute was not read at schema level";
+        << "IsUnitSystemSchema custom attribute was not read at schema level";
     ASSERT_TRUE(m_schema->IsDefined("Unit_Attributes", "UnitSpecifications"))
         << "UnitSpecifications custom attribute was not read at schema level";
     ASSERT_TRUE(m_schema->GetClassP("TestClass")->GetPropertyP("PropertyA")->IsDefined("Unit_Attributes", "UnitSpecificationAttr"))
@@ -832,20 +805,19 @@ TEST_F(UnitsCustomAttributesConversionTests, TestUnitsCustomAttributesAreNotLost
     SerializeAndCheck(schema, m_schema, stringsToFind, stringsToNotFind);
 
     ASSERT_TRUE(schema->IsDefined("Unit_Attributes", "IsUnitSystemSchema"))
-             << "IsUnitSystemSchema custom attribute was not read at schema level";
+        << "IsUnitSystemSchema custom attribute was not read at schema level";
     ASSERT_TRUE(schema->IsDefined("Unit_Attributes", "UnitSpecifications"))
-             << "UnitSpecifications custom attribute was not read at schema level";
+        << "UnitSpecifications custom attribute was not read at schema level";
     ASSERT_TRUE(schema->GetClassP("TestClass")->GetPropertyP("PropertyA")->IsDefined("Unit_Attributes", "UnitSpecificationAttr"))
-             << "UnitSpecifications custom attribute was not read at property level";
+        << "UnitSpecifications custom attribute was not read at property level";
     ASSERT_TRUE(schema->GetClassP("TestClass")->GetPropertyP("PropertyB")->IsDefined("Unit_Attributes", "DisplayUnitSpecificationAttr"))
-             << "UnitSpecifications custom attribute was not read at schema level";
-    }
+        << "UnitSpecifications custom attribute was not read at schema level";
+}
 
 //---------------------------------------------------------------------------------------//
 //* @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(UnitsCustomAttributesConversionTests, OldUnitsWithKoqNameConflicts)
-    {
+TEST_F(UnitsCustomAttributesConversionTests, OldUnitsWithKoqNameConflicts) {
     Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="OldUnits" version="01.00" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
         <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -867,7 +839,7 @@ TEST_F(UnitsCustomAttributesConversionTests, OldUnitsWithKoqNameConflicts)
         <ECClass typeName="LENGTH_TestClass_Length_" isDomainClass="True" />
     </ECSchema>)xml";
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
     ECSchemaPtr originalSchema;
@@ -880,19 +852,18 @@ TEST_F(UnitsCustomAttributesConversionTests, OldUnitsWithKoqNameConflicts)
     expectedRefSchemas.push_back("Units");
     expectedRefSchemas.push_back("Formats");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
-    
+
     ASSERT_EQ(1, schema->GetKindOfQuantityCount()) << "The schema should only have one KindOfQuantity";
 
     KindOfQuantityCP lengthKOQ = schema->GetClassCP("TestClass")->GetPropertyP("Length")->GetKindOfQuantity();
     EXPECT_NE(lengthKOQ, nullptr);
     ASSERT_STREQ("LENGTH_TestClass_Length__", lengthKOQ->GetName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationIsRemovedWhenNoUnitSpecificationCanBeFound)
-    {
+TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationIsRemovedWhenNoUnitSpecificationCanBeFound) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -961,13 +932,12 @@ TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationIsRemovedWhenNoU
     expectedRefSchemas.push_back("Units");
     expectedRefSchemas.push_back("Formats");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationUsesSameKOQNameAsUnitSpecification)
-    {
+TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationUsesSameKOQNameAsUnitSpecification) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
         <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -1040,13 +1010,12 @@ TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationUsesSameKOQNameA
     expectedRefSchemas.push_back("Formats");
     expectedRefSchemas.push_back("ECv3ConversionAttributes");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationGetsKOQNameFromUnitSpecificationIfProcessedFirst)
-    {
+TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationGetsKOQNameFromUnitSpecificationIfProcessedFirst) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
         <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -1079,13 +1048,12 @@ TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationGetsKOQNameFromU
     EXPECT_STREQ("DIAMETER", koq->GetName().c_str());
 
     ASSERT_EQ(1, schema->GetKindOfQuantityCount()) << "The schema should only have one KindOfQuantity";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitSpecificationConversionTest, KOQIsAcceptableEvenIfItHasNoPresentationFormats)
-    {
+TEST_F(UnitSpecificationConversionTest, KOQIsAcceptableEvenIfItHasNoPresentationFormats) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
         <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -1132,14 +1100,13 @@ TEST_F(UnitSpecificationConversionTest, KOQIsAcceptableEvenIfItHasNoPresentation
     EXPECT_STREQ("ELECTRIC_CURRENT", koq->GetName().c_str());
 
     ASSERT_EQ(1, schema->GetKindOfQuantityCount()) << "The schema should only have one KindOfQuantity";
-    }
+}
 
 //---------------------------------------------------------------------------------------//
 //* @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
 // Test that references are properly removed when there is no schema level 'UnitSpecifications' CA, only property level ones
-TEST_F(UnitsCustomAttributesConversionTests, SchemaWithIsUnitSystemSchema_Attribute)
-    {
+TEST_F(UnitsCustomAttributesConversionTests, SchemaWithIsUnitSystemSchema_Attribute) {
     Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="OldUnits" version="01.00" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
         <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -1161,7 +1128,7 @@ TEST_F(UnitsCustomAttributesConversionTests, SchemaWithIsUnitSystemSchema_Attrib
         </ECClass>
     </ECSchema>)xml";
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
     ECSchemaPtr originalSchema;
@@ -1174,26 +1141,22 @@ TEST_F(UnitsCustomAttributesConversionTests, SchemaWithIsUnitSystemSchema_Attrib
     expectedRefSchemas.push_back("Units");
     expectedRefSchemas.push_back("Formats");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
-    }
+}
 
-
-Utf8String getUnitName(ECSchemaCP schema, Utf8CP className, Utf8CP propertyName, Utf8CP caName, Utf8CP caPropName)
-    {
+Utf8String getUnitName(ECSchemaCP schema, Utf8CP className, Utf8CP propertyName, Utf8CP caName, Utf8CP caPropName) {
     IECInstancePtr myUnitSpec = schema->GetClassCP(className)->GetPropertyP(propertyName)->GetCustomAttributeLocal(caName);
-    if (myUnitSpec.IsValid())
-        {
+    if (myUnitSpec.IsValid()) {
         ECValue unitName;
         myUnitSpec->GetValue(unitName, caPropName);
         return unitName.GetUtf8CP();
-        }
-    return "";
     }
+    return "";
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitsCustomAttributesConversionTests, EC3KOQsConvertBackToUnitSpecificationsCAs)
-    {
+TEST_F(UnitsCustomAttributesConversionTests, EC3KOQsConvertBackToUnitSpecificationsCAs) {
     Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
         <ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
             <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" alias="V2ToV3" />
@@ -1258,13 +1221,12 @@ TEST_F(UnitsCustomAttributesConversionTests, EC3KOQsConvertBackToUnitSpecificati
     ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(convertedThenSerialized, ECVersion::V2_0));
 
     ASSERT_STREQ(convertedDuringXmlSerialization.c_str(), convertedThenSerialized.c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitsCustomAttributesConversionTests, EC32SchemasWithKoQsProperlyRemoveReferenceToStandardUnitsSchema)
-    {
+TEST_F(UnitsCustomAttributesConversionTests, EC32SchemasWithKoQsProperlyRemoveReferenceToStandardUnitsSchema) {
     Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
         <ECSchema schemaName='testSchema' version='01.00.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
             <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.00" alias="V2ToV3" />
@@ -1311,13 +1273,12 @@ TEST_F(UnitsCustomAttributesConversionTests, EC32SchemasWithKoQsProperlyRemoveRe
     ASSERT_TRUE(ECSchemaDownConverter::Convert(*schema));
     ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *ECTestFixture::GetUnitsSchema()));
     ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *ECTestFixture::GetFormatsSchema()));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitsCustomAttributesConversionTests, EC2SchemasWithoutKoQsDoNotAttemptToRemoveReferenceToStandardUnitsSchema)
-    {
+TEST_F(UnitsCustomAttributesConversionTests, EC2SchemasWithoutKoQsDoNotAttemptToRemoveReferenceToStandardUnitsSchema) {
     Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
         <ECSchema schemaName='testSchema' version='01.00.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
             <ECSchemaReference name='ECv3ConversionAttributes' version='01.00.00' prefix='V2ToV3' />
@@ -1352,27 +1313,24 @@ TEST_F(UnitsCustomAttributesConversionTests, EC2SchemasWithoutKoQsDoNotAttemptTo
     ASSERT_TRUE(ECSchemaDownConverter::Convert(*schema));
     ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *ECTestFixture::GetUnitsSchema()));
     ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *ECTestFixture::GetFormatsSchema()));
-    }
+}
 //=======================================================================================
 //! UnitInstanceConversionTest
 //=======================================================================================
-struct UnitInstanceConversionTest : ECTestFixture
-    {
-    struct TestUnitResolver : ECInstanceReadContext::IUnitResolver
-        {
-        explicit TestUnitResolver(){}
+struct UnitInstanceConversionTest : ECTestFixture {
+    struct TestUnitResolver : ECInstanceReadContext::IUnitResolver {
+        explicit TestUnitResolver() {}
         ~TestUnitResolver() {}
         Utf8String _ResolveUnitName(ECClassCR ecClass, ECPropertyCR ecProperty) const override;
-        };
+    };
 
     mutable TestUnitResolver m_testUnitResolver;
-    };
+};
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String UnitInstanceConversionTest::TestUnitResolver::_ResolveUnitName(ECClassCR ecClass, ECPropertyCR ecProperty) const
-    {
+Utf8String UnitInstanceConversionTest::TestUnitResolver::_ResolveUnitName(ECClassCR ecClass, ECPropertyCR ecProperty) const {
     if (!ecProperty.IsDefinedLocal("ECv3ConversionAttributes", "OldPersistenceUnit"))
         return "";
 
@@ -1384,10 +1342,9 @@ Utf8String UnitInstanceConversionTest::TestUnitResolver::_ResolveUnitName(ECClas
         return "";
 
     return unitName.GetUtf8CP();
-    }
+}
 
-void getUnitsInstanceTestSchema (ECSchemaPtr &schema, ECSchemaReadContextR context)
-    {
+void getUnitsInstanceTestSchema(ECSchemaPtr& schema, ECSchemaReadContextR context) {
     const Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
@@ -1444,103 +1401,99 @@ void getUnitsInstanceTestSchema (ECSchemaPtr &schema, ECSchemaReadContextR conte
                 </ECProperty>
             </ECClass>
         </ECSchema>)xml";
-    
+
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, context);
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context)) << "Failed to convert schema";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitInstanceConversionTest, BasicTest)
-    {
+TEST_F(UnitInstanceConversionTest, BasicTest) {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     getUnitsInstanceTestSchema(schema, *context);
 
-    { // value converted when there is a unit resolver
-    Utf8CP instanceXml = R"xml(
+    {  // value converted when there is a unit resolver
+        Utf8CP instanceXml = R"xml(
         <Pipe xmlns="OldUnits.01.00">
             <Length>42</Length>
         </Pipe>
         )xml";
 
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    instanceContext->SetUnitResolver(&m_testUnitResolver);
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        instanceContext->SetUnitResolver(&m_testUnitResolver);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    Units::Quantity lengthQ;
-    ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(lengthQ, "Length"));
-    EXPECT_STREQ("M", lengthQ.GetUnitName());
-    ECUnitCP unit = ECTestFixture::GetUnitsSchema()->GetUnitCP("DM");
-    ASSERT_NE(nullptr, unit);
-    EXPECT_EQ(42, lengthQ.ConvertTo(unit).GetMagnitude());
+        Units::Quantity lengthQ;
+        ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(lengthQ, "Length"));
+        EXPECT_STREQ("M", lengthQ.GetUnitName());
+        ECUnitCP unit = ECTestFixture::GetUnitsSchema()->GetUnitCP("DM");
+        ASSERT_NE(nullptr, unit);
+        EXPECT_EQ(42, lengthQ.ConvertTo(unit).GetMagnitude());
     }
-    { // value converted when there is a unit resolver
-    Utf8CP instanceXml = R"xml(
+    {  // value converted when there is a unit resolver
+        Utf8CP instanceXml = R"xml(
         <SpecialPipe xmlns="OldUnits.01.00">
             <Length>50</Length>
         </SpecialPipe>
         )xml";
 
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    instanceContext->SetUnitResolver(&m_testUnitResolver);
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        instanceContext->SetUnitResolver(&m_testUnitResolver);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    Units::Quantity lengthQ;
-    ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(lengthQ, "Length"));
-    EXPECT_STREQ("M", lengthQ.GetUnitName());
-    ECUnitCP unit = ECTestFixture::GetUnitsSchema()->GetUnitCP("FT");
-    ASSERT_NE(nullptr, unit);
-    EXPECT_EQ(50, lengthQ.ConvertTo(unit).GetMagnitude());
+        Units::Quantity lengthQ;
+        ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(lengthQ, "Length"));
+        EXPECT_STREQ("M", lengthQ.GetUnitName());
+        ECUnitCP unit = ECTestFixture::GetUnitsSchema()->GetUnitCP("FT");
+        ASSERT_NE(nullptr, unit);
+        EXPECT_EQ(50, lengthQ.ConvertTo(unit).GetMagnitude());
     }
-    { // value converted when there is a unit resolver
-    Utf8CP instanceXml = R"xml(
+    {  // value converted when there is a unit resolver
+        Utf8CP instanceXml = R"xml(
         <SillyPipe xmlns="OldUnits.01.00">
             <Length>50</Length>
         </SillyPipe>
         )xml";
 
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    instanceContext->SetUnitResolver(&m_testUnitResolver);
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        instanceContext->SetUnitResolver(&m_testUnitResolver);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_STREQ("5", length.GetUtf8CP()) << "Expected the unit conversion to result in a value of 5 but the value was: " << length.GetUtf8CP();
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_STREQ("5", length.GetUtf8CP()) << "Expected the unit conversion to result in a value of 5 but the value was: " << length.GetUtf8CP();
     }
-    { // value not converted when there is no unit resolver
-    Utf8CP instanceXml = R"xml(
+    {  // value not converted when there is no unit resolver
+        Utf8CP instanceXml = R"xml(
         <SpecialPipe xmlns="OldUnits.01.00">
             <Length>50</Length>
         </SpecialPipe>
         )xml";
 
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_EQ(50, length.GetDouble());
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_EQ(50, length.GetDouble());
     }
+}
 
-    }
-
-namespace
-    {
-    void getTestSchemaXMLForArray(ECSchemaPtr &schema, ECSchemaReadContextR context)
-        {
-        const Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+namespace {
+void getTestSchemaXMLForArray(ECSchemaPtr& schema, ECSchemaReadContextR context) {
+    const Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                 <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
                 <ECClass typeName="Pipe" displayLabel="A generic pipe" isDomainClass="True">
@@ -1597,103 +1550,101 @@ namespace
                 </ECClass>
             </ECSchema>)xml";
 
-        auto status = ECSchema::ReadFromXmlString(schema, schemaXml, context);
-        ASSERT_EQ(SchemaReadStatus::Success, status);
-        ASSERT_TRUE(schema.IsValid());
-        ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context)) << "Failed to convert schema";
-        }
-    }
+    auto status = ECSchema::ReadFromXmlString(schema, schemaXml, context);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context)) << "Failed to convert schema";
+}
+}  // namespace
 
-TEST_F(UnitInstanceConversionTest, UnitConversionOnPrimitiveArray)
-    {
+TEST_F(UnitInstanceConversionTest, UnitConversionOnPrimitiveArray) {
     ECSchemaPtr schema;
     auto context = ECSchemaReadContext::CreateContext();
     getTestSchemaXMLForArray(schema, *context);
 
     const auto conversionToFeetFactor = 0.30480000000000002;
     {
-    Utf8CP instanceXML = R"xml(<Pipe xmlns='OldUnits.01.00'>
+        Utf8CP instanceXML = R"xml(<Pipe xmlns='OldUnits.01.00'>
                                         <Dimensions>
                                             <double>41</double>
                                             <double>63</double>
                                         </Dimensions>
                                     </Pipe>)xml";
 
-    IECInstancePtr testInstance;
-    auto instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    instanceContext->SetUnitResolver(&m_testUnitResolver);
-    auto readStat = IECInstance::ReadFromXmlString(testInstance, instanceXML, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        IECInstancePtr testInstance;
+        auto instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        instanceContext->SetUnitResolver(&m_testUnitResolver);
+        auto readStat = IECInstance::ReadFromXmlString(testInstance, instanceXML, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    Units::Quantity numConverted;
-    ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(numConverted, "Dimensions", 0));
-    EXPECT_STREQ("M", numConverted.GetUnitName());
-    EXPECT_DOUBLE_EQ(numConverted.GetMagnitude(), 4.1);
+        Units::Quantity numConverted;
+        ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(numConverted, "Dimensions", 0));
+        EXPECT_STREQ("M", numConverted.GetUnitName());
+        EXPECT_DOUBLE_EQ(numConverted.GetMagnitude(), 4.1);
 
-    auto unit = ECTestFixture::GetUnitsSchema()->GetUnitCP("DM");
-    ASSERT_NE(nullptr, unit);
-    EXPECT_DOUBLE_EQ(41, numConverted.ConvertTo(unit).GetMagnitude());
+        auto unit = ECTestFixture::GetUnitsSchema()->GetUnitCP("DM");
+        ASSERT_NE(nullptr, unit);
+        EXPECT_DOUBLE_EQ(41, numConverted.ConvertTo(unit).GetMagnitude());
 
-    ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(numConverted, "Dimensions", 1));
-    EXPECT_STREQ("M", numConverted.GetUnitName());
-    EXPECT_DOUBLE_EQ(numConverted.GetMagnitude(), 6.3);
-    EXPECT_DOUBLE_EQ(63, numConverted.ConvertTo(unit).GetMagnitude());
+        ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(numConverted, "Dimensions", 1));
+        EXPECT_STREQ("M", numConverted.GetUnitName());
+        EXPECT_DOUBLE_EQ(numConverted.GetMagnitude(), 6.3);
+        EXPECT_DOUBLE_EQ(63, numConverted.ConvertTo(unit).GetMagnitude());
     }
 
     {
-    Utf8CP instanceXML = R"xml(<SpecialPipe xmlns='OldUnits.01.00'>
+        Utf8CP instanceXML = R"xml(<SpecialPipe xmlns='OldUnits.01.00'>
                                     <Dimensions>
                                         <double>41</double>
                                         <double>63</double>
                                     </Dimensions>
                                 </SpecialPipe>)xml";
 
-    IECInstancePtr testInstance;
-    auto instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    instanceContext->SetUnitResolver(&m_testUnitResolver);
-    auto readStat = IECInstance::ReadFromXmlString(testInstance, instanceXML, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        IECInstancePtr testInstance;
+        auto instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        instanceContext->SetUnitResolver(&m_testUnitResolver);
+        auto readStat = IECInstance::ReadFromXmlString(testInstance, instanceXML, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    Units::Quantity numConverted;
-    ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(numConverted, "Dimensions", 0));
-    EXPECT_STREQ("M", numConverted.GetUnitName());
-    EXPECT_DOUBLE_EQ(numConverted.GetMagnitude(), (41 * conversionToFeetFactor));
+        Units::Quantity numConverted;
+        ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(numConverted, "Dimensions", 0));
+        EXPECT_STREQ("M", numConverted.GetUnitName());
+        EXPECT_DOUBLE_EQ(numConverted.GetMagnitude(), (41 * conversionToFeetFactor));
 
-    auto unit = ECTestFixture::GetUnitsSchema()->GetUnitCP("FT");
-    ASSERT_NE(nullptr, unit);
-    EXPECT_DOUBLE_EQ(41, numConverted.ConvertTo(unit).GetMagnitude());
+        auto unit = ECTestFixture::GetUnitsSchema()->GetUnitCP("FT");
+        ASSERT_NE(nullptr, unit);
+        EXPECT_DOUBLE_EQ(41, numConverted.ConvertTo(unit).GetMagnitude());
 
-    ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(numConverted, "Dimensions", 1));
-    EXPECT_STREQ("M", numConverted.GetUnitName());
-    EXPECT_DOUBLE_EQ(numConverted.GetMagnitude(), (63 * conversionToFeetFactor));
-    EXPECT_DOUBLE_EQ(63, numConverted.ConvertTo(unit).GetMagnitude());
+        ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(numConverted, "Dimensions", 1));
+        EXPECT_STREQ("M", numConverted.GetUnitName());
+        EXPECT_DOUBLE_EQ(numConverted.GetMagnitude(), (63 * conversionToFeetFactor));
+        EXPECT_DOUBLE_EQ(63, numConverted.ConvertTo(unit).GetMagnitude());
     }
 
     {
-    Utf8CP instanceXML = R"xml(<SillyPipe xmlns='OldUnits.01.00'>
+        Utf8CP instanceXML = R"xml(<SillyPipe xmlns='OldUnits.01.00'>
                                     <Dimensions>
                                         <string>41</string>
                                         <string>63</string>
                                     </Dimensions>
                                 </SillyPipe>)xml";
 
-    IECInstancePtr testInstance;
-    auto instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    instanceContext->SetUnitResolver(&m_testUnitResolver);
-    auto readStat = IECInstance::ReadFromXmlString(testInstance, instanceXML, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        IECInstancePtr testInstance;
+        auto instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        instanceContext->SetUnitResolver(&m_testUnitResolver);
+        auto readStat = IECInstance::ReadFromXmlString(testInstance, instanceXML, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue dimensions;
-    testInstance->GetValue(dimensions, "Dimensions", 0);
-    EXPECT_STREQ("4.1", dimensions.GetUtf8CP());
+        ECValue dimensions;
+        testInstance->GetValue(dimensions, "Dimensions", 0);
+        EXPECT_STREQ("4.1", dimensions.GetUtf8CP());
 
-    testInstance->GetValue(dimensions, "Dimensions", 1);
-    EXPECT_STREQ("6.3", dimensions.GetUtf8CP());
+        testInstance->GetValue(dimensions, "Dimensions", 1);
+        EXPECT_STREQ("6.3", dimensions.GetUtf8CP());
     }
-    }
+}
 
-TEST_F(UnitInstanceConversionTest, UnitConversionOnPrimitiveArrayWithDifferentTypes)
-    {
+TEST_F(UnitInstanceConversionTest, UnitConversionOnPrimitiveArrayWithDifferentTypes) {
     ECSchemaPtr pSchema;
     auto context = ECSchemaReadContext::CreateContext();
     getTestSchemaXMLForArray(pSchema, *context);
@@ -1724,21 +1675,19 @@ TEST_F(UnitInstanceConversionTest, UnitConversionOnPrimitiveArrayWithDifferentTy
     ECValue secondVal;
     testInstance->GetValue(secondVal, "Dimensions", 1);
     EXPECT_TRUE(secondVal.IsNull());
-    }
+}
 
-struct FixedStringUnitResolver : ECInstanceReadContext::IUnitResolver
-    {
+struct FixedStringUnitResolver : ECInstanceReadContext::IUnitResolver {
     Utf8String m_unitName;
-    explicit FixedStringUnitResolver(){}
+    explicit FixedStringUnitResolver() {}
     ~FixedStringUnitResolver() {}
     Utf8String _ResolveUnitName(ECClassCR ecClass, ECPropertyCR ecProperty) const { return m_unitName; };
-    };
+};
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitInstanceConversionTest, ValueSkippedIfUnitResolutionHasIssues)
-    {
+TEST_F(UnitInstanceConversionTest, ValueSkippedIfUnitResolutionHasIssues) {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     getUnitsInstanceTestSchema(schema, *context);
@@ -1750,51 +1699,50 @@ TEST_F(UnitInstanceConversionTest, ValueSkippedIfUnitResolutionHasIssues)
         )xml";
 
     {
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    FixedStringUnitResolver unitResolver;
-    unitResolver.m_unitName = "";
-    instanceContext->SetUnitResolver(&unitResolver);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        FixedStringUnitResolver unitResolver;
+        unitResolver.m_unitName = "";
+        instanceContext->SetUnitResolver(&unitResolver);
 
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name is an empty string, but was: " << length.GetDouble();
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name is an empty string, but was: " << length.GetDouble();
     }
     {
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    FixedStringUnitResolver unitResolver;
-    unitResolver.m_unitName = "AMPERE";
-    instanceContext->SetUnitResolver(&unitResolver);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        FixedStringUnitResolver unitResolver;
+        unitResolver.m_unitName = "AMPERE";
+        instanceContext->SetUnitResolver(&unitResolver);
 
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name is incompatible with current unit, but was: " << length.GetDouble();
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name is incompatible with current unit, but was: " << length.GetDouble();
     }
     {
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    FixedStringUnitResolver unitResolver;
-    unitResolver.m_unitName = "MEGASMOOT";
-    instanceContext->SetUnitResolver(&unitResolver);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        FixedStringUnitResolver unitResolver;
+        unitResolver.m_unitName = "MEGASMOOT";
+        instanceContext->SetUnitResolver(&unitResolver);
 
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name cannot be converted to a new unit, but was: " << length.GetDouble();
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name cannot be converted to a new unit, but was: " << length.GetDouble();
     }
-    }
+}
 
-TEST_F(UnitInstanceConversionTest, ValueSkippedIfUnitResolutionHasIssuesForPrimitiveArray)
-    {
+TEST_F(UnitInstanceConversionTest, ValueSkippedIfUnitResolutionHasIssuesForPrimitiveArray) {
     ECSchemaPtr pSchema;
     auto context = ECSchemaReadContext::CreateContext();
     getTestSchemaXMLForArray(pSchema, *context);
@@ -1807,13 +1755,10 @@ TEST_F(UnitInstanceConversionTest, ValueSkippedIfUnitResolutionHasIssuesForPrimi
             </Dimensions>
         </Pipe>)xml";
 
-    for (const auto& [unitName, errorMsgOnFailure] : std::vector<std::pair<const std::string, const std::string>>
-    {
-        { "", "Expected unset when unit name is an empty string."},
-        { "AMPERE", "Expected unset when unit name is incompatible with current unit."},
-        { "MEGASMOOT", "Expected unset when unit name cannot be converted to a new unit."}
-    })
-        {
+    for (const auto& [unitName, errorMsgOnFailure] : std::vector<std::pair<const std::string, const std::string>>{
+             {"", "Expected unset when unit name is an empty string."},
+             {"AMPERE", "Expected unset when unit name is incompatible with current unit."},
+             {"MEGASMOOT", "Expected unset when unit name cannot be converted to a new unit."}}) {
         IECInstancePtr testInstance;
         auto instanceContext = ECInstanceReadContext::CreateContext(*pSchema);
         FixedStringUnitResolver unitResolver;
@@ -1829,14 +1774,13 @@ TEST_F(UnitInstanceConversionTest, ValueSkippedIfUnitResolutionHasIssuesForPrimi
 
         testInstance->GetValue(value, "Dimensions", 1);
         EXPECT_TRUE(value.IsNull()) << errorMsgOnFailure << " but was: " << value.GetDouble();
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitInstanceConversionTest, ValueSkippedIfConversionRequiredAndStringCannotBeConvertedToDouble)
-    {
+TEST_F(UnitInstanceConversionTest, ValueSkippedIfConversionRequiredAndStringCannotBeConvertedToDouble) {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     getUnitsInstanceTestSchema(schema, *context);
@@ -1848,80 +1792,79 @@ TEST_F(UnitInstanceConversionTest, ValueSkippedIfConversionRequiredAndStringCann
         )xml";
 
     {
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    FixedStringUnitResolver unitResolver;
-    unitResolver.m_unitName = "METRE";
-    instanceContext->SetUnitResolver(&unitResolver);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        FixedStringUnitResolver unitResolver;
+        unitResolver.m_unitName = "METRE";
+        instanceContext->SetUnitResolver(&unitResolver);
 
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_FALSE(length.IsNull()) << "Expected Value to be copied because the old and new units matched.";
-    EXPECT_STREQ("Five", length.GetUtf8CP()) << "Old and new units matched so expected string to come over unchanged.";
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_FALSE(length.IsNull()) << "Expected Value to be copied because the old and new units matched.";
+        EXPECT_STREQ("Five", length.GetUtf8CP()) << "Old and new units matched so expected string to come over unchanged.";
     }
     {
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    FixedStringUnitResolver unitResolver;
-    unitResolver.m_unitName = "";
-    instanceContext->SetUnitResolver(&unitResolver);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        FixedStringUnitResolver unitResolver;
+        unitResolver.m_unitName = "";
+        instanceContext->SetUnitResolver(&unitResolver);
 
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name is an empty string, but was: " << length.GetUtf8CP();
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name is an empty string, but was: " << length.GetUtf8CP();
     }
     {
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    FixedStringUnitResolver unitResolver;
-    unitResolver.m_unitName = "FOOT";
-    instanceContext->SetUnitResolver(&unitResolver);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        FixedStringUnitResolver unitResolver;
+        unitResolver.m_unitName = "FOOT";
+        instanceContext->SetUnitResolver(&unitResolver);
 
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_TRUE(length.IsNull()) << "Expected unset when old and new units are different even though they are compatible, but was: " << length.GetUtf8CP();
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_TRUE(length.IsNull()) << "Expected unset when old and new units are different even though they are compatible, but was: " << length.GetUtf8CP();
     }
     {
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    FixedStringUnitResolver unitResolver;
-    unitResolver.m_unitName = "AMPERE";
-    instanceContext->SetUnitResolver(&unitResolver);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        FixedStringUnitResolver unitResolver;
+        unitResolver.m_unitName = "AMPERE";
+        instanceContext->SetUnitResolver(&unitResolver);
 
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name is incompatible with current unit, but was: " << length.GetUtf8CP();
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name is incompatible with current unit, but was: " << length.GetUtf8CP();
     }
     {
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    FixedStringUnitResolver unitResolver;
-    unitResolver.m_unitName = "MEGASMOOT";
-    instanceContext->SetUnitResolver(&unitResolver);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        FixedStringUnitResolver unitResolver;
+        unitResolver.m_unitName = "MEGASMOOT";
+        instanceContext->SetUnitResolver(&unitResolver);
 
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name cannot be converted to a new unit, but was: " << length.GetUtf8CP();
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name cannot be converted to a new unit, but was: " << length.GetUtf8CP();
     }
-    }
+}
 
-TEST_F(UnitInstanceConversionTest, ValueSkippedIfConversionRequiredAndStringCannotBeConvertedToDoubleForPrimitiveArray)
-    {
+TEST_F(UnitInstanceConversionTest, ValueSkippedIfConversionRequiredAndStringCannotBeConvertedToDoubleForPrimitiveArray) {
     ECSchemaPtr pSchema;
     auto context = ECSchemaReadContext::CreateContext();
     getTestSchemaXMLForArray(pSchema, *context);
@@ -1934,8 +1877,7 @@ TEST_F(UnitInstanceConversionTest, ValueSkippedIfConversionRequiredAndStringCann
             </Dimensions>
         </Pipe>)xml";
 
-    for (const auto& unitName : std::vector<Utf8String>{"METRE", "", "FOOT", "AMPERE", "MEGASMOOT"})
-        {
+    for (const auto& unitName : std::vector<Utf8String>{"METRE", "", "FOOT", "AMPERE", "MEGASMOOT"}) {
         IECInstancePtr testInstance;
         auto instanceContext = ECInstanceReadContext::CreateContext(*pSchema);
         FixedStringUnitResolver unitResolver;
@@ -1950,14 +1892,13 @@ TEST_F(UnitInstanceConversionTest, ValueSkippedIfConversionRequiredAndStringCann
         EXPECT_TRUE(value.IsNull());
         testInstance->GetValue(value, "Dimensions", 1);
         EXPECT_TRUE(value.IsNull());
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitInstanceConversionTest, UnitConversionOnlySupportedOnDoubleAndStringThatCanBeConvertedToDouble)
-    {
+TEST_F(UnitInstanceConversionTest, UnitConversionOnlySupportedOnDoubleAndStringThatCanBeConvertedToDouble) {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     getUnitsInstanceTestSchema(schema, *context);
@@ -1969,80 +1910,79 @@ TEST_F(UnitInstanceConversionTest, UnitConversionOnlySupportedOnDoubleAndStringT
         )xml";
 
     {
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    FixedStringUnitResolver unitResolver;
-    unitResolver.m_unitName = "METRE";
-    instanceContext->SetUnitResolver(&unitResolver);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        FixedStringUnitResolver unitResolver;
+        unitResolver.m_unitName = "METRE";
+        instanceContext->SetUnitResolver(&unitResolver);
 
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_FALSE(length.IsNull()) << "Expected Value to be copied because the old and new units matched.";
-    EXPECT_EQ(50, length.GetInteger()) << "Old and new units matched so expected int to come over unchanged.";
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_FALSE(length.IsNull()) << "Expected Value to be copied because the old and new units matched.";
+        EXPECT_EQ(50, length.GetInteger()) << "Old and new units matched so expected int to come over unchanged.";
     }
     {
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    FixedStringUnitResolver unitResolver;
-    unitResolver.m_unitName = "";
-    instanceContext->SetUnitResolver(&unitResolver);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        FixedStringUnitResolver unitResolver;
+        unitResolver.m_unitName = "";
+        instanceContext->SetUnitResolver(&unitResolver);
 
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name is an empty string, but was: " << length.GetInteger();
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name is an empty string, but was: " << length.GetInteger();
     }
     {
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    FixedStringUnitResolver unitResolver;
-    unitResolver.m_unitName = "FOOT";
-    instanceContext->SetUnitResolver(&unitResolver);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        FixedStringUnitResolver unitResolver;
+        unitResolver.m_unitName = "FOOT";
+        instanceContext->SetUnitResolver(&unitResolver);
 
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_TRUE(length.IsNull()) << "Expected unset when old and new units are different even though they are compatible, but was: " << length.GetInteger();
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_TRUE(length.IsNull()) << "Expected unset when old and new units are different even though they are compatible, but was: " << length.GetInteger();
     }
     {
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    FixedStringUnitResolver unitResolver;
-    unitResolver.m_unitName = "AMPERE";
-    instanceContext->SetUnitResolver(&unitResolver);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        FixedStringUnitResolver unitResolver;
+        unitResolver.m_unitName = "AMPERE";
+        instanceContext->SetUnitResolver(&unitResolver);
 
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name is incompatible with current unit, but was: " << length.GetInteger();
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name is incompatible with current unit, but was: " << length.GetInteger();
     }
     {
-    IECInstancePtr testInstance;
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
-    FixedStringUnitResolver unitResolver;
-    unitResolver.m_unitName = "MEGASMOOT";
-    instanceContext->SetUnitResolver(&unitResolver);
+        IECInstancePtr testInstance;
+        ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);
+        FixedStringUnitResolver unitResolver;
+        unitResolver.m_unitName = "MEGASMOOT";
+        instanceContext->SetUnitResolver(&unitResolver);
 
-    InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
-    ASSERT_EQ(InstanceReadStatus::Success, readStat);
+        InstanceReadStatus readStat = IECInstance::ReadFromXmlString(testInstance, instanceXml, *instanceContext);
+        ASSERT_EQ(InstanceReadStatus::Success, readStat);
 
-    ECValue length;
-    testInstance->GetValue(length, "Length");
-    EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name cannot be converted to a new unit, but was: " << length.GetInteger();
+        ECValue length;
+        testInstance->GetValue(length, "Length");
+        EXPECT_TRUE(length.IsNull()) << "Expected unset when unit name cannot be converted to a new unit, but was: " << length.GetInteger();
     }
-    }
+}
 
-TEST_F(UnitInstanceConversionTest, UnitConversionNotSupportedOnIntForDoublePrimitiveArray)
-    {
+TEST_F(UnitInstanceConversionTest, UnitConversionNotSupportedOnIntForDoublePrimitiveArray) {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     getTestSchemaXMLForArray(schema, *context);
@@ -2055,8 +1995,7 @@ TEST_F(UnitInstanceConversionTest, UnitConversionNotSupportedOnIntForDoublePrimi
             </Dimensions>
         </Pipe>)xml";
 
-    for (const auto& unitName : std::vector<Utf8String>{"METRE", "", "FOOT", "AMPERE", "MEGASMOOT"})
-        {
+    for (const auto& unitName : std::vector<Utf8String>{"METRE", "", "FOOT", "AMPERE", "MEGASMOOT"}) {
         IECInstancePtr testInstance;
         auto instanceContext = ECInstanceReadContext::CreateContext(*schema);
         FixedStringUnitResolver unitResolver;
@@ -2071,27 +2010,23 @@ TEST_F(UnitInstanceConversionTest, UnitConversionNotSupportedOnIntForDoublePrimi
         EXPECT_TRUE(value.IsNull());
         testInstance->GetValue(value, "Dimensions", 1);
         EXPECT_TRUE(value.IsNull());
-        }
     }
+}
 
-namespace
-    {
-    template <typename IssueReporterArguments>
-    RelayIssueListener<IssueReporterArguments> MakeRelayIssueListener(IssueReporterArguments&& f)
-        {
-        return RelayIssueListener<IssueReporterArguments>(std::forward<IssueReporterArguments>(f));
-        }
-    }
+namespace {
+template <typename IssueReporterArguments>
+RelayIssueListener<IssueReporterArguments> MakeRelayIssueListener(IssueReporterArguments&& f) {
+    return RelayIssueListener<IssueReporterArguments>(std::forward<IssueReporterArguments>(f));
+}
+}  // namespace
 
-TEST_F(UnitInstanceConversionTest, UnitConversionLoggingWithIssueReporter)
-    {
+TEST_F(UnitInstanceConversionTest, UnitConversionLoggingWithIssueReporter) {
     auto testListenerReportCount = 0;
     std::string logMessage;
-    auto testListener = MakeRelayIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message)
-        {
+    auto testListener = MakeRelayIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) {
         ++testListenerReportCount;
         logMessage = message;
-        });
+    });
 
     ECSchemaPtr nonArraySchema;
     auto nonArrayContext = ECSchemaReadContext::CreateContext();
@@ -2103,28 +2038,24 @@ TEST_F(UnitInstanceConversionTest, UnitConversionLoggingWithIssueReporter)
 
     FixedStringUnitResolver unitResolver;
 
-    for (const auto& [lineNumber, isArray, unitName, instanceXML, errorMsg]
-    : std::vector<std::tuple<const int, const bool, const Utf8String, const Utf8CP, const std::string>>
-    {
-        // Test case set 1: Non-array primitive values
-        { __LINE__, false, "", R"xml(<Pipe xmlns='OldUnits.01.00'><Length>50</Length></Pipe>)xml", "No old unit name resolved for property 'OldUnits:Pipe.Length'.  Cannot ensure old unit is the same or convertible to new unit.  Skipping value." },
-        { __LINE__, false, "TestUnit", R"xml(<Pipe xmlns='OldUnits.01.00'><Length>50</Length></Pipe>)xml", "An ECUnit name could not be found for the old unit '(null)' for property 'OldUnits:Pipe.Length'.  Cannot convert value. Skipping value."},
-        { __LINE__, false, "AMPERE", R"xml(<Pipe xmlns='OldUnits.01.00'><Length>50</Length></Pipe>)xml", "Failed to convert value for property 'OldUnits:Pipe.Length' from 'Units:A' to 'Units:M'. Skipping value." },
-        { __LINE__, false, "FOOT", R"xml(<SillyPipe xmlns="OldUnits.01.00"><Length>Fifty</Length></SillyPipe>)xml", "Could not convert value for property 'OldUnits:SillyPipe.Length' from string to double for unit conversion from 'Units:FT' to 'Units:M'.  Skipping value."},
-        { __LINE__, false, "FOOT", R"xml(<IntPipe xmlns='OldUnits.01.00'><Length>50</Length></IntPipe>)xml", "Unit conversion required for property 'OldUnits:IntPipe.Length' of type 'int' but conversion is only supported for doubles and strings that can be converted to double. Skipping value."},
-        { __LINE__, false, "AMPERE", R"xml(<SillyPipe xmlns="OldUnits.01.00"><Length>50</Length></SillyPipe>)xml", "Failed to convert value for property 'OldUnits:SillyPipe.Length' from 'A' to 'M'. Skipping value."},
+    for (const auto& [lineNumber, isArray, unitName, instanceXML, errorMsg] : std::vector<std::tuple<const int, const bool, const Utf8String, const Utf8CP, const std::string>>{
+             // Test case set 1: Non-array primitive values
+             {__LINE__, false, "", R"xml(<Pipe xmlns='OldUnits.01.00'><Length>50</Length></Pipe>)xml", "No old unit name resolved for property 'OldUnits:Pipe.Length'.  Cannot ensure old unit is the same or convertible to new unit.  Skipping value."},
+             {__LINE__, false, "TestUnit", R"xml(<Pipe xmlns='OldUnits.01.00'><Length>50</Length></Pipe>)xml", "An ECUnit name could not be found for the old unit '(null)' for property 'OldUnits:Pipe.Length'.  Cannot convert value. Skipping value."},
+             {__LINE__, false, "AMPERE", R"xml(<Pipe xmlns='OldUnits.01.00'><Length>50</Length></Pipe>)xml", "Failed to convert value for property 'OldUnits:Pipe.Length' from 'Units:A' to 'Units:M'. Skipping value."},
+             {__LINE__, false, "FOOT", R"xml(<SillyPipe xmlns="OldUnits.01.00"><Length>Fifty</Length></SillyPipe>)xml", "Could not convert value for property 'OldUnits:SillyPipe.Length' from string to double for unit conversion from 'Units:FT' to 'Units:M'.  Skipping value."},
+             {__LINE__, false, "FOOT", R"xml(<IntPipe xmlns='OldUnits.01.00'><Length>50</Length></IntPipe>)xml", "Unit conversion required for property 'OldUnits:IntPipe.Length' of type 'int' but conversion is only supported for doubles and strings that can be converted to double. Skipping value."},
+             {__LINE__, false, "AMPERE", R"xml(<SillyPipe xmlns="OldUnits.01.00"><Length>50</Length></SillyPipe>)xml", "Failed to convert value for property 'OldUnits:SillyPipe.Length' from 'A' to 'M'. Skipping value."},
 
-        // Test case set 2: Array primitive values
-        { __LINE__, true, "", R"xml(<Pipe xmlns='OldUnits.01.00'><Dimensions><double>41</double><double>63</double></Dimensions></Pipe>)xml", "No old unit name resolved for property 'OldUnits:Pipe.Dimensions'.  Cannot ensure old unit is the same or convertible to new unit.  Skipping value." },
-        { __LINE__, true, "TestUnit", R"xml(<Pipe xmlns='OldUnits.01.00'><Dimensions><double>41</double><double>63</double></Dimensions></Pipe>)xml", "An ECUnit name could not be found for the old unit '(null)' for property 'OldUnits:Pipe.Dimensions'.  Cannot convert value. Skipping value."},
-        { __LINE__, true, "AMPERE", R"xml(<Pipe xmlns='OldUnits.01.00'><Dimensions><double>41</double><double>63</double></Dimensions></Pipe>)xml", "Failed to convert value for property 'OldUnits:Pipe.Dimensions' from 'Units:A' to 'Units:M'. Skipping value." },
-        { __LINE__, true, "FOOT", R"xml(<SillyPipe xmlns='OldUnits.01.00'><Dimensions><string>FortyOne</string><string>SixtyThree</string></Dimensions></SillyPipe>)xml", "Could not convert value for property 'OldUnits:SillyPipe.Dimensions' from string to double for unit conversion from 'Units:FT' to 'Units:M'.  Skipping value."},
-        { __LINE__, true, "FOOT", R"xml(<IntPipe xmlns='OldUnits.01.00'><Dimensions><int>41</int><int>63</int></Dimensions></IntPipe>)xml", "Unit conversion required for property 'OldUnits:IntPipe.Dimensions' of type 'int' but conversion is only supported for doubles and strings that can be converted to double. Skipping value."},
-        { __LINE__, true, "AMPERE", R"xml(<SillyPipe xmlns='OldUnits.01.00'><Dimensions><string>41</string><string>63</string></Dimensions></SillyPipe>)xml", "Failed to convert value for property 'OldUnits:SillyPipe.Dimensions' from 'A' to 'M'. Skipping value."}
-    })
-        {
+             // Test case set 2: Array primitive values
+             {__LINE__, true, "", R"xml(<Pipe xmlns='OldUnits.01.00'><Dimensions><double>41</double><double>63</double></Dimensions></Pipe>)xml", "No old unit name resolved for property 'OldUnits:Pipe.Dimensions'.  Cannot ensure old unit is the same or convertible to new unit.  Skipping value."},
+             {__LINE__, true, "TestUnit", R"xml(<Pipe xmlns='OldUnits.01.00'><Dimensions><double>41</double><double>63</double></Dimensions></Pipe>)xml", "An ECUnit name could not be found for the old unit '(null)' for property 'OldUnits:Pipe.Dimensions'.  Cannot convert value. Skipping value."},
+             {__LINE__, true, "AMPERE", R"xml(<Pipe xmlns='OldUnits.01.00'><Dimensions><double>41</double><double>63</double></Dimensions></Pipe>)xml", "Failed to convert value for property 'OldUnits:Pipe.Dimensions' from 'Units:A' to 'Units:M'. Skipping value."},
+             {__LINE__, true, "FOOT", R"xml(<SillyPipe xmlns='OldUnits.01.00'><Dimensions><string>FortyOne</string><string>SixtyThree</string></Dimensions></SillyPipe>)xml", "Could not convert value for property 'OldUnits:SillyPipe.Dimensions' from string to double for unit conversion from 'Units:FT' to 'Units:M'.  Skipping value."},
+             {__LINE__, true, "FOOT", R"xml(<IntPipe xmlns='OldUnits.01.00'><Dimensions><int>41</int><int>63</int></Dimensions></IntPipe>)xml", "Unit conversion required for property 'OldUnits:IntPipe.Dimensions' of type 'int' but conversion is only supported for doubles and strings that can be converted to double. Skipping value."},
+             {__LINE__, true, "AMPERE", R"xml(<SillyPipe xmlns='OldUnits.01.00'><Dimensions><string>41</string><string>63</string></Dimensions></SillyPipe>)xml", "Failed to convert value for property 'OldUnits:SillyPipe.Dimensions' from 'A' to 'M'. Skipping value."}}) {
         unitResolver.m_unitName = unitName;
-    
+
         auto instanceContext = ECInstanceReadContext::CreateContext(*(isArray ? arraySchema : nonArraySchema));
         instanceContext->SetUnitResolver(&unitResolver);
         instanceContext->Issues().AddListener(testListener);
@@ -2135,43 +2066,40 @@ TEST_F(UnitInstanceConversionTest, UnitConversionLoggingWithIssueReporter)
         IECInstancePtr testInstance;
         auto readStat = IECInstance::ReadFromXmlString(testInstance, instanceXML, *instanceContext);
         ASSERT_EQ(InstanceReadStatus::Success, readStat);
-        
+
         EXPECT_EQ(testListenerReportCount, 1) << "Test case at line " << lineNumber << " failed. Incorrect number of error messages reported.\n";
         EXPECT_EQ(0, logMessage.compare(errorMsg)) << "Test case at line " << lineNumber << " failed. Error message logged is: " << logMessage << "\n";
 
         instanceContext->Issues().RemoveListener();
-        }
     }
+}
 
-TEST_F(UnitInstanceConversionTest, PrimitiveArrayWithEmptyOrNullValues)
-    {
+TEST_F(UnitInstanceConversionTest, PrimitiveArrayWithEmptyOrNullValues) {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     getTestSchemaXMLForArray(schema, *context);
 
-    for (const auto& [lineNumber, value, convertUnit] : std::vector<std::tuple<const int, const std::string, const bool>>
-    {
-        // Test case set 1 : No unit conversion 
-        std::make_tuple(__LINE__, "<double></double>", false),
-        std::make_tuple(__LINE__, "<double> </double>", false),
-        std::make_tuple(__LINE__, "<double />", false),
-        std::make_tuple(__LINE__, "<double xsi:nil='true'/>", false),
+    for (const auto& [lineNumber, value, convertUnit] : std::vector<std::tuple<const int, const std::string, const bool>>{
+             // Test case set 1 : No unit conversion
+             std::make_tuple(__LINE__, "<double></double>", false),
+             std::make_tuple(__LINE__, "<double> </double>", false),
+             std::make_tuple(__LINE__, "<double />", false),
+             std::make_tuple(__LINE__, "<double xsi:nil='true'/>", false),
 
-        // Test case set 2 : Unit conversion done
-        std::make_tuple(__LINE__, "<double></double>", true),
-        std::make_tuple(__LINE__, "<double> </double>", true),
-        std::make_tuple(__LINE__, "<double />", true),
-        std::make_tuple(__LINE__, "<double xsi:nil='true'/>", true)
-        })
-        {
+             // Test case set 2 : Unit conversion done
+             std::make_tuple(__LINE__, "<double></double>", true),
+             std::make_tuple(__LINE__, "<double> </double>", true),
+             std::make_tuple(__LINE__, "<double />", true),
+             std::make_tuple(__LINE__, "<double xsi:nil='true'/>", true)}) {
         Utf8String instanceXml = Utf8PrintfString(R"xml(<Pipe xmlns='OldUnits.01.00'>
                                         <Dimensions>
                                             <double>41</double>
                                             %s
                                             <double>63</double>
                                         </Dimensions>
-                                    </Pipe>)xml", value.c_str());
-        
+                                    </Pipe>)xml",
+                                                  value.c_str());
+
         IECInstancePtr testInstance;
         auto instanceContext = ECInstanceReadContext::CreateContext(*schema);
         if (convertUnit)
@@ -2192,31 +2120,28 @@ TEST_F(UnitInstanceConversionTest, PrimitiveArrayWithEmptyOrNullValues)
         ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(numConverted, "Dimensions", 2));
         EXPECT_STREQ("M", numConverted.GetUnitName());
         EXPECT_DOUBLE_EQ(numConverted.GetMagnitude(), (convertUnit ? 6.3 : 63));
-        }
     }
+}
 
-TEST_F(UnitInstanceConversionTest, PrimitiveValueEmptyOrNull)
-    {
+TEST_F(UnitInstanceConversionTest, PrimitiveValueEmptyOrNull) {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     getUnitsInstanceTestSchema(schema, *context);
 
-    for (const auto& [lineNumber, value, convertUnit] : std::vector<std::tuple<const int, const std::string, const bool>>
-    {
-        // Test case set 1 : No unit conversion
-        std::make_tuple(__LINE__, "<Length></Length>", false),
-        std::make_tuple(__LINE__, "<Length> </Length>", false),
-        std::make_tuple(__LINE__, "<Length />", false),
-        std::make_tuple(__LINE__, "<Length xsi:nil='true'/>", false),
+    for (const auto& [lineNumber, value, convertUnit] : std::vector<std::tuple<const int, const std::string, const bool>>{
+             // Test case set 1 : No unit conversion
+             std::make_tuple(__LINE__, "<Length></Length>", false),
+             std::make_tuple(__LINE__, "<Length> </Length>", false),
+             std::make_tuple(__LINE__, "<Length />", false),
+             std::make_tuple(__LINE__, "<Length xsi:nil='true'/>", false),
 
-        // Test case set 2 : Unit conversion done
-        std::make_tuple(__LINE__, "<Length></Length>", true),
-        std::make_tuple(__LINE__, "<Length> </Length>", true),
-        std::make_tuple(__LINE__, "<Length />", true),
-        std::make_tuple(__LINE__, "<Length xsi:nil='true'/>", true)
-        
-        })
-        {
+             // Test case set 2 : Unit conversion done
+             std::make_tuple(__LINE__, "<Length></Length>", true),
+             std::make_tuple(__LINE__, "<Length> </Length>", true),
+             std::make_tuple(__LINE__, "<Length />", true),
+             std::make_tuple(__LINE__, "<Length xsi:nil='true'/>", true)
+
+         }) {
         Utf8String instanceXml = Utf8PrintfString(R"xml(<Pipe xmlns='OldUnits.01.00'>%s</Pipe>)xml", value.c_str());
 
         IECInstancePtr testInstance;
@@ -2230,6 +2155,6 @@ TEST_F(UnitInstanceConversionTest, PrimitiveValueEmptyOrNull)
         ECValue nullValue;
         ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetValue(nullValue, "Length"));
         EXPECT_TRUE(nullValue.IsNull()) << "Test case at line " << lineNumber << " failed. Value was expected to be NULL\n";
-        }
     }
+}
 END_BENTLEY_ECN_TEST_NAMESPACE

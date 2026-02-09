@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <json/json.h>
@@ -18,14 +18,13 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! without data loss. Using one of the other options from this enumeration allows to workaround that issue.
 // @bsienum
 //+===============+===============+===============+===============+===============+======
-enum class ECJsonInt64Format
-    {
+enum class ECJsonInt64Format {
     //! The Int64 number is formatted as is. I.e. this causes data loss in JavaScript. Only use this option
     //! if the JSON is not supposed to be used in JavaScript.
     AsNumber,
-    AsDecimalString, //!< The Int64 number is formatted as decimal string.
-    AsHexadecimalString //!< The Int64 number is formatted as hexadecimal string.
-    };
+    AsDecimalString,     //!< The Int64 number is formatted as decimal string.
+    AsHexadecimalString  //!< The Int64 number is formatted as hexadecimal string.
+};
 
 //=================================================================================
 //! An ECInstance in the ECJSON Format is formatted as JSON object made up of property value pairs.
@@ -69,73 +68,66 @@ enum class ECJsonInt64Format
 //!
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECJsonSystemNames final
-    {
-    public:
+struct ECJsonSystemNames final {
+   public:
+    static constexpr Utf8CP Id() { return "id"; }
+    static constexpr Utf8CP ClassName() { return "className"; }
+    static constexpr Utf8CP ClassFullName() { return "classFullName"; }
+    static constexpr Utf8CP SourceId() { return "sourceId"; }
+    static constexpr Utf8CP SourceClassName() { return "sourceClassName"; }
+    static constexpr Utf8CP TargetId() { return "targetId"; }
+    static constexpr Utf8CP TargetClassName() { return "targetClassName"; }
+
+    //! System member names for the representation of BentleyApi::ECN::NavigationECProperty values
+    //! in the ECJSON
+    struct Navigation final {
+       public:
         static constexpr Utf8CP Id() { return "id"; }
-        static constexpr Utf8CP ClassName() { return "className"; }
-        static constexpr Utf8CP ClassFullName() { return "classFullName"; }
-        static constexpr Utf8CP SourceId() { return "sourceId"; }
-        static constexpr Utf8CP SourceClassName() { return "sourceClassName"; }
-        static constexpr Utf8CP TargetId() { return "targetId"; }
-        static constexpr Utf8CP TargetClassName() { return "targetClassName"; }
+        static constexpr Utf8CP RelClassName() { return "relClassName"; }
 
-        //! System member names for the representation of BentleyApi::ECN::NavigationECProperty values
-        //! in the ECJSON
-        struct Navigation final
-            {
-            public:
-                static constexpr Utf8CP Id() { return "id"; }
-                static constexpr Utf8CP RelClassName() { return "relClassName"; }
+       private:
+        Navigation() = delete;
+        ~Navigation() = delete;
 
-            private:
-                Navigation() = delete;
-                ~Navigation() = delete;
-
-            public:
-                static bool IsSystemMember(Utf8StringCR memberName) { return memberName.Equals(Id()) || memberName.Equals(RelClassName()); }
-            };
-
-        //! System member names for the representation of Point property values in the ECJSON
-        struct Point final
-            {
-            public:
-
-                static constexpr Utf8CP X() { return "x"; }
-                static constexpr Utf8CP Y() { return "y"; }
-                static constexpr Utf8CP Z() { return "z"; }
-
-            private:
-                Point() = delete;
-                ~Point() = delete;
-
-            public:
-                static bool IsSystemMember(Utf8StringCR memberName) { return memberName.Equals(X()) || memberName.Equals(Y()) || memberName.Equals(Z()); }
-            };
-
-    private:
-        ECJsonSystemNames() = delete;
-        ~ECJsonSystemNames() = delete;
-
-    public:
-        //!Checks whether @p topLevelMemberName is a system name for top-level members of the ECJSON object.
-        //! @remarks System names that can only occur in nested members (ECJsonSystemNames::Navigation or ECJsonSystemNames::Point)
-        //! are not considered by the check.
-        //! @param[in] topLevelMemberName Name of top-level member of ECJSON object to check
-        //! @return true or false
-        static bool IsTopLevelSystemMember(Utf8StringCR topLevelMemberName) { return topLevelMemberName.Equals(Id()) || topLevelMemberName.Equals(ClassName()) || topLevelMemberName.Equals(SourceId()) || topLevelMemberName.Equals(TargetId()) || topLevelMemberName.Equals(SourceClassName()) || topLevelMemberName.Equals(TargetClassName()); }
+       public:
+        static bool IsSystemMember(Utf8StringCR memberName) { return memberName.Equals(Id()) || memberName.Equals(RelClassName()); }
     };
 
+    //! System member names for the representation of Point property values in the ECJSON
+    struct Point final {
+       public:
+        static constexpr Utf8CP X() { return "x"; }
+        static constexpr Utf8CP Y() { return "y"; }
+        static constexpr Utf8CP Z() { return "z"; }
+
+       private:
+        Point() = delete;
+        ~Point() = delete;
+
+       public:
+        static bool IsSystemMember(Utf8StringCR memberName) { return memberName.Equals(X()) || memberName.Equals(Y()) || memberName.Equals(Z()); }
+    };
+
+   private:
+    ECJsonSystemNames() = delete;
+    ~ECJsonSystemNames() = delete;
+
+   public:
+    //! Checks whether @p topLevelMemberName is a system name for top-level members of the ECJSON object.
+    //!  @remarks System names that can only occur in nested members (ECJsonSystemNames::Navigation or ECJsonSystemNames::Point)
+    //!  are not considered by the check.
+    //!  @param[in] topLevelMemberName Name of top-level member of ECJSON object to check
+    //!  @return true or false
+    static bool IsTopLevelSystemMember(Utf8StringCR topLevelMemberName) { return topLevelMemberName.Equals(Id()) || topLevelMemberName.Equals(ClassName()) || topLevelMemberName.Equals(SourceId()) || topLevelMemberName.Equals(TargetId()) || topLevelMemberName.Equals(SourceClassName()) || topLevelMemberName.Equals(TargetClassName()); }
+};
 
 //=================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ECJsonUtilities
-    {
-public:
-
-    //don't use BE_JSON_NAME here so that we can maintain a master definition of the reserved words
-    //which each JSON API adoption can use
+struct ECJsonUtilities {
+   public:
+    // don't use BE_JSON_NAME here so that we can maintain a master definition of the reserved words
+    // which each JSON API adoption can use
 
     //! @name Methods for JSON values of the JsonCpp API
     //! @{
@@ -164,7 +156,7 @@ public:
     static constexpr Json::StaticString json_z() { return Json::StaticString(ECJsonSystemNames::Point::Z()); }
     //! @}
 
-private:
+   private:
     ECJsonUtilities() = delete;
     ~ECJsonUtilities() = delete;
 
@@ -184,7 +176,7 @@ private:
         return f == std::floor(f);
     }
 
-public:
+   public:
     //! Generates the fully qualified name of an ECClass as used in the ECJSON format: &lt;schema name&gt;.&lt;class name&gt;
     //! @param[in] ecClass ECClass
     //! @return Fully qualified class name for the ECJSON format
@@ -197,22 +189,22 @@ public:
     //! Generates the fully qualified name of an PropertyCategory as used in the ECJSON format: &lt;schema name&gt;.&lt;PropertyCategory name&gt;
     //! @param[in] ecPropertyCategory PropertyCategory
     //! @return Fully qualified property category name for the ECJSON format
-    static Utf8String FormatPropertyCategoryName(PropertyCategoryCR ecPropertyCategory) {return Utf8PrintfString("%s.%s", ecPropertyCategory.GetSchema().GetName().c_str(), ecPropertyCategory.GetName().c_str());}
+    static Utf8String FormatPropertyCategoryName(PropertyCategoryCR ecPropertyCategory) { return Utf8PrintfString("%s.%s", ecPropertyCategory.GetSchema().GetName().c_str(), ecPropertyCategory.GetName().c_str()); }
 
     //! Generates the fully qualified name of an ECEnumeration as used in the ECJSON format: &lt;schema name&gt;.&lt;Enumeration name&gt;
     //! @param[in] ecEnumeration ECEnumeration
     //! @return Fully qualified enumeration name for the ECJSON format
-    static Utf8String FormatEnumerationName(ECEnumerationCR ecEnumeration) {return Utf8PrintfString("%s.%s", ecEnumeration.GetSchema().GetName().c_str(), ecEnumeration.GetName().c_str());}
+    static Utf8String FormatEnumerationName(ECEnumerationCR ecEnumeration) { return Utf8PrintfString("%s.%s", ecEnumeration.GetSchema().GetName().c_str(), ecEnumeration.GetName().c_str()); }
 
     //! Generates the fully qualified name of a KindOfQuantity as used in the ECJSON format: &lt;schema name&gt;.&lt;KindOfQuantity name&gt;
     //! @param[in] koq KindOfQuantity
     //! @return Fully qualified KindOfQuantity name for the ECJSON format
-    static Utf8String FormatKindOfQuantityName(KindOfQuantityCR koq) {return Utf8PrintfString("%s.%s", koq.GetSchema().GetName().c_str(), koq.GetName().c_str());}
+    static Utf8String FormatKindOfQuantityName(KindOfQuantityCR koq) { return Utf8PrintfString("%s.%s", koq.GetSchema().GetName().c_str(), koq.GetName().c_str()); }
 
     //! Lowers the first char of the specified string.
     //! @remarks Use this method to make a name, e.g. an ECProperty name a JSON member name.
     //! @param[in,out] str String to lower its first character
-    static void LowerFirstChar(Utf8StringR str) { str[0] = (Utf8Char) tolower(str[0]); }
+    static void LowerFirstChar(Utf8StringR str) { str[0] = (Utf8Char)tolower(str[0]); }
 
     //! @name Methods for JSON values of the JsonCpp API
     //! @{
@@ -227,11 +219,10 @@ public:
     //! Type must have both GetName() and GetSchema() methods
     //! @param[in] ec The schema child to extract name from
     //! return A string containing the fully qualified name
-    template<typename T>
-    static Utf8String ECNameToJsonName(T const& ec)
-        {
+    template <typename T>
+    static Utf8String ECNameToJsonName(T const& ec) {
         return ec.GetSchema().GetName() + "." + ec.GetName();
-        }
+    }
 
     //! Looks up an ECClass from a JSON string containing the fully qualified class name
     //! @param[in] json JSON containing the class name
@@ -257,7 +248,8 @@ public:
     //! @remarks The JSON must contain the Id value in one of the formats of BentleyApi::ECN::ECJsonInt64Format.
     //! @param[in] json JSON value containing the id
     //! @return Resulting BeInt64Id. In case of error, an invalid BeInt64Id will be returned.
-    template<class TBeInt64Id> static TBeInt64Id JsonToId(BeJsConst json) { return json.GetId64<TBeInt64Id>(); }
+    template <class TBeInt64Id>
+    static TBeInt64Id JsonToId(BeJsConst json) { return json.GetId64<TBeInt64Id>(); }
 
     //! Converts an Int64 into a JSON value.
     //! @param[out] json resulting JSON value.
@@ -276,7 +268,7 @@ public:
     //! @param[out] json the resulting ISO8601 string JSON value
     //! @param[in] dateTime DateTime to convert
     //! @see BentleyApi::DateTime::ToString
-    static void DateTimeToJson(BeJsValue json, DateTimeCR dateTime) { json = dateTime.ToString();  }
+    static void DateTimeToJson(BeJsValue json, DateTimeCR dateTime) { json = dateTime.ToString(); }
 
     //! Converts the JSON containing an ISO8691 date time string into a DateTime object.
     //! @param[out] dateTime DateTime
@@ -377,42 +369,38 @@ public:
     //! @remarks The JSON must contain the Id value in one of the formats of BentleyApi::ECN::ECJsonInt64Format.
     //! @param[in] json JSON value containing the id
     //! @return Resulting BeInt64Id. In case of error, an int64 < 0, a double/float that cannot be converted losslessly to uint64, or a json string with '-' or '.' an invalid BeInt64Id will be returned.
-    template<class TBeInt64Id>
-    static TBeInt64Id JsonToId(RapidJsonValueCR json)
-        {
+    template <class TBeInt64Id>
+    static TBeInt64Id JsonToId(RapidJsonValueCR json) {
         int64_t val = 0;
         bool stringCheckFailed = false;
-        if (json.IsString())
-            {
+        if (json.IsString()) {
             Utf8CP strVal = json.GetString();
-            if (strVal[0] == '-') // negative numbers are not valid
+            if (strVal[0] == '-')  // negative numbers are not valid
                 stringCheckFailed = true;
-            else if (strchr(strVal, '.') != nullptr) // decimal numbers are not valid
+            else if (strchr(strVal, '.') != nullptr)  // decimal numbers are not valid
                 stringCheckFailed = true;
-            }
-        else if (json.IsFloat() && IsLosslessUint64(json.GetFloat()))
-            {
-            return TBeInt64Id((uint64_t) json.GetFloat());
-            }
-        else if (json.IsDouble() && IsLosslessUint64(json.GetDouble()))
-            {
-            return TBeInt64Id((uint64_t) json.GetDouble());
-            }
+        } else if (json.IsFloat() && IsLosslessUint64(json.GetFloat())) {
+            return TBeInt64Id((uint64_t)json.GetFloat());
+        } else if (json.IsDouble() && IsLosslessUint64(json.GetDouble())) {
+            return TBeInt64Id((uint64_t)json.GetDouble());
+        }
 
-        if (stringCheckFailed || json.IsFloat() || json.IsDouble() || SUCCESS != JsonToInt64(val, json) || val < 0)
-            {
+        if (stringCheckFailed || json.IsFloat() || json.IsDouble() || SUCCESS != JsonToInt64(val, json) || val < 0) {
             TBeInt64Id invalidId;
             return invalidId;
-            }
-        return TBeInt64Id((uint64_t) val);
         }
+        return TBeInt64Id((uint64_t)val);
+    }
 
     //! Converts the specified DateTime to a JSON value as ISO8601 string
     //! @param[out] json the resulting ISO8601 string JSON value
     //! @param[in] dateTime DateTime to convert
     //! @param[in] allocator Allocator to use to copy the string into the RapidJson value.
     //! @see BentleyApi::DateTime::ToString
-    static void DateTimeToJson(RapidJsonValueR json, DateTimeCR dateTime, rapidjson::MemoryPoolAllocator<>& allocator) { Utf8String isoStr = dateTime.ToString(); json.SetString(isoStr.c_str(), (rapidjson::SizeType) isoStr.size(), allocator); }
+    static void DateTimeToJson(RapidJsonValueR json, DateTimeCR dateTime, rapidjson::MemoryPoolAllocator<>& allocator) {
+        Utf8String isoStr = dateTime.ToString();
+        json.SetString(isoStr.c_str(), (rapidjson::SizeType)isoStr.size(), allocator);
+    }
 
     //! Converts the JSON containing an ISO8691 date time string into a DateTime object.
     //! @param[out] dateTime DateTime
@@ -494,43 +482,40 @@ public:
     //! @see BentleyApi::BentleyGeometryJson::TryJsonValueToGeometry
     ECOBJECTS_EXPORT static IGeometryPtr JsonToIGeometry(RapidJsonValueCR json);
     //! @}
-    };
+};
 
 //=================================================================================
 //! Populates an ECInstance from a JSON in the @ref ECN::ECJsonSystemNames "ECJSON Format".
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct JsonECInstanceConverter final
-    {
-    private:
-        JsonECInstanceConverter() = delete;
-        ~JsonECInstanceConverter() = delete;
+struct JsonECInstanceConverter final {
+   private:
+    JsonECInstanceConverter() = delete;
+    ~JsonECInstanceConverter() = delete;
 
-        //JsonCpp
-        static BentleyStatus JsonToECInstance(ECN::IECInstanceR, BeJsConst, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR, bool ignoreUnknownProperties = false, IECSchemaRemapperCP remapper = nullptr, std::function<bool(Utf8CP)> shouldSerializeProperty = nullptr, bool isDeepNull = false);
-        static BentleyStatus JsonToPrimitiveECValue(ECN::ECValueR value, BeJsConst json, ECN::PrimitiveType type, Utf8CP extendedTypeName);
-        static BentleyStatus JsonToArrayECValue(ECN::IECInstanceR, BeJsConst, ECN::ArrayECPropertyCR, Utf8StringCR currentAccessString, IECClassLocaterR);
+    // JsonCpp
+    static BentleyStatus JsonToECInstance(ECN::IECInstanceR, BeJsConst, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR, bool ignoreUnknownProperties = false, IECSchemaRemapperCP remapper = nullptr, std::function<bool(Utf8CP)> shouldSerializeProperty = nullptr, bool isDeepNull = false);
+    static BentleyStatus JsonToPrimitiveECValue(ECN::ECValueR value, BeJsConst json, ECN::PrimitiveType type, Utf8CP extendedTypeName);
+    static BentleyStatus JsonToArrayECValue(ECN::IECInstanceR, BeJsConst, ECN::ArrayECPropertyCR, Utf8StringCR currentAccessString, IECClassLocaterR);
 
-    public:
-        ECOBJECTS_EXPORT static BentleyStatus JsonToECInstance(ECN::IECInstanceR instance, BeJsConst jsonValue, IECClassLocaterR classLocater, bool ignoreUnknownProperties = false, IECSchemaRemapperCP remapper = nullptr);
-        ECOBJECTS_EXPORT static BentleyStatus JsonToECInstance(ECN::IECInstanceR instance, BeJsConst jsonValue, IECClassLocaterR classLocater, std::function<bool(Utf8CP)> shouldSerializeProperty);
+   public:
+    ECOBJECTS_EXPORT static BentleyStatus JsonToECInstance(ECN::IECInstanceR instance, BeJsConst jsonValue, IECClassLocaterR classLocater, bool ignoreUnknownProperties = false, IECSchemaRemapperCP remapper = nullptr);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToECInstance(ECN::IECInstanceR instance, BeJsConst jsonValue, IECClassLocaterR classLocater, std::function<bool(Utf8CP)> shouldSerializeProperty);
+};
+
+/*=================================================================================**/ /**
+ * JsonEcInstanceWriter - creates Json object from ECInstance
+ * If writeFormattedQuanties is true then primitive values with koq specification will be save as a JSON object with rawValue, formattedValue, and fusSpec.
+ * @bsistruct
+ +===============+===============+===============+===============+===============+======*/
+struct JsonEcInstanceWriter final {
+   public:
+    enum class MemberNameCasing {
+        KeepOriginal,   //!< The JSON member name will be the same as the ECProperty name
+        LowerFirstChar  //!< The first character of the ECProperty name will be lowercased to create the JSON member name
     };
 
-/*=================================================================================**//**
-* JsonEcInstanceWriter - creates Json object from ECInstance
-* If writeFormattedQuanties is true then primitive values with koq specification will be save as a JSON object with rawValue, formattedValue, and fusSpec.
-* @bsistruct
-+===============+===============+===============+===============+===============+======*/
-struct JsonEcInstanceWriter final
-{
-public:
-    enum class MemberNameCasing
-        {
-        KeepOriginal, //!< The JSON member name will be the same as the ECProperty name
-        LowerFirstChar //!< The first character of the ECProperty name will be lowercased to create the JSON member name
-        };
-
-private:
+   private:
     static void AppendAccessString(Utf8String& compoundAccessString, Utf8CP baseAccessString, Utf8StringCR propertyName);
     static StatusInt WritePropertyValuesOfClassOrStructArrayMember(BeJsValue valueToPopulate, ECN::ECClassCR ecClass, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, IECClassLocaterP classLocator, bool writeFormattedQuantities = false, bool serializeNullValues = false, MemberNameCasing casing = MemberNameCasing::KeepOriginal, std::function<bool(Utf8CP)> shouldWriteProperty = nullptr);
     static StatusInt WritePrimitiveValue(BeJsValue valueToPopulate, Utf8CP propertyName, ECN::ECValueCR ecValue, ECN::PrimitiveType propertyType, KindOfQuantityCP koq = nullptr, MemberNameCasing casing = MemberNameCasing::KeepOriginal);
@@ -539,7 +524,7 @@ private:
     static StatusInt WritePrimitivePropertyValue(BeJsValue valueToPopulate, ECN::PrimitiveECPropertyCR primitiveProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities = false, bool serializeNullValues = false, MemberNameCasing casing = MemberNameCasing::KeepOriginal);
     static StatusInt WriteEmbeddedStructPropertyValue(BeJsValue valueToPopulate, ECN::StructECPropertyCR structProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities = false, bool serializeNullValues = false, MemberNameCasing casing = MemberNameCasing::KeepOriginal);
 
-public:
+   public:
     //! Convert an ECPropertyName to a JSON member name according to the specified MemberNameCasing option
     ECOBJECTS_EXPORT static Utf8String FormatMemberName(Utf8StringCR propertyName, MemberNameCasing casing);
 

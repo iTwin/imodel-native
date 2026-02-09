@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <ECObjects/ECObjects.h>
@@ -17,18 +17,16 @@ using ECSchemaReadContextPtr = RefCountedPtr<ECSchemaReadContext>;
 //=======================================================================================
 //! Context object used for schema creation and deserialization.
 //=======================================================================================
-struct ECSchemaReadContext : RefCountedBase
-{
-friend struct ECSchema;
-friend struct SearchPathSchemaFileLocater;
-    struct WStringComparer
-        {
-        bool operator()(WStringCR s1, WStringCR s2) const
-            {
+struct ECSchemaReadContext : RefCountedBase {
+    friend struct ECSchema;
+    friend struct SearchPathSchemaFileLocater;
+    struct WStringComparer {
+        bool operator()(WStringCR s1, WStringCR s2) const {
             return s1.CompareTo(s2) < 0;
-            }
-        };
-private:
+        }
+    };
+
+   private:
     using SearchPathList = bset<WString, WStringComparer>;
 
     bool m_preserveElementOrder = false;
@@ -42,74 +40,77 @@ private:
     bvector<WString> m_cultureStrings;
     bvector<SearchPathSchemaFileLocaterPtr> m_ownedLocators;
 
-    IECSchemaRemapperCP         m_remapper;
-    IStandaloneEnablerLocaterP  m_standaloneEnablerLocater;
+    IECSchemaRemapperCP m_remapper;
+    IStandaloneEnablerLocaterP m_standaloneEnablerLocater;
 
-    ECSchemaCachePtr            m_knownSchemas;
-    bvector<bool>               m_knownSchemaDirtyStack;
-    ECSchemaReadContextPtr      m_conversionSchemas;
+    ECSchemaCachePtr m_knownSchemas;
+    bvector<bool> m_knownSchemaDirtyStack;
+    ECSchemaReadContextPtr m_conversionSchemas;
 
-    bvector<IECSchemaLocaterP>  m_locaters;
-    int                         m_userAddedLocatersCount;
-    int                         m_searchPathLocatersCount;
+    bvector<IECSchemaLocaterP> m_locaters;
+    int m_userAddedLocatersCount;
+    int m_searchPathLocatersCount;
 
-    bvector<Utf8String>         m_schemasToPrune;
-    // Aliases are scoped by the schema which has the schema reference.  
+    bvector<Utf8String> m_schemasToPrune;
+    // Aliases are scoped by the schema which has the schema reference.
     // This is necessary due to alias renames and the fact that V8 does not ensure all aliases in a graph are unique
     bmap<Utf8String, bvector<Utf8String>> m_schemasToPruneAliases;
 
-    IssueReporter               m_issueReporter;
+    IssueReporter m_issueReporter;
 
     bool GetStandardPaths(bvector<WString>& standardPaths);
 
-protected:
+   protected:
     //! Constructs a context for deserializing ECSchemas
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestWriteCompatible only checks that the read and write versions match. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     //! @param[in] createConversionContext  If true a private schema read context is created to locate and store conversion schemas
-    //! @param[in] includeFilesWithNoVerExt Pass true to include schema files that don't have a version number included as part of the file name. 
+    //! @param[in] includeFilesWithNoVerExt Pass true to include schema files that don't have a version number included as part of the file name.
     ECOBJECTS_EXPORT ECSchemaReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext, bool includeFilesWithNoVerExt = false);
 
     //! Creates a context for deserializing ECSchemas
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestWriteCompatible only checks that the read and write versions match. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     //! @param[in] createConversionContext  If true a private schema read context is created to locate and store conversion schemas
-    //! @param[in] includeFilesWithNoVerExt Pass true to include schema files that don't have a version number included as part of the file name. 
+    //! @param[in] includeFilesWithNoVerExt Pass true to include schema files that don't have a version number included as part of the file name.
     ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext, bool includeFilesWithNoVerExt);
 
     ECOBJECTS_EXPORT virtual void _AddSchema(ECSchemaR schema);
-public:
-    IStandaloneEnablerLocaterP GetStandaloneEnablerLocater() {return m_standaloneEnablerLocater;}
+
+   public:
+    IStandaloneEnablerLocaterP GetStandaloneEnablerLocater() { return m_standaloneEnablerLocater; }
     ECOBJECTS_EXPORT ECObjectsStatus AddSchema(ECSchemaR schema);
 
     //! Removes all references of the provided schema from this context.
-    void RemoveSchema(ECSchemaR schema) {m_knownSchemas->DropAllReferencesOfSchema(schema);}
-    ECSchemaPtr GetFoundSchema(SchemaKeyCR key, SchemaMatchType matchType) {return m_knownSchemas->GetSchema(key, matchType);}
+    void RemoveSchema(ECSchemaR schema) { m_knownSchemas->DropAllReferencesOfSchema(schema); }
+    ECSchemaPtr GetFoundSchema(SchemaKeyCR key, SchemaMatchType matchType) { return m_knownSchemas->GetSchema(key, matchType); }
 
     ECOBJECTS_EXPORT ECObjectsStatus AddConversionSchema(ECSchemaR schema);
-    void RemoveConversionSchema(ECSchemaR schema) {if (m_conversionSchemas.IsValid()) m_conversionSchemas->RemoveSchema(schema);}
+    void RemoveConversionSchema(ECSchemaR schema) {
+        if (m_conversionSchemas.IsValid()) m_conversionSchemas->RemoveSchema(schema);
+    }
 
     ECOBJECTS_EXPORT void AddSchemaLocaters(bvector<ECN::IECSchemaLocaterP> const& schemaLocators);
 
-    IECSchemaRemapperCP GetRemapper() const {return m_remapper;}
-    void SetRemapper(IECSchemaRemapperCP remapper) {m_remapper = remapper;}
+    IECSchemaRemapperCP GetRemapper() const { return m_remapper; }
+    void SetRemapper(IECSchemaRemapperCP remapper) { m_remapper = remapper; }
     void ResolveClassName(Utf8StringR serializedClassName, ECSchemaCR schema) const;
 
-    bool GetPreserveElementOrder() const {return m_preserveElementOrder;}
-    void SetPreserveElementOrder(bool flag) {m_preserveElementOrder = flag;}
+    bool GetPreserveElementOrder() const { return m_preserveElementOrder; }
+    void SetPreserveElementOrder(bool flag) { m_preserveElementOrder = flag; }
 
-    bool ResolveConflicts() const {return m_resolveConflicts;}
+    bool ResolveConflicts() const { return m_resolveConflicts; }
 
     //! If true ECSchema::Validate will not be called on schemas deserialized with this context.  Default is false, so validation is run.
-    bool GetSkipValidation() const {return m_skipValidation;}
+    bool GetSkipValidation() const { return m_skipValidation; }
     //! Sets skip validation parameter.  If set to true ECSchema::Validate will not be called on schemas deserialized with this context.  Default is false, so validation is run.
-    void SetSkipValidation(bool skipValidation) {m_skipValidation = skipValidation;}
+    void SetSkipValidation(bool skipValidation) { m_skipValidation = skipValidation; }
 
-    //! If true an ECSchema's checksum will be calculated on schemas deserialized with this context.  Default is false, where a returned schema may not always contain a checksum. 
-    bool GetCalculateChecksum() const {return m_calculateChecksum;}
+    //! If true an ECSchema's checksum will be calculated on schemas deserialized with this context.  Default is false, where a returned schema may not always contain a checksum.
+    bool GetCalculateChecksum() const { return m_calculateChecksum; }
 
     //! Sets calculate checksum on every schema loaded into context
-    void SetCalculateChecksum(bool calculateChecksum) {m_calculateChecksum = calculateChecksum;}
+    void SetCalculateChecksum(bool calculateChecksum) { m_calculateChecksum = calculateChecksum; }
 
     //! Host should call to establish search paths for standard ECSchemas.
     //! @param[in] hostAssetsDirectory Directory to where the application has deployed assets that come with the API,
@@ -120,7 +121,7 @@ public:
     //! Gets the host assets directory to where the application deploys assets that come with the API, e.g. standard ECSchemas.
     //! Must have been set via ECSchemaReadContext::Initialize.
     //! @return Host assets directory
-    ECOBJECTS_EXPORT static BeFileNameCR GetHostAssetsDirectory ();
+    ECOBJECTS_EXPORT static BeFileNameCR GetHostAssetsDirectory();
 
     //! Creates a context for deserializing ECSchemas
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
@@ -130,17 +131,20 @@ public:
 
     //! Creates a context for deserializing ECSchemas
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestWriteCompatible only checks that the read and write versions match. A warning will be logged if minor version is too low, but the ECSchema will be accepted
-    //! @param[in] includeFilesWithNoVerExt Pass true to include schema files that don't have a version number included as part of the file name. 
+    //! @param[in] includeFilesWithNoVerExt Pass true to include schema files that don't have a version number included as part of the file name.
     ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext(bool acceptLegacyImperfectLatestCompatibleMatch = false, bool includeFilesWithNoVerExt = false);
 
     //! Adds a schema locater to the current context
     //! @param[in] locater  Locater to add to the current context
-    void AddSchemaLocater(IECSchemaLocaterR locater) {m_locaters.insert(m_locaters.begin() + ++m_userAddedLocatersCount, &locater);}
+    void AddSchemaLocater(IECSchemaLocaterR locater) { m_locaters.insert(m_locaters.begin() + ++m_userAddedLocatersCount, &locater); }
 
     //! Adds a schema locater as first to the current context
     //! @param[in] locater  Locater to add to the current context
-    void AddFirstSchemaLocater(IECSchemaLocaterR locater) { m_locaters.insert(m_locaters.begin() + 1, &locater); ++m_userAddedLocatersCount; }
-    
+    void AddFirstSchemaLocater(IECSchemaLocaterR locater) {
+        m_locaters.insert(m_locaters.begin() + 1, &locater);
+        ++m_userAddedLocatersCount;
+    }
+
     //! Removes a schema locater from the current context
     //! @param[in] locater  Locater to remove from the current context
     ECOBJECTS_EXPORT void RemoveSchemaLocater(IECSchemaLocaterR locater);
@@ -152,11 +156,13 @@ public:
 
     //! Adds a file path that should be used to search for a matching conversion schemas
     //! @param[in] path Path to the directory where conversion schemas can be found
-    void AddConversionSchemaPath(WCharCP path) {if (m_conversionSchemas.IsValid()) m_conversionSchemas->AddSchemaPath(path);}
+    void AddConversionSchemaPath(WCharCP path) {
+        if (m_conversionSchemas.IsValid()) m_conversionSchemas->AddSchemaPath(path);
+    }
 
     //! Set the last locater to be used when trying to find a schema
     //! @param[in] locater  Locater that should be used as the last locater when trying to find a schema
-    void SetFinalSchemaLocater(IECSchemaLocaterR locater) {m_locaters.push_back (&locater);}
+    void SetFinalSchemaLocater(IECSchemaLocaterR locater) { m_locaters.push_back(&locater); }
 
     //! Adds the input search paths to a new schema locater added as the last locater in the current list of locaters
     //! @param[in] searchPaths  Directories to search for schemas
@@ -174,7 +180,7 @@ public:
 
     //! Gets the schemas cached by this context.
     //! @returns Schemas cached by this context
-    ECSchemaCacheR GetCache() {return *m_knownSchemas;}
+    ECSchemaCacheR GetCache() { return *m_knownSchemas; }
 
     //! Look for a _V8Conversion schema for the given schema
     //! @param[in] schemaName   The name of the schema to look for
@@ -184,11 +190,11 @@ public:
 
     //! Whether conflicts should be resolved when deserializing the schema
     //! @param[in] resolveConflicts true/false to resolve conflicts
-    void SetResolveConflicts(bool resolveConflicts) {m_resolveConflicts = resolveConflicts;}
+    void SetResolveConflicts(bool resolveConflicts) { m_resolveConflicts = resolveConflicts; }
 
     //! callers should append or set this to efficiently prune references
     //! @returns the container of schemas to prune references to while reading
-    bvector<Utf8String>& GetSchemasToPrune() {return m_schemasToPrune;}
+    bvector<Utf8String>& GetSchemasToPrune() { return m_schemasToPrune; }
 
     //! Adds the alias to the list of aliases to prune if found in schemaName if the schemaToPrune is in the list of schemas to prune
     //! If the alias is already in the list the old entry will be overwritten.
@@ -211,63 +217,69 @@ using ECInstanceReadContextPtr = RefCountedPtr<ECInstanceReadContext>;
 //=======================================================================================
 //! Context object used for instance creation and deserialization.
 //=======================================================================================
-struct ECInstanceReadContext : RefCountedBase
-{
+struct ECInstanceReadContext : RefCountedBase {
     // InstanceXml does not contain primitive type information. An IPrimitiveTypeResolver can assist the
     // ECInstanceReadContext in determining the type of a serialized primitive value.
     // If no IPrimitiveTypeResolver is supplied, the primitive type defined for the ECProperty is used.
-    struct IPrimitiveTypeResolver
-        {
-        virtual PrimitiveType _ResolvePrimitiveType (PrimitiveECPropertyCR ecproperty) const = 0;
-        virtual PrimitiveType _ResolvePrimitiveArrayType (PrimitiveArrayECPropertyCR ecproperty) const = 0;
-        };
+    struct IPrimitiveTypeResolver {
+        virtual PrimitiveType _ResolvePrimitiveType(PrimitiveECPropertyCR ecproperty) const = 0;
+        virtual PrimitiveType _ResolvePrimitiveArrayType(PrimitiveArrayECPropertyCR ecproperty) const = 0;
+    };
 
-    struct IUnitResolver
-        {
+    struct IUnitResolver {
         // The ECClass is the class of the instance being read which is not the same as the class which defines the property if the property is inherited from a base class
         virtual Utf8String _ResolveUnitName(ECClassCR ecClass, ECPropertyCR ecProperty) const = 0;
-        };
+    };
 
-private:
-    IStandaloneEnablerLocaterP      m_standaloneEnablerLocater;
-    ECSchemaCR                      m_fallBackSchema;
-    IPrimitiveTypeResolver const*   m_typeResolver;
-    IUnitResolver const*            m_unitResolver;
-    IECSchemaRemapperCP             m_schemaRemapper;
-    IssueReporter                   m_issueReporter;
+   private:
+    IStandaloneEnablerLocaterP m_standaloneEnablerLocater;
+    ECSchemaCR m_fallBackSchema;
+    IPrimitiveTypeResolver const* m_typeResolver;
+    IUnitResolver const* m_unitResolver;
+    IECSchemaRemapperCP m_schemaRemapper;
+    IssueReporter m_issueReporter;
 
-protected:
-    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema, IPrimitiveTypeResolver const* typeResolver) 
-        : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema), m_typeResolver (typeResolver), m_schemaRemapper (nullptr), m_unitResolver(nullptr)
-        {
-        }
+   protected:
+    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema, IPrimitiveTypeResolver const* typeResolver)
+        : m_standaloneEnablerLocater(standaloneEnablerLocater), m_fallBackSchema(fallBackSchema), m_typeResolver(typeResolver), m_schemaRemapper(nullptr), m_unitResolver(nullptr) {
+    }
 
     //! Will be called by ECInstance deserialization to create the ECInstances that it returns.
     //! The default implementation calls GetDefaultStandaloneEnabler() on the ecClass
-    ECOBJECTS_EXPORT virtual IECInstancePtr _CreateStandaloneInstance (ECClassCR ecClass);
+    ECOBJECTS_EXPORT virtual IECInstancePtr _CreateStandaloneInstance(ECClassCR ecClass);
 
     virtual ECObjectsStatus _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const = 0;
 
-public:
-    PrimitiveType   GetSerializedPrimitiveType (PrimitiveECPropertyCR ecprop) const {return m_typeResolver != nullptr ? m_typeResolver->_ResolvePrimitiveType (ecprop) : ecprop.GetType();}
-    PrimitiveType   GetSerializedPrimitiveArrayType (PrimitiveArrayECPropertyCR ecprop) const {return m_typeResolver != nullptr ? m_typeResolver->_ResolvePrimitiveArrayType (ecprop) : ecprop.GetPrimitiveElementType();}
-    Utf8String      GetOldUnitName(ECClassCR ecClass, ECPropertyCR property) const {if (nullptr != m_unitResolver) return m_unitResolver->_ResolveUnitName(ecClass, property); else return "";}
+   public:
+    PrimitiveType GetSerializedPrimitiveType(PrimitiveECPropertyCR ecprop) const { return m_typeResolver != nullptr ? m_typeResolver->_ResolvePrimitiveType(ecprop) : ecprop.GetType(); }
+    PrimitiveType GetSerializedPrimitiveArrayType(PrimitiveArrayECPropertyCR ecprop) const { return m_typeResolver != nullptr ? m_typeResolver->_ResolvePrimitiveArrayType(ecprop) : ecprop.GetPrimitiveElementType(); }
+    Utf8String GetOldUnitName(ECClassCR ecClass, ECPropertyCR property) const {
+        if (nullptr != m_unitResolver)
+            return m_unitResolver->_ResolveUnitName(ecClass, property);
+        else
+            return "";
+    }
 
-    void            SetSchemaRemapper (IECSchemaRemapperCP remapper) {m_schemaRemapper = remapper;}
-    void            SetUnitResolver(IUnitResolver const* resolver) {m_unitResolver = resolver;}
-    bool            HasUnitResolver() const { return nullptr != m_unitResolver; }
-    void            SetTypeResolver (IPrimitiveTypeResolver const* resolver) {m_typeResolver = resolver;}
-    void            ResolveSerializedPropertyName (Utf8StringR name, ECClassCR ecClass) const {if (nullptr != m_schemaRemapper) m_schemaRemapper->ResolvePropertyName (name, ecClass); }
-    void            ResolveSerializedClassName (Utf8StringR name, ECSchemaCR schema) const    {if (nullptr != m_schemaRemapper) m_schemaRemapper->ResolveClassName (name, schema); }
+    void SetSchemaRemapper(IECSchemaRemapperCP remapper) { m_schemaRemapper = remapper; }
+    void SetUnitResolver(IUnitResolver const* resolver) { m_unitResolver = resolver; }
+    bool HasUnitResolver() const { return nullptr != m_unitResolver; }
+    void SetTypeResolver(IPrimitiveTypeResolver const* resolver) { m_typeResolver = resolver; }
+    void ResolveSerializedPropertyName(Utf8StringR name, ECClassCR ecClass) const {
+        if (nullptr != m_schemaRemapper) m_schemaRemapper->ResolvePropertyName(name, ecClass);
+    }
+    void ResolveSerializedClassName(Utf8StringR name, ECSchemaCR schema) const {
+        if (nullptr != m_schemaRemapper) m_schemaRemapper->ResolveClassName(name, schema);
+    }
 
     ECObjectsStatus FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const;
 
     IECInstancePtr CreateStandaloneInstance(ECClassCR ecClass);
 
-    ECSchemaCR GetFallBackSchema() {return m_fallBackSchema;}
+    ECSchemaCR GetFallBackSchema() { return m_fallBackSchema; }
 
     IssueReporter& Issues() { return m_issueReporter; }
-public:
+
+   public:
     //! - For use when the caller knows the schema of the instance he is deserializing.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaCR, IStandaloneEnablerLocaterP = nullptr, IPrimitiveTypeResolver const* typeResolver = nullptr);
 

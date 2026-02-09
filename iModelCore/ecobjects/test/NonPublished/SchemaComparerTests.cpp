@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
@@ -11,46 +11,40 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct DisableAssertions
-    {
+struct DisableAssertions {
     DisableAssertions() { BeTest::SetFailOnAssert(false); }
     ~DisableAssertions() { BeTest::SetFailOnAssert(true); }
-    };
+};
 
-struct SchemaCompareTest : ECTestFixture 
-    {
+struct SchemaCompareTest : ECTestFixture {
     ECSchemaPtr m_firstSchema;
     ECSchemaPtr m_secondSchema;
 
-    public:
-        void CreateFirstSchema() {EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_firstSchema, "TestSchema", "ts", 1, 0, 0));}
-        void CreateSecondSchema() {EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_secondSchema, "TestSchema", "ts", 1, 0, 0));}
-    };
+   public:
+    void CreateFirstSchema() { EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_firstSchema, "TestSchema", "ts", 1, 0, 0)); }
+    void CreateSecondSchema() { EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_secondSchema, "TestSchema", "ts", 1, 0, 0)); }
+};
 
-struct SchemaComparerXmlTests : ECTestFixture 
-    {
+struct SchemaComparerXmlTests : ECTestFixture {
     ECSchemaReadContextPtr m_firstContext = ECSchemaReadContext::CreateContext();
     ECSchemaReadContextPtr m_secondContext = ECSchemaReadContext::CreateContext();
 
-    public:
-        void LoadSchemaIntoContext(ECSchemaReadContextPtr context, Utf8CP schemaXml)
-            {
-            ECSchemaPtr schema;
-            ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-            }
+   public:
+    void LoadSchemaIntoContext(ECSchemaReadContextPtr context, Utf8CP schemaXml) {
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
 
-        void LoadSchemasIntoContext(ECSchemaReadContextPtr context, bvector<Utf8CP> const& schemasXml)
-            {
-            for (auto schemaXml : schemasXml)
-                LoadSchemaIntoContext(context, schemaXml);
-            }
-    };
+    void LoadSchemasIntoContext(ECSchemaReadContextPtr context, bvector<Utf8CP> const& schemasXml) {
+        for (auto schemaXml : schemasXml)
+            LoadSchemaIntoContext(context, schemaXml);
+    }
+};
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareSchemaWithUnitsSame)
-    {
+TEST_F(SchemaCompareTest, CompareSchemaWithUnitsSame) {
     CreateFirstSchema();
     CreateSecondSchema();
 
@@ -76,7 +70,7 @@ TEST_F(SchemaCompareTest, CompareSchemaWithUnitsSame)
     koq->SetPersistenceUnit(*unit);
     koq->AddPresentationFormat(*format);
 
-    SchemaComparer comparer; 
+    SchemaComparer comparer;
     SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
@@ -84,14 +78,13 @@ TEST_F(SchemaCompareTest, CompareSchemaWithUnitsSame)
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(0, changes.Changes().Count()); //Identical
-    }
+    ASSERT_EQ(0, changes.Changes().Count());  // Identical
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareSchemaWithDifferingUnitUnitSystemAndPhenomenon)
-    {
+TEST_F(SchemaCompareTest, CompareSchemaWithDifferingUnitUnitSystemAndPhenomenon) {
     CreateFirstSchema();
     CreateSecondSchema();
 
@@ -146,17 +139,16 @@ TEST_F(SchemaCompareTest, CompareSchemaWithDifferingUnitUnitSystemAndPhenomenon)
     EXPECT_STREQ("APPLE", systemChanges[0].DisplayLabel().GetNew().Value().c_str());
     EXPECT_STREQ("SMOOT_SYSTEM_DESCRIPTION", systemChanges[0].Description().GetOld().Value().c_str());
     EXPECT_STREQ("BANANA", systemChanges[0].Description().GetNew().Value().c_str());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareShouldHandleUnitsWithDependenciesInOtherSchemas)
-    {
+TEST_F(SchemaCompareTest, CompareShouldHandleUnitsWithDependenciesInOtherSchemas) {
     CreateFirstSchema();
     CreateSecondSchema();
     ECSchemaPtr ref;
-    ECSchema::CreateSchema(ref, "REF", "r", 1,0,0);
+    ECSchema::CreateSchema(ref, "REF", "r", 1, 0, 0);
     ECUnitP unit;
     UnitSystemP system;
     PhenomenonP phenom;
@@ -186,18 +178,17 @@ TEST_F(SchemaCompareTest, CompareShouldHandleUnitsWithDependenciesInOtherSchemas
     auto& unitChanges = firstChanges.Units();
 
     ASSERT_EQ(1, unitChanges.Count());
-    
+
     EXPECT_STRCASEEQ("TestSchema:SMOOT_PHENOM", unitChanges[0].Phenomenon().GetOld().Value().c_str());
     EXPECT_STRCASEEQ("Ref:SMOOT_PHENOM", unitChanges[0].Phenomenon().GetNew().Value().c_str());
     EXPECT_STRCASEEQ("TestSchema:SMOOT_SYSTEM", unitChanges[0].UnitSystem().GetOld().Value().c_str());
     EXPECT_STRCASEEQ("Ref:SMOOT_SYSTEM", unitChanges[0].UnitSystem().GetNew().Value().c_str());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchema)
-    {
+TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchema) {
     CreateFirstSchema();
     CreateSecondSchema();
     KindOfQuantityP koq;
@@ -222,19 +213,18 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchema)
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(0, changes.Changes().Count()); //Identical
-    }
+    ASSERT_EQ(0, changes.Changes().Count());  // Identical
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferentReferencedSchemas)
-    {
+TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferentReferencedSchemas) {
     CreateFirstSchema();
     CreateSecondSchema();
     KindOfQuantityP koq;
     ECSchemaPtr ref;
-    ECSchema::CreateSchema(ref, "REF", "r", 1,0,0);
+    ECSchema::CreateSchema(ref, "REF", "r", 1, 0, 0);
 
     ECUnitP unit;
     ECFormatP format;
@@ -284,13 +274,12 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferen
 
     EXPECT_FALSE(pres[0].GetNew().IsNull());
     EXPECT_STRCASEEQ("r:AmerFI[r:M]", pres[0].GetNew().Value().c_str());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWithDifferences)
-    {
+TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWithDifferences) {
     CreateFirstSchema();
     CreateSecondSchema();
     KindOfQuantityP koq;
@@ -298,7 +287,7 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     EC_ASSERT_SUCCESS(m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
     EC_ASSERT_SUCCESS(m_firstSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
-    ASSERT_EQ(ECObjectsStatus::Success,koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
+    ASSERT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
     EC_ASSERT_SUCCESS(koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
     ASSERT_EQ(1, koq->GetPresentationFormats().size());
 
@@ -334,16 +323,15 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
 
     ASSERT_FALSE(pres[0].GetNew().IsNull());
     EXPECT_STRCASEEQ("f:DefaultReal[u:CM]", pres[0].GetNew().Value().c_str());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareFormatsIdentical)
-    {
+TEST_F(SchemaCompareTest, CompareFormatsIdentical) {
     CreateFirstSchema();
     CreateSecondSchema();
-    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
     comp.SetMajorLabel("Apple");
     comp.SetMiddleLabel("Bannana");
     comp.SetMinorLabel("Carrot");
@@ -372,17 +360,16 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(0, changes.Changes().Count()); //Identical
-    }
+    ASSERT_EQ(0, changes.Changes().Count());  // Identical
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareFormatsDeleted)
-    {
+TEST_F(SchemaCompareTest, CompareFormatsDeleted) {
     CreateFirstSchema();
     CreateSecondSchema();
-    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
     comp.SetMajorLabel("Apple");
     comp.SetMiddleLabel("Bannana");
     comp.SetMinorLabel("Carrot");
@@ -418,16 +405,15 @@ TEST_F(SchemaCompareTest, CompareFormatsDeleted)
     auto formatChange = formatChanges[0];
 
     ASSERT_EQ(5, formatChange.MemberChangesCount());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareFormatsDeletedCompositeSpec)
-    {
+TEST_F(SchemaCompareTest, CompareFormatsDeletedCompositeSpec) {
     CreateFirstSchema();
     CreateSecondSchema();
-    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
     comp.SetMajorLabel("Apple");
     comp.SetMiddleLabel("Banana");
     comp.SetMinorLabel("Carrot");
@@ -453,16 +439,15 @@ TEST_F(SchemaCompareTest, CompareFormatsDeletedCompositeSpec)
     auto& formatChange = formatChanges[0];
 
     ASSERT_EQ(1, formatChange.MemberChangesCount());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareFormatsCompareToEmptyCompositeSpec)
-    {
+TEST_F(SchemaCompareTest, CompareFormatsCompareToEmptyCompositeSpec) {
     CreateFirstSchema();
     CreateSecondSchema();
-    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
     comp.SetMajorLabel("Apple");
     comp.SetMiddleLabel("Banana");
     comp.SetMinorLabel("Carrot");
@@ -508,16 +493,15 @@ TEST_F(SchemaCompareTest, CompareFormatsCompareToEmptyCompositeSpec)
     EXPECT_TRUE(formatChange.CompositeSpec().MinorLabel().GetNew().IsNull());
     EXPECT_STRCASEEQ("Dragonfruit", formatChange.CompositeSpec().SubLabel().GetOld().Value().c_str());
     EXPECT_TRUE(formatChange.CompositeSpec().SubLabel().GetNew().IsNull());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareFormatsNewCompositeSpec)
-    {
+TEST_F(SchemaCompareTest, CompareFormatsNewCompositeSpec) {
     CreateFirstSchema();
     CreateSecondSchema();
-    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
     comp.SetMajorLabel("Apple");
     comp.SetMiddleLabel("Banana");
     comp.SetMinorLabel("Carrot");
@@ -563,23 +547,22 @@ TEST_F(SchemaCompareTest, CompareFormatsNewCompositeSpec)
     EXPECT_TRUE(formatChange.CompositeSpec().MinorLabel().GetOld().IsNull());
     EXPECT_STRCASEEQ("Dragonfruit", formatChange.CompositeSpec().SubLabel().GetNew().Value().c_str());
     EXPECT_TRUE(formatChange.CompositeSpec().SubLabel().GetOld().IsNull());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareFormatsModifiedCompositeSpecs)
-    {
+TEST_F(SchemaCompareTest, CompareFormatsModifiedCompositeSpecs) {
     CreateFirstSchema();
     CreateSecondSchema();
-    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
     comp.SetMajorLabel("Apple");
     comp.SetMiddleLabel("Banana");
     comp.SetMinorLabel("Carrot");
     comp.SetSubLabel("Dragonfruit");
     comp.SetSpacer("Spacer1");
 
-    auto comp2 = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MILE"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("YRD"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("FT"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("IN"));
+    auto comp2 = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MILE"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("YRD"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("FT"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("IN"));
     comp2.SetMajorLabel("Dragonfruit");
     comp2.SetMiddleLabel("Eggplant");
     comp2.SetMinorLabel("Fig");
@@ -627,13 +610,12 @@ TEST_F(SchemaCompareTest, CompareFormatsModifiedCompositeSpecs)
     EXPECT_STRCASEEQ("Fig", formatChange.CompositeSpec().MinorLabel().GetNew().Value().c_str());
     EXPECT_STRCASEEQ("Dragonfruit", formatChange.CompositeSpec().SubLabel().GetOld().Value().c_str());
     EXPECT_STRCASEEQ("Grapefruit", formatChange.CompositeSpec().SubLabel().GetNew().Value().c_str());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, NullOrEmptyStringsInCompositeFormat)
-    {
+TEST_F(SchemaCompareTest, NullOrEmptyStringsInCompositeFormat) {
     Utf8CP firstSchemaXml = R"xml(
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u" />
@@ -733,14 +715,14 @@ TEST_F(SchemaCompareTest, NullOrEmptyStringsInCompositeFormat)
     // No label specified in Old, Label set to empty string "" in New
     EXPECT_FALSE(spec.MinorLabel().GetOld().IsValid());
     EXPECT_STREQ("TestSchema:TestUnitMinor", spec.MinorUnit().GetOld().Value().c_str());
-    
+
     EXPECT_STREQ("", spec.MinorLabel().GetNew().Value().c_str());
     EXPECT_STREQ("TestSchema:TestUnitMinorNew", spec.MinorUnit().GetNew().Value().c_str());
-      
+
     // Label set to string "bravo" in Old, Label set to empty string "" in New
     EXPECT_STREQ("bravo", spec.SubLabel().GetOld().Value().c_str());
     EXPECT_STREQ("TestSchema:TestUnitSub", spec.SubUnit().GetOld().Value().c_str());
-    
+
     EXPECT_STREQ("", spec.SubLabel().GetNew().Value().c_str());
     EXPECT_STREQ("TestSchema:TestUnitSubNew", spec.SubUnit().GetNew().Value().c_str());
 
@@ -769,21 +751,20 @@ TEST_F(SchemaCompareTest, NullOrEmptyStringsInCompositeFormat)
 
     EXPECT_STREQ("tango", spec.MinorLabel().GetNew().Value().c_str());
     EXPECT_STREQ("TestSchema:TestUnitMinorNew", spec.MinorUnit().GetNew().Value().c_str());
-      
+
     // Label set to empty string "" in Old, Label set to empty string "" in New
     // Since there is no change between the sublabels in the two formats being comapred, the will both be set to null by the comparer
     EXPECT_FALSE(spec.SubLabel().GetOld().IsValid());
     EXPECT_STREQ("TestSchema:TestUnitSub", spec.SubUnit().GetOld().Value().c_str());
-    
+
     EXPECT_FALSE(spec.SubLabel().GetNew().IsValid());
     EXPECT_STREQ("TestSchema:TestUnitSubNew", spec.SubUnit().GetNew().Value().c_str());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareFormatsDeletedNumericSpec)
-    {
+TEST_F(SchemaCompareTest, CompareFormatsDeletedNumericSpec) {
     CreateFirstSchema();
     CreateSecondSchema();
 
@@ -813,13 +794,12 @@ TEST_F(SchemaCompareTest, CompareFormatsDeletedNumericSpec)
 
     ASSERT_EQ(1, change.Count());
     auto formatChange = change[0];
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareFormatsCompareToEmptyNumericSpec)
-    {
+TEST_F(SchemaCompareTest, CompareFormatsCompareToEmptyNumericSpec) {
     CreateFirstSchema();
     CreateSecondSchema();
 
@@ -868,13 +848,12 @@ TEST_F(SchemaCompareTest, CompareFormatsCompareToEmptyNumericSpec)
     EXPECT_TRUE(formatChange.NumericSpec().DecimalSeparator().GetNew().IsNull());
     EXPECT_STRCASEEQ(",", formatChange.NumericSpec().ThousandsSeparator().GetOld().Value().c_str());
     EXPECT_TRUE(formatChange.NumericSpec().ThousandsSeparator().GetNew().IsNull());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareFormatsNewNumericSpec)
-    {
+TEST_F(SchemaCompareTest, CompareFormatsNewNumericSpec) {
     CreateFirstSchema();
     CreateSecondSchema();
 
@@ -923,13 +902,12 @@ TEST_F(SchemaCompareTest, CompareFormatsNewNumericSpec)
     EXPECT_TRUE(formatChange.NumericSpec().DecimalSeparator().GetOld().IsNull());
     EXPECT_STRCASEEQ(",", formatChange.NumericSpec().ThousandsSeparator().GetNew().Value().c_str());
     EXPECT_TRUE(formatChange.NumericSpec().ThousandsSeparator().GetOld().IsNull());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareFormatsModifiedNumericSpec)
-    {
+TEST_F(SchemaCompareTest, CompareFormatsModifiedNumericSpec) {
     CreateFirstSchema();
     CreateSecondSchema();
 
@@ -990,13 +968,12 @@ TEST_F(SchemaCompareTest, CompareFormatsModifiedNumericSpec)
     EXPECT_STRCASEEQ(".", formatChange.NumericSpec().DecimalSeparator().GetNew().Value().c_str());
     EXPECT_STRCASEEQ(",", formatChange.NumericSpec().ThousandsSeparator().GetOld().Value().c_str());
     EXPECT_STRCASEEQ(".", formatChange.NumericSpec().ThousandsSeparator().GetNew().Value().c_str());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareEnumerationsIdentical)
-    {
+TEST_F(SchemaCompareTest, CompareEnumerationsIdentical) {
     CreateFirstSchema();
     CreateSecondSchema();
 
@@ -1016,69 +993,67 @@ TEST_F(SchemaCompareTest, CompareEnumerationsIdentical)
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
     ASSERT_EQ(0, changes.Changes().Count());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareEnumerationsDeleted)
+TEST_F(SchemaCompareTest, CompareEnumerationsDeleted) {
     {
-    {
-    CreateFirstSchema();
-    CreateSecondSchema();
+        CreateFirstSchema();
+        CreateSecondSchema();
 
-    ECEnumerationP enumeration;
-    m_firstSchema->CreateEnumeration(enumeration, "enum", PrimitiveType::PRIMITIVETYPE_String);
-    auto firstEnum = m_firstSchema->GetEnumerationP("enum");
-    ECEnumeratorP enumerator;
-    firstEnum->CreateEnumerator(enumerator, "blah", "banana");
-    SchemaComparer comparer;
-    SchemaDiff changes;
-    bvector<ECSchemaCP> first;
-    bvector<ECSchemaCP> second;
-    first.push_back(m_firstSchema.get());
-    second.push_back(m_secondSchema.get());
-    comparer.Compare(changes, first, second);
-    ASSERT_EQ(1, changes.Changes().Count());
-    auto& change = changes.Changes()[0].Enumerations();
+        ECEnumerationP enumeration;
+        m_firstSchema->CreateEnumeration(enumeration, "enum", PrimitiveType::PRIMITIVETYPE_String);
+        auto firstEnum = m_firstSchema->GetEnumerationP("enum");
+        ECEnumeratorP enumerator;
+        firstEnum->CreateEnumerator(enumerator, "blah", "banana");
+        SchemaComparer comparer;
+        SchemaDiff changes;
+        bvector<ECSchemaCP> first;
+        bvector<ECSchemaCP> second;
+        first.push_back(m_firstSchema.get());
+        second.push_back(m_secondSchema.get());
+        comparer.Compare(changes, first, second);
+        ASSERT_EQ(1, changes.Changes().Count());
+        auto& change = changes.Changes()[0].Enumerations();
 
-    ASSERT_EQ(1, change.Count());
-    auto enumChange = change[0];
+        ASSERT_EQ(1, change.Count());
+        auto enumChange = change[0];
 
-    ASSERT_EQ(6, enumChange.MemberChangesCount());
+        ASSERT_EQ(6, enumChange.MemberChangesCount());
     }
 
     {
-    CreateFirstSchema();
-    CreateSecondSchema();
+        CreateFirstSchema();
+        CreateSecondSchema();
 
-    ECEnumerationP enumeration;
-    m_secondSchema->CreateEnumeration(enumeration, "enum", PrimitiveType::PRIMITIVETYPE_String);
-    auto firstEnum = m_secondSchema->GetEnumerationP("enum");
-    ECEnumeratorP enumerator;
-    firstEnum->CreateEnumerator(enumerator, "blah", "banana");
-    SchemaComparer comparer;
-    SchemaDiff changes;
-    bvector<ECSchemaCP> first;
-    bvector<ECSchemaCP> second;
-    first.push_back(m_firstSchema.get());
-    second.push_back(m_secondSchema.get());
-    comparer.Compare(changes, first, second);
-    ASSERT_EQ(1,  changes.Changes().Count());
-    auto& change = changes.Changes()[0].Enumerations();
+        ECEnumerationP enumeration;
+        m_secondSchema->CreateEnumeration(enumeration, "enum", PrimitiveType::PRIMITIVETYPE_String);
+        auto firstEnum = m_secondSchema->GetEnumerationP("enum");
+        ECEnumeratorP enumerator;
+        firstEnum->CreateEnumerator(enumerator, "blah", "banana");
+        SchemaComparer comparer;
+        SchemaDiff changes;
+        bvector<ECSchemaCP> first;
+        bvector<ECSchemaCP> second;
+        first.push_back(m_firstSchema.get());
+        second.push_back(m_secondSchema.get());
+        comparer.Compare(changes, first, second);
+        ASSERT_EQ(1, changes.Changes().Count());
+        auto& change = changes.Changes()[0].Enumerations();
 
-    ASSERT_EQ(1, change.Count());
-    auto enumChange = change[0];
+        ASSERT_EQ(1, change.Count());
+        auto enumChange = change[0];
 
-    ASSERT_EQ(6, enumChange.MemberChangesCount());
+        ASSERT_EQ(6, enumChange.MemberChangesCount());
     }
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareECClassIdentical)
-    {
+TEST_F(SchemaCompareTest, CompareECClassIdentical) {
     CreateFirstSchema();
     CreateSecondSchema();
 
@@ -1116,17 +1091,16 @@ TEST_F(SchemaCompareTest, CompareECClassIdentical)
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
     ASSERT_EQ(0, changes.Changes().Count());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaComparerXmlTests, CompareSchemasWithWrongPropertyTags)
-    {
-    //Test created for 3.1 version of schema specifically 
-    //to observe defaulting behavior for and when the property types are wrong
-     bvector<Utf8CP> firstSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+TEST_F(SchemaComparerXmlTests, CompareSchemasWithWrongPropertyTags) {
+    // Test created for 3.1 version of schema specifically
+    // to observe defaulting behavior for and when the property types are wrong
+    bvector<Utf8CP> firstSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
       <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECStructClass typeName="PrimStruct">
                     <ECProperty propertyName="p2d" typeName="Point2d" />
@@ -1136,13 +1110,12 @@ TEST_F(SchemaComparerXmlTests, CompareSchemasWithWrongPropertyTags)
                     <ECProperty propertyName="Struct" typeName="PrimStruct" />
                     <ECStructArrayProperty propertyName="Struct_Array" typeName="PrimStruct" />
                 </ECEntityClass>
-      </ECSchema>)schema"
-      };
+      </ECSchema>)schema"};
 
     LoadSchemasIntoContext(m_firstContext, firstSchemasXml);
 
-    bvector<Utf8CP> secondSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    bvector<Utf8CP> secondSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
       <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECStructClass typeName="PrimStruct">
                     <ECProperty propertyName="p2d" typeName="Point2d" />
@@ -1152,25 +1125,23 @@ TEST_F(SchemaComparerXmlTests, CompareSchemasWithWrongPropertyTags)
                     <ECStructProperty propertyName="Struct" typeName="PrimStruct" />
                     <ECStructArrayProperty propertyName="Struct_Array" typeName="PrimStruct" />
                 </ECEntityClass>
-      </ECSchema>)schema"
-      };
+      </ECSchema>)schema"};
 
     LoadSchemasIntoContext(m_secondContext, secondSchemasXml);
-    
+
     SchemaComparer comparer;
     SchemaDiff changes;
-    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(),  m_secondContext->GetCache().GetSchemas());
+    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(), m_secondContext->GetCache().GetSchemas());
 
     ASSERT_EQ(1, changes.Changes().Count());
 
     // We default to string when the property type is wrong therefore, property change should be observed.
     EXPECT_TRUE(changes.Changes()[0].Classes()[0].Properties()[0].IsPrimitive().IsChanged());
-    }
+}
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, CompareECSchemaClassPropertyDescriptionAgainstNull)
-    {
+TEST_F(SchemaCompareTest, CompareECSchemaClassPropertyDescriptionAgainstNull) {
     CreateFirstSchema();
     CreateSecondSchema();
 
@@ -1208,13 +1179,12 @@ TEST_F(SchemaCompareTest, CompareECSchemaClassPropertyDescriptionAgainstNull)
     auto& propertyChange = classChange.Properties()[0];
     ASSERT_TRUE(propertyChange.Description().IsChanged());
     ASSERT_TRUE(propertyChange.Description().GetOld().IsNull());
-    }
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
-TEST_F(SchemaCompareTest, MultipleSchemaReferencesToSameSchema)
-    {
+TEST_F(SchemaCompareTest, MultipleSchemaReferencesToSameSchema) {
     // To test written log messages and warnings, unfortunately, this is global and there is currently no way to intercept the messages
     // NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
     // NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_WARNING);
@@ -1229,7 +1199,7 @@ TEST_F(SchemaCompareTest, MultipleSchemaReferencesToSameSchema)
     ECSchemaPtr referencedSchema2;
     ECSchema::CreateSchema(referencedSchema2, "RefSchema", "ref", 1, 1, 0);
 
-    DisableAssertions _notUsed; // The attempt produces an assertion which we need to ignore
+    DisableAssertions _notUsed;  // The attempt produces an assertion which we need to ignore
 
     m_firstSchema->AddReferencedSchema(*referencedSchema1);
     m_firstSchema->AddReferencedSchema(*referencedSchema2);
@@ -1241,21 +1211,20 @@ TEST_F(SchemaCompareTest, MultipleSchemaReferencesToSameSchema)
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
 
-    //should fail since old schema has multiple references to RefSchema
+    // should fail since old schema has multiple references to RefSchema
     ASSERT_EQ(BentleyStatus::ERROR, comparer.Compare(changes, first, second));
 
-    //swap the input schemas, so the new schema is now the invalid one
+    // swap the input schemas, so the new schema is now the invalid one
     ASSERT_EQ(BentleyStatus::ERROR, comparer.Compare(changes, second, first));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaComparerXmlTests, ModifyBaseClassDownWithinExistingHierarchy)
-    {
+TEST_F(SchemaComparerXmlTests, ModifyBaseClassDownWithinExistingHierarchy) {
     // Goes from C -> A to C -> B -> A
-    bvector<Utf8CP> firstSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    bvector<Utf8CP> firstSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
             <ECProperty propertyName="PropA" typeName="string" />
@@ -1269,13 +1238,12 @@ TEST_F(SchemaComparerXmlTests, ModifyBaseClassDownWithinExistingHierarchy)
             <ECProperty propertyName="PropC" typeName="string" />
           </ECEntityClass>
         </ECSchema>
-        )schema"
-    };
+        )schema"};
 
     LoadSchemasIntoContext(m_firstContext, firstSchemasXml);
 
-    bvector<Utf8CP> secondSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    bvector<Utf8CP> secondSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
             <ECProperty propertyName="PropA" typeName="string" />
@@ -1289,16 +1257,15 @@ TEST_F(SchemaComparerXmlTests, ModifyBaseClassDownWithinExistingHierarchy)
             <ECProperty propertyName="PropC" typeName="string" />
           </ECEntityClass>
         </ECSchema>
-        )schema"
-    };
+        )schema"};
 
     LoadSchemasIntoContext(m_secondContext, secondSchemasXml);
-    
+
     SchemaComparer comparer;
     SchemaDiff changes;
-    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(),  m_secondContext->GetCache().GetSchemas());
-    
-    //TODO: there has to be a better way to compare schema diff results.
+    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(), m_secondContext->GetCache().GetSchemas());
+
+    // TODO: there has to be a better way to compare schema diff results.
     Utf8String expectedDiff = R"diff(!Schemas
 !    Schema(TestSchema)
 !        Classes
@@ -1309,16 +1276,15 @@ TEST_F(SchemaComparerXmlTests, ModifyBaseClassDownWithinExistingHierarchy)
 
     Utf8String actualDiff = changes.Changes().ToString();
     ASSERT_STREQ(expectedDiff.c_str(), actualDiff.c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaComparerXmlTests, ModifyBaseClassUpWithinExistingHierarchy)
-    {
+TEST_F(SchemaComparerXmlTests, ModifyBaseClassUpWithinExistingHierarchy) {
     // Goes from C -> B -> A to C -> A
-    bvector<Utf8CP> firstSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    bvector<Utf8CP> firstSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
             <ECProperty propertyName="PropA" typeName="string" />
@@ -1332,13 +1298,12 @@ TEST_F(SchemaComparerXmlTests, ModifyBaseClassUpWithinExistingHierarchy)
             <ECProperty propertyName="PropC" typeName="string" />
           </ECEntityClass>
         </ECSchema>
-        )schema"
-    };
+        )schema"};
 
     LoadSchemasIntoContext(m_firstContext, firstSchemasXml);
 
-    bvector<Utf8CP> secondSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    bvector<Utf8CP> secondSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
             <ECProperty propertyName="PropA" typeName="string" />
@@ -1352,16 +1317,15 @@ TEST_F(SchemaComparerXmlTests, ModifyBaseClassUpWithinExistingHierarchy)
             <ECProperty propertyName="PropC" typeName="string" />
           </ECEntityClass>
         </ECSchema>
-        )schema"
-    };
+        )schema"};
 
     LoadSchemasIntoContext(m_secondContext, secondSchemasXml);
-    
+
     SchemaComparer comparer;
     SchemaDiff changes;
-    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(),  m_secondContext->GetCache().GetSchemas());
-    
-    //TODO: there has to be a better way to compare schema diff results.
+    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(), m_secondContext->GetCache().GetSchemas());
+
+    // TODO: there has to be a better way to compare schema diff results.
     Utf8String expectedDiff = R"diff(!Schemas
 !    Schema(TestSchema)
 !        Classes
@@ -1373,16 +1337,15 @@ TEST_F(SchemaComparerXmlTests, ModifyBaseClassUpWithinExistingHierarchy)
 
     Utf8String actualDiff = changes.Changes().ToString();
     ASSERT_STREQ(expectedDiff.c_str(), actualDiff.c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaComparerXmlTests, ModifyBaseClassToIndependentBase)
-    {
+TEST_F(SchemaComparerXmlTests, ModifyBaseClassToIndependentBase) {
     // Goes from C -> A to C -> B
-    bvector<Utf8CP> firstSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    bvector<Utf8CP> firstSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
             <ECProperty propertyName="PropA" typeName="string" />
@@ -1395,13 +1358,12 @@ TEST_F(SchemaComparerXmlTests, ModifyBaseClassToIndependentBase)
             <ECProperty propertyName="PropC" typeName="string" />
           </ECEntityClass>
         </ECSchema>
-        )schema"
-    };
+        )schema"};
 
     LoadSchemasIntoContext(m_firstContext, firstSchemasXml);
 
-    bvector<Utf8CP> secondSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    bvector<Utf8CP> secondSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
             <ECProperty propertyName="PropA" typeName="string" />
@@ -1414,16 +1376,15 @@ TEST_F(SchemaComparerXmlTests, ModifyBaseClassToIndependentBase)
             <ECProperty propertyName="PropC" typeName="string" />
           </ECEntityClass>
         </ECSchema>
-        )schema"
-    };
+        )schema"};
 
     LoadSchemasIntoContext(m_secondContext, secondSchemasXml);
-    
+
     SchemaComparer comparer;
     SchemaDiff changes;
-    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(),  m_secondContext->GetCache().GetSchemas());
-    
-    //TODO: there has to be a better way to compare schema diff results.
+    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(), m_secondContext->GetCache().GetSchemas());
+
+    // TODO: there has to be a better way to compare schema diff results.
     Utf8String expectedDiff = R"diff(!Schemas
 !    Schema(TestSchema)
 !        Classes
@@ -1435,16 +1396,15 @@ TEST_F(SchemaComparerXmlTests, ModifyBaseClassToIndependentBase)
 
     Utf8String actualDiff = changes.Changes().ToString();
     ASSERT_STREQ(expectedDiff.c_str(), actualDiff.c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaComparerXmlTests, SwapMixinsKeepExistingBaseClass)
-    {
+TEST_F(SchemaComparerXmlTests, SwapMixinsKeepExistingBaseClass) {
     // Code considers every base class after the first a mixin, so no need to flag them and load references, to keep test simple...
-    bvector<Utf8CP> firstSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    bvector<Utf8CP> firstSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A" />
           <ECEntityClass typeName="B" />
@@ -1455,13 +1415,12 @@ TEST_F(SchemaComparerXmlTests, SwapMixinsKeepExistingBaseClass)
             <BaseClass>C</BaseClass>
           </ECEntityClass>
         </ECSchema>
-        )schema"
-    };
+        )schema"};
 
     LoadSchemasIntoContext(m_firstContext, firstSchemasXml);
 
-    bvector<Utf8CP> secondSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    bvector<Utf8CP> secondSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A" />
           <ECEntityClass typeName="B" />
@@ -1472,26 +1431,24 @@ TEST_F(SchemaComparerXmlTests, SwapMixinsKeepExistingBaseClass)
             <BaseClass>B</BaseClass>
           </ECEntityClass>
         </ECSchema>
-        )schema"
-    };
+        )schema"};
 
     LoadSchemasIntoContext(m_secondContext, secondSchemasXml);
-    
+
     SchemaComparer comparer;
     SchemaDiff changes;
-    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(),  m_secondContext->GetCache().GetSchemas());
+    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(), m_secondContext->GetCache().GetSchemas());
 
     ASSERT_FALSE(changes.Changes().IsChanged());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaComparerXmlTests, InsertNewMixin)
-    {
+TEST_F(SchemaComparerXmlTests, InsertNewMixin) {
     // Code considers every base class after the first a mixin, so no need to flag them and load references, to keep test simple...
-    bvector<Utf8CP> firstSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    bvector<Utf8CP> firstSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A" />
           <ECEntityClass typeName="B" />
@@ -1503,13 +1460,12 @@ TEST_F(SchemaComparerXmlTests, InsertNewMixin)
             <BaseClass>C</BaseClass>
           </ECEntityClass>
         </ECSchema>
-        )schema"
-    };
+        )schema"};
 
     LoadSchemasIntoContext(m_firstContext, firstSchemasXml);
 
-    bvector<Utf8CP> secondSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    bvector<Utf8CP> secondSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A" />
           <ECEntityClass typeName="B" />
@@ -1522,16 +1478,15 @@ TEST_F(SchemaComparerXmlTests, InsertNewMixin)
             <BaseClass>B</BaseClass>
           </ECEntityClass>
         </ECSchema>
-        )schema"
-    };
+        )schema"};
 
     LoadSchemasIntoContext(m_secondContext, secondSchemasXml);
-    
+
     SchemaComparer comparer;
     SchemaDiff changes;
-    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(),  m_secondContext->GetCache().GetSchemas());
-    
-    //TODO: there has to be a better way to compare schema diff results.
+    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(), m_secondContext->GetCache().GetSchemas());
+
+    // TODO: there has to be a better way to compare schema diff results.
     Utf8String expectedDiff = R"diff(!Schemas
 !    Schema(TestSchema)
 !        Classes
@@ -1542,16 +1497,15 @@ TEST_F(SchemaComparerXmlTests, InsertNewMixin)
 
     Utf8String actualDiff = changes.Changes().ToString();
     ASSERT_STREQ(expectedDiff.c_str(), actualDiff.c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaComparerXmlTests, RemoveMixin)
-    {
+TEST_F(SchemaComparerXmlTests, RemoveMixin) {
     // Code considers every base class after the first a mixin, so no need to flag them and load references, to keep test simple...
-    bvector<Utf8CP> firstSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    bvector<Utf8CP> firstSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A" />
           <ECEntityClass typeName="B" />
@@ -1563,13 +1517,12 @@ TEST_F(SchemaComparerXmlTests, RemoveMixin)
             <BaseClass>C</BaseClass>
           </ECEntityClass>
         </ECSchema>
-        )schema"
-    };
+        )schema"};
 
     LoadSchemasIntoContext(m_firstContext, firstSchemasXml);
 
-    bvector<Utf8CP> secondSchemasXml {
-      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    bvector<Utf8CP> secondSchemasXml{
+        R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A" />
           <ECEntityClass typeName="B" />
@@ -1580,16 +1533,15 @@ TEST_F(SchemaComparerXmlTests, RemoveMixin)
             <BaseClass>C</BaseClass>
           </ECEntityClass>
         </ECSchema>
-        )schema"
-    };
+        )schema"};
 
     LoadSchemasIntoContext(m_secondContext, secondSchemasXml);
-    
+
     SchemaComparer comparer;
     SchemaDiff changes;
-    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(),  m_secondContext->GetCache().GetSchemas());
-    
-    //TODO: there has to be a better way to compare schema diff results.
+    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(), m_secondContext->GetCache().GetSchemas());
+
+    // TODO: there has to be a better way to compare schema diff results.
     Utf8String expectedDiff = R"diff(!Schemas
 !    Schema(TestSchema)
 !        Classes
@@ -1600,5 +1552,5 @@ TEST_F(SchemaComparerXmlTests, RemoveMixin)
 
     Utf8String actualDiff = changes.Changes().ToString();
     ASSERT_STREQ(expectedDiff.c_str(), actualDiff.c_str());
-    }
+}
 END_BENTLEY_ECN_TEST_NAMESPACE

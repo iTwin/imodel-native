@@ -1,19 +1,18 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
-// The following test file is to validate that the code gracefully handles unknown 
+// The following test file is to validate that the code gracefully handles unknown
 // scenarios within the EC3 generation.
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct SchemaCompatibilityTests : ECTestFixture
-{
+struct SchemaCompatibilityTests : ECTestFixture {
     Utf8CP templateSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%s">
             %s
@@ -23,18 +22,16 @@ struct SchemaCompatibilityTests : ECTestFixture
     ECSchemaPtr m_schema;
     ECSchemaReadContextPtr m_context;
 
-    virtual void SetUp() override
-        {
+    virtual void SetUp() override {
         m_schema = nullptr;
         m_context = ECSchemaReadContext::CreateContext();
-        }
+    }
 
-    //! The additionalSchemaXml is a snippet of the ECXml that will be placed within the 
+    //! The additionalSchemaXml is a snippet of the ECXml that will be placed within the
     void CreateSchema(Utf8CP additionSchemaXml, Utf8CP failureMessage);
 
     // Serialization should fail when schema has original ECXml version greater than the current version.
-    void TestSerializationFailure(ECSchemaCR schema, Utf8String testCaseName)
-        {
+    void TestSerializationFailure(ECSchemaCR schema, Utf8String testCaseName) {
         WString wcharXml;
         EXPECT_EQ(SchemaWriteStatus::FailedToSaveXml, schema.WriteToXmlString(wcharXml));
         EXPECT_STREQ(L"", wcharXml.c_str());
@@ -51,17 +48,16 @@ struct SchemaCompatibilityTests : ECTestFixture
         serializedSchema.clear();
         EXPECT_FALSE(schema.WriteToJsonString(serializedSchema));
         EXPECT_TRUE(Utf8String::IsNullOrEmpty(serializedSchema.c_str()));
-        }
+    }
 };
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-void SchemaCompatibilityTests::CreateSchema(Utf8CP additionSchemaXml, Utf8CP failureMessage)
-    {
+void SchemaCompatibilityTests::CreateSchema(Utf8CP additionSchemaXml, Utf8CP failureMessage) {
     uint32_t ecMajorVersion;
     uint32_t ecMinorVersion;
-    ECSchema::ParseECVersion(ecMajorVersion, ecMinorVersion, ECVersion::Latest); // Always want to grab the latest the current software handles
+    ECSchema::ParseECVersion(ecMajorVersion, ecMinorVersion, ECVersion::Latest);  // Always want to grab the latest the current software handles
 
     ASSERT_EQ(3, ecMajorVersion) << "The major version of ECObjects has changed from 3";
 
@@ -79,13 +75,12 @@ void SchemaCompatibilityTests::CreateSchema(Utf8CP additionSchemaXml, Utf8CP fai
         .append(failureMessage);
 
     DeserializeSchema(m_schema, *m_context, SchemaItem(schemaXml.c_str()), SchemaReadStatus::Success, message.c_str());
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaCompatibilityTests, PrimitiveTypeAdded)
-    {
+TEST_F(SchemaCompatibilityTests, PrimitiveTypeAdded) {
     Utf8CP partialXml = R"xml(
     <ECEntityClass typeName="TestClass">
         <ECProperty propertyName="BananaTypeProperty" typeName="banana"/>
@@ -99,32 +94,31 @@ TEST_F(SchemaCompatibilityTests, PrimitiveTypeAdded)
     ASSERT_NE(nullptr, testClass);
 
     {
-    ECPropertyP bananaProp = testClass->GetPropertyP("BananaTypeProperty");
-    ASSERT_NE(nullptr, bananaProp) << "Expected the 'BananaTypeProperty' to be found within the 'TestClass'";
-    EXPECT_TRUE(bananaProp->GetIsPrimitive());
-    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, bananaProp->GetAsPrimitiveProperty()->GetType()) << "The property is expected to have the default Primitive Type of string since it has an unknown type.";
+        ECPropertyP bananaProp = testClass->GetPropertyP("BananaTypeProperty");
+        ASSERT_NE(nullptr, bananaProp) << "Expected the 'BananaTypeProperty' to be found within the 'TestClass'";
+        EXPECT_TRUE(bananaProp->GetIsPrimitive());
+        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, bananaProp->GetAsPrimitiveProperty()->GetType()) << "The property is expected to have the default Primitive Type of string since it has an unknown type.";
     }
     {
-    ECPropertyP bananaArrProp = testClass->GetPropertyP("BananaArrayProperty");
-    ASSERT_NE(nullptr, bananaArrProp) << "Expected the 'BananaArrayProperty' to be found within the 'TestClass'";
-    EXPECT_TRUE(bananaArrProp->GetIsPrimitiveArray());
-    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, bananaArrProp->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()) << "The property is expected to have the default Primitive Type of string since it has an unknown type.";
+        ECPropertyP bananaArrProp = testClass->GetPropertyP("BananaArrayProperty");
+        ASSERT_NE(nullptr, bananaArrProp) << "Expected the 'BananaArrayProperty' to be found within the 'TestClass'";
+        EXPECT_TRUE(bananaArrProp->GetIsPrimitiveArray());
+        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, bananaArrProp->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()) << "The property is expected to have the default Primitive Type of string since it has an unknown type.";
     }
 
     TestSerializationFailure(*m_schema, "PrimitiveTypeAdded");
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaCompatibilityTests, NewEnumerationBackingType)
-    {
+TEST_F(SchemaCompatibilityTests, NewEnumerationBackingType) {
     Utf8CP partialXml = R"xml(
     <ECEnumeration typeName="TestEnumeration" backingTypeName="banana" />
     )xml";
 
     CreateSchema(partialXml, "with an unknown Enumeration backing type.");
-    
+
     ASSERT_NE(nullptr, m_schema.get());
 
     ECEnumerationCP ecEnum = m_schema->GetEnumerationCP("TestEnumeration");
@@ -132,13 +126,12 @@ TEST_F(SchemaCompatibilityTests, NewEnumerationBackingType)
     EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, ecEnum->GetType()) << "The enumeration is expected to have a default backing type of string since it has a currently unknown backing type.";
 
     TestSerializationFailure(*m_schema, "NewEnumerationBackingType");
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaCompatibilityTests, NewClassModifier)
-    {
+TEST_F(SchemaCompatibilityTests, NewClassModifier) {
     Utf8CP partialXml = R"xml(
     <ECEntityClass typeName="TestClass" modifier="banana" />
     )xml";
@@ -152,13 +145,12 @@ TEST_F(SchemaCompatibilityTests, NewClassModifier)
     EXPECT_EQ(ECClassModifier::None, testClass->GetClassModifier()) << "The class is expected to have a modifier of None since it currently has an unknown backing type";
 
     TestSerializationFailure(*m_schema, "NewClassModifier");
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaCompatibilityTests, NewPropertyKind)
-    {
+TEST_F(SchemaCompatibilityTests, NewPropertyKind) {
     Utf8CP partialXml = R"xml(
     <ECEntityClass typeName="TestClass">
         <MyNewPropertyKind propertyName="MyNewProperty" />
@@ -174,13 +166,12 @@ TEST_F(SchemaCompatibilityTests, NewPropertyKind)
     EXPECT_EQ(0, testClass->GetPropertyCount()) << "The property kind that is unknown is expected to be dropped from the class.";
 
     TestSerializationFailure(*m_schema, "NewPropertyKind");
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaCompatibilityTests, NewStrengthType)
-    {
+TEST_F(SchemaCompatibilityTests, NewStrengthType) {
     Utf8CP partialXml = R"xml(
     <ECEntityClass typeName="Source"/>
     <ECEntityClass typeName="Target"/>
@@ -205,13 +196,12 @@ TEST_F(SchemaCompatibilityTests, NewStrengthType)
     EXPECT_EQ(StrengthType::Referencing, testClass->GetRelationshipClassCP()->GetStrength()) << "The relationship is expected to have a strength of Referencing since it currently has an unknown strength";
 
     TestSerializationFailure(*m_schema, "NewStrengthType");
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaCompatibilityTests, NewSchemaItemType)
-    {
+TEST_F(SchemaCompatibilityTests, NewSchemaItemType) {
     Utf8CP partialXml = R"xml(
     <BananaClass typeName="TestBananaClass" bananaAttribute="yellow"/>
     )xml";
@@ -220,13 +210,12 @@ TEST_F(SchemaCompatibilityTests, NewSchemaItemType)
     ASSERT_NE(nullptr, m_schema.get());
 
     TestSerializationFailure(*m_schema, "NewSchemaItemType");
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaCompatibilityTests, SchemaItemWithUnknownAttributes)
-    {
+TEST_F(SchemaCompatibilityTests, SchemaItemWithUnknownAttributes) {
     Utf8CP partialXml = R"xml(
     <ECEntityClass typeName="TestBananaClass" bananaAttribute="yellow"/>
     )xml";
@@ -238,6 +227,6 @@ TEST_F(SchemaCompatibilityTests, SchemaItemWithUnknownAttributes)
     EXPECT_NE(nullptr, ecClass);
 
     TestSerializationFailure(*m_schema, "SchemaItemWithUnknownAttributes");
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "PerformanceTestFixture.h"
 #include <Bentley/BeTimeUtilities.h>
@@ -10,33 +10,27 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct PerformanceTestsECXml : PerformanceTestFixture
-{
+struct PerformanceTestsECXml : PerformanceTestFixture {
+    void TimeBisSchema(WString schemaPath) {
+        std::vector<WString> schemaPaths;
+        schemaPaths.push_back(GetAssetsGDataPath({L"ECSchemas", L"ECDb"}));
+        schemaPaths.push_back(GetAssetsGDataPath({L"ECSchemas", L"Dgn"}));
+        schemaPaths.push_back(GetAssetsGDataPath({L"ECSchemas", L"Domain"}));
 
-void TimeBisSchema(WString schemaPath)
-    {
-    std::vector<WString> schemaPaths;
-    schemaPaths.push_back(GetAssetsGDataPath({L"ECSchemas", L"ECDb"}));
-    schemaPaths.push_back(GetAssetsGDataPath({L"ECSchemas", L"Dgn"}));
-    schemaPaths.push_back(GetAssetsGDataPath({L"ECSchemas", L"Domain"}));
-
-    TimeSchemaXmlFile(schemaPath, schemaPaths, false, true, TEST_FIXTURE_NAME);
+        TimeSchemaXmlFile(schemaPath, schemaPaths, false, true, TEST_FIXTURE_NAME);
     }
 
-void TimeInMemorySchema(ECSchemaPtr schema)
-    {
-    Utf8String schemaXml;
-    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(schemaXml)) << schema->GetFullSchemaName().c_str();
-    TimeSchemaXml(schemaXml, TEST_FIXTURE_NAME);
+    void TimeInMemorySchema(ECSchemaPtr schema) {
+        Utf8String schemaXml;
+        EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(schemaXml)) << schema->GetFullSchemaName().c_str();
+        TimeSchemaXml(schemaXml, TEST_FIXTURE_NAME);
     }
-
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceTestsECXml, ReadingAndWritingEC2Schemas)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceTestsECXml, ReadingAndWritingEC2Schemas) {
     std::vector<WString> referencePaths;
     referencePaths.push_back(ECTestFixture::GetAssetsDataPath({L"SeedData"}));
 
@@ -45,13 +39,12 @@ TEST_F(PerformanceTestsECXml, ReadingAndWritingEC2Schemas)
     TimeSchemaXmlFile(ECTestFixture::GetTestDataPath(L"OpenPlant_3D.01.02.ecschema.xml"), referencePaths, false, true, TEST_FIXTURE_NAME);
     TimeSchemaXmlFile(ECTestFixture::GetTestDataPath(L"Bentley_Plant.06.00.ecschema.xml"), referencePaths, false, true, TEST_FIXTURE_NAME);
     TimeSchemaXmlFile(ECTestFixture::GetTestDataPath(L"CustomAttributeTest.01.00.ecschema.xml"), referencePaths, false, true, TEST_FIXTURE_NAME);
-    }
+}
 
 //-------------------------------------------------------------------------------------
 //* @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceTestsECXml, ReadingAndWritingGeneratedSchemas)
-    {
+TEST_F(PerformanceTestsECXml, ReadingAndWritingGeneratedSchemas) {
     TimeInMemorySchema(GenerateSchema20000Classes1PropsPerClass());
     TimeInMemorySchema(GenerateSchema2000Classes10PropsPerClass());
     TimeInMemorySchema(GenerateSchema100Classes200PropsPerClass());
@@ -65,13 +58,12 @@ TEST_F(PerformanceTestsECXml, ReadingAndWritingGeneratedSchemas)
 
     ECSchemaReadContextPtr schemaContext3 = ECSchemaReadContext::CreateContext();
     TimeInMemorySchema(GenerateSchema50Root5Deep3Mixin5Props(schemaContext3));
-    }
+}
 
 //-------------------------------------------------------------------------------------
 //* @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceTestsECXml, ReadingAndWritingBisSchemas)
-    {
+TEST_F(PerformanceTestsECXml, ReadingAndWritingBisSchemas) {
     TimeBisSchema(GetStandardsPath(L"Units.01.00.09.ecschema.xml"));
     TimeBisSchema(GetStandardsPath(L"Formats.01.00.00.ecschema.xml"));
 
@@ -91,17 +83,16 @@ TEST_F(PerformanceTestsECXml, ReadingAndWritingBisSchemas)
     TimeBisSchema(GetAssetsGSchemaPath(L"Domain", L"CifSubsurface.ecschema.xml"));
     TimeBisSchema(GetAssetsGSchemaPath(L"Domain", L"CifSubsurfaceConflictAnalysis.ecschema.xml"));
     TimeBisSchema(GetAssetsGSchemaPath(L"Domain", L"CifUnits.ecschema.xml"));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceTestsECXml, ReadingAndWritingInstance)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceTestsECXml, ReadingAndWritingInstance) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     TimeInstance(L"ECRules.01.00.ecschema.xml", L"RuleSet.xml", schemaContext, TEST_FIXTURE_NAME);
     TimeInstance(L"OpenPlant_3D.01.02.ecschema.xml", L"OpenPlant_3D_Instance.xml", schemaContext, TEST_FIXTURE_NAME);
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

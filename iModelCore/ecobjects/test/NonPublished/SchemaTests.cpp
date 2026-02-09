@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 #include "BeXml/BeXml.h"
@@ -32,11 +32,10 @@ struct SchemaElementsOrderTest : ECTestFixture {};
 //! SchemaTest
 //=======================================================================================
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaTest, AddAndRemoveEnumerations)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaTest, AddAndRemoveEnumerations) {
     ECSchemaPtr schema;
     ECEntityClassP domainClass;
     ECEnumerationP enumeration;
@@ -45,7 +44,7 @@ TEST_F(SchemaTest, AddAndRemoveEnumerations)
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ASSERT_TRUE(schema.IsValid());
 
-    //Create Enumeration
+    // Create Enumeration
     auto status = schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
     ASSERT_NE(nullptr, enumeration);
     EC_ASSERT_SUCCESS(status);
@@ -63,12 +62,11 @@ TEST_F(SchemaTest, AddAndRemoveEnumerations)
     ASSERT_EQ(enumeration2, enumeration);
 
     int i = 0;
-    for (auto p : schema->GetEnumerations())
-        {
+    for (auto p : schema->GetEnumerations()) {
         i++;
         ASSERT_NE(nullptr, p);
         ASSERT_EQ(enumeration, p);
-        }
+    }
 
     ASSERT_EQ(1, i);
 
@@ -81,51 +79,47 @@ TEST_F(SchemaTest, AddAndRemoveEnumerations)
     ASSERT_EQ(nullptr, enumeration2);
 
     ASSERT_EQ(0, schema->GetEnumerationCount());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, CreateDynamicSchema)
-    {
+TEST_F(SchemaTest, CreateDynamicSchema) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     auto dynamicClass = CoreCustomAttributeHelper::GetCustomAttributeClass(*schemaContext, "DynamicSchema");
     IECInstancePtr dynamicSchemaCA = dynamicClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ECSchemaCachePtr cache = ECSchemaCache::Create();
-    
+
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 2, 0, 1);
     schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(*schemaContext));
     EC_ASSERT_SUCCESS(schema->SetCustomAttribute(*dynamicSchemaCA));
-    
 
     ASSERT_EQ(ECObjectsStatus::Success, cache->AddSchema(*schema));
     ECSchemaP retrievedSchema = cache->GetSchema(SchemaKey("TestSchema", 2, 1), SchemaMatchType::Exact);
     ASSERT_NE(nullptr, retrievedSchema);
 
     ASSERT_TRUE(retrievedSchema->IsDynamicSchema());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, AddCycleReference)
-    {
+TEST_F(SchemaTest, AddCycleReference) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 2, 0, 1);
     ASSERT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, schema->AddReferencedSchema(*schema));
 
     ECSchemaPtr schema2;
-    ECSchema::CreateSchema(schema2, "TestSchema", "ts", 2, 0, 4); //different version
+    ECSchema::CreateSchema(schema2, "TestSchema", "ts", 2, 0, 4);  // different version
     ASSERT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, schema->AddReferencedSchema(*schema2));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, AddIndirectCycleReference)
-    {
-    //Create reference cycle Foo -> Middle -> Bar -> Foo
+TEST_F(SchemaTest, AddIndirectCycleReference) {
+    // Create reference cycle Foo -> Middle -> Bar -> Foo
     ECSchemaPtr foo;
     ECSchema::CreateSchema(foo, "Foo", "foo", 2, 0, 1);
 
@@ -138,14 +132,13 @@ TEST_F(SchemaTest, AddIndirectCycleReference)
     ASSERT_EQ(ECObjectsStatus::Success, bar->AddReferencedSchema(*foo));
 
     ASSERT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, middle->AddReferencedSchema(*bar));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, AddIndirectCycleReferenceToDifferentVersion)
-    {
-    //Create reference cycle Foo -> Middle -> Bar -> FooAlt (Same name different version as Foo)
+TEST_F(SchemaTest, AddIndirectCycleReferenceToDifferentVersion) {
+    // Create reference cycle Foo -> Middle -> Bar -> FooAlt (Same name different version as Foo)
     ECSchemaPtr foo;
     ECSchema::CreateSchema(foo, "Foo", "foo", 2, 0, 1);
 
@@ -162,13 +155,12 @@ TEST_F(SchemaTest, AddIndirectCycleReferenceToDifferentVersion)
     ASSERT_EQ(ECObjectsStatus::Success, bar->AddReferencedSchema(*fooAlt));
 
     ASSERT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, middle->AddReferencedSchema(*bar));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, TryRenameECClass)
-    {
+TEST_F(SchemaTest, TryRenameECClass) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
@@ -190,13 +182,12 @@ TEST_F(SchemaTest, TryRenameECClass)
     ECClassP classB1 = schema->GetClassP("ClassB1");
     ASSERT_NE(nullptr, classA1);
     ASSERT_NE(nullptr, classB1);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, RemoveReferenceSchema)
-    {
+TEST_F(SchemaTest, RemoveReferenceSchema) {
     ECSchemaPtr schema;
     ECSchemaPtr refSchema;
 
@@ -227,15 +218,14 @@ TEST_F(SchemaTest, RemoveReferenceSchema)
     // remove source constraint class from relationship
     EXPECT_EQ(ECObjectsStatus::Success, relClass->GetSource().RemoveClass(*sourceClass));
 
-    //removing reference schema should be successful now
+    // removing reference schema should be successful now
     ASSERT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(SchemaKey("RefSchema", 5, 5)));
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaTest, CannotAddMultipleSchemaItemsWithSameName)
-    {
+TEST_F(SchemaTest, CannotAddMultipleSchemaItemsWithSameName) {
     ECSchemaPtr schema;
 
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
@@ -284,13 +274,12 @@ TEST_F(SchemaTest, CannotAddMultipleSchemaItemsWithSameName)
 
     ECUnitP invertedUnit;
     EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->CreateInvertedUnit(invertedUnit, *realUnit, "IdenticalName", *realUnitSystem));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, DeleteKOQ)
-    {
+TEST_F(SchemaTest, DeleteKOQ) {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     Utf8CP schemaXml =
@@ -300,8 +289,8 @@ TEST_F(SchemaTest, DeleteKOQ)
         "                    displayLabel='My KindOfQuantity' persistenceUnit='CM' relativeError='10e-3'"
         "                    presentationUnits='FT;IN;YRD' />"
         "    <ECEntityClass typeName='Foo' >"
-        "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />" // kindOfQuantity='s1:MyKindOfQuantity'
-        "        <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>" // kindOfQuantity='s1:MyKindOfQuantity'
+        "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />"                                                       // kindOfQuantity='s1:MyKindOfQuantity'
+        "        <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>"  // kindOfQuantity='s1:MyKindOfQuantity'
         "    </ECEntityClass>"
         "</ECSchema>";
 
@@ -317,13 +306,12 @@ TEST_F(SchemaTest, DeleteKOQ)
         ASSERT_EQ(ECObjectsStatus::Success, schema->DeleteKindOfQuantity(*koq));
 
     ASSERT_EQ(0, schema->GetKindOfQuantityCount());
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaTest, DeleteUnitSystem)
-    {
+TEST_F(SchemaTest, DeleteUnitSystem) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
     UnitSystemP system;
@@ -334,13 +322,12 @@ TEST_F(SchemaTest, DeleteUnitSystem)
     EC_EXPECT_SUCCESS(schema->DeleteUnitSystem(*system));
     EXPECT_EQ(nullptr, schema->GetUnitSystemCP("TestUnitSystem"));
     EXPECT_EQ(0, schema->GetUnitSystemCount());
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaTest, DeletePhenomenon)
-    {
+TEST_F(SchemaTest, DeletePhenomenon) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
     PhenomenonP phenom;
@@ -351,13 +338,12 @@ TEST_F(SchemaTest, DeletePhenomenon)
     EC_EXPECT_SUCCESS(schema->DeletePhenomenon(*phenom));
     EXPECT_EQ(nullptr, schema->GetPhenomenonCP("TestPhenomenon"));
     EXPECT_EQ(0, schema->GetPhenomenonCount());
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaTest, DeleteUnits)
-    {
+TEST_F(SchemaTest, DeleteUnits) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
 
@@ -366,49 +352,48 @@ TEST_F(SchemaTest, DeleteUnits)
     EC_ASSERT_SUCCESS(schema->CreatePhenomenon(phenom, "TestPhenomenon", "LENGTH"));
     EC_ASSERT_SUCCESS(schema->CreateUnitSystem(unitSystem, "TestUnitSystem"));
 
-    { // ECUnit
-    ECUnitP unit;
-    EC_ASSERT_SUCCESS(schema->CreateUnit(unit, "TestUnit", "", *phenom, *unitSystem));
-    ASSERT_NE(nullptr, unit);
-    EXPECT_EQ(1, schema->GetUnitCount());
-    EXPECT_EQ(unit, schema->GetUnitCP("TestUnit"));
-    EC_EXPECT_SUCCESS(schema->DeleteUnit(*unit));
-    EXPECT_EQ(nullptr, schema->GetUnitCP("TestUnit"));
-    EXPECT_EQ(0, schema->GetFormatCount());
+    {  // ECUnit
+        ECUnitP unit;
+        EC_ASSERT_SUCCESS(schema->CreateUnit(unit, "TestUnit", "", *phenom, *unitSystem));
+        ASSERT_NE(nullptr, unit);
+        EXPECT_EQ(1, schema->GetUnitCount());
+        EXPECT_EQ(unit, schema->GetUnitCP("TestUnit"));
+        EC_EXPECT_SUCCESS(schema->DeleteUnit(*unit));
+        EXPECT_EQ(nullptr, schema->GetUnitCP("TestUnit"));
+        EXPECT_EQ(0, schema->GetFormatCount());
     }
-    { // Inverted Unit
-    ECUnitP unit;
-    EC_ASSERT_SUCCESS(schema->CreateUnit(unit, "TestUnit", "", *phenom, *unitSystem));
+    {  // Inverted Unit
+        ECUnitP unit;
+        EC_ASSERT_SUCCESS(schema->CreateUnit(unit, "TestUnit", "", *phenom, *unitSystem));
 
-    ECUnitP invertedUnit;
-    EC_ASSERT_SUCCESS(schema->CreateInvertedUnit(invertedUnit, *unit, "TestInvertedUnit", *unitSystem));
-    ASSERT_NE(nullptr, invertedUnit);
-    EXPECT_EQ(2, schema->GetUnitCount());
-    EXPECT_EQ(invertedUnit, schema->GetInvertedUnitCP("TestInvertedUnit"));
-    EC_EXPECT_SUCCESS(schema->DeleteUnit(*invertedUnit));
-    EXPECT_EQ(nullptr, schema->GetInvertedUnitCP("TestInvertedUnit"));
-    EXPECT_EQ(1, schema->GetUnitCount());
+        ECUnitP invertedUnit;
+        EC_ASSERT_SUCCESS(schema->CreateInvertedUnit(invertedUnit, *unit, "TestInvertedUnit", *unitSystem));
+        ASSERT_NE(nullptr, invertedUnit);
+        EXPECT_EQ(2, schema->GetUnitCount());
+        EXPECT_EQ(invertedUnit, schema->GetInvertedUnitCP("TestInvertedUnit"));
+        EC_EXPECT_SUCCESS(schema->DeleteUnit(*invertedUnit));
+        EXPECT_EQ(nullptr, schema->GetInvertedUnitCP("TestInvertedUnit"));
+        EXPECT_EQ(1, schema->GetUnitCount());
 
-    // Cleanup
-    schema->DeleteUnit(*unit);
+        // Cleanup
+        schema->DeleteUnit(*unit);
     }
-    { // Constant
-    ECUnitP constant;
-    EC_ASSERT_SUCCESS(schema->CreateConstant(constant, "TestConstant", "", *phenom, 5));
-    ASSERT_NE(nullptr, constant);
-    EXPECT_EQ(1, schema->GetUnitCount());
-    EXPECT_EQ(constant, schema->GetConstantCP("TestConstant"));
-    EC_EXPECT_SUCCESS(schema->DeleteUnit(*constant));
-    EXPECT_EQ(nullptr, schema->GetConstantCP("TestConstant"));
-    EXPECT_EQ(0, schema->GetUnitCount());
+    {  // Constant
+        ECUnitP constant;
+        EC_ASSERT_SUCCESS(schema->CreateConstant(constant, "TestConstant", "", *phenom, 5));
+        ASSERT_NE(nullptr, constant);
+        EXPECT_EQ(1, schema->GetUnitCount());
+        EXPECT_EQ(constant, schema->GetConstantCP("TestConstant"));
+        EC_EXPECT_SUCCESS(schema->DeleteUnit(*constant));
+        EXPECT_EQ(nullptr, schema->GetConstantCP("TestConstant"));
+        EXPECT_EQ(0, schema->GetUnitCount());
     }
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaTest, DeleteFormat)
-    {
+TEST_F(SchemaTest, DeleteFormat) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
     ECFormatP format;
@@ -419,39 +404,37 @@ TEST_F(SchemaTest, DeleteFormat)
     EC_EXPECT_SUCCESS(schema->DeleteFormat(*format));
     EXPECT_EQ(nullptr, schema->GetFormatCP("TestFormat"));
     EXPECT_EQ(0, schema->GetFormatCount());
-    }
+}
 
 //---------------------------------------------------------------------------------**//**
 // @bsimethod
 // +---------------+---------------+---------------+---------------+---------------+-----
-TEST_F(SchemaTest, TestCircularReference)
-    {
-    ECSchemaPtr testSchema;
-    ECSchemaReadContextPtr   schemaContext;
-    SearchPathSchemaFileLocaterPtr schemaLocater;
-    bvector<WString> searchPaths;
-    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
-    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
-    schemaContext = ECSchemaReadContext::CreateContext ();
-    schemaContext->AddSchemaLocater (*schemaLocater);
-    SchemaKey key("CircleSchema", 01, 00);
-    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
-    EXPECT_FALSE(testSchema.IsValid ());
-    SchemaKey sqKey("SquareSchema", 1, 0);
-    testSchema = schemaContext->LocateSchema(sqKey, SchemaMatchType::Latest);
-    EXPECT_FALSE(testSchema.IsValid());
-    }
-
-//---------------------------------------------------------------------------------**//**
-// @bsimethod
-// +---------------+---------------+---------------+---------------+---------------+-----
-TEST_F(SchemaTest, TestsLatestCompatible)
-    {
+TEST_F(SchemaTest, TestCircularReference) {
     ECSchemaPtr testSchema;
     ECSchemaReadContextPtr schemaContext;
     SearchPathSchemaFileLocaterPtr schemaLocater;
     bvector<WString> searchPaths;
-    searchPaths.push_back (ECTestFixture::GetTestDataPath(L""));
+    searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(*schemaLocater);
+    SchemaKey key("CircleSchema", 01, 00);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    EXPECT_FALSE(testSchema.IsValid());
+    SchemaKey sqKey("SquareSchema", 1, 0);
+    testSchema = schemaContext->LocateSchema(sqKey, SchemaMatchType::Latest);
+    EXPECT_FALSE(testSchema.IsValid());
+}
+
+//---------------------------------------------------------------------------------**//**
+// @bsimethod
+// +---------------+---------------+---------------+---------------+---------------+-----
+TEST_F(SchemaTest, TestsLatestCompatible) {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr schemaContext;
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
     schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
     schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddSchemaLocater(*schemaLocater);
@@ -460,73 +443,69 @@ TEST_F(SchemaTest, TestsLatestCompatible)
     EXPECT_TRUE(testSchema.IsValid());
     EXPECT_EQ(9, testSchema->GetVersionRead());
     EXPECT_EQ(6, testSchema->GetVersionMinor());
-    }
+}
 
 //---------------------------------------------------------------------------------**//**
 // @bsimethod
 // +---------------+---------------+---------------+---------------+---------------+-----
-TEST_F(SchemaTest, TestsLatest)
-    {
-    ECSchemaPtr testSchema;
-    ECSchemaReadContextPtr   schemaContext;
-    SearchPathSchemaFileLocaterPtr schemaLocater;
-    bvector<WString> searchPaths;
-    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
-    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
-    schemaContext = ECSchemaReadContext::CreateContext ();
-    schemaContext->AddSchemaLocater (*schemaLocater);
-    SchemaKey key ("Widgets", 9, 7);
-    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
-    EXPECT_TRUE (testSchema.IsValid ());
-    EXPECT_TRUE (testSchema->GetVersionRead () == 9);
-    EXPECT_TRUE (testSchema->GetVersionMinor () == 6);
-    }
-
-//---------------------------------------------------------------------------------**//**
-// @bsimethod
-// +---------------+---------------+---------------+---------------+---------------+-----
-TEST_F(SchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplicatePrefixes)
-    {
+TEST_F(SchemaTest, TestsLatest) {
     ECSchemaPtr testSchema;
     ECSchemaReadContextPtr schemaContext;
     SearchPathSchemaFileLocaterPtr schemaLocater;
     bvector<WString> searchPaths;
-    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
-    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
-    schemaContext = ECSchemaReadContext::CreateContext ();
-    schemaContext->AddSchemaLocater (*schemaLocater);
-    SchemaKey key ("DuplicatePrefixes", 01, 00);
-    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
-    EXPECT_TRUE (testSchema.IsValid ());
-    ECClassCP circleClass = testSchema->GetClassCP ("Circle");
+    searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(*schemaLocater);
+    SchemaKey key("Widgets", 9, 7);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    EXPECT_TRUE(testSchema.IsValid());
+    EXPECT_TRUE(testSchema->GetVersionRead() == 9);
+    EXPECT_TRUE(testSchema->GetVersionMinor() == 6);
+}
+
+//---------------------------------------------------------------------------------**//**
+// @bsimethod
+// +---------------+---------------+---------------+---------------+---------------+-----
+TEST_F(SchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplicatePrefixes) {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr schemaContext;
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(*schemaLocater);
+    SchemaKey key("DuplicatePrefixes", 01, 00);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    EXPECT_TRUE(testSchema.IsValid());
+    ECClassCP circleClass = testSchema->GetClassCP("Circle");
     EXPECT_NE(nullptr, circleClass) << "Cannot Load Ellipse Class";
-    }
+}
 
 //---------------------------------------------------------------------------------**//**
 // @bsimethod
 // +---------------+---------------+---------------+---------------+---------------+-----
-TEST_F(SchemaTest, GetBaseClassProperty)
-    {
+TEST_F(SchemaTest, GetBaseClassProperty) {
     ECSchemaPtr testSchema;
     ECSchemaReadContextPtr schemaContext;
     SearchPathSchemaFileLocaterPtr schemaLocater;
     bvector<WString> searchPaths;
-    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
-    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
-    schemaContext = ECSchemaReadContext::CreateContext ();
-    schemaContext->AddSchemaLocater (*schemaLocater);
-    SchemaKey key ("testschema", 01, 00);
-    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
-    EXPECT_TRUE (testSchema.IsValid ());
-    ECClassCP wheelsChildClass = testSchema->GetClassCP ("WheelsChild");
+    searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(*schemaLocater);
+    SchemaKey key("testschema", 01, 00);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    EXPECT_TRUE(testSchema.IsValid());
+    ECClassCP wheelsChildClass = testSchema->GetClassCP("WheelsChild");
     EXPECT_NE(nullptr, wheelsChildClass) << "Cannot Load WheelsChild Class";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaTest, HierarchyInCorrectOrder)
-    {
+TEST_F(SchemaTest, HierarchyInCorrectOrder) {
     ECSchemaPtr schemaA;
     ECSchemaPtr schemaB;
     ECSchemaPtr schemaC;
@@ -561,13 +540,12 @@ TEST_F(SchemaTest, HierarchyInCorrectOrder)
     EXPECT_TRUE(schemas[3]->GetAlias().EqualsIAscii("c"));
     EXPECT_TRUE(schemas[4]->GetAlias().EqualsIAscii("b"));
     EXPECT_TRUE(schemas[5]->GetAlias().EqualsIAscii("a"));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically) {
     ECSchemaPtr schema;
     ECEntityClassP entityClass;
     ECStructClassP structClass;
@@ -585,7 +563,7 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
     EXPECT_TRUE(schema->HasId()) << "Expected ECSchemaId to be set after calling ECSchema::SetId";
     EXPECT_EQ(id, schema->GetId().GetValue()) << "Expected ECSchemaId to be set to 42";
 
-    //Create Domain Class
+    // Create Domain Class
     schema->CreateEntityClass(entityClass, "EntityClass");
     ASSERT_NE(nullptr, entityClass);
     EXPECT_FALSE(entityClass->HasId()) << "Expected ECClassId to be unset when creating via ECSchema::CreateEntityClass";
@@ -593,7 +571,7 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
     EXPECT_TRUE(entityClass->HasId()) << "Expected ECClassId to be set after calling ECClass::SetId";
     EXPECT_EQ(id, entityClass->GetId().GetValue()) << "Expected ECClassId to be set to 42";
 
-    //Create Struct
+    // Create Struct
     schema->CreateStructClass(structClass, "StructClass");
     ASSERT_NE(nullptr, structClass);
     EXPECT_FALSE(structClass->HasId()) << "Expected ECClassId to be unset when creating via ECSchema::CreateStructClass";
@@ -601,7 +579,7 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
     EXPECT_TRUE(structClass->HasId()) << "Expected ECClassId to be set on struct after calling ECClass::SetId";
     EXPECT_EQ(id, structClass->GetId().GetValue()) << "Expected ECClassId to be set to 42 on struct";
 
-    //Create customAttributeClass
+    // Create customAttributeClass
     schema->CreateCustomAttributeClass(customAttributeClass, "CustomAttributeClass");
     ASSERT_NE(nullptr, customAttributeClass);
     EXPECT_FALSE(customAttributeClass->HasId()) << "Expected ECClassId to be unset when creating via ECSchema::CreateCustomAttributeClass";
@@ -609,7 +587,7 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
     EXPECT_TRUE(customAttributeClass->HasId()) << "Expected ECClassId to be set on custom attribute after calling ECClass::SetId";
     EXPECT_EQ(id, customAttributeClass->GetId().GetValue()) << "Expected ECClassId to be set to 42 on custom attribute";
 
-    //Create RelationshipClass
+    // Create RelationshipClass
     schema->CreateRelationshipClass(relationshipClass, "RelationshipClass");
     ASSERT_NE(nullptr, relationshipClass);
     relationshipClass->GetSource().AddClass(*entityClass);
@@ -619,7 +597,7 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
     EXPECT_TRUE(relationshipClass->HasId()) << "Expected ECClassId to be set on relationship after calling ECClass::SetId";
     EXPECT_EQ(id, relationshipClass->GetId().GetValue()) << "Expected ECClassId to be set to 42 on relationship";
 
-    //Create Enumeration
+    // Create Enumeration
     schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
     ASSERT_NE(nullptr, enumeration);
     EXPECT_FALSE(enumeration->HasId()) << "Expected ECEnumerationId to be unset when creating via ECSchema::CreateEnumeration";
@@ -627,7 +605,7 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
     EXPECT_TRUE(enumeration->HasId()) << "Expected ECEnumerationId to be set after calling ECEnumeration::SetId";
     EXPECT_EQ(id, enumeration->GetId().GetValue()) << "Expected ECEnumerationId to be set to 42";
 
-    //Create KindOfQuantity
+    // Create KindOfQuantity
     schema->CreateKindOfQuantity(koq, "KindOfQuantity");
     ASSERT_NE(nullptr, koq);
     EXPECT_FALSE(koq->HasId()) << "Expected KindOfQuantityId to be unset when creating via ECSchema::CreateKindOfQuantity";
@@ -635,7 +613,7 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
     EXPECT_TRUE(koq->HasId()) << "Expected KindOfQuantityId to be set after calling KindOfQuantity::SetId";
     EXPECT_EQ(id, koq->GetId().GetValue()) << "Expected KindOfQuantityId to be set to 42";
 
-    //Create PropertyCategory
+    // Create PropertyCategory
     schema->CreatePropertyCategory(propCategory, "PropertyCategory");
     ASSERT_NE(nullptr, propCategory);
     EXPECT_FALSE(propCategory->HasId()) << "Expected PropertyCategoryId to be unset when creating via ECSchema::CreatePropertyCategory";
@@ -643,7 +621,7 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
     EXPECT_TRUE(propCategory->HasId()) << "Expected PropertyCategoryId to be set after calling PropertyCategory::SetId";
     EXPECT_EQ(id, propCategory->GetId().GetValue()) << "Expected PropertyCategoryId to be set to 42";
 
-    //Add Property of primitive type to entity class
+    // Add Property of primitive type to entity class
     PrimitiveECPropertyP primitiveProperty;
     entityClass->CreatePrimitiveProperty(primitiveProperty, "PrimitiveProperty", PrimitiveType::PRIMITIVETYPE_Boolean);
     ASSERT_NE(nullptr, primitiveProperty);
@@ -652,25 +630,25 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
     EXPECT_TRUE(primitiveProperty->HasId()) << "Expected ECPropertyId to be set on primitive after calling ECProperty::SetId";
     EXPECT_EQ(id, primitiveProperty->GetId().GetValue()) << "Expected ECPropertyId to be set to 42 on primitive";
 
-    //Add Property of Array type to structClass
+    // Add Property of Array type to structClass
     PrimitiveArrayECPropertyP arrProp;
-    structClass->CreatePrimitiveArrayProperty (arrProp, "ArrayProperty");
+    structClass->CreatePrimitiveArrayProperty(arrProp, "ArrayProperty");
     ASSERT_NE(nullptr, arrProp);
     EXPECT_FALSE(arrProp->HasId()) << "Expected ECPropertyId to be unset when creating  ECClass::CreateArrayProperty";
     arrProp->SetId(ECPropertyId(id));
     EXPECT_TRUE(arrProp->HasId()) << "Expected ECPropertyId to be set on array after calling ECProperty::SetId";
     EXPECT_EQ(id, arrProp->GetId().GetValue()) << "Expected ECPropertyId to be set to 42 on array";
 
-    //Add Property Of Struct type to custom attribute
+    // Add Property Of Struct type to custom attribute
     StructECPropertyP propOfCustomAttribute;
-    customAttributeClass->CreateStructProperty (propOfCustomAttribute, "PropertyOfCustomAttribute", *structClass);
+    customAttributeClass->CreateStructProperty(propOfCustomAttribute, "PropertyOfCustomAttribute", *structClass);
     ASSERT_NE(nullptr, propOfCustomAttribute);
     EXPECT_FALSE(propOfCustomAttribute->HasId()) << "Expected ECPropertyId to be unset when creating  ECClass::CreateStructProperty";
     propOfCustomAttribute->SetId(ECPropertyId(id));
     EXPECT_TRUE(propOfCustomAttribute->HasId()) << "Expected ECPropertyId to be set on struct after calling ECProperty::SetId";
     EXPECT_EQ(id, propOfCustomAttribute->GetId().GetValue()) << "Expected ECPropertyId to be set to 42 on struct";
 
-    //Add Navgation property to entity class
+    // Add Navgation property to entity class
     NavigationECPropertyP navigationProperty;
     entityClass->CreateNavigationProperty(navigationProperty, "NavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Forward);
     ASSERT_NE(nullptr, navigationProperty);
@@ -678,10 +656,9 @@ TEST_F(SchemaTest, ElementIdsAreNotSetAutomatically)
     navigationProperty->SetId(ECPropertyId(id));
     EXPECT_TRUE(navigationProperty->HasId()) << "Expected ECPropertyId to be set on navigation property after calling ECProperty::SetId";
     EXPECT_EQ(id, navigationProperty->GetId().GetValue()) << "Expected ECPropertyId to be set to 42 on navigation property";
-    }
+}
 
-TEST_F(SchemaTest, FindNameForSchemaItem)
-    {
+TEST_F(SchemaTest, FindNameForSchemaItem) {
     ECSchemaPtr schema;
     ECEntityClassP classA, classAp, classApp, classNull;
     ECEnumerationP enumA, enumAp, enumApp;
@@ -742,17 +719,16 @@ TEST_F(SchemaTest, FindNameForSchemaItem)
     // Returns _ for nullptr
     classNull = nullptr;
     EXPECT_STREQ("_", schema->FindNameForSchemaItem(classNull).c_str());
-    }
+}
 
 //=======================================================================================
 //! SchemaSearchTest
 //=======================================================================================
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaSearchTest, FindSchemaByName)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaSearchTest, FindSchemaByName) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
     schemaContext->AddSchemaPath(seedPath.c_str());
@@ -769,112 +745,104 @@ TEST_F(SchemaSearchTest, FindSchemaByName)
     EXPECT_TRUE(nullptr != schema->FindSchema(SchemaKey("BaseSchema", 1, 0), SchemaMatchType::Exact));
     EXPECT_TRUE(nullptr != schema->FindSchemaP(SchemaKey("SchemaThatReferences", 1, 0), SchemaMatchType::Exact));
     EXPECT_TRUE(nullptr == schema->FindSchemaP(SchemaKey("a", 123, 456), SchemaMatchType::Exact));
-    }
+}
 
-void VerifySingleSchemaExists(ECSchemaReadContextR schemaContext, SchemaKey schemaKey)
-    {
+void VerifySingleSchemaExists(ECSchemaReadContextR schemaContext, SchemaKey schemaKey) {
     bool found = false;
-    for (ECSchemaCP schema : schemaContext.GetCache().GetSchemas())
-        {
-        if (schema->GetSchemaKey().Matches(schemaKey, SchemaMatchType::Exact))
-            {
+    for (ECSchemaCP schema : schemaContext.GetCache().GetSchemas()) {
+        if (schema->GetSchemaKey().Matches(schemaKey, SchemaMatchType::Exact)) {
             if (!found)
                 found = true;
-            else
-                {
+            else {
                 EXPECT_TRUE(false);
                 break;
-                }
             }
         }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaSearchTest, FindSchemaByFileName)
-    {
+TEST_F(SchemaSearchTest, FindSchemaByFileName) {
     // Test success when the schema can be found
     {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaKey testKey("Widgets", 9, 6);
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaKey testKey("Widgets", 9, 6);
 
-    ECSchemaPtr schema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(schema->GetSchemaKey().Matches(testKey, SchemaMatchType::Exact));
+        ECSchemaPtr schema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
+        ASSERT_TRUE(schema.IsValid());
+        ASSERT_TRUE(schema->GetSchemaKey().Matches(testKey, SchemaMatchType::Exact));
 
-    // Check that if the schema is a duplicate it will be returned
-    ECSchemaPtr duplicateSchema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
-    ASSERT_TRUE(duplicateSchema.IsValid());
-    EXPECT_TRUE(duplicateSchema->GetSchemaKey().Matches(testKey, SchemaMatchType::Exact));
-    
-    EXPECT_TRUE(schema->GetSchemaKey().Matches(duplicateSchema->GetSchemaKey(), SchemaMatchType::Exact));
+        // Check that if the schema is a duplicate it will be returned
+        ECSchemaPtr duplicateSchema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
+        ASSERT_TRUE(duplicateSchema.IsValid());
+        EXPECT_TRUE(duplicateSchema->GetSchemaKey().Matches(testKey, SchemaMatchType::Exact));
 
-    // verify that there is only one in the schema cache
-    VerifySingleSchemaExists(*schemaContext, testKey);
+        EXPECT_TRUE(schema->GetSchemaKey().Matches(duplicateSchema->GetSchemaKey(), SchemaMatchType::Exact));
+
+        // verify that there is only one in the schema cache
+        VerifySingleSchemaExists(*schemaContext, testKey);
     }
 
     {
-    SchemaKey testKey("Widgets", 9, 6);
+        SchemaKey testKey("Widgets", 9, 6);
 
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema.IsValid());
-    EXPECT_TRUE(schema->GetSchemaKey().Matches(testKey, SchemaMatchType::Exact));
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_TRUE(schema->GetSchemaKey().Matches(testKey, SchemaMatchType::Exact));
 
-    status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
-    EXPECT_EQ(SchemaReadStatus::DuplicateSchema, status);
+        status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
+        EXPECT_EQ(SchemaReadStatus::DuplicateSchema, status);
 
-    ECSchemaPtr dupSchema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
-    ASSERT_TRUE(dupSchema.IsValid());
-    EXPECT_TRUE(dupSchema->GetSchemaKey().Matches(testKey, SchemaMatchType::Exact));
-    
-    VerifySingleSchemaExists(*schemaContext, testKey);
+        ECSchemaPtr dupSchema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.09.06.ecschema.xml").c_str(), *schemaContext);
+        ASSERT_TRUE(dupSchema.IsValid());
+        EXPECT_TRUE(dupSchema->GetSchemaKey().Matches(testKey, SchemaMatchType::Exact));
+
+        VerifySingleSchemaExists(*schemaContext, testKey);
     }
 
     // Test failure when a non xml file is passed
     {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    BeTest::SetFailOnAssert(false);
-    ECSchemaPtr schema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.05.10.ecschema").c_str(), *schemaContext);
-    BeTest::SetFailOnAssert(true);
-    ASSERT_FALSE(schema.IsValid());
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        BeTest::SetFailOnAssert(false);
+        ECSchemaPtr schema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.05.10.ecschema").c_str(), *schemaContext);
+        BeTest::SetFailOnAssert(true);
+        ASSERT_FALSE(schema.IsValid());
     }
 
     // Test failure when schema xml file does not exist
     {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    BeTest::SetFailOnAssert(false);
-    ECSchemaPtr schema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.05.10.ecschema.xml").c_str(), *schemaContext);
-    BeTest::SetFailOnAssert(true);
-    ASSERT_FALSE(schema.IsValid());
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        BeTest::SetFailOnAssert(false);
+        ECSchemaPtr schema = ECSchema::LocateSchema(ECTestFixture::GetTestDataPath(L"Widgets.05.10.ecschema.xml").c_str(), *schemaContext);
+        BeTest::SetFailOnAssert(true);
+        ASSERT_FALSE(schema.IsValid());
     }
-
-    }
+}
 
 //=======================================================================================
 //! SchemaNameParsingTest
 //=======================================================================================
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void ValidateSchemaNameParsing(Utf8CP fullName, bool expectFailure, Utf8CP expectName, uint32_t expectRead, uint32_t expectWrite, uint32_t expectMinor)
-    {
-    Utf8String    shortName;
-    uint32_t   versionRead;
-    uint32_t   versionWrite;
-    uint32_t   versionMinor;
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+static void ValidateSchemaNameParsing(Utf8CP fullName, bool expectFailure, Utf8CP expectName, uint32_t expectRead, uint32_t expectWrite, uint32_t expectMinor) {
+    Utf8String shortName;
+    uint32_t versionRead;
+    uint32_t versionWrite;
+    uint32_t versionMinor;
 
     ECObjectsStatus status = ECSchema::ParseSchemaFullName(shortName, versionRead, versionWrite, versionMinor, fullName);
 
-    if (expectFailure)
-        {
+    if (expectFailure) {
         EXPECT_TRUE(ECObjectsStatus::Success != status);
         return;
-        }
+    }
 
     EXPECT_TRUE(ECObjectsStatus::Success == status);
 
@@ -882,13 +850,12 @@ static void ValidateSchemaNameParsing(Utf8CP fullName, bool expectFailure, Utf8C
     EXPECT_EQ(versionRead, expectRead);
     EXPECT_EQ(versionWrite, expectWrite);
     EXPECT_EQ(versionMinor, expectMinor);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaNameParsingTest, ParseFullSchemaName)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaNameParsingTest, ParseFullSchemaName) {
     ValidateSchemaNameParsing("TestName.6.8", false, "TestName", 6, 0, 8);
     ValidateSchemaNameParsing("TestName.16.18", false, "TestName", 16, 0, 18);
     ValidateSchemaNameParsing("TestName.126.128", false, "TestName", 126, 0, 128);
@@ -897,17 +864,16 @@ TEST_F(SchemaNameParsingTest, ParseFullSchemaName)
     ValidateSchemaNameParsing("TestName", true, nullptr, 0, 0, 0);
     ValidateSchemaNameParsing("", true, nullptr, 0, 0, 0);
     ValidateSchemaNameParsing("12.18", true, nullptr, 0, 0, 0);
-    }
+}
 
 //=======================================================================================
 //! SchemaReferenceTest
 //=======================================================================================
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 5, 5);
 
@@ -928,13 +894,12 @@ TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
 
     EXPECT_TRUE(schemaIterator == refList.end());
     EXPECT_EQ(ECObjectsStatus::SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaReferenceTest, CanRemoveAllUnusedSchemaReferences)
-    {
+TEST_F(SchemaReferenceTest, CanRemoveAllUnusedSchemaReferences) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 5, 5);
 
@@ -968,13 +933,12 @@ TEST_F(SchemaReferenceTest, CanRemoveAllUnusedSchemaReferences)
     EXPECT_TRUE(schemaIterator == refList.end()) << "Found UnusedRefSchema in reference list after removing unused schemas";
 
     EXPECT_EQ(ECObjectsStatus::SchemaNotFound, schema->RemoveReferencedSchema(*unusedRefSchema)) << "Expected UnusedRefSchema to not be found after removing unused schema references";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaReferenceTest, WillNotRemoveUsedReference_MultipleCopiesOfReferencedSchema)
-    {
+TEST_F(SchemaReferenceTest, WillNotRemoveUsedReference_MultipleCopiesOfReferencedSchema) {
     ECSchemaPtr refSchema;
     ECSchema::CreateSchema(refSchema, "RefSchema", "RS", 1, 2, 3);
     ECCustomAttributeClassP caClass;
@@ -999,13 +963,12 @@ TEST_F(SchemaReferenceTest, WillNotRemoveUsedReference_MultipleCopiesOfReference
     ASSERT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchemaCopy)) << "Should have found CA which uses refSchema even though we passed in the copy";
 
     ASSERT_EQ(0, schema->RemoveUnusedSchemaReferences()) << "Should not have removed any referenced schemas";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaReferenceTest, CanRemoveUnusedRefSchemaWhenSchemaUsesAnotherRefForAStructType)
-    {
+TEST_F(SchemaReferenceTest, CanRemoveUnusedRefSchemaWhenSchemaUsesAnotherRefForAStructType) {
     ECSchemaPtr refSchema;
     ECSchema::CreateSchema(refSchema, "RefSchema", "RS", 1, 2, 3);
     ECStructClassP structClass;
@@ -1026,34 +989,32 @@ TEST_F(SchemaReferenceTest, CanRemoveUnusedRefSchemaWhenSchemaUsesAnotherRefForA
 
     ASSERT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << "Should not have been able to remove RefSchema because it is used";
     ASSERT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*unusedRefSchema)) << "Should have been able to remove UnusedRefSchema because it is not used";
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaReferenceTest, InvalidReference)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaReferenceTest, InvalidReference) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
     schemaContext->AddSchemaPath(seedPath.c_str());
 
-    //The "InvalidReference" schema contains a reference to BaseSchema.01.01.  This schema 
-    //does not exist.  1.0 exists, but the minor version numbers are incompatible.
+    // The "InvalidReference" schema contains a reference to BaseSchema.01.01.  This schema
+    // does not exist.  1.0 exists, but the minor version numbers are incompatible.
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"InvalidReference.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_TRUE(schema.IsNull());
     EXPECT_EQ(SchemaReadStatus::ReferencedSchemaNotFound, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaReferenceTest, TryRemoveSchemaInUse)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaReferenceTest, TryRemoveSchemaInUse) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
@@ -1080,8 +1041,8 @@ TEST_F(SchemaReferenceTest, TryRemoveSchemaInUse)
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema, true));
     ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
 
-    class1->AddBaseClass(*baseClass);    // dropReferences=true above removed baseClass,
-    class1->RemoveBaseClass(*baseClass); // this redundant add+removal makes it explicit
+    class1->AddBaseClass(*baseClass);     // dropReferences=true above removed baseClass,
+    class1->RemoveBaseClass(*baseClass);  // this redundant add+removal makes it explicit
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
     EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
 
@@ -1091,18 +1052,18 @@ TEST_F(SchemaReferenceTest, TryRemoveSchemaInUse)
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema, true));
     ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
     relClass->GetSource().SetAbstractConstraint(*baseClass);
-    
+
     relClass->GetSource().SetAbstractConstraint(*class1);
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
     EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
-    
+
     // Test Target abstract constraint in referenced schema
     relClass->GetTarget().SetAbstractConstraint(*baseClass);
     EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema, true));
     ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
     relClass->GetTarget().SetAbstractConstraint(*baseClass);
-    
+
     relClass->GetTarget().SetAbstractConstraint(*class1);
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
     EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
@@ -1144,7 +1105,7 @@ TEST_F(SchemaReferenceTest, TryRemoveSchemaInUse)
 
     class1->RemoveProperty("NavProp");
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
-    
+
     // Test unit in referenced schema
     ECSchemaPtr unitSchema;
     ECSchema::CreateSchema(unitSchema, "Units", "u", 5, 0, 5);
@@ -1164,7 +1125,7 @@ TEST_F(SchemaReferenceTest, TryRemoveSchemaInUse)
     EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*unitSchema));
     EXPECT_EQ(1, schema->GetKindOfQuantityCount());
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*unitSchema, true));
-    EXPECT_EQ(0, schema->GetKindOfQuantityCount());         // dropReferences=true above removed kindofquantity from schema
+    EXPECT_EQ(0, schema->GetKindOfQuantityCount());  // dropReferences=true above removed kindofquantity from schema
 
     // Test property having kind of quantity's unit in referenced schema
     ECEntityClassP class2;
@@ -1175,7 +1136,7 @@ TEST_F(SchemaReferenceTest, TryRemoveSchemaInUse)
     schema->CreateKindOfQuantity(koq2, "KindOfQuantity2");
     koq2->SetPersistenceUnit(*unit);
     prop1->SetKindOfQuantity(koq2);
-    
+
     EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*unitSchema));
     EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*unitSchema));
     EXPECT_EQ(true, prop1->IsKindOfQuantityDefinedLocally());
@@ -1196,14 +1157,14 @@ TEST_F(SchemaReferenceTest, TryRemoveSchemaInUse)
     EC_ASSERT_SUCCESS(schema->CreateKindOfQuantity(koq3, "KindOfQuantity3"));
     koq3->SetPersistenceUnit(*meter);
     EXPECT_EQ(ECObjectsStatus::Success, koq3->AddPresentationFormat(*format));
-    
+
     EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*formatSchema));
     EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*formatSchema));
     EXPECT_EQ(1, koq3->GetPresentationFormats().size());
     EXPECT_EQ(1, schema->GetKindOfQuantityCount());
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*formatSchema, true));
-    EXPECT_EQ(0, koq3->GetPresentationFormats().size());    // dropReferences=true above removed presentation format from kindofquantity
-    EXPECT_EQ(1, schema->GetKindOfQuantityCount());         // dropReferences=true above does not remove kindofquantity from schema
+    EXPECT_EQ(0, koq3->GetPresentationFormats().size());  // dropReferences=true above removed presentation format from kindofquantity
+    EXPECT_EQ(1, schema->GetKindOfQuantityCount());       // dropReferences=true above does not remove kindofquantity from schema
 
     // Test property having category in referenced schema
     PropertyCategoryP proCategory;
@@ -1216,7 +1177,7 @@ TEST_F(SchemaReferenceTest, TryRemoveSchemaInUse)
 
     EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema, true));
-    EXPECT_EQ(nullptr, prop2->GetCategory());    // dropReferences=true above removed category from property
+    EXPECT_EQ(nullptr, prop2->GetCategory());  // dropReferences=true above removed category from property
 
     // Test property having kind of quantity in referenced schema
     ECEntityClassP class3;
@@ -1232,20 +1193,19 @@ TEST_F(SchemaReferenceTest, TryRemoveSchemaInUse)
 
     EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema));
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema, true));
-    EXPECT_EQ(nullptr, prop3->GetKindOfQuantity());    // dropReferences=true above removed KOQ from property
-    }
+    EXPECT_EQ(nullptr, prop3->GetKindOfQuantity());  // dropReferences=true above removed KOQ from property
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaReferenceTest, TryRemoveSchemaInUseWithCustomAttributes)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaReferenceTest, TryRemoveSchemaInUseWithCustomAttributes) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
     ECSchemaPtr refSchema;
     ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 0, 5);
-    
+
     ECEntityClassP entityClass;
     PrimitiveECPropertyP prop;
     ECRelationshipClassP relClass;
@@ -1269,12 +1229,12 @@ TEST_F(SchemaReferenceTest, TryRemoveSchemaInUseWithCustomAttributes)
     EXPECT_TRUE(schema->GetCustomAttribute("SchemaCA").IsValid());
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema, true));
     EXPECT_TRUE(!schema->GetCustomAttribute("SchemaCA").IsValid());
-    
+
     ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
-    EXPECT_EQ(ECObjectsStatus::Success, schema->SetCustomAttribute(*instance));    // dropReferences=true already removed it
-    schema->RemoveCustomAttribute(refSchema->GetName(), custAttribute->GetName()); // we readd+remove to make it explicit that we're removing
+    EXPECT_EQ(ECObjectsStatus::Success, schema->SetCustomAttribute(*instance));     // dropReferences=true already removed it
+    schema->RemoveCustomAttribute(refSchema->GetName(), custAttribute->GetName());  // we readd+remove to make it explicit that we're removing
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
-    
+
     // Test a Custom Attribute at the class level
     EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
 
@@ -1286,8 +1246,8 @@ TEST_F(SchemaReferenceTest, TryRemoveSchemaInUseWithCustomAttributes)
     EXPECT_TRUE(!entityClass->GetCustomAttribute("SchemaCA").IsValid());
 
     ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
-    EXPECT_EQ(ECObjectsStatus::Success, entityClass->SetCustomAttribute(*instance));    // dropReferences=true already removed it
-    entityClass->RemoveCustomAttribute(refSchema->GetName(), custAttribute->GetName()); // we readd+remove to make it explicit that we're removing
+    EXPECT_EQ(ECObjectsStatus::Success, entityClass->SetCustomAttribute(*instance));     // dropReferences=true already removed it
+    entityClass->RemoveCustomAttribute(refSchema->GetName(), custAttribute->GetName());  // we readd+remove to make it explicit that we're removing
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
 
     // Test a Custom Attribute at the property level
@@ -1301,8 +1261,8 @@ TEST_F(SchemaReferenceTest, TryRemoveSchemaInUseWithCustomAttributes)
     EXPECT_TRUE(!prop->GetCustomAttribute("SchemaCA").IsValid());
 
     ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
-    EXPECT_EQ(ECObjectsStatus::Success, prop->SetCustomAttribute(*instance));    // dropReferences=true already removed it
-    prop->RemoveCustomAttribute(refSchema->GetName(), custAttribute->GetName()); // we readd+remove to make it explicit that we're removing
+    EXPECT_EQ(ECObjectsStatus::Success, prop->SetCustomAttribute(*instance));     // dropReferences=true already removed it
+    prop->RemoveCustomAttribute(refSchema->GetName(), custAttribute->GetName());  // we readd+remove to make it explicit that we're removing
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
 
     // Test a Custom Attribute on Relationship Constraints
@@ -1316,8 +1276,8 @@ TEST_F(SchemaReferenceTest, TryRemoveSchemaInUseWithCustomAttributes)
     EXPECT_TRUE(!relClass->GetSource().GetCustomAttribute("SchemaCA").IsValid());
 
     ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
-    EXPECT_EQ(ECObjectsStatus::Success, relClass->GetSource().SetCustomAttribute(*instance));    // dropReferences=true already removed it
-    relClass->GetSource().RemoveCustomAttribute(refSchema->GetName(), custAttribute->GetName()); // we readd+remove to make it explicit that we're removing
+    EXPECT_EQ(ECObjectsStatus::Success, relClass->GetSource().SetCustomAttribute(*instance));     // dropReferences=true already removed it
+    relClass->GetSource().RemoveCustomAttribute(refSchema->GetName(), custAttribute->GetName());  // we readd+remove to make it explicit that we're removing
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
 
     // Test a Custom Attribute on Relationship Constraints
@@ -1331,16 +1291,15 @@ TEST_F(SchemaReferenceTest, TryRemoveSchemaInUseWithCustomAttributes)
     EXPECT_TRUE(!relClass->GetTarget().GetCustomAttribute("SchemaCA").IsValid());
 
     ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
-    EXPECT_EQ(ECObjectsStatus::Success, relClass->GetTarget().SetCustomAttribute(*instance));    // dropReferences=true already removed it
-    relClass->GetTarget().RemoveCustomAttribute(refSchema->GetName(), custAttribute->GetName()); // we readd+remove to make it explicit that we're removing
+    EXPECT_EQ(ECObjectsStatus::Success, relClass->GetTarget().SetCustomAttribute(*instance));     // dropReferences=true already removed it
+    relClass->GetTarget().RemoveCustomAttribute(refSchema->GetName(), custAttribute->GetName());  // we readd+remove to make it explicit that we're removing
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithIsMixin)
-    {
+TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithIsMixin) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
@@ -1351,7 +1310,7 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithIsMixin)
     ECEntityClassP mixinClass;
 
     refSchema->CreateEntityClass(entityClass, "EntityClass");
-    
+
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixinClass, "Mixin", *entityClass, *schemaContext)) << "Should not fail to add mixin with class in referenced schema";
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchema)) << "The CreateMixinClass succeeded without creating a reference to the schema the AppliesTo class is located in.";
@@ -1362,13 +1321,12 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithIsMixin)
     EXPECT_FALSE(mixinClass->IsMixin()) << "IsMixin returned true even though the custom attribute was successfully removed.";
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the appliesTo class could not be removed even though all references to it have been removed.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithPropertyCategory)
-    {
+TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithPropertyCategory) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
@@ -1383,7 +1341,7 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithProperty
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchema));
 
     refSchema->CreatePropertyCategory(propertyCategory, "PropertyCategory");
-    
+
     schema->CreateEntityClass(entityClass, "Entity");
     entityClass->CreatePrimitiveProperty(primProp, "PrimProp", PRIMITIVETYPE_String);
     primProp->SetCategory(propertyCategory);
@@ -1394,13 +1352,12 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithProperty
     EXPECT_FALSE(primProp->IsCategoryDefinedLocally());
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the propertyCateogry could not be removed even though all references to it have been removed.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithKindOfQuantity)
-    {
+TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithKindOfQuantity) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
@@ -1420,21 +1377,18 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithKindOfQu
     entityClass->CreatePrimitiveProperty(primProp, "PrimProp", PRIMITIVETYPE_String);
     primProp->SetKindOfQuantity(kindOfQuantity);
 
-    EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << 
-        "The schema containing the KindOfQUantity was removed when it shouldn't be because it is still in use within the ECProperty";
+    EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the KindOfQUantity was removed when it shouldn't be because it is still in use within the ECProperty";
 
     ASSERT_EQ(ECObjectsStatus::Success, primProp->SetKindOfQuantity(nullptr));
     EXPECT_FALSE(primProp->IsKindOfQuantityDefinedLocally());
 
-    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema)) << 
-        "The schema containing the KindOfQuantity could not be removed even though all references to it have been removed.";
-    }
+    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the KindOfQuantity could not be removed even though all references to it have been removed.";
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithEnumeration)
-    {
+TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithEnumeration) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
@@ -1454,22 +1408,19 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithEnumerat
     entityClass->CreatePrimitiveProperty(primProp, "PrimProp", PRIMITIVETYPE_String);
     primProp->SetType(*enumeration);
 
-    EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) <<
-        "The schema containing the ECEnumeration was removed when it shouldn't be because it is still in use within the ECProperty";
+    EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the ECEnumeration was removed when it shouldn't be because it is still in use within the ECProperty";
 
     ASSERT_EQ(ECObjectsStatus::Success, primProp->SetType(PrimitiveType::PRIMITIVETYPE_Double));
     EXPECT_EQ(nullptr, primProp->GetEnumeration());
 
-    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema)) <<
-        "The schema containing the ECEnumeration could not be removed even though all references to it have been removed.";
-    }
+    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the ECEnumeration could not be removed even though all references to it have been removed.";
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaReferenceTest, ExpectFailureWithCircularReferences)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaReferenceTest, ExpectFailureWithCircularReferences) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
     schemaContext->AddSchemaPath(seedPath.c_str());
 
@@ -1477,14 +1428,13 @@ TEST_F(SchemaReferenceTest, ExpectFailureWithCircularReferences)
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"CircleSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_FALSE(SchemaReadStatus::Success == status);
     EXPECT_FALSE(schema.IsValid());
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaReferenceTest, ExpectSuccessWithSpecialCaseOpenPlantSchema)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaReferenceTest, ExpectSuccessWithSpecialCaseOpenPlantSchema) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
     schemaContext->AddSchemaPath(seedPath.c_str());
 
@@ -1496,13 +1446,12 @@ TEST_F(SchemaReferenceTest, ExpectSuccessWithSpecialCaseOpenPlantSchema)
     EXPECT_EQ(1, refList.size());
     ECSchemaPtr refSchema = refList.begin()->second;
     EXPECT_EQ(0, refSchema->GetName().CompareTo("Bentley_Standard_CustomAttributes"));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaReferenceTest, FindClassInReferenceList)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaReferenceTest, FindClassInReferenceList) {
     ECSchemaPtr schema, refSchema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 0, 5);
@@ -1520,18 +1469,17 @@ TEST_F(SchemaReferenceTest, FindClassInReferenceList)
     ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
 
     EXPECT_NE(nullptr, refList.FindClassP(SchemaNameClassNamePair("RefSchema", "Source")));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaReferenceTest, TestSchemaCannotReferenceItself)
-    {
+TEST_F(SchemaReferenceTest, TestSchemaCannotReferenceItself) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
 
     ASSERT_NE(ECObjectsStatus::Success, schema->AddReferencedSchema(*schema)) << "Schema was able to reference itself which isn't allowed.";
-    }
+}
 
 //=======================================================================================
 //! SchemaLocateTest
@@ -1540,9 +1488,8 @@ TEST_F(SchemaReferenceTest, TestSchemaCannotReferenceItself)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     bmap<Utf8String, Utf8CP> standardSchemaNames;
     standardSchemaNames.insert(bpair<Utf8String, Utf8CP>("Bentley_Standard_CustomAttributes", "01.04"));
@@ -1566,9 +1513,8 @@ TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
 
     ECSchemaPtr schema;
 
-    for (bmap<Utf8String, Utf8CP>::const_iterator it = standardSchemaNames.begin(); it != standardSchemaNames.end(); ++it)
-        {
-        bpair<Utf8String, Utf8CP>const& entry = *it;
+    for (bmap<Utf8String, Utf8CP>::const_iterator it = standardSchemaNames.begin(); it != standardSchemaNames.end(); ++it) {
+        bpair<Utf8String, Utf8CP> const& entry = *it;
 
         SchemaKey key(entry.first.c_str(), 1, 0);
         uint32_t vRead, vMinor;
@@ -1580,25 +1526,23 @@ TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
         schema = ECSchema::LocateSchema(key, *schemaContext);
         EXPECT_TRUE(schema.IsValid());
         EXPECT_TRUE(schema->IsStandardSchema());
-        }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaLocateTest, ExpectFailureWithNonStandardSchema)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaLocateTest, ExpectFailureWithNonStandardSchema) {
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 2);
     EXPECT_FALSE(testSchema->IsStandardSchema());
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaLocateTest, DetermineWhetherSchemaCanBeImported)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaLocateTest, DetermineWhetherSchemaCanBeImported) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     SchemaKey key("Bentley_Standard_CustomAttributes", 1, 4);
 
@@ -1608,17 +1552,16 @@ TEST_F(SchemaLocateTest, DetermineWhetherSchemaCanBeImported)
 
     ECSchema::CreateSchema(schema, "Units_Schema", "ts", 1, 0, 4);
     EXPECT_TRUE(schema->ShouldNotBeStored());
-    }
+}
 
 //=======================================================================================
 //! SchemaCreationTest
 //=======================================================================================
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaCreationTest, CanFullyCreateASchema)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCreationTest, CanFullyCreateASchema) {
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 2);
     testSchema->SetDescription("Schema for testing programmatic construction");
@@ -1822,23 +1765,22 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(1, relationshipClass->GetSource().GetMultiplicity().GetLowerLimit());
     EXPECT_TRUE(relationshipClass->GetSource().GetMultiplicity().IsUpperLimitUnbounded());
 
-    RelationshipMultiplicity *card = new RelationshipMultiplicity(2, 5);
+    RelationshipMultiplicity* card = new RelationshipMultiplicity(2, 5);
     relationshipClass->GetTarget().SetMultiplicity(*card);
     EXPECT_EQ(2, relationshipClass->GetTarget().GetMultiplicity().GetLowerLimit());
     EXPECT_EQ(5, relationshipClass->GetTarget().GetMultiplicity().GetUpperLimit());
     delete card;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // * @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaCreationTest, OriginalXmlVersionEqualsInputVersion_UnlessInputVersionIsLowerThan31)
-    {
+TEST_F(SchemaCreationTest, OriginalXmlVersionEqualsInputVersion_UnlessInputVersionIsLowerThan31) {
     ECSchemaPtr testSchema;
-    uint32_t    latestMajor;
-    uint32_t    latestMinor;
-    uint32_t    testSchemaMajor;
-    uint32_t    testSchemaMinor;
+    uint32_t latestMajor;
+    uint32_t latestMinor;
+    uint32_t testSchemaMajor;
+    uint32_t testSchemaMinor;
 
     ECSchema::ParseECVersion(latestMajor, latestMinor, ECVersion::Latest);
 
@@ -1876,29 +1818,26 @@ TEST_F(SchemaCreationTest, OriginalXmlVersionEqualsInputVersion_UnlessInputVersi
     ECSchema::ParseECVersion(testSchemaMajor, testSchemaMinor, testSchema->GetECVersion());
     EXPECT_EQ(latestMajor, testSchemaMajor);
     EXPECT_EQ(latestMinor, testSchemaMinor);
-    }
+}
 
-void validateProperty (ECClassCP ecClass, Utf8CP name, Utf8CP basePropClassName)
-    {
+void validateProperty(ECClassCP ecClass, Utf8CP name, Utf8CP basePropClassName) {
     ECPropertyP prop = ecClass->GetPropertyP(name, false);
     EXPECT_NE(nullptr, prop) << "Couldn't find " << name << " in class " << ecClass->GetName().c_str();
     EXPECT_STREQ(name, prop->GetName().c_str()) << ecClass->GetName().c_str();
     auto bProp = prop->GetBaseProperty();
-    if (Utf8String::IsNullOrEmpty(basePropClassName))
-        {
+    if (Utf8String::IsNullOrEmpty(basePropClassName)) {
         EXPECT_EQ(nullptr, bProp) << ecClass->GetName().c_str();
         return;
-        }
+    }
 
     EXPECT_NE(nullptr, bProp) << ecClass->GetName().c_str();
     EXPECT_STREQ(basePropClassName, bProp->GetClass().GetName().c_str()) << ecClass->GetName().c_str();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaCreationTest, AddBaseClassWithPropertyCaseDifferencesInDerivedClass)
-    {
+TEST_F(SchemaCreationTest, AddBaseClassWithPropertyCaseDifferencesInDerivedClass) {
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 2);
 
@@ -1931,7 +1870,7 @@ TEST_F(SchemaCreationTest, AddBaseClassWithPropertyCaseDifferencesInDerivedClass
     base->CreatePrimitiveProperty(bPropB, "propertyb", PRIMITIVETYPE_Double);
     EXPECT_EQ(ECObjectsStatus::CaseCollision, derived1->AddBaseClass(*base));
     EXPECT_EQ(ECObjectsStatus::Success, derived1->AddBaseClass(*base, false, true, true));
-    
+
     validateProperty(derived3, "propertya", "Derived2");
     validateProperty(derived3, "propertyb", "Derived2");
 
@@ -1943,38 +1882,34 @@ TEST_F(SchemaCreationTest, AddBaseClassWithPropertyCaseDifferencesInDerivedClass
 
     validateProperty(base, "propertya", nullptr);
     validateProperty(base, "propertyb", nullptr);
-    }
+}
 
 //=======================================================================================
 //! ECNameValidationTest
 //=======================================================================================
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP GetPropertyByName(ECClassCR ecClass, Utf8CP name, bool expectExists = true)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyP GetPropertyByName(ECClassCR ecClass, Utf8CP name, bool expectExists = true) {
     ECPropertyP prop = ecClass.GetPropertyP(name);
     EXPECT_EQ(expectExists, nullptr != prop);
     Utf8String utf8(name);
     prop = ecClass.GetPropertyP(utf8.c_str());
     EXPECT_EQ(expectExists, nullptr != prop);
     return prop;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECNameValidationTest : ECTestFixture
-    {
-    struct ITester
-        {
-        virtual void        Preprocess(ECSchemaR schema) const = 0;
-        virtual void        Postprocess(ECSchemaR schema) const = 0;
-        };
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsistruct
+ +---------------+---------------+---------------+---------------+---------------+------*/
+struct ECNameValidationTest : ECTestFixture {
+    struct ITester {
+        virtual void Preprocess(ECSchemaR schema) const = 0;
+        virtual void Postprocess(ECSchemaR schema) const = 0;
+    };
 
-    void Roundtrip(ITester const& tester)
-        {
+    void Roundtrip(ITester const& tester) {
         ECSchemaPtr schema;
         ECSchema::CreateSchema(schema, "MySchema", "ts", 1, 0, 1);
         tester.Preprocess(*schema);
@@ -1987,41 +1922,39 @@ struct ECNameValidationTest : ECTestFixture
         EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context));
 
         tester.Postprocess(*schema);
-        }
-    };
+    }
+};
 
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct DisplayLabelTester : ECNameValidationTest::ITester
-    {
-    Utf8String         m_name;
-    Utf8String         m_encodedName;
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsistruct
+ +---------------+---------------+---------------+---------------+---------------+------*/
+struct DisplayLabelTester : ECNameValidationTest::ITester {
+    Utf8String m_name;
+    Utf8String m_encodedName;
 
     DisplayLabelTester(Utf8CP name, Utf8CP encodedName) : m_name(name), m_encodedName(encodedName) {}
 
-    template<typename T> void CompareNoAutoDecode(T const& target) const
-        {
+    template <typename T>
+    void CompareNoAutoDecode(T const& target) const {
         EXPECT_FALSE(target.GetIsDisplayLabelDefined());
         EXPECT_STREQ(m_encodedName.c_str(), target.GetName().c_str());
         EXPECT_STREQ(m_encodedName.c_str(), target.GetDisplayLabel().c_str());
-        }
-    
-    template<typename T> void Compare(T const& target) const
-        {
+    }
+
+    template <typename T>
+    void Compare(T const& target) const {
         EXPECT_EQ(!ECNameValidation::IsValidName(m_name.c_str()), target.GetIsDisplayLabelDefined());
         EXPECT_STREQ(m_encodedName.c_str(), target.GetName().c_str());
         EXPECT_STREQ(m_name.c_str(), target.GetDisplayLabel().c_str());
-        }
+    }
 
-    template<typename T> void CompareOverriddenLabel(T const& target, Utf8CP label) const
-        {
+    template <typename T>
+    void CompareOverriddenLabel(T const& target, Utf8CP label) const {
         EXPECT_TRUE(target.GetIsDisplayLabelDefined());
         EXPECT_STREQ(label, target.GetDisplayLabel().c_str());
-        }
+    }
 
-    virtual void Preprocess(ECSchemaR schema) const override
-        {
+    virtual void Preprocess(ECSchemaR schema) const override {
         // This test used to test that ECObjects would decode names into display labels, this now only happens for deserialization from EC2 schemas
         Utf8String encodedName;
         EXPECT_EQ(!ECNameValidation::IsValidName(m_name.c_str()), ECNameValidation::EncodeToValidName(encodedName, m_name));
@@ -2035,10 +1968,9 @@ struct DisplayLabelTester : ECNameValidationTest::ITester
         PrimitiveECPropertyP ecprop;
         ecclass->CreatePrimitiveProperty(ecprop, encodedName, PRIMITIVETYPE_String);
         CompareNoAutoDecode(*ecprop);
-        }
+    }
 
-    virtual void Postprocess(ECSchemaR schema) const override
-        {
+    virtual void Postprocess(ECSchemaR schema) const override {
         ECClassP ecclass = schema.GetClassP(m_encodedName.c_str());
         ECPropertyP ecprop = GetPropertyByName(*ecclass, m_encodedName.c_str());
 
@@ -2050,59 +1982,55 @@ struct DisplayLabelTester : ECNameValidationTest::ITester
         schema.SetDisplayLabel("NewDisplayLabel");
         CompareOverriddenLabel(schema, "NewDisplayLabel");
         ecclass->SetDisplayLabel("1!@$");
-        CompareOverriddenLabel(*ecclass, "1!@$");                // will not be encoded
+        CompareOverriddenLabel(*ecclass, "1!@$");  // will not be encoded
         ecprop->SetDisplayLabel("__x003E__");
-        CompareOverriddenLabel(*ecprop, "__x003E__");            // will not be decoded
+        CompareOverriddenLabel(*ecprop, "__x003E__");  // will not be decoded
 
         // Test explicitly un-setting display labels
         ecclass->SetDisplayLabel("");
         CompareNoAutoDecode(*ecclass);
         ecprop->SetDisplayLabel("");
         CompareNoAutoDecode(*ecprop);
-        }
-    };
+    }
+};
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECNameValidationTest, DisplayLabels)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECNameValidationTest, DisplayLabels) {
     // Chinese chars...see TFS#298776...we are stuck with UTF-16 persistent encoding from long ago, should round-trip correctly with UTF-8
     static const unsigned char s_chineseUtf8[] = {0xE8, 0x88, 0xAC,
-                                     0xE6, 0xA8, 0xA1,
-                                     0xE5, 0x9E, 0x8B,
-                                     '\0'};
+                                                  0xE6, 0xA8, 0xA1,
+                                                  0xE5, 0x9E, 0x8B,
+                                                  '\0'};
     // UTF-16: 822C 6A21 578B
 
     static const Utf8CP s_testValues[] =
         {
-        "NothingSpecial", "NothingSpecial",
-        "Nothing1Special2", "Nothing1Special2",
-        "1_LeadingDigitsDisallowed", "__x0031___LeadingDigitsDisallowed",
-        "Special!", "Special__x0021__",
-        "thing@mail.com", "thing__x0040__mail__x002E__com",
-        "*", "__x002A__",
-        "9&:", "__x0039____x0026____x003A__",
-        "__xNotAChar__", "__xNotAChar__",
-        "__xTTTT__", "__xTTTT__",
-        "__x####__", "__x__x0023____x0023____x0023____x0023____",
-        (Utf8CP) s_chineseUtf8, "__x822C____x6A21____x578B__",
-        nullptr, nullptr
-        };
+            "NothingSpecial", "NothingSpecial",
+            "Nothing1Special2", "Nothing1Special2",
+            "1_LeadingDigitsDisallowed", "__x0031___LeadingDigitsDisallowed",
+            "Special!", "Special__x0021__",
+            "thing@mail.com", "thing__x0040__mail__x002E__com",
+            "*", "__x002A__",
+            "9&:", "__x0039____x0026____x003A__",
+            "__xNotAChar__", "__xNotAChar__",
+            "__xTTTT__", "__xTTTT__",
+            "__x####__", "__x__x0023____x0023____x0023____x0023____",
+            (Utf8CP)s_chineseUtf8, "__x822C____x6A21____x578B__",
+            nullptr, nullptr};
 
-    for (Utf8CP const* cur = s_testValues; *cur; cur += 2)
-        {
+    for (Utf8CP const* cur = s_testValues; *cur; cur += 2) {
         Utf8CP name = *cur, encoded = *(cur + 1);
         Roundtrip(DisplayLabelTester(name, encoded));
-        }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECNameValidationTest, Validate)
-    {
-#define EXPECT_VALIDATION_RESULT(RESULTTOEXPECT, NAMETOTEST) EXPECT_EQ (ECNameValidation::RESULT_ ## RESULTTOEXPECT, ECNameValidation::Validate (NAMETOTEST))
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECNameValidationTest, Validate) {
+#define EXPECT_VALIDATION_RESULT(RESULTTOEXPECT, NAMETOTEST) EXPECT_EQ(ECNameValidation::RESULT_##RESULTTOEXPECT, ECNameValidation::Validate(NAMETOTEST))
     EXPECT_VALIDATION_RESULT(Valid, "ThisIsAValidName");
     EXPECT_VALIDATION_RESULT(Valid, "_123");
     EXPECT_VALIDATION_RESULT(Valid, "___");
@@ -2115,14 +2043,13 @@ TEST_F(ECNameValidationTest, Validate)
 
     EXPECT_VALIDATION_RESULT(IncludesInvalidCharacters, "!ABC");
     EXPECT_VALIDATION_RESULT(IncludesInvalidCharacters, "ABC@");
-    }
+}
 
 //=======================================================================================
 //! SchemaKeyComparisonTest
 //=======================================================================================
 
-struct SchemaKeyComparisonTest : ECTestFixture
-{
+struct SchemaKeyComparisonTest : ECTestFixture {
     SchemaKey key1WithChecksum;
     SchemaKey key1_0_0;
     SchemaKey key1_0_1;
@@ -2151,11 +2078,10 @@ struct SchemaKeyComparisonTest : ECTestFixture
     }
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaKeyComparisonTest, VerifyMatchesOperator)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaKeyComparisonTest, VerifyMatchesOperator) {
     // Verifies an identical SchemaKey matches in all cases
     EXPECT_TRUE(key1_0_0 == key1WithChecksum);
     EXPECT_TRUE(key1_0_0.Matches(key1WithChecksum, SchemaMatchType::Identical));
@@ -2253,13 +2179,12 @@ TEST_F(SchemaKeyComparisonTest, VerifyMatchesOperator)
     EXPECT_FALSE(key1_0_0.Matches(key2_0_0, SchemaMatchType::LatestWriteCompatible));
     EXPECT_FALSE(key1_0_0.Matches(key2_0_0, SchemaMatchType::LatestReadCompatible));
     EXPECT_TRUE(key1_0_0.Matches(key2_0_0, SchemaMatchType::Latest));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaKeyComparisonTest, VerifyLessThanOperator)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaKeyComparisonTest, VerifyLessThanOperator) {
     // Same key
     EXPECT_FALSE(key1_0_0 < key1_0_0);
     EXPECT_FALSE(key1_0_0.LessThan(key1_0_0, SchemaMatchType::Identical));
@@ -2313,20 +2238,19 @@ TEST_F(SchemaKeyComparisonTest, VerifyLessThanOperator)
     EXPECT_FALSE(key1_0_0.LessThan(key1_0_1, SchemaMatchType::LatestReadCompatible));
     EXPECT_FALSE(key1_0_0.LessThan(key1_0_1, SchemaMatchType::LatestWriteCompatible));
     EXPECT_FALSE(key1_0_0.LessThan(key1_0_1, SchemaMatchType::Latest));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaKeyComparisonTest, VerifyNotMatchesOperator)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaKeyComparisonTest, VerifyNotMatchesOperator) {
     EXPECT_FALSE(key1_0_0 != key1WithChecksum);
     EXPECT_TRUE(key1WithChecksum != diffChecksumKey);
     EXPECT_TRUE(key1_0_0 != diffNameKey);
     EXPECT_TRUE(key1_0_0 != key1_1_0);
     EXPECT_TRUE(key1_0_0 != key1_0_1);
     EXPECT_TRUE(key1_0_0 != key2_0_0);
-    }
+}
 
 //=======================================================================================
 //! SchemaKeyTest
@@ -2335,8 +2259,7 @@ TEST_F(SchemaKeyComparisonTest, VerifyNotMatchesOperator)
 //-------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-----
-TEST_F(SchemaKeyTest, TestParseSchemaVersionString)
-    {
+TEST_F(SchemaKeyTest, TestParseSchemaVersionString) {
     uint32_t r = 0;
     uint32_t w = 0;
     uint32_t m = 0;
@@ -2371,13 +2294,12 @@ TEST_F(SchemaKeyTest, TestParseSchemaVersionString)
     EXPECT_EQ(1, r);
     EXPECT_EQ(2, w);
     EXPECT_EQ(3, m);
-    }
+}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-----
-TEST_F(SchemaKeyTest, TestParseSchemaVersionStringStrict)
-    {
+TEST_F(SchemaKeyTest, TestParseSchemaVersionStringStrict) {
     uint32_t r;
     uint32_t w;
     uint32_t m;
@@ -2400,17 +2322,16 @@ TEST_F(SchemaKeyTest, TestParseSchemaVersionStringStrict)
     EXPECT_EQ(1, r);
     EXPECT_EQ(2, w);
     EXPECT_EQ(3, m);
-    }
+}
 
 //=======================================================================================
 //! SchemaCacheTest
 //=======================================================================================
 
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaCacheTest, LoadAndGetSchema)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  * @bsimethod
+  +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCacheTest, LoadAndGetSchema) {
     ECSchemaCachePtr cache = ECSchemaCache::Create();
     ECSchemaPtr schema1;
     ECSchemaPtr schema2;
@@ -2431,13 +2352,12 @@ TEST_F(SchemaCacheTest, LoadAndGetSchema)
 
     cache->Clear();
     EXPECT_EQ(cache->GetCount(), 0);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaCacheTest, FilterSchema)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  * @bsimethod
+  +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCacheTest, FilterSchema) {
     ECSchemaCachePtr cache = ECSchemaCache::Create();
     ECSchemaPtr schema1;
     ECSchemaPtr schema2;
@@ -2446,7 +2366,7 @@ TEST_F(SchemaCacheTest, FilterSchema)
     ECSchema::CreateSchema(schema1, "Widget", "ts", 5, 0, 1);
     ECSchema::CreateSchema(schema2, "BaseSchema1", "ts", 2, 0, 0);
     ECSchema::CreateSchema(schema3, "BaseSchema2", "ts", 5, 0, 5);
-    
+
     EC_EXPECT_SUCCESS(cache->AddSchema(*schema1));
     EC_EXPECT_SUCCESS(cache->AddSchema(*schema2));
     EC_EXPECT_SUCCESS(cache->AddSchema(*schema3));
@@ -2470,13 +2390,12 @@ TEST_F(SchemaCacheTest, FilterSchema)
     EXPECT_EQ(nullptr, cache->GetSchema(SchemaKey("BaseZchema2", 5, 5), SchemaMatchType::LatestWriteCompatible));
     EXPECT_EQ(nullptr, cache->GetSchema(SchemaKey("BaseSchema2", 3, 5), SchemaMatchType::LatestWriteCompatible));
     EXPECT_NE(nullptr, cache->GetSchema(SchemaKey("BaseSchema2", 5, 3), SchemaMatchType::LatestWriteCompatible));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaCacheTest, DropSchema)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  * @bsimethod
+  +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCacheTest, DropSchema) {
     ECSchemaCachePtr cache = ECSchemaCache::Create();
     ECSchemaPtr schema1;
     ECSchemaPtr schema2;
@@ -2502,13 +2421,12 @@ TEST_F(SchemaCacheTest, DropSchema)
     EXPECT_EQ(cache->GetCount(), 1);
     EXPECT_TRUE(cache->DropSchema(SchemaKey("BaseSchema1", 2, 0)) == ECObjectsStatus::Success);
     EXPECT_EQ(cache->GetCount(), 0);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaCacheTest, FindSchema)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  * @bsimethod
+  +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCacheTest, FindSchema) {
     ECSchemaCachePtr cache = ECSchemaCache::Create();
     ECSchemaPtr schema1;
     ECSchemaPtr schema2;
@@ -2523,13 +2441,12 @@ TEST_F(SchemaCacheTest, FindSchema)
     EXPECT_TRUE(cache->AddSchema(*schema3) == ECObjectsStatus::Success);
     EXPECT_EQ(cache->FindSchema([](SchemaKeyCR key) { return key.GetVersionMinor() == 5; }), schema3.get());
     EXPECT_EQ(cache->FindSchema([](SchemaKeyCR key) { return key.GetName() == "Widget"; }), schema1.get());
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaCacheTest, FindSchemaByNameI)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  * @bsimethod
+  +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCacheTest, FindSchemaByNameI) {
     ECSchemaCachePtr cache = ECSchemaCache::Create();
     ECSchemaPtr schema1;
     ECSchemaPtr schema2;
@@ -2545,33 +2462,31 @@ TEST_F(SchemaCacheTest, FindSchemaByNameI)
     EXPECT_EQ(cache->FindSchemaByNameI("Widget"), schema1.get());
     EXPECT_EQ(cache->FindSchemaByNameI("WIDGET"), schema1.get());
     EXPECT_EQ(cache->FindSchemaByNameI("baseschema1"), schema2.get());
-    }
+}
 
 //=======================================================================================
 //! SchemaChecksumTest
 //=======================================================================================
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaChecksumTest, RawSchemaXmlStringCheckSum)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaChecksumTest, RawSchemaXmlStringCheckSum) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
             <ECEntityClass typeName="TestClass">
             </ECEntityClass>
         </ECSchema>)xml";
-    
+
     Utf8String checksum = ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml, Utf8String(schemaXml).length());
     EXPECT_TRUE(checksum.EqualsIAscii("dadb691ddd3c751b5de803094d00c610eb142dee"));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaChecksumTest, ComputeCheckSumSameAsSerializedXmlStringCheckSum)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaChecksumTest, ComputeCheckSumSameAsSerializedXmlStringCheckSum) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="TestClass">
@@ -2594,13 +2509,12 @@ TEST_F(SchemaChecksumTest, ComputeCheckSumSameAsSerializedXmlStringCheckSum)
 
     Utf8String checksum = schema->ComputeCheckSum();
     EXPECT_STREQ(serializedXmlChecksum.ToLower().c_str(), checksum.ToLower().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(SchemaChecksumTest, ComputingChecksumTakingIntoAccountSchemaXmlVersion)
-    {
+TEST_F(SchemaChecksumTest, ComputingChecksumTakingIntoAccountSchemaXmlVersion) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="TestClass">
@@ -2612,30 +2526,28 @@ TEST_F(SchemaChecksumTest, ComputingChecksumTakingIntoAccountSchemaXmlVersion)
 
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
     EXPECT_STREQ("1de2f27499158c8747d04ab45c36d2b57dd7e9f0", schema->ComputeCheckSum().ToLower().c_str());
-    
+
     schema->SetOriginalECXmlVersion(3, 2);
     EXPECT_STREQ("1de2f27499158c8747d04ab45c36d2b57dd7e9f0", schema->ComputeCheckSum().ToLower().c_str());
 
     schema->SetOriginalECXmlVersion(3, 1);
     EXPECT_STREQ("f873d1d8223498533a2567a9badaf4bcd641350c", schema->ComputeCheckSum().ToLower().c_str());
-    
+
     schema->SetOriginalECXmlVersion(3, 0);
     EXPECT_STREQ("58baeba5e12e50c623a3fa30d876c6ae3ac7f563", schema->ComputeCheckSum().ToLower().c_str());
 
-    schema->SetOriginalECXmlVersion(0, 0); // when no schema xml version is found, it falls back to EC3.1
+    schema->SetOriginalECXmlVersion(0, 0);  // when no schema xml version is found, it falls back to EC3.1
     EXPECT_STREQ("f873d1d8223498533a2567a9badaf4bcd641350c", schema->ComputeCheckSum().ToLower().c_str());
-    }
-
+}
 
 //=======================================================================================
 //! SchemaImmutableTest
 //=======================================================================================
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaImmutableTest, SetImmutable)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaImmutableTest, SetImmutable) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -2646,7 +2558,7 @@ TEST_F(SchemaImmutableTest, SetImmutable)
     ECEntityClassP class1 = nullptr;
     ECClassP class2 = schema->GetClassP("ecProject");
     ECRelationshipClassP relationshipClass;
-    ECClassP base = (ECClassP) class1;
+    ECClassP base = (ECClassP)class1;
     EXPECT_EQ(schema->CreateEntityClass(class1, "TestClass"), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_TRUE(class1 == nullptr);
     EXPECT_EQ(schema->CopyClass(base, *class2), ECObjectsStatus::SchemaIsImmutable);
@@ -2657,7 +2569,7 @@ TEST_F(SchemaImmutableTest, SetImmutable)
     EXPECT_EQ(schema->SetDisplayLabel("Some new label"), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ(schema->SetVersionRead(13), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ(schema->SetVersionMinor(13), ECObjectsStatus::SchemaIsImmutable);
-    }
+}
 
 //=======================================================================================
 //! SchemaVersionTest
@@ -2666,8 +2578,7 @@ TEST_F(SchemaImmutableTest, SetImmutable)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaVersionTest, ECVersionToWrite)
-    {
+TEST_F(SchemaVersionTest, ECVersionToWrite) {
     ECVersion xmlVersion = ECSchema::ECVersionToWrite(2, 0);
     EXPECT_EQ(ECVersion::Latest, xmlVersion);
 
@@ -2679,13 +2590,12 @@ TEST_F(SchemaVersionTest, ECVersionToWrite)
 
     xmlVersion = ECSchema::ECVersionToWrite(3, 0);
     EXPECT_EQ(ECVersion::Latest, xmlVersion);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaVersionTest, CreateECVersionTest)
-    {
+TEST_F(SchemaVersionTest, CreateECVersionTest) {
     ECVersion ecVersion;
     EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateECVersion(ecVersion, 0, 0)) << "Creating an ECVersion with invalid major and minor versions should fail.";
 
@@ -2713,13 +2623,12 @@ TEST_F(SchemaVersionTest, CreateECVersionTest)
     EXPECT_EQ(ECVersion::Latest, ecVersion32) << "ECVersion Latest should be equal to 3.2, therefore the comparsion should succeed.";
 
     EXPECT_STREQ("3.2", ECSchema::GetECVersionString(ECVersion::Latest)) << "ECVersion Latest should be equal to 3.2, therefore the string of it should be equal to 3.2.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaVersionTest, UpdateVersionUpdatesFullName)
-    {
+TEST_F(SchemaVersionTest, UpdateVersionUpdatesFullName) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     EXPECT_EQ(5, schema->GetVersionRead());
@@ -2738,135 +2647,131 @@ TEST_F(SchemaVersionTest, UpdateVersionUpdatesFullName)
     schema->SetVersionMinor(9);
     EXPECT_EQ(9, schema->GetVersionMinor());
     EXPECT_STREQ("TestSchema.12.03.09", schema->GetFullSchemaName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaVersionTest, CreateSchemaECVersionTest)
+TEST_F(SchemaVersionTest, CreateSchemaECVersionTest) {
     {
-    {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2)) << "The default schema ECVersion should be EC3.2 so this should validate to true.";
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The default schema ECVersion should be the latest so this should validate to true.";
+        ECSchemaPtr schema;
+        ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+        EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2)) << "The default schema ECVersion should be EC3.2 so this should validate to true.";
+        EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The default schema ECVersion should be the latest so this should validate to true.";
     }
     {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::Latest);
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2)) << "The schema was created as the Latest version which is EC3.2 so this should validate to true.";
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as the Latest version so this should validate to true.";
+        ECSchemaPtr schema;
+        ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::Latest);
+        EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2)) << "The schema was created as the Latest version which is EC3.2 so this should validate to true.";
+        EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as the Latest version so this should validate to true.";
     }
     {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_2);
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2)) << "The schema was created as an EC3.2 schema.";
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.2 schema so Latest should return true.";
+        ECSchemaPtr schema;
+        ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_2);
+        EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2)) << "The schema was created as an EC3.2 schema.";
+        EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.2 schema so Latest should return true.";
     }
     {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_1);
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The schema was created as an EC3.1 schema.";
-    EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.1 schema so it is not the latest.";
+        ECSchemaPtr schema;
+        ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_1);
+        EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The schema was created as an EC3.1 schema.";
+        EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.1 schema so it is not the latest.";
     }
     {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_0);
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_0)) << "The schema was created as an EC3.0 schema.";
-    EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.0 schema so it is not the latest.";
+        ECSchemaPtr schema;
+        ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_0);
+        EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_0)) << "The schema was created as an EC3.0 schema.";
+        EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.0 schema so it is not the latest.";
     }
     {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V2_0);
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::V2_0)) << "The schema was created as an EC2.0 schema.";
-    EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC2.0 schema so it is not the latest";
+        ECSchemaPtr schema;
+        ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V2_0);
+        EXPECT_TRUE(schema->IsECVersion(ECVersion::V2_0)) << "The schema was created as an EC2.0 schema.";
+        EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC2.0 schema so it is not the latest";
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaVersionTest, ECVersionsLimitTest)
+TEST_F(SchemaVersionTest, ECVersionsLimitTest) {
     {
-    {
-    ECSchemaPtr schema;
-    EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateSchema(schema, "TestSchema", "ts", -1, 0, 0))
-        << "Cannot create a schema with an negative read version";
+        ECSchemaPtr schema;
+        EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateSchema(schema, "TestSchema", "ts", -1, 0, 0))
+            << "Cannot create a schema with an negative read version";
     }
     {
-    ECSchemaPtr schema;
-    EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateSchema(schema, "TestSchema", "ts", 0, -1, 0))
-        << "Cannot create a schema with an negative write version";
+        ECSchemaPtr schema;
+        EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateSchema(schema, "TestSchema", "ts", 0, -1, 0))
+            << "Cannot create a schema with an negative write version";
     }
     {
-    ECSchemaPtr schema;
-    EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateSchema(schema, "TestSchema", "ts", 0, 0, -1))
-        << "Cannot create a schema with an negative minor version";
+        ECSchemaPtr schema;
+        EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateSchema(schema, "TestSchema", "ts", 0, 0, -1))
+            << "Cannot create a schema with an negative minor version";
     }
     {
-    ECSchemaPtr schema;
-    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 0, 0, 0))
-        << "Minimum EC version";
+        ECSchemaPtr schema;
+        EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 0, 0, 0))
+            << "Minimum EC version";
     }
     {
-    ECSchemaPtr schema;
-    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 999, 999, 9999999))
-        << "Maximum EC version";
+        ECSchemaPtr schema;
+        EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 999, 999, 9999999))
+            << "Maximum EC version";
     }
     {
-    ECSchemaPtr schema;
-    EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1000, 0, 0))
-        << "Cannot create a schema having read version greater than 999";
+        ECSchemaPtr schema;
+        EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1000, 0, 0))
+            << "Cannot create a schema having read version greater than 999";
     }
     {
-    ECSchemaPtr schema;
-    EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateSchema(schema, "TestSchema", "ts", 0, 1000, 0))
-        << "Cannot create a schema having write version greater than 999";
+        ECSchemaPtr schema;
+        EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateSchema(schema, "TestSchema", "ts", 0, 1000, 0))
+            << "Cannot create a schema having write version greater than 999";
     }
     {
-    ECSchemaPtr schema;
-    EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateSchema(schema, "TestSchema", "ts", 0, 0, 10000000))
-        << "Cannot create a schema having minor version greater than 9999999";
+        ECSchemaPtr schema;
+        EXPECT_EQ(ECObjectsStatus::InvalidECVersion, ECSchema::CreateSchema(schema, "TestSchema", "ts", 0, 0, 10000000))
+            << "Cannot create a schema having minor version greater than 9999999";
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaVersionTest, ChangeOriginalECXmlVersion)
+TEST_F(SchemaVersionTest, ChangeOriginalECXmlVersion) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
         </ECSchema>
         )xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    ASSERT_TRUE(schema.IsValid());
-    EXPECT_EQ(2, schema->GetOriginalECXmlVersionMajor());
-    EXPECT_EQ(0, schema->GetOriginalECXmlVersionMinor());
-    ASSERT_EQ(ECObjectsStatus::Success, schema->SetOriginalECXmlVersion(3, 1));
-    EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor());
-    EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor());
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_EQ(2, schema->GetOriginalECXmlVersionMajor());
+        EXPECT_EQ(0, schema->GetOriginalECXmlVersionMinor());
+        ASSERT_EQ(ECObjectsStatus::Success, schema->SetOriginalECXmlVersion(3, 1));
+        EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor());
+        EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor());
     }
     {
-    ECSchemaPtr schema;
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0, ECVersion::V3_2));
-    ASSERT_TRUE(schema.IsValid());
-    EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor());
-    EXPECT_EQ(2, schema->GetOriginalECXmlVersionMinor());
-    ASSERT_EQ(ECObjectsStatus::Success, schema->SetOriginalECXmlVersion(2, 0));
-    EXPECT_EQ(2, schema->GetOriginalECXmlVersionMajor());
-    EXPECT_EQ(0, schema->GetOriginalECXmlVersionMinor());
+        ECSchemaPtr schema;
+        ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0, ECVersion::V3_2));
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor());
+        EXPECT_EQ(2, schema->GetOriginalECXmlVersionMinor());
+        ASSERT_EQ(ECObjectsStatus::Success, schema->SetOriginalECXmlVersion(2, 0));
+        EXPECT_EQ(2, schema->GetOriginalECXmlVersionMajor());
+        EXPECT_EQ(0, schema->GetOriginalECXmlVersionMinor());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaVersionTest, ShouldFailToDeserialize32AndGreaterWithoutCorrectVersion)
-    {
+TEST_F(SchemaVersionTest, ShouldFailToDeserialize32AndGreaterWithoutCorrectVersion) {
     ExpectSchemaDeserializationSuccess(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         </ECSchema>
@@ -2874,18 +2779,19 @@ TEST_F(SchemaVersionTest, ShouldFailToDeserialize32AndGreaterWithoutCorrectVersi
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         </ECSchema>
-        )xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize 3.2 schema with 2 part version");
+        )xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize 3.2 schema with 2 part version");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
         </ECSchema>
-        )xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize 3.3 schema with 2 part version");
-    }
+        )xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize 3.3 schema with 2 part version");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaVersionTest, ReferenceSchemasShoudlUse3PartVersionsForGreaterThan32Schemas)
-    {
+TEST_F(SchemaVersionTest, ReferenceSchemasShoudlUse3PartVersionsForGreaterThan32Schemas) {
     Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="ref" alias="r" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         </ECSchema>
@@ -2893,176 +2799,178 @@ TEST_F(SchemaVersionTest, ReferenceSchemasShoudlUse3PartVersionsForGreaterThan32
     ExpectSchemaDeserializationSuccess(refSchemaXml);
 
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="ref" version="1.00.00" alias="r"/>
     </ECSchema>
     )xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
-    DeserializeSchema(schema, *context, SchemaItem(schemaXml));
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
+        DeserializeSchema(schema, *context, SchemaItem(schemaXml));
     }
 
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
         <ECSchemaReference name="ref" version="1.00.00" alias="r"/>
     </ECSchema>
     )xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
-    DeserializeSchema(schema, *context, SchemaItem(schemaXml));
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
+        DeserializeSchema(schema, *context, SchemaItem(schemaXml));
     }
 
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="ref" version="1.00" alias="r"/>
     </ECSchema>
     )xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
-    DeserializeSchema(schema, *context, SchemaItem(schemaXml), SchemaReadStatus::InvalidECSchemaXml);
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
+        DeserializeSchema(schema, *context, SchemaItem(schemaXml), SchemaReadStatus::InvalidECSchemaXml);
     }
 
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
         <ECSchemaReference name="ref" version="1.00" alias="r"/>
     </ECSchema>
     )xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
-    DeserializeSchema(schema, *context, SchemaItem(schemaXml), SchemaReadStatus::InvalidECSchemaXml);
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
+        DeserializeSchema(schema, *context, SchemaItem(schemaXml), SchemaReadStatus::InvalidECSchemaXml);
     }
 
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="ref" version="a.b.c" alias="r"/>
     </ECSchema>
     )xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
-    DeserializeSchema(schema, *context, SchemaItem(schemaXml), SchemaReadStatus::InvalidECSchemaXml);
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
+        DeserializeSchema(schema, *context, SchemaItem(schemaXml), SchemaReadStatus::InvalidECSchemaXml);
     }
 
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
         <ECSchemaReference name="ref" version="a.b.c" alias="r"/>
     </ECSchema>
     )xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
-    DeserializeSchema(schema, *context, SchemaItem(schemaXml), SchemaReadStatus::InvalidECSchemaXml);
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
+        DeserializeSchema(schema, *context, SchemaItem(schemaXml), SchemaReadStatus::InvalidECSchemaXml);
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaVersionTest, CustomAttributeNameSpacesMustUseCorrectVersions)
+TEST_F(SchemaVersionTest, CustomAttributeNameSpacesMustUseCorrectVersions) {
     {
-
-    {
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
-    "<ECSchema schemaName='CaseInsensitive' version='01.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-    "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
-    "    <ECStructClass typeName='MyStruct'>"
-    "        <ECProperty propertyName='Prop1' typeName='string' />"
-    "    </ECStructClass>"
-    "    <ECEntityClass typeName='Entity'>"
-    "        <ECCustomAttributes>"
-    "            <Customattrib xmlns='CaseInsensitive.01.00' />"
-    "        </ECCustomAttributes>"
-    "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
-    "    </ECEntityClass>"
-    "</ECSchema>";
-    ExpectSchemaDeserializationSuccess(schemaXML, "Should successfully deserialize a 3.1 schema with 2 part versions");
+        Utf8CP schemaXML =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='CaseInsensitive' version='01.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
+            "    <ECStructClass typeName='MyStruct'>"
+            "        <ECProperty propertyName='Prop1' typeName='string' />"
+            "    </ECStructClass>"
+            "    <ECEntityClass typeName='Entity'>"
+            "        <ECCustomAttributes>"
+            "            <Customattrib xmlns='CaseInsensitive.01.00' />"
+            "        </ECCustomAttributes>"
+            "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+        ExpectSchemaDeserializationSuccess(schemaXML, "Should successfully deserialize a 3.1 schema with 2 part versions");
     }
 
     {
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
-    "<ECSchema schemaName='CaseInsensitive' version='01.00.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
-    "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
-    "    <ECStructClass typeName='MyStruct'>"
-    "        <ECProperty propertyName='Prop1' typeName='string' />"
-    "    </ECStructClass>"
-    "    <ECEntityClass typeName='Entity'>"
-    "        <ECCustomAttributes>"
-    "            <Customattrib xmlns='CaseInsensitive.01.00' />"
-    "        </ECCustomAttributes>"
-    "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
-    "    </ECEntityClass>"
-    "</ECSchema>";
-    ExpectSchemaDeserializationFailure(schemaXML, SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize 3.2 schema with 2 part version in xmlns");
+        Utf8CP schemaXML =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='CaseInsensitive' version='01.00.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+            "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
+            "    <ECStructClass typeName='MyStruct'>"
+            "        <ECProperty propertyName='Prop1' typeName='string' />"
+            "    </ECStructClass>"
+            "    <ECEntityClass typeName='Entity'>"
+            "        <ECCustomAttributes>"
+            "            <Customattrib xmlns='CaseInsensitive.01.00' />"
+            "        </ECCustomAttributes>"
+            "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+        ExpectSchemaDeserializationFailure(schemaXML, SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize 3.2 schema with 2 part version in xmlns");
     }
 
     {
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
-    "<ECSchema schemaName='CaseInsensitive' version='01.00.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.3'>"
-    "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
-    "    <ECStructClass typeName='MyStruct'>"
-    "        <ECProperty propertyName='Prop1' typeName='string' />"
-    "    </ECStructClass>"
-    "    <ECEntityClass typeName='Entity'>"
-    "        <ECCustomAttributes>"
-    "            <Customattrib xmlns='CaseInsensitive.01.00' />"
-    "        </ECCustomAttributes>"
-    "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
-    "    </ECEntityClass>"
-    "</ECSchema>";
-    ExpectSchemaDeserializationFailure(schemaXML, SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize 3.3 schema with 2 part version in xmlns");
+        Utf8CP schemaXML =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='CaseInsensitive' version='01.00.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.3'>"
+            "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
+            "    <ECStructClass typeName='MyStruct'>"
+            "        <ECProperty propertyName='Prop1' typeName='string' />"
+            "    </ECStructClass>"
+            "    <ECEntityClass typeName='Entity'>"
+            "        <ECCustomAttributes>"
+            "            <Customattrib xmlns='CaseInsensitive.01.00' />"
+            "        </ECCustomAttributes>"
+            "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+        ExpectSchemaDeserializationFailure(schemaXML, SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize 3.3 schema with 2 part version in xmlns");
     }
 
     {
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
-    "<ECSchema schemaName='CaseInsensitive' version='01.00.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
-    "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
-    "    <ECStructClass typeName='MyStruct'>"
-    "        <ECProperty propertyName='Prop1' typeName='string' />"
-    "    </ECStructClass>"
-    "    <ECEntityClass typeName='Entity'>"
-    "        <ECCustomAttributes>"
-    "            <Customattrib xmlns='CaseInsensitive.01.00.00' />"
-    "        </ECCustomAttributes>"
-    "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
-    "    </ECEntityClass>"
-    "</ECSchema>";
-    ExpectSchemaDeserializationSuccess(schemaXML, "Should successfully deserialize a 3.2 schema with 3 part versions");
+        Utf8CP schemaXML =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='CaseInsensitive' version='01.00.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+            "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
+            "    <ECStructClass typeName='MyStruct'>"
+            "        <ECProperty propertyName='Prop1' typeName='string' />"
+            "    </ECStructClass>"
+            "    <ECEntityClass typeName='Entity'>"
+            "        <ECCustomAttributes>"
+            "            <Customattrib xmlns='CaseInsensitive.01.00.00' />"
+            "        </ECCustomAttributes>"
+            "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+        ExpectSchemaDeserializationSuccess(schemaXML, "Should successfully deserialize a 3.2 schema with 3 part versions");
     }
 
     {
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
-    "<ECSchema schemaName='CaseInsensitive' version='01.00.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.3'>"
-    "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
-    "    <ECStructClass typeName='MyStruct'>"
-    "        <ECProperty propertyName='Prop1' typeName='string' />"
-    "    </ECStructClass>"
-    "    <ECEntityClass typeName='Entity'>"
-    "        <ECCustomAttributes>"
-    "            <Customattrib xmlns='CaseInsensitive.01.00.00' />"
-    "        </ECCustomAttributes>"
-    "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
-    "    </ECEntityClass>"
-    "</ECSchema>";
-    ExpectSchemaDeserializationSuccess(schemaXML, "Should successfully deserialize a 3.3 schema with 3 part versions");
+        Utf8CP schemaXML =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='CaseInsensitive' version='01.00.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.3'>"
+            "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
+            "    <ECStructClass typeName='MyStruct'>"
+            "        <ECProperty propertyName='Prop1' typeName='string' />"
+            "    </ECStructClass>"
+            "    <ECEntityClass typeName='Entity'>"
+            "        <ECCustomAttributes>"
+            "            <Customattrib xmlns='CaseInsensitive.01.00.00' />"
+            "        </ECCustomAttributes>"
+            "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
+            "    </ECEntityClass>"
+            "</ECSchema>";
+        ExpectSchemaDeserializationSuccess(schemaXML, "Should successfully deserialize a 3.3 schema with 3 part versions");
     }
-    }
+}
 
 //=======================================================================================
 //! SchemaElementsOrderTest
 //=======================================================================================
 
-bvector<bpair<Utf8CP, ECSchemaElementType>> getTestElements()
-    {
+bvector<bpair<Utf8CP, ECSchemaElementType>> getTestElements() {
     // return elements in expected order if created alphabetically
     bvector<bpair<Utf8CP, ECSchemaElementType>> elements;
 
@@ -3078,95 +2986,82 @@ bvector<bpair<Utf8CP, ECSchemaElementType>> getTestElements()
     elements.push_back(make_bpair<Utf8CP, ECSchemaElementType>("bPropertyCategory", ECSchemaElementType::PropertyCategory));
 
     return elements;
-    }
+}
 
-ECSchemaPtr generateSchemaFromElements(const bvector<bpair<Utf8CP, ECSchemaElementType>> &elements)
-    {
+ECSchemaPtr generateSchemaFromElements(const bvector<bpair<Utf8CP, ECSchemaElementType>>& elements) {
     ECSchemaPtr schema;
 
     EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "TS", 1, 1, 1));
 
-    for (auto element : elements)
-        {
-        switch (element.second)
-            {
-                case ECSchemaElementType::ECEnumeration:
-                    ECEnumerationP e;
-                    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(e, element.first, PrimitiveType::PRIMITIVETYPE_Integer));
-                    break;
-                case ECSchemaElementType::ECClass:
-                    ECEntityClassP c;
-                    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(c, element.first));
-                    break;
-                case ECSchemaElementType::KindOfQuantity:
-                    KindOfQuantityP k;
-                    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(k, element.first));
-                    break;
-                case ECSchemaElementType::PropertyCategory:
-                    PropertyCategoryP p;
-                    EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(p, element.first));
-                    break;
-            }
+    for (auto element : elements) {
+        switch (element.second) {
+            case ECSchemaElementType::ECEnumeration:
+                ECEnumerationP e;
+                EXPECT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(e, element.first, PrimitiveType::PRIMITIVETYPE_Integer));
+                break;
+            case ECSchemaElementType::ECClass:
+                ECEntityClassP c;
+                EXPECT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(c, element.first));
+                break;
+            case ECSchemaElementType::KindOfQuantity:
+                KindOfQuantityP k;
+                EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(k, element.first));
+                break;
+            case ECSchemaElementType::PropertyCategory:
+                PropertyCategoryP p;
+                EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(p, element.first));
+                break;
         }
-    
-    return schema;
     }
 
-void generateSchemaElementsOrder(ECSchemaElementsOrder &order, const bvector<bpair<Utf8CP, ECSchemaElementType>> &elements, bool reverse = false)
-    {
-    if (reverse)
-        {
+    return schema;
+}
+
+void generateSchemaElementsOrder(ECSchemaElementsOrder& order, const bvector<bpair<Utf8CP, ECSchemaElementType>>& elements, bool reverse = false) {
+    if (reverse) {
         bvector<bpair<Utf8CP, ECSchemaElementType>> reversed;
         reversed.resize(elements.size());
         std::reverse_copy(elements.begin(), elements.end(), reversed.begin());
-        
-        for (const auto pair : reversed)
-            {
+
+        for (const auto pair : reversed) {
             order.AddElement(pair.first, pair.second);
-            }
         }
-    else
-        {
-        for (const auto pair : elements)
-            {
+    } else {
+        for (const auto pair : elements) {
             order.AddElement(pair.first, pair.second);
-            }
         }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaElementsOrderTest, PreserveElementOrder)
-    {
+TEST_F(SchemaElementsOrderTest, PreserveElementOrder) {
     bvector<bpair<Utf8CP, ECSchemaElementType>> elements;
     ECSchemaElementsOrder order, orderReversed;
     ECSchemaPtr schema;
-    
+
     elements = getTestElements();
-    
+
     int i = 0;
 
     // Create schema element order with elements in order
     generateSchemaElementsOrder(order, elements, false);
-    for (auto entry : order)
-        {
+    for (auto entry : order) {
         EXPECT_TRUE(entry.first.EqualsIAscii(elements[i++].first));
-        }
+    }
 
     // Create schema element order with elements in reverse order
     generateSchemaElementsOrder(orderReversed, elements, true);
-    for (auto entry : orderReversed)
-        {
+    for (auto entry : orderReversed) {
         EXPECT_TRUE(entry.first.EqualsIAscii(elements[--i].first));
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaElementsOrderTest, CreateAlphabeticalOrder)
-    {
+TEST_F(SchemaElementsOrderTest, CreateAlphabeticalOrder) {
     bvector<bpair<Utf8CP, ECSchemaElementType>> elements;
     ECSchemaElementsOrder order;
     ECSchemaPtr schema;
@@ -3181,32 +3076,30 @@ TEST_F(SchemaElementsOrderTest, CreateAlphabeticalOrder)
     schema = generateSchemaFromElements(reversedElements);
 
     int i = 0;
-    
+
     // create schema element order from schema and make sure they're in alphabetical order
     order.CreateAlphabeticalOrder(*schema);
-    for (auto entry : order)
-        {
+    for (auto entry : order) {
         EXPECT_TRUE(entry.first.EqualsIAscii(elements[i++].first));
-        }
     }
+}
 
 //! this test codifies existing behavior, which may be considered incorrect and therefore subject to change
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaCreationTest, CodifyAllowedNamelessItems)
-    {
+TEST_F(SchemaCreationTest, CodifyAllowedNamelessItems) {
     ECSchemaReadContextPtr readCtx = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     EXPECT_EQ(ECObjectsStatus::InvalidName, ECSchema::CreateSchema(schema, "", "ts", 1, 0, 0))
         << "cannot create a schema with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     ECSchema::CreateSchema(schema, "schema", "ts", 1, 0, 0));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "schema", "ts", 1, 0, 0));
     schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
     schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
 
     ECEnumerationP enumeration;
-    EXPECT_EQ(ECObjectsStatus::Success,     schema->CreateEnumeration(enumeration, "", PrimitiveType::PRIMITIVETYPE_Integer));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(enumeration, "", PrimitiveType::PRIMITIVETYPE_Integer));
 
     ECEnumeratorP enumerator;
     EXPECT_EQ(ECObjectsStatus::InvalidName, enumeration->CreateEnumerator(enumerator, "", 1)) << "cannot create an enumerator with an empty name";
@@ -3221,23 +3114,23 @@ TEST_F(SchemaCreationTest, CodifyAllowedNamelessItems)
 
     ECStructClassP structClass;
     EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateStructClass(structClass, "")) << "cannot create a struct class with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     schema->CreateStructClass(structClass, "structClass"));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateStructClass(structClass, "structClass"));
     structClass->SetClassModifier(ECClassModifier::Sealed);
 
     PrimitiveArrayECPropertyP primArrProp;
     EXPECT_EQ(ECObjectsStatus::InvalidName, structClass->CreatePrimitiveArrayProperty(primArrProp, ""))
         << "cannot create a primitive array property with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     structClass->CreatePrimitiveArrayProperty(primArrProp, "primArrProp"));
+    ASSERT_EQ(ECObjectsStatus::Success, structClass->CreatePrimitiveArrayProperty(primArrProp, "primArrProp"));
 
     ECRelationshipClassP relationshipClass;
     EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateRelationshipClass(relationshipClass, ""))
         << "cannotcreate a relationship class with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     schema->CreateRelationshipClass(relationshipClass, "relationshipClass"));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateRelationshipClass(relationshipClass, "relationshipClass"));
 
     ECCustomAttributeClassP customAttrClass;
     EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateCustomAttributeClass(customAttrClass, ""))
         << "cannot create a custom attribute class with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     schema->CreateCustomAttributeClass(customAttrClass, "customAttrClass"));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateCustomAttributeClass(customAttrClass, "customAttrClass"));
 
     UnitSystemP unitSystem;
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateUnitSystem(unitSystem, "", "ExampleUnitSystemLabel", "ExampleUnitSystemDescription"))
@@ -3286,26 +3179,26 @@ TEST_F(SchemaCreationTest, CodifyAllowedNamelessItems)
     ECEntityClassP class1;
     EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateEntityClass(class1, ""))
         << "cannot create a class with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     schema->CreateEntityClass(class1, "class1"));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(class1, "class1"));
 
     PrimitiveECPropertyP primProp;
     EXPECT_EQ(ECObjectsStatus::InvalidName, class1->CreatePrimitiveProperty(primProp, "", PrimitiveType::PRIMITIVETYPE_Integer))
         << "cannot create a primitive property with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     class1->CreatePrimitiveProperty(primProp, "primProp", PrimitiveType::PRIMITIVETYPE_Integer));
+    ASSERT_EQ(ECObjectsStatus::Success, class1->CreatePrimitiveProperty(primProp, "primProp", PrimitiveType::PRIMITIVETYPE_Integer));
 
     StructECPropertyP structProp;
     EXPECT_EQ(ECObjectsStatus::InvalidName, class1->CreateStructProperty(structProp, "", *structClass))
         << "cannot create a struct property with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     class1->CreateStructProperty(structProp, "structProp", *structClass));
+    ASSERT_EQ(ECObjectsStatus::Success, class1->CreateStructProperty(structProp, "structProp", *structClass));
 
     StructArrayECPropertyP structArrayProp;
     EXPECT_EQ(ECObjectsStatus::InvalidName, class1->CreateStructArrayProperty(structArrayProp, "", *structClass))
         << "cannot create a struct array property with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     class1->CreateStructArrayProperty(structArrayProp, "structArrayProp", *structClass));
+    ASSERT_EQ(ECObjectsStatus::Success, class1->CreateStructArrayProperty(structArrayProp, "structArrayProp", *structClass));
 
     PropertyCategoryP propCateg;
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(propCateg, ""))
         << "can create a property category with an empty name";
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

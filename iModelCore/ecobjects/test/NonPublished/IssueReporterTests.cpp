@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
@@ -13,19 +13,17 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct IssueReporterTests : ECTestFixture {};
 
-namespace
-    {
-    template <typename F>
-    RelayIssueListener<F> MakeRelayIssueListener(F&& f) { return RelayIssueListener<F>(std::forward<F>(f)); }
-    }
+namespace {
+template <typename F>
+RelayIssueListener<F> MakeRelayIssueListener(F&& f) { return RelayIssueListener<F>(std::forward<F>(f)); }
+}  // namespace
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(IssueReporterTests, SchemaXmlReaderCantResolveSchemaReference)
-    {
+TEST_F(IssueReporterTests, SchemaXmlReaderCantResolveSchemaReference) {
     int testListenerReportCount = 0;
-    auto testListener = MakeRelayIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message){
+    auto testListener = MakeRelayIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) {
         ++testListenerReportCount;
     });
 
@@ -49,17 +47,16 @@ TEST_F(IssueReporterTests, SchemaXmlReaderCantResolveSchemaReference)
     EXPECT_EQ(testListenerReportCount, 2);
 
     context->Issues().RemoveListener();
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(IssueReporterTests, SchemaConverterClassMapBadMapStrategyReported)
-    {
+TEST_F(IssueReporterTests, SchemaConverterClassMapBadMapStrategyReported) {
     int testListenerReportCount = 0;
     Utf8String lastReportMessage = "";
     IssueId lastIssueId = IssueId("");
-    auto testListener = MakeRelayIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message){
+    auto testListener = MakeRelayIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) {
         lastReportMessage = message;
         lastIssueId = id;
         ++testListenerReportCount;
@@ -98,6 +95,6 @@ TEST_F(IssueReporterTests, SchemaConverterClassMapBadMapStrategyReported)
     EXPECT_EQ(ECIssueId::EC_0010, lastIssueId);
 
     context->Issues().RemoveListener();
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

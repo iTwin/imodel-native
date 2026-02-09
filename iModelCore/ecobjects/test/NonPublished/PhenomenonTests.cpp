@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 #include <Bentley/BeNumerical.h>
@@ -16,8 +16,7 @@ struct PhenomenonDeserializationTest : ECTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonTests, BasicPhenomenonCreation)
-    {
+TEST_F(PhenomenonTests, BasicPhenomenonCreation) {
     ECSchemaPtr schema;
     PhenomenonP Phenomenon;
 
@@ -31,13 +30,12 @@ TEST_F(PhenomenonTests, BasicPhenomenonCreation)
 
     auto testPhenomenon = schema->GetPhenomenonCP("TestPhenomenon");
     EXPECT_EQ(Phenomenon, testPhenomenon);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonTests, LookupPhenomTest)
-    {
+TEST_F(PhenomenonTests, LookupPhenomTest) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -87,44 +85,41 @@ TEST_F(PhenomenonTests, LookupPhenomTest)
     bvector<Units::PhenomenonCP> phenom;
     unitContext->AllPhenomena(phenom);
     ASSERT_EQ(schema->GetPhenomenonCount(), phenom.size());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonTests, PhenomenonContainerTest)
-    {
+TEST_F(PhenomenonTests, PhenomenonContainerTest) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
 
     {
-    PhenomenonP phenom;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePhenomenon(phenom, "Phenomenon1", "LENGTH", "Phenomenon 1", "The first Phenomenon"));
-    EXPECT_TRUE(nullptr != phenom);
+        PhenomenonP phenom;
+        EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePhenomenon(phenom, "Phenomenon1", "LENGTH", "Phenomenon 1", "The first Phenomenon"));
+        EXPECT_TRUE(nullptr != phenom);
     }
     {
-    PhenomenonP phenom;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePhenomenon(phenom, "Phenomenon2", "LENGTH*LENGTH", "Phenomenon 2", "The second Phenomenon"));
-    EXPECT_TRUE(nullptr != phenom);
+        PhenomenonP phenom;
+        EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePhenomenon(phenom, "Phenomenon2", "LENGTH*LENGTH", "Phenomenon 2", "The second Phenomenon"));
+        EXPECT_TRUE(nullptr != phenom);
     }
     {
-    PhenomenonP phenom;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePhenomenon(phenom, "Phenomenon3", "LENGTH*LENGTH*LENGTH", nullptr, "The third Phenomenon"));
-    EXPECT_TRUE(nullptr != phenom);
+        PhenomenonP phenom;
+        EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePhenomenon(phenom, "Phenomenon3", "LENGTH*LENGTH*LENGTH", nullptr, "The third Phenomenon"));
+        EXPECT_TRUE(nullptr != phenom);
     }
     {
-    PhenomenonP phenom;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePhenomenon(phenom, "Phenomenon4", "LENGTH*LENGTH*LENGTH*LENGTH", "Phenomenon 4", "The fourth Phenomenon"));
-    EXPECT_TRUE(nullptr != phenom);
+        PhenomenonP phenom;
+        EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePhenomenon(phenom, "Phenomenon4", "LENGTH*LENGTH*LENGTH*LENGTH", "Phenomenon 4", "The fourth Phenomenon"));
+        EXPECT_TRUE(nullptr != phenom);
     }
 
     EXPECT_EQ(4, schema->GetPhenomenonCount());
     int curCount = 0;
-    for (PhenomenonCP phenom : schema->GetPhenomena())
-        {
+    for (PhenomenonCP phenom : schema->GetPhenomena()) {
         EXPECT_TRUE(nullptr != phenom);
-        switch (curCount)
-            {
+        switch (curCount) {
             case 0:
                 EXPECT_STREQ("Phenomenon1", phenom->GetName().c_str());
                 EXPECT_STREQ("The first Phenomenon", phenom->GetInvariantDescription().c_str());
@@ -149,17 +144,16 @@ TEST_F(PhenomenonTests, PhenomenonContainerTest)
                 EXPECT_STREQ("Phenomenon 4", phenom->GetInvariantDisplayLabel().c_str());
                 EXPECT_STREQ("LENGTH*LENGTH*LENGTH*LENGTH", phenom->GetDefinition().c_str());
                 break;
-            }
+        }
 
         curCount++;
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PhenomenonTests, StandaloneSchemaChildPhenomenon)
-    {
+TEST_F(PhenomenonTests, StandaloneSchemaChildPhenomenon) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
@@ -176,34 +170,31 @@ TEST_F(PhenomenonTests, StandaloneSchemaChildPhenomenon)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonTests, AllPhenomenonInStandardUnitsSchemaHaveValidDefinitions)
-    {
+TEST_F(PhenomenonTests, AllPhenomenonInStandardUnitsSchemaHaveValidDefinitions) {
     ECSchemaPtr schema = ECTestFixture::GetUnitsSchema();
 
     bvector<Units::PhenomenonCP> allPhenom;
     bvector<Utf8String> dimensionlessPhenomena = {/*ratio phen*/ "LENGTH_RATIO", "VOLUME_RATIO", "SLOPE", "MASS_RATIO",
-        /*Numeric phen*/"NUMBER", "PERCENTAGE","PROBABILITY"};
+                                                  /*Numeric phen*/ "NUMBER", "PERCENTAGE", "PROBABILITY"};
     schema->GetUnitsContext().AllPhenomena(allPhenom);
 
-    for(auto const& p: allPhenom)
-        {
+    for (auto const& p : allPhenom) {
         if (dimensionlessPhenomena.end() != std::find(dimensionlessPhenomena.begin(), dimensionlessPhenomena.end(), p->GetName()))
             continue;
         Utf8StringCR expression = p->GetPhenomenonSignature();
         EXPECT_FALSE(expression.empty()) << p->GetName();
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonTests, AllUnitsInPhenomenaAreConvertibleBetweenEachOther)
-    {
+TEST_F(PhenomenonTests, AllUnitsInPhenomenaAreConvertibleBetweenEachOther) {
     ECSchemaPtr schema = ECTestFixture::GetUnitsSchema();
 
     bvector<Units::PhenomenonCP> allPhenom;
@@ -211,72 +202,60 @@ TEST_F(PhenomenonTests, AllUnitsInPhenomenaAreConvertibleBetweenEachOther)
     bvector<Utf8String> excludedPhenomenon = {"CURRENCY"};
     schema->GetUnitsContext().AllPhenomena(allPhenom);
 
-    for(auto const& p: allPhenom)
-        {
+    for (auto const& p : allPhenom) {
         if (excludedPhenomenon.end() != std::find(excludedPhenomenon.begin(), excludedPhenomenon.end(), p->GetName()))
             continue;
         auto units = p->GetUnits();
-        for (auto const& u : units)
-            {
-            for (auto const& convertTo : units)
-                {
+        for (auto const& u : units) {
+            for (auto const& convertTo : units) {
                 double converted;
-                auto code =  u->Convert(converted, 1.0, convertTo);
+                auto code = u->Convert(converted, 1.0, convertTo);
                 EXPECT_EQ(Units::UnitsProblemCode::NoProblem, code);
                 EXPECT_FALSE(BeNumerical::BeIsnan(converted) || !BeNumerical::BeFinite(converted));
-                }
             }
         }
     }
+}
 
 //---------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(PhenomenonTests, CheckSignatureForEveryPhenomenon)
-    {
+TEST_F(PhenomenonTests, CheckSignatureForEveryPhenomenon) {
     bvector<Units::PhenomenonCP> allPhenomena;
     ECTestFixture::GetUnitsSchema()->GetUnitsContext().AllPhenomena(allPhenomena);
-    for (auto const& phenomenon : allPhenomena)
-        {
+    for (auto const& phenomenon : allPhenomena) {
         PERFORMANCELOG.errorv("Dimension string for %s: %s", phenomenon->GetName().c_str(), phenomenon->GetPhenomenonSignature().c_str());
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(PhenomenonTests, PhenomenonAndUnitSignaturesMatch)
-    {
+TEST_F(PhenomenonTests, PhenomenonAndUnitSignaturesMatch) {
     bvector<Units::PhenomenonCP> allPhenomena;
     ECTestFixture::GetUnitsSchema()->GetUnitsContext().AllPhenomena(allPhenomena);
-    for (auto const& phenomenon : allPhenomena)
-        {
-        for (auto const& unit : phenomenon->GetUnits())
-            {
+    for (auto const& phenomenon : allPhenomena) {
+        for (auto const& unit : phenomenon->GetUnits()) {
             EXPECT_TRUE(phenomenon->IsCompatible(*unit)) << "The unit " << unit->GetName() << " is not dimensionally compatible with the phenomenon it belongs to: " << phenomenon->GetName();
-            }
         }
     }
+}
 
 //---------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(PhenomenonTests, EveryPhenomenonHasAtleastOneUnit)
-    {
+TEST_F(PhenomenonTests, EveryPhenomenonHasAtleastOneUnit) {
     bvector<Units::PhenomenonCP> allPhenomena;
     ECTestFixture::GetUnitsSchema()->GetUnitsContext().AllPhenomena(allPhenomena);
-    for (auto const& phenomenon : allPhenomena)
-        {
+    for (auto const& phenomenon : allPhenomena) {
         EXPECT_NE(0, phenomenon->GetUnits().size()) << "The Phenomenon '" << phenomenon->GetName().c_str() << "' has no units.";
-        }
     }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonDeserializationTest, BasicRoundTripTest)
-    {
+TEST_F(PhenomenonDeserializationTest, BasicRoundTripTest) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
@@ -284,40 +263,39 @@ TEST_F(PhenomenonDeserializationTest, BasicRoundTripTest)
 
     Utf8String serializedSchemaXml;
     {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
 
-    ASSERT_EQ(1, schema->GetPhenomenonCount());
-    PhenomenonCP phenom = schema->GetPhenomenonCP("TestPhenomenon");
-    ASSERT_TRUE(nullptr != phenom);
-    ASSERT_EQ(&phenom->GetSchema(), schema.get());
+        ASSERT_EQ(1, schema->GetPhenomenonCount());
+        PhenomenonCP phenom = schema->GetPhenomenonCP("TestPhenomenon");
+        ASSERT_TRUE(nullptr != phenom);
+        ASSERT_EQ(&phenom->GetSchema(), schema.get());
 
-    EXPECT_STREQ("Phenomenon", phenom->GetInvariantDisplayLabel().c_str());
-    EXPECT_STREQ("This is an awesome new Phenomenon", phenom->GetInvariantDescription().c_str());
-    EXPECT_STREQ("LENGTH*LENGTH", phenom->GetDefinition().c_str());
+        EXPECT_STREQ("Phenomenon", phenom->GetInvariantDisplayLabel().c_str());
+        EXPECT_STREQ("This is an awesome new Phenomenon", phenom->GetInvariantDescription().c_str());
+        EXPECT_STREQ("LENGTH*LENGTH", phenom->GetDefinition().c_str());
 
-    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
+        EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
     }
     {
-    ECSchemaPtr serializedSchema;
-    ECSchemaReadContextPtr serializedContext = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(serializedSchema, serializedSchemaXml.c_str(), *serializedContext));
-    ASSERT_EQ(1, serializedSchema->GetPhenomenonCount());
-    PhenomenonCP serializedPhenomenon = serializedSchema->GetPhenomenonCP("TestPhenomenon");
-    ASSERT_TRUE(nullptr != serializedPhenomenon);
+        ECSchemaPtr serializedSchema;
+        ECSchemaReadContextPtr serializedContext = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(serializedSchema, serializedSchemaXml.c_str(), *serializedContext));
+        ASSERT_EQ(1, serializedSchema->GetPhenomenonCount());
+        PhenomenonCP serializedPhenomenon = serializedSchema->GetPhenomenonCP("TestPhenomenon");
+        ASSERT_TRUE(nullptr != serializedPhenomenon);
 
-    EXPECT_STREQ("Phenomenon", serializedPhenomenon->GetInvariantDisplayLabel().c_str());
-    EXPECT_STREQ("This is an awesome new Phenomenon", serializedPhenomenon->GetInvariantDescription().c_str());
-    EXPECT_STREQ("LENGTH*LENGTH", serializedPhenomenon->GetDefinition().c_str());
+        EXPECT_STREQ("Phenomenon", serializedPhenomenon->GetInvariantDisplayLabel().c_str());
+        EXPECT_STREQ("This is an awesome new Phenomenon", serializedPhenomenon->GetInvariantDescription().c_str());
+        EXPECT_STREQ("LENGTH*LENGTH", serializedPhenomenon->GetDefinition().c_str());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonDeserializationTest, EmptyDisplayLabelRoundTripTest)
-{
+TEST_F(PhenomenonDeserializationTest, EmptyDisplayLabelRoundTripTest) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
@@ -335,13 +313,12 @@ TEST_F(PhenomenonDeserializationTest, EmptyDisplayLabelRoundTripTest)
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
     ASSERT_FALSE(serializedSchemaXml.Contains("displayLabel=\"TestPhenomenon\""));
     ASSERT_FALSE(serializedSchemaXml.Contains("displayLabel=\"\""));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonDeserializationTest, DuplicatePhenomenonNames)
-    {
+TEST_F(PhenomenonDeserializationTest, DuplicatePhenomenonNames) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
@@ -352,13 +329,12 @@ TEST_F(PhenomenonDeserializationTest, DuplicatePhenomenonNames)
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonDeserializationTest, DuplicateSchemaChildNames)
-    {
+TEST_F(PhenomenonDeserializationTest, DuplicateSchemaChildNames) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <PropertyCategory typeName="TestPhenomenon"/>
@@ -369,29 +345,29 @@ TEST_F(PhenomenonDeserializationTest, DuplicateSchemaChildNames)
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonDeserializationTest, MissingOrInvalidName)
-    {
+TEST_F(PhenomenonDeserializationTest, MissingOrInvalidName) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon without a name"/>
-    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize phenomenon with missing name");
+    </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize phenomenon with missing name");
 
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon with an empty name"/>
-    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to derserialize schema with an empty name");
-    }
+    </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to derserialize schema with an empty name");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonDeserializationTest, MissingDisplayLabel)
-    {
+TEST_F(PhenomenonDeserializationTest, MissingDisplayLabel) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="aUniquePhenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
@@ -404,13 +380,12 @@ TEST_F(PhenomenonDeserializationTest, MissingDisplayLabel)
 
     PhenomenonCP Phenomenon = schema->GetPhenomenonCP("aUniquePhenomenon");
     EXPECT_STREQ("aUniquePhenomenon", Phenomenon->GetInvariantDisplayLabel().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonDeserializationTest, MissingDescription)
-    {
+TEST_F(PhenomenonDeserializationTest, MissingDescription) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="aUniquePhenomenon" definition="LENGTH*LENGTH" displayLabel="Label"/>
@@ -423,22 +398,23 @@ TEST_F(PhenomenonDeserializationTest, MissingDescription)
 
     PhenomenonCP phenom = schema->GetPhenomenonCP("aUniquePhenomenon");
     EXPECT_FALSE(phenom->GetIsDescriptionDefined());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonDeserializationTest, MissingOrEmptyDefinition)
-    {
+TEST_F(PhenomenonDeserializationTest, MissingOrEmptyDefinition) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="aUniquePhenomenon" displayLabel="Phenomenon" description="This is an awesome new Phenomenon"/>
-    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize phenomenon with missing definition");
+    </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize phenomenon with missing definition");
 
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="aUniquePhenomenon" displayLabel="Phenomenon" definition="" description="This is an awesome new Phenomenon"/>
-    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize phenomenon with empty definition");
-    }
+    </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize phenomenon with empty definition");
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

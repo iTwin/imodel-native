@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <ECObjects/ECInstance.h>
@@ -33,10 +33,9 @@ typedef bmap<Utf8String, Utf8String> SchemaNamePurposeMap;
 //! Also defines constants for accessing the Custom Attribute directly.
 // @bsistruct
 //=======================================================================================
-struct SupplementalSchemaMetaData : RefCountedBase
-{
-private:
-    bool m_isUserSpecific; // Not sure if should still be here....
+struct SupplementalSchemaMetaData : RefCountedBase {
+   private:
+    bool m_isUserSpecific;  // Not sure if should still be here....
     uint32_t m_readVersion;
     uint32_t m_writeVersion;
     uint32_t m_minorVersion;
@@ -49,7 +48,7 @@ private:
 
     void InitializeFromOldCustomAttribute(IECInstanceCR supplementalSchemaMetaDataCustomAttribute);
 
-public:
+   public:
     //! Constructor for SupplementalSchemaMetaData
     //! @param[in] primarySchemaName Name of the primary schema that this schema supplements
     //! @param[in] primarySchemaReadVersion Read version of the primary schema that this schema supplements
@@ -58,8 +57,7 @@ public:
     //! @param[in] supplementalSchemaPrecedence Custom attributes with higher precedence overrride custom attributes with lower precedence
     //! @param[in] supplementalSchemaPurpose Purpose of this supplemental schema
     ECOBJECTS_EXPORT SupplementalSchemaMetaData(Utf8CP primarySchemaName, uint32_t primarySchemaReadVersion, uint32_t primarySchemaWriteVersion, uint32_t primarySchemaMinorVersion, uint32_t supplementalSchemaPrecedence, Utf8CP supplementalSchemaPurpose)
-        : m_schemaName(primarySchemaName), m_readVersion(primarySchemaReadVersion), m_writeVersion(primarySchemaWriteVersion), m_minorVersion(primarySchemaMinorVersion), m_precedence(supplementalSchemaPrecedence), m_purpose(supplementalSchemaPurpose)
-        {}
+        : m_schemaName(primarySchemaName), m_readVersion(primarySchemaReadVersion), m_writeVersion(primarySchemaWriteVersion), m_minorVersion(primarySchemaMinorVersion), m_precedence(supplementalSchemaPrecedence), m_purpose(supplementalSchemaPurpose) {}
 
     //! Creates an instance of SupplementalSchemaMetaData
     //! @param[in] primarySchemaName Name of the primary schema that this schema supplements
@@ -68,14 +66,13 @@ public:
     //! @param[in] primarySchemaMinorVersion Minor version of the primary schema that this schema supplements
     //! @param[in] supplementalSchemaPrecedence Custom attributes with higher precedence overrride custom attributes with lower precedence
     //! @param[in] supplementalSchemaPurpose Purpose of this supplemental schema
-    static SupplementalSchemaMetaDataPtr Create(Utf8CP primarySchemaName, uint32_t primarySchemaReadVersion, uint32_t primarySchemaWriteVersion, uint32_t primarySchemaMinorVersion, uint32_t supplementalSchemaPrecedence, Utf8CP supplementalSchemaPurpose)
-        {return new SupplementalSchemaMetaData(primarySchemaName, primarySchemaReadVersion, primarySchemaWriteVersion, primarySchemaMinorVersion, supplementalSchemaPrecedence, supplementalSchemaPurpose);}
+    static SupplementalSchemaMetaDataPtr Create(Utf8CP primarySchemaName, uint32_t primarySchemaReadVersion, uint32_t primarySchemaWriteVersion, uint32_t primarySchemaMinorVersion, uint32_t supplementalSchemaPrecedence, Utf8CP supplementalSchemaPurpose) { return new SupplementalSchemaMetaData(primarySchemaName, primarySchemaReadVersion, primarySchemaWriteVersion, primarySchemaMinorVersion, supplementalSchemaPrecedence, supplementalSchemaPurpose); }
 
     //! Constructor that takes the custom attribute itself
     ECOBJECTS_EXPORT SupplementalSchemaMetaData(IECInstanceCR supplementalSchemaMetaDataCustomAttribute);
 
     //! Creates an instance of SupplementalSchemaMetaData
-    static SupplementalSchemaMetaDataPtr Create(IECInstanceCR supplementalSchemaMetaDataCustomAttribute) {return new SupplementalSchemaMetaData(supplementalSchemaMetaDataCustomAttribute);}
+    static SupplementalSchemaMetaDataPtr Create(IECInstanceCR supplementalSchemaMetaDataCustomAttribute) { return new SupplementalSchemaMetaData(supplementalSchemaMetaDataCustomAttribute); }
 
     ECOBJECTS_EXPORT virtual ~SupplementalSchemaMetaData() {}
     //! Returns true if the input schema defines the SupplementalSchemaMetaData custom attribute
@@ -86,23 +83,23 @@ public:
     //! Creates a Custom Attribute from the current SupplementalSchemaMetaData instance
     ECOBJECTS_EXPORT IECInstancePtr CreateCustomAttribute(ECSchemaReadContextR schemaContext);
 
-    Utf8StringCR GetPrimarySchemaName() const {return m_schemaName;} //!< Gets the primary schema name
-    void SetPrimarySchemaName(Utf8CP name) {m_schemaName = name;} //!< Sets the primary schema name
+    Utf8StringCR GetPrimarySchemaName() const { return m_schemaName; }  //!< Gets the primary schema name
+    void SetPrimarySchemaName(Utf8CP name) { m_schemaName = name; }     //!< Sets the primary schema name
 
-    uint32_t GetPrimarySchemaReadVersion() const {return m_readVersion;} //!< Gets the read version of the Primary schema
-    void SetPrimarySchemaReadVersion(uint32_t read) {m_readVersion = read;} //!< Sets the read version of the Primary schema
+    uint32_t GetPrimarySchemaReadVersion() const { return m_readVersion; }     //!< Gets the read version of the Primary schema
+    void SetPrimarySchemaReadVersion(uint32_t read) { m_readVersion = read; }  //!< Sets the read version of the Primary schema
 
-    uint32_t GetPrimarySchemaWriteVersion() const {return m_writeVersion;} //!< Gets the write version of the Primary schema
-    void SetPrimarySchemaWriteVersion(uint32_t write) {m_writeVersion = write;} //!< Sets the write version of the Primary schema
+    uint32_t GetPrimarySchemaWriteVersion() const { return m_writeVersion; }       //!< Gets the write version of the Primary schema
+    void SetPrimarySchemaWriteVersion(uint32_t write) { m_writeVersion = write; }  //!< Sets the write version of the Primary schema
 
-    uint32_t GetPrimarySchemaMinorVersion() const {return m_minorVersion;} //!< Gets the minor version of the Primary schema
-    void SetPrimarySchemaMinorVersion(uint32_t minor) {m_minorVersion = minor;} //!< Sets the minor version of the Primary schema
+    uint32_t GetPrimarySchemaMinorVersion() const { return m_minorVersion; }       //!< Gets the minor version of the Primary schema
+    void SetPrimarySchemaMinorVersion(uint32_t minor) { m_minorVersion = minor; }  //!< Sets the minor version of the Primary schema
 
-    uint32_t GetSupplementalSchemaPrecedence() const {return m_precedence;} //!< Gets the supplemental schema precedence
-    void SetSupplementalSchemaPrecedence(uint32_t precedence) {m_precedence = precedence;} //!< Sets the supplemental schema precedence
+    uint32_t GetSupplementalSchemaPrecedence() const { return m_precedence; }                 //!< Gets the supplemental schema precedence
+    void SetSupplementalSchemaPrecedence(uint32_t precedence) { m_precedence = precedence; }  //!< Sets the supplemental schema precedence
 
-    Utf8StringCR GetSupplementalSchemaPurpose() const {return m_purpose;} //!< Gets the supplemental schema purpose
-    void SetSupplementalSchemaPurpose(Utf8StringCR purpose) {m_purpose = purpose;} //!< Sets the supplemental schema purpose
+    Utf8StringCR GetSupplementalSchemaPurpose() const { return m_purpose; }           //!< Gets the supplemental schema purpose
+    void SetSupplementalSchemaPurpose(Utf8StringCR purpose) { m_purpose = purpose; }  //!< Sets the supplemental schema purpose
 
     //! Returns true if the SupplmentalSchemaMetaData's back references matches the input values
     //! @param[in]  primarySchemaName           The name of the primary schema
@@ -117,10 +114,9 @@ public:
     //! @param[in]  primarySchemaReadVersion    The read version of the primary schema
     //! @param[in]  primarySchemaMinorVersion   The minor version of the primary schema
     //! @param[in]  matchType                   The matching requirements for the primary schema
-    bool IsForPrimarySchema(Utf8StringCR primarySchemaName, uint32_t primarySchemaReadVersion, uint32_t primarySchemaMinorVersion, SchemaMatchType matchType) const 
-                {return IsForPrimarySchema(primarySchemaName, primarySchemaReadVersion, 0, primarySchemaMinorVersion, matchType);}
+    bool IsForPrimarySchema(Utf8StringCR primarySchemaName, uint32_t primarySchemaReadVersion, uint32_t primarySchemaMinorVersion, SchemaMatchType matchType) const { return IsForPrimarySchema(primarySchemaName, primarySchemaReadVersion, 0, primarySchemaMinorVersion, matchType); }
 
-// Statics
+    // Statics
     //! Returns the string used to get the SupplementalSchema custom attribute.
     ECOBJECTS_EXPORT static Utf8CP GetCustomAttributeAccessor();
 
@@ -157,14 +153,13 @@ public:
     ECOBJECTS_EXPORT static void SetMetadata(ECSchemaR supplementalSchema, SupplementalSchemaMetaDataR supplementalSchemaMetadata, ECSchemaReadContextR schemaContext);
 
     //! Represents the Standard Purposes a supplemental schema can have
-    struct StandardPurpose
-        {
+    struct StandardPurpose {
         //! The Standard Purpose for a Supplemental schema that contains Units information
-        static Utf8CP Units() {return "Units";}
+        static Utf8CP Units() { return "Units"; }
 
         //! The Standard Purpose for a Supplemental schema that contains ChangeTracking information
-        static Utf8CP ChangeTracking() {return "ChangeTracking";}
-        };
+        static Utf8CP ChangeTracking() { return "ChangeTracking"; }
+    };
 };
 
 //=======================================================================================
@@ -221,23 +216,21 @@ public:
 
 // @bsistruct
 //=======================================================================================
-struct SupplementedSchemaBuilder
-{
-public:
+struct SupplementedSchemaBuilder {
+   public:
     //! An enumeration used to pass precedence information around.  It provides enough information
     //! to merge the supplemental schemas into the primary schema so long as the supplemental schemas
     //! are properly ordered by precedence.
-    enum SchemaPrecedence
-        {
+    enum SchemaPrecedence {
         //! The supplemental schema has lower precedence than the consolidated schema
         SCHEMA_PRECEDENCE_Lower,
         //! The supplemental schema has the same precedence as the consolidated schema. This is a special case where two schemas have the same precedence value.
         SCHEMA_PRECEDENCE_Equal,
         //! The supplemental schema has greater precedence than the consolidated schema.
         SCHEMA_PRECEDENCE_Greater
-        };
+    };
 
-private:
+   private:
     Utf8String m_primarySchemaName;
     SchemaNamePurposeMap m_supplementalSchemaNamesAndPurposes;
     ECSchemaCachePtr m_schemaCache;
@@ -260,7 +253,7 @@ private:
     //! Takes a map of supplemental schemas sorted by precedence and merges them one by one to create the consolidated schema
     //! @param[in,out]  primarySchema   The schema to merge the supplemental schemas into
     //! @param[in]      schemasByPrecedence A map of supplemental schemas sorted by precedence
-    SupplementedSchemaStatus MergeSchemasIntoSupplementedSchema (ECSchemaR primarySchema, bmap<uint32_t, ECSchemaP> schemasByPrecedence);
+    SupplementedSchemaStatus MergeSchemasIntoSupplementedSchema(ECSchemaR primarySchema, bmap<uint32_t, ECSchemaP> schemasByPrecedence);
 
     //! Merges a supplemental schema into the consolidated schema
     //! @param[in,out]  primarySchema   The consolidated schema that will get supplemented
@@ -319,9 +312,9 @@ private:
     //! @param[in,out] container Container on which consolidated custom attribute needs to be set
     //! @param[in]  customAttributeInstance The custom attribute from the consolidated schema
     //! @param[in] precedence If SCHEMA_PRECEDENCE_Equal, sets into list of primary ECCustomAttributes, otherwise into list of consolidated
-    static ECObjectsStatus  SetMergedCustomAttribute(IECCustomAttributeContainerR container, IECInstanceR customAttributeInstance, SchemaPrecedence precedence);
+    static ECObjectsStatus SetMergedCustomAttribute(IECCustomAttributeContainerR container, IECInstanceR customAttributeInstance, SchemaPrecedence precedence);
 
-public:
+   public:
     //! Default Constructor
     SupplementedSchemaBuilder() { m_schemaCache = ECSchemaCache::Create(); }
 
@@ -350,7 +343,7 @@ public:
     //! the primary schema.  Defaults to true
     //! @returns A status code indicating whether the primarySchema was successfully supplemented
     ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, ECSchemaReadContextR schemaContext, Utf8CP locale, bool createCopyOfSupplementalCustomAttribute = true);
-    }; // SupplementalSchemaBuilder
+};  // SupplementalSchemaBuilder
 
 //=======================================================================================
 //! Container for information about supplemental schemas
@@ -360,23 +353,22 @@ public:
 //! @li the purpose of each of the supplemental schemas
 // @bsistruct
 //=======================================================================================
-struct SupplementalSchemaInfo : RefCountedBase
-    {
-private:
-    Utf8String     m_primarySchemaFullName;
-    Utf8String     m_supplementedKey;
-    SchemaNamePurposeMap  m_supplementalSchemaNamesAndPurpose;
+struct SupplementalSchemaInfo : RefCountedBase {
+   private:
+    Utf8String m_primarySchemaFullName;
+    Utf8String m_supplementedKey;
+    SchemaNamePurposeMap m_supplementalSchemaNamesAndPurpose;
     static Utf8CP s_customAttributeAccessor;
     static Utf8CP s_customAttributeSchemaName;
 
-public:
+   public:
     //! Constructs an instance of the SupplementalSchemaInfo class
     //! @param[in]  primarySchemaFullName   The full name of the primary schema this SupplementalSchemaInfo instance relates to
     //! @param[in]  schemaFullNameToPurposeMapping  The bmap of schema full names and purposes used to supplement the primary schema.h  Schema Fullname is the key, Purpose is the value
     ECOBJECTS_EXPORT SupplementalSchemaInfo(Utf8StringCR primarySchemaFullName, SchemaNamePurposeMap& schemaFullNameToPurposeMapping);
 
     //! Creates an instance of SupplementalSchemaInfo
-    static SupplementalSchemaInfoPtr Create(Utf8StringCR primarySchemaFullName, SchemaNamePurposeMap& schemaFullNameToPurposeMapping) {return new SupplementalSchemaInfo(primarySchemaFullName, schemaFullNameToPurposeMapping);}
+    static SupplementalSchemaInfoPtr Create(Utf8StringCR primarySchemaFullName, SchemaNamePurposeMap& schemaFullNameToPurposeMapping) { return new SupplementalSchemaInfo(primarySchemaFullName, schemaFullNameToPurposeMapping); }
 
     //! Returns the full name of the primary schema this SupplementalSchemaInfo instance relates to
     ECOBJECTS_EXPORT Utf8StringCR GetPrimarySchemaFullName() const { return m_primarySchemaFullName; };
@@ -410,8 +402,6 @@ public:
     static Utf8CP GetCustomAttributeAccessor();
     //! Returns the string used to get the SupplementalSchemaMetaData custom attribute schema.
     static Utf8CP GetCustomAttributeSchemaName();
-
-    };
+};
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
-

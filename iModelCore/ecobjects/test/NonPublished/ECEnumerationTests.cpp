@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -13,12 +13,10 @@ struct ECEnumerationTest : ECTestFixture {};
 struct ECEnumerationCompatibilityTests : ECTestFixture {};
 struct ECEnumeratorTest : ECTestFixture {};
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECEnumerationTest, CheckEnumerationBasicProperties)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECEnumerationTest, CheckEnumerationBasicProperties) {
     ECSchemaPtr schema;
     ECEnumerationP enumeration;
 
@@ -90,69 +88,65 @@ TEST_F(ECEnumerationTest, CheckEnumerationBasicProperties)
     EXPECT_EQ(1, enumeration->GetEnumeratorCount());
     enumeration->Clear();
     EXPECT_EQ(0, enumeration->GetEnumeratorCount());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECEnumerationTest, TestEmptyOrMissingName)
+TEST_F(ECEnumerationTest, TestEmptyOrMissingName) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEnumeration backingTypeName='int' description='...' displayLabel='Revision Status' isStrict='False'>
             </ECEnumeration>
         </ECSchema>)xml";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     }
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEnumeration typeName='' backingTypeName='int' description='...' displayLabel='Revision Status' isStrict='False'>
             </ECEnumeration>
         </ECSchema>)xml";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     }
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEnumeration typeName='1BadName' backingTypeName='int' description='...' displayLabel='Revision Status' isStrict='False'>
             </ECEnumeration>
         </ECSchema>)xml";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context)) << 
-        "Schema with ECEnumeration name with leading number should have failed to deserialize.";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context)) << "Schema with ECEnumeration name with leading number should have failed to deserialize.";
     }
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEnumeration typeName='Testing' backingTypeName='int' description='...' displayLabel='Revision Status' isStrict='False'>
             </ECEnumeration>
         </ECSchema>)xml";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
 
-    ECEnumerationCP ecEnum = schema->GetEnumerationCP("Testing");
-    EXPECT_STREQ("Testing", ecEnum->GetName().c_str());
+        ECEnumerationCP ecEnum = schema->GetEnumerationCP("Testing");
+        EXPECT_STREQ("Testing", ecEnum->GetName().c_str());
     }
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationTest, TestFindEnumeratoByNameRetrievesProperEnumerator)
-    {
+TEST_F(ECEnumerationTest, TestFindEnumeratoByNameRetrievesProperEnumerator) {
     Utf8CP schemaXML = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="FoodType" backingTypeName="int" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
@@ -168,34 +162,33 @@ TEST_F(ECEnumerationTest, TestFindEnumeratoByNameRetrievesProperEnumerator)
 
     // Lookup using the exact name casing should succeed.
     {
-    ECEnumerationCP ecEnum = schema->GetEnumerationCP("FoodType");
-    ASSERT_NE(nullptr, ecEnum);
+        ECEnumerationCP ecEnum = schema->GetEnumerationCP("FoodType");
+        ASSERT_NE(nullptr, ecEnum);
 
-    auto enumerator = ecEnum->FindEnumeratorByName("spaghetti");
-    ASSERT_NE(nullptr, enumerator);
-    EXPECT_EQ(13, enumerator->GetInteger());
-    enumerator = ecEnum->FindEnumeratorByName("cannoli");
-    ASSERT_NE(nullptr, enumerator);
-    EXPECT_EQ(42, enumerator->GetInteger());
+        auto enumerator = ecEnum->FindEnumeratorByName("spaghetti");
+        ASSERT_NE(nullptr, enumerator);
+        EXPECT_EQ(13, enumerator->GetInteger());
+        enumerator = ecEnum->FindEnumeratorByName("cannoli");
+        ASSERT_NE(nullptr, enumerator);
+        EXPECT_EQ(42, enumerator->GetInteger());
     }
     // Lookup using case insensitive name should succeed.
     {
-    ECEnumerationCP ecEnum = schema->GetEnumerationCP("FoodType");
-    ASSERT_NE(nullptr, ecEnum);
+        ECEnumerationCP ecEnum = schema->GetEnumerationCP("FoodType");
+        ASSERT_NE(nullptr, ecEnum);
 
-    ASSERT_NE(nullptr, ecEnum->FindEnumeratorByName("sPaGhEtTi"));
-    ASSERT_NE(nullptr, ecEnum->FindEnumeratorByName("cAnNoLi"));
+        ASSERT_NE(nullptr, ecEnum->FindEnumeratorByName("sPaGhEtTi"));
+        ASSERT_NE(nullptr, ecEnum->FindEnumeratorByName("cAnNoLi"));
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationTest, TestFindEnumeratorRetrievesProperEnumerator)
-    {
+TEST_F(ECEnumerationTest, TestFindEnumeratorRetrievesProperEnumerator) {
     // Integer backed
     {
-    Utf8CP schemaXML = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXML = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEnumeration typeName="FoodType" backingTypeName="int" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator value="13" displayLabel="Spaghetti"/>
@@ -203,23 +196,23 @@ TEST_F(ECEnumerationTest, TestFindEnumeratorRetrievesProperEnumerator)
             </ECEnumeration>
         </ECSchema>)xml";
 
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ECEnumerationCP ecEnum = schema->GetEnumerationCP("FoodType");
-    ASSERT_NE(nullptr, ecEnum);
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ECEnumerationCP ecEnum = schema->GetEnumerationCP("FoodType");
+        ASSERT_NE(nullptr, ecEnum);
 
-    auto enumerator = ecEnum->FindEnumerator(13);
-    ASSERT_NE(nullptr, enumerator);
-    EXPECT_EQ(13, enumerator->GetInteger());
-    enumerator = ecEnum->FindEnumerator(42);
-    ASSERT_NE(nullptr, enumerator);
-    EXPECT_EQ(42, enumerator->GetInteger());
+        auto enumerator = ecEnum->FindEnumerator(13);
+        ASSERT_NE(nullptr, enumerator);
+        EXPECT_EQ(13, enumerator->GetInteger());
+        enumerator = ecEnum->FindEnumerator(42);
+        ASSERT_NE(nullptr, enumerator);
+        EXPECT_EQ(42, enumerator->GetInteger());
     }
     // String backed
     {
-    Utf8CP schemaXML = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXML = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator value="spaghetti" displayLabel="Spaghetti"/>
@@ -227,27 +220,26 @@ TEST_F(ECEnumerationTest, TestFindEnumeratorRetrievesProperEnumerator)
             </ECEnumeration>
         </ECSchema>)xml";
 
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ECEnumerationCP ecEnum = schema->GetEnumerationCP("FoodType");
-    ASSERT_NE(nullptr, ecEnum);
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ECEnumerationCP ecEnum = schema->GetEnumerationCP("FoodType");
+        ASSERT_NE(nullptr, ecEnum);
 
-    auto enumerator = ecEnum->FindEnumerator("spaghetti");
-    ASSERT_NE(nullptr, enumerator);
-    EXPECT_EQ("spaghetti", enumerator->GetString());
-    enumerator = ecEnum->FindEnumerator("cannoli");
-    ASSERT_NE(nullptr, enumerator);
-    EXPECT_EQ("cannoli", enumerator->GetString());
+        auto enumerator = ecEnum->FindEnumerator("spaghetti");
+        ASSERT_NE(nullptr, enumerator);
+        EXPECT_EQ("spaghetti", enumerator->GetString());
+        enumerator = ecEnum->FindEnumerator("cannoli");
+        ASSERT_NE(nullptr, enumerator);
+        EXPECT_EQ("cannoli", enumerator->GetString());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationTest, TestGetEnumerationIsCaseInsensitive)
-    {
+TEST_F(ECEnumerationTest, TestGetEnumerationIsCaseInsensitive) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
@@ -266,18 +258,17 @@ TEST_F(ECEnumerationTest, TestGetEnumerationIsCaseInsensitive)
     EXPECT_EQ(ecEnum, schema->GetEnumerationCP("foodtype"));
     EXPECT_EQ(ecEnum, schema->GetEnumerationCP("FoOdTyPE"));
     EXPECT_NE(nullptr, ecEnum->FindEnumerator("SpAgHeTtI"));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECEnumerationTest, ExpectSuccessWhenRoundtripEnumerationUsingString)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECEnumerationTest, ExpectSuccessWhenRoundtripEnumerationUsingString) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ASSERT_TRUE(schema.IsValid());
 
-    //Create Enumeration
+    // Create Enumeration
     ECEnumerationP enumeration;
     EC_ASSERT_SUCCESS(schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_String));
     ASSERT_NE(nullptr, enumeration);
@@ -343,16 +334,16 @@ TEST_F(ECEnumerationTest, ExpectSuccessWhenRoundtripEnumerationUsingString)
     ECEnumerationCP propertyEnumeration = deserializedPrimitive->GetEnumeration();
     ASSERT_NE(nullptr, propertyEnumeration);
     EXPECT_STREQ("string", propertyEnumeration->GetTypeName().c_str());
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECEnumerationTest, ExpectSuccessWithEnumerationInReferencedSchema)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECEnumerationTest, ExpectSuccessWithEnumerationInReferencedSchema) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
-    Utf8CP refSchemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP refSchemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='ReferencedSchema' version='01.00' displayLabel='Display Label' description='Description' nameSpacePrefix='ref' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "   <ECEnumeration typeName='RevisionStatus' backingTypeName='int' description='...' displayLabel='Revision Status' isStrict='False'>"
         "       <ECEnumerator value='0' displayLabel='Undefined' />"
@@ -366,7 +357,8 @@ TEST_F(ECEnumerationTest, ExpectSuccessWithEnumerationInReferencedSchema)
     ECSchemaPtr refSchema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refSchema, refSchemaXML, *schemaContext));
 
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Stuff' version='09.06' displayLabel='Display Label' description='Description' nameSpacePrefix='stuff' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "<ECSchemaReference name='ReferencedSchema' version='01.00' prefix='ref' />"
         "   <ECClass typeName='Document' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
@@ -403,14 +395,13 @@ TEST_F(ECEnumerationTest, ExpectSuccessWithEnumerationInReferencedSchema)
     EXPECT_EQ(3, ecEnumerator->GetInteger());
     Utf8StringCR displayLabel = ecEnumerator->GetDisplayLabel();
     EXPECT_STREQ("Approved", displayLabel.c_str());
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECEnumerationTest, ExpectSuccessWhenDeserializingSchemaWithEnumerationInReferencedFile)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECEnumerationTest, ExpectSuccessWhenDeserializingSchemaWithEnumerationInReferencedFile) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
     schemaContext->AddSchemaPath(seedPath.c_str());
 
@@ -443,13 +434,12 @@ TEST_F(ECEnumerationTest, ExpectSuccessWhenDeserializingSchemaWithEnumerationInR
     EXPECT_STREQ("MyEnumeration", arrEnum->GetName().c_str());
 
     ASSERT_EQ(12, ecEnum->GetSchema().GetVersionWrite());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationTest, SerializeStandaloneEnumeration)
-    {
+TEST_F(ECEnumerationTest, SerializeStandaloneEnumeration) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
@@ -474,132 +464,132 @@ TEST_F(ECEnumerationTest, SerializeStandaloneEnumeration)
     ASSERT_EQ(BentleyStatus::SUCCESS, ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile));
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationTest, ShouldFailWithBadBackingType)
-    {
-    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+TEST_F(ECEnumerationTest, ShouldFailWithBadBackingType) {
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="FoodType" backingTypeName="foo" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator name="foo" value="Spaghetti" displayLabel="spaghetti"/>
             </ECEnumeration>
-        </ECSchema>)xml", SchemaReadStatus::InvalidPrimitiveType, "Should fail to deserialize enumeration with nonexistant backing type");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidPrimitiveType, "Should fail to deserialize enumeration with nonexistant backing type");
 
-    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="FoodType" backingTypeName="boolean" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator name="foo" value="Spaghetti" displayLabel="spaghetti"/>
             </ECEnumeration>
-        </ECSchema>)xml", SchemaReadStatus::InvalidPrimitiveType, "Should fail to deserialize enumeration with invalid backingType for and Enumerator");
-    }
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidPrimitiveType, "Should fail to deserialize enumeration with invalid backingType for and Enumerator");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationTest, ShouldFailWithDuplicateName)
-    {
-    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+TEST_F(ECEnumerationTest, ShouldFailWithDuplicateName) {
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator name="Bananas" value="Spaghetti" displayLabel="spaghetti"/>
                 <ECEnumerator name="Bananas" value="Stuff" displayLabel="stuff"/>
             </ECEnumeration>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumeration with duplicate enumerator names");
-    }
-
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumeration with duplicate enumerator names");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationTest, ShouldFailWithDuplicateValues)
-    {
-    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+TEST_F(ECEnumerationTest, ShouldFailWithDuplicateValues) {
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator name="Bananas" value="Spaghetti" displayLabel="spaghetti"/>
                 <ECEnumerator name="Spaghetti" value="Spaghetti" displayLabel="stuff"/>
             </ECEnumeration>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumeration with duplicate enumerator values");
-    }
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumeration with duplicate enumerator values");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationTest, InvalidOrMissingName)
-    {
-    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+TEST_F(ECEnumerationTest, InvalidOrMissingName) {
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator value="Spaghetti" displayLabel="spaghetti"/>
             </ECEnumeration>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumerator with missing name");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumerator with missing name");
 
-    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator name="" value="Spaghetti" displayLabel="spaghetti"/>
             </ECEnumeration>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumerator with empty name");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumerator with empty name");
 
-    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator name="@#$%" value="Spaghetti" displayLabel="spaghetti"/>
             </ECEnumeration>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumerator with invalid EC name");
-    }
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumerator with invalid EC name");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationTest, MissingOrEmptyDisplayLabel)
+TEST_F(ECEnumerationTest, MissingOrEmptyDisplayLabel) {
     {
-    {
-    SchemaItem missing(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        SchemaItem missing(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator name="Foo1" value="Spaghetti" />
             </ECEnumeration>
         </ECSchema>)xml");
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ECSchema::ReadFromXmlString(schema, missing.GetXmlString().c_str(), *context);
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(schema->Validate());
-    ECEnumerationCP enumeration = schema->GetEnumerationCP("FoodType");
-    ASSERT_NE(nullptr, enumeration);
-    ECEnumeratorCP enumerator = enumeration->FindEnumeratorByName("Foo1");
-    ASSERT_NE(nullptr, enumerator);
-    ASSERT_STRCASEEQ("Foo1", enumerator->GetInvariantDisplayLabel().c_str());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ECSchema::ReadFromXmlString(schema, missing.GetXmlString().c_str(), *context);
+        ASSERT_TRUE(schema.IsValid());
+        ASSERT_TRUE(schema->Validate());
+        ECEnumerationCP enumeration = schema->GetEnumerationCP("FoodType");
+        ASSERT_NE(nullptr, enumeration);
+        ECEnumeratorCP enumerator = enumeration->FindEnumeratorByName("Foo1");
+        ASSERT_NE(nullptr, enumerator);
+        ASSERT_STRCASEEQ("Foo1", enumerator->GetInvariantDisplayLabel().c_str());
     }
     {
-    SchemaItem empty( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        SchemaItem empty(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
                 <ECEnumerator name="Foo2" value="Spaghetti" displayLabel=""/>
             </ECEnumeration>
         </ECSchema>)xml");
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ECSchema::ReadFromXmlString(schema, empty.GetXmlString().c_str(), *context);
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(schema->Validate());
-    ECEnumerationCP enumeration = schema->GetEnumerationCP("FoodType");
-    ASSERT_NE(nullptr, enumeration);
-    ECEnumeratorCP enumerator = enumeration->FindEnumeratorByName("Foo2");
-    ASSERT_NE(nullptr, enumerator);
-    ASSERT_STRCASEEQ("Foo2", enumerator->GetInvariantDisplayLabel().c_str());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ECSchema::ReadFromXmlString(schema, empty.GetXmlString().c_str(), *context);
+        ASSERT_TRUE(schema.IsValid());
+        ASSERT_TRUE(schema->Validate());
+        ECEnumerationCP enumeration = schema->GetEnumerationCP("FoodType");
+        ASSERT_NE(nullptr, enumeration);
+        ECEnumeratorCP enumerator = enumeration->FindEnumeratorByName("Foo2");
+        ASSERT_NE(nullptr, enumerator);
+        ASSERT_STRCASEEQ("Foo2", enumerator->GetInvariantDisplayLabel().c_str());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECEnumerationTest, LookupEnumerationTest)
-    {
+TEST_F(ECEnumerationTest, LookupEnumerationTest) {
     Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="ref" version="01.00.00" alias="r" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
            <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
@@ -654,7 +644,7 @@ TEST_F(ECEnumerationTest, LookupEnumerationTest)
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("FoodType", shouldNotBeNull->GetName().c_str());
     ASSERT_EQ(1, schema->GetEnumerationCount());
-    }
+}
 
 //=======================================================================================
 //! ECEnumerationCompatibilityTests
@@ -663,8 +653,7 @@ TEST_F(ECEnumerationTest, LookupEnumerationTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationCompatibilityTests, ShouldNotCrashWithUnsupportedBackingTypesForFutureVersions)
-    {
+TEST_F(ECEnumerationCompatibilityTests, ShouldNotCrashWithUnsupportedBackingTypesForFutureVersions) {
     SchemaItem schemaXml(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECEnumeration typeName="FoodType" backingTypeName="boolean" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
@@ -678,13 +667,12 @@ TEST_F(ECEnumerationCompatibilityTests, ShouldNotCrashWithUnsupportedBackingType
     ASSERT_TRUE(schema->Validate());
     ECEnumerationCP enumeration = schema->GetEnumerationCP("FoodType");
     ASSERT_NE(nullptr, enumeration);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationCompatibilityTests, ShouldNotCrashWithOtherNodeNameInFutureVersion)
-    {
+TEST_F(ECEnumerationCompatibilityTests, ShouldNotCrashWithOtherNodeNameInFutureVersion) {
     SchemaItem schemaXml(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECEnumeration typeName="FoodType" backingTypeName="boolean" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
@@ -699,13 +687,12 @@ TEST_F(ECEnumerationCompatibilityTests, ShouldNotCrashWithOtherNodeNameInFutureV
     ASSERT_TRUE(schema->Validate());
     ECEnumerationCP enumeration = schema->GetEnumerationCP("FoodType");
     ASSERT_NE(nullptr, enumeration);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationCompatibilityTests, ShouldReadEnumerationFromNewerSchemaSuccessfully)
-    {
+TEST_F(ECEnumerationCompatibilityTests, ShouldReadEnumerationFromNewerSchemaSuccessfully) {
     SchemaItem missing(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
@@ -722,9 +709,9 @@ TEST_F(ECEnumerationCompatibilityTests, ShouldReadEnumerationFromNewerSchemaSucc
     ECEnumeratorCP enumerator = enumeration->FindEnumeratorByName("Foo1");
     ASSERT_NE(nullptr, enumerator);
     ASSERT_STRCASEEQ("Foo1", enumerator->GetInvariantDisplayLabel().c_str());
-    ASSERT_STRCASEEQ("Spaghetti", enumerator->GetString().c_str()); //value
+    ASSERT_STRCASEEQ("Spaghetti", enumerator->GetString().c_str());  // value
     ASSERT_STRCASEEQ("Foo1", enumerator->GetName().c_str());
-    }
+}
 
 //=======================================================================================
 //! ECEnumeratorTests
@@ -733,8 +720,7 @@ TEST_F(ECEnumerationCompatibilityTests, ShouldReadEnumerationFromNewerSchemaSucc
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumeratorTest, TestEnumeratorSetString)
-    {
+TEST_F(ECEnumeratorTest, TestEnumeratorSetString) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ASSERT_TRUE(schema.IsValid());
@@ -757,13 +743,12 @@ TEST_F(ECEnumeratorTest, TestEnumeratorSetString)
     EC_ASSERT_SUCCESS(intEnumeration->CreateEnumerator(intInumerator, "IntegerEnumerator", 3));
 
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, intInumerator->SetString("qux")) << "Setting a type-mismatched enumerator should fail.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumeratorTest, TestEnumeratorSetInteger)
-    {
+TEST_F(ECEnumeratorTest, TestEnumeratorSetInteger) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ASSERT_TRUE(schema.IsValid());
@@ -786,33 +771,31 @@ TEST_F(ECEnumeratorTest, TestEnumeratorSetInteger)
     EC_ASSERT_SUCCESS(strEnumeration->CreateEnumerator(strEnumerator, "StringEnumerator", "foo"));
 
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, strEnumerator->SetInteger(9)) << "Setting a type-mismatched enumerator should fail.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumeratorTest, DetermineEnumeratorName)
-    {
+TEST_F(ECEnumeratorTest, DetermineEnumeratorName) {
     Utf8String enumerationName("TestEnumeration");
     // String enumerator
     {
-    Utf8String enumeratorValueA("TestEnumeratorValueA");
-    Utf8CP enumeratorValueB = "TestEnumeratorValueB";
-    EXPECT_EQ("TestEnumeratorValueA", ECEnumerator::DetermineName(enumerationName, enumeratorValueA.c_str(), nullptr));
-    EXPECT_EQ("TestEnumeratorValueB", ECEnumerator::DetermineName(enumerationName, enumeratorValueB, nullptr));
+        Utf8String enumeratorValueA("TestEnumeratorValueA");
+        Utf8CP enumeratorValueB = "TestEnumeratorValueB";
+        EXPECT_EQ("TestEnumeratorValueA", ECEnumerator::DetermineName(enumerationName, enumeratorValueA.c_str(), nullptr));
+        EXPECT_EQ("TestEnumeratorValueB", ECEnumerator::DetermineName(enumerationName, enumeratorValueB, nullptr));
     }
     // Integer enumerator
     {
-    int32_t enumeratorValue = 42;
-    EXPECT_EQ("TestEnumeration42", ECEnumerator::DetermineName(enumerationName, nullptr, &enumeratorValue));
+        int32_t enumeratorValue = 42;
+        EXPECT_EQ("TestEnumeration42", ECEnumerator::DetermineName(enumerationName, nullptr, &enumeratorValue));
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumeratorTest, CreateEnumeratorWithoutExplicitName)
-    {
+TEST_F(ECEnumeratorTest, CreateEnumeratorWithoutExplicitName) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ASSERT_TRUE(schema.IsValid());
@@ -840,7 +823,6 @@ TEST_F(ECEnumeratorTest, CreateEnumeratorWithoutExplicitName)
 
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, strEnumerator->SetInteger(9)) << "Setting a type-mismatched enumerator should fail.";
     EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, strEnumeratorB->SetString(strEnumerator->GetString().c_str())) << "Setting a type-matched enumerator to a non-unique value should fail.";
-    }
-
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -1,7 +1,7 @@
 ﻿/*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
@@ -16,43 +16,38 @@ USING_NAMESPACE_BENTLEY_EC
 //=======================================================================================
 // @bsistruct
 //=======================================================================================
-struct ECClassLocater : IECClassLocater
-    {
+struct ECClassLocater : IECClassLocater {
     ECSchemaCR m_schema;
     ECClassLocater(ECSchemaCR schema) : m_schema(schema) {}
 
-protected:
-    ECClassCP _LocateClass(ECClassId const& classId) override
-        {
+   protected:
+    ECClassCP _LocateClass(ECClassId const& classId) override {
         auto const& ecClasses = m_schema.GetClasses();
 
-         auto const it = std::find_if(std::begin(ecClasses), std::end(ecClasses),
-               [&classId] (auto const& ecClass)
-                  {
-                  return nullptr != ecClass && ecClass->HasId() && ecClass->GetId() == classId;
-                  });
+        auto const it = std::find_if(std::begin(ecClasses), std::end(ecClasses),
+                                     [&classId](auto const& ecClass) {
+                                         return nullptr != ecClass && ecClass->HasId() && ecClass->GetId() == classId;
+                                     });
 
-         if (std::end(ecClasses) == it)
-               return nullptr;
-         return *it;
-        }
+        if (std::end(ecClasses) == it)
+            return nullptr;
+        return *it;
+    }
 
-    ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override
-        {
+    ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override {
         return m_schema.LookupClass(className);
-        }
-    };
+    }
+};
 
 struct ECInstanceBuilder;
 
 //=======================================================================================
 // @bsistruct
 //=======================================================================================
-struct Value : NonCopyableClass
-    {
+struct Value : NonCopyableClass {
     friend ECInstanceBuilder;
 
-private:
+   private:
     ECValue m_ecValue;
     bool m_isArrayMember;
     int m_arrayCount;
@@ -60,90 +55,75 @@ private:
 
     std::unordered_multimap<Utf8String, std::unique_ptr<Value>>* m_instanceProperties;
 
-public:
-    Value(Value &&) = default;
-    Value& operator=(Value &&) = default;
+   public:
+    Value(Value&&) = default;
+    Value& operator=(Value&&) = default;
 
-    template <typename T, typename = std::enable_if_t<!std::is_base_of<T, ECInstanceBuilder>::value>> Value(T&& value) :
-        m_ecValue(value), m_isArrayMember(false), m_instanceProperties(nullptr) {}
-    template <typename T, typename = std::enable_if_t<!std::is_base_of<T, ECInstanceBuilder>::value>> Value(T&& value, int count, int index) :
-        m_ecValue(value), m_isArrayMember(true), m_arrayCount(count), m_arrayIndex(index), m_instanceProperties(nullptr) {}
-    template <typename T, typename = std::enable_if_t<std::is_base_of<T, ECInstanceBuilder>::value>> Value(T& value, int count, int index) :
-        m_isArrayMember(true), m_arrayCount(count), m_arrayIndex(index), m_instanceProperties(nullptr) { m_ecValue.SetStruct(value.BuildInstance().get()); }
-    Value(std::nullptr_t value, int count, int index) :
-        m_isArrayMember(true), m_arrayCount(count), m_arrayIndex(index), m_instanceProperties(nullptr) { m_ecValue.SetStruct(nullptr); }
-    };
+    template <typename T, typename = std::enable_if_t<!std::is_base_of<T, ECInstanceBuilder>::value>>
+    Value(T&& value) : m_ecValue(value), m_isArrayMember(false), m_instanceProperties(nullptr) {}
+    template <typename T, typename = std::enable_if_t<!std::is_base_of<T, ECInstanceBuilder>::value>>
+    Value(T&& value, int count, int index) : m_ecValue(value), m_isArrayMember(true), m_arrayCount(count), m_arrayIndex(index), m_instanceProperties(nullptr) {}
+    template <typename T, typename = std::enable_if_t<std::is_base_of<T, ECInstanceBuilder>::value>>
+    Value(T& value, int count, int index) : m_isArrayMember(true), m_arrayCount(count), m_arrayIndex(index), m_instanceProperties(nullptr) { m_ecValue.SetStruct(value.BuildInstance().get()); }
+    Value(std::nullptr_t value, int count, int index) : m_isArrayMember(true), m_arrayCount(count), m_arrayIndex(index), m_instanceProperties(nullptr) { m_ecValue.SetStruct(nullptr); }
+};
 
 //=======================================================================================
 // @bsistruct
 //=======================================================================================
-struct ECInstanceBuilder
-    {
-private:
+struct ECInstanceBuilder {
+   private:
     std::unordered_multimap<Utf8String, std::unique_ptr<Value>> m_instanceProperties;
     std::unordered_set<Utf8String> m_initializedArrays;
     ECClassCR m_ecClass;
 
-public:
+   public:
     ECInstanceBuilder(ECClassCR ecClass) : m_ecClass(ecClass) {}
 
-    template <typename TValue> void EmplaceProperty(Utf8String name, TValue value)
-        {
+    template <typename TValue>
+    void EmplaceProperty(Utf8String name, TValue value) {
         m_instanceProperties.emplace(std::make_pair(name, std::make_unique<Value>(value)));
-        }
+    }
 
-    template <typename TValue> void EmplaceProperty(Utf8String name, TValue value, int arrayCount, int arrayIndex)
-        {
+    template <typename TValue>
+    void EmplaceProperty(Utf8String name, TValue value, int arrayCount, int arrayIndex) {
         m_instanceProperties.emplace(std::make_pair(name, std::make_unique<Value>(value, arrayCount, arrayIndex)));
-        }
+    }
 
-    void EmplaceProperty(Utf8String name, ECInstanceBuilder& structInstanceBuilder)
-        {
-        for (auto& property : structInstanceBuilder.m_instanceProperties)
-            {
-            std::unique_ptr<Value> propertyValue(property.second.release()); // Fix for build on linuxx64
+    void EmplaceProperty(Utf8String name, ECInstanceBuilder& structInstanceBuilder) {
+        for (auto& property : structInstanceBuilder.m_instanceProperties) {
+            std::unique_ptr<Value> propertyValue(property.second.release());  // Fix for build on linuxx64
             m_instanceProperties.emplace(std::make_pair(name + "." + property.first, std::move(propertyValue)));
-            }
         }
+    }
 
-    void EmplaceProperty(Utf8String name, ECInstanceBuilder* structInstanceBuilder, int arrayCount, int arrayIndex)
-        {
-        if (structInstanceBuilder == nullptr) 
-            {
-               m_instanceProperties.emplace(std::make_pair(name, std::make_unique<Value>(nullptr, arrayCount, arrayIndex)));
-            }
-        else
-            {
-               m_instanceProperties.emplace(std::make_pair(name, std::make_unique<Value>(*structInstanceBuilder, arrayCount, arrayIndex)));
-            }
-        
+    void EmplaceProperty(Utf8String name, ECInstanceBuilder* structInstanceBuilder, int arrayCount, int arrayIndex) {
+        if (structInstanceBuilder == nullptr) {
+            m_instanceProperties.emplace(std::make_pair(name, std::make_unique<Value>(nullptr, arrayCount, arrayIndex)));
+        } else {
+            m_instanceProperties.emplace(std::make_pair(name, std::make_unique<Value>(*structInstanceBuilder, arrayCount, arrayIndex)));
         }
+    }
 
-    auto BuildInstance()
-        {
+    auto BuildInstance() {
         auto instance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance();
-        for (auto const& property : m_instanceProperties)
-            {
-            if (property.second->m_isArrayMember)
-                {
+        for (auto const& property : m_instanceProperties) {
+            if (property.second->m_isArrayMember) {
                 if (m_initializedArrays.emplace(property.first).second)
                     instance->AddArrayElements(property.first.c_str(), property.second->m_arrayCount);
                 instance->SetValue(property.first.c_str(), property.second->m_ecValue, property.second->m_arrayIndex);
-                }
-            else
+            } else
                 instance->SetValue(property.first.c_str(), property.second->m_ecValue);
-            }
-
-        return instance;
         }
 
-    };
+        return instance;
+    }
+};
 
 //=======================================================================================
 // @bsistruct
 //=======================================================================================
-struct ECInstanceJsonWriterTests : ECTestFixture
-    {
+struct ECInstanceJsonWriterTests : ECTestFixture {
     static ECSchemaPtr m_schema;
 
     static ECRelationshipClassP m_relationshipClass;
@@ -186,9 +166,8 @@ struct ECInstanceJsonWriterTests : ECTestFixture
     static KindOfQuantityP m_angleKindOfQuantity;
     static KindOfQuantityP m_volumeKindOfQuantity;
 
-protected:
-    void SetUp() override
-        {
+   protected:
+    void SetUp() override {
         if (m_schema.IsValid())
             return;
 
@@ -257,21 +236,19 @@ protected:
 
         m_structDoubleProperty->SetKindOfQuantity(m_volumeKindOfQuantity);
         m_structStructDoubleProperty->SetKindOfQuantity(m_volumeKindOfQuantity);
-        }
+    }
 
-public:
+   public:
     static void SetStructStructProperties(ECInstanceBuilder& innerStructBuilder, Nullable<int> const& intProperty, Nullable<double> const& doubleProperty, Utf8CP stringProperty,
-        IGeometryPtr geometryProperty, Utf8CP strictEnumerationProperty, Nullable<int> const& looseEnumerationProperty, int doubleArrayCount, std::initializer_list<double> doubleArray)
-        {
+                                          IGeometryPtr geometryProperty, Utf8CP strictEnumerationProperty, Nullable<int> const& looseEnumerationProperty, int doubleArrayCount, std::initializer_list<double> doubleArray) {
         SetCommonStructProperties(innerStructBuilder, intProperty, doubleProperty, stringProperty, geometryProperty, strictEnumerationProperty, looseEnumerationProperty, doubleArrayCount, doubleArray);
-        }
+    }
 
     static void SetStructProperties(ECInstanceBuilder& outerStructBuilder, Nullable<int> const& intProperty, Nullable<double> const& doubleProperty, Utf8CP stringProperty,
-        IGeometryPtr geometryProperty, Utf8CP strictEnumerationProperty, Nullable<int> const& looseEnumerationProperty, int doubleArrayCount, std::initializer_list<double> doubleArray,
-        ECInstanceBuilder* innerStructBuilder, int innerStructArrayCount, std::initializer_list<ECInstanceBuilder*> innerStructArray)
-        {
+                                    IGeometryPtr geometryProperty, Utf8CP strictEnumerationProperty, Nullable<int> const& looseEnumerationProperty, int doubleArrayCount, std::initializer_list<double> doubleArray,
+                                    ECInstanceBuilder* innerStructBuilder, int innerStructArrayCount, std::initializer_list<ECInstanceBuilder*> innerStructArray) {
         SetCommonStructProperties(outerStructBuilder, intProperty, doubleProperty, stringProperty,
-            geometryProperty, strictEnumerationProperty, looseEnumerationProperty, doubleArrayCount, doubleArray);
+                                  geometryProperty, strictEnumerationProperty, looseEnumerationProperty, doubleArrayCount, doubleArray);
 
         if (nullptr != innerStructBuilder)
             outerStructBuilder.EmplaceProperty("StructStructProperty", *innerStructBuilder);
@@ -281,20 +258,19 @@ public:
             outerStructBuilder.EmplaceProperty("StructStructArrayProperty", builder, innerStructArrayCount, ++pos);
 
         ASSERT_EQ(++pos, innerStructArrayCount) << "Wrong struct array count passed to the SetStructProperties() function.";
-        }
+    }
 
-private:
+   private:
     static void SetCommonStructProperties(ECInstanceBuilder& structBuilder, Nullable<int> const& intProperty, Nullable<double> const& doubleProperty, Utf8CP stringProperty,
-        IGeometryPtr geometryProperty, Utf8CP strictEnumerationProperty, Nullable<int> const& looseEnumerationProperty, int doubleArrayCount, std::initializer_list<double> doubleArray)
-        {
-        if(intProperty.IsValid())
+                                          IGeometryPtr geometryProperty, Utf8CP strictEnumerationProperty, Nullable<int> const& looseEnumerationProperty, int doubleArrayCount, std::initializer_list<double> doubleArray) {
+        if (intProperty.IsValid())
             structBuilder.EmplaceProperty("IntProperty", intProperty.Value());
-        if(doubleProperty.IsValid())
+        if (doubleProperty.IsValid())
             structBuilder.EmplaceProperty("DoubleProperty", doubleProperty.Value());
         if (looseEnumerationProperty.IsValid())
             structBuilder.EmplaceProperty("LooseEnumerationProperty", looseEnumerationProperty.Value());
         if (geometryProperty.IsValid())
-         structBuilder.EmplaceProperty("GeometryProperty", *geometryProperty);
+            structBuilder.EmplaceProperty("GeometryProperty", *geometryProperty);
 
         structBuilder.EmplaceProperty("StringProperty", stringProperty);
         structBuilder.EmplaceProperty("StrictEnumerationProperty", strictEnumerationProperty);
@@ -304,8 +280,8 @@ private:
             structBuilder.EmplaceProperty("DoubleArrayProperty", value, doubleArrayCount, ++pos);
 
         ASSERT_EQ(++pos, doubleArrayCount) << "Wrong double array count passed to the SetStructProperties() or SetStructStructProperties() function.";
-        }
-    };
+    }
+};
 
 // Static member definitions
 
@@ -346,8 +322,7 @@ KindOfQuantityP ECInstanceJsonWriterTests::m_volumeKindOfQuantity;
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
-    {
+TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest) {
     // Arrange
 
     ECInstanceBuilder
@@ -357,15 +332,16 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
         structStructArrayMemberBuilder1(*m_structStructClass),
         structStructArrayMemberBuilder2(*m_structStructClass);
 
-    SetStructStructProperties(structStructBuilder, 0, 3.14, "Pi 3 digits", nullptr, nullptr, 1, 4, { 1.0, 2.0, 4.0, 9.2 });
-    SetStructStructProperties(structStructArrayMemberBuilder1, +1234567890, 3.1415926535897932384626433832795028841971, Utf8Chars(u8"π 41 digits"), nullptr, "EnumeratorB", 2, 2, { 16, 25 });
+    SetStructStructProperties(structStructBuilder, 0, 3.14, "Pi 3 digits", nullptr, nullptr, 1, 4, {1.0, 2.0, 4.0, 9.2});
+    SetStructStructProperties(structStructArrayMemberBuilder1, +1234567890, 3.1415926535897932384626433832795028841971, Utf8Chars(u8"π 41 digits"), nullptr, "EnumeratorB", 2, 2, {16, 25});
     SetStructStructProperties(structStructArrayMemberBuilder2, -1234567890, 2.7182818284590452353602874713526624977572, "e 41 digits", nullptr, "EnumeratorB", 2, 0, {});
-    SetStructProperties(structBuilder, 1, 2.0, "2.0", nullptr, "EnumeratorA", 1, 0, {}, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
+    SetStructProperties(structBuilder, 1, 2.0, "2.0", nullptr, "EnumeratorA", 1, 0, {}, &structStructBuilder, 2, {&structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2});
     sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue12 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue12 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "StructProperty" : {
               "IntProperty" : 1,
@@ -400,7 +376,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
            }
         })"));
 
-    auto expectedJsonValue34 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue34 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "StructStructProperty" : {
               "IntProperty" : 0,
@@ -411,7 +388,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
            }
         })"));
 
-    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "StructStructProperty" : {
               "IntProperty" : 0,
@@ -477,28 +455,22 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
 
     // Assert
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue1)) <<
-        "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue1)) << "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue2)) << "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue34, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue34.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue34, actualJsonValue3)) << "Expected:\n" + expectedJsonValue34.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue34, actualJsonValue4)) <<
-        "Expected:\n" + expectedJsonValue34.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue34, actualJsonValue4)) << "Expected:\n" + expectedJsonValue34.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
-    }
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) << "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECInstanceJsonWriterTests, WritePartialInstanceToJsonWritesNullsInStructArray)
-   {
-   // Arrange
+TEST_F(ECInstanceJsonWriterTests, WritePartialInstanceToJsonWritesNullsInStructArray) {
+    // Arrange
 
     ECInstanceBuilder
         sourceInstanceBuilder(*m_sourceClass),
@@ -506,12 +478,13 @@ TEST_F(ECInstanceJsonWriterTests, WritePartialInstanceToJsonWritesNullsInStructA
         structStructArrayMemberBuilder1(*m_structStructClass);
 
     SetStructStructProperties(structStructArrayMemberBuilder1, -1234567890, 2.7182818284590452353602874713526624977572, "e 41 digits", nullptr, "EnumeratorB", 2, 0, {});
-    SetStructProperties(structBuilder, 1, 2.0, "2.0", nullptr, "EnumeratorA", 1, 0, {}, nullptr, 3, { nullptr, &structStructArrayMemberBuilder1, nullptr });
+    SetStructProperties(structBuilder, 1, 2.0, "2.0", nullptr, "EnumeratorA", 1, 0, {}, nullptr, 3, {nullptr, &structStructArrayMemberBuilder1, nullptr});
     sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue1 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue1 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "StructProperty" : {
               "IntProperty" : 1,
@@ -536,19 +509,17 @@ TEST_F(ECInstanceJsonWriterTests, WritePartialInstanceToJsonWritesNullsInStructA
     // Act
 
     BeJsDocument actualJsonValue1;
-   ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePartialInstanceToJson(actualJsonValue1, *sourceInstance, JsonEcInstanceWriter::MemberNameCasing::KeepOriginal, nullptr));
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePartialInstanceToJson(actualJsonValue1, *sourceInstance, JsonEcInstanceWriter::MemberNameCasing::KeepOriginal, nullptr));
 
-   // Assert
+    // Assert
 
-   ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) <<
-       "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
-   }
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) << "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
-    {
+TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest) {
     // Arrange
 
     ECInstanceBuilder
@@ -558,15 +529,16 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
         structStructArrayMemberBuilder1(*m_structStructClass),
         structStructArrayMemberBuilder2(*m_structStructClass);
 
-    SetStructStructProperties(structStructBuilder, nullptr, nullptr, Utf8Chars(u8"α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω"), nullptr, "EnumeratorB", nullptr, 1, { 7 });
-    SetStructStructProperties(structStructArrayMemberBuilder1, 333333, 3.333333, nullptr, nullptr, nullptr, 2, 1, { 9.0 });
-    SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr/*"EnumeratorInvalid"*/, nullptr, 0, { });
-    SetStructProperties(structBuilder, nullptr, 1.111111, "1.111111", nullptr, nullptr, 1, 0, { }, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
+    SetStructStructProperties(structStructBuilder, nullptr, nullptr, Utf8Chars(u8"α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω"), nullptr, "EnumeratorB", nullptr, 1, {7});
+    SetStructStructProperties(structStructArrayMemberBuilder1, 333333, 3.333333, nullptr, nullptr, nullptr, 2, 1, {9.0});
+    SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr /*"EnumeratorInvalid"*/, nullptr, 0, {});
+    SetStructProperties(structBuilder, nullptr, 1.111111, "1.111111", nullptr, nullptr, 1, 0, {}, &structStructBuilder, 2, {&structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2});
     sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue12 = BeJsDocument(Utf8Chars(u8R"*(
+    auto expectedJsonValue12 = BeJsDocument(Utf8Chars(
+        u8R"*(
         {
            "StructProperty" : {
               "StringProperty" : "1.111111",
@@ -609,7 +581,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
            }
         })*"));
 
-    auto expectedJsonValue34 = BeJsDocument(Utf8Chars(u8R"*(
+    auto expectedJsonValue34 = BeJsDocument(Utf8Chars(
+        u8R"*(
         {
            "StructStructProperty" : {
               "StringProperty" : "α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω",
@@ -624,7 +597,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
            }
         })*"));
 
-    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"*(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(
+        u8R"*(
         {
            "StructStructProperty" : {
               "StringProperty" : "α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω",
@@ -702,27 +676,21 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
 
     // Assert
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue1)) <<
-        "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue1)) << "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue2)) << "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue34, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue34.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue34, actualJsonValue3)) << "Expected:\n" + expectedJsonValue34.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue34, actualJsonValue4)) <<
-        "Expected:\n" + expectedJsonValue34.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue34, actualJsonValue4)) << "Expected:\n" + expectedJsonValue34.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
-    }
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) << "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueTest)
-    {
+TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueTest) {
     // Arrange
 
     ECInstanceBuilder
@@ -734,38 +702,44 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueTest)
 
     SetStructStructProperties(structStructBuilder, nullptr, nullptr, Utf8Chars(u8"α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω"), nullptr, "EnumeratorB", nullptr, 1, {7});
     SetStructStructProperties(structStructArrayMemberBuilder1, 333333, 3.333333, nullptr, nullptr, nullptr, 2, 1, {9.0});
-    SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr, 5, 0, { });
-    SetStructProperties(structBuilder, nullptr, 1.111111, "1.111111", nullptr, nullptr, 7, 0, { }, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
+    SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr, 5, 0, {});
+    SetStructProperties(structBuilder, nullptr, 1.111111, "1.111111", nullptr, nullptr, 7, 0, {}, &structStructBuilder, 2, {&structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2});
     sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue2 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue2 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "DoubleProperty" : 1.111111
         })"));
 
-    auto expectedJsonValue3 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue3 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "StringProperty" : "1.111111"
         })"));
 
-    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "LooseEnumerationProperty" : 7
         })"));
 
-    auto expectedJsonValue8 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue8 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "StringProperty" : "α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω"
         })"));
 
-    auto expectedJsonValue9 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue9 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "StrictEnumerationProperty" : "EnumeratorB"
         })"));
 
-    auto expectedJsonValue11 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue11 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "DoubleProperty" : 1.111111,
            "StringProperty" : "1.111111",
@@ -773,7 +747,8 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueTest)
            "StrictEnumerationProperty" : "EnumeratorB"
         })"));
 
-    auto expectedJsonValue12 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue12 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "DoubleProperty" : 1.111111,
            "StringProperty" : "α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω",
@@ -833,48 +808,35 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueTest)
 
     BeJsDocument nullValue;
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue1)) <<
-        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue1)) << "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue2, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue2.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue2, actualJsonValue2)) << "Expected:\n" + expectedJsonValue2.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue3, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue3.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue3, actualJsonValue3)) << "Expected:\n" + expectedJsonValue3.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue4)) <<
-        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue4)) << "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) << "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue6)) <<
-        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue6.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue6)) << "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue6.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue7)) <<
-        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue7.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue7)) << "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue7.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue8, actualJsonValue8)) <<
-        "Expected:\n" + expectedJsonValue8.Stringify() + "\nBut was:\n" + actualJsonValue8.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue8, actualJsonValue8)) << "Expected:\n" + expectedJsonValue8.Stringify() + "\nBut was:\n" + actualJsonValue8.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue9, actualJsonValue9)) <<
-        "Expected:\n" + expectedJsonValue9.Stringify() + "\nBut was:\n" + actualJsonValue9.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue9, actualJsonValue9)) << "Expected:\n" + expectedJsonValue9.Stringify() + "\nBut was:\n" + actualJsonValue9.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue10)) <<
-        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue10.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue10)) << "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue10.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue11, actualJsonValue11)) <<
-        "Expected:\n" + expectedJsonValue11.Stringify() + "\nBut was:\n" + actualJsonValue11.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue11, actualJsonValue11)) << "Expected:\n" + expectedJsonValue11.Stringify() + "\nBut was:\n" + actualJsonValue11.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue12)) <<
-        "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue12.Stringify();
-    }
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue12)) << "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue12.Stringify();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
-    {
+TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest) {
     // Arrange
 
     ECInstanceBuilder
@@ -886,13 +848,14 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
 
     SetStructStructProperties(structStructBuilder, nullptr, 3.14, Utf8Chars(u8"π"), nullptr, "EnumeratorB", nullptr, 1, {7});
     SetStructStructProperties(structStructArrayMemberBuilder1, 333333, 3.333333, nullptr, nullptr, nullptr, 2, 1, {9.0});
-    SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr, 5, 0, { });
-    SetStructProperties(structBuilder, nullptr, 1.111111, "1.111111", nullptr, nullptr, 7, 0, { }, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
+    SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr, 5, 0, {});
+    SetStructProperties(structBuilder, nullptr, 1.111111, "1.111111", nullptr, nullptr, 7, 0, {}, &structStructBuilder, 2, {&structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2});
     sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue2 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue2 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "DoubleProperty" : {
               "currentUnit" : "DefaultRealU(3)[u:CUB_M]",
@@ -901,17 +864,20 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
            }
         })"));
 
-    auto expectedJsonValue3 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue3 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "StringProperty" : "1.111111"
         })"));
 
-    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "LooseEnumerationProperty" : 7
         })"));
 
-    auto expectedJsonValue7 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue7 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "DoubleProperty" : {
               "currentUnit" : "DefaultRealU(3)[u:CUB_M]",
@@ -920,17 +886,20 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
            }
         })"));
 
-    auto expectedJsonValue8 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue8 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "StringProperty" : "π"
         })"));
 
-    auto expectedJsonValue9 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue9 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "StrictEnumerationProperty" : "EnumeratorB"
         })"));
 
-    auto expectedJsonValue11 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue11 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "DoubleProperty" : {
               "currentUnit" : "DefaultRealU(3)[u:CUB_M]",
@@ -942,7 +911,8 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
            "StrictEnumerationProperty" : "EnumeratorB"
         })"));
 
-    auto expectedJsonValue12 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue12 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "DoubleProperty" : {
               "currentUnit" : "DefaultRealU(3)[u:CUB_M]",
@@ -1007,48 +977,35 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
 
     BeJsDocument nullValue;
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue1)) <<
-        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue1)) << "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue2, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue2.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue2, actualJsonValue2)) << "Expected:\n" + expectedJsonValue2.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue3, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue3.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue3, actualJsonValue3)) << "Expected:\n" + expectedJsonValue3.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue4)) <<
-        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue4)) << "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) << "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue6)) <<
-        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue6.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue6)) << "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue6.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue7, actualJsonValue7)) <<
-        "Expected:\n" + expectedJsonValue7.Stringify() + "\nBut was:\n" + actualJsonValue7.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue7, actualJsonValue7)) << "Expected:\n" + expectedJsonValue7.Stringify() + "\nBut was:\n" + actualJsonValue7.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue8, actualJsonValue8)) <<
-        "Expected:\n" + expectedJsonValue8.Stringify() + "\nBut was:\n" + actualJsonValue8.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue8, actualJsonValue8)) << "Expected:\n" + expectedJsonValue8.Stringify() + "\nBut was:\n" + actualJsonValue8.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue9, actualJsonValue9)) <<
-        "Expected:\n" + expectedJsonValue9.Stringify() + "\nBut was:\n" + actualJsonValue9.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue9, actualJsonValue9)) << "Expected:\n" + expectedJsonValue9.Stringify() + "\nBut was:\n" + actualJsonValue9.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue10)) <<
-        "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue10.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(nullValue, actualJsonValue10)) << "Expected:\n" + nullValue.Stringify() + "\nBut was:\n" + actualJsonValue10.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue11, actualJsonValue11)) <<
-        "Expected:\n" + expectedJsonValue11.Stringify() + "\nBut was:\n" + actualJsonValue11.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue11, actualJsonValue11)) << "Expected:\n" + expectedJsonValue11.Stringify() + "\nBut was:\n" + actualJsonValue11.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue12)) <<
-        "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue12.Stringify();
-    }
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue12, actualJsonValue12)) << "Expected:\n" + expectedJsonValue12.Stringify() + "\nBut was:\n" + actualJsonValue12.Stringify();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
-    {
+TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest) {
     // Arrange
 
     ECInstanceBuilder
@@ -1062,7 +1019,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
     SetStructStructProperties(structStructBuilder, nullptr, 3.14, "Pi 3 digits", nullptr, nullptr, 1, 4, {1.0, 2.0, 4.0, 9.0});
     SetStructStructProperties(structStructArrayMemberBuilder1, +1, 3.1415926535897932384626433832795028841971, Utf8Chars(u8"π 41 digits"), nullptr, "EnumeratorB", 2, 2, {16, 25});
     SetStructStructProperties(structStructArrayMemberBuilder2, -1, 2.7182818284590452353602874713526624977572, "e 41 digits", nullptr, "EnumeratorB", 2, 0, {});
-    SetStructProperties(structBuilder, nullptr, 2.0, "2.0", nullptr, "EnumeratorA", 1, 0, {}, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
+    SetStructProperties(structBuilder, nullptr, 2.0, "2.0", nullptr, "EnumeratorA", 1, 0, {}, &structStructBuilder, 2, {&structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2});
     sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
@@ -1070,7 +1027,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
     auto const targetInstance = targetInstanceBuilder.BuildInstance();
     targetInstance->SetInstanceId("targetInstanceId");
 
-    auto expectedJsonValue1 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue1 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1112,7 +1070,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "instanceId" : "sourceInstanceId"
         })"));
 
-    auto expectedJsonValue2 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue2 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "MyClass" : {
               "NavigationProperty" : {
@@ -1162,7 +1121,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "ecSchema" : "Schema.01.00"
         })"));
 
-    auto expectedJsonValue3 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue3 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1212,7 +1172,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "instanceId" : "sourceInstanceId"
         })"));
 
-    auto expectedJsonValue4 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue4 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1253,7 +1214,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "ecSchema" : "Schema.01.00"
         })"));
 
-    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "AnotherSourceClass" : {
               "NavigationProperty" : {
@@ -1340,7 +1302,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "instanceId" : "targetInstanceId"
         })"));
 
-    auto expectedJsonValue6 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue6 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00"
@@ -1374,37 +1337,30 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualJsonValue5, *targetInstance, nullptr, true, false, &classLocator));
 
     BeJsDocument actualJsonValue6;
-        {
+    {
         DISABLE_ASSERTS
         ASSERT_EQ(BSIERROR, JsonEcInstanceWriter::WriteInstanceToJson(actualJsonValue6, *sourceInstance, nullptr, false));
-        }
+    }
 
     // Assert
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) <<
-        "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) << "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue2, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue2.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue2, actualJsonValue2)) << "Expected:\n" + expectedJsonValue2.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue3, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue3.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue3, actualJsonValue3)) << "Expected:\n" + expectedJsonValue3.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue4, actualJsonValue4)) <<
-        "Expected:\n" + expectedJsonValue4.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue4, actualJsonValue4)) << "Expected:\n" + expectedJsonValue4.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) << "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue6, actualJsonValue6)) <<
-        "Expected:\n" + expectedJsonValue6.Stringify() + "\nBut was:\n" + actualJsonValue6.Stringify();
-    }
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue6, actualJsonValue6)) << "Expected:\n" + expectedJsonValue6.Stringify() + "\nBut was:\n" + actualJsonValue6.Stringify();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
-    {
+TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest) {
     // Arrange
 
     ECInstanceBuilder
@@ -1415,10 +1371,10 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
         structStructArrayMemberBuilder1(*m_structStructClass),
         structStructArrayMemberBuilder2(*m_structStructClass);
 
-    SetStructStructProperties(structStructBuilder, nullptr, 3.14, "Pi 3 digits", nullptr, nullptr, 1, 1, { 7.0 });
-    SetStructStructProperties(structStructArrayMemberBuilder1, +1, 3.1415926535897932384626433832795028841971, Utf8Chars(u8"π 41 digits"), nullptr, "EnumeratorB", 2, 1, { 25 });
-    SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, 0, { });
-    SetStructProperties(structBuilder, nullptr, 2.0, "2.0", nullptr, "EnumeratorA", 1, 0, { }, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
+    SetStructStructProperties(structStructBuilder, nullptr, 3.14, "Pi 3 digits", nullptr, nullptr, 1, 1, {7.0});
+    SetStructStructProperties(structStructArrayMemberBuilder1, +1, 3.1415926535897932384626433832795028841971, Utf8Chars(u8"π 41 digits"), nullptr, "EnumeratorB", 2, 1, {25});
+    SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, 0, {});
+    SetStructProperties(structBuilder, nullptr, 2.0, "2.0", nullptr, "EnumeratorA", 1, 0, {}, &structStructBuilder, 2, {&structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2});
     sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
@@ -1426,7 +1382,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
     auto const targetInstance = targetInstanceBuilder.BuildInstance();
     targetInstance->SetInstanceId("targetInstanceId");
 
-    auto expectedJsonValue1 = BeJsDocument(Utf8Chars(u8R"*(
+    auto expectedJsonValue1 = BeJsDocument(Utf8Chars(
+        u8R"*(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1486,7 +1443,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "instanceId" : "sourceInstanceId"
         })*"));
 
-    auto expectedJsonValue2 = BeJsDocument(Utf8Chars(u8R"*(
+    auto expectedJsonValue2 = BeJsDocument(Utf8Chars(
+        u8R"*(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1544,7 +1502,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "ecSchema" : "Schema.01.00"
         })*"));
 
-    auto expectedJsonValue3 = BeJsDocument(Utf8Chars(u8R"*(
+    auto expectedJsonValue3 = BeJsDocument(Utf8Chars(
+        u8R"*(
         {
            "SourceClass" : {
               "NavigationProperty" : {
@@ -1603,7 +1562,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "ecSchema" : "Schema.01.00"
         })*"));
 
-    auto expectedJsonValue4 = BeJsDocument(Utf8Chars(u8R"*(
+    auto expectedJsonValue4 = BeJsDocument(Utf8Chars(
+        u8R"*(
         {
            "AnotherSourceClass" : {
               "NavigationProperty" : {
@@ -1717,7 +1677,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "instanceId" : "targetInstanceId"
         })*"));
 
-    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(
+        u8R"(
         {
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00"
@@ -1748,34 +1709,28 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToPresentationJson(actualJsonValue4, *targetInstance, nullptr, true, &classLocator));
 
     BeJsDocument actualJsonValue5;
-        {
+    {
         DISABLE_ASSERTS
         ASSERT_EQ(BSIERROR, JsonEcInstanceWriter::WriteInstanceToPresentationJson(actualJsonValue5, *sourceInstance, nullptr, false));
-        }
+    }
 
     // Assert
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) <<
-        "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) << "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue2, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue2.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue2, actualJsonValue2)) << "Expected:\n" + expectedJsonValue2.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue3, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue3.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue3, actualJsonValue3)) << "Expected:\n" + expectedJsonValue3.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue4, actualJsonValue4)) <<
-        "Expected:\n" + expectedJsonValue4.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue4, actualJsonValue4)) << "Expected:\n" + expectedJsonValue4.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
-    }
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) << "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
-    {
+TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest) {
     // Arrange
 
     ECInstanceBuilder
@@ -1786,16 +1741,17 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
         structStructArrayMemberBuilder1(*m_structStructClass),
         structStructArrayMemberBuilder2(*m_structStructClass);
 
-    SetStructStructProperties(structStructBuilder, nullptr, nullptr, "No number", nullptr, nullptr, nullptr, 0, { });
-    SetStructStructProperties(structStructArrayMemberBuilder1, nullptr, 3.1415926535897932384626433832795028841971, Utf8Chars(u8"π 41 digits"), nullptr, "EnumeratorB", nullptr, 1, { 25 });
-    SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, 0, { });
-    SetStructProperties(structBuilder, nullptr, nullptr, nullptr, nullptr, "EnumeratorA", 1, 0, { }, &structStructBuilder, 2, { &structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2 });
+    SetStructStructProperties(structStructBuilder, nullptr, nullptr, "No number", nullptr, nullptr, nullptr, 0, {});
+    SetStructStructProperties(structStructArrayMemberBuilder1, nullptr, 3.1415926535897932384626433832795028841971, Utf8Chars(u8"π 41 digits"), nullptr, "EnumeratorB", nullptr, 1, {25});
+    SetStructStructProperties(structStructArrayMemberBuilder2, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, 0, {});
+    SetStructProperties(structBuilder, nullptr, nullptr, nullptr, nullptr, "EnumeratorA", 1, 0, {}, &structStructBuilder, 2, {&structStructArrayMemberBuilder1, &structStructArrayMemberBuilder2});
     sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
 
     auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
     auto const targetInstance = targetInstanceBuilder.BuildInstance();
 
-    auto expectedJsonValue1 = BeJsDocument(Utf8Chars(u8R"*(
+    auto expectedJsonValue1 = BeJsDocument(Utf8Chars(
+        u8R"*(
         {
            "NavigationProperty" : {
               "id" : "0xd"
@@ -1829,7 +1785,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
            "className" : "Schema.SourceClass"
         })*"));
 
-    auto expectedJsonValue23 = BeJsDocument(Utf8Chars(u8R"*(
+    auto expectedJsonValue23 = BeJsDocument(Utf8Chars(
+        u8R"*(
         {
            "NavigationProperty" : {
               "id" : "0xe",
@@ -1864,7 +1821,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
            "className" : "Schema.SourceClass"
         })*"));
 
-    auto expectedJsonValue4 = BeJsDocument(Utf8Chars(u8R"*(
+    auto expectedJsonValue4 = BeJsDocument(Utf8Chars(
+        u8R"*(
         {
            "NavigationProperty" : {
               "id" : "0xe",
@@ -1899,7 +1857,8 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
            "className" : "Schema.TargetClass"
         })*"));
 
-    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(u8R"*(
+    auto expectedJsonValue5 = BeJsDocument(Utf8Chars(
+        u8R"*(
         {
            "NavigationProperty" : {
               "id" : "0xe"
@@ -1956,45 +1915,40 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
     ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToSchemaJson(actualJsonValue4, *targetInstance, &classLocator));
 
     BeJsDocument actualJsonValue5;
-        {
+    {
         DISABLE_ASSERTS
         ASSERT_EQ(BSIERROR, JsonEcInstanceWriter::WriteInstanceToSchemaJson(actualJsonValue5, *sourceInstance));
-        }
+    }
 
     // Assert
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) <<
-        "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) << "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue23, actualJsonValue2)) <<
-        "Expected:\n" + expectedJsonValue23.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue23, actualJsonValue2)) << "Expected:\n" + expectedJsonValue23.Stringify() + "\nBut was:\n" + actualJsonValue2.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue23, actualJsonValue3)) <<
-        "Expected:\n" + expectedJsonValue23.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue23, actualJsonValue3)) << "Expected:\n" + expectedJsonValue23.Stringify() + "\nBut was:\n" + actualJsonValue3.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue4, actualJsonValue4)) <<
-        "Expected:\n" + expectedJsonValue4.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue4, actualJsonValue4)) << "Expected:\n" + expectedJsonValue4.Stringify() + "\nBut was:\n" + actualJsonValue4.Stringify();
 
-    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
-        "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
-    }
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) << "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ECInstanceJsonWriterTests, WritePartialWritesIModelJsonGeometry)
-   {
-   // Arrange
+TEST_F(ECInstanceJsonWriterTests, WritePartialWritesIModelJsonGeometry) {
+    // Arrange
 
-   ECInstanceBuilder sourceInstanceBuilder(*m_sourceClass), structBuilder(*m_structClass);
+    ECInstanceBuilder sourceInstanceBuilder(*m_sourceClass), structBuilder(*m_structClass);
 
-   IGeometryPtr geom = IGeometry::Create(ICurvePrimitive::CreateArc(DEllipse3d::From(1, 1, 1,   0, 0, 2,   0, 3, 0,   0.0, Angle::TwoPi())));
-   SetStructProperties(structBuilder, nullptr, nullptr, nullptr, geom, nullptr, nullptr, 0, { }, nullptr, 0, { });
-   sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
+    IGeometryPtr geom = IGeometry::Create(ICurvePrimitive::CreateArc(DEllipse3d::From(1, 1, 1, 0, 0, 2, 0, 3, 0, 0.0, Angle::TwoPi())));
+    SetStructProperties(structBuilder, nullptr, nullptr, nullptr, geom, nullptr, nullptr, 0, {}, nullptr, 0, {});
+    sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
 
-   auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
+    auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
 
-   auto expectedJsonValue1 = BeJsDocument(Utf8Chars(u8R"(
+    auto expectedJsonValue1 = BeJsDocument(Utf8Chars(
+        u8R"(
       {
          "StructProperty": {
             "GeometryProperty": {
@@ -2008,15 +1962,14 @@ TEST_F(ECInstanceJsonWriterTests, WritePartialWritesIModelJsonGeometry)
          }
       })"));
 
-   // Act
+    // Act
 
-   BeJsDocument actualJsonValue1;
-   ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePartialInstanceToJson(actualJsonValue1, *sourceInstance, JsonEcInstanceWriter::MemberNameCasing::KeepOriginal, nullptr));
+    BeJsDocument actualJsonValue1;
+    ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePartialInstanceToJson(actualJsonValue1, *sourceInstance, JsonEcInstanceWriter::MemberNameCasing::KeepOriginal, nullptr));
 
-   // Assert
+    // Assert
 
-   ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) <<
-       "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
-   }
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) << "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

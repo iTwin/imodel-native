@@ -1,14 +1,14 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 // IssueCategory
-IssueCategory IssueCategory::BusinessProperties = IssueCategory("BusinessProperties"); // should be used when an issue is related to ECFramework;
+IssueCategory IssueCategory::BusinessProperties = IssueCategory("BusinessProperties");  // should be used when an issue is related to ECFramework;
 
 IssueCategory IssueCategory::SchemaSync = IssueCategory("SchemaSync");
 
@@ -93,33 +93,30 @@ IssueId ECIssueId::EC_0063 = IssueId("EC_0063");
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECOBJECTS_EXPORT BentleyStatus IssueReporter::AddListener(IIssueListener const& issueListener)
-    {
+ECOBJECTS_EXPORT BentleyStatus IssueReporter::AddListener(IIssueListener const& issueListener) {
     BeMutexHolder lock(m_mutex);
     if (m_issueListener != nullptr)
         return ERROR;
 
     m_issueListener = &issueListener;
     return SUCCESS;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECOBJECTS_EXPORT void IssueReporter::RemoveListener()
-    {
+ECOBJECTS_EXPORT void IssueReporter::RemoveListener() {
     BeMutexHolder lock(m_mutex);
     m_issueListener = nullptr;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECOBJECTS_EXPORT void IssueReporter::_Report(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) const
-    {
+ECOBJECTS_EXPORT void IssueReporter::_Report(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) const {
     BeMutexHolder lock(m_mutex);
     if (m_issueListener != nullptr)
         m_issueListener->ReportIssue(severity, category, type, id, message);
-    }
+}
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECObjects/ECSchema.h>
 
@@ -10,11 +10,10 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 template <typename T>
 using Validator = std::function<ECObjectsStatus(T)>;
 
-struct ECSchemaValidator
-{
-private:
+struct ECSchemaValidator {
+   private:
     ECSchemaValidator(ECSchemaConverter const& rhs) = delete;
-    ECSchemaValidator& operator= (ECSchemaValidator const& rhs) = delete;
+    ECSchemaValidator& operator=(ECSchemaValidator const& rhs) = delete;
 
     bool m_validated;
     bvector<Validator<ECSchemaCR>> m_schemaValidators;
@@ -35,15 +34,15 @@ private:
     static ECObjectsStatus RelationshipValidator(ECClassCR);
     static ECObjectsStatus KindOfQuantityValidator(KindOfQuantityCR);
 
-public:
+   public:
     ECOBJECTS_EXPORT ECSchemaValidator();
 
     //! Run the provided schema against all added validators.
     ECOBJECTS_EXPORT bool Validate(ECSchemaCR schema);
 
-    void AddSchemaValidator(Validator<ECSchemaCR> validator) {m_schemaValidators.push_back(validator);}
-    void AddClassValidator(Validator<ECClassCR> validator) {m_classValidators.push_back(validator);}
-    void AddKindOfQuantityValidator(Validator<KindOfQuantityCR> validator) {m_koqValidators.push_back(validator);}
+    void AddSchemaValidator(Validator<ECSchemaCR> validator) { m_schemaValidators.push_back(validator); }
+    void AddClassValidator(Validator<ECClassCR> validator) { m_classValidators.push_back(validator); }
+    void AddKindOfQuantityValidator(Validator<KindOfQuantityCR> validator) { m_koqValidators.push_back(validator); }
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

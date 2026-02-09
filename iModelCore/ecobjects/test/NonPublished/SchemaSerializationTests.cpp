@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 #include "BeXml/BeXml.h"
@@ -11,70 +11,66 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct SchemaXmlSerializationTest : ECTestFixture
-    {
-    };
+struct SchemaXmlSerializationTest : ECTestFixture {
+};
 
-struct SchemaJsonSerializationTest : ECTestFixture
-    {
-    protected:
-        static ECSchemaPtr CreateSchemaWithNoItems()
-            {
-            ECSchemaPtr schema;
-            Utf8String schemaName = "ExampleSchema";
-            Utf8String schemaAlias = "ex";
-            uint32_t versionRead = 3;
-            uint32_t versionWrite = 1;
-            uint32_t versionMinor = 0;
-            ECVersion ecVersion = ECVersion::Latest;
-            Utf8String label = "Example Schema";
-            Utf8String description = "The quick brown fox jumps over the lazy dog.";
+struct SchemaJsonSerializationTest : ECTestFixture {
+   protected:
+    static ECSchemaPtr CreateSchemaWithNoItems() {
+        ECSchemaPtr schema;
+        Utf8String schemaName = "ExampleSchema";
+        Utf8String schemaAlias = "ex";
+        uint32_t versionRead = 3;
+        uint32_t versionWrite = 1;
+        uint32_t versionMinor = 0;
+        ECVersion ecVersion = ECVersion::Latest;
+        Utf8String label = "Example Schema";
+        Utf8String description = "The quick brown fox jumps over the lazy dog.";
 
-            ECSchemaPtr refSchemaA;
-            Utf8String refSchemaAName = "refSchemaA";
-            Utf8String refSchemaAAlias = "refA";
-            ECSchema::CreateSchema(refSchemaA, refSchemaAName, refSchemaAAlias, versionRead, versionWrite, versionMinor, ecVersion);
-            ECCustomAttributeClassP customAttributeClassA;
-            refSchemaA->CreateCustomAttributeClass(customAttributeClassA, "SomeCustomAttributeClass");
-            customAttributeClassA->SetContainerType(CustomAttributeContainerType::Any);
-            customAttributeClassA->SetDescription("SomeCustomAttributeClass description! How exciting!");
+        ECSchemaPtr refSchemaA;
+        Utf8String refSchemaAName = "refSchemaA";
+        Utf8String refSchemaAAlias = "refA";
+        ECSchema::CreateSchema(refSchemaA, refSchemaAName, refSchemaAAlias, versionRead, versionWrite, versionMinor, ecVersion);
+        ECCustomAttributeClassP customAttributeClassA;
+        refSchemaA->CreateCustomAttributeClass(customAttributeClassA, "SomeCustomAttributeClass");
+        customAttributeClassA->SetContainerType(CustomAttributeContainerType::Any);
+        customAttributeClassA->SetDescription("SomeCustomAttributeClass description! How exciting!");
 
-            ECSchemaPtr refSchemaB;
-            Utf8String refSchemaBAlias = "refB";
-            Utf8String refSchemaBName = "refSchemaB";
-            ECSchema::CreateSchema(refSchemaB, refSchemaBName, refSchemaBAlias, versionRead, versionWrite, versionMinor, ecVersion);
-            ECCustomAttributeClassP customAttributeClassB;
-            refSchemaB->CreateCustomAttributeClass(customAttributeClassB, "AnotherCustomAttributeClass");
-            customAttributeClassB->SetContainerType(CustomAttributeContainerType::Any);
-            customAttributeClassB->SetDescription("AnotherCustomAttributeClass description! Wowzers!");
+        ECSchemaPtr refSchemaB;
+        Utf8String refSchemaBAlias = "refB";
+        Utf8String refSchemaBName = "refSchemaB";
+        ECSchema::CreateSchema(refSchemaB, refSchemaBName, refSchemaBAlias, versionRead, versionWrite, versionMinor, ecVersion);
+        ECCustomAttributeClassP customAttributeClassB;
+        refSchemaB->CreateCustomAttributeClass(customAttributeClassB, "AnotherCustomAttributeClass");
+        customAttributeClassB->SetContainerType(CustomAttributeContainerType::Any);
+        customAttributeClassB->SetDescription("AnotherCustomAttributeClass description! Wowzers!");
 
-            ECSchema::CreateSchema(schema, schemaName, schemaAlias, versionRead, versionWrite, versionMinor, ecVersion);
-            schema->SetDisplayLabel(label);
-            schema->SetDescription(description);
-            schema->AddReferencedSchema(*refSchemaA);
-            schema->AddReferencedSchema(*refSchemaB);
+        ECSchema::CreateSchema(schema, schemaName, schemaAlias, versionRead, versionWrite, versionMinor, ecVersion);
+        schema->SetDisplayLabel(label);
+        schema->SetDescription(description);
+        schema->AddReferencedSchema(*refSchemaA);
+        schema->AddReferencedSchema(*refSchemaB);
 
-            IECInstancePtr customAttributeA = customAttributeClassA->GetDefaultStandaloneEnabler()->CreateInstance();
-            ECValue valA;
-            valA.SetUtf8CP("some string");
-            customAttributeA->SetValue("Primitive", valA);
-            schema->SetCustomAttribute(*customAttributeA);
+        IECInstancePtr customAttributeA = customAttributeClassA->GetDefaultStandaloneEnabler()->CreateInstance();
+        ECValue valA;
+        valA.SetUtf8CP("some string");
+        customAttributeA->SetValue("Primitive", valA);
+        schema->SetCustomAttribute(*customAttributeA);
 
-            IECInstancePtr customAttributeB = customAttributeClassB->GetDefaultStandaloneEnabler()->CreateInstance();
-            ECValue valB;
-            valB.SetUtf8CP("another string");
-            customAttributeB->SetValue("Primitive", valB);
-            schema->SetCustomAttribute(*customAttributeB);
+        IECInstancePtr customAttributeB = customAttributeClassB->GetDefaultStandaloneEnabler()->CreateInstance();
+        ECValue valB;
+        valB.SetUtf8CP("another string");
+        customAttributeB->SetValue("Primitive", valB);
+        schema->SetCustomAttribute(*customAttributeB);
 
-            return schema;
-            }
-    };
+        return schema;
+    }
+};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithSerializingBaseClasses)
-    {
+TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithSerializingBaseClasses) {
     ECSchemaPtr schema;
     ECSchemaPtr schema2;
     ECSchemaPtr schema3;
@@ -125,15 +121,14 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     WString ecSchemaXmlString;
     status = schema->WriteToXmlString(ecSchemaXmlString);
     EXPECT_EQ(SchemaWriteStatus::Success, status);
-    }
+}
 
 #if defined(NEEDSWORK_CALCULATED_PROPERTIES)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
-    {
-    //Load Bentley_Standard_CustomAttributes
+TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema) {
+    // Load Bentley_Standard_CustomAttributes
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SearchPathSchemaFileLocaterPtr schemaLocater;
     bvector<WString> searchPaths;
@@ -145,7 +140,7 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     ECSchemaPtr standardCASchema = schemaContext->LocateSchema(schemaKey, SchemaMatchType::Latest);
     EXPECT_TRUE(standardCASchema.IsValid());
 
-    //Compose our new schema
+    // Compose our new schema
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ComprehensiveSchema", "cmpr", 1, 5, 2);
     schema->SetDescription("Comprehensive Schema to demonstrate use of all ECSchema concepts.");
@@ -292,14 +287,13 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     WString ecSchemaXmlString;
     SchemaWriteStatus status4 = schema->WriteToXmlString(ecSchemaXmlString);
     EXPECT_EQ(SchemaWriteStatus::Success, status4);
-    }
+}
 #endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
-    {
+TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
     schema->SetDescription("Schema to test Kind of Quantity Inheritance serialization.");
@@ -372,7 +366,7 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     ASSERT_EQ(SchemaWriteStatus::Success, writeStatus);
 
     ECSchemaPtr readSchema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus readStatus = ECSchema::ReadFromXmlFile(readSchema, ECTestFixture::GetTempDataPath(L"InheritedKOQ.01.00.00.ecschema.xml").c_str(), *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, readStatus);
     ASSERT_TRUE(readSchema.IsValid());
@@ -396,28 +390,24 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     ASSERT_TRUE(derivedProp3 != nullptr);
     ASSERT_TRUE(derivedProp3->IsKindOfQuantityDefinedLocally());
     ASSERT_STREQ("OverrideKindOfQuantity", derivedProp3->GetKindOfQuantity()->GetName().c_str());
-    }
+}
 
-
-void extendTargetXmlRegex(Utf8StringR regexStrOut, Utf8String str)
-    {
+void extendTargetXmlRegex(Utf8StringR regexStrOut, Utf8String str) {
     regexStrOut.append(".*" + str + ".*\n");
-    }
+}
 
-std::regex generateTargetXmlRegex(Utf8StringR regexStrOut, bvector<Utf8String> orderedNames, Utf8String prefix = "")
-    {
+std::regex generateTargetXmlRegex(Utf8StringR regexStrOut, bvector<Utf8String> orderedNames, Utf8String prefix = "") {
     for (Utf8String name : orderedNames)
         extendTargetXmlRegex(regexStrOut, prefix + name);
 
     std::regex r(regexStrOut.c_str(), std::regex::extended);
     return r;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaXmlSerializationTest, ExpectReferencedSchemasSerializedInOrder)
-    {
+TEST_F(SchemaXmlSerializationTest, ExpectReferencedSchemasSerializedInOrder) {
     ECSchemaPtr schema1, schema2;
     bvector<ECSchemaPtr> refSchemas(4);
 
@@ -431,12 +421,12 @@ TEST_F(SchemaXmlSerializationTest, ExpectReferencedSchemasSerializedInOrder)
     std::regex targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, refSchemaNames, "<ECSchemaReference name=\"");
 
     int i = 0;
-    for(Utf8String name : refSchemaNames)
+    for (Utf8String name : refSchemaNames)
         ECSchema::CreateSchema(refSchemas[i++], name, "rs", 1, 0, 0);
 
     // add references in order, serialize, and make sure they're still in order
     ECSchema::CreateSchema(schema1, "testSchema1", "ts", 1, 0, 0);
-    
+
     i = 0;
     for (ECSchemaPtr refSchema : refSchemas)
         schema1->AddReferencedSchema(*refSchema);
@@ -459,13 +449,12 @@ TEST_F(SchemaXmlSerializationTest, ExpectReferencedSchemasSerializedInOrder)
     schema2->WriteToXmlString(schemaXml);
 
     EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaXmlSerializationTest, ExpectCustomAttributesSerializedInOrder)
-    {
+TEST_F(SchemaXmlSerializationTest, ExpectCustomAttributesSerializedInOrder) {
     bvector<Utf8String> caClassNames;
     caClassNames.push_back("aCustomClass");
     caClassNames.push_back("bCustomClass");
@@ -474,86 +463,83 @@ TEST_F(SchemaXmlSerializationTest, ExpectCustomAttributesSerializedInOrder)
 
     // create custom attribute classes and instances in order, verify they serialize in order
     {
-    ECSchemaPtr schema;
-    bvector<ECCustomAttributeClassP> caClasses(4);
-    bvector<IECInstancePtr> caInstances(4);
+        ECSchemaPtr schema;
+        bvector<ECCustomAttributeClassP> caClasses(4);
+        bvector<IECInstancePtr> caInstances(4);
 
-    Utf8String targetXmlRegexStr;
-    std::regex targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, caClassNames, "<ECCustomAttributeClass typeName=\"");
+        Utf8String targetXmlRegexStr;
+        std::regex targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, caClassNames, "<ECCustomAttributeClass typeName=\"");
 
-    ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
+        ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
 
-    int i = 0;
-    for (Utf8String name : caClassNames)
-        schema->CreateCustomAttributeClass(caClasses[i++], name);
+        int i = 0;
+        for (Utf8String name : caClassNames)
+            schema->CreateCustomAttributeClass(caClasses[i++], name);
 
-    Utf8String schemaXml;
-    schema->WriteToXmlString(schemaXml);
+        Utf8String schemaXml;
+        schema->WriteToXmlString(schemaXml);
 
-    EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
+        EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
 
-    extendTargetXmlRegex(targetXmlRegexStr, "<ECCustomAttributes>");
-    targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, caClassNames, "<");
-    extendTargetXmlRegex(targetXmlRegexStr, "</ECCustomAttributes>");
+        extendTargetXmlRegex(targetXmlRegexStr, "<ECCustomAttributes>");
+        targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, caClassNames, "<");
+        extendTargetXmlRegex(targetXmlRegexStr, "</ECCustomAttributes>");
 
-    i = 0;
-    for (ECCustomAttributeClassP caClass : caClasses)
-        {
-        StandaloneECEnablerPtr enabler = caClass->GetDefaultStandaloneEnabler();
-        caInstances[i] = enabler->CreateInstance().get();
-        schema->SetCustomAttribute(*caInstances[i++]);
+        i = 0;
+        for (ECCustomAttributeClassP caClass : caClasses) {
+            StandaloneECEnablerPtr enabler = caClass->GetDefaultStandaloneEnabler();
+            caInstances[i] = enabler->CreateInstance().get();
+            schema->SetCustomAttribute(*caInstances[i++]);
         }
 
-    schema->WriteToXmlString(schemaXml);
+        schema->WriteToXmlString(schemaXml);
 
-    EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
+        EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
     }
 
     // create custom attribute classes and instances in reverse order, verify they serialize in order
     {
-    ECSchemaPtr schema;
-    bvector<ECCustomAttributeClassP> caClasses(4);
-    bvector<IECInstancePtr> caInstances(4);
+        ECSchemaPtr schema;
+        bvector<ECCustomAttributeClassP> caClasses(4);
+        bvector<IECInstancePtr> caInstances(4);
 
-    Utf8String targetXmlRegexStr;
-    std::regex targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, caClassNames, "<ECCustomAttributeClass typeName=\"");
+        Utf8String targetXmlRegexStr;
+        std::regex targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, caClassNames, "<ECCustomAttributeClass typeName=\"");
 
-    ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
+        ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
 
-    int i = (int)caClassNames.size();
-    for (Utf8String name : caClassNames)
-        schema->CreateCustomAttributeClass(caClasses[--i], name);
+        int i = (int)caClassNames.size();
+        for (Utf8String name : caClassNames)
+            schema->CreateCustomAttributeClass(caClasses[--i], name);
 
-    Utf8String schemaXml;
-    schema->WriteToXmlString(schemaXml);
+        Utf8String schemaXml;
+        schema->WriteToXmlString(schemaXml);
 
-    EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
+        EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
 
-    extendTargetXmlRegex(targetXmlRegexStr, "<ECCustomAttributes>");
-    targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, caClassNames, "<");
-    extendTargetXmlRegex(targetXmlRegexStr, "</ECCustomAttributes>");
+        extendTargetXmlRegex(targetXmlRegexStr, "<ECCustomAttributes>");
+        targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, caClassNames, "<");
+        extendTargetXmlRegex(targetXmlRegexStr, "</ECCustomAttributes>");
 
-    i = 0;
-    for (ECCustomAttributeClassP caClass : caClasses)
-        {
-        StandaloneECEnablerPtr enabler = caClass->GetDefaultStandaloneEnabler();
-        caInstances[i++] = enabler->CreateInstance().get();
+        i = 0;
+        for (ECCustomAttributeClassP caClass : caClasses) {
+            StandaloneECEnablerPtr enabler = caClass->GetDefaultStandaloneEnabler();
+            caInstances[i++] = enabler->CreateInstance().get();
         }
 
-    for (i = (int)caClassNames.size()-1; i >= 0; i--)
-        schema->SetCustomAttribute(*caInstances[i]);
+        for (i = (int)caClassNames.size() - 1; i >= 0; i--)
+            schema->SetCustomAttribute(*caInstances[i]);
 
-    schema->WriteToXmlString(schemaXml);
+        schema->WriteToXmlString(schemaXml);
 
-    EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
+        EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaXmlSerializationTest, ExpectCustomAttributeVersionAsTwoPartWhenEC2)
-    {
+TEST_F(SchemaXmlSerializationTest, ExpectCustomAttributeVersionAsTwoPartWhenEC2) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "testSchema", "ts", 5, 1, 0);
 
@@ -589,17 +575,16 @@ TEST_F(SchemaXmlSerializationTest, ExpectCustomAttributeVersionAsTwoPartWhenEC2)
 
     int numOfMatches = 0;
     size_t offset = 0;
-    while((offset = schemaXml.find("xmlns=\"testSchema.05.00\"", offset+1)) != Utf8String::npos)
+    while ((offset = schemaXml.find("xmlns=\"testSchema.05.00\"", offset + 1)) != Utf8String::npos)
         numOfMatches += 1;
 
     EXPECT_EQ(numOfMatches, 4);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaXmlSerializationTest, UnitAndFormatSchemasAreNotSerializedInEC31)
-    {
+TEST_F(SchemaXmlSerializationTest, UnitAndFormatSchemasAreNotSerializedInEC31) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ReferencesUnitAndFormatSchemas", "RUAFS", 1, 0, 0);
     schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
@@ -612,13 +597,12 @@ TEST_F(SchemaXmlSerializationTest, UnitAndFormatSchemasAreNotSerializedInEC31)
     schemaXml.clear();
     schema->WriteToXmlString(schemaXml, ECVersion::V3_2);
     EXPECT_TRUE(schemaXml.Contains("ECSchemaReference")) << "References to Unit and Format schemas should not have been stripped from EC 3.2 xml";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaXmlSerializationTest, AliasSetInECSchemaReferencePreservedOnRoundTrip)
-    {
+TEST_F(SchemaXmlSerializationTest, AliasSetInECSchemaReferencePreservedOnRoundTrip) {
     Utf8CP schemaXml = R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                             <ECSchemaReference name="Bentley_Standard_Classes" version="01.00" alias="bsc" />
                               <ECEntityClass typeName="A">
@@ -655,10 +639,9 @@ TEST_F(SchemaXmlSerializationTest, AliasSetInECSchemaReferencePreservedOnRoundTr
     refSchema = rtSchema->GetSchemaByAliasP("bsc");
     ASSERT_NE(nullptr, refSchema);
     EXPECT_STREQ("bsm", refSchema->GetAlias().c_str());
-    }
+}
 
-void validateFormat(Formatting::FormatCP format)
-    {
+void validateFormat(Formatting::FormatCP format) {
     ASSERT_NE(nullptr, format);
     EXPECT_TRUE(format->HasNumeric());
     EXPECT_TRUE(format->GetNumericSpec()->HasRoundingFactor());
@@ -686,13 +669,12 @@ void validateFormat(Formatting::FormatCP format)
     EXPECT_TRUE(format->HasCompositeMajorUnit());
     EXPECT_STREQ("kilogram", format->GetCompositeSpec()->GetMajorLabel().c_str());
     EXPECT_STREQ("KG", format->GetCompositeMajorUnit()->GetName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaXmlSerializationTest, CompositeFormatSpecRoundTripsAllValues)
-    {
+TEST_F(SchemaXmlSerializationTest, CompositeFormatSpecRoundTripsAllValues) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
                             <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                 <ECSchemaReference name="Units" version="01.00.00" alias="u" />
@@ -721,17 +703,16 @@ TEST_F(SchemaXmlSerializationTest, CompositeFormatSpecRoundTripsAllValues)
 
     Json::Value formatJSON;
     EXPECT_TRUE(format->ToJson(formatJSON, false));
-    
+
     Formatting::Format rtFormat;
     EXPECT_TRUE(ECFormat::FromJson(rtFormat, formatJSON, &rtSchema->GetUnitsContext()));
     validateFormat(&rtFormat);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaJsonSerializationTest, SchemaWithNoItems)
-    {
+TEST_F(SchemaJsonSerializationTest, SchemaWithNoItems) {
     ECSchemaPtr schema = SchemaJsonSerializationTest::CreateSchemaWithNoItems();
 
     BeJsDocument schemaJson;
@@ -743,13 +724,12 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithNoItems)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
-    {
+TEST_F(SchemaJsonSerializationTest, SchemaWithItems) {
     ECSchemaPtr schema = SchemaJsonSerializationTest::CreateSchemaWithNoItems();
     schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
     schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
@@ -778,8 +758,8 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     PrimitiveArrayECPropertyP primArrProp;
     structClass->CreatePrimitiveArrayProperty(primArrProp, "ExamplePrimitiveArray");
     primArrProp->SetPrimitiveElementType(ECN::PRIMITIVETYPE_Integer);
-    primArrProp->SetMinimumValue(ECValue((int32_t) 7));
-    primArrProp->SetMaximumValue(ECValue((int32_t) 20));
+    primArrProp->SetMinimumValue(ECValue((int32_t)7));
+    primArrProp->SetMaximumValue(ECValue((int32_t)20));
     primArrProp->SetMinOccurs(10);
     primArrProp->SetMaxOccurs(25);
     primArrProp->SetExtendedTypeName("FooBar");
@@ -815,7 +795,7 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     // UnitSystem
     UnitSystemP unitSystem;
     schema->CreateUnitSystem(unitSystem, "ExampleUnitSystem", "ExampleUnitSystemLabel", "ExampleUnitSystemDescription");
-    
+
     // Phenomenon
     PhenomenonP phenom;
     schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH", "ExamplePhenomenonLabel", "ExamplePhenomenonDescription");
@@ -875,13 +855,12 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaXmlSerializationTest, PruneUnnamedEcItemsDuringSerialization )
-    {
+TEST_F(SchemaXmlSerializationTest, PruneUnnamedEcItemsDuringSerialization) {
     ECSchemaReadContextPtr readCtx = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr initialSchema;
@@ -895,7 +874,7 @@ TEST_F(SchemaXmlSerializationTest, PruneUnnamedEcItemsDuringSerialization )
     PrimitiveECPropertyP prop;
     EXPECT_EQ(ECObjectsStatus::InvalidName, class1->CreatePrimitiveProperty(prop, "", PrimitiveType::PRIMITIVETYPE_Integer))
         << "cannot create a property with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     class1->CreatePrimitiveProperty(prop, "Prop", PrimitiveType::PRIMITIVETYPE_Integer));
+    ASSERT_EQ(ECObjectsStatus::Success, class1->CreatePrimitiveProperty(prop, "Prop", PrimitiveType::PRIMITIVETYPE_Integer));
 
     ECSchemaPtr actualSchema;
     Utf8String initialSchemaXml;
@@ -904,48 +883,47 @@ TEST_F(SchemaXmlSerializationTest, PruneUnnamedEcItemsDuringSerialization )
 
     auto GetClass1 = [&](ECSchemaPtr s) { return s->GetClassCP(class1->GetName().c_str()); };
     EXPECT_NE(nullptr, GetClass1(initialSchema)) << "initialSchema should not prune non-empty named items";
-    EXPECT_NE(nullptr, GetClass1(actualSchema))  << "actualSchema should not prune non-empty named items";
+    EXPECT_NE(nullptr, GetClass1(actualSchema)) << "actualSchema should not prune non-empty named items";
 
     auto GetPropCateg = [&](ECSchemaPtr s) { return s->GetPropertyCategoryCP(propCateg->GetName().c_str()); };
     EXPECT_NE(nullptr, GetPropCateg(initialSchema)) << "initialSchema should not have pruned empty named items";
-    EXPECT_EQ(nullptr, GetPropCateg(actualSchema))  << "actualSchema should have pruned empty named items during deserialization";
+    EXPECT_EQ(nullptr, GetPropCateg(actualSchema)) << "actualSchema should have pruned empty named items during deserialization";
 
     auto GetProp = [&](ECSchemaPtr s) { return GetClass1(s)->GetPropertyP(prop->GetName().c_str()); };
     EXPECT_NE(nullptr, GetProp(initialSchema)) << "initialSchema should not prune non-empty named items";
-    EXPECT_NE(nullptr, GetProp(actualSchema))  << "actualSchema should not prune non-empty named items";
-    }
+    EXPECT_NE(nullptr, GetProp(actualSchema)) << "actualSchema should not prune non-empty named items";
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaXmlSerializationTest, TrySerializeReferencedNamelessItems)
-    {
+TEST_F(SchemaXmlSerializationTest, TrySerializeReferencedNamelessItems) {
     ECSchemaReadContextPtr readCtx = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr initialSchema;
     EXPECT_EQ(ECObjectsStatus::InvalidName, ECSchema::CreateSchema(initialSchema, "", "ts", 1, 0, 0))
         << "cannot create a schema with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     ECSchema::CreateSchema(initialSchema, "initialSchema", "ts", 1, 0, 0));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(initialSchema, "initialSchema", "ts", 1, 0, 0));
     initialSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
     initialSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
 
     ECEntityClassP baseEntityClass;
     EXPECT_EQ(ECObjectsStatus::InvalidName, initialSchema->CreateEntityClass(baseEntityClass, "")) << "cannot create an entity class with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     initialSchema->CreateEntityClass(baseEntityClass, "baseEntityClass"));
+    ASSERT_EQ(ECObjectsStatus::Success, initialSchema->CreateEntityClass(baseEntityClass, "baseEntityClass"));
     initialSchema->CreateEntityClass(baseEntityClass, "");
 
     ECStructClassP structClass;
     EXPECT_EQ(ECObjectsStatus::InvalidName, initialSchema->CreateStructClass(structClass, "")) << "cannot create a struct class with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     initialSchema->CreateStructClass(structClass, "structClass"));
+    ASSERT_EQ(ECObjectsStatus::Success, initialSchema->CreateStructClass(structClass, "structClass"));
     structClass->SetClassModifier(ECClassModifier::Sealed);
 
     PrimitiveArrayECPropertyP primArrProp;
     EXPECT_EQ(ECObjectsStatus::InvalidName, structClass->CreatePrimitiveArrayProperty(primArrProp, ""))
         << "cannot create a primitive array property with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     structClass->CreatePrimitiveArrayProperty(primArrProp, "primArrProp"));
+    ASSERT_EQ(ECObjectsStatus::Success, structClass->CreatePrimitiveArrayProperty(primArrProp, "primArrProp"));
     primArrProp->SetPrimitiveElementType(ECN::PRIMITIVETYPE_Integer);
-    primArrProp->SetMinimumValue(ECValue((int32_t) 7));
-    primArrProp->SetMaximumValue(ECValue((int32_t) 20));
+    primArrProp->SetMinimumValue(ECValue((int32_t)7));
+    primArrProp->SetMaximumValue(ECValue((int32_t)20));
     primArrProp->SetMinOccurs(10);
     primArrProp->SetMaxOccurs(25);
     primArrProp->SetExtendedTypeName("FooBar");
@@ -954,22 +932,22 @@ TEST_F(SchemaXmlSerializationTest, TrySerializeReferencedNamelessItems)
     ECEntityClassP class1;
     EXPECT_EQ(ECObjectsStatus::InvalidName, initialSchema->CreateEntityClass(class1, ""))
         << "cannot create a class with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     initialSchema->CreateEntityClass(class1, "class1"));
+    ASSERT_EQ(ECObjectsStatus::Success, initialSchema->CreateEntityClass(class1, "class1"));
 
     PrimitiveECPropertyP primProp;
     EXPECT_EQ(ECObjectsStatus::InvalidName, class1->CreatePrimitiveProperty(primProp, "", PrimitiveType::PRIMITIVETYPE_Integer))
         << "cannot create a primitive property with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     class1->CreatePrimitiveProperty(primProp, "primProp", PrimitiveType::PRIMITIVETYPE_Integer));
+    ASSERT_EQ(ECObjectsStatus::Success, class1->CreatePrimitiveProperty(primProp, "primProp", PrimitiveType::PRIMITIVETYPE_Integer));
 
     StructECPropertyP structProp;
     EXPECT_EQ(ECObjectsStatus::InvalidName, class1->CreateStructProperty(structProp, "", *structClass))
         << "cannot create a struct property with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     class1->CreateStructProperty(structProp, "structProp", *structClass));
+    ASSERT_EQ(ECObjectsStatus::Success, class1->CreateStructProperty(structProp, "structProp", *structClass));
 
     StructArrayECPropertyP structArrayProp;
     EXPECT_EQ(ECObjectsStatus::InvalidName, class1->CreateStructArrayProperty(structArrayProp, "", *structClass))
         << "cannot create a struct array property with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     class1->CreateStructArrayProperty(structArrayProp, "structArrayProp", *structClass));
+    ASSERT_EQ(ECObjectsStatus::Success, class1->CreateStructArrayProperty(structArrayProp, "structArrayProp", *structClass));
 
     PropertyCategoryP emptyNamedPropCateg;
     EXPECT_EQ(ECObjectsStatus::Success, initialSchema->CreatePropertyCategory(emptyNamedPropCateg, ""))
@@ -1005,13 +983,12 @@ TEST_F(SchemaXmlSerializationTest, TrySerializeReferencedNamelessItems)
     EXPECT_EQ(nullptr, roundTripSchema->GetClassCP(name(class1))->GetPropertyP(name(structArrayProp))->GetCategory());
     EXPECT_EQ(nullptr, roundTripSchema->GetClassCP(name(structClass))->GetPropertyP(name(primArrProp))->GetCategory());
     EXPECT_NE(nullptr, roundTripSchema->GetClassCP(name(class1))->GetPropertyP(name(primPropWithValidCateg))->GetCategory());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaJsonSerializationTest, PruneUnnamedEcItemsDuringSerialization)
-    {
+TEST_F(SchemaJsonSerializationTest, PruneUnnamedEcItemsDuringSerialization) {
     ECSchemaReadContextPtr readCtx = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr initialSchema;
@@ -1019,7 +996,7 @@ TEST_F(SchemaJsonSerializationTest, PruneUnnamedEcItemsDuringSerialization)
     ECEntityClassP class1;
     EXPECT_EQ(ECObjectsStatus::InvalidName, initialSchema->CreateEntityClass(class1, ""))
         << "cannot create a class with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     initialSchema->CreateEntityClass(class1, "TestClass"));
+    ASSERT_EQ(ECObjectsStatus::Success, initialSchema->CreateEntityClass(class1, "TestClass"));
 
     PropertyCategoryP namelessCategory = nullptr;
     EXPECT_EQ(ECObjectsStatus::Success, initialSchema->CreatePropertyCategory(namelessCategory, ""))
@@ -1031,7 +1008,7 @@ TEST_F(SchemaJsonSerializationTest, PruneUnnamedEcItemsDuringSerialization)
     PrimitiveECPropertyP namelessReferencingProp;
     EXPECT_EQ(ECObjectsStatus::InvalidName, class1->CreatePrimitiveProperty(namelessReferencingProp, "", PrimitiveType::PRIMITIVETYPE_Integer))
         << "cannot create a property with an empty name";
-    ASSERT_EQ(ECObjectsStatus::Success,     class1->CreatePrimitiveProperty(namelessReferencingProp, "NamelessReffingProp", PrimitiveType::PRIMITIVETYPE_Integer));
+    ASSERT_EQ(ECObjectsStatus::Success, class1->CreatePrimitiveProperty(namelessReferencingProp, "NamelessReffingProp", PrimitiveType::PRIMITIVETYPE_Integer));
     namelessReferencingProp->SetCategory(namelessCategory);
 
     PrimitiveECPropertyP namedReferencingProp;
@@ -1082,6 +1059,6 @@ TEST_F(SchemaJsonSerializationTest, PruneUnnamedEcItemsDuringSerialization)
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(expectedSchemaJson, actualSchemaJson))
         << ECTestUtility::JsonSchemasComparisonString(expectedSchemaJson, actualSchemaJson);
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

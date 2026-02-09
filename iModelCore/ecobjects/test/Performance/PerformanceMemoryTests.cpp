@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "PerformanceTestFixture.h"
 
@@ -9,55 +9,51 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct ECSchemaMemoryTests : PerformanceTestFixture
-{
-void TestSchema(WString schemaPath)
-    {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false, true);
-    schemaContext->AddSchemaPath(GetAssetsGDataPath({L"ECSchemas", L"ECDb"}).c_str());
-    schemaContext->AddSchemaPath(GetAssetsGDataPath({L"ECSchemas", L"Dgn"}).c_str());
-    schemaContext->AddSchemaPath(GetAssetsGDataPath({L"ECSchemas", L"Domain"}).c_str());
+struct ECSchemaMemoryTests : PerformanceTestFixture {
+    void TestSchema(WString schemaPath) {
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false, true);
+        schemaContext->AddSchemaPath(GetAssetsGDataPath({L"ECSchemas", L"ECDb"}).c_str());
+        schemaContext->AddSchemaPath(GetAssetsGDataPath({L"ECSchemas", L"Dgn"}).c_str());
+        schemaContext->AddSchemaPath(GetAssetsGDataPath({L"ECSchemas", L"Domain"}).c_str());
 
-    MeasureSchemaMemory(schemaPath, schemaContext, TEST_FIXTURE_NAME);
+        MeasureSchemaMemory(schemaPath, schemaContext, TEST_FIXTURE_NAME);
     }
 };
 
-TEST_F(ECSchemaMemoryTests, SizeOfObjects)
-    {
+TEST_F(ECSchemaMemoryTests, SizeOfObjects) {
     BeJsDocument ecSizes;
-    ecSizes["ECSchema"] = (int) sizeof(ECSchema);
-    ecSizes["ECClass"] = (int) sizeof(ECClass);
-    ecSizes["ECEntityClass"] = (int) sizeof(ECEntityClass);
-    ecSizes["ECCustomAttributeClass"] = (int) sizeof(ECCustomAttributeClass);
-    ecSizes["ECStructClass"] = (int) sizeof(ECStructClass);
-    ecSizes["ECRelationshipClass"] = (int) sizeof(ECRelationshipClass);
-    ecSizes["ECRelationshipConstraint"] = (int) sizeof(ECRelationshipConstraint);
-    ecSizes["ECProperty"] = (int) sizeof(ECProperty);
-    ecSizes["PrimitiveECProperty"] = (int) sizeof(PrimitiveECProperty);
-    ecSizes["StructECProperty"] = (int) sizeof(StructECProperty);
-    ecSizes["PrimitiveArrayECProperty"] = (int) sizeof(PrimitiveArrayECProperty);
-    ecSizes["StructArrayECProperty"] = (int) sizeof(StructArrayECProperty);
-    ecSizes["NavigationECProperty"] = (int) sizeof(NavigationECProperty);
-    ecSizes["ArrayECProperty"] = (int) sizeof(ArrayECProperty);
-    ecSizes["ECEnumeration"] = (int) sizeof(ECEnumeration);
-    ecSizes["ECEnumerator"] = (int) sizeof(ECEnumerator);
-    ecSizes["KindOfQuantity"] = (int) sizeof(KindOfQuantity);
-    ecSizes["ECUnit"] = (int) sizeof(ECUnit);
-    ecSizes["UnitSystem"] = (int) sizeof(UnitSystem);
-    ecSizes["Phenomenon"] = (int) sizeof(Phenomenon);
-    ecSizes["ECFormat"] = (int) sizeof(ECFormat);
-    ecSizes["NamedFormat"] = (int) sizeof(NamedFormat);
-    ecSizes["IECCustomAttributeContainer"] = (int) sizeof(IECCustomAttributeContainer);
+    ecSizes["ECSchema"] = (int)sizeof(ECSchema);
+    ecSizes["ECClass"] = (int)sizeof(ECClass);
+    ecSizes["ECEntityClass"] = (int)sizeof(ECEntityClass);
+    ecSizes["ECCustomAttributeClass"] = (int)sizeof(ECCustomAttributeClass);
+    ecSizes["ECStructClass"] = (int)sizeof(ECStructClass);
+    ecSizes["ECRelationshipClass"] = (int)sizeof(ECRelationshipClass);
+    ecSizes["ECRelationshipConstraint"] = (int)sizeof(ECRelationshipConstraint);
+    ecSizes["ECProperty"] = (int)sizeof(ECProperty);
+    ecSizes["PrimitiveECProperty"] = (int)sizeof(PrimitiveECProperty);
+    ecSizes["StructECProperty"] = (int)sizeof(StructECProperty);
+    ecSizes["PrimitiveArrayECProperty"] = (int)sizeof(PrimitiveArrayECProperty);
+    ecSizes["StructArrayECProperty"] = (int)sizeof(StructArrayECProperty);
+    ecSizes["NavigationECProperty"] = (int)sizeof(NavigationECProperty);
+    ecSizes["ArrayECProperty"] = (int)sizeof(ArrayECProperty);
+    ecSizes["ECEnumeration"] = (int)sizeof(ECEnumeration);
+    ecSizes["ECEnumerator"] = (int)sizeof(ECEnumerator);
+    ecSizes["KindOfQuantity"] = (int)sizeof(KindOfQuantity);
+    ecSizes["ECUnit"] = (int)sizeof(ECUnit);
+    ecSizes["UnitSystem"] = (int)sizeof(UnitSystem);
+    ecSizes["Phenomenon"] = (int)sizeof(Phenomenon);
+    ecSizes["ECFormat"] = (int)sizeof(ECFormat);
+    ecSizes["NamedFormat"] = (int)sizeof(NamedFormat);
+    ecSizes["IECCustomAttributeContainer"] = (int)sizeof(IECCustomAttributeContainer);
 
     size_t totalSize = 0;
-    ecSizes.ForEachArrayMemberValue([&](BeJsValue::ArrayIndex, BeJsValue size)
-        {
+    ecSizes.ForEachArrayMemberValue([&](BeJsValue::ArrayIndex, BeJsValue size) {
         totalSize += size.asUInt64();
         return false;
-        });
+    });
 
     LOGPERFDB(TEST_DETAILS, "sizeof for all EC structs", (double)totalSize, ecSizes.Stringify().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -89,6 +85,5 @@ TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest4) { MeasureSchemaMemoryUs
 TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest5) { MeasureSchemaMemoryUsage(PerformanceTestFixture::GenerateSchema10Root15Deep3Mixin5PropsAndOverridesPublic, TEST_FIXTURE_NAME); }
 TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest6) { MeasureSchemaMemoryUsage(PerformanceTestFixture::GenerateSchema300Root3Deep200PropsPublic, TEST_FIXTURE_NAME); }
 TEST_F(ECSchemaMemoryTests, SyntheticSchemasMemoryTest7) { MeasureSchemaMemoryUsage(PerformanceTestFixture::GenerateSchema50Root5Deep3Mixin5PropsPublic, TEST_FIXTURE_NAME); }
-
 
 END_BENTLEY_ECN_TEST_NAMESPACE

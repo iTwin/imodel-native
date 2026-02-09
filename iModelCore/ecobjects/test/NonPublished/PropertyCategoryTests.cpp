@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -15,73 +15,69 @@ struct PropertyCategoryDeserializationTest : ECTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCategoryTest, BasicPropertyCategoryCreation)
-    {
+TEST_F(PropertyCategoryTest, BasicPropertyCategoryCreation) {
     ECSchemaPtr schema;
     PropertyCategoryP propCategory;
-    
+
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(propCategory, "PropertyCategory"));
 
     EXPECT_EQ(ECObjectsStatus::Success, propCategory->SetDescription("TestDescription"));
     EXPECT_STREQ("TestDescription", propCategory->GetDescription().c_str());
-    
+
     EXPECT_EQ(ECObjectsStatus::Success, propCategory->SetDisplayLabel("DisplayLabel"));
     EXPECT_STREQ("DisplayLabel", propCategory->GetDisplayLabel().c_str());
 
     EXPECT_EQ(ECObjectsStatus::Success, propCategory->SetPriority(2));
     EXPECT_EQ(2, propCategory->GetPriority());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCategoryTest, PropertyCategoryContainer)
-    {
+TEST_F(PropertyCategoryTest, PropertyCategoryContainer) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
 
     {
-    PropertyCategoryP propCategory;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(propCategory, "PropertyCategory1"));
-    EXPECT_TRUE(nullptr != propCategory);
-    propCategory->SetDescription("The first PropertyCategory with priority of 2");
-    propCategory->SetDisplayLabel("PropertyCategory_Priority2");
-    propCategory->SetPriority(2);
+        PropertyCategoryP propCategory;
+        EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(propCategory, "PropertyCategory1"));
+        EXPECT_TRUE(nullptr != propCategory);
+        propCategory->SetDescription("The first PropertyCategory with priority of 2");
+        propCategory->SetDisplayLabel("PropertyCategory_Priority2");
+        propCategory->SetPriority(2);
     }
     {
-    PropertyCategoryP propCategory;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(propCategory, "PropertyCategory2"));
-    EXPECT_TRUE(nullptr != propCategory);
-    propCategory->SetDescription("The second PropertyCategory with priority of 0");
-    propCategory->SetDisplayLabel("PropertyCategory_Priority0");
-    propCategory->SetPriority(0);
+        PropertyCategoryP propCategory;
+        EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(propCategory, "PropertyCategory2"));
+        EXPECT_TRUE(nullptr != propCategory);
+        propCategory->SetDescription("The second PropertyCategory with priority of 0");
+        propCategory->SetDisplayLabel("PropertyCategory_Priority0");
+        propCategory->SetPriority(0);
     }
     {
-    PropertyCategoryP propCategory;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(propCategory, "PropertyCategory3"));
-    EXPECT_TRUE(nullptr != propCategory);
-    propCategory->SetDescription("The third PropertyCategory with priority of 1");
-    propCategory->SetDisplayLabel("PropertyCategory_Priority1");
-    propCategory->SetPriority(1);
+        PropertyCategoryP propCategory;
+        EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(propCategory, "PropertyCategory3"));
+        EXPECT_TRUE(nullptr != propCategory);
+        propCategory->SetDescription("The third PropertyCategory with priority of 1");
+        propCategory->SetDisplayLabel("PropertyCategory_Priority1");
+        propCategory->SetPriority(1);
     }
     {
-    PropertyCategoryP propCategory;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(propCategory, "PropertyCategory4"));
-    EXPECT_TRUE(nullptr != propCategory);
-    propCategory->SetDescription("The fourth PropertyCategory with priority of 3");
-    propCategory->SetDisplayLabel("PropertyCategory_Priority3");
-    propCategory->SetPriority(3);
+        PropertyCategoryP propCategory;
+        EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(propCategory, "PropertyCategory4"));
+        EXPECT_TRUE(nullptr != propCategory);
+        propCategory->SetDescription("The fourth PropertyCategory with priority of 3");
+        propCategory->SetDisplayLabel("PropertyCategory_Priority3");
+        propCategory->SetPriority(3);
     }
 
     EXPECT_EQ(4, schema->GetPropertyCategoryCount());
     int curCount = 0;
-    for (PropertyCategoryCP propCategory : schema->GetPropertyCategories())
-        {
+    for (PropertyCategoryCP propCategory : schema->GetPropertyCategories()) {
         EXPECT_TRUE(nullptr != propCategory);
-        switch (curCount)
-            {
+        switch (curCount) {
             case 0:
                 EXPECT_STREQ("PropertyCategory1", propCategory->GetName().c_str());
                 EXPECT_STREQ("The first PropertyCategory with priority of 2", propCategory->GetDescription().c_str());
@@ -106,17 +102,16 @@ TEST_F(PropertyCategoryTest, PropertyCategoryContainer)
                 EXPECT_STREQ("PropertyCategory_Priority3", propCategory->GetDisplayLabel().c_str());
                 EXPECT_EQ(3, propCategory->GetPriority());
                 break;
-            }
+        }
 
         curCount++;
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PropertyCategoryTest, StandaloneSchemaItemPropertyCategory)
-    {
+TEST_F(PropertyCategoryTest, StandaloneSchemaItemPropertyCategory) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
@@ -133,13 +128,12 @@ TEST_F(PropertyCategoryTest, StandaloneSchemaItemPropertyCategory)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCategoryTest, LookupPropertyCategoryTest)
-    {
+TEST_F(PropertyCategoryTest, LookupPropertyCategoryTest) {
     Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="ref" version="01.00.00" alias="r" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <PropertyCategory typeName="propCategory" displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="2"/>
@@ -196,13 +190,12 @@ TEST_F(PropertyCategoryTest, LookupPropertyCategoryTest)
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
     ASSERT_EQ(1, schema->GetPropertyCategoryCount());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCategoryDeserializationTest, BasicRoundTripTest)
-    {
+TEST_F(PropertyCategoryDeserializationTest, BasicRoundTripTest) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <PropertyCategory typeName="propCategory" displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="2"/>
@@ -222,7 +215,7 @@ TEST_F(PropertyCategoryDeserializationTest, BasicRoundTripTest)
 
     Utf8String serializedSchemaXml;
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
-    
+
     ECSchemaPtr serializedSchema;
     ECSchemaReadContextPtr serializedContext = ECSchemaReadContext::CreateContext();
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(serializedSchema, serializedSchemaXml.c_str(), *serializedContext));
@@ -233,64 +226,62 @@ TEST_F(PropertyCategoryDeserializationTest, BasicRoundTripTest)
     EXPECT_STREQ("PropertyCategory", serializedPropCategory->GetDisplayLabel().c_str());
     EXPECT_STREQ("This is an awesome new Property Category", serializedPropCategory->GetDescription().c_str());
     EXPECT_EQ(2, serializedPropCategory->GetPriority());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCategoryDeserializationTest, MissingOrInvalidName)
+TEST_F(PropertyCategoryDeserializationTest, MissingOrInvalidName) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <PropertyCategory displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="0"/>
         </ECSchema>)xml";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     }
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <PropertyCategory typeName="" displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="0"/>
         </ECSchema>)xml";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     }
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <PropertyCategory typeName="" displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="0"/>
         </ECSchema>)xml";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCategoryDeserializationTest, MissingDisplayLabel)
+TEST_F(PropertyCategoryDeserializationTest, MissingDisplayLabel) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <PropertyCategory typeName="aUniquePropertyCategory" description="This is an awesome new Property Category" priority="0"/>
         </ECSchema>)xml";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    ASSERT_TRUE(schema.IsValid());
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        ASSERT_TRUE(schema.IsValid());
 
-    PropertyCategoryCP propCat = schema->GetPropertyCategoryCP("aUniquePropertyCategory");
-    EXPECT_STREQ("aUniquePropertyCategory", propCat->GetDisplayLabel().c_str());
+        PropertyCategoryCP propCat = schema->GetPropertyCategoryCP("aUniquePropertyCategory");
+        EXPECT_STREQ("aUniquePropertyCategory", propCat->GetDisplayLabel().c_str());
     }
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

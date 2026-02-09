@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <assert.h>
@@ -13,83 +13,81 @@
 #include <ECObjects/ECObjects.h>
 
 //! This class is utilzed by the macros defined in this header file.  No calling code should typically ever need to use this class directly.
-struct AssertDisabler
-{
-private:
+struct AssertDisabler {
+   private:
     static int s_globalIgnoreCount;
 
-public:
-    ECOBJECTS_EXPORT static bool AreAssertsDisabled (void);
+   public:
+    ECOBJECTS_EXPORT static bool AreAssertsDisabled(void);
     ECOBJECTS_EXPORT AssertDisabler(void);
     ECOBJECTS_EXPORT ~AssertDisabler(void);
 };
 
-    //! Utilize this macro to disable asserts that may occur within a codeblock.
-    //! The intent is that this macro will only ever be used by ATPs when testing failure scenarios.  No delivered code should ever utilize this macro.
-    //! This macro can only be used once within a codeblock and will disable any assert that may occur within the context of that codeblock.
-    //! Usage within Nested codeblocks and method calls are valid.
-    //! Let's assume the following method exists in a library
-    //! \code
-    //! StatusInt SetHour (int hour)
-    //!      {
-    //!      PRECONDITION (0 <= hour && hour <= 23, ERROR);
-    //!      m_hour = hour;
-    //!      return SUCCESS;
-    //!      }
-    //! \endcode
-    //! Aside from logging and returning the specified ERROR, the PRECONDITION macro will assert in debug builds when argument <= 0.  Now let's assume you wanted
-    //! to write a test case that validated this expected failure condition.  You would encounter problems in a debug build because the assertion dialog would display and
-    //! interrupt a test that was designed to target this failure.  You can DISABLE_ASSERTS in the context of executing this method from your test in order to prevent such
-    //! scenario from occuring.
-    //! \code
-    //!   void TestFailureAndSuccessScenarioInAFunctionThatWillAssert
-    //!       {
-    //!         {
-    //!         DISABLE_ASSERTS
-    //!         EXPECT_EQ (ERROR, ExpectArgumentGreaterThenZero (-1));
-    //!         }
-    //!       EXPECT_EQ (SUCCESS, ExpectArgumentGreaterThenZero (-1));
-    //!       };
-    //! \endcode
-    #define DISABLE_ASSERTS           AssertDisabler assertDisabler;
+//! Utilize this macro to disable asserts that may occur within a codeblock.
+//! The intent is that this macro will only ever be used by ATPs when testing failure scenarios.  No delivered code should ever utilize this macro.
+//! This macro can only be used once within a codeblock and will disable any assert that may occur within the context of that codeblock.
+//! Usage within Nested codeblocks and method calls are valid.
+//! Let's assume the following method exists in a library
+//! \code
+//! StatusInt SetHour (int hour)
+//!      {
+//!      PRECONDITION (0 <= hour && hour <= 23, ERROR);
+//!      m_hour = hour;
+//!      return SUCCESS;
+//!      }
+//! \endcode
+//! Aside from logging and returning the specified ERROR, the PRECONDITION macro will assert in debug builds when argument <= 0.  Now let's assume you wanted
+//! to write a test case that validated this expected failure condition.  You would encounter problems in a debug build because the assertion dialog would display and
+//! interrupt a test that was designed to target this failure.  You can DISABLE_ASSERTS in the context of executing this method from your test in order to prevent such
+//! scenario from occuring.
+//! \code
+//!   void TestFailureAndSuccessScenarioInAFunctionThatWillAssert
+//!       {
+//!         {
+//!         DISABLE_ASSERTS
+//!         EXPECT_EQ (ERROR, ExpectArgumentGreaterThenZero (-1));
+//!         }
+//!       EXPECT_EQ (SUCCESS, ExpectArgumentGreaterThenZero (-1));
+//!       };
+//! \endcode
+#define DISABLE_ASSERTS AssertDisabler assertDisabler;
 
 #ifndef DOCUMENTATION_GENERATOR
-#ifdef  NDEBUG
-    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message) (void)0
-    #define DATA_ASSERT_FALSE_IF_NOT_DISABLED(_Message) (void)0
+#ifdef NDEBUG
+#define ASSERT_FALSE_IF_NOT_DISABLED(_Message) (void)0
+#define DATA_ASSERT_FALSE_IF_NOT_DISABLED(_Message) (void)0
 #else
-    //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
-    // Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
-    #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (BeAssert(_Message), 0))
-    #define DATA_ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (BeDataAssert(_Message), 0))
+//! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
+// Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
+#define ASSERT_FALSE_IF_NOT_DISABLED(_Message) (void)((AssertDisabler::AreAssertsDisabled()) || (BeAssert(_Message), 0))
+#define DATA_ASSERT_FALSE_IF_NOT_DISABLED(_Message) (void)((AssertDisabler::AreAssertsDisabled()) || (BeDataAssert(_Message), 0))
 #endif
 
-#if defined(NDEBUG) && !defined (LOG_ASSERT_IN_PRODUCTION_CODE)
-    #define LOG_ASSERT_FAILURE(_LogMessage, ...) (void)0
+#if defined(NDEBUG) && !defined(LOG_ASSERT_IN_PRODUCTION_CODE)
+#define LOG_ASSERT_FAILURE(_LogMessage, ...) (void)0
 #else
-    #define LOG_ASSERT_FAILURE(_LogMessage, ...) ECN::LogFailureMessage(_LogMessage, ## __VA_ARGS__)
+#define LOG_ASSERT_FAILURE(_LogMessage, ...) ECN::LogFailureMessage(_LogMessage, ##__VA_ARGS__)
 #endif
 
 //! Avoid direct use of this function.  It is only intended for use by macros defined in this file.
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
+ECOBJECTS_EXPORT void LogFailureMessage(WCharCP message, ...);
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
-#define LOG_ASSERT_RETURN(_Expression, _ErrorStatus, _LogMessage, ...)           \
-        {                                                           \
-        LOG_ASSERT_FAILURE (_LogMessage, ## __VA_ARGS__);           \
-        ASSERT_FALSE_IF_NOT_DISABLED(_Expression);                  \
-        return _ErrorStatus;                                        \
-        }
+#define LOG_ASSERT_RETURN(_Expression, _ErrorStatus, _LogMessage, ...) \
+    {                                                                  \
+        LOG_ASSERT_FAILURE(_LogMessage, ##__VA_ARGS__);                \
+        ASSERT_FALSE_IF_NOT_DISABLED(_Expression);                     \
+        return _ErrorStatus;                                           \
+    }
 
 //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
-#define EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, _LogMessage, ...)       \
-    {\
-    if (!(_Expression))                                                         \
-        {                                                                       \
-        LOG_ASSERT_RETURN(_Expression, _ErrorStatus, _LogMessage, ## __VA_ARGS__)            \
-        }\
+#define EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, _LogMessage, ...) \
+    {                                                                                   \
+        if (!(_Expression)) {                                                           \
+            LOG_ASSERT_RETURN(_Expression, _ErrorStatus, _LogMessage, ##__VA_ARGS__)    \
+        }                                                                               \
     }
 
 //! This macro should be utilized in published API methods to enforce any restrictions on the parameters of the method and/or data members as a way to
@@ -106,11 +104,10 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 //!      return SUCCESS;
 //!      }
 //! \endcode
-#define PRECONDITION(_Expression, _ErrorStatus)             \
-        EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, \
-        L"Precondition failed: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", \
-        WString(#_Expression, BentleyCharEncoding::Utf8).c_str(), WString(__FUNCTION__, BentleyCharEncoding::Utf8).c_str(), WString(__FILE__, BentleyCharEncoding::Utf8).c_str(), __LINE__)
-
+#define PRECONDITION(_Expression, _ErrorStatus)                                                               \
+    EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus,                                             \
+                                       L"Precondition failed: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", \
+                                       WString(#_Expression, BentleyCharEncoding::Utf8).c_str(), WString(__FUNCTION__, BentleyCharEncoding::Utf8).c_str(), WString(__FILE__, BentleyCharEncoding::Utf8).c_str(), __LINE__)
 
 //! This macro should be utilized in published API methods to enforce the post-conditions.  The post-conditions of a method are a series of assertions near the
 //! end of the method that check that the method actually did what it said it would do. It's a double-check on the method's implementation.
@@ -131,11 +128,10 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 //!      return SUCCESS;
 //!      }
 //! \endcode
-#define POSTCONDITION(_Expression, _ErrorStatus)            \
-        EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, \
-            L"Postcondition failed: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", \
-            WString(#_Expression, BentleyCharEncoding::Utf8).c_str(), WString(__FUNCTION__, BentleyCharEncoding::Utf8).c_str(), WString(__FILE__, BentleyCharEncoding::Utf8).c_str(), __LINE__)
-
+#define POSTCONDITION(_Expression, _ErrorStatus)                                                               \
+    EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus,                                              \
+                                       L"Postcondition failed: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", \
+                                       WString(#_Expression, BentleyCharEncoding::Utf8).c_str(), WString(__FUNCTION__, BentleyCharEncoding::Utf8).c_str(), WString(__FILE__, BentleyCharEncoding::Utf8).c_str(), __LINE__)
 
 //! This macro should be utilized to check that an expected condition is true.  If the condition evaluates to false the macro will log and BeAssert leaving it to the caller
 //! to return an error code or take any additional action.
@@ -150,9 +146,7 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 //!         return MyStatus::ERROR_ItFailed;
 //!         }
 //! \endcode
-#define EXPECTED_CONDITION(_Expression)     ( (_Expression) \
-    || (LOG_ASSERT_FAILURE(L"Expected condition failed: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", WString(#_Expression, BentleyCharEncoding::Utf8).c_str(), WString(__FUNCTION__, BentleyCharEncoding::Utf8).c_str(), WString(__FILE__, BentleyCharEncoding::Utf8).c_str(), __LINE__), 0) \
-    || (ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
+#define EXPECTED_CONDITION(_Expression) ((_Expression) || (LOG_ASSERT_FAILURE(L"Expected condition failed: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", WString(#_Expression, BentleyCharEncoding::Utf8).c_str(), WString(__FUNCTION__, BentleyCharEncoding::Utf8).c_str(), WString(__FILE__, BentleyCharEncoding::Utf8).c_str(), __LINE__), 0) || (ASSERT_FALSE_IF_NOT_DISABLED(_Expression), 0))
 
 //! An inverted form of EXPECTED_CONDITION if you prefer checking for the positive of an expression when writing your code.
 //! @see EXPECTED_CONDITION
@@ -179,9 +173,7 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 //!         return MyStatus::ERROR_ItFailed;
 //!         }
 //! \endcode
-#define EXPECTED_DATA_CONDITION(_Expression)     ( (_Expression) \
-    || (LOG_ASSERT_FAILURE(L"Expected condition failed: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", WString(#_Expression, BentleyCharEncoding::Utf8).c_str(), WString(__FUNCTION__, BentleyCharEncoding::Utf8).c_str(), WString(__FILE__, BentleyCharEncoding::Utf8).c_str(), __LINE__), 0) \
-    || (DATA_ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
+#define EXPECTED_DATA_CONDITION(_Expression) ((_Expression) || (LOG_ASSERT_FAILURE(L"Expected condition failed: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", WString(#_Expression, BentleyCharEncoding::Utf8).c_str(), WString(__FUNCTION__, BentleyCharEncoding::Utf8).c_str(), WString(__FILE__, BentleyCharEncoding::Utf8).c_str(), __LINE__), 0) || (DATA_ASSERT_FALSE_IF_NOT_DISABLED(_Expression), 0))
 
 //! An inverted form of EXPECTED_DATA_CONDITION if you prefer checking for the positive of an expression when writing your code.
 //! @see EXPECTED_DATA_CONDITION
@@ -196,13 +188,13 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 #define UNEXPECTED_DATA_CONDITION(_Expression) !EXPECTED_DATA_CONDITION(!(_Expression))
 
 #ifdef NDEBUG
-    #define DEBUG_EXPECT(_Expression) (void)0
-    #define DEBUG_FAIL(_Message) (void)0
+#define DEBUG_EXPECT(_Expression) (void)0
+#define DEBUG_FAIL(_Message) (void)0
 #else
-    #define DEBUG_EXPECT(_Expression)    EXPECTED_CONDITION(_Expression)
-    #define DEBUG_FAIL(_Message)         EXPECTED_CONDITION(false && _Message)
+#define DEBUG_EXPECT(_Expression) EXPECTED_CONDITION(_Expression)
+#define DEBUG_FAIL(_Message) EXPECTED_CONDITION(false && _Message)
 #endif
 
 #endif
 
-#endif // DesignByContract_H_
+#endif  // DesignByContract_H_
