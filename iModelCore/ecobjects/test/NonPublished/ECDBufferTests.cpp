@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -11,13 +11,12 @@ using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECDBufferTests : ECTestFixture
-    {
-    template<typename T> void TestIsEmpty(IECInstanceR instance, Utf8CP accessor, T const& value)
-        {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsistruct
+ +---------------+---------------+---------------+---------------+---------------+------*/
+struct ECDBufferTests : ECTestFixture {
+    template <typename T>
+    void TestIsEmpty(IECInstanceR instance, Utf8CP accessor, T const& value) {
         ECDBuffer* buf = instance.GetECDBufferP();
         EXPECT_TRUE(buf->IsEmpty());
 
@@ -36,10 +35,10 @@ struct ECDBufferTests : ECTestFixture
 
         buf->ClearValues();
         EXPECT_TRUE(buf->IsEmpty());
-        }
+    }
 
-    template<typename T> void TestIsEmptyArray(IECInstanceR instance, Utf8CP accessor, T const& value)
-        {
+    template <typename T>
+    void TestIsEmptyArray(IECInstanceR instance, Utf8CP accessor, T const& value) {
         ECDBuffer& buf = *instance.GetECDBufferP();
         EXPECT_TRUE(buf.IsEmpty());
 
@@ -47,7 +46,7 @@ struct ECDBufferTests : ECTestFixture
         bool isNull = false;
         EXPECT_EQ(ECObjectsStatus::Success, instance.IsPropertyNull(isNull, accessor, 0));
         EXPECT_TRUE(isNull);
-        EXPECT_FALSE(buf.IsEmpty());   // a non-empty array containing null elements => a non-empty IECInstance
+        EXPECT_FALSE(buf.IsEmpty());  // a non-empty array containing null elements => a non-empty IECInstance
 
         ECValue v(value);
         EXPECT_EQ(ECObjectsStatus::Success, instance.SetValue(accessor, v, 0));
@@ -63,39 +62,37 @@ struct ECDBufferTests : ECTestFixture
 
         buf.ClearValues();
         EXPECT_TRUE(buf.IsEmpty());
-        }
+    }
 
-    struct ExpectedValue
-        {
-        ECValue         m_value;
-        bool            m_expectExists;
+    struct ExpectedValue {
+        ECValue m_value;
+        bool m_expectExists;
 
-        template<typename T> ExpectedValue(T const& val) : m_value(val), m_expectExists(true) {}
+        template <typename T>
+        ExpectedValue(T const& val) : m_value(val), m_expectExists(true) {}
         ExpectedValue() : m_expectExists(false) {}
-        };
+    };
 
-    void TestValue(IECInstanceCR instance, Utf8CP accessor, ExpectedValue const& val, uint32_t arrayIndex = -1)
-        {
+    void TestValue(IECInstanceCR instance, Utf8CP accessor, ExpectedValue const& val, uint32_t arrayIndex = -1) {
         ECValue v;
         ECObjectsStatus status = -1 != arrayIndex ? instance.GetValue(v, accessor, arrayIndex) : instance.GetValue(v, accessor);
         EXPECT_EQ((ECObjectsStatus::Success == status), val.m_expectExists) << " for property " << accessor;
 
-        if (ECObjectsStatus::Success == status)
-            {
+        if (ECObjectsStatus::Success == status) {
             if (val.m_expectExists)
                 EXPECT_TRUE(val.m_value.Equals(v)) << "Expected: " << val.m_value.ToString().c_str() << " Actual: " << v.ToString().c_str() << " for property " << accessor;
             else
                 printf("Expected: non-existent Actual: %s for property %s\n", v.ToString().c_str(), accessor);
-            }
         }
-    };
+    }
+};
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String    GetTestSchemaXMLString(Utf8CP schemaName, uint32_t versionRead, uint32_t versionMinor, Utf8CP className)
-    {
-    Utf8Char fmt[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String GetTestSchemaXMLString(Utf8CP schemaName, uint32_t versionRead, uint32_t versionMinor, Utf8CP className) {
+    Utf8Char fmt[] =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<ECSchema schemaName=\"%s\" nameSpacePrefix=\"test\" version=\"%02d.%02d\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "    <ECClass typeName=\"EmptyClass\" isDomainClass=\"True\">"
         "    </ECClass>"
@@ -247,34 +244,32 @@ Utf8String    GetTestSchemaXMLString(Utf8CP schemaName, uint32_t versionRead, ui
     buff.Sprintf(fmt, schemaName, versionRead, versionMinor, className);
 
     return buff;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr CreateTestSchema()
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr CreateTestSchema() {
     Utf8String schemaXMLString = GetTestSchemaXMLString("TestSchema", 0, 0, "TestClass");
 
-    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXMLString.c_str(), *schemaContext));
 
     return schema;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Test the ECDBuffer::IsEmpty() method. Should return true if all values are null and
-* all arrays are empty.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDBufferTests, IsEmpty)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Test the ECDBuffer::IsEmpty() method. Should return true if all values are null and
+ * all arrays are empty.
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDBufferTests, IsEmpty) {
     ECSchemaPtr schema = CreateTestSchema();
 
     IECInstancePtr instance = schema->GetClassP("Manufacturer")->GetDefaultStandaloneEnabler()->CreateInstance();
-    TestIsEmpty(*instance, "AccountNo", 12345);   // fixed-sized property
+    TestIsEmpty(*instance, "AccountNo", 12345);  // fixed-sized property
     TestIsEmpty(*instance, "Name", "Ed");        // variable-sized property
 
     instance = schema->GetClassP("AllPrimitives")->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -286,14 +281,13 @@ TEST_F(ECDBufferTests, IsEmpty)
     TestIsEmpty(*instance, "StructMember.AString", "bbbbb");
     TestIsEmptyArray(*instance, "StructMember.SomeInts", 54321);
     TestIsEmptyArray(*instance, "StructMember.SomeStrings", "lalalalala");
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Simplification of above test to isolate some memory corruption when clearing the array.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDBufferTests, ClearArray)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Simplification of above test to isolate some memory corruption when clearing the array.
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDBufferTests, ClearArray) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ArrayTest", "ts", 1, 0, 0);
     ECEntityClassP ecClass;
@@ -328,13 +322,12 @@ TEST_F(ECDBufferTests, ClearArray)
     EXPECT_EQ(0, v.GetArrayInfo().GetCount());
     EXPECT_EQ(ECObjectsStatus::Success, instance->GetValue(v, "Strings"));
     EXPECT_EQ(0, v.GetArrayInfo().GetCount());
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDBufferTests, MoreClearArrayTests)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDBufferTests, MoreClearArrayTests) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "Test", "ts", 1, 0, 0);
     ECEntityClassP ecClass;
@@ -348,15 +341,14 @@ TEST_F(ECDBufferTests, MoreClearArrayTests)
     inst->AddArrayElements("Strings", 1);
     inst->SetValue("Strings", ECValue("String", false), 0);
     inst->ClearArray("Strings");
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Test the ECValue flag that returns strings as pointers into instance data rather than
-* making a copy.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDBufferTests, PointersIntoInstanceMemory)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Test the ECValue flag that returns strings as pointers into instance data rather than
+ * making a copy.
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDBufferTests, PointersIntoInstanceMemory) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "InstancePointers", "ts", 1, 0, 0);
     ECEntityClassP ecClass;
@@ -373,33 +365,32 @@ TEST_F(ECDBufferTests, PointersIntoInstanceMemory)
 
     // To test whether or not we got back a pointer into instance memory, we'll modify the memory. Real code would never do this of course.
     Utf8Char newStr[] = "STRING";
-    Utf8Char* pStr = const_cast<Utf8Char*> (v.GetUtf8CP());
+    Utf8Char* pStr = const_cast<Utf8Char*>(v.GetUtf8CP());
     memcpy(pStr, newStr, _countof(newStr) * sizeof(Utf8Char));
 
     instance->GetValue(v, "String");
-    EXPECT_EQ(0, strcmp(v.GetUtf8CP(), "string"));   // did not modify instance data
+    EXPECT_EQ(0, strcmp(v.GetUtf8CP(), "string"));  // did not modify instance data
 
     v.SetAllowsPointersIntoInstanceMemory(true);
     instance->GetValue(v, "String");
 
-    pStr = const_cast<Utf8P> (v.GetUtf8CP());
+    pStr = const_cast<Utf8P>(v.GetUtf8CP());
     memcpy(pStr, newStr, _countof(newStr) * sizeof(Utf8Char));
 
     // The flag should not be reset when the ECValue was assigned a value
     EXPECT_TRUE(v.AllowsPointersIntoInstanceMemory());
 
     instance->GetValue(v, "String");
-    //EXPECT_EQ (v.GetString(), pStr);                // got back pointer to same address in instance data
-    //EXPECT_EQ (0, wcscmp (v.GetString(), newStr));  // modified instance memory directly through returned pointer
-    }
+    // EXPECT_EQ (v.GetString(), pStr);                // got back pointer to same address in instance data
+    // EXPECT_EQ (0, wcscmp (v.GetString(), newStr));  // modified instance memory directly through returned pointer
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Test using ECDBuffer::CopyDataBuffer() to populate an ECDBuffer from another ECDBuffer
-* created for a different ClassLayout.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDBufferTests, ConvertDataBuffer)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Test using ECDBuffer::CopyDataBuffer() to populate an ECDBuffer from another ECDBuffer
+ * created for a different ClassLayout.
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDBufferTests, ConvertDataBuffer) {
     // Create initial version of class
     ECSchemaPtr schemaA;
     ECSchema::CreateSchema(schemaA, "SchemaA", "ts", 1, 0, 0);
@@ -430,7 +421,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer)
 
     // Create a new version of the class with different layout
     ECSchemaPtr schemaA2;
-    ECSchema::CreateSchema(schemaA2, "SchemaA", "ts", 2, 0 ,0);
+    ECSchema::CreateSchema(schemaA2, "SchemaA", "ts", 2, 0, 0);
     ECEntityClassP classA2;
     schemaA2->CreateEntityClass(classA2, "ClassA");
 
@@ -443,18 +434,17 @@ TEST_F(ECDBufferTests, ConvertDataBuffer)
     instanceA2 = classA2->GetDefaultStandaloneEnabler()->CreateInstance();
     EXPECT_EQ(ECObjectsStatus::Success, instanceA2->CopyDataBuffer(*instanceA, true));
 
-    TestValue(*instanceA2, "Int", "123"); // int->string converted
-    TestValue(*instanceA2, "String", ECValue()); // string->int conversion failed
-    TestValue(*instanceA2, "AddedThisProperty", ECValue());   // not present in old class, uninitialized
-    TestValue(*instanceA2, "RemovedThisProperty", ExpectedValue());   // not present in new class
-    TestValue(*instanceA2, "Bool", true); // no change, value preserved
-    }
+    TestValue(*instanceA2, "Int", "123");                            // int->string converted
+    TestValue(*instanceA2, "String", ECValue());                     // string->int conversion failed
+    TestValue(*instanceA2, "AddedThisProperty", ECValue());          // not present in old class, uninitialized
+    TestValue(*instanceA2, "RemovedThisProperty", ExpectedValue());  // not present in new class
+    TestValue(*instanceA2, "Bool", true);                            // no change, value preserved
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDBufferTests, ConvertDataBuffer_Arrays)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDBufferTests, ConvertDataBuffer_Arrays) {
     ECSchemaPtr schemaA;
     ECSchema::CreateSchema(schemaA, "SchemaA", "ts", 1, 0, 0);
     ECEntityClassP classA;
@@ -510,16 +500,14 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_Arrays)
     ECValue emptyArray;
     emptyArray.SetPrimitiveArrayInfo(PRIMITIVETYPE_String, 0, false);
     TestValue(*instanceA2, "Added", emptyArray);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Copying a data buffer containing struct arrays should copy the struct identifiers
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
-    {
-    enum struct Case
-        {
+/*---------------------------------------------------------------------------------**/ /**
+ * Copying a data buffer containing struct arrays should copy the struct identifiers
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays) {
+    enum struct Case {
         SameClassLayout,
         DifferentStructElementTypeLayout,
         StructElementContainsEmbeddedStruct,
@@ -532,10 +520,9 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
         NewStruct,
         NewStructArray,
         NewPrimitive,
-        };
+    };
 
-    const auto test = [&](Case case_) -> IECInstancePtr
-        {
+    const auto test = [&](Case case_) -> IECInstancePtr {
         ECSchemaPtr schema1;
         ECSchema::CreateSchema(schema1, "Schema", "ts", 1, 0, 0);
 
@@ -550,8 +537,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
 
         StructECPropertyP structProp;
         StructArrayECPropertyP structArrayProp;
-        switch (case_)
-            {
+        switch (case_) {
             case Case::StructElementContainsEmbeddedStruct:
                 struct1->CreateStructProperty(structProp, "EmbeddedStructProp", *simpleStruct1);
                 break;
@@ -564,7 +550,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
             case Case::MissingPrimitive:
                 struct1->CreatePrimitiveProperty(primProp, "MissingProp", PRIMITIVETYPE_Double);
                 break;
-            }
+        }
 
         ECEntityClassP class1;
         schema1->CreateEntityClass(class1, "Class");
@@ -574,11 +560,9 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
         StandaloneECInstancePtr instance1 = class1->GetDefaultStandaloneEnabler()->CreateInstance();
         instance1->AddArrayElements("StructArray", 2);
 
-        const auto addCaseProps = [&](IECInstancePtr structInstance)
-            {
+        const auto addCaseProps = [&](IECInstancePtr structInstance) {
             ECValue val;
-            switch (case_)
-                {
+            switch (case_) {
                 case Case::StructElementContainsEmbeddedStruct:
                     structInstance->SetValue("EmbeddedStructProp.PropE", ECValue("value"));
                     break;
@@ -592,8 +576,8 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
                 case Case::MissingPrimitive:
                     structInstance->SetValue("MissingProp", ECValue(2.3));
                     break;
-                }
-            };
+            }
+        };
         ECValue structVal;
         IECInstancePtr structInstance;
         structInstance = struct1->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -618,8 +602,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
 
         ECStructClassP struct2;
         schema2->CreateStructClass(struct2, "Struct");
-        switch (case_)
-            {
+        switch (case_) {
             case Case::StructElementContainsEmbeddedStruct:
                 struct2->CreateStructProperty(structProp, "EmbeddedStructProp", *simpleStruct2);
                 break;
@@ -635,7 +618,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
             case Case::NewPrimitive:
                 struct2->CreatePrimitiveProperty(primProp, "NewProp", PRIMITIVETYPE_Integer);
                 break;
-            }
+        }
         if (nullptr == struct2->GetPropertyP("StructElemProp"))
             struct2->CreatePrimitiveProperty(primProp, "StructElemProp", PRIMITIVETYPE_String);
 
@@ -655,7 +638,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
         TestValue(*instance2, "StructArray", arrayVal);
 
         return instance2;
-        };
+    };
 
     ECValue testStructValue, testStructValueInner;
     IECInstancePtr result;
@@ -731,29 +714,26 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
     result->GetValue(testStructValue, "StructArray", 1);
     TestValue(*testStructValue.GetStruct(), "StructElemProp", "2");
     TestValue(*testStructValue.GetStruct(), "NewProp", ECValue(/*null*/));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDBufferTests, ConvertDataBuffer_NonPrimitiveConversions)
-    {
-    enum class ValueKindCase
-        {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDBufferTests, ConvertDataBuffer_NonPrimitiveConversions) {
+    enum class ValueKindCase {
         Primitive,
         Struct,
         StructArray,
         PrimitiveArray,
         Navigation,
-        };
+    };
 
     // we need a different relation per property or we violate the one-property per relation rule
     std::array<ECRelationshipClassP, 7> relations;
 
-    ECSchemaPtr schema1; // We are returning and using ECInstancePtr in the method below, which has references to the schema, so
-    //it needs to stay allocated.
-    const auto test = [&](ValueKindCase toKind) -> IECInstancePtr
-        {
+    ECSchemaPtr schema1;  // We are returning and using ECInstancePtr in the method below, which has references to the schema, so
+    // it needs to stay allocated.
+    const auto test = [&](ValueKindCase toKind) -> IECInstancePtr {
         ECSchema::CreateSchema(schema1, "Schema1", "ts1", 1, 0, 0);
 
         ECStructClassP simpleStruct;
@@ -774,8 +754,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_NonPrimitiveConversions)
         classA->CreatePrimitiveProperty(primProp, "PropA", PRIMITIVETYPE_String);
         classB->CreatePrimitiveProperty(primProp, "PropB", PRIMITIVETYPE_Double);
 
-        for (int i = 0; i < relations.size(); ++i)
-            {
+        for (int i = 0; i < relations.size(); ++i) {
             auto& relation = relations[i];
             Utf8PrintfString relationName("Relation%d", i);
             schema1->CreateRelationshipClass(relation, relationName.c_str());
@@ -783,7 +762,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_NonPrimitiveConversions)
             relation->GetSource().AddClass(*classA);
             relation->GetTarget().SetAbstractConstraint(*classB);
             relation->GetTarget().AddClass(*classB);
-            }
+        }
 
         classA->CreateStructProperty(structProp, "FromStruct", *simpleStruct);
         classA->CreatePrimitiveProperty(primProp, "FromPrimitive", PRIMITIVETYPE_Double);
@@ -797,7 +776,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_NonPrimitiveConversions)
         instance1->SetValue("FromPrimitive", ECValue(2.3));
         instance1->SetValue("FromNavigation", ECValue(BeInt64Id(5), relations[0]));
         instance1->AddArrayElements("FromStructArray", 2);
-            {
+        {
             ECValue structVal;
             IECInstancePtr structInstance;
             structInstance = simpleStruct->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -809,14 +788,14 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_NonPrimitiveConversions)
             structInstance->SetValue("SimpleProp", ECValue("simple-prop-value-2"));
             structVal.SetStruct(structInstance.get());
             instance1->SetValue("FromStructArray", structVal, 1);
-            }
+        }
 
         instance1->AddArrayElements("FromPrimitiveArray", 2);
         instance1->SetValue("FromPrimitiveArray", ECValue("entry-1"), 0);
         instance1->SetValue("FromPrimitiveArray", ECValue("entry-2"), 1);
 
         instance1->AddArrayElements("FromIntegerableArray", 2);
-        instance1->SetValue("FromIntegerableArray", ECValue("11"), 0); // values can be converted to integers
+        instance1->SetValue("FromIntegerableArray", ECValue("11"), 0);  // values can be converted to integers
         instance1->SetValue("FromIntegerableArray", ECValue("12"), 1);
 
         ECEntityClassP classC;
@@ -825,8 +804,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_NonPrimitiveConversions)
         for (auto& relation : relations)
             relation->GetSource().AddClass(*classC);
 
-        switch (toKind)
-            {
+        switch (toKind) {
             case ValueKindCase::Primitive:
                 classC->CreatePrimitiveProperty(primProp, "FromStruct", PRIMITIVETYPE_String);
                 classC->CreatePrimitiveProperty(primProp, "FromPrimitive", PRIMITIVETYPE_String);
@@ -867,106 +845,107 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_NonPrimitiveConversions)
                 classC->CreateNavigationProperty(navigationProp, "FromPrimitiveArray", *relations[5], ECRelatedInstanceDirection::Forward);
                 classC->CreateNavigationProperty(navigationProp, "FromIntegerableArray", *relations[6], ECRelatedInstanceDirection::Forward);
                 break;
-            }
+        }
 
         StandaloneECInstancePtr instance2 = classC->GetDefaultStandaloneEnabler()->CreateInstance();
         EXPECT_EQ(ECObjectsStatus::Success, instance2->CopyDataBuffer(*instance1, true));
         return instance2;
-        };
+    };
 
-    ECValue emptyStructArray; emptyStructArray.SetStructArrayInfo(0, false);
-    ECValue emptyStringArray; emptyStringArray.SetPrimitiveArrayInfo(PRIMITIVETYPE_String, 0, false);
+    ECValue emptyStructArray;
+    emptyStructArray.SetStructArrayInfo(0, false);
+    ECValue emptyStringArray;
+    emptyStringArray.SetPrimitiveArrayInfo(PRIMITIVETYPE_String, 0, false);
 
     {
-    auto result = test(ValueKindCase::Primitive);
-    TestValue(*result, "FromStruct", ECValue());
-    TestValue(*result, "FromPrimitive", ECValue("2.2999999999999998"));
-    TestValue(*result, "FromNavigation", ECValue());
-    TestValue(*result, "FromStructArray", ECValue());
-    TestValue(*result, "FromPrimitiveArray", ECValue());
-    TestValue(*result, "FromIntegerableArray", ECValue());
+        auto result = test(ValueKindCase::Primitive);
+        TestValue(*result, "FromStruct", ECValue());
+        TestValue(*result, "FromPrimitive", ECValue("2.2999999999999998"));
+        TestValue(*result, "FromNavigation", ECValue());
+        TestValue(*result, "FromStructArray", ECValue());
+        TestValue(*result, "FromPrimitiveArray", ECValue());
+        TestValue(*result, "FromIntegerableArray", ECValue());
     }
 
     {
-    auto result = test(ValueKindCase::Struct);
-    TestValue(*result, "FromStruct.SimpleProp", ECValue("simple-prop-value"));
-    TestValue(*result, "FromPrimitive", ECValue());
-    TestValue(*result, "FromNavigation", ECValue());
-    TestValue(*result, "FromStructArray", ECValue());
-    TestValue(*result, "FromPrimitiveArray", ECValue());
-    TestValue(*result, "FromIntegerableArray", ECValue());
+        auto result = test(ValueKindCase::Struct);
+        TestValue(*result, "FromStruct.SimpleProp", ECValue("simple-prop-value"));
+        TestValue(*result, "FromPrimitive", ECValue());
+        TestValue(*result, "FromNavigation", ECValue());
+        TestValue(*result, "FromStructArray", ECValue());
+        TestValue(*result, "FromPrimitiveArray", ECValue());
+        TestValue(*result, "FromIntegerableArray", ECValue());
     }
 
     {
-    auto result = test(ValueKindCase::StructArray);
-    TestValue(*result, "FromStruct", emptyStructArray);
-    TestValue(*result, "FromPrimitive", emptyStructArray);
-    TestValue(*result, "FromNavigation", emptyStructArray);
+        auto result = test(ValueKindCase::StructArray);
+        TestValue(*result, "FromStruct", emptyStructArray);
+        TestValue(*result, "FromPrimitive", emptyStructArray);
+        TestValue(*result, "FromNavigation", emptyStructArray);
 
-    ECValue arrayInfoVal;
-    ECValue arrayEntries[2];
+        ECValue arrayInfoVal;
+        ECValue arrayEntries[2];
 
-    arrayInfoVal.SetStructArrayInfo(2, false);
-    TestValue(*result, "FromStructArray", arrayInfoVal);
-    result->GetValue(arrayEntries[0], "FromStructArray", 0);
-    TestValue(*arrayEntries[0].GetStruct(), "SimpleProp", ECValue("simple-prop-value-1"));
-    result->GetValue(arrayEntries[1], "FromStructArray", 1);
-    TestValue(*arrayEntries[1].GetStruct(), "SimpleProp", ECValue("simple-prop-value-2"));
+        arrayInfoVal.SetStructArrayInfo(2, false);
+        TestValue(*result, "FromStructArray", arrayInfoVal);
+        result->GetValue(arrayEntries[0], "FromStructArray", 0);
+        TestValue(*arrayEntries[0].GetStruct(), "SimpleProp", ECValue("simple-prop-value-1"));
+        result->GetValue(arrayEntries[1], "FromStructArray", 1);
+        TestValue(*arrayEntries[1].GetStruct(), "SimpleProp", ECValue("simple-prop-value-2"));
 
-    arrayInfoVal.SetStructArrayInfo(2, false);
-    TestValue(*result, "FromPrimitiveArray", arrayInfoVal);
-    TestValue(*result, "FromPrimitiveArray", ECValue(), 0);
-    TestValue(*result, "FromPrimitiveArray", ECValue(), 1);
+        arrayInfoVal.SetStructArrayInfo(2, false);
+        TestValue(*result, "FromPrimitiveArray", arrayInfoVal);
+        TestValue(*result, "FromPrimitiveArray", ECValue(), 0);
+        TestValue(*result, "FromPrimitiveArray", ECValue(), 1);
 
-    arrayInfoVal.SetStructArrayInfo(2, false);
-    TestValue(*result, "FromIntegerableArray", arrayInfoVal);
-    TestValue(*result, "FromIntegerableArray", ECValue(), 0);
-    TestValue(*result, "FromIntegerableArray", ECValue(), 1);
+        arrayInfoVal.SetStructArrayInfo(2, false);
+        TestValue(*result, "FromIntegerableArray", arrayInfoVal);
+        TestValue(*result, "FromIntegerableArray", ECValue(), 0);
+        TestValue(*result, "FromIntegerableArray", ECValue(), 1);
     }
 
     {
-    auto result = test(ValueKindCase::Navigation);
-    TestValue(*result, "FromStruct", ECValue());
-    TestValue(*result, "FromPrimitive", ECValue());
-    // relation is set by each call of `test`, so if test order has to change, consider
-    // returning it as part of the `test` return value to make it order independent
-    TestValue(*result, "FromNavigation", ECValue(BeInt64Id(5), relations[0]));
-    TestValue(*result, "FromStructArray", ECValue());
-    TestValue(*result, "FromPrimitiveArray", ECValue());
-    TestValue(*result, "FromIntegerableArray", ECValue());
+        auto result = test(ValueKindCase::Navigation);
+        TestValue(*result, "FromStruct", ECValue());
+        TestValue(*result, "FromPrimitive", ECValue());
+        // relation is set by each call of `test`, so if test order has to change, consider
+        // returning it as part of the `test` return value to make it order independent
+        TestValue(*result, "FromNavigation", ECValue(BeInt64Id(5), relations[0]));
+        TestValue(*result, "FromStructArray", ECValue());
+        TestValue(*result, "FromPrimitiveArray", ECValue());
+        TestValue(*result, "FromIntegerableArray", ECValue());
     }
 
     {
-    auto result = test(ValueKindCase::PrimitiveArray);
-    TestValue(*result, "FromStruct", emptyStringArray);
-    TestValue(*result, "FromPrimitive", emptyStringArray);
-    TestValue(*result, "FromNavigation", emptyStringArray);
+        auto result = test(ValueKindCase::PrimitiveArray);
+        TestValue(*result, "FromStruct", emptyStringArray);
+        TestValue(*result, "FromPrimitive", emptyStringArray);
+        TestValue(*result, "FromNavigation", emptyStringArray);
 
-    ECValue arrayInfoVal;
-    ECValue arrayEntries[2];
+        ECValue arrayInfoVal;
+        ECValue arrayEntries[2];
 
-    arrayInfoVal.SetPrimitiveArrayInfo(PRIMITIVETYPE_String, 2, false);
-    TestValue(*result, "FromStructArray", arrayInfoVal);
-    TestValue(*result, "FromStructArray", ECValue(), 0);
-    TestValue(*result, "FromStructArray", ECValue(), 1);
+        arrayInfoVal.SetPrimitiveArrayInfo(PRIMITIVETYPE_String, 2, false);
+        TestValue(*result, "FromStructArray", arrayInfoVal);
+        TestValue(*result, "FromStructArray", ECValue(), 0);
+        TestValue(*result, "FromStructArray", ECValue(), 1);
 
-    arrayInfoVal.SetPrimitiveArrayInfo(PRIMITIVETYPE_String, 2, false);
-    TestValue(*result, "FromPrimitiveArray", arrayInfoVal);
-    TestValue(*result, "FromPrimitiveArray", ECValue("entry-1"), 0);
-    TestValue(*result, "FromPrimitiveArray", ECValue("entry-2"), 1);
+        arrayInfoVal.SetPrimitiveArrayInfo(PRIMITIVETYPE_String, 2, false);
+        TestValue(*result, "FromPrimitiveArray", arrayInfoVal);
+        TestValue(*result, "FromPrimitiveArray", ECValue("entry-1"), 0);
+        TestValue(*result, "FromPrimitiveArray", ECValue("entry-2"), 1);
 
-    arrayInfoVal.SetPrimitiveArrayInfo(PRIMITIVETYPE_String, 2, false);
-    TestValue(*result, "FromIntegerableArray", arrayInfoVal);
-    TestValue(*result, "FromIntegerableArray", ECValue("11"), 0);
-    TestValue(*result, "FromIntegerableArray", ECValue("12"), 1);
+        arrayInfoVal.SetPrimitiveArrayInfo(PRIMITIVETYPE_String, 2, false);
+        TestValue(*result, "FromIntegerableArray", arrayInfoVal);
+        TestValue(*result, "FromIntegerableArray", ECValue("11"), 0);
+        TestValue(*result, "FromIntegerableArray", ECValue("12"), 1);
     }
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDBufferTests, ArraysAreNotNull)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDBufferTests, ArraysAreNotNull) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "Test", "ts", 1, 0, 0);
     ECEntityClassP ecClass;
@@ -982,24 +961,21 @@ TEST_F(ECDBufferTests, ArraysAreNotNull)
     ECValue v;
     EXPECT_EQ(ECObjectsStatus::Success, instance->GetValue(v, "Array"));
     EXPECT_FALSE(v.IsNull());
-    }
+}
 
-struct ECDBufferTester : MemoryECInstanceBase
-    {
-public:
+struct ECDBufferTester : MemoryECInstanceBase {
+   public:
     StandaloneECEnablerCR m_enabler;
     IECInstanceP _GetAsIECInstance() const override { return nullptr; }
     ClassLayoutCR _GetClassLayout() const override { return m_enabler.GetClassLayout(); }
-    
-    ECDBufferTester (StandaloneECEnablerCR enabler) : MemoryECInstanceBase(enabler.GetClassLayout(), 42, false, enabler.GetClass()), m_enabler(enabler) {};
-    ECObjectsStatus InsertArrayElementsAt(Utf8CP propertyAccessString, uint32_t index, uint32_t count)
-        {
+
+    ECDBufferTester(StandaloneECEnablerCR enabler) : MemoryECInstanceBase(enabler.GetClassLayout(), 42, false, enabler.GetClass()), m_enabler(enabler) {};
+    ECObjectsStatus InsertArrayElementsAt(Utf8CP propertyAccessString, uint32_t index, uint32_t count) {
         uint32_t propIdx;
         m_enabler.GetPropertyIndex(propIdx, propertyAccessString);
         return InsertNullArrayElementsAt(propIdx, index, count);
-        }
-    ECObjectsStatus SetArrayLength(Utf8CP propertyAccessString, uint32_t desiredLength)
-        {
+    }
+    ECObjectsStatus SetArrayLength(Utf8CP propertyAccessString, uint32_t desiredLength) {
         ECValue arrayValue;
         GetValueFromMemory(arrayValue, propertyAccessString);
         if (!arrayValue.IsArray())
@@ -1009,24 +985,22 @@ public:
         if (currentLength == desiredLength)
             return ECObjectsStatus::Success;
 
-        if (currentLength > desiredLength)
-            {
+        if (currentLength > desiredLength) {
             PropertyLayoutCP propertyLayout = NULL;
             uint32_t numToRemove = currentLength - desiredLength;
             GetClassLayout().GetPropertyLayout(propertyLayout, propertyAccessString);
             return RemoveArrayElementsFromMemory(*propertyLayout, 0, numToRemove);
-            }
+        }
 
         uint32_t numToAdd = desiredLength - currentLength;
         return InsertArrayElementsAt(propertyAccessString, 0, numToAdd);
-        }
-    };
+    }
+};
 
 //---------------------------------------------------------------------------------------//
 //* @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(ECDBufferTests, ECDBufferCanInsertArrayEntriesWhenUsingWriteBuffer)
-    {
+TEST_F(ECDBufferTests, ECDBufferCanInsertArrayEntriesWhenUsingWriteBuffer) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "Test", "ts", 1, 0, 0);
     ECEntityClassP ecClass;
@@ -1043,13 +1017,12 @@ TEST_F(ECDBufferTests, ECDBufferCanInsertArrayEntriesWhenUsingWriteBuffer)
     tester.InsertArrayElementsAt("Array", 0, 4);
     EXPECT_EQ(ECObjectsStatus::Success, tester.GetValueFromMemory(v, "Array", true, 1));
     EXPECT_TRUE(v.IsNull());
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDBufferTests, CopyFromBuffer)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDBufferTests, CopyFromBuffer) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "Test", "test", 1, 0, 0);
     EXPECT_TRUE(schema.IsValid());
@@ -1099,8 +1072,7 @@ TEST_F(ECDBufferTests, CopyFromBuffer)
 
     const int numIterations = 1000;
 
-    for (int i=0; i<numIterations; i++)
-        {
+    for (int i = 0; i < numIterations; i++) {
         ECValue v;
         int int1 = 10 * numIterations + i;
         int int2 = 20 * numIterations + i;
@@ -1120,13 +1092,12 @@ TEST_F(ECDBufferTests, CopyFromBuffer)
         EXPECT_EQ(ECObjectsStatus::Success, instance1A.SetArrayLength("A2", numArrayMembers));
         EXPECT_EQ(ECObjectsStatus::Success, instance1A.SetArrayLength("A3", numArrayMembers));
 
-        for (int j=0; j<numArrayMembers; j++)
-            {
+        for (int j = 0; j < numArrayMembers; j++) {
             EXPECT_EQ(ECObjectsStatus::Success, instance1A.SetValueToMemory("A1", ECValue((double)j), true, j));
             EXPECT_EQ(ECObjectsStatus::Success, instance1A.SetValueToMemory("A2", ECValue(j), true, j));
             Utf8PrintfString s("s%d", j);
             EXPECT_EQ(ECObjectsStatus::Success, instance1A.SetValueToMemory("A3", ECValue(s.c_str()), true, j));
-            }
+        }
 
         DPoint3d point1 = DPoint3d::From(int1, 0, 0);
         DPoint3d point2 = DPoint3d::From(int1, int2, 0);
@@ -1136,8 +1107,7 @@ TEST_F(ECDBufferTests, CopyFromBuffer)
         EXPECT_EQ(ECObjectsStatus::Success, instance1A.SetValueToMemory("P2", ECValue(point2)));
         EXPECT_EQ(ECObjectsStatus::Success, instance1A.SetValueToMemory("P3", ECValue(point3)));
 
-        switch (i % 3)
-            {
+        switch (i % 3) {
             case 0:
                 instance1A.SetValueToMemory("B1", ECValue(true));
                 instance1A.SetValueToMemory("B2", ECValue(false));
@@ -1159,13 +1129,12 @@ TEST_F(ECDBufferTests, CopyFromBuffer)
                 instance1A.SetValueToMemory("I2", ECValue());
                 instance1A.SetValueToMemory("D2", ECValue());
                 break;
-            }
+        }
 
         // Copy into instance1B from instance1A
         EXPECT_EQ(ECObjectsStatus::Success, instance1B.CopyFromBuffer(instance1A));
 
-        switch (i % 3)
-            {
+        switch (i % 3) {
             case 0:
                 EXPECT_EQ(ECObjectsStatus::Success, instance1B.GetValueFromMemory(v, "B1"));
                 EXPECT_EQ(v.GetBoolean(), true);
@@ -1226,7 +1195,7 @@ TEST_F(ECDBufferTests, CopyFromBuffer)
                 EXPECT_EQ(ECObjectsStatus::Success, instance1B.GetValueFromMemory(v, "D3"));
                 EXPECT_EQ(v.GetDouble(), int3);
                 break;
-            }
+        }
 
         EXPECT_EQ(ECObjectsStatus::Success, instance1B.GetValueFromMemory(v, "P1"));
         EXPECT_EQ(v.GetPoint3d(), point1);
@@ -1242,11 +1211,10 @@ TEST_F(ECDBufferTests, CopyFromBuffer)
         EXPECT_EQ(ECObjectsStatus::Success, instance1B.GetValueFromMemory(v, "A3"));
         EXPECT_EQ(v.GetArrayInfo().GetCount(), numArrayMembers);
 
-        for (int j=0; j<numArrayMembers; j++)
-            {
+        for (int j = 0; j < numArrayMembers; j++) {
             EXPECT_EQ(ECObjectsStatus::Success, instance1B.GetValueFromMemory(v, "A1", true, j));
             EXPECT_EQ(v.GetDouble(), j);
-            }
+        }
 
         int64_t long1 = 10000LL + i;
         int64_t long2 = 20000LL + i;
@@ -1256,8 +1224,7 @@ TEST_F(ECDBufferTests, CopyFromBuffer)
         EXPECT_EQ(ECObjectsStatus::Success, instance1A.SetValueToMemory("L2", ECValue(long2)));
         EXPECT_EQ(ECObjectsStatus::Success, instance1A.SetValueToMemory("L3", ECValue(long3)));
 
-        switch (i % 3)
-            {
+        switch (i % 3) {
             case 0:
                 EXPECT_EQ(ECObjectsStatus::Success, instance1A.SetValueToMemory("L1", ECValue()));
                 break;
@@ -1267,7 +1234,7 @@ TEST_F(ECDBufferTests, CopyFromBuffer)
             case 2:
                 EXPECT_EQ(ECObjectsStatus::Success, instance1A.SetValueToMemory("L3", ECValue()));
                 break;
-            }
+        }
 
         // Copy into instance1B from instance1A
         EXPECT_EQ(ECObjectsStatus::Success, instance1B.CopyFromBuffer(instance1A));
@@ -1279,8 +1246,7 @@ TEST_F(ECDBufferTests, CopyFromBuffer)
         EXPECT_EQ(ECObjectsStatus::Success, instance1B.GetValueFromMemory(longValue2, "L2"));
         EXPECT_EQ(ECObjectsStatus::Success, instance1B.GetValueFromMemory(longValue3, "L3"));
 
-        switch (i % 3)
-            {
+        switch (i % 3) {
             case 0:
                 EXPECT_TRUE(longValue1.IsNull());
                 EXPECT_EQ(longValue2.GetLong(), long2);
@@ -1296,7 +1262,7 @@ TEST_F(ECDBufferTests, CopyFromBuffer)
                 EXPECT_EQ(longValue2.GetLong(), long2);
                 EXPECT_TRUE(longValue3.IsNull());
                 break;
-            }
+        }
 
         EXPECT_EQ(ECObjectsStatus::Success, instance1A.GetValueFromMemory(v, "S1"));
         Utf8PrintfString string1("%s%d", v.GetUtf8CP(), i % 10);
@@ -1304,7 +1270,7 @@ TEST_F(ECDBufferTests, CopyFromBuffer)
 
         EXPECT_EQ(ECObjectsStatus::Success, instance1B.GetValueFromMemory(v, "S2"));
         EXPECT_TRUE(v.IsNull());
-        
+
         EXPECT_EQ(ECObjectsStatus::Success, instance1A.GetValueFromMemory(v, "S3"));
         Utf8PrintfString string3("%s----%d", v.GetUtf8CP(), i % 10);
         EXPECT_EQ(ECObjectsStatus::Success, instance1A.SetValueToMemory("S3", ECValue(string3.c_str())));
@@ -1318,14 +1284,13 @@ TEST_F(ECDBufferTests, CopyFromBuffer)
         EXPECT_TRUE(v.IsNull());
         EXPECT_EQ(ECObjectsStatus::Success, instance1B.GetValueFromMemory(v, "S3"));
         EXPECT_STREQ(v.GetUtf8CP(), string3.c_str());
-        }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDBufferTests, CopyDataBuffer)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDBufferTests, CopyDataBuffer) {
     ECSchemaPtr sourceSchema;
     ECSchema::CreateSchema(sourceSchema, "Source", "source", 1, 0, 0);
     EXPECT_TRUE(sourceSchema.IsValid());
@@ -1411,6 +1376,6 @@ TEST_F(ECDBufferTests, CopyDataBuffer)
     EXPECT_STREQ(v.GetUtf8CP(), "Ducts");
     EXPECT_EQ(ECObjectsStatus::Success, targetInstance.GetValueFromMemory(v, "ALL_MODEL_TYPE_NAME"));
     EXPECT_STREQ(v.GetUtf8CP(), "Default");
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 #include "regex"
@@ -10,13 +10,10 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct ECRelationshipTestFixture : ECTestFixture 
-{
-public:
-    static Utf8CP StrengthToString(StrengthType strength)
-        {
-        switch (strength)
-            {
+struct ECRelationshipTestFixture : ECTestFixture {
+   public:
+    static Utf8CP StrengthToString(StrengthType strength) {
+        switch (strength) {
             case StrengthType::Referencing:
                 return "referencing";
             case StrengthType::Holding:
@@ -25,32 +22,28 @@ public:
                 return "embedding";
             default:
                 return "";
-            }
         }
+    }
 
-    static Utf8CP StrengthDirectionToString (ECRelatedInstanceDirection direction)
-        {
-        switch (direction)
-            {
+    static Utf8CP StrengthDirectionToString(ECRelatedInstanceDirection direction) {
+        switch (direction) {
             case ECRelatedInstanceDirection::Forward:
                 return "forward";
             case ECRelatedInstanceDirection::Backward:
                 return "backward";
             default:
                 return "";
-            }
         }
+    }
 };
 
-struct ECRelationshipInstanceTest : ECRelationshipTestFixture
-    {
+struct ECRelationshipInstanceTest : ECRelationshipTestFixture {
     ECSchemaPtr m_schema;
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static Utf8String GetTestSchemaXMLString ()
-        {
+    /*---------------------------------------------------------------------------------**/ /**
+     * @bsimethod
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    static Utf8String GetTestSchemaXMLString() {
         Utf8CP fmt = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="RelationshipTesting" nameSpacePrefix="test" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                 <ECClass typeName="ClassA" displayLabel="Class A" isDomainClass="True">
@@ -76,39 +69,36 @@ struct ECRelationshipInstanceTest : ECRelationshipTestFixture
             </ECSchema>)xml";
 
         return fmt;
-        }
+    }
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void CreateTestSchema ()
-        {
-        Utf8String schemaXMLString = GetTestSchemaXMLString ();
+    /*---------------------------------------------------------------------------------**/ /**
+     * @bsimethod
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    void CreateTestSchema() {
+        Utf8String schemaXMLString = GetTestSchemaXMLString();
 
-        ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext ();
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
-        EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, schemaXMLString.c_str (), *schemaContext));
-        EXPECT_TRUE (m_schema.IsValid ());
-        }
+        EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(m_schema, schemaXMLString.c_str(), *schemaContext));
+        EXPECT_TRUE(m_schema.IsValid());
+    }
 
-    bvector<Utf8String> split (Utf8String text, Utf8Char delimiter)
-        {
+    bvector<Utf8String> split(Utf8String text, Utf8Char delimiter) {
         bvector<Utf8String> result;
 
         size_t start = 0;
-        size_t end = text.find (delimiter, start);
+        size_t end = text.find(delimiter, start);
 
-        while (end != Utf8String::npos)
-            {
-            Utf8String token = text.substr (start, end - start);
-            result.push_back (token);
+        while (end != Utf8String::npos) {
+            Utf8String token = text.substr(start, end - start);
+            result.push_back(token);
             start = end + 1;
-            end = text.find (delimiter, start);
-            }
+            end = text.find(delimiter, start);
+        }
 
         return result;
-        }
-    };
+    }
+};
 
 struct ECRelationshipClassTest : ECRelationshipTestFixture {};
 
@@ -119,347 +109,335 @@ struct ECRelationshipDeserializationTest : ECRelationshipTestFixture {};
 //************************************************************************************
 // ECRelationshipInstanceTests
 //************************************************************************************
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECRelationshipInstanceTest, SimpleRelationship)
-    {
-    CreateTestSchema ();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipInstanceTest, SimpleRelationship) {
+    CreateTestSchema();
 
-    ECClassP sourceClass = m_schema->GetClassP ("ClassA");
-    ASSERT_TRUE (NULL != sourceClass);
-    StandaloneECEnablerPtr sourceEnabler = sourceClass->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (sourceEnabler.IsValid ());
+    ECClassP sourceClass = m_schema->GetClassP("ClassA");
+    ASSERT_TRUE(NULL != sourceClass);
+    StandaloneECEnablerPtr sourceEnabler = sourceClass->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(sourceEnabler.IsValid());
 
-    ECClassP targetClass = m_schema->GetClassP ("ClassB");
-    ASSERT_TRUE (NULL != targetClass);
-    StandaloneECEnablerPtr targetEnabler = targetClass->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (targetEnabler.IsValid ());
+    ECClassP targetClass = m_schema->GetClassP("ClassB");
+    ASSERT_TRUE(NULL != targetClass);
+    StandaloneECEnablerPtr targetEnabler = targetClass->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(targetEnabler.IsValid());
 
     ECValue p1;
-    p1.SetInteger (123);
+    p1.SetInteger(123);
 
-    ECN::StandaloneECInstancePtr sourceInstance = sourceEnabler->CreateInstance ();
-    sourceInstance->SetValue ("p", p1);
-    sourceInstance->SetInstanceId ("source");
+    ECN::StandaloneECInstancePtr sourceInstance = sourceEnabler->CreateInstance();
+    sourceInstance->SetValue("p", p1);
+    sourceInstance->SetInstanceId("source");
 
     ECValue p2, b2;
-    p2.SetInteger (456);
-    b2.SetInteger (789);
-    ECN::StandaloneECInstancePtr targetInstance = targetEnabler->CreateInstance ();
-    targetInstance->SetValue ("p", p2);
-    targetInstance->SetValue ("b", b2);
-    targetInstance->SetInstanceId ("target");
+    p2.SetInteger(456);
+    b2.SetInteger(789);
+    ECN::StandaloneECInstancePtr targetInstance = targetEnabler->CreateInstance();
+    targetInstance->SetValue("p", p2);
+    targetInstance->SetValue("b", b2);
+    targetInstance->SetInstanceId("target");
 
-    ECRelationshipClassCP relClass = m_schema->GetClassP ("ALikesB")->GetRelationshipClassCP ();
-    ASSERT_TRUE (NULL != relClass);
+    ECRelationshipClassCP relClass = m_schema->GetClassP("ALikesB")->GetRelationshipClassCP();
+    ASSERT_TRUE(NULL != relClass);
 
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
-    ASSERT_TRUE (relationshipEnabler.IsValid ());
+    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
+    ASSERT_TRUE(relationshipEnabler.IsValid());
 
-    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
-    relationshipInstance->SetSource (sourceInstance.get ());
-    relationshipInstance->SetTarget (targetInstance.get ());
-    relationshipInstance->SetInstanceId ("source->target");
+    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+    relationshipInstance->SetSource(sourceInstance.get());
+    relationshipInstance->SetTarget(targetInstance.get());
+    relationshipInstance->SetInstanceId("source->target");
 
-    IECInstancePtr readSource = relationshipInstance->GetSource ();
+    IECInstancePtr readSource = relationshipInstance->GetSource();
     ECValue readValue;
-    readSource->GetValue (readValue, "p");
-    ASSERT_TRUE (readValue.Equals (p1));
+    readSource->GetValue(readValue, "p");
+    ASSERT_TRUE(readValue.Equals(p1));
 
-    IECInstancePtr readTarget = relationshipInstance->GetTarget ();
-    readTarget->GetValue (readValue, "p");
-    ASSERT_TRUE (readValue.Equals (p2));
-    readTarget->GetValue (readValue, "b");
-    ASSERT_TRUE (readValue.Equals (b2));
-    }
+    IECInstancePtr readTarget = relationshipInstance->GetTarget();
+    readTarget->GetValue(readValue, "p");
+    ASSERT_TRUE(readValue.Equals(p2));
+    readTarget->GetValue(readValue, "b");
+    ASSERT_TRUE(readValue.Equals(b2));
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECRelationshipInstanceTest, SetRelationshipProperties)
-    {
-    CreateTestSchema ();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipInstanceTest, SetRelationshipProperties) {
+    CreateTestSchema();
 
-    ECClassP sourceClass = m_schema->GetClassP ("ClassA");
-    ASSERT_TRUE (NULL != sourceClass);
-    StandaloneECEnablerPtr sourceEnabler = sourceClass->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (sourceEnabler.IsValid ());
+    ECClassP sourceClass = m_schema->GetClassP("ClassA");
+    ASSERT_TRUE(NULL != sourceClass);
+    StandaloneECEnablerPtr sourceEnabler = sourceClass->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(sourceEnabler.IsValid());
 
-    ECClassP targetClass = m_schema->GetClassP ("ClassB");
-    ASSERT_TRUE (NULL != targetClass);
-    StandaloneECEnablerPtr targetEnabler = targetClass->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (targetEnabler.IsValid ());
+    ECClassP targetClass = m_schema->GetClassP("ClassB");
+    ASSERT_TRUE(NULL != targetClass);
+    StandaloneECEnablerPtr targetEnabler = targetClass->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(targetEnabler.IsValid());
 
     ECValue p1;
-    p1.SetInteger (123);
+    p1.SetInteger(123);
 
-    ECN::StandaloneECInstancePtr sourceInstance = sourceEnabler->CreateInstance ();
-    sourceInstance->SetValue ("p", p1);
-    sourceInstance->SetInstanceId ("source");
+    ECN::StandaloneECInstancePtr sourceInstance = sourceEnabler->CreateInstance();
+    sourceInstance->SetValue("p", p1);
+    sourceInstance->SetInstanceId("source");
 
     ECValue p2, b2;
-    p2.SetInteger (456);
-    b2.SetInteger (789);
-    ECN::StandaloneECInstancePtr targetInstance = targetEnabler->CreateInstance ();
-    targetInstance->SetValue ("p", p2);
-    targetInstance->SetValue ("b", b2);
-    targetInstance->SetInstanceId ("target");
+    p2.SetInteger(456);
+    b2.SetInteger(789);
+    ECN::StandaloneECInstancePtr targetInstance = targetEnabler->CreateInstance();
+    targetInstance->SetValue("p", p2);
+    targetInstance->SetValue("b", b2);
+    targetInstance->SetInstanceId("target");
 
-    ECRelationshipClassP relClass = dynamic_cast<ECRelationshipClassP>(m_schema->GetClassP ("ALikesB"));
-    ASSERT_TRUE (NULL != relClass);
+    ECRelationshipClassP relClass = dynamic_cast<ECRelationshipClassP>(m_schema->GetClassP("ALikesB"));
+    ASSERT_TRUE(NULL != relClass);
 
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
-    ASSERT_TRUE (relationshipEnabler.IsValid ());
+    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
+    ASSERT_TRUE(relationshipEnabler.IsValid());
 
-    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
-    relationshipInstance->SetSource (sourceInstance.get ());
-    relationshipInstance->SetTarget (targetInstance.get ());
-    relationshipInstance->SetInstanceId ("source->target");
+    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+    relationshipInstance->SetSource(sourceInstance.get());
+    relationshipInstance->SetTarget(targetInstance.get());
+    relationshipInstance->SetInstanceId("source->target");
 
     ECValue rel_p, rel_name, rel_sourceOrder, rel_targetOrder;
-    rel_p.SetInteger (777);
-    rel_sourceOrder.SetInteger (888);
-    rel_targetOrder.SetInteger (999);
-    rel_name.SetUtf8CP ("my_relationship");
+    rel_p.SetInteger(777);
+    rel_sourceOrder.SetInteger(888);
+    rel_targetOrder.SetInteger(999);
+    rel_name.SetUtf8CP("my_relationship");
 
-    EXPECT_TRUE (ECObjectsStatus::Success == relationshipInstance->SetValue ("p", rel_p));
-    EXPECT_TRUE (ECObjectsStatus::Success == relationshipInstance->SetValue ("Name", rel_name));
-    EXPECT_TRUE (ECObjectsStatus::Success == relationshipInstance->SetValue ("SourceOrderId", rel_sourceOrder));
-    EXPECT_TRUE (ECObjectsStatus::Success == relationshipInstance->SetValue ("TargetOrderId", rel_targetOrder));
+    EXPECT_TRUE(ECObjectsStatus::Success == relationshipInstance->SetValue("p", rel_p));
+    EXPECT_TRUE(ECObjectsStatus::Success == relationshipInstance->SetValue("Name", rel_name));
+    EXPECT_TRUE(ECObjectsStatus::Success == relationshipInstance->SetValue("SourceOrderId", rel_sourceOrder));
+    EXPECT_TRUE(ECObjectsStatus::Success == relationshipInstance->SetValue("TargetOrderId", rel_targetOrder));
 
-    IECInstancePtr readSource = relationshipInstance->GetSource ();
+    IECInstancePtr readSource = relationshipInstance->GetSource();
     ECValue readValue;
-    readSource->GetValue (readValue, "p");
-    ASSERT_TRUE (readValue.Equals (p1));
+    readSource->GetValue(readValue, "p");
+    ASSERT_TRUE(readValue.Equals(p1));
 
-    IECInstancePtr readTarget = relationshipInstance->GetTarget ();
-    readTarget->GetValue (readValue, "p");
-    ASSERT_TRUE (readValue.Equals (p2));
-    readTarget->GetValue (readValue, "b");
-    ASSERT_TRUE (readValue.Equals (b2));
+    IECInstancePtr readTarget = relationshipInstance->GetTarget();
+    readTarget->GetValue(readValue, "p");
+    ASSERT_TRUE(readValue.Equals(p2));
+    readTarget->GetValue(readValue, "b");
+    ASSERT_TRUE(readValue.Equals(b2));
 
     WString ecInstanceXml;
 
-    InstanceWriteStatus status2 = relationshipInstance->WriteToXmlString (ecInstanceXml, true, true);
-    EXPECT_EQ (InstanceWriteStatus::Success, status2);
-    }
+    InstanceWriteStatus status2 = relationshipInstance->WriteToXmlString(ecInstanceXml, true, true);
+    EXPECT_EQ(InstanceWriteStatus::Success, status2);
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECRelationshipInstanceTest, InstanceSettersAndGetters)
-    {
-    CreateTestSchema ();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipInstanceTest, InstanceSettersAndGetters) {
+    CreateTestSchema();
 
-    ECRelationshipClassCP relClass = m_schema->GetClassP ("ALikesB")->GetRelationshipClassCP ();
-    ASSERT_TRUE (NULL != relClass);
+    ECRelationshipClassCP relClass = m_schema->GetClassP("ALikesB")->GetRelationshipClassCP();
+    ASSERT_TRUE(NULL != relClass);
 
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
-    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
+    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
+    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
 
-    EXPECT_STREQ (relationshipEnabler->GetName (), "Bentley::ECN::StandaloneECEnabler");
-    EXPECT_STREQ (relationshipInstance->GetName (), "");
-    relationshipInstance->SetName ("Some name");
-    EXPECT_STREQ (relationshipInstance->GetName (), "Some name");
+    EXPECT_STREQ(relationshipEnabler->GetName(), "Bentley::ECN::StandaloneECEnabler");
+    EXPECT_STREQ(relationshipInstance->GetName(), "");
+    relationshipInstance->SetName("Some name");
+    EXPECT_STREQ(relationshipInstance->GetName(), "Some name");
 
-    EXPECT_STREQ (relationshipInstance->GetRelationshipEnabler ().GetECEnabler ().GetClass ().GetFullName (), "RelationshipTesting:ALikesB");
-    EXPECT_STREQ (relationshipInstance->GetRelationshipClass ().GetFullName (), "RelationshipTesting:ALikesB");
-    }
+    EXPECT_STREQ(relationshipInstance->GetRelationshipEnabler().GetECEnabler().GetClass().GetFullName(), "RelationshipTesting:ALikesB");
+    EXPECT_STREQ(relationshipInstance->GetRelationshipClass().GetFullName(), "RelationshipTesting:ALikesB");
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECRelationshipInstanceTest, InheritedEnablerIterator)
-    {
-    CreateTestSchema ();
-    ECRelationshipClassCP relClass = m_schema->GetClassP ("ALikesB")->GetRelationshipClassCP ();
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipInstanceTest, InheritedEnablerIterator) {
+    CreateTestSchema();
+    ECRelationshipClassCP relClass = m_schema->GetClassP("ALikesB")->GetRelationshipClassCP();
+    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
 
-    Utf8CP props[] = { "p", "SourceOrderId", "TargetOrderId", "Name", "Source ECPointer", "Target ECPointer", "ArrayProperty" };
+    Utf8CP props[] = {"p", "SourceOrderId", "TargetOrderId", "Name", "Source ECPointer", "Target ECPointer", "ArrayProperty"};
 
     // Target/Source ECPointer are not properties of the ECClass, they are special access strings for relationship enablers...
-    EXPECT_EQ (relationshipEnabler->GetClass ().GetPropertyCount () + 2, sizeof(props) / sizeof(props[0]));
-    uint32_t tempIndex = relationshipEnabler->GetFirstPropertyIndex (0);
-    EXPECT_TRUE (relationshipEnabler->HasChildProperties (0));
+    EXPECT_EQ(relationshipEnabler->GetClass().GetPropertyCount() + 2, sizeof(props) / sizeof(props[0]));
+    uint32_t tempIndex = relationshipEnabler->GetFirstPropertyIndex(0);
+    EXPECT_TRUE(relationshipEnabler->HasChildProperties(0));
 
-    while (tempIndex != 0)
-        {
+    while (tempIndex != 0) {
         Utf8CP tempName = NULL;
-        EXPECT_EQ (relationshipEnabler->GetAccessString (tempName, tempIndex), ECObjectsStatus::Success);
-        EXPECT_FALSE (relationshipEnabler->HasChildProperties (tempIndex));
+        EXPECT_EQ(relationshipEnabler->GetAccessString(tempName, tempIndex), ECObjectsStatus::Success);
+        EXPECT_FALSE(relationshipEnabler->HasChildProperties(tempIndex));
 
         int foundPos = -1;
-        for (int i = 0; i<sizeof(props) / sizeof(props[0]); i++)
-        if (props[i] != NULL && strcmp (props[i], tempName) == 0)
-            {
-            foundPos = i;
-            break;
+        for (int i = 0; i < sizeof(props) / sizeof(props[0]); i++)
+            if (props[i] != NULL && strcmp(props[i], tempName) == 0) {
+                foundPos = i;
+                break;
             }
-        EXPECT_NE (foundPos, -1);
+        EXPECT_NE(foundPos, -1);
         if (foundPos > -1)
             props[foundPos] = NULL;
 
-        tempIndex = relationshipEnabler->GetNextPropertyIndex (0, tempIndex);
-        }
+        tempIndex = relationshipEnabler->GetNextPropertyIndex(0, tempIndex);
+    }
 
     for (int i = 0; i < sizeof(props) / sizeof(props[0]); i++)
         EXPECT_TRUE(nullptr == props[i]);
-        // EXPECT_STREQ (props[i], NULL);
-    }
+    // EXPECT_STREQ (props[i], NULL);
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECRelationshipInstanceTest, InheritedEnablerIndices)
-    {
-    CreateTestSchema ();
-    ECRelationshipClassCP relClass = m_schema->GetClassP ("ALikesB")->GetRelationshipClassCP ();
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipInstanceTest, InheritedEnablerIndices) {
+    CreateTestSchema();
+    ECRelationshipClassCP relClass = m_schema->GetClassP("ALikesB")->GetRelationshipClassCP();
+    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
 
-    Utf8CP props[] = { "p", "SourceOrderId", "TargetOrderId", "Name", "Source ECPointer", "Target ECPointer", "ArrayProperty" };
+    Utf8CP props[] = {"p", "SourceOrderId", "TargetOrderId", "Name", "Source ECPointer", "Target ECPointer", "ArrayProperty"};
 
     bvector<uint32_t> indices;
-    EXPECT_EQ (relationshipEnabler->GetPropertyIndices (indices, 0), ECObjectsStatus::Success);
-    EXPECT_EQ (indices.size (), sizeof(props) / sizeof(props[0]));
+    EXPECT_EQ(relationshipEnabler->GetPropertyIndices(indices, 0), ECObjectsStatus::Success);
+    EXPECT_EQ(indices.size(), sizeof(props) / sizeof(props[0]));
 
-    for (uint32_t i = 0; i < indices.size (); i++)
-        {
+    for (uint32_t i = 0; i < indices.size(); i++) {
         Utf8CP tempName = NULL;
-        EXPECT_EQ (relationshipEnabler->GetAccessString (tempName, indices[i]), ECObjectsStatus::Success);
-        EXPECT_FALSE (relationshipEnabler->HasChildProperties (indices[i]));
+        EXPECT_EQ(relationshipEnabler->GetAccessString(tempName, indices[i]), ECObjectsStatus::Success);
+        EXPECT_FALSE(relationshipEnabler->HasChildProperties(indices[i]));
 
         int foundPos = -1;
-        for (int i = 0; i<sizeof(props) / sizeof(props[0]); i++)
-        if (props[i] != NULL && strcmp (props[i], tempName) == 0)
-            {
-            foundPos = i;
-            break;
+        for (int i = 0; i < sizeof(props) / sizeof(props[0]); i++)
+            if (props[i] != NULL && strcmp(props[i], tempName) == 0) {
+                foundPos = i;
+                break;
             }
-        EXPECT_NE (foundPos, -1);
+        EXPECT_NE(foundPos, -1);
         if (foundPos > -1)
             props[foundPos] = NULL;
-        }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECRelationshipInstanceTest, InheritedSetGetValues)
-    {
-    CreateTestSchema ();
-    ECRelationshipClassCP relClass = m_schema->GetClassP ("ALikesB")->GetRelationshipClassCP ();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipInstanceTest, InheritedSetGetValues) {
+    CreateTestSchema();
+    ECRelationshipClassCP relClass = m_schema->GetClassP("ALikesB")->GetRelationshipClassCP();
 
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
-    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
+    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
+    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
 
     ECValue value;
-    EXPECT_EQ (relationshipInstance->SetValue ("Name", ECValue ("Some value 1")), ECObjectsStatus::Success);
-    EXPECT_EQ (relationshipInstance->GetValue (value, "Name"), ECObjectsStatus::Success);
-    EXPECT_STREQ ("Some value 1", value.GetUtf8CP ());
+    EXPECT_EQ(relationshipInstance->SetValue("Name", ECValue("Some value 1")), ECObjectsStatus::Success);
+    EXPECT_EQ(relationshipInstance->GetValue(value, "Name"), ECObjectsStatus::Success);
+    EXPECT_STREQ("Some value 1", value.GetUtf8CP());
 
-    EXPECT_EQ (relationshipInstance->SetValue ("p", ECValue (42)), ECObjectsStatus::Success);
-    EXPECT_EQ (relationshipInstance->GetValue (value, "p"), ECObjectsStatus::Success);
-    EXPECT_EQ (42, value.GetInteger ());
-    }
+    EXPECT_EQ(relationshipInstance->SetValue("p", ECValue(42)), ECObjectsStatus::Success);
+    EXPECT_EQ(relationshipInstance->GetValue(value, "p"), ECObjectsStatus::Success);
+    EXPECT_EQ(42, value.GetInteger());
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECRelationshipInstanceTest, InheritedSetGetArrayValues)
-    {
-    CreateTestSchema ();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipInstanceTest, InheritedSetGetArrayValues) {
+    CreateTestSchema();
 
-    ECRelationshipClassCP relClass = m_schema->GetClassP ("ALikesB")->GetRelationshipClassCP ();
+    ECRelationshipClassCP relClass = m_schema->GetClassP("ALikesB")->GetRelationshipClassCP();
 
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
-    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
+    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
+    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
 
     ECValue value;
-    EXPECT_EQ (relationshipInstance->AddArrayElements ("ArrayProperty", 13), ECObjectsStatus::Success);
-    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty"), ECObjectsStatus::Success);
-    EXPECT_EQ (value.GetArrayInfo ().GetCount (), 13);
+    EXPECT_EQ(relationshipInstance->AddArrayElements("ArrayProperty", 13), ECObjectsStatus::Success);
+    EXPECT_EQ(relationshipInstance->GetValue(value, "ArrayProperty"), ECObjectsStatus::Success);
+    EXPECT_EQ(value.GetArrayInfo().GetCount(), 13);
 
-    EXPECT_EQ (relationshipInstance->SetValue ("ArrayProperty", ECValue ("Seventh Value"), 7), ECObjectsStatus::Success);
-    EXPECT_EQ (relationshipInstance->SetValue ("ArrayProperty", ECValue ("First Value"), 1), ECObjectsStatus::Success);
-    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty", 7), ECObjectsStatus::Success);
-    EXPECT_STREQ (value.GetUtf8CP (), "Seventh Value");
+    EXPECT_EQ(relationshipInstance->SetValue("ArrayProperty", ECValue("Seventh Value"), 7), ECObjectsStatus::Success);
+    EXPECT_EQ(relationshipInstance->SetValue("ArrayProperty", ECValue("First Value"), 1), ECObjectsStatus::Success);
+    EXPECT_EQ(relationshipInstance->GetValue(value, "ArrayProperty", 7), ECObjectsStatus::Success);
+    EXPECT_STREQ(value.GetUtf8CP(), "Seventh Value");
 
-    EXPECT_EQ (relationshipInstance->InsertArrayElements ("ArrayProperty", 2, 29), ECObjectsStatus::Success);
-    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty"), ECObjectsStatus::Success);
-    EXPECT_EQ (value.GetArrayInfo ().GetCount (), 42);
+    EXPECT_EQ(relationshipInstance->InsertArrayElements("ArrayProperty", 2, 29), ECObjectsStatus::Success);
+    EXPECT_EQ(relationshipInstance->GetValue(value, "ArrayProperty"), ECObjectsStatus::Success);
+    EXPECT_EQ(value.GetArrayInfo().GetCount(), 42);
 
-    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty", 36), ECObjectsStatus::Success);
-    EXPECT_STREQ (value.GetUtf8CP (), "Seventh Value");
+    EXPECT_EQ(relationshipInstance->GetValue(value, "ArrayProperty", 36), ECObjectsStatus::Success);
+    EXPECT_STREQ(value.GetUtf8CP(), "Seventh Value");
 
-    EXPECT_EQ (relationshipInstance->RemoveArrayElement ("ArrayProperty", 36), ECObjectsStatus::Success);
-    EXPECT_EQ (relationshipInstance->RemoveArrayElement ("ArrayProperty", 36), ECObjectsStatus::Success);
-    EXPECT_EQ (relationshipInstance->RemoveArrayElement ("ArrayProperty", 0), ECObjectsStatus::Success);
+    EXPECT_EQ(relationshipInstance->RemoveArrayElement("ArrayProperty", 36), ECObjectsStatus::Success);
+    EXPECT_EQ(relationshipInstance->RemoveArrayElement("ArrayProperty", 36), ECObjectsStatus::Success);
+    EXPECT_EQ(relationshipInstance->RemoveArrayElement("ArrayProperty", 0), ECObjectsStatus::Success);
 
-    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty", 0), ECObjectsStatus::Success);
-    EXPECT_STREQ (value.GetUtf8CP (), "First Value");
+    EXPECT_EQ(relationshipInstance->GetValue(value, "ArrayProperty", 0), ECObjectsStatus::Success);
+    EXPECT_STREQ(value.GetUtf8CP(), "First Value");
 
-    EXPECT_EQ (relationshipInstance->GetValue (value, "ArrayProperty"), ECObjectsStatus::Success);
-    EXPECT_EQ (value.GetArrayInfo ().GetCount (), 39);
+    EXPECT_EQ(relationshipInstance->GetValue(value, "ArrayProperty"), ECObjectsStatus::Success);
+    EXPECT_EQ(value.GetArrayInfo().GetCount(), 39);
 
-    //No idea why clearing array is not allowed
-    EXPECT_EQ (relationshipInstance->ClearArray ("ArrayProperty"), ECObjectsStatus::OperationNotSupported);
-    EXPECT_EQ (value.GetArrayInfo ().GetCount (), 39);
-    }
+    // No idea why clearing array is not allowed
+    EXPECT_EQ(relationshipInstance->ClearArray("ArrayProperty"), ECObjectsStatus::OperationNotSupported);
+    EXPECT_EQ(value.GetArrayInfo().GetCount(), 39);
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-//Source and dest IDs are hardcoded to 0 in StandaloneECRelationshipInstance.cpp
-TEST_F (ECRelationshipInstanceTest, SourceDestOrderIDs)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+// Source and dest IDs are hardcoded to 0 in StandaloneECRelationshipInstance.cpp
+TEST_F(ECRelationshipInstanceTest, SourceDestOrderIDs) {
     int64_t sourceId, targetId;
 
-    CreateTestSchema ();
-    ECRelationshipClassCP relClass = m_schema->GetClassP ("ALikesB")->GetRelationshipClassCP ();
+    CreateTestSchema();
+    ECRelationshipClassCP relClass = m_schema->GetClassP("ALikesB")->GetRelationshipClassCP();
 
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
-    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
+    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
+    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
 
-    EXPECT_EQ (relationshipInstance->GetSourceOrderId (sourceId), ECObjectsStatus::Success);
-    EXPECT_EQ (sourceId, 0);
-    EXPECT_EQ (relationshipInstance->GetTargetOrderId (targetId), ECObjectsStatus::Success);
-    EXPECT_EQ (targetId, 0);
+    EXPECT_EQ(relationshipInstance->GetSourceOrderId(sourceId), ECObjectsStatus::Success);
+    EXPECT_EQ(sourceId, 0);
+    EXPECT_EQ(relationshipInstance->GetTargetOrderId(targetId), ECObjectsStatus::Success);
+    EXPECT_EQ(targetId, 0);
 
-    EXPECT_TRUE (relationshipInstance->GetSource ().IsNull ());
-    EXPECT_TRUE (relationshipInstance->GetTarget ().IsNull ());
+    EXPECT_TRUE(relationshipInstance->GetSource().IsNull());
+    EXPECT_TRUE(relationshipInstance->GetTarget().IsNull());
 
-    relationshipInstance->SetSource (m_schema->GetClassP ("ClassA")->GetDefaultStandaloneEnabler ()->CreateInstance ().get ());
-    relationshipInstance->SetTarget (m_schema->GetClassP ("ClassB")->GetDefaultStandaloneEnabler ()->CreateInstance ().get ());
+    relationshipInstance->SetSource(m_schema->GetClassP("ClassA")->GetDefaultStandaloneEnabler()->CreateInstance().get());
+    relationshipInstance->SetTarget(m_schema->GetClassP("ClassB")->GetDefaultStandaloneEnabler()->CreateInstance().get());
 
-    EXPECT_STREQ (relationshipInstance->GetSource ()->GetClass ().GetFullName (), "RelationshipTesting:ClassA");
-    EXPECT_STREQ (relationshipInstance->GetTarget ()->GetClass ().GetFullName (), "RelationshipTesting:ClassB");
+    EXPECT_STREQ(relationshipInstance->GetSource()->GetClass().GetFullName(), "RelationshipTesting:ClassA");
+    EXPECT_STREQ(relationshipInstance->GetTarget()->GetClass().GetFullName(), "RelationshipTesting:ClassB");
 
-    EXPECT_EQ (relationshipInstance->GetSourceOrderId (sourceId), ECObjectsStatus::Success);
-    EXPECT_EQ (sourceId, 0);
-    EXPECT_EQ (relationshipInstance->GetTargetOrderId (targetId), ECObjectsStatus::Success);
-    EXPECT_EQ (targetId, 0);
-    }
+    EXPECT_EQ(relationshipInstance->GetSourceOrderId(sourceId), ECObjectsStatus::Success);
+    EXPECT_EQ(sourceId, 0);
+    EXPECT_EQ(relationshipInstance->GetTargetOrderId(targetId), ECObjectsStatus::Success);
+    EXPECT_EQ(targetId, 0);
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECRelationshipInstanceTest, DumpToString)
-    {
-    CreateTestSchema ();
-    ECRelationshipClassCP relClass = m_schema->GetClassP ("ALikesB")->GetRelationshipClassCP ();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipInstanceTest, DumpToString) {
+    CreateTestSchema();
+    ECRelationshipClassCP relClass = m_schema->GetClassP("ALikesB")->GetRelationshipClassCP();
 
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
-    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
+    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
+    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
 
-    relationshipInstance->SetSource (m_schema->GetClassP ("ClassA")->GetDefaultStandaloneEnabler ()->CreateInstance ().get ());
-    relationshipInstance->SetTarget (m_schema->GetClassP ("ClassB")->GetDefaultStandaloneEnabler ()->CreateInstance ().get ());
-    EXPECT_EQ (relationshipInstance->SetValue ("Name", ECValue ("Some value 1")), ECObjectsStatus::Success);
-    EXPECT_EQ (relationshipInstance->SetValue ("p", ECValue (42)), ECObjectsStatus::Success);
+    relationshipInstance->SetSource(m_schema->GetClassP("ClassA")->GetDefaultStandaloneEnabler()->CreateInstance().get());
+    relationshipInstance->SetTarget(m_schema->GetClassP("ClassB")->GetDefaultStandaloneEnabler()->CreateInstance().get());
+    EXPECT_EQ(relationshipInstance->SetValue("Name", ECValue("Some value 1")), ECObjectsStatus::Success);
+    EXPECT_EQ(relationshipInstance->SetValue("p", ECValue(42)), ECObjectsStatus::Success);
 
-    Utf8String outStr = relationshipInstance->ToString ("~!@");
-    bvector<Utf8String> strSplit = split (outStr, '\n');
-    Utf8String strMatches[] = { "^~!@================== ECInstance Dump #\\d+ =============================$",
+    Utf8String outStr = relationshipInstance->ToString("~!@");
+    bvector<Utf8String> strSplit = split(outStr, '\n');
+    Utf8String strMatches[] = {
+        "^~!@================== ECInstance Dump #\\d+ =============================$",
         "^~!@ECClass=ALikesB at address = 0x[a-f0-9]{2,16}$",
         "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[   0\\] Nullflags\\[0\\] = 0x[a-f0-9]{1,8}$",
         "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[   4\\] p = 42$",
@@ -469,28 +447,27 @@ TEST_F (ECRelationshipInstanceTest, DumpToString)
         "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[  20\\] -> \\[0x[a-f0-9]{2,8}\\]\\[  49\\] ArrayProperty = Count: 0 IsFixedSize: 0$",
         "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[  24\\] -> \\[0x[a-f0-9]{2,8}\\]\\[    \\] Source ECPointer = <null>$",
         "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[  28\\] -> \\[0x[a-f0-9]{2,8}\\]\\[    \\] Target ECPointer = <null>$",
-        "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[  32\\] Offset of TheEnd = 49$", };
+        "^~!@  \\[0x[a-f0-9]{2,16}\\]\\[  32\\] Offset of TheEnd = 49$",
+    };
 
-    EXPECT_EQ (sizeof(strMatches) / sizeof(strMatches[0]), strSplit.size ());
-    size_t check_size = sizeof(strMatches) / sizeof(strMatches[0]) < strSplit.size () ? sizeof(strMatches) / sizeof(strMatches[0]) : strSplit.size ();
+    EXPECT_EQ(sizeof(strMatches) / sizeof(strMatches[0]), strSplit.size());
+    size_t check_size = sizeof(strMatches) / sizeof(strMatches[0]) < strSplit.size() ? sizeof(strMatches) / sizeof(strMatches[0]) : strSplit.size();
 
-    for (int i = 0; i < (int)check_size; i++)
-        {
-        bool match = std::regex_match (strSplit[i].c_str (), std::regex (strMatches[i].c_str ()));
-        EXPECT_TRUE (match);
+    for (int i = 0; i < (int)check_size; i++) {
+        bool match = std::regex_match(strSplit[i].c_str(), std::regex(strMatches[i].c_str()));
+        EXPECT_TRUE(match);
         if (!match)
-            printf ("Line %d: %s\nDoesn't match regex: %s\n", i, strSplit[i].c_str (), strMatches[i].c_str ());
-        }
+            printf("Line %d: %s\nDoesn't match regex: %s\n", i, strSplit[i].c_str(), strMatches[i].c_str());
     }
+}
 
 //************************************************************************************
 // ECRelationshipClassTest
 //************************************************************************************
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECRelationshipClassTest, TestsRelationshipStrengthAndDirectionConstraints)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipClassTest, TestsRelationshipStrengthAndDirectionConstraints) {
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
@@ -525,13 +502,12 @@ TEST_F (ECRelationshipClassTest, TestsRelationshipStrengthAndDirectionConstraint
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass1->AddBaseClass(*relationClass3)) << "Strength Direction was supposed to have different values (Forward/Backward) so base class was rejected";
     // #3 Strength and Direction are same
     EXPECT_EQ(ECObjectsStatus::Success, relationClass1->AddBaseClass(*relationClass4)) << "Failing with equal Strength Direction and Strength, so baseclass should have been accepted.";
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECRelationshipClassTest, TestsRelationshipConstraints)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipClassTest, TestsRelationshipConstraints) {
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
@@ -565,7 +541,7 @@ TEST_F (ECRelationshipClassTest, TestsRelationshipConstraints)
     relationClassBase->GetTarget().SetRoleLabel("Target");
 
     relationClassBase->GetSource().AddClass(*classB);
-    
+
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->AddBaseClass(*relationClassBase));
 
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetSource().AddClass(*classB)) << "ClassB is the constraint class so it should work ";
@@ -581,14 +557,12 @@ TEST_F (ECRelationshipClassTest, TestsRelationshipConstraints)
     EXPECT_EQ(ECObjectsStatus::Success, relationClassBase->GetTarget().AddClass(*classA)) << "Should have been able to add a target constraint to the base relationship class";
     EXPECT_TRUE(relationClassBase->Verify()) << "The base relationship class should  verify because it defines both constraints.";
     EXPECT_TRUE(relationClass->Verify()) << "The derived relationship class should not verify because the base relationship defines both constraints and they are compatible.";
+}
 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECRelationshipClassTest, TestRelationshipMultiplicityConstraint)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipClassTest, TestRelationshipMultiplicityConstraint) {
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
@@ -607,7 +581,7 @@ TEST_F (ECRelationshipClassTest, TestRelationshipMultiplicityConstraint)
     relationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
     relationClass->GetSource().SetMultiplicity(RelationshipMultiplicity::OneMany());
     relationClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
-    
+
     ASSERT_EQ(ECObjectsStatus::Success, relationClass->AddBaseClass(*relationClassBase));
     ASSERT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany()));
     ASSERT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany()));
@@ -626,13 +600,12 @@ TEST_F (ECRelationshipClassTest, TestRelationshipMultiplicityConstraint)
     relationClass2->GetSource().SetMultiplicity(RelationshipMultiplicity::OneMany());
     relationClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
     ASSERT_EQ(ECObjectsStatus::Success, relationClass2->AddBaseClass(*relationClassBase));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECRelationshipClassTest, TestBaseClassRules)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECRelationshipClassTest, TestBaseClassRules) {
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
@@ -681,13 +654,12 @@ TEST_F(ECRelationshipClassTest, TestBaseClassRules)
     baseRelationClass->GetTarget().AddClass(*entityClassB);
 
     EXPECT_EQ(ECObjectsStatus::RelationshipAlreadyHasBaseClass, relationClass2->AddBaseClass(*baseRelationClass)) << "An ECRelationshipClass can only have one base class";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipClassTest, TestAbstractConstraint_Entity)
-    {
+TEST_F(ECRelationshipClassTest, TestAbstractConstraint_Entity) {
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
@@ -717,18 +689,17 @@ TEST_F(ECRelationshipClassTest, TestAbstractConstraint_Entity)
 
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().AddClass(*entityClassB)) << "Should fail to add the second constaint class because the abstract constraint has not been explicity set.";
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().SetAbstractConstraint(*entityClassB)) << "The abstract constraint cannot be set to B because C is not nor derived from B.";
-    entityClassC->AddBaseClass(*entityClassB); // Making C derive from B
+    entityClassC->AddBaseClass(*entityClassB);  // Making C derive from B
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetTarget().SetAbstractConstraint(*entityClassB)) << "The abstract constraint can now be set because B is a base class of C";
 
     EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint is locally set therefore should return true.";
     EXPECT_STREQ("B", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipClassTest, TestAbstractConstraint_Relationships)
-    {
+TEST_F(ECRelationshipClassTest, TestAbstractConstraint_Relationships) {
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
@@ -763,20 +734,19 @@ TEST_F(ECRelationshipClassTest, TestAbstractConstraint_Relationships)
 
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().AddClass(*relClassB)) << "Should fail to add the second constaint class because the abstract constraint has not been explicity set.";
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().SetAbstractConstraint(*relClassB)) << "The abstract constraint cannot be set to B because C is not nor derived from B.";
-    relClassC->AddBaseClass(*relClassB); // Making C derive from B
+    relClassC->AddBaseClass(*relClassB);  // Making C derive from B
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetTarget().SetAbstractConstraint(*relClassB)) << "The abstract constraint can now be set because B is a base class of C";
 
     EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint is locally set therefore should return true.";
     EXPECT_STREQ("RelB", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
 
     EXPECT_TRUE(ecSchema->Validate());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipClassTest, TestRelationshipDelayedValidation)
-    {
+TEST_F(ECRelationshipClassTest, TestRelationshipDelayedValidation) {
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
@@ -791,7 +761,7 @@ TEST_F(ECRelationshipClassTest, TestRelationshipDelayedValidation)
     ecSchema->CreateRelationshipClass(baseRelationClass, "baseRelClass", false);
     ASSERT_FALSE(baseRelationClass->GetIsVerified()) << "A newly created relationship should not be verified.";
     ASSERT_FALSE(ecSchema->Validate()) << "The schema fail to validate since the relationship is invalid.";
-    
+
     baseRelationClass->SetStrength(StrengthType::Referencing);
     baseRelationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
     baseRelationClass->SetClassModifier(ECClassModifier::Abstract);
@@ -822,13 +792,12 @@ TEST_F(ECRelationshipClassTest, TestRelationshipDelayedValidation)
 
     relationClass->RemoveBaseClass(*baseRelationClass);
     EXPECT_FALSE(relationClass->GetIsVerified()) << "The base class which made this relationship valid has been removed. The relationship should now not be valid";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipClassTest, TestRelationshipAsEndpoint)
-    {
+TEST_F(ECRelationshipClassTest, TestRelationshipAsEndpoint) {
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
@@ -857,13 +826,12 @@ TEST_F(ECRelationshipClassTest, TestRelationshipAsEndpoint)
     relClassCRelAToB->GetTarget().SetRoleLabel("Target");
 
     EXPECT_TRUE(ecSchema->Validate());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipClassTest, TestEntityAndRelationshipCannotBeOnTheSameEndpoint)
-    {
+TEST_F(ECRelationshipClassTest, TestEntityAndRelationshipCannotBeOnTheSameEndpoint) {
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
@@ -888,13 +856,12 @@ TEST_F(ECRelationshipClassTest, TestEntityAndRelationshipCannotBeOnTheSameEndpoi
     EXPECT_EQ(ECObjectsStatus::Success, relClassCRelAToB->GetTarget().AddClass(*relClassAToB));
     EXPECT_EQ(ECObjectsStatus::Success, relClassCRelAToB->GetTarget().SetAbstractConstraint(*relClassAToB));
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relClassCRelAToB->GetTarget().AddClass(*entityClassB));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipClassTest, TestRelationshipSerialization)
-    {
+TEST_F(ECRelationshipClassTest, TestRelationshipSerialization) {
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
@@ -914,13 +881,12 @@ TEST_F(ECRelationshipClassTest, TestRelationshipSerialization)
     ECSchemaPtr roundTripSchema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(roundTripSchema, serializedSchemaXml.c_str(), *context)) << "Schema should fail deserialization because it is an invalid 3.1 schema.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClass)
-    {
+TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClass) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
@@ -958,13 +924,12 @@ TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClass)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClassWithAbstractConstraint)
-    {
+TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClassWithAbstractConstraint) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
@@ -1007,13 +972,12 @@ TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClassWithAbstract
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipClassTest, InheritedConstraintCustomAttributesShouldNotBeSerialized)
-    {
+TEST_F(ECRelationshipClassTest, InheritedConstraintCustomAttributesShouldNotBeSerialized) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
@@ -1051,14 +1015,12 @@ TEST_F(ECRelationshipClassTest, InheritedConstraintCustomAttributesShouldNotBeSe
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, relClassTestDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(relationshipClassJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(relationshipClassJson, testDataJson);
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipClassTest, RelationshipCannotHaveItselfAsAnEndPoint)
-    {
+TEST_F(ECRelationshipClassTest, RelationshipCannotHaveItselfAsAnEndPoint) {
     ECSchemaPtr ecSchema;
     ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
 
@@ -1071,18 +1033,17 @@ TEST_F(ECRelationshipClassTest, RelationshipCannotHaveItselfAsAnEndPoint)
     EXPECT_EQ(ECObjectsStatus::Success, relClassAToMe->GetSource().AddClass(*entityClassA));
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relClassAToMe->GetTarget().AddClass(*relClassAToMe));
     EXPECT_EQ(nullptr, relClassAToMe->GetTarget().GetAbstractConstraint());
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipClassTest, TestSupportsClassWithoutAbstractConstraint)
-    {
+TEST_F(ECRelationshipClassTest, TestSupportsClassWithoutAbstractConstraint) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr ecSchema;
     auto status = ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
     ASSERT_EQ(ECObjectsStatus::Success, status);
-    
+
     ECEntityClassP class1;
     status = ecSchema->CreateEntityClass(class1, "Class1");
     ASSERT_EQ(ECObjectsStatus::Success, status);
@@ -1113,7 +1074,7 @@ TEST_F(ECRelationshipClassTest, TestSupportsClassWithoutAbstractConstraint)
     ASSERT_TRUE(relClass->GetSource().SupportsClass(*class4));
     ASSERT_FALSE(relClass->GetSource().SupportsClass(*class2));
 
-    //Add a second class to the source constraint
+    // Add a second class to the source constraint
     status = relClass->GetSource().AddClass(*class1);
     ASSERT_EQ(ECObjectsStatus::Success, status);
     ASSERT_FALSE(relClass->GetSource().IsAbstractConstraintDefined());
@@ -1121,19 +1082,17 @@ TEST_F(ECRelationshipClassTest, TestSupportsClassWithoutAbstractConstraint)
     ASSERT_TRUE(relClass->GetSource().SupportsClass(*class3));
     ASSERT_TRUE(relClass->GetSource().SupportsClass(*class4));
     ASSERT_FALSE(relClass->GetSource().SupportsClass(*class2));
-    }
-
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipClassTest, TestSupportsClassWithAbstractConstraint)
-    {
+TEST_F(ECRelationshipClassTest, TestSupportsClassWithAbstractConstraint) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr ecSchema;
     auto status = ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
     ASSERT_EQ(ECObjectsStatus::Success, status);
-    
+
     ECEntityClassP class1;
     status = ecSchema->CreateEntityClass(class1, "Class1");
     ASSERT_EQ(ECObjectsStatus::Success, status);
@@ -1166,25 +1125,24 @@ TEST_F(ECRelationshipClassTest, TestSupportsClassWithAbstractConstraint)
     ASSERT_TRUE(relClass->GetSource().SupportsClass(*class4));
     ASSERT_TRUE(relClass->GetSource().SupportsClass(*class2));
 
-    //Add a second class to the source constraint
+    // Add a second class to the source constraint
     status = relClass->GetSource().AddClass(*class1);
     ASSERT_EQ(ECObjectsStatus::Success, status);
     ASSERT_TRUE(relClass->GetSource().SupportsClass(*class1));
     ASSERT_TRUE(relClass->GetSource().SupportsClass(*class3));
     ASSERT_TRUE(relClass->GetSource().SupportsClass(*class4));
     ASSERT_TRUE(relClass->GetSource().SupportsClass(*class2));
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipClassTest, TestTryAddMultipleClassesWithoutAbstractConstraint)
-    {
+TEST_F(ECRelationshipClassTest, TestTryAddMultipleClassesWithoutAbstractConstraint) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr ecSchema;
     auto status = ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
     ASSERT_EQ(ECObjectsStatus::Success, status);
-    
+
     ECEntityClassP class1;
     status = ecSchema->CreateEntityClass(class1, "Class1");
     ASSERT_EQ(ECObjectsStatus::Success, status);
@@ -1205,10 +1163,10 @@ TEST_F(ECRelationshipClassTest, TestTryAddMultipleClassesWithoutAbstractConstrai
     ASSERT_FALSE(relClass->GetSource().SupportsClass(*class1));
     ASSERT_TRUE(relClass->GetSource().SupportsClass(*class2));
 
-    //Add a second class to the source constraint
+    // Add a second class to the source constraint
     status = relClass->GetSource().AddClass(*class1);
     ASSERT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, status);
-    }
+}
 
 //************************************************************************************
 // ECRelationshipDeserializationTest
@@ -1216,8 +1174,7 @@ TEST_F(ECRelationshipClassTest, TestTryAddMultipleClassesWithoutAbstractConstrai
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-void TestRelationshipStrengthDirectionConstraint(ECRelatedInstanceDirection baseDirection, ECRelatedInstanceDirection derivedDirection, bool expectSuccess = true)
-    {
+void TestRelationshipStrengthDirectionConstraint(ECRelatedInstanceDirection baseDirection, ECRelatedInstanceDirection derivedDirection, bool expectSuccess = true) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent"/>
@@ -1252,8 +1209,7 @@ void TestRelationshipStrengthDirectionConstraint(ECRelatedInstanceDirection base
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
 
     SchemaReadStatus expectedOutcome = expectSuccess ? SchemaReadStatus::Success : SchemaReadStatus::InvalidECSchemaXml;
-    ASSERT_EQ(expectedOutcome, ECSchema::ReadFromXmlString(schema, formattedSchemaXml.c_str(), *context)) <<
-        "The schema has a base relationship with strength direction " << baseStrengthDirectionString << " and the derived relationship with strength direction " << derivedStrengthDirectionString << " which should " << (expectSuccess ? "successfully" : "fail") << " to deserialize.";
+    ASSERT_EQ(expectedOutcome, ECSchema::ReadFromXmlString(schema, formattedSchemaXml.c_str(), *context)) << "The schema has a base relationship with strength direction " << baseStrengthDirectionString << " and the derived relationship with strength direction " << derivedStrengthDirectionString << " which should " << (expectSuccess ? "successfully" : "fail") << " to deserialize.";
 
     if (!expectSuccess)
         return;
@@ -1269,24 +1225,22 @@ void TestRelationshipStrengthDirectionConstraint(ECRelatedInstanceDirection base
     ECRelationshipClassCP relSubClass = ecRelSubClass->GetRelationshipClassCP();
     ASSERT_TRUE(nullptr != relSubClass);
     EXPECT_EQ(derivedDirection, relSubClass->GetStrengthDirection());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, TestRelationshipStrengthDirectionConstraint)
-    {
+TEST_F(ECRelationshipDeserializationTest, TestRelationshipStrengthDirectionConstraint) {
     TestRelationshipStrengthDirectionConstraint(ECRelatedInstanceDirection::Forward, ECRelatedInstanceDirection::Forward);
     TestRelationshipStrengthDirectionConstraint(ECRelatedInstanceDirection::Forward, ECRelatedInstanceDirection::Backward, false);
     TestRelationshipStrengthDirectionConstraint(ECRelatedInstanceDirection::Backward, ECRelatedInstanceDirection::Forward, false);
     TestRelationshipStrengthDirectionConstraint(ECRelatedInstanceDirection::Backward, ECRelatedInstanceDirection::Backward);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-void TestRelationshipStrengthConstraint(StrengthType baseStrength, StrengthType derivedStrength, bool expectSuccess = true)
-    {
+void TestRelationshipStrengthConstraint(StrengthType baseStrength, StrengthType derivedStrength, bool expectSuccess = true) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Parent"/>
@@ -1321,8 +1275,7 @@ void TestRelationshipStrengthConstraint(StrengthType baseStrength, StrengthType 
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
 
     SchemaReadStatus expectedOutcome = expectSuccess ? SchemaReadStatus::Success : SchemaReadStatus::InvalidECSchemaXml;
-    ASSERT_EQ(expectedOutcome, ECSchema::ReadFromXmlString(schema, formattedSchemaXml.c_str(), *context)) <<
-        "The schema has a base relationship with strength " << baseStrengthString << " and the derived relationship with strength " << derivedStrengthString << " which should " << (expectSuccess ? "successfully" : "fail") << " to deserialize.";
+    ASSERT_EQ(expectedOutcome, ECSchema::ReadFromXmlString(schema, formattedSchemaXml.c_str(), *context)) << "The schema has a base relationship with strength " << baseStrengthString << " and the derived relationship with strength " << derivedStrengthString << " which should " << (expectSuccess ? "successfully" : "fail") << " to deserialize.";
 
     if (!expectSuccess)
         return;
@@ -1338,13 +1291,12 @@ void TestRelationshipStrengthConstraint(StrengthType baseStrength, StrengthType 
     ECRelationshipClassCP relSubClass = ecRelSubClass->GetRelationshipClassCP();
     ASSERT_TRUE(nullptr != relSubClass);
     EXPECT_EQ(derivedStrength, relSubClass->GetStrength());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, TestRelationshipStrengthConstraint)
-    {
+TEST_F(ECRelationshipDeserializationTest, TestRelationshipStrengthConstraint) {
     TestRelationshipStrengthConstraint(StrengthType::Referencing, StrengthType::Referencing);
     TestRelationshipStrengthConstraint(StrengthType::Referencing, StrengthType::Holding, false);
     TestRelationshipStrengthConstraint(StrengthType::Referencing, StrengthType::Embedding, false);
@@ -1354,212 +1306,217 @@ TEST_F(ECRelationshipDeserializationTest, TestRelationshipStrengthConstraint)
     TestRelationshipStrengthConstraint(StrengthType::Embedding, StrengthType::Referencing, false);
     TestRelationshipStrengthConstraint(StrengthType::Embedding, StrengthType::Holding, false);
     TestRelationshipStrengthConstraint(StrengthType::Embedding, StrengthType::Embedding);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, TestValidAbstractConstraint)
+TEST_F(ECRelationshipDeserializationTest, TestValidAbstractConstraint) {
     {
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A' modifier='abstract'/>"
-        "   <ECEntityClass typeName='B' modifier='abstract'>"
-        "       <BaseClass>A</BaseClass>"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='C' modifier='abstract'>"
-        "       <BaseClass>A</BaseClass>"
-        "   </ECEntityClass>"
-        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
-        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' >"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='A'>"
-        "           <Class class='B' />"
-        "           <Class class='C' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema.IsValid());
-    
-    EXPECT_STREQ("A", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The Source constraint's abstract constraint is implicitly defined to be A.";
-    EXPECT_STREQ("A", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The Target constraint's abstract constraint is explicitly defined to be B.";
-    }
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A' modifier='abstract'/>"
-        "   <ECEntityClass typeName='B' modifier='abstract'/>"
-        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
-        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' >"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' >"
-        "           <Class class='B' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema.IsValid());
-    
-    EXPECT_STREQ("A", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The Source constraint's abstract constraint is implicitly defined to be A.";
-    EXPECT_STREQ("B", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The Target constraint's abstract constraint is implicitly defined to be B.";
-    }
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A' modifier='abstract'/>"
-        "   <ECEntityClass typeName='B' modifier='abstract'/>"
-        "   <ECEntityClass typeName='C' modifier='abstract'>"
-        "       <BaseClass>B</BaseClass>"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='CB' modifier='abstract'>"
-        "       <BaseClass>B</BaseClass>"
-        "       <BaseClass>C</BaseClass>"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='AB' modifier='abstract'>"
-        "       <BaseClass>A</BaseClass>"
-        "       <BaseClass>B</BaseClass>"
-        "   </ECEntityClass>"
-        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
-        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' >"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='B'>"
-        "           <Class class='B' />"
-        "           <Class class='C' />"
-        "           <Class class='CB' />"
-        "           <Class class='AB' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema.IsValid());
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A' modifier='abstract'/>"
+            "   <ECEntityClass typeName='B' modifier='abstract'>"
+            "       <BaseClass>A</BaseClass>"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='C' modifier='abstract'>"
+            "       <BaseClass>A</BaseClass>"
+            "   </ECEntityClass>"
+            "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+            "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' >"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='A'>"
+            "           <Class class='B' />"
+            "           <Class class='C' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema.IsValid());
 
-    EXPECT_STREQ("A", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The Source constraint's abstract constraint is implicitly defined to be A.";
-    EXPECT_STREQ("B", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The Target constraint's abstract constraint should be explicitly defined to B.";
+        EXPECT_STREQ("A", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The Source constraint's abstract constraint is implicitly defined to be A.";
+        EXPECT_STREQ("A", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The Target constraint's abstract constraint is explicitly defined to be B.";
     }
     {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A' modifier='abstract'/>"
-        "   <ECEntityClass typeName='B' modifier='abstract'/>"
-        "   <ECEntityClass typeName='C' modifier='abstract'>"
-        "       <BaseClass>B</BaseClass>"
-        "   </ECEntityClass>"
-        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
-        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' >"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='B'>"
-        "           <Class class='C' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema.IsValid());
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A' modifier='abstract'/>"
+            "   <ECEntityClass typeName='B' modifier='abstract'/>"
+            "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+            "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' >"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' >"
+            "           <Class class='B' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema.IsValid());
 
-    EXPECT_STREQ("A", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The Source constraint's abstract constraint is implicitly defined to be A.";
-    EXPECT_STREQ("B", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The Target constraint's abstract constraint is explicitly defined to B.";
+        EXPECT_STREQ("A", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The Source constraint's abstract constraint is implicitly defined to be A.";
+        EXPECT_STREQ("B", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The Target constraint's abstract constraint is implicitly defined to be B.";
     }
-    }
+    {
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A' modifier='abstract'/>"
+            "   <ECEntityClass typeName='B' modifier='abstract'/>"
+            "   <ECEntityClass typeName='C' modifier='abstract'>"
+            "       <BaseClass>B</BaseClass>"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='CB' modifier='abstract'>"
+            "       <BaseClass>B</BaseClass>"
+            "       <BaseClass>C</BaseClass>"
+            "   </ECEntityClass>"
+            "   <ECEntityClass typeName='AB' modifier='abstract'>"
+            "       <BaseClass>A</BaseClass>"
+            "       <BaseClass>B</BaseClass>"
+            "   </ECEntityClass>"
+            "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+            "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' >"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='B'>"
+            "           <Class class='B' />"
+            "           <Class class='C' />"
+            "           <Class class='CB' />"
+            "           <Class class='AB' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema.IsValid());
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenAbstractConstraintNotFoundOrEmpty)
-    {
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A' modifier='abstract'/>"
-        "   <ECEntityClass typeName='B' modifier='abstract'/>"
-        "   <ECEntityClass typeName='C' modifier='abstract'>"
-        "       <BaseClass>B</BaseClass>"
-        "   </ECEntityClass>"
-        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
-        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' >"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' >"
-        "           <Class class='B' />"
-        "           <Class class='C' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema should fail to deserialize when an abstractConstraint attribute is not found and multiple constraint classes are defined.";
+        EXPECT_STREQ("A", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The Source constraint's abstract constraint is implicitly defined to be A.";
+        EXPECT_STREQ("B", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The Target constraint's abstract constraint should be explicitly defined to B.";
     }
     {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A' modifier='abstract'/>"
-        "   <ECEntityClass typeName='B' modifier='abstract'/>"
-        "   <ECEntityClass typeName='C' modifier='abstract'>"
-        "       <BaseClass>B</BaseClass>"
-        "   </ECEntityClass>"
-        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
-        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' abstractConstraint='' >"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='' >"
-        "           <Class class='B' />"
-        "           <Class class='C' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema should fail to deserialize because the abstractConstraint is empty.";
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A' modifier='abstract'/>"
+            "   <ECEntityClass typeName='B' modifier='abstract'/>"
+            "   <ECEntityClass typeName='C' modifier='abstract'>"
+            "       <BaseClass>B</BaseClass>"
+            "   </ECEntityClass>"
+            "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+            "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' >"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='B'>"
+            "           <Class class='C' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema.IsValid());
+
+        EXPECT_STREQ("A", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The Source constraint's abstract constraint is implicitly defined to be A.";
+        EXPECT_STREQ("B", schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The Target constraint's abstract constraint is explicitly defined to B.";
     }
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A' modifier='abstract'/>"
-        "   <ECEntityClass typeName='B' modifier='abstract'/>"
-        "   <ECEntityClass typeName='C' modifier='abstract'>"
-        "       <BaseClass>B</BaseClass>"
-        "   </ECEntityClass>"
-        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
-        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' abstractConstraint='D' >"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='E' >"
-        "           <Class class='B' />"
-        "           <Class class='C' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema should fail to deserialize because the abstractConstraint class do not exist.";
-    }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenAbstractConstraintViolatesNarrowing)
+TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenAbstractConstraintNotFoundOrEmpty) {
     {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A' modifier='abstract'/>"
+            "   <ECEntityClass typeName='B' modifier='abstract'/>"
+            "   <ECEntityClass typeName='C' modifier='abstract'>"
+            "       <BaseClass>B</BaseClass>"
+            "   </ECEntityClass>"
+            "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+            "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' >"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' >"
+            "           <Class class='B' />"
+            "           <Class class='C' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema should fail to deserialize when an abstractConstraint attribute is not found and multiple constraint classes are defined.";
+    }
+    {
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A' modifier='abstract'/>"
+            "   <ECEntityClass typeName='B' modifier='abstract'/>"
+            "   <ECEntityClass typeName='C' modifier='abstract'>"
+            "       <BaseClass>B</BaseClass>"
+            "   </ECEntityClass>"
+            "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+            "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' abstractConstraint='' >"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='' >"
+            "           <Class class='B' />"
+            "           <Class class='C' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema should fail to deserialize because the abstractConstraint is empty.";
+    }
+    {
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A' modifier='abstract'/>"
+            "   <ECEntityClass typeName='B' modifier='abstract'/>"
+            "   <ECEntityClass typeName='C' modifier='abstract'>"
+            "       <BaseClass>B</BaseClass>"
+            "   </ECEntityClass>"
+            "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+            "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='testSource' abstractConstraint='D' >"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='testTarget' abstractConstraint='E' >"
+            "           <Class class='B' />"
+            "           <Class class='C' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema should fail to deserialize because the abstractConstraint class do not exist.";
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenAbstractConstraintViolatesNarrowing) {
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECEntityClass typeName='A' modifier='abstract'/>"
         "   <ECEntityClass typeName='B' modifier='abstract'/>"
@@ -1591,14 +1548,14 @@ TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenAbstractConstraintVio
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema should fail because DerivedARelD has a more base class as the target abstract constraint then it's base class ARelD.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenRelationshipConstraintsEmpty)
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenRelationshipConstraintsEmpty) {
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECEntityClass typeName='A' modifier='abstract'/>"
         "   <ECEntityClass typeName='B' modifier='abstract'/>"
@@ -1614,14 +1571,14 @@ TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenRelationshipConstrain
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_NE(SchemaReadStatus::Success, status) << "The schema should fail because DerivedARelD has a more base class as the target abstract constraint then it's base class ARelD.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, TestMultiplicityValidation)
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+TEST_F(ECRelationshipDeserializationTest, TestMultiplicityValidation) {
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECEntityClass typeName='A' modifier='abstract'/>"
         "   <ECEntityClass typeName='B' modifier='abstract'/>"
@@ -1669,176 +1626,179 @@ TEST_F(ECRelationshipDeserializationTest, TestMultiplicityValidation)
     EXPECT_TRUE(relClass->GetTarget().GetMultiplicity().Equals(RelationshipMultiplicity::ZeroMany()));
     EXPECT_TRUE(derivedRelClass->GetSource().GetMultiplicity().Equals(RelationshipMultiplicity::OneOne()));
     EXPECT_TRUE(derivedRelClass->GetTarget().GetMultiplicity().Equals(RelationshipMultiplicity::ZeroMany()));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, TestFailureWhenRelationshipClassModifierNotFound)
+TEST_F(ECRelationshipDeserializationTest, TestFailureWhenRelationshipClassModifierNotFound) {
     {
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A'/>"
-        "   <ECEntityClass typeName='B'/>"
-        "   <ECRelationshipClass typeName='ARelB' >"
-        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
-        "           <Class class='B' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A'/>"
+            "   <ECEntityClass typeName='B'/>"
+            "   <ECRelationshipClass typeName='ARelB' >"
+            "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
+            "           <Class class='B' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema did not fail to deserialize even though the relationship class is missing the modifier attribute.";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema did not fail to deserialize even though the relationship class is missing the modifier attribute.";
     }
     {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A'/>"
-        "   <ECEntityClass typeName='B'/>"
-        "   <ECRelationshipClass typeName='ARelB' modifier=''>"
-        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
-        "           <Class class='B' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A'/>"
+            "   <ECEntityClass typeName='B'/>"
+            "   <ECRelationshipClass typeName='ARelB' modifier=''>"
+            "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
+            "           <Class class='B' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema did not fail to deserialize even though the relationship class modifier attribute is empty.";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema did not fail to deserialize even though the relationship class modifier attribute is empty.";
     }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, TestFailureWithRelationshipKeys)
-    {
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A'/>"
-        "   <ECEntityClass typeName='B'/>"
-        "   <ECRelationshipClass typeName='ARelB' modifier='Sealed'>"
-        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
-        "           <Class class='A'>"
-        "               <Key>"
-        "                   <Property name='Property' />"
-        "               </Key>"
-        "           </Class>"
-        "       </Source>"
-        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
-        "           <Class class='B' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
-
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema did not fail to deserialize even though the source constraint of the relationship class has a key property.";
-    }
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A'/>"
-        "   <ECEntityClass typeName='B'/>"
-        "   <ECRelationshipClass typeName='ARelB' modifier='Sealed'>"
-        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
-        "           <Class class='A'/>"
-        "       </Source>"
-        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
-        "           <Class class='B' >"
-        "               <Key>"
-        "                   <Property name='Property' />"
-        "               </Key>"
-        "           </Class>"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
-
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema did not fail to deserialize even though the target constraint of the relationship class has a key property.";
-    }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, TestSuccessWithRelationshipKeysFromEC2)
+TEST_F(ECRelationshipDeserializationTest, TestFailureWithRelationshipKeys) {
     {
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A'/>"
+            "   <ECEntityClass typeName='B'/>"
+            "   <ECRelationshipClass typeName='ARelB' modifier='Sealed'>"
+            "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
+            "           <Class class='A'>"
+            "               <Key>"
+            "                   <Property name='Property' />"
+            "               </Key>"
+            "           </Class>"
+            "       </Source>"
+            "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
+            "           <Class class='B' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema did not fail to deserialize even though the source constraint of the relationship class has a key property.";
+    }
+    {
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A'/>"
+            "   <ECEntityClass typeName='B'/>"
+            "   <ECRelationshipClass typeName='ARelB' modifier='Sealed'>"
+            "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
+            "           <Class class='A'/>"
+            "       </Source>"
+            "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
+            "           <Class class='B' >"
+            "               <Key>"
+            "                   <Property name='Property' />"
+            "               </Key>"
+            "           </Class>"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema did not fail to deserialize even though the target constraint of the relationship class has a key property.";
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECRelationshipDeserializationTest, TestSuccessWithRelationshipKeysFromEC2) {
     // This test is only to make sure de-serialization does not fail when 2.0/3.0 schemas have key properties.
     // Even though they are allowed to have them they are dropped and there is no way to access
     // them via the API
     {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='A'/>"
-        "   <ECEntityClass typeName='B'/>"
-        "   <ECRelationshipClass typeName='ARelB' >"
-        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
-        "           <Class class='A'>"
-        "               <Key>"
-        "                   <Property name='Property' />"
-        "               </Key>"
-        "           </Class>"
-        "       </Source>"
-        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
-        "           <Class class='B' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECEntityClass typeName='A'/>"
+            "   <ECEntityClass typeName='B'/>"
+            "   <ECRelationshipClass typeName='ARelB' >"
+            "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
+            "           <Class class='A'>"
+            "               <Key>"
+            "                   <Property name='Property' />"
+            "               </Key>"
+            "           </Class>"
+            "       </Source>"
+            "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
+            "           <Class class='B' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
-    ASSERT_EQ(SchemaReadStatus::Success, status) << "The 3.0 schema failed even though relationship classes can have key properties.";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+        ASSERT_EQ(SchemaReadStatus::Success, status) << "The 3.0 schema failed even though relationship classes can have key properties.";
     }
     {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "   <ECClass typeName='A' isDomainClass='True' />"
-        "   <ECClass typeName='B' isDomainClass='True' />"
-        "   <ECRelationshipClass typeName='ARelB' isDomainClass='True' >"
-        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
-        "           <Class class='A'>"
-        "               <Key>"
-        "                   <Property name='Property' />"
-        "               </Key>"
-        "           </Class>"
-        "       </Source>"
-        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
-        "           <Class class='B' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "   <ECClass typeName='A' isDomainClass='True' />"
+            "   <ECClass typeName='B' isDomainClass='True' />"
+            "   <ECRelationshipClass typeName='ARelB' isDomainClass='True' >"
+            "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
+            "           <Class class='A'>"
+            "               <Key>"
+            "                   <Property name='Property' />"
+            "               </Key>"
+            "           </Class>"
+            "       </Source>"
+            "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
+            "           <Class class='B' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
-    ASSERT_EQ(SchemaReadStatus::Success, status) << "The 2.0 schema failed even though relationship classes can have key properties.";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+        ASSERT_EQ(SchemaReadStatus::Success, status) << "The 2.0 schema failed even though relationship classes can have key properties.";
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenMultiplicityNotFoundOrEmpty)
-    {
+TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenMultiplicityNotFoundOrEmpty) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECEntityClass typeName='A' modifier='abstract'/>"
         "   <ECEntityClass typeName='B' modifier='abstract'/>"
@@ -1856,7 +1816,8 @@ TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenMultiplicityNotFoundO
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint without a mutliplicity attribute is supposed to fail to deserialize.";
 
-    Utf8CP schemaXml2 = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXml2 =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECEntityClass typeName='A' modifier='abstract'/>"
         "   <ECEntityClass typeName='B' modifier='abstract'/>"
@@ -1873,16 +1834,16 @@ TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenMultiplicityNotFoundO
     ECSchemaPtr schema2;
     status = ECSchema::ReadFromXmlString(schema2, schemaXml2, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint with an empty mutliplicity attribute is supposed to fail to deserialize.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenPolymorphicNotFoundOrEmpty)
-    {
+TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenPolymorphicNotFoundOrEmpty) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECEntityClass typeName='A' modifier='abstract'/>"
         "   <ECEntityClass typeName='B' modifier='abstract'/>"
@@ -1900,7 +1861,8 @@ TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenPolymorphicNotFoundOr
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint without a polymorphic attribute is supposed to fail to deserialize.";
 
-    Utf8CP schemaXml2 = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXml2 =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECEntityClass typeName='A' modifier='abstract'/>"
         "   <ECEntityClass typeName='B' modifier='abstract'/>"
@@ -1917,94 +1879,96 @@ TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenPolymorphicNotFoundOr
     ECSchemaPtr schema2;
     status = ECSchema::ReadFromXmlString(schema2, schemaXml2, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint with an empty polymorphic attribute is supposed to fail to deserialize.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenRoleLabelNotFoundOrEmpty)
+TEST_F(ECRelationshipDeserializationTest, ExpectFailureWhenRoleLabelNotFoundOrEmpty) {
     {
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A' modifier='abstract'/>"
-        "   <ECEntityClass typeName='B' modifier='abstract'/>"
-        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
-        "       <Source multiplicity='(0..1)' polymorphic='True' >"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0..1)' polymorphic='True' >"
-        "           <Class class='B' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A' modifier='abstract'/>"
+            "   <ECEntityClass typeName='B' modifier='abstract'/>"
+            "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+            "       <Source multiplicity='(0..1)' polymorphic='True' >"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..1)' polymorphic='True' >"
+            "           <Class class='B' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint without a roleLabel attribute is supposed to fail to deserialize.";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint without a roleLabel attribute is supposed to fail to deserialize.";
     }
 
     {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A' modifier='abstract'/>"
-        "   <ECEntityClass typeName='B' modifier='abstract'/>"
-        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
-        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='' >"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='' >"
-        "           <Class class='B' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A' modifier='abstract'/>"
+            "   <ECEntityClass typeName='B' modifier='abstract'/>"
+            "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+            "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='' >"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='' >"
+            "           <Class class='B' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint with an empty roleLabel attribute is supposed to fail to deserialize.";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint with an empty roleLabel attribute is supposed to fail to deserialize.";
     }
     {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "   <ECEntityClass typeName='A' modifier='abstract'/>"
-        "   <ECEntityClass typeName='B' modifier='abstract'/>"
-        "   <ECEntityClass typeName='C' modifier='abstract'>"
-        "       <BaseClass>B</BaseClass>"
-        "   </ECEntityClass>"
-        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
-        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='' >"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='' >"
-        "           <Class class='B' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "   <ECRelationshipClass typeName='ARelC' modifier='abstract'>"
-        "       <BaseClass>ARelC</BaseClass>"
-        "       <Source multiplicity='(0..1)' polymorphic='True' >"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target multiplicity='(0..1)' polymorphic='True' >"
-        "           <Class class='C' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
+        Utf8CP schemaXml =
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECEntityClass typeName='A' modifier='abstract'/>"
+            "   <ECEntityClass typeName='B' modifier='abstract'/>"
+            "   <ECEntityClass typeName='C' modifier='abstract'>"
+            "       <BaseClass>B</BaseClass>"
+            "   </ECEntityClass>"
+            "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+            "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='' >"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..1)' polymorphic='True' roleLabel='' >"
+            "           <Class class='B' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "   <ECRelationshipClass typeName='ARelC' modifier='abstract'>"
+            "       <BaseClass>ARelC</BaseClass>"
+            "       <Source multiplicity='(0..1)' polymorphic='True' >"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..1)' polymorphic='True' >"
+            "           <Class class='C' />"
+            "       </Target>"
+            "   </ECRelationshipClass>"
+            "</ECSchema>";
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint with an empty roleLabel attribute is supposed to fail to deserialize.";
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "ECRelationshipConstraint with an empty roleLabel attribute is supposed to fail to deserialize.";
     }
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipDeserializationTest, TestMultipleConstraintClasses)
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+TEST_F(ECRelationshipDeserializationTest, TestMultipleConstraintClasses) {
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0' schemaName='ReferencedSchema' nameSpacePrefix='ref' version='01.00' description='Description' displayLabel='Display Label' xmlns:ec='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "  <ECClass typeName = 'Class' isDomainClass = 'True'>"
         "      <ECProperty propertyName = 'Property' typeName = 'string' />"
@@ -2039,14 +2003,14 @@ TEST_F(ECRelationshipDeserializationTest, TestMultipleConstraintClasses)
     ASSERT_EQ(2, relClass->GetTarget().GetConstraintClasses().size());
     ASSERT_STREQ("Class1", relClass->GetTarget().GetConstraintClasses()[0]->GetName().c_str());
     ASSERT_STREQ("Class2", relClass->GetTarget().GetConstraintClasses()[1]->GetName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, ExpectSuccessWhenDerivedClassComesBeforeBaseClass)
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+TEST_F(ECRelationshipDeserializationTest, ExpectSuccessWhenDerivedClassComesBeforeBaseClass) {
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECEntityClass typeName='C' modifier='sealed'>"
         "       <BaseClass>B</BaseClass>"
@@ -2073,17 +2037,16 @@ TEST_F(ECRelationshipDeserializationTest, ExpectSuccessWhenDerivedClassComesBefo
         "</ECSchema>";
 
     ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, InheritanceRule_ExpectSuccessWhenOverridingRelationshipsMoreStrictMultiplicity)
-    {
+TEST_F(ECRelationshipDeserializationTest, InheritanceRule_ExpectSuccessWhenOverridingRelationshipsMoreStrictMultiplicity) {
     Utf8CP schemaXml(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="Element" modifier="Abstract" />
@@ -2121,18 +2084,17 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_ExpectSuccessWhenOverr
         )schema");
 
     ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(schema->Validate(false));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, InheritanceRule_ExpectValidationFailureWhenOverridingRelationshipsLessStrictLowerMultiplicity)
-    {
+TEST_F(ECRelationshipDeserializationTest, InheritanceRule_ExpectValidationFailureWhenOverridingRelationshipsLessStrictLowerMultiplicity) {
     Utf8CP schemaXml(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="Element" modifier="Abstract" />
@@ -2160,16 +2122,15 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_ExpectValidationFailur
         )schema");
 
     ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, InheritanceRule_ExpectValidationFailureWhenOverridingRelationshipsLessStrictUpperMultiplicity)
-    {
+TEST_F(ECRelationshipDeserializationTest, InheritanceRule_ExpectValidationFailureWhenOverridingRelationshipsLessStrictUpperMultiplicity) {
     Utf8CP schemaXml(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="Element" modifier="Abstract" />
@@ -2197,17 +2158,16 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_ExpectValidationFailur
         )schema");
 
     ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, InheritanceRule_ExpectValidationFailureWhenOverridingRelationshipsMultiplicity)
-    {
-    //This test makes the lower bound less strict, but the upper bound more strict. We expect this to fail.
+TEST_F(ECRelationshipDeserializationTest, InheritanceRule_ExpectValidationFailureWhenOverridingRelationshipsMultiplicity) {
+    // This test makes the lower bound less strict, but the upper bound more strict. We expect this to fail.
     Utf8CP schemaXml(R"schema(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="Element" modifier="Abstract" />
@@ -2235,16 +2195,15 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_ExpectValidationFailur
         )schema");
 
     ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, RelationshipClassAsEndpoint)
-    {
+TEST_F(ECRelationshipDeserializationTest, RelationshipClassAsEndpoint) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="A"/>
@@ -2269,7 +2228,7 @@ TEST_F(ECRelationshipDeserializationTest, RelationshipClassAsEndpoint)
         </ECSchema>)xml";
 
     ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
@@ -2285,16 +2244,14 @@ TEST_F(ECRelationshipDeserializationTest, RelationshipClassAsEndpoint)
     ASSERT_NE(nullptr, relatedClass);
     ECRelationshipClassCP relatedRelationship = relatedClass->GetRelationshipClassCP();
     ASSERT_NE(nullptr, relatedRelationship);
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, InheritanceRule_OnlySingleBaseClassAllowed)
+TEST_F(ECRelationshipDeserializationTest, InheritanceRule_OnlySingleBaseClassAllowed) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECEntityClass typeName="B"/>
@@ -2317,15 +2274,15 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_OnlySingleBaseClassAll
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema->Validate(false));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema->Validate(false));
     }
-    
+
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECEntityClass typeName="B"/>
@@ -2358,21 +2315,19 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_OnlySingleBaseClassAll
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
     }
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, CanDeriveAbstractAndConcreteRelationship)
+TEST_F(ECRelationshipDeserializationTest, CanDeriveAbstractAndConcreteRelationship) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECEntityClass typeName="B"/>
@@ -2395,15 +2350,15 @@ TEST_F(ECRelationshipDeserializationTest, CanDeriveAbstractAndConcreteRelationsh
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema->Validate(false));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema->Validate(false));
     }
-    
+
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECEntityClass typeName="B"/>
@@ -2426,21 +2381,20 @@ TEST_F(ECRelationshipDeserializationTest, CanDeriveAbstractAndConcreteRelationsh
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema->Validate(false));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema->Validate(false));
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, InheritanceRule_SourceConstraintMustBeEqualOrMoreDerived)
+TEST_F(ECRelationshipDeserializationTest, InheritanceRule_SourceConstraintMustBeEqualOrMoreDerived) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECEntityClass typeName="B">
@@ -2476,15 +2430,15 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_SourceConstraintMustBe
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema->Validate(false));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema->Validate(false));
     }
-    
+
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECEntityClass typeName="B">
@@ -2511,20 +2465,19 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_SourceConstraintMustBe
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, InheritanceRule_SourceConstraintMustBeEqualWithFalsePolymorphicFlag)
+TEST_F(ECRelationshipDeserializationTest, InheritanceRule_SourceConstraintMustBeEqualWithFalsePolymorphicFlag) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECEntityClass typeName="B">
@@ -2551,15 +2504,15 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_SourceConstraintMustBe
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema->Validate(false));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema->Validate(false));
     }
-    
+
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECEntityClass typeName="B">
@@ -2586,20 +2539,19 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_SourceConstraintMustBe
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, InheritanceRule_TargetConstraintMustBeEqualOrMoreDerived)
+TEST_F(ECRelationshipDeserializationTest, InheritanceRule_TargetConstraintMustBeEqualOrMoreDerived) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECEntityClass typeName="B">
@@ -2635,15 +2587,15 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_TargetConstraintMustBe
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema->Validate(false));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema->Validate(false));
     }
-    
+
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECEntityClass typeName="B">
@@ -2670,20 +2622,19 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_TargetConstraintMustBe
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, InheritanceRule_TargetConstraintMustBeEqualWithFalsePolymorphicFlag)
+TEST_F(ECRelationshipDeserializationTest, InheritanceRule_TargetConstraintMustBeEqualWithFalsePolymorphicFlag) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECEntityClass typeName="B">
@@ -2710,15 +2661,15 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_TargetConstraintMustBe
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema->Validate(false));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema->Validate(false));
     }
-    
+
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECEntityClass typeName="B">
@@ -2745,20 +2696,19 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_TargetConstraintMustBe
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, InheritanceRule_AbstractConstraintMustBeEqualOrMoreDerived)
+TEST_F(ECRelationshipDeserializationTest, InheritanceRule_AbstractConstraintMustBeEqualOrMoreDerived) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A" modifier="Abstract"/>
             <ECEntityClass typeName="B" modifier="Abstract">
@@ -2797,15 +2747,15 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_AbstractConstraintMust
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema->Validate(false));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema->Validate(false));
     }
-    
-    { //Source less derived
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+
+    {  // Source less derived
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A" modifier="Abstract"/>
             <ECEntityClass typeName="B" modifier="Abstract">
@@ -2835,13 +2785,13 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_AbstractConstraintMust
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
     }
-    { //Target less derived
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    {  // Target less derived
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A" modifier="Abstract"/>
             <ECEntityClass typeName="B" modifier="Abstract">
@@ -2871,20 +2821,19 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_AbstractConstraintMust
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, OverrideAbstractConstraintWithFalsePolymorphicFlag)
+TEST_F(ECRelationshipDeserializationTest, OverrideAbstractConstraintWithFalsePolymorphicFlag) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A" modifier="Abstract"/>
             <ECEntityClass typeName="B" modifier="Abstract">
@@ -2923,20 +2872,19 @@ TEST_F(ECRelationshipDeserializationTest, OverrideAbstractConstraintWithFalsePol
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, PropertiesOnBaseAndDerivedRelationship)
+TEST_F(ECRelationshipDeserializationTest, PropertiesOnBaseAndDerivedRelationship) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECRelationshipClass typeName="MyBaseRelationship" strength="Referencing" strengthDirection="forward" modifier="Abstract">
@@ -2958,15 +2906,15 @@ TEST_F(ECRelationshipDeserializationTest, PropertiesOnBaseAndDerivedRelationship
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema->Validate(false));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema->Validate(false));
     }
-    
+
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A"/>
             <ECRelationshipClass typeName="MyBaseRelationship" strength="Referencing" strengthDirection="forward" modifier="Abstract">
@@ -2988,21 +2936,20 @@ TEST_F(ECRelationshipDeserializationTest, PropertiesOnBaseAndDerivedRelationship
                 <ECProperty propertyName="p" typeName="int" />
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status); //Should fail according to rule, but we do not prevent this. In fact, people seem to commonly do this. So we cannot change behavior for now.
-    ASSERT_TRUE(schema->Validate(false));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);  // Should fail according to rule, but we do not prevent this. In fact, people seem to commonly do this. So we cannot change behavior for now.
+        ASSERT_TRUE(schema->Validate(false));
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipDeserializationTest, InheritanceRule_OnlyBaseRelationshipsCanBeReferencedByNavigationProperties)
+TEST_F(ECRelationshipDeserializationTest, InheritanceRule_OnlyBaseRelationshipsCanBeReferencedByNavigationProperties) {
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A">
                 <ECNavigationProperty propertyName="Parent" relationshipName="MyBaseRelationship" direction="Backward"/>
@@ -3026,15 +2973,15 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_OnlyBaseRelationshipsC
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema->Validate(false));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, status);
+        ASSERT_TRUE(schema->Validate(false));
     }
-    
+
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A">
                 <ECNavigationProperty propertyName="Parent" relationshipName="MyRelationship" direction="Backward"/>
@@ -3058,25 +3005,24 @@ TEST_F(ECRelationshipDeserializationTest, InheritanceRule_OnlyBaseRelationshipsC
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml";
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECRelationshipMultiplicityTest, TestIsMoreRestrictive)
-    {
+TEST_F(ECRelationshipMultiplicityTest, TestIsMoreRestrictive) {
     RelationshipMultiplicity r0_1(0, 1);
     RelationshipMultiplicity r1_1(1, 1);
     RelationshipMultiplicity r0_2(0, 2);
     RelationshipMultiplicity r1_2(1, 2);
     RelationshipMultiplicity r0_unbounded(0);
     RelationshipMultiplicity r1_unbounded(1);
-    
+
     ASSERT_TRUE(r0_1.IsEqualToOrMoreRestrictiveThan(r0_1));
     ASSERT_TRUE(r1_2.IsEqualToOrMoreRestrictiveThan(r1_2));
 
@@ -3091,10 +3037,10 @@ TEST_F(ECRelationshipMultiplicityTest, TestIsMoreRestrictive)
     ASSERT_FALSE(r1_2.IsEqualToOrMoreRestrictiveThan(r1_1));
     ASSERT_FALSE(r0_2.IsEqualToOrMoreRestrictiveThan(r0_1));
     ASSERT_FALSE(r0_unbounded.IsEqualToOrMoreRestrictiveThan(r0_1));
-    
-    //lower bound less restrictive but upper bound more restrictive (less restrictive should take priority)
+
+    // lower bound less restrictive but upper bound more restrictive (less restrictive should take priority)
     ASSERT_FALSE(r0_2.IsEqualToOrMoreRestrictiveThan(r1_unbounded));
-    //lower bound more restrictive but upper bound less restrictive (less restrictive should take priority)
+    // lower bound more restrictive but upper bound less restrictive (less restrictive should take priority)
     ASSERT_FALSE(r1_unbounded.IsEqualToOrMoreRestrictiveThan(r0_2));
-    }
+}
 END_BENTLEY_ECN_TEST_NAMESPACE

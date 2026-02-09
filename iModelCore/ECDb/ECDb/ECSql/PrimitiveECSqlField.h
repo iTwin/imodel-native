@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECSqlField.h"
 
@@ -9,16 +9,15 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveECSqlField final : public ECSqlField
-    {
-private:
+struct PrimitiveECSqlField final : public ECSqlField {
+   private:
     int m_sqliteColumnIndex;
     DateTime::Info m_datetimeMetadata;
 
     bool _IsNull() const override { return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex); }
 
     void const* _GetBlob(int* blobSize) const override;
-    bool _GetBoolean() const override { return  GetSqliteStatement().GetValueBoolean(m_sqliteColumnIndex); }
+    bool _GetBoolean() const override { return GetSqliteStatement().GetValueBoolean(m_sqliteColumnIndex); }
     uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override;
     double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
     double _GetDouble() const override { return GetSqliteStatement().GetValueDouble(m_sqliteColumnIndex); }
@@ -37,8 +36,8 @@ private:
     void _OnDynamicPropertyUpdated() override;
     void UpdateDateTimeMetaData();
 
-public:
+   public:
     PrimitiveECSqlField(ECSqlSelectPreparedStatement&, ECSqlColumnInfo const&, int ecsqlColumnIndex);
     ~PrimitiveECSqlField() {}
-    };
+};
 END_BENTLEY_SQLITE_EC_NAMESPACE

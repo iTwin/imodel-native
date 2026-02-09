@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 
 #include "../../ECObjectsTestPCH.h"
 #include "../../TestFixture/TestFixture.h"
@@ -18,8 +18,7 @@ struct PhenomenonCopyTest : ECTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonCopyTest, BasicCopy)
-    {
+TEST_F(PhenomenonCopyTest, BasicCopy) {
     ECSchemaPtr ecSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(ecSchema, "Dole", "d", 42, 42, 42));
     PhenomenonP phen;
@@ -35,13 +34,12 @@ TEST_F(PhenomenonCopyTest, BasicCopy)
     EXPECT_STREQ(phen->GetDefinition().c_str(), targetPhen->GetDefinition().c_str());
     EXPECT_STREQ(phen->GetDisplayLabel().c_str(), targetPhen->GetDisplayLabel().c_str());
     EXPECT_STREQ(phen->GetDescription().c_str(), targetPhen->GetDescription().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PhenomenonCopyTest, NameConflict)
-    {
+TEST_F(PhenomenonCopyTest, NameConflict) {
     ECSchemaPtr ecSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(ecSchema, "Dole", "d", 42, 42, 42));
     PhenomenonP phen;
@@ -59,5 +57,5 @@ TEST_F(PhenomenonCopyTest, NameConflict)
     EXPECT_STREQ("BananaLength", targetPhen->GetDefinition().c_str());
     EXPECT_STREQ("Del Monte Banana Lengths!", targetPhen->GetDisplayLabel().c_str());
     EXPECT_STREQ("Measurements used for Bananas lengths at Del Monte", targetPhen->GetDescription().c_str());
-    }
+}
 END_BENTLEY_ECN_TEST_NAMESPACE

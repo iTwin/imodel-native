@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -18,8 +18,7 @@ struct CompositeTests : ECTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatTest, BasicUnitFormatCreation)
-    {
+TEST_F(FormatTest, BasicUnitFormatCreation) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
@@ -42,13 +41,12 @@ TEST_F(FormatTest, BasicUnitFormatCreation)
     ASSERT_NE(nullptr, ufmt->GetNumericSpec());
     EXPECT_EQ(Formatting::FractionalPrecision::Over_128, ufmt->GetNumericSpec()->GetFractionalPrecision());
     EXPECT_EQ(Formatting::PresentationType::Fractional, ufmt->GetNumericSpec()->GetPresentationType());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatTest, EmptySpacerRoundTrips)
-    {
+TEST_F(FormatTest, EmptySpacerRoundTrips) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -61,38 +59,36 @@ TEST_F(FormatTest, EmptySpacerRoundTrips)
         </ECSchema>)xml";
     Utf8String serializedSchemaXml;
 
-    static auto const verify = [](ECSchemaPtr schema) -> void
-        {
+    static auto const verify = [](ECSchemaPtr schema) -> void {
         ECFormatCP ufmt = schema->GetFormatCP("MrNoSpacer");
         ASSERT_NE(nullptr, ufmt);
         ASSERT_EQ(schema.get(), &ufmt->GetSchema());
         ASSERT_STREQ("MrNoSpacer", ufmt->GetName().c_str());
         ASSERT_EQ(Formatting::PresentationType::Fractional, ufmt->GetNumericSpec()->GetPresentationType());
         ASSERT_STREQ("", ufmt->GetCompositeSpec()->GetSpacer().c_str());
-        };
+    };
 
     // Deserialize original XML and serialize it back out.
     {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    verify(schema);
-    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml, ECVersion::Latest));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        verify(schema);
+        ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml, ECVersion::Latest));
     }
     // Deserialize roundtriped schema XML.
     {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, serializedSchemaXml.c_str(), *context));
-    verify(schema);
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, serializedSchemaXml.c_str(), *context));
+        verify(schema);
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatTest, EmptyUomSeparatorRoundTrips)
-    {
+TEST_F(FormatTest, EmptyUomSeparatorRoundTrips) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -101,37 +97,35 @@ TEST_F(FormatTest, EmptyUomSeparatorRoundTrips)
         </ECSchema>)xml";
     Utf8String serializedSchemaXml;
 
-    static auto const verify = [](ECSchemaPtr schema) -> void
-        {
+    static auto const verify = [](ECSchemaPtr schema) -> void {
         ECFormatCP ufmt = schema->GetFormatCP("NoUomSeparator");
         ASSERT_NE(nullptr, ufmt);
         ASSERT_EQ(schema.get(), &ufmt->GetSchema());
         ASSERT_STREQ("NoUomSeparator", ufmt->GetName().c_str());
         ASSERT_STREQ("", ufmt->GetNumericSpec()->GetUomSeparator());
-        };
+    };
 
     // Deserialize original XML and serialize it back out.
     {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    verify(schema);
-    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml, ECVersion::Latest));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        verify(schema);
+        ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml, ECVersion::Latest));
     }
     // Deserialize roundtripped schema XML.
     {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, serializedSchemaXml.c_str(), *context));
-    verify(schema);
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, serializedSchemaXml.c_str(), *context));
+        verify(schema);
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatTest, BasicRoundTripTest)
-    {
+TEST_F(FormatTest, BasicRoundTripTest) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -146,8 +140,7 @@ TEST_F(FormatTest, BasicRoundTripTest)
         </ECSchema>)xml";
     Utf8String serializedSchemaXml;
 
-    static auto const verify = [](ECSchemaPtr schema) -> void
-        {
+    static auto const verify = [](ECSchemaPtr schema) -> void {
         ECFormatCP ufmt = schema->GetFormatCP("AmerMYFI4");
         ASSERT_NE(nullptr, ufmt);
         ASSERT_EQ(schema.get(), &ufmt->GetSchema());
@@ -179,30 +172,29 @@ TEST_F(FormatTest, BasicRoundTripTest)
         ASSERT_STRCASEEQ("'", ufmt->GetCompositeSpec()->GetMinorLabel().c_str());
         ASSERT_STRCASEEQ("IN", ufmt->GetCompositeSubUnit()->GetName().c_str());
         ASSERT_STRCASEEQ("\"", ufmt->GetCompositeSpec()->GetSubLabel().c_str());
-        };
+    };
 
     // Deserialize original XML and serialize it back out.
     {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    verify(schema);
-    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml, ECVersion::Latest));
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        verify(schema);
+        ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml, ECVersion::Latest));
     }
     // Deserialize roundtriped schema XML.
     {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, serializedSchemaXml.c_str(), *context));
-    verify(schema);
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, serializedSchemaXml.c_str(), *context));
+        verify(schema);
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatTest, SerializeStandaloneUnitFormat)
-    {
+TEST_F(FormatTest, SerializeStandaloneUnitFormat) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "es", 3, 2, 0);
     schema->AddReferencedSchema(*GetUnitsSchema());
@@ -238,13 +230,12 @@ TEST_F(FormatTest, SerializeStandaloneUnitFormat)
     ASSERT_EQ(BentleyStatus::SUCCESS, ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile));
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatTest, VerifyDefaults)
-    {
+TEST_F(FormatTest, VerifyDefaults) {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" precision="4"/>
@@ -279,17 +270,15 @@ TEST_F(FormatTest, VerifyDefaults)
     EXPECT_FALSE(nfs->HasStationSeparator());
     EXPECT_EQ('+', nfs->GetStationSeparator());
     EXPECT_FALSE(format->HasComposite());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatTest, VerifyRoundTripMappings)
-    {
+TEST_F(FormatTest, VerifyRoundTripMappings) {
     auto schema = ECTestFixture::GetFormatsSchema();
     bvector<Utf8String> ignoredNames = {"FORMATS:StationUNS_100"};
-    for (const auto& f : schema->GetFormats())
-        {
+    for (const auto& f : schema->GetFormats()) {
         if (ignoredNames.end() == std::find(ignoredNames.begin(), ignoredNames.end(), f->GetFullName()))
             continue;
         auto legacy = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(f->GetFullName().c_str());
@@ -304,14 +293,13 @@ TEST_F(FormatTest, VerifyRoundTripMappings)
         ECClass::ParseClassName(_alias, name, roundTrippedName);
         auto format = schema->GetFormatCP(name.c_str());
         EXPECT_TRUE(f->IsIdentical(*format));
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatTest, LookupFormatTest)
-    {
+TEST_F(FormatTest, LookupFormatTest) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
@@ -358,187 +346,195 @@ TEST_F(FormatTest, LookupFormatTest)
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("AmerFI", shouldNotBeNull->GetName().c_str());
     ASSERT_EQ(1, schema->GetFormatCount());
-
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatRequiredAttributesTest, MissingOrInvalidType)
-    {
+TEST_F(FormatRequiredAttributesTest, MissingOrInvalidType) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format  typeName="AmerMYFI4" precision="4" />
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with missing presentation type");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with missing presentation type");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format  typeName="AmerMYFI4" type="" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with empty presentation type");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with empty presentation type");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="bananas" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid presentation type");
-    }
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid presentation type");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatRequiredAttributesTest, VerifyAllowedPresentationTypes)
+TEST_F(FormatRequiredAttributesTest, VerifyAllowedPresentationTypes) {
     {
-    {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="fractional" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::PresentationType::Fractional, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetPresentationType());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        EXPECT_EQ(Formatting::PresentationType::Fractional, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetPresentationType());
     }
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::PresentationType::Decimal, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetPresentationType());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        EXPECT_EQ(Formatting::PresentationType::Decimal, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetPresentationType());
     }
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="scientific" scientificType="normalized" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::PresentationType::Scientific, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetPresentationType());
-    EXPECT_EQ(Formatting::ScientificType::Normalized, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetScientificType());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        EXPECT_EQ(Formatting::PresentationType::Scientific, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetPresentationType());
+        EXPECT_EQ(Formatting::ScientificType::Normalized, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetScientificType());
     }
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="station" stationOffsetSize="2" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::PresentationType::Station, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetPresentationType());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        EXPECT_EQ(Formatting::PresentationType::Station, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetPresentationType());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatRequiredAttributesTest, MissingOrInvalidName)
-    {
+TEST_F(FormatRequiredAttributesTest, MissingOrInvalidName) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format type="fractional" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with missing typeName");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with missing typeName");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="" type="fractional" precision="4" />
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with empty typeName");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with empty typeName");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u" precision="4"/>
             <Format typeName="...." type="fractional"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid typeName");
-    }
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid typeName");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatRequiredAttributesTest, ScientificTypeShouldBeRequiredWhenTypeIsScientific)
-    {
+TEST_F(FormatRequiredAttributesTest, ScientificTypeShouldBeRequiredWhenTypeIsScientific) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="scientific" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with missing scientific type when type is scientific");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with missing scientific type when type is scientific");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="scientific" scientificType="bananas" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid scientific type when type is scientific");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid scientific type when type is scientific");
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="scientific" scientificType="zeroNormalized" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::ScientificType::ZeroNormalized, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetScientificType());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        EXPECT_EQ(Formatting::ScientificType::ZeroNormalized, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetScientificType());
     }
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="scientific" scientificType="normalized" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::ScientificType::Normalized, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetScientificType());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        EXPECT_EQ(Formatting::ScientificType::Normalized, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetScientificType());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatRequiredAttributesTest, StationOffsetSizeShouldBeRequiredWhenTypeIsStation)
-    {
+TEST_F(FormatRequiredAttributesTest, StationOffsetSizeShouldBeRequiredWhenTypeIsStation) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="station" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with missing stationoffsetsize when type is station");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with missing stationoffsetsize when type is station");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="station" stationOffsetSize="bananas" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid stationoffsetsize when type is station");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid stationoffsetsize when type is station");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="station" stationOffsetSize="-1" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid stationoffsetsize when type is station");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid stationoffsetsize when type is station");
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="station" stationOffsetSize="3" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(3, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetStationOffsetSize());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        EXPECT_EQ(3, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetStationOffsetSize());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatRequiredAttributesTest, VerifyValidDecimalPrecision)
-    {
+TEST_F(FormatRequiredAttributesTest, VerifyValidDecimalPrecision) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with missing decimal precision");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with missing decimal precision");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" precision=""/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty decimal precision");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty decimal precision");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" precision="-1"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with negative decimal precision");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with negative decimal precision");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" precision="bananas"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid decimal precision");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid decimal precision");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" precision="13"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with decimal precision higher than max");
-    for (int i = 0; i <= 12; ++i)
-        {
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with decimal precision higher than max");
+    for (int i = 0; i <= 12; ++i) {
         Utf8String goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <Format typeName="AmerMYFI4" type="decimal" precision=")xml";
@@ -548,42 +544,46 @@ TEST_F(FormatRequiredAttributesTest, VerifyValidDecimalPrecision)
         ECSchemaPtr schema;
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml.c_str(), *context));
         ASSERT_EQ(static_cast<Formatting::DecimalPrecision>(i), schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetDecimalPrecision());
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatRequiredAttributesTest, VerifyValidFractionalPrecision)
-    {
+TEST_F(FormatRequiredAttributesTest, VerifyValidFractionalPrecision) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="fractional"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with missing fractional precision");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with missing fractional precision");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="fractional" precision=""/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty fractional precision");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty fractional precision");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="fractional" precision="-1"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with negative fractional precision");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with negative fractional precision");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="fractional" precision="13"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid fractional precision");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid fractional precision");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="fractional" precision="bananas"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid fractional precision");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid fractional precision");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="fractional" precision="512"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with fractional precision higher than max");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with fractional precision higher than max");
     int i = 1;
     int j = 0;
-    while(i <= 256)
-        {
+    while (i <= 256) {
         Utf8String goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -594,66 +594,64 @@ TEST_F(FormatRequiredAttributesTest, VerifyValidFractionalPrecision)
         ECSchemaPtr schema;
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml.c_str(), *context));
         ASSERT_EQ(static_cast<Formatting::FractionalPrecision>(j), schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetFractionalPrecision());
-        i<<=1;
+        i <<= 1;
         j++;
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatOptionalAttributesTest, VerifyAllowedShowSignOptions)
+TEST_F(FormatOptionalAttributesTest, VerifyAllowedShowSignOptions) {
     {
-    {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="fractional" showSignOption="noSign" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::SignOption::NoSign, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        EXPECT_EQ(Formatting::SignOption::NoSign, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
     }
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
             <Format typeName="AmerMYFI4" type="fractional" showSignOption="onlyNegative" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::SignOption::OnlyNegative, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        EXPECT_EQ(Formatting::SignOption::OnlyNegative, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
     }
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
             <Format typeName="AmerMYFI4" type="fractional" showSignOption="signAlways" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::SignOption::SignAlways, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        EXPECT_EQ(Formatting::SignOption::SignAlways, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
     }
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
             <Format typeName="AmerMYFI4" type="fractional" showSignOption="negativeParentheses" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::SignOption::NegativeParentheses, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        EXPECT_EQ(Formatting::SignOption::NegativeParentheses, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatOptionalAttributesTest, VerifyValidFormatTraits)
-    {
+TEST_F(FormatOptionalAttributesTest, VerifyValidFormatTraits) {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -673,147 +671,152 @@ TEST_F(FormatOptionalAttributesTest, VerifyValidFormatTraits)
     EXPECT_TRUE(nfs->GetTraitBit(Formatting::FormatTraits::PrependUnitLabel));
     EXPECT_TRUE(nfs->GetTraitBit(Formatting::FormatTraits::Use1000Separator));
     EXPECT_TRUE(nfs->GetTraitBit(Formatting::FormatTraits::ExponenentOnlyNegative));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyRoundingFactor)
-    {
+TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyRoundingFactor) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" roundFactor="" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty round factor");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty round factor");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" roundFactor="bananas" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid round factor");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid round factor");
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
-    EXPECT_FALSE(nfs->HasRoundingFactor());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
+        EXPECT_FALSE(nfs->HasRoundingFactor());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyMinWidth)
-    {
+TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyMinWidth) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" minWidth="" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty minwidth");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty minwidth");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" minWidth="bananas" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid minwidth");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid minwidth");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" minWidth="-1" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid minwidth");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid minwidth");
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
-    EXPECT_FALSE(nfs->HasMinWidth());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
+        EXPECT_FALSE(nfs->HasMinWidth());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyDecimalSeparator)
-    {
+TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyDecimalSeparator) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" decimalSeparator="" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty decSeparator");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty decSeparator");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" decimalSeparator="bananas" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid decSeparator");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid decSeparator");
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
-    EXPECT_FALSE(nfs->HasDecimalSeparator());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
+        EXPECT_FALSE(nfs->HasDecimalSeparator());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyThousandSeparator)
-    {
+TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyThousandSeparator) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" thousandSeparator="" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty thousandSeparator");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty thousandSeparator");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" thousandSeparator="bananas" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid thousandSeparator");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid thousandSeparator");
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
-    EXPECT_FALSE(nfs->HasThousandsSeparator());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
+        EXPECT_FALSE(nfs->HasThousandsSeparator());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyStationSeparator)
-    {
+TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyStationSeparator) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" stationSeparator="" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty statSeparator");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty statSeparator");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" stationSeparator="bananas" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid statSeparator");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid statSeparator");
     {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="decimal" precision="4"/>
         </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
-    EXPECT_FALSE(nfs->HasStationSeparator());
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
+        auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
+        EXPECT_FALSE(nfs->HasStationSeparator());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatJsonTests, FromJson)
-    {
+TEST_F(FormatJsonTests, FromJson) {
     Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"Units.FT"}]},"formatTraits":"KeepSingleZero|KeepDecimalPoint|ShowUnitLabel","precision":4,"type":"Decimal","uomSeparator":""})json";
 
     auto jsonValue = Json::Value::From(json);
@@ -833,13 +836,12 @@ TEST_F(FormatJsonTests, FromJson)
     EXPECT_TRUE(format.GetNumericSpec()->IsShowUnitLabel());
     EXPECT_TRUE(format.GetCompositeSpec()->IsIncludeZero());
     EXPECT_STRCASEEQ(" ", format.GetCompositeSpec()->GetSpacer().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatJsonTests, JsonRoundTrip)
-    {
+TEST_F(FormatJsonTests, JsonRoundTrip) {
     Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"Units.FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
     auto original = Json::Value::From(json);
     ECSchemaPtr out;
@@ -851,66 +853,61 @@ TEST_F(FormatJsonTests, JsonRoundTrip)
     format.ToJson(roundTripped, false);
     Json::Reader::Parse(json, original);
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(original, roundTripped)) << ECTestUtility::JsonSchemasComparisonString(roundTripped, original);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatJsonTests, InvalidJson)
+TEST_F(FormatJsonTests, InvalidJson) {
     {
-
-    {
-    Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"u.FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
-    auto original = Json::Value::From(json);
-    ECSchemaPtr out;
-    ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
-    out->AddReferencedSchema(*GetUnitsSchema());
-    NamedFormat format;
-    ASSERT_FALSE(NamedFormat::FromJson(format, original, &out->GetUnitsContext()));
+        Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"u.FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
+        auto original = Json::Value::From(json);
+        ECSchemaPtr out;
+        ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
+        out->AddReferencedSchema(*GetUnitsSchema());
+        NamedFormat format;
+        ASSERT_FALSE(NamedFormat::FromJson(format, original, &out->GetUnitsContext()));
     }
 
     {
-    Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"Units:FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
-    auto original = Json::Value::From(json);
-    ECSchemaPtr out;
-    ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
-    out->AddReferencedSchema(*GetUnitsSchema());
-    NamedFormat format;
-    ASSERT_FALSE(NamedFormat::FromJson(format, original, &out->GetUnitsContext()));
+        Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"Units:FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
+        auto original = Json::Value::From(json);
+        ECSchemaPtr out;
+        ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
+        out->AddReferencedSchema(*GetUnitsSchema());
+        NamedFormat format;
+        ASSERT_FALSE(NamedFormat::FromJson(format, original, &out->GetUnitsContext()));
     }
 
     {
-    Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"u:FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
-    auto original = Json::Value::From(json);
-    ECSchemaPtr out;
-    ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
-    out->AddReferencedSchema(*GetUnitsSchema());
-    NamedFormat format;
-    ASSERT_FALSE(NamedFormat::FromJson(format, original, &out->GetUnitsContext()));
+        Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"u:FT"}]},"formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"],"precision":4,"type":"Decimal","uomSeparator":""})json";
+        auto original = Json::Value::From(json);
+        ECSchemaPtr out;
+        ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
+        out->AddReferencedSchema(*GetUnitsSchema());
+        NamedFormat format;
+        ASSERT_FALSE(NamedFormat::FromJson(format, original, &out->GetUnitsContext()));
     }
-
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatJsonTests, EmptyFormat_ToJson)
-    {
+TEST_F(FormatJsonTests, EmptyFormat_ToJson) {
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema(testSchema, "test", "ts", 1, 0, 0);
     ECFormatP testFormat;
     testSchema->CreateFormat(testFormat, "testF");
     Json::Value output;
-    ASSERT_TRUE (testFormat->ToJson(output, false));
+    ASSERT_TRUE(testFormat->ToJson(output, false));
     Utf8String expectedJson = R"json({"$schema":"https://dev.bentley.com/json_schemas/ec/32/schemaitem","name":"testF","schema":"test","schemaItemType":"Format"})json";
     ASSERT_STREQ(expectedJson.c_str(), output.ToString().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeTests, VerifyDefaults)
-    {
+TEST_F(CompositeTests, VerifyDefaults) {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -938,13 +935,12 @@ TEST_F(CompositeTests, VerifyDefaults)
     EXPECT_EQ(nullptr, cfs->GetMiddleUnit());
     EXPECT_EQ(nullptr, cfs->GetMinorUnit());
     EXPECT_EQ(nullptr, cfs->GetSubUnit());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeTests, InvalidNumberOfUnits)
-    {
+TEST_F(CompositeTests, InvalidNumberOfUnits) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -952,7 +948,8 @@ TEST_F(CompositeTests, InvalidNumberOfUnits)
                 <Composite inputUnit="u:M">
                 </Composite>
             </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with no units in a composite");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with no units in a composite");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -965,14 +962,14 @@ TEST_F(CompositeTests, InvalidNumberOfUnits)
                     <Unit>u:CM</Unit>
                 </Composite>
             </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with more than 4 units in a composite");
-    }
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with more than 4 units in a composite");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeTests, DuplicateUnits)
-    {
+TEST_F(CompositeTests, DuplicateUnits) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -982,14 +979,14 @@ TEST_F(CompositeTests, DuplicateUnits)
                     <Unit>u:MILE</Unit>
                 </Composite>
             </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with more than 4 units in a composite");
-    }
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with more than 4 units in a composite");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeTests, InvalidUnits)
-    {
+TEST_F(CompositeTests, InvalidUnits) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -998,7 +995,8 @@ TEST_F(CompositeTests, InvalidUnits)
                     <Unit>u:BANANA</Unit>
                 </Composite>
             </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid major unit");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid major unit");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -1008,7 +1006,8 @@ TEST_F(CompositeTests, InvalidUnits)
                     <Unit>u:BANANA</Unit>
                 </Composite>
             </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid middle unit");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid middle unit");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -1019,7 +1018,8 @@ TEST_F(CompositeTests, InvalidUnits)
                     <Unit>u:BANANA</Unit>
                 </Composite>
             </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid minor unit");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid minor unit");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -1031,14 +1031,14 @@ TEST_F(CompositeTests, InvalidUnits)
                     <Unit>u:BANANA</Unit>
                 </Composite>
             </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid sub unit");
-    }
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid sub unit");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeTests, UnqualifiedUnits)
-    {
+TEST_F(CompositeTests, UnqualifiedUnits) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -1047,7 +1047,8 @@ TEST_F(CompositeTests, UnqualifiedUnits)
                     <Unit>MILE</Unit>
                 </Composite>
             </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with unqualified major unit");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with unqualified major unit");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -1057,7 +1058,8 @@ TEST_F(CompositeTests, UnqualifiedUnits)
                     <Unit>YRD</Unit>
                 </Composite>
             </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with unqualified middle unit");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with unqualified middle unit");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -1068,7 +1070,8 @@ TEST_F(CompositeTests, UnqualifiedUnits)
                     <Unit>FT</Unit>
                 </Composite>
             </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with unqualified minor unit");
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with unqualified minor unit");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -1080,14 +1083,14 @@ TEST_F(CompositeTests, UnqualifiedUnits)
                     <Unit>IN</Unit>
                 </Composite>
             </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with unqualified sub unit");
-    }
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with unqualified sub unit");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeTests, UseLocallyDefinedUnits)
-    {
+TEST_F(CompositeTests, UseLocallyDefinedUnits) {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -1123,13 +1126,12 @@ TEST_F(CompositeTests, UseLocallyDefinedUnits)
     EXPECT_NE(nullptr, schema->GetUnitCP(cfs->GetMinorUnit()->GetName().c_str()));
     EXPECT_NE(nullptr, cfs->GetSubUnit());
     EXPECT_NE(nullptr, schema->GetUnitCP(cfs->GetSubUnit()->GetName().c_str()));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeTests, IncompatibleUnits)
-    {
+TEST_F(CompositeTests, IncompatibleUnits) {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
@@ -1139,6 +1141,7 @@ TEST_F(CompositeTests, IncompatibleUnits)
                     <Unit>u:M</Unit>
                 </Composite>
             </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with incompatible units");
-    }
+        </ECSchema>)xml",
+                                       SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with incompatible units");
+}
 END_BENTLEY_ECN_TEST_NAMESPACE

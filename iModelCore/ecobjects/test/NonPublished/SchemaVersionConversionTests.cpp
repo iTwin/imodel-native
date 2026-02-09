@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -9,39 +9,33 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct SchemaVersionConversionTests : ECTestFixture { };
+struct SchemaVersionConversionTests : ECTestFixture {};
 
-struct ExpectedClassMetaData
-    {
-    ExpectedClassMetaData(Utf8CP className, ECClassType type, ECClassModifier modifier)
-        {
+struct ExpectedClassMetaData {
+    ExpectedClassMetaData(Utf8CP className, ECClassType type, ECClassModifier modifier) {
         ClassName = className;
         Type = type;
         Modifier = modifier;
-        }
+    }
     Utf8CP ClassName;
     ECClassType Type;
     ECClassModifier Modifier;
-    };
+};
 
-void VerifySchema(ECSchemaPtr schema, bvector<ExpectedClassMetaData> expectedClasses, bvector<Utf8CP> unexpectedClasses)
-    {
-    for (auto const& expected : expectedClasses)
-        {
+void VerifySchema(ECSchemaPtr schema, bvector<ExpectedClassMetaData> expectedClasses, bvector<Utf8CP> unexpectedClasses) {
+    for (auto const& expected : expectedClasses) {
         ECClassCP expectedClass = schema->GetClassCP(expected.ClassName);
         ASSERT_NE(nullptr, expectedClass) << "Could not find class '" << expected.ClassName << "' in converted schema";
         ASSERT_EQ(expected.Type, expectedClass->GetClassType()) << "Type of class incorrect for '" << expected.ClassName << "' in converted schema";
         ASSERT_EQ(expected.Modifier, expectedClass->GetClassModifier()) << "Modifer for class incorrect for '" << expected.ClassName << "' in converted schema";
-        }
-    for (auto const& unexpectedClassName : unexpectedClasses)
-        {
+    }
+    for (auto const& unexpectedClassName : unexpectedClasses) {
         ECClassCP unexpectedClass = schema->GetClassCP(unexpectedClassName);
         ASSERT_EQ(nullptr, unexpectedClass) << "Found class '" << unexpectedClassName << "' but it should have been removed from the converted schema";
-        }
     }
+}
 
-void CreateExpectedWithAttributes(bvector<ExpectedClassMetaData>& expectedClasses)
-    {
+void CreateExpectedWithAttributes(bvector<ExpectedClassMetaData>& expectedClasses) {
     expectedClasses.push_back(ExpectedClassMetaData("EntityAbstract", ECClassType::Entity, ECClassModifier::Abstract));
     expectedClasses.push_back(ExpectedClassMetaData("EntityWithJustDomain", ECClassType::Entity, ECClassModifier::None));
     expectedClasses.push_back(ExpectedClassMetaData("EntitySealed", ECClassType::Entity, ECClassModifier::Sealed));
@@ -65,10 +59,9 @@ void CreateExpectedWithAttributes(bvector<ExpectedClassMetaData>& expectedClasse
 
     expectedClasses.push_back(ExpectedClassMetaData("RelationshipAbstract", ECClassType::Relationship, ECClassModifier::Abstract));
     expectedClasses.push_back(ExpectedClassMetaData("RelationshipConcrete", ECClassType::Relationship, ECClassModifier::None));
-    }
+}
 
-void CreateExpectedWithOutAttributes(bvector<ExpectedClassMetaData>& expectedClasses)
-    {
+void CreateExpectedWithOutAttributes(bvector<ExpectedClassMetaData>& expectedClasses) {
     expectedClasses.push_back(ExpectedClassMetaData("EntityAbstract", ECClassType::Entity, ECClassModifier::Abstract));
     expectedClasses.push_back(ExpectedClassMetaData("EntityWithJustDomain", ECClassType::Entity, ECClassModifier::None));
     expectedClasses.push_back(ExpectedClassMetaData("EntitySealed", ECClassType::Struct, ECClassModifier::Sealed));
@@ -92,14 +85,13 @@ void CreateExpectedWithOutAttributes(bvector<ExpectedClassMetaData>& expectedCla
 
     expectedClasses.push_back(ExpectedClassMetaData("RelationshipAbstract", ECClassType::Relationship, ECClassModifier::Abstract));
     expectedClasses.push_back(ExpectedClassMetaData("RelationshipConcrete", ECClassType::Relationship, ECClassModifier::None));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_Flat_ConversionSchema)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_Flat_ConversionSchema) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddConversionSchemaPath(ECTestFixture::GetTestDataPath(L"V3Conversion").c_str());
 
     ECSchemaPtr schema;
@@ -111,14 +103,13 @@ TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_Flat_ConversionSchema)
 
     bvector<Utf8CP> unexpectedClasses;
     VerifySchema(schema, expectedClasses, unexpectedClasses);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_Flat_NoConversionSchema)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_Flat_NoConversionSchema) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"BadSchemaFlat2.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -129,14 +120,13 @@ TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_Flat_NoConversionSchema)
 
     bvector<Utf8CP> unexpectedClasses;
     VerifySchema(schema, expectedClasses, unexpectedClasses);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_ConversionSchema)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_ConversionSchema) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddConversionSchemaPath(ECTestFixture::GetTestDataPath(L"V3Conversion").c_str());
 
     ECSchemaPtr schema;
@@ -148,13 +138,12 @@ TEST_F(SchemaVersionConversionTests, SchemaWithBadFlags_ConversionSchema)
 
     bvector<Utf8CP> unexpectedClasses;
     VerifySchema(schema, expectedClasses, unexpectedClasses);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaVersionConversionTests, CanLoadMetaSchemaWithDeliveredConversionSchema)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaVersionConversionTests, CanLoadMetaSchemaWithDeliveredConversionSchema) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
@@ -185,6 +174,6 @@ TEST_F(SchemaVersionConversionTests, CanLoadMetaSchemaWithDeliveredConversionSch
     unexpectedClasses.push_back("SupplementalCustomAttributeDef");
 
     VerifySchema(schema, expectedClasses, unexpectedClasses);
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

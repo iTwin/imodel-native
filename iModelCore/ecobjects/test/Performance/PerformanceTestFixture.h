@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
@@ -10,18 +10,16 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-//=======================================================================================    
+//=======================================================================================
 //! @bsiclass
-//=======================================================================================    
-struct PerformanceTestFixture : public ECTestFixture
-{
-protected:
+//=======================================================================================
+struct PerformanceTestFixture : public ECTestFixture {
+   protected:
     static void StoreStringToFile(Utf8CP fileName, Utf8StringCR content);
 
     static void TimeSchemaXml(Utf8String schemaXml, std::vector<WString>& referencePaths, bool acceptLegacyImperfectLatestCompatibleMatch, bool includeFilesWithNoVerExt, Utf8String testcaseName);
     static void TimeSchemaXmlFile(WString schemaPath, std::vector<WString>& referencePaths, bool acceptLegacyImperfectLatestCompatibleMatch, bool includeFilesWithNoVerExt, Utf8String testcaseName);
-    static void TimeSchemaXml(Utf8String schemaXml, Utf8String testcaseName)
-    {
+    static void TimeSchemaXml(Utf8String schemaXml, Utf8String testcaseName) {
         std::vector<WString> referencePaths;
         TimeSchemaXml(schemaXml, referencePaths, false, false, testcaseName);
     };
@@ -31,7 +29,7 @@ protected:
     static std::size_t GetPeakMemoryUsage();
     static void MeasureSchemaMemory(Utf8String schemaXml, ECSchemaReadContextPtr schemaContext, Utf8String testcaseName);
     static void MeasureSchemaMemory(WString ecSchemaPath, ECSchemaReadContextPtr schemaContext, Utf8String testcaseName);
-    static void MeasureSchemaMemoryUsage (ECSchemaPtr (*generateSchema) (void), Utf8String testcaseName);
+    static void MeasureSchemaMemoryUsage(ECSchemaPtr (*generateSchema)(void), Utf8String testcaseName);
 
     static ECSchemaPtr GenerateFlatTestSchema(size_t numberOfClasses, size_t numberOfProperties);
     static ECSchemaPtr GenerateDeepHierarchyTestSchema(size_t numberOfClassHierarchies, size_t numberOfClassesPerHierarchy, size_t numberOfMixinsPerHierarchy, size_t numberOfPropertiesPerClass, bool overrideProperties, ECSchemaReadContextPtr schemaContext);
@@ -49,26 +47,23 @@ protected:
     WString GetStandardsPath(WString fileName);
     WString GetAssetsGSchemaPath(WString domain, WString schemaFile);
 
-    //Generates some statistics and calculates the median from a set of results. The json is wrapped in quotes and uses double-quoting around the property names
+    // Generates some statistics and calculates the median from a set of results. The json is wrapped in quotes and uses double-quoting around the property names
     static Utf8String GenerateResultJson(std::vector<double>& results, double& median);
     static size_t CalculateNumberOfRepeats(double firstDuration);
     static const size_t MinimumRepeats = 5;
     static const size_t MaximumRepeats = 70;
     static const int DesiredNumberOfSecondsPerTest = 3;
 
-public:
-    static ECSchemaPtr GenerateSchema10Root15Deep3Mixin5PropsAndOverridesPublic()
-    {
+   public:
+    static ECSchemaPtr GenerateSchema10Root15Deep3Mixin5PropsAndOverridesPublic() {
         ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
         return GenerateSchema10Root15Deep3Mixin5PropsAndOverrides(schemaContext);
     }
-    static ECSchemaPtr GenerateSchema300Root3Deep200PropsPublic()
-    {
+    static ECSchemaPtr GenerateSchema300Root3Deep200PropsPublic() {
         ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
         return GenerateSchema300Root3Deep200Props(schemaContext);
     }
-    static ECSchemaPtr GenerateSchema50Root5Deep3Mixin5PropsPublic()
-    {
+    static ECSchemaPtr GenerateSchema50Root5Deep3Mixin5PropsPublic() {
         ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
         return GenerateSchema50Root5Deep3Mixin5Props(schemaContext);
     }

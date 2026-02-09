@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <ECDb/IECSqlBinder.h>
 #include <GeomSerialization/GeomSerializationApi.h>
@@ -10,7 +10,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*********************** IECSqlBinder ********************************
 //---------------------------------------------------------------------------------------
-//not inlined to prevent being called outside ECDb
+// not inlined to prevent being called outside ECDb
 // @bsimethod
 //---------------------------------------------------------------------------------------
 IECSqlBinder::IECSqlBinder() {}
@@ -38,11 +38,10 @@ ECSqlStatus IECSqlBinder::BindBoolean(bool value) { return _BindBoolean(value); 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindDateTime(DateTimeCR value)
-    {
+ECSqlStatus IECSqlBinder::BindDateTime(DateTimeCR value) {
     uint64_t jd = 0;
     return SUCCESS != value.ToJulianDay(jd) ? ECSqlStatus::Error : BindDateTime(jd, value.GetInfo());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -62,19 +61,17 @@ ECSqlStatus IECSqlBinder::BindDouble(double value) { return _BindDouble(value); 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindGeometry(IGeometryCR value)
-    {
+ECSqlStatus IECSqlBinder::BindGeometry(IGeometryCR value) {
     bvector<Byte> geometryBlob;
     BentleyGeometryFlatBuffer::GeometryToBytes(value, geometryBlob);
-    if (geometryBlob.empty())
-        {
+    if (geometryBlob.empty()) {
         LOG.error("Failed to serialize IGeometry to BentleyGeometryFlatBuffer.");
         BeAssert(false && "Failed to serialize IGeometry to BentleyGeometryFlatBuffer.");
         return ECSqlStatus::Error;
-        }
-
-    return BindBlob(geometryBlob.data(), (int) geometryBlob.size(), MakeCopy::Yes);
     }
+
+    return BindBlob(geometryBlob.data(), (int)geometryBlob.size(), MakeCopy::Yes);
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -84,8 +81,7 @@ ECSqlStatus IECSqlBinder::BindInt(int value) { return _BindInt(value); }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindEnum(ECN::ECEnumeratorCR value)
-    {
+ECSqlStatus IECSqlBinder::BindEnum(ECN::ECEnumeratorCR value) {
     if (value.IsInteger())
         return BindInt(value.GetInteger());
 
@@ -93,7 +89,7 @@ ECSqlStatus IECSqlBinder::BindEnum(ECN::ECEnumeratorCR value)
         return BindText(value.GetString().c_str(), IECSqlBinder::MakeCopy::No);
 
     return ECSqlStatus::Error;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -118,8 +114,7 @@ ECSqlStatus IECSqlBinder::BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindNavigation(BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId)
-    {
+ECSqlStatus IECSqlBinder::BindNavigation(BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId) {
     IECSqlBinder& idBinder = _BindStructMember(ECDBSYS_PROP_NavPropId);
     ECSqlStatus stat = idBinder.BindId(relatedInstanceId);
     if (stat != ECSqlStatus::Success)
@@ -133,7 +128,7 @@ ECSqlStatus IECSqlBinder::BindNavigation(BeInt64Id relatedInstanceId, ECN::ECCla
 
     IECSqlBinder& relClassIdBinder = _BindStructMember(ECDBSYS_PROP_NavPropRelECClassId);
     return relClassIdBinder.BindId(relationshipECClassId);
-    }
+}
 
 // --------------------------------------------------------------------------------------
 // @bsimethod

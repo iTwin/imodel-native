@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <ECDb/ECSqlStatement.h>
 #include "ECSqlStatementImpl.h"
@@ -17,40 +17,35 @@ ECSqlStatement::ECSqlStatement() : m_pimpl(new ECSqlStatement::Impl()) {}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatement::~ECSqlStatement()
-    {
-    if (m_pimpl != nullptr)
-        {
+ECSqlStatement::~ECSqlStatement() {
+    if (m_pimpl != nullptr) {
         delete m_pimpl;
         m_pimpl = nullptr;
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ECSqlStatement::ECSqlStatement(ECSqlStatement&& rhs)
-    : m_pimpl(std::move(rhs.m_pimpl))
-    {
-    //nulling out the pimpl on the RHS to avoid that rhs' destructor tries to delete it
+    : m_pimpl(std::move(rhs.m_pimpl)) {
+    // nulling out the pimpl on the RHS to avoid that rhs' destructor tries to delete it
     rhs.m_pimpl = nullptr;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatement& ECSqlStatement::operator=(ECSqlStatement&& rhs)
-    {
-    if (this != &rhs)
-        {
+ECSqlStatement& ECSqlStatement::operator=(ECSqlStatement&& rhs) {
+    if (this != &rhs) {
         m_pimpl = std::move(rhs.m_pimpl);
 
-        //nulling out the pimpl on the RHS to avoid that rhs' destructor tries to delete it
+        // nulling out the pimpl on the RHS to avoid that rhs' destructor tries to delete it
         rhs.m_pimpl = nullptr;
-        }
+    }
 
     return *this;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -120,11 +115,10 @@ int ECSqlStatement::GetColumnCount() const { return m_pimpl->GetColumnCount(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-IECSqlValue const& ECSqlStatement::GetValue(int columnIndex) const
-    {
-    //Reports errors (not prepared yet, index out of bounds) and uses no-op field in case of error
+IECSqlValue const& ECSqlStatement::GetValue(int columnIndex) const {
+    // Reports errors (not prepared yet, index out of bounds) and uses no-op field in case of error
     return m_pimpl->GetValue(columnIndex);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -141,18 +135,15 @@ Utf8CP ECSqlStatement::GetNativeSql() const { return m_pimpl->GetNativeSql(); }
 //---------------------------------------------------------------------------------------
 ECDb const* ECSqlStatement::GetECDb() const { return m_pimpl->GetECDb(); }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 Db const* ECSqlStatement::GetDataSourceDb() const { return m_pimpl->GetDataSourceDb(); }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 uint64_t ECSqlStatement::GetHashCode() const { return m_pimpl->GetHashCode(); }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

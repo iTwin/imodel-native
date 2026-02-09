@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -9,51 +9,46 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ClassTest : ECTestFixture
-    {
-    void TestPropertyCount(ECClassCR ecClass, size_t nPropertiesWithoutBaseClasses, size_t nPropertiesWithBaseClasses)
-        {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsistruct
+ +---------------+---------------+---------------+---------------+---------------+------*/
+struct ClassTest : ECTestFixture {
+    void TestPropertyCount(ECClassCR ecClass, size_t nPropertiesWithoutBaseClasses, size_t nPropertiesWithBaseClasses) {
         EXPECT_EQ(ecClass.GetPropertyCount(false), nPropertiesWithoutBaseClasses);
         EXPECT_EQ(ecClass.GetPropertyCount(true), nPropertiesWithBaseClasses);
-        }
+    }
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    ECPropertyP GetPropertyByName(ECClassCR ecClass, Utf8CP name, bool expectExists = true)
-        {
+    /*---------------------------------------------------------------------------------**/ /**
+     * @bsimethod
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    ECPropertyP GetPropertyByName(ECClassCR ecClass, Utf8CP name, bool expectExists = true) {
         ECPropertyP prop = ecClass.GetPropertyP(name);
         EXPECT_EQ(expectExists, NULL != prop);
         Utf8String utf8(name);
         prop = ecClass.GetPropertyP(utf8.c_str());
         EXPECT_EQ(expectExists, NULL != prop);
         return prop;
-        }
-    };
+    }
+};
 
-struct PropertyCopyTest : ECTestFixture 
-    {
-    ECSchemaPtr m_schema0; // schema containing the original property
-    ECEntityClassP m_entity0; // class containing the original property
-    ECPropertyP m_prop0; // property to copy
+struct PropertyCopyTest : ECTestFixture {
+    ECSchemaPtr m_schema0;     // schema containing the original property
+    ECEntityClassP m_entity0;  // class containing the original property
+    ECPropertyP m_prop0;       // property to copy
 
-    ECSchemaPtr m_schema1; // schema that will contain the copied property
-    ECEntityClassP m_entity1; // class that will contain the copied property
-    ECPropertyP m_prop1; // copied property
+    ECSchemaPtr m_schema1;     // schema that will contain the copied property
+    ECEntityClassP m_entity1;  // class that will contain the copied property
+    ECPropertyP m_prop1;       // copied property
 
     virtual void SetUp() override;
 
     void CopyProperty(bool copyReferences = true);
-    };
+};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, TestGetClassIsCaseInsensitive)
-    {
+TEST_F(ClassTest, TestGetClassIsCaseInsensitive) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
@@ -71,13 +66,12 @@ TEST_F(ClassTest, TestGetClassIsCaseInsensitive)
     EXPECT_EQ(ecClass, schema->GetClassCP("TESTCLASS"));
     EXPECT_EQ(ecClass, schema->GetClassCP("testclass"));
     EXPECT_EQ(ecClass, schema->GetClassCP("TeStClAsS"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, TestGetPropertyIsCaseInsensitive)
-    {
+TEST_F(ClassTest, TestGetPropertyIsCaseInsensitive) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
@@ -98,13 +92,12 @@ TEST_F(ClassTest, TestGetPropertyIsCaseInsensitive)
     ASSERT_EQ(classProp, ecClass->GetPropertyP("TESTPROP"));
     ASSERT_EQ(classProp, ecClass->GetPropertyP("testprop"));
     ASSERT_EQ(classProp, ecClass->GetPropertyP("TeStPrOp"));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, ExpectErrorWithCircularBaseClasses)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, ExpectErrorWithCircularBaseClasses) {
     ECSchemaPtr schema;
     ECEntityClassP class1;
     ECEntityClassP baseClass1;
@@ -118,13 +111,12 @@ TEST_F(ClassTest, ExpectErrorWithCircularBaseClasses)
     EXPECT_EQ(ECObjectsStatus::Success, class1->AddBaseClass(*baseClass1));
     EXPECT_EQ(ECObjectsStatus::Success, baseClass1->AddBaseClass(*baseClass2));
     EXPECT_EQ(ECObjectsStatus::BaseClassUnacceptable, baseClass2->AddBaseClass(*class1));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, GetPropertyCount)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, GetPropertyCount) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
 
@@ -162,13 +154,12 @@ TEST_F(ClassTest, GetPropertyCount)
     TestPropertyCount(*baseClass1, 3, 3);
     TestPropertyCount(*baseClass2, 3, 3);
     TestPropertyCount(*derivedClass, 2, 8);
-    }
+}
 
 //---------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------///
-TEST_F(ClassTest, GetPropertyCount_WithOverridesAndDiamonds)
-    {
+TEST_F(ClassTest, GetPropertyCount_WithOverridesAndDiamonds) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
 
@@ -193,29 +184,26 @@ TEST_F(ClassTest, GetPropertyCount_WithOverridesAndDiamonds)
     TestPropertyCount(*baseClass1, 1, 1);
     TestPropertyCount(*derivedClass, 1, 2);
     TestPropertyCount(*derivedClass1, 1, 2);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IsClassInList(bvector<ECClassP> const& classList, ECClassR searchClass)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool IsClassInList(bvector<ECClassP> const& classList, ECClassR searchClass) {
     bvector<ECClassP>::const_iterator classIterator;
 
-    for (classIterator = classList.begin(); classIterator != classList.end(); classIterator++)
-        {
+    for (classIterator = classList.begin(); classIterator != classList.end(); classIterator++) {
         if (*classIterator == &searchClass)
             return true;
-        }
-
-    return false;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, AddAndRemoveBaseClass)
-    {
+    return false;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, AddAndRemoveBaseClass) {
     ECSchemaPtr schema;
     ECEntityClassP class1;
     ECEntityClassP baseClass1;
@@ -235,13 +223,12 @@ TEST_F(ClassTest, AddAndRemoveBaseClass)
     EXPECT_FALSE(IsClassInList(baseClass1->GetDerivedClasses(), *class1));
 
     EXPECT_EQ(ECObjectsStatus::ClassNotFound, class1->RemoveBaseClass(*baseClass1));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, AddBaseClassWithProperties)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, AddBaseClassWithProperties) {
     ECSchemaPtr schema;
     ECEntityClassP class1;
     ECEntityClassP baseClass1;
@@ -264,13 +251,12 @@ TEST_F(ClassTest, AddBaseClassWithProperties)
     class1->CreatePrimitiveProperty(intProp, "IntProperty", PRIMITIVETYPE_Integer);
     baseClass2->CreatePrimitiveProperty(base2NonIntProp, "IntProperty", PRIMITIVETYPE_String);
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->AddBaseClass(*baseClass2));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, BaseClassOrder)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, BaseClassOrder) {
     ECSchemaPtr schema = nullptr;
     ECEntityClassP class1 = nullptr;
     ECEntityClassP baseClass1 = nullptr;
@@ -301,13 +287,12 @@ TEST_F(ClassTest, BaseClassOrder)
     ASSERT_TRUE(baseClass3 == class1->GetBaseClasses()[0]);
     ASSERT_TRUE(baseClass1 == class1->GetBaseClasses()[1]);
     ASSERT_TRUE(baseClass2 == class1->GetBaseClasses()[2]);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, IsTests)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, IsTests) {
     ECSchemaPtr schema;
     ECEntityClassP class1;
     ECEntityClassP baseClass1;
@@ -321,13 +306,12 @@ TEST_F(ClassTest, IsTests)
     EXPECT_FALSE(class1->Is(baseClass1));
     class1->AddBaseClass(*baseClass1);
     EXPECT_TRUE(class1->Is(baseClass1));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, CanOverrideBaseProperties)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, CanOverrideBaseProperties) {
     ECSchemaPtr schema;
     ECEntityClassP class1;
     ECEntityClassP baseClass1;
@@ -367,8 +351,8 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     class1->RemoveProperty("StringProperty");
 
     {
-    // Primitives overriding structs
-    DISABLE_ASSERTS
+        // Primitives overriding structs
+        DISABLE_ASSERTS
         EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreatePrimitiveProperty(longProperty, "StructProperty", PRIMITIVETYPE_Long));
     }
 
@@ -380,8 +364,8 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     StructECPropertyP structProperty;
 
     {
-    // Structs overriding primitives
-    DISABLE_ASSERTS
+        // Structs overriding primitives
+        DISABLE_ASSERTS
         EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructProperty(structProperty, "IntegerProperty", *structClass2));
     }
 
@@ -410,13 +394,12 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreatePrimitiveArrayProperty(intArrayProperty, "StringArrayProperty", PRIMITIVETYPE_Long));
     EXPECT_EQ(ECObjectsStatus::Success, class1->CreatePrimitiveArrayProperty(stringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String));
     class1->RemoveProperty("StringArrayProperty");
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ClassTest, CanOverrideBasePropertiesInDerivedClass)
-    {
+TEST_F(ClassTest, CanOverrideBasePropertiesInDerivedClass) {
     ECSchemaPtr schema;
     ECEntityClassP parent;
     ECEntityClassP derived;
@@ -441,13 +424,12 @@ TEST_F(ClassTest, CanOverrideBasePropertiesInDerivedClass)
     ASSERT_TRUE(nullptr != prop);
     PrimitiveECPropertyP primProp = prop->GetAsPrimitivePropertyP();
     EXPECT_EQ(PRIMITIVETYPE_String, primProp->GetType());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ClassTest, ExpectFailureWhenOverridePropertyConflicts_MultipleLevelsOfDerivedClassesChecked)
-    {
+TEST_F(ClassTest, ExpectFailureWhenOverridePropertyConflicts_MultipleLevelsOfDerivedClassesChecked) {
     ECSchemaPtr schema;
     ECEntityClassP parent;
     ECEntityClassP derived;
@@ -468,13 +450,12 @@ TEST_F(ClassTest, ExpectFailureWhenOverridePropertyConflicts_MultipleLevelsOfDer
     ECObjectsStatus status = parent->AddBaseClass(*base);
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, status);
     EXPECT_FALSE(parent->HasBaseClasses());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ClassTest, ExpectFailureWhenOverridePropertyConflicts)
-    {
+TEST_F(ClassTest, ExpectFailureWhenOverridePropertyConflicts) {
     ECSchemaPtr schema;
     ECEntityClassP base;
     ECEntityClassP derived;
@@ -513,13 +494,12 @@ TEST_F(ClassTest, ExpectFailureWhenOverridePropertyConflicts)
     status = derived3->AddBaseClass(*base);
     ASSERT_EQ(ECObjectsStatus::CaseCollision, status);
     ASSERT_EQ(1, derived2->GetPropertyCount(false));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced) {
     ECSchemaPtr schema;
     ECSchemaPtr schema2;
     ECEntityClassP class1;
@@ -544,13 +524,12 @@ TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
     schema->AddReferencedSchema(*schema2);
     EXPECT_EQ(ECObjectsStatus::Success, class1->CreateStructProperty(baseStructProp, "StructProperty", *structClass));
     EXPECT_EQ(ECObjectsStatus::Success, class1->CreateStructArrayProperty(structArrayProperty, "StructArrayProperty", *structClass));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, ExpectPropertiesInOrder)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, ExpectPropertiesInOrder) {
     std::vector<Utf8CP> propertyNames;
     propertyNames.push_back("beta");
     propertyNames.push_back("gamma");
@@ -572,19 +551,17 @@ TEST_F(ClassTest, ExpectPropertiesInOrder)
     class1->CreatePrimitiveProperty(property4, "alpha", PRIMITIVETYPE_String);
 
     int i = 0;
-    ECPropertyIterable  iterable = class1->GetProperties(false);
-    for (ECPropertyP prop : iterable)
-        {
+    ECPropertyIterable iterable = class1->GetProperties(false);
+    for (ECPropertyP prop : iterable) {
         EXPECT_EQ(0, prop->GetName().compare(propertyNames[i]));
         i++;
-        }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, ExpectProperties)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, ExpectProperties) {
     ECSchemaPtr schema;
     ECEntityClassP ab;
     ECEntityClassP cd;
@@ -617,13 +594,12 @@ TEST_F(ClassTest, ExpectProperties)
     EXPECT_TRUE(NULL != GetPropertyByName(*ef, "e"));
     EXPECT_TRUE(NULL != GetPropertyByName(*ef, "c"));
     EXPECT_TRUE(NULL != GetPropertyByName(*ef, "a"));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, ExpectPropertiesFromBaseClass) {
     ECSchemaPtr schema;
     ECEntityClassP ab;
     ECEntityClassP cd;
@@ -687,17 +663,16 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     mn->AddBaseClass(*ef);
     mn->AddBaseClass(*kl);
 
-    ECPropertyIterable  iterable1 = mn->GetProperties(true);
+    ECPropertyIterable iterable1 = mn->GetProperties(true);
     std::vector<ECPropertyP> testVector;
     for (ECPropertyP prop : iterable1)
         testVector.push_back(prop);
 
     EXPECT_EQ(14, testVector.size());
-    for (size_t i = 0; i < testVector.size(); i++)
-        {
-        Utf8Char expectedName[] = {(Utf8Char) ('a' + static_cast<Utf8Char> (i)), 0};
+    for (size_t i = 0; i < testVector.size(); i++) {
+        Utf8Char expectedName[] = {(Utf8Char)('a' + static_cast<Utf8Char>(i)), 0};
         EXPECT_EQ(0, testVector[i]->GetName().compare(expectedName)) << "Expected: " << expectedName << " Actual: " << testVector[i]->GetName().c_str();
-        }
+    }
 
     // now we add some duplicate properties to mn which will "override" those from the base classes
     PrimitiveECPropertyP b2;
@@ -714,13 +689,13 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     mn->CreatePrimitiveProperty(j2, "j", PRIMITIVETYPE_String);
     mn->CreatePrimitiveProperty(k2, "k", PRIMITIVETYPE_String);
 
-    ECPropertyIterable  iterable2 = mn->GetProperties(true);
+    ECPropertyIterable iterable2 = mn->GetProperties(true);
     testVector.clear();
     for (ECPropertyP prop : iterable2)
         testVector.push_back(prop);
 
     EXPECT_EQ(14, testVector.size());
-    bvector<Utf8CP> expectedVector {"a", "c", "e", "g", "i", "l", "m", "n", "b", "d", "f", "h", "j", "k"};
+    bvector<Utf8CP> expectedVector{"a", "c", "e", "g", "i", "l", "m", "n", "b", "d", "f", "h", "j", "k"};
     for (size_t i = 0; i < testVector.size(); i++)
         EXPECT_EQ(0, testVector[i]->GetName().compare(expectedVector[i])) << "Expected: " << expectedVector[i] << " Actual: " << testVector[i]->GetName().c_str();
 
@@ -752,7 +727,7 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     ab->CreatePrimitiveProperty(g4, "g", PRIMITIVETYPE_String);
     ab->CreatePrimitiveProperty(h3, "h", PRIMITIVETYPE_String);
 
-    ECPropertyIterable  iterable3 = mn->GetProperties(true);
+    ECPropertyIterable iterable3 = mn->GetProperties(true);
     testVector.clear();
     for (ECPropertyP prop : iterable3)
         testVector.push_back(prop);
@@ -761,13 +736,12 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     expectedVector = {"a", "g", "c", "e", "l", "i", "m", "n", "b", "d", "f", "h", "j", "k"};
     for (size_t i = 0; i < testVector.size(); i++)
         EXPECT_EQ(0, testVector[i]->GetName().compare(expectedVector[i])) << "Expected: " << expectedVector[i] << " Actual: " << testVector[i]->GetName().c_str();
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, AddAndRemoveConstraintClasses)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, AddAndRemoveConstraintClasses) {
     ECSchemaPtr schema;
     ECSchemaPtr refSchema;
 
@@ -790,13 +764,12 @@ TEST_F(ClassTest, AddAndRemoveConstraintClasses)
 
     EXPECT_EQ(ECObjectsStatus::Success, relClass->GetTarget().RemoveClass(*targetClass));
     EXPECT_EQ(ECObjectsStatus::ClassNotFound, relClass->GetTarget().RemoveClass(*targetClass));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassTest, ExpectReadOnlyFromBaseClass)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, ExpectReadOnlyFromBaseClass) {
     ECSchemaPtr schema;
     ECEntityClassP child;
     ECEntityClassP base;
@@ -814,13 +787,12 @@ TEST_F(ClassTest, ExpectReadOnlyFromBaseClass)
 
     ECPropertyP ecProp = GetPropertyByName(*child, "readOnlyProp");
     ASSERT_EQ(true, ecProp->GetIsReadOnly());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, TestPropertyEnumerationType)
-    {
+TEST_F(ClassTest, TestPropertyEnumerationType) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
@@ -857,13 +829,12 @@ TEST_F(ClassTest, TestPropertyEnumerationType)
     ASSERT_NE(nullptr, classB->GetPropertyP("PrimArrProp")->GetAsPrimitiveArrayProperty()->GetEnumeration()) << "There was not an Enumeration set when there should be";
     EXPECT_EQ(tsEnum->GetName(), classB->GetPropertyP("PrimArrProp")->GetAsPrimitiveArrayProperty()->GetEnumeration()->GetName()) << "The property did not have the expected Enumeration.";
     EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, classB->GetPropertyP("PrimArrProp")->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()) << "The property did not have the expected primitive type";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_API_NoExclusions)
-    {
+TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_API_NoExclusions) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ECEntityClassP baseClass;
@@ -887,15 +858,13 @@ TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_API_NoExclusions)
 
     ECEntityClassP remoteDerivedDerivedClass;
     refingSchema->CreateEntityClass(remoteDerivedDerivedClass, "RemoteDerivedDerivedClass");
-    EXPECT_EQ(ECObjectsStatus::Success, remoteDerivedDerivedClass->AddBaseClass(*localDerivedClass)) << 
-        "Should  have been able to add base class because 'NotSubclassableInReferencingSchemas' CA applied to base class of applied base class";
-    }
+    EXPECT_EQ(ECObjectsStatus::Success, remoteDerivedDerivedClass->AddBaseClass(*localDerivedClass)) << "Should  have been able to add base class because 'NotSubclassableInReferencingSchemas' CA applied to base class of applied base class";
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_API_WithExclusions)
-    {
+TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_API_WithExclusions) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ECEntityClassP baseClass;
@@ -918,26 +887,22 @@ TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_API_WithExclusions)
 
     ECEntityClassP remoteDerivedClass;
     refingSchema->CreateEntityClass(remoteDerivedClass, "RemoteDerivedClass");
-    EXPECT_EQ(ECObjectsStatus::Success, remoteDerivedClass->AddBaseClass(*baseClass)) << 
-        "Should  have been able to add base class because 'NotSubclassableInReferencingSchemas' CA includes exclusion for this class.";
+    EXPECT_EQ(ECObjectsStatus::Success, remoteDerivedClass->AddBaseClass(*baseClass)) << "Should  have been able to add base class because 'NotSubclassableInReferencingSchemas' CA includes exclusion for this class.";
 
     ECEntityClassP remoteDerivedClass2;
     refingSchema->CreateEntityClass(remoteDerivedClass2, "RemoteDerivedClass2");
-    EXPECT_EQ(ECObjectsStatus::BaseClassUnacceptable, remoteDerivedClass2->AddBaseClass(*baseClass)) << 
-        "Should not have been able to add base class because 'NotSubclassableInReferencingSchemas' CA does not include an exclusion for this class";
+    EXPECT_EQ(ECObjectsStatus::BaseClassUnacceptable, remoteDerivedClass2->AddBaseClass(*baseClass)) << "Should not have been able to add base class because 'NotSubclassableInReferencingSchemas' CA does not include an exclusion for this class";
 
     ECValue exclusion1("RefingSchema:RemoteDerivedClass2");
     ASSERT_EQ(ECObjectsStatus::Success, notSubClassable->SetValue("Exceptions", exclusion1, 1));
 
-    EXPECT_EQ(ECObjectsStatus::Success, remoteDerivedClass2->AddBaseClass(*baseClass)) <<
-        "Should  have been able to add base class because 'NotSubclassableInReferencingSchemas' CA includes exclusion for this class.";
-    }
+    EXPECT_EQ(ECObjectsStatus::Success, remoteDerivedClass2->AddBaseClass(*baseClass)) << "Should  have been able to add base class because 'NotSubclassableInReferencingSchemas' CA includes exclusion for this class.";
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_XML_NoExclusions)
-    {
+TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_XML_NoExclusions) {
     Utf8CP baseSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
@@ -950,7 +915,7 @@ TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_XML_NoExclusions)
                     <BaseClass>BaseClass</BaseClass>
                 </ECEntityClass>
             </ECSchema>)xml";
-    
+
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, baseSchemaXml, *context));
@@ -978,13 +943,12 @@ TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_XML_NoExclusions)
 
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refingSchema, goodRefSchemaXml, *context));
     ASSERT_TRUE(refingSchema.IsValid());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_XML_WithExclusions)
-    {
+TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_XML_WithExclusions) {
     Utf8CP baseSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
@@ -1034,13 +998,12 @@ TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_XML_WithExclusions)
 
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(refingSchema, badRefSchemaXml, *context));
     ASSERT_TRUE(!refingSchema.IsValid());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, SerializeStandaloneEntityClass)
-    {
+TEST_F(ClassTest, SerializeStandaloneEntityClass) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
@@ -1076,13 +1039,12 @@ TEST_F(ClassTest, SerializeStandaloneEntityClass)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaItemJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaItemJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, SerializeStandaloneStructClass)
-    {
+TEST_F(ClassTest, SerializeStandaloneStructClass) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
@@ -1108,13 +1070,12 @@ TEST_F(ClassTest, SerializeStandaloneStructClass)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, SerializeStandaloneCustomAttributeClass)
-    {
+TEST_F(ClassTest, SerializeStandaloneCustomAttributeClass) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
@@ -1132,13 +1093,12 @@ TEST_F(ClassTest, SerializeStandaloneCustomAttributeClass)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, SerializeClassWithProperties)
-    {
+TEST_F(ClassTest, SerializeClassWithProperties) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
     schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
@@ -1205,20 +1165,19 @@ TEST_F(ClassTest, SerializeClassWithProperties)
     entityClass->CreateNavigationProperty(navProp, "ExampleNavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Backward, false);
 
     BeJsDocument schemaJson;
-    EXPECT_TRUE(entityClass->ToJson(schemaJson, true)); 
+    EXPECT_TRUE(entityClass->ToJson(schemaJson, true));
     BeJsDocument testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithClassProperties.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, InheritedCustomAttributesAndPropertiesShouldNotBeSerializedByDefault)
-    {
+TEST_F(ClassTest, InheritedCustomAttributesAndPropertiesShouldNotBeSerializedByDefault) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
@@ -1264,13 +1223,12 @@ TEST_F(ClassTest, InheritedCustomAttributesAndPropertiesShouldNotBeSerializedByD
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, entityClassTestDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(entityClassJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(entityClassJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, ExplicitSerializeInheritedProperties)
-    {
+TEST_F(ClassTest, ExplicitSerializeInheritedProperties) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
@@ -1300,13 +1258,12 @@ TEST_F(ClassTest, ExplicitSerializeInheritedProperties)
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, entityClassTestDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(entityClassJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(entityClassJson, testDataJson);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ClassTest, LookupClassTest)
-    {
+TEST_F(ClassTest, LookupClassTest) {
     Utf8CP baseSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
@@ -1319,7 +1276,7 @@ TEST_F(ClassTest, LookupClassTest)
                     <BaseClass>BaseClass</BaseClass>
                 </ECEntityClass>
             </ECSchema>)xml";
-    
+
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, baseSchemaXml, *context));
@@ -1380,14 +1337,13 @@ TEST_F(ClassTest, LookupClassTest)
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("RemoteDerivedClass", shouldNotBeNull->GetName().c_str());
     ASSERT_EQ(1, refingSchema->GetClassCount());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ClassTest, DowncastClassTest) 
-    {
-    ECClass *ecClass;
+TEST_F(ClassTest, DowncastClassTest) {
+    ECClass* ecClass;
 
     ECSchemaPtr ecSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(ecSchema, "TestSchema", "TestSchema", 3, 1, 0));
@@ -1477,14 +1433,13 @@ TEST_F(ClassTest, DowncastClassTest)
     ASSERT_EQ(ecClass->GetStructClassP(), nullptr);
     ASSERT_EQ(ecClass->GetCustomAttributeClassCP(), nullptr);
     ASSERT_EQ(ecClass->GetCustomAttributeClassP(), nullptr);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassTest, DeleteMixinAppliesTo)
-    {
-    ECClass *ecClass;
+TEST_F(ClassTest, DeleteMixinAppliesTo) {
+    ECClass* ecClass;
     ECSchemaPtr ecSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(ecSchema, "TestSchema", "TestSchema", 4, 1, 1));
 
@@ -1504,8 +1459,7 @@ TEST_F(ClassTest, DeleteMixinAppliesTo)
     ASSERT_EQ(ecClass->GetRelationshipClassP(), nullptr);
     ASSERT_EQ(ecClass->GetStructClassP(), nullptr);
     ASSERT_EQ(ecClass->GetCustomAttributeClassP(), nullptr);
-    }
-
+}
 
 //=======================================================================================
 //! PropertyCopyTest
@@ -1514,8 +1468,7 @@ TEST_F(ClassTest, DeleteMixinAppliesTo)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-void PropertyCopyTest::SetUp()
-    {
+void PropertyCopyTest::SetUp() {
     // m_schema0 and m_entity0 will contain the property to be copied
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_schema0, "Schema0", "s0", 1, 0, 0));
     ASSERT_TRUE(m_schema0.IsValid());
@@ -1526,48 +1479,42 @@ void PropertyCopyTest::SetUp()
     ASSERT_TRUE(m_schema1.IsValid());
 
     ECTestFixture::SetUp();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-void PropertyCopyTest::CopyProperty(bool copyReferences)
-    {
-    if (copyReferences)
-        {
+void PropertyCopyTest::CopyProperty(bool copyReferences) {
+    if (copyReferences) {
         ECClassP ecClass;
         EC_EXPECT_SUCCESS(m_schema1->CopyClass(ecClass, *m_entity0, true));
         ASSERT_TRUE(nullptr != ecClass);
         m_entity1 = ecClass->GetEntityClassP();
         ASSERT_TRUE(nullptr != m_entity1);
         m_prop1 = m_entity1->GetPropertyP(m_prop0->GetName().c_str());
-        }
-    else
-        {
+    } else {
         EC_ASSERT_SUCCESS(m_schema1->CreateEntityClass(m_entity1, "Entity"));
         ASSERT_TRUE(nullptr != m_entity1);
         EC_EXPECT_SUCCESS(m_entity1->CopyProperty(m_prop1, m_prop0, true));
-        }
+    }
 
     ASSERT_TRUE(nullptr != m_prop1);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, FailToCopyWithoutSourceProperty)
-    {
+TEST_F(PropertyCopyTest, FailToCopyWithoutSourceProperty) {
     PrimitiveECPropertyCP prop = nullptr;
-    
+
     ECPropertyP copiedProp;
     EXPECT_EQ(ECObjectsStatus::NullPointerValue, m_entity0->CopyProperty(copiedProp, prop, true));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, BaseFullyDefinedECProperty)
-    {
+TEST_F(PropertyCopyTest, BaseFullyDefinedECProperty) {
     PropertyCategoryP propCategory;
     m_schema0->CreatePropertyCategory(propCategory, "TestPropCategory");
 
@@ -1605,13 +1552,12 @@ TEST_F(PropertyCopyTest, BaseFullyDefinedECProperty)
     KindOfQuantityCP destKoQ = m_schema1->GetKindOfQuantityCP("TestKoQ");
     EXPECT_TRUE(nullptr != destKoQ);
     EXPECT_EQ(destKoQ, m_prop1->GetKindOfQuantity());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PropertyWithCategoryInSameSchemaWithoutCopyingTypes) 
-    {
+TEST_F(PropertyCopyTest, PropertyWithCategoryInSameSchemaWithoutCopyingTypes) {
     PrimitiveECPropertyP primProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop", PRIMITIVETYPE_String));
 
@@ -1628,13 +1574,12 @@ TEST_F(PropertyCopyTest, PropertyWithCategoryInSameSchemaWithoutCopyingTypes)
     ASSERT_TRUE(nullptr != m_prop1->GetCategory());
     EXPECT_STREQ("Schema0", m_prop1->GetCategory()->GetSchema().GetName().c_str());
     EXPECT_EQ(propCategory, m_prop1->GetCategory());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PropertyWithCategoryInRefSchema) 
-    {
+TEST_F(PropertyCopyTest, PropertyWithCategoryInRefSchema) {
     PrimitiveECPropertyP primProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop", PRIMITIVETYPE_String));
 
@@ -1656,13 +1601,12 @@ TEST_F(PropertyCopyTest, PropertyWithCategoryInRefSchema)
     ASSERT_TRUE(nullptr != m_prop1->GetCategory());
     EXPECT_STREQ("RefSchema", m_prop1->GetCategory()->GetSchema().GetName().c_str());
     EXPECT_EQ(refCategory, m_prop1->GetCategory());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PropertyWithKindOfQuantityInSameSchemaWithoutCopyingTypes) 
-    {
+TEST_F(PropertyCopyTest, PropertyWithKindOfQuantityInSameSchemaWithoutCopyingTypes) {
     PrimitiveECPropertyP primProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop", PRIMITIVETYPE_String));
 
@@ -1679,13 +1623,12 @@ TEST_F(PropertyCopyTest, PropertyWithKindOfQuantityInSameSchemaWithoutCopyingTyp
     ASSERT_TRUE(nullptr != m_prop1->GetKindOfQuantity());
     EXPECT_STREQ("Schema0", m_prop1->GetKindOfQuantity()->GetSchema().GetName().c_str());
     EXPECT_EQ(koq, m_prop1->GetKindOfQuantity());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PropertyWithKindOfQuantityInRefSchema) 
-    {
+TEST_F(PropertyCopyTest, PropertyWithKindOfQuantityInRefSchema) {
     PrimitiveECPropertyP primProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop", PRIMITIVETYPE_String));
 
@@ -1707,14 +1650,13 @@ TEST_F(PropertyCopyTest, PropertyWithKindOfQuantityInRefSchema)
     ASSERT_TRUE(nullptr != m_prop1->GetKindOfQuantity());
     EXPECT_STREQ("RefSchema", m_prop1->GetKindOfQuantity()->GetSchema().GetName().c_str());
     EXPECT_EQ(refKoQ, m_prop1->GetKindOfQuantity());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // Maximum and Minimum length are only supported for Primitive types string and binary.
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PrimitivePropertyWithMaxAndMinLength)
-    {
+TEST_F(PropertyCopyTest, PrimitivePropertyWithMaxAndMinLength) {
     PrimitiveECPropertyP primProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop", PRIMITIVETYPE_String));
 
@@ -1729,21 +1671,20 @@ TEST_F(PropertyCopyTest, PrimitivePropertyWithMaxAndMinLength)
     EXPECT_STREQ("string", m_prop1->GetTypeName().c_str());
     EXPECT_EQ(1, m_prop1->GetMinimumLength());
     EXPECT_EQ(10, m_prop1->GetMaximumLength());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // Maximum and Minimum value are only supported for Primitive types integer, long and double.
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PrimitivePropertyWithMaxAndMinValue)
-    {
+TEST_F(PropertyCopyTest, PrimitivePropertyWithMaxAndMinValue) {
     PrimitiveECPropertyP primProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop", PRIMITIVETYPE_String));
 
     EC_ASSERT_SUCCESS(primProp->SetTypeName("int"));
-    ECValue minValue (5);
+    ECValue minValue(5);
     EC_ASSERT_SUCCESS(primProp->SetMinimumValue(minValue));
-    ECValue maxValue (25);
+    ECValue maxValue(25);
     EC_ASSERT_SUCCESS(primProp->SetMaximumValue(maxValue));
 
     m_prop0 = primProp;
@@ -1760,13 +1701,12 @@ TEST_F(PropertyCopyTest, PrimitivePropertyWithMaxAndMinValue)
     ECValue expectMaxValue(25);
     EC_EXPECT_SUCCESS(m_prop1->GetMaximumValue(copiedMaxValue));
     EXPECT_EQ(expectMaxValue, copiedMaxValue);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PrimitivePropertyWithExtendedType) 
-    {
+TEST_F(PropertyCopyTest, PrimitivePropertyWithExtendedType) {
     PrimitiveECPropertyP primProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop", PRIMITIVETYPE_String));
 
@@ -1781,13 +1721,12 @@ TEST_F(PropertyCopyTest, PrimitivePropertyWithExtendedType)
     PrimitiveECPropertyCP primProp1 = m_prop1->GetAsPrimitiveProperty();
     EXPECT_TRUE(primProp1->IsExtendedTypeDefinedLocally());
     EXPECT_STREQ("Json", primProp1->GetExtendedTypeName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PrimitivePropertyWithEnumerationInSameSchema) 
-    {
+TEST_F(PropertyCopyTest, PrimitivePropertyWithEnumerationInSameSchema) {
     PrimitiveECPropertyP primProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop", PRIMITIVETYPE_String));
 
@@ -1802,18 +1741,17 @@ TEST_F(PropertyCopyTest, PrimitivePropertyWithEnumerationInSameSchema)
 
     EXPECT_STREQ("TestEnum", m_prop1->GetTypeName().c_str());
     PrimitiveECPropertyCP primProp1 = m_prop1->GetAsPrimitiveProperty();
-    
+
     ECEnumerationCP destEnum = m_schema1->GetEnumerationCP("TestEnum");
     EXPECT_TRUE(nullptr != destEnum);
     EXPECT_TRUE(nullptr != primProp1->GetEnumeration());
     EXPECT_EQ(destEnum, primProp1->GetEnumeration());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PrimitivePropertyWithEnumerationInSameSchemaWithoutCopyingTypes) 
-    {
+TEST_F(PropertyCopyTest, PrimitivePropertyWithEnumerationInSameSchemaWithoutCopyingTypes) {
     PrimitiveECPropertyP primProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop", PRIMITIVETYPE_String));
 
@@ -1827,18 +1765,17 @@ TEST_F(PropertyCopyTest, PrimitivePropertyWithEnumerationInSameSchemaWithoutCopy
     CopyProperty(false);
 
     PrimitiveECPropertyCP primProp1 = m_prop1->GetAsPrimitiveProperty();
-    
+
     ECEnumerationCP destEnum = m_schema1->GetEnumerationCP("TestEnum");
     EXPECT_TRUE(nullptr == destEnum);
     EXPECT_TRUE(nullptr != primProp1->GetEnumeration());
     EXPECT_EQ(sourceEnum, primProp1->GetEnumeration());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PrimitivePropertyWithEnumerationInRefSchema)
-    {
+TEST_F(PropertyCopyTest, PrimitivePropertyWithEnumerationInRefSchema) {
     PrimitiveECPropertyP primProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop", PRIMITIVETYPE_String));
 
@@ -1861,13 +1798,12 @@ TEST_F(PropertyCopyTest, PrimitivePropertyWithEnumerationInRefSchema)
     EXPECT_TRUE(nullptr != primProp1->GetEnumeration());
     EXPECT_STREQ("RefSchema", primProp1->GetEnumeration()->GetSchema().GetName().c_str());
     EXPECT_EQ(refEnum, primProp1->GetEnumeration());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithMaxAndMinOccurs)
-    {
+TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithMaxAndMinOccurs) {
     PrimitiveArrayECPropertyP primArrProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveArrayProperty(primArrProp, "Prop"));
     EC_ASSERT_SUCCESS(primArrProp->SetTypeName("string"));
@@ -1882,14 +1818,13 @@ TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithMaxAndMinOccurs)
     PrimitiveArrayECPropertyCP primProp1 = m_prop1->GetAsPrimitiveArrayProperty();
     EXPECT_EQ(5, primProp1->GetMinOccurs());
     EXPECT_EQ(15, primProp1->GetStoredMaxOccurs());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // Maximum and Minimum length are only supported for Primitive types string and binary.
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithMaxAndMinLength)
-    {
+TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithMaxAndMinLength) {
     PrimitiveArrayECPropertyP primArrProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveArrayProperty(primArrProp, "Prop"));
 
@@ -1904,21 +1839,20 @@ TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithMaxAndMinLength)
     EXPECT_STREQ("string", m_prop1->GetTypeName().c_str());
     EXPECT_EQ(1, m_prop1->GetMinimumLength());
     EXPECT_EQ(10, m_prop1->GetMaximumLength());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // Maximum and Minimum value are only supported for Primitive types integer, long and double.
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithMaxAndMinValue)
-    {
+TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithMaxAndMinValue) {
     PrimitiveArrayECPropertyP primArrProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveArrayProperty(primArrProp, "Prop"));
 
     EC_ASSERT_SUCCESS(primArrProp->SetTypeName("int"));
-    ECValue minValue (5);
+    ECValue minValue(5);
     EC_ASSERT_SUCCESS(primArrProp->SetMinimumValue(minValue));
-    ECValue maxValue (25);
+    ECValue maxValue(25);
     EC_ASSERT_SUCCESS(primArrProp->SetMaximumValue(maxValue));
 
     m_prop0 = primArrProp;
@@ -1935,13 +1869,12 @@ TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithMaxAndMinValue)
     ECValue expectMaxValue(25);
     EC_EXPECT_SUCCESS(m_prop1->GetMaximumValue(copiedMaxValue));
     EXPECT_EQ(expectMaxValue, copiedMaxValue);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithExtendedType) 
-    {
+TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithExtendedType) {
     PrimitiveArrayECPropertyP primArrProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveArrayProperty(primArrProp, "Prop"));
 
@@ -1956,13 +1889,12 @@ TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithExtendedType)
     PrimitiveArrayECPropertyCP primProp1 = m_prop1->GetAsPrimitiveArrayProperty();
     EXPECT_TRUE(primProp1->IsExtendedTypeDefinedLocally());
     EXPECT_STREQ("Json", primProp1->GetExtendedTypeName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithEnumerationInSameSchema)
-    {
+TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithEnumerationInSameSchema) {
     PrimitiveArrayECPropertyP primArrProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveArrayProperty(primArrProp, "Prop"));
 
@@ -1977,18 +1909,17 @@ TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithEnumerationInSameSchema)
 
     EXPECT_STREQ("TestEnum", m_prop1->GetTypeName().c_str());
     PrimitiveArrayECPropertyCP primProp1 = m_prop1->GetAsPrimitiveArrayProperty();
-    
+
     ECEnumerationCP destEnum = m_schema1->GetEnumerationCP("TestEnum");
     EXPECT_TRUE(nullptr != destEnum);
     EXPECT_TRUE(nullptr != primProp1->GetEnumeration());
     EXPECT_EQ(destEnum, primProp1->GetEnumeration());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithEnumerationInSameSchemaWithoutCopyingTypes)
-    {
+TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithEnumerationInSameSchemaWithoutCopyingTypes) {
     PrimitiveArrayECPropertyP primArrProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveArrayProperty(primArrProp, "Prop"));
 
@@ -2002,18 +1933,17 @@ TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithEnumerationInSameSchemaWithou
     CopyProperty(false);
 
     PrimitiveArrayECPropertyCP primProp1 = m_prop1->GetAsPrimitiveArrayProperty();
-    
+
     ECEnumerationCP destEnum = m_schema1->GetEnumerationCP("TestEnum");
     EXPECT_TRUE(nullptr == destEnum);
     EXPECT_TRUE(nullptr != primProp1->GetEnumeration());
     EXPECT_EQ(sourceEnum, primProp1->GetEnumeration());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithEnumerationInRefSchema)
-    {
+TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithEnumerationInRefSchema) {
     PrimitiveArrayECPropertyP primArrProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveArrayProperty(primArrProp, "Prop"));
 
@@ -2036,13 +1966,12 @@ TEST_F(PropertyCopyTest, PrimitiveArrayPropertyWithEnumerationInRefSchema)
     EXPECT_TRUE(nullptr != primProp1->GetEnumeration());
     EXPECT_STREQ("RefSchema", primProp1->GetEnumeration()->GetSchema().GetName().c_str());
     EXPECT_EQ(refEnum, primProp1->GetEnumeration());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, StructPropertyWithStructClassInSameSchema)
-    {
+TEST_F(PropertyCopyTest, StructPropertyWithStructClassInSameSchema) {
     ECStructClassP structClass;
     EC_ASSERT_SUCCESS(m_schema0->CreateStructClass(structClass, "Struct"));
 
@@ -2061,13 +1990,12 @@ TEST_F(PropertyCopyTest, StructPropertyWithStructClassInSameSchema)
     StructECPropertyCP destStructProp = m_prop1->GetAsStructProperty();
     ASSERT_TRUE(nullptr != destStructProp);
     EXPECT_STREQ(m_schema1->GetName().c_str(), destStructProp->GetType().GetSchema().GetName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, StructPropertyWithStructClassInSameSchemaWithoutCopyingTypes)
-    {
+TEST_F(PropertyCopyTest, StructPropertyWithStructClassInSameSchemaWithoutCopyingTypes) {
     ECStructClassP structClass;
     EC_ASSERT_SUCCESS(m_schema0->CreateStructClass(structClass, "Struct"));
 
@@ -2081,13 +2009,12 @@ TEST_F(PropertyCopyTest, StructPropertyWithStructClassInSameSchemaWithoutCopying
     StructECPropertyCP destStructProp = m_prop1->GetAsStructProperty();
     ASSERT_TRUE(nullptr != destStructProp);
     EXPECT_STREQ(m_schema0->GetName().c_str(), destStructProp->GetType().GetSchema().GetName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, StructPropertyWithStructClassInRefSchema)
-    {
+TEST_F(PropertyCopyTest, StructPropertyWithStructClassInRefSchema) {
     ECStructClassP refStructClass;
     ECSchemaPtr refSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(refSchema, "RefSchema", "ref", 1, 0, 0));
@@ -2107,13 +2034,12 @@ TEST_F(PropertyCopyTest, StructPropertyWithStructClassInRefSchema)
     StructECPropertyCP structProp1 = m_prop1->GetAsStructProperty();
     EXPECT_TRUE(nullptr != structProp1);
     EXPECT_STREQ("RefSchema", structProp1->GetType().GetSchema().GetName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, StructArrayPropertyWithMaxAndMinOccurs)
-    {
+TEST_F(PropertyCopyTest, StructArrayPropertyWithMaxAndMinOccurs) {
     ECStructClassP structClass;
     EC_ASSERT_SUCCESS(m_schema0->CreateStructClass(structClass, "Struct"));
 
@@ -2129,13 +2055,12 @@ TEST_F(PropertyCopyTest, StructArrayPropertyWithMaxAndMinOccurs)
     StructArrayECPropertyCP structArrProp1 = m_prop1->GetAsStructArrayProperty();
     EXPECT_EQ(5, structArrProp1->GetMinOccurs());
     EXPECT_EQ(15, structArrProp1->GetStoredMaxOccurs());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, StructArrayPropertyWithStructClassInSameSchema)
-    {
+TEST_F(PropertyCopyTest, StructArrayPropertyWithStructClassInSameSchema) {
     ECStructClassP structClass;
     EC_ASSERT_SUCCESS(m_schema0->CreateStructClass(structClass, "Struct"));
 
@@ -2154,13 +2079,12 @@ TEST_F(PropertyCopyTest, StructArrayPropertyWithStructClassInSameSchema)
     StructArrayECPropertyCP destStructProp = m_prop1->GetAsStructArrayProperty();
     ASSERT_TRUE(nullptr != destStructProp);
     EXPECT_STREQ(m_schema1->GetName().c_str(), destStructProp->GetStructElementType().GetSchema().GetName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, StructArrayPropertyWithStructClassInSameSchemaWithoutCopyingTypes)
-    {
+TEST_F(PropertyCopyTest, StructArrayPropertyWithStructClassInSameSchemaWithoutCopyingTypes) {
     ECStructClassP structClass;
     EC_ASSERT_SUCCESS(m_schema0->CreateStructClass(structClass, "Struct"));
 
@@ -2174,13 +2098,12 @@ TEST_F(PropertyCopyTest, StructArrayPropertyWithStructClassInSameSchemaWithoutCo
     StructArrayECPropertyCP destStructProp = m_prop1->GetAsStructArrayProperty();
     ASSERT_TRUE(nullptr != destStructProp);
     EXPECT_STREQ(m_schema0->GetName().c_str(), destStructProp->GetStructElementType().GetSchema().GetName().c_str()) << "The struct type should still be in the source schema.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, StructArrayPropertyWithStructClassInRefSchema)
-    {
+TEST_F(PropertyCopyTest, StructArrayPropertyWithStructClassInRefSchema) {
     ECStructClassP refStructClass;
     ECSchemaPtr refSchema;
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(refSchema, "RefSchema", "ref", 1, 0, 0));
@@ -2200,18 +2123,17 @@ TEST_F(PropertyCopyTest, StructArrayPropertyWithStructClassInRefSchema)
     StructArrayECPropertyCP structProp1 = m_prop1->GetAsStructArrayProperty();
     EXPECT_TRUE(nullptr != structProp1);
     EXPECT_STREQ("RefSchema", structProp1->GetStructElementType().GetSchema().GetName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, NavigationPropertyWithRelatedInstanceDirection)
-    {
+TEST_F(PropertyCopyTest, NavigationPropertyWithRelatedInstanceDirection) {
     ECEntityClassP targetClass;
     ECRelationshipClassP relClass;
     EC_ASSERT_SUCCESS(m_schema0->CreateEntityClass(targetClass, "TargetClass"));
     EC_ASSERT_SUCCESS(m_schema0->CreateRelationshipClass(relClass, "RelClass", *m_entity0, "Source", *targetClass, "target"));
-    
+
     NavigationECPropertyP navProp;
     EC_ASSERT_SUCCESS(m_entity0->CreateNavigationProperty(navProp, "NavProp", *relClass, ECRelatedInstanceDirection::Forward));
 
@@ -2222,24 +2144,23 @@ TEST_F(PropertyCopyTest, NavigationPropertyWithRelatedInstanceDirection)
     NavigationECPropertyCP destNavProp = m_prop1->GetAsNavigationProperty();
     EXPECT_TRUE(nullptr != destNavProp);
     EXPECT_EQ(ECRelatedInstanceDirection::Forward, destNavProp->GetDirection());
-    }
+}
 
 //---------------------------------------------------------------------------------------
-// The ECRelationshipClass on a NavigationECProperty can never be in a reference schema 
+// The ECRelationshipClass on a NavigationECProperty can never be in a reference schema
 // because the ECEntityClass the NavigationECProperty is on has to be a constraint class
-// in the ECRelationship class. This cannot happen if the ECRelationshipClass is in the 
-// referenced schema and the intended ECEntityClass is in the main schema, it would 
+// in the ECRelationship class. This cannot happen if the ECRelationshipClass is in the
+// referenced schema and the intended ECEntityClass is in the main schema, it would
 // result in a circular reference.
 //
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, NavigationPropertyWithRelationshipInSameSchema)
-    {
+TEST_F(PropertyCopyTest, NavigationPropertyWithRelationshipInSameSchema) {
     ECEntityClassP targetClass;
     ECRelationshipClassP relClass;
     EC_ASSERT_SUCCESS(m_schema0->CreateEntityClass(targetClass, "TargetClass"));
     EC_ASSERT_SUCCESS(m_schema0->CreateRelationshipClass(relClass, "RelClass", *m_entity0, "Source", *targetClass, "target"));
-    
+
     NavigationECPropertyP navProp;
     EC_ASSERT_SUCCESS(m_entity0->CreateNavigationProperty(navProp, "NavProp", *relClass, ECRelatedInstanceDirection::Forward));
 
@@ -2250,18 +2171,17 @@ TEST_F(PropertyCopyTest, NavigationPropertyWithRelationshipInSameSchema)
     NavigationECPropertyCP destNavProp = m_prop1->GetAsNavigationProperty();
     EXPECT_TRUE(nullptr != destNavProp);
     EXPECT_STREQ(m_schema1->GetName().c_str(), destNavProp->GetRelationshipClass()->GetSchema().GetName().c_str());
-    }
+}
 
 //---------------+---------------+---------------+---------------+---------------+-------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(PropertyCopyTest, NavigationPropertyWithRelationshipInSameSchemaWithoutCopyingTypes)
-    {
+TEST_F(PropertyCopyTest, NavigationPropertyWithRelationshipInSameSchemaWithoutCopyingTypes) {
     ECEntityClassP targetClass;
     ECRelationshipClassP relClass;
     EC_ASSERT_SUCCESS(m_schema0->CreateEntityClass(targetClass, "TargetClass"));
     EC_ASSERT_SUCCESS(m_schema0->CreateRelationshipClass(relClass, "RelClass", *m_entity0, "Source", *targetClass, "target"));
-    
+
     NavigationECPropertyP navProp;
     EC_ASSERT_SUCCESS(m_entity0->CreateNavigationProperty(navProp, "NavProp", *relClass, ECRelatedInstanceDirection::Forward));
 
@@ -2272,26 +2192,24 @@ TEST_F(PropertyCopyTest, NavigationPropertyWithRelationshipInSameSchemaWithoutCo
     NavigationECPropertyCP destNavProp = m_prop1->GetAsNavigationProperty();
     EXPECT_TRUE(nullptr != destNavProp);
     EXPECT_STREQ(m_schema0->GetName().c_str(), destNavProp->GetRelationshipClass()->GetSchema().GetName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(PropertyCopyTest, SimpleCase_CopiedPropertyIsSameProperty)
-    {
+TEST_F(PropertyCopyTest, SimpleCase_CopiedPropertyIsSameProperty) {
     PrimitiveECPropertyP primProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop", PRIMITIVETYPE_String));
-    
+
     m_prop0 = primProp;
     CopyProperty(true);
     EXPECT_TRUE(m_prop0->IsSame(*m_prop1));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(PropertyCopyTest, PriorityExplicitlySet_CopiedPropertyIsSameProperty)
-    {
+TEST_F(PropertyCopyTest, PriorityExplicitlySet_CopiedPropertyIsSameProperty) {
     PrimitiveECPropertyP primProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(primProp, "Prop", PRIMITIVETYPE_String));
     primProp->SetPriority(33);
@@ -2299,13 +2217,12 @@ TEST_F(PropertyCopyTest, PriorityExplicitlySet_CopiedPropertyIsSameProperty)
     m_prop0 = primProp;
     CopyProperty(true);
     EXPECT_TRUE(m_prop0->IsSame(*m_prop1));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(PropertyCopyTest, PropertyHasBasePropertyWithNoPriority_CopiedPropertyIsSameProperty)
-    {
+TEST_F(PropertyCopyTest, PropertyHasBasePropertyWithNoPriority_CopiedPropertyIsSameProperty) {
     PrimitiveECPropertyP baseProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(baseProp, "BaseProp", PRIMITIVETYPE_String));
 
@@ -2316,13 +2233,12 @@ TEST_F(PropertyCopyTest, PropertyHasBasePropertyWithNoPriority_CopiedPropertyIsS
     m_prop0 = primProp;
     CopyProperty(true);
     EXPECT_TRUE(m_prop0->IsSame(*m_prop1));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(PropertyCopyTest, PropertyHasBasePropertyWithPriorityExcplicitlySet_CopiedPropertyIsSameProperty)
-    {
+TEST_F(PropertyCopyTest, PropertyHasBasePropertyWithPriorityExcplicitlySet_CopiedPropertyIsSameProperty) {
     PrimitiveECPropertyP baseProp;
     EC_ASSERT_SUCCESS(m_entity0->CreatePrimitiveProperty(baseProp, "BaseProp", PRIMITIVETYPE_String));
     baseProp->SetPriority(31);
@@ -2334,13 +2250,12 @@ TEST_F(PropertyCopyTest, PropertyHasBasePropertyWithPriorityExcplicitlySet_Copie
     m_prop0 = primProp;
     CopyProperty(true);
     EXPECT_TRUE(m_prop0->IsSame(*m_prop1));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassTest, ExplicitSerializeInheritedPropertiesWithLengthGreaterThanInt32Max)
-    {
+TEST_F(ClassTest, ExplicitSerializeInheritedPropertiesWithLengthGreaterThanInt32Max) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
 
@@ -2370,6 +2285,6 @@ TEST_F(ClassTest, ExplicitSerializeInheritedPropertiesWithLengthGreaterThanInt32
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, entityClassTestDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(entityClassJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(entityClassJson, testDataJson);
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

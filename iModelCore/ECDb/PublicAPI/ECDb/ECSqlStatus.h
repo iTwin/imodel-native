@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ECDbTypes.h>
 #include <BeSQLite/BeSQLite.h>
@@ -13,26 +13,24 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @ingroup ECDbGroup
 // @bsienum
 //+===============+===============+===============+===============+===============+======
-struct ECSqlStatus final
-    {
-public:
-    enum class Status : uint8_t
-        {
-        Success = SUCCESS, //!< Success
-        Error, //!< Error which is not further specified
-        InvalidECSql, //!< An invalid ECSQL (e.g. because of a syntax or semantic error in the ECSQL text) was passed to ECSqlStatement::Prepare.
-        SQLiteError //!< A SQLite error occurred
-        };
+struct ECSqlStatus final {
+   public:
+    enum class Status : uint8_t {
+        Success = SUCCESS,  //!< Success
+        Error,              //!< Error which is not further specified
+        InvalidECSql,       //!< An invalid ECSQL (e.g. because of a syntax or semantic error in the ECSQL text) was passed to ECSqlStatement::Prepare.
+        SQLiteError         //!< A SQLite error occurred
+    };
 
     ECDB_EXPORT static const ECSqlStatus Success;
     ECDB_EXPORT static const ECSqlStatus Error;
     ECDB_EXPORT static const ECSqlStatus InvalidECSql;
 
-private:
+   private:
     Status m_status;
     DbResult m_sqliteError;
 
-public:
+   public:
     ECSqlStatus() : m_status(Status::Success), m_sqliteError(BE_SQLITE_OK) {}
     explicit ECSqlStatus(Status stat) : m_status(stat), m_sqliteError(stat == Status::SQLiteError ? BE_SQLITE_ERROR : BE_SQLITE_OK) {};
     explicit ECSqlStatus(DbResult sqliteError) : m_status(Status::SQLiteError), m_sqliteError(sqliteError) { BeAssert(sqliteError != BE_SQLITE_OK && "Use default ctor in this case"); };
@@ -52,7 +50,6 @@ public:
     bool IsSQLiteError() const { return m_status == Status::SQLiteError; }
     //! Gets the detailed SQLite error if this ECSqlStatus is ECSqlStatus::Status::SQLiteError
     DbResult GetSQLiteError() const { return m_sqliteError; }
-
-    };
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

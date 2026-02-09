@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
 #include <Bentley/BeFile.h>
 #include <ECObjects/ECObjectsAPI.h>
@@ -17,35 +17,32 @@
 
 BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::LoggingManager::GetLogger("SchemaComparison");
 
-struct ExactSearchPathSchemaFileLocater : ECN::SearchPathSchemaFileLocater
-    {
+struct ExactSearchPathSchemaFileLocater : ECN::SearchPathSchemaFileLocater {
     using ECN::SearchPathSchemaFileLocater::SearchPathSchemaFileLocater;
-    protected:
-        ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
-    public:
-        static ECN::SearchPathSchemaFileLocaterPtr CreateExactSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt = false);
-    };
 
-ECN::ECSchemaPtr ExactSearchPathSchemaFileLocater::_LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext)
-    {
+   protected:
+    ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
+
+   public:
+    static ECN::SearchPathSchemaFileLocaterPtr CreateExactSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt = false);
+};
+
+ECN::ECSchemaPtr ExactSearchPathSchemaFileLocater::_LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) {
     return SearchPathSchemaFileLocater::_LocateSchema(key, ECN::SchemaMatchType::Exact, schemaContext);
-    }
+}
 
-ECN::SearchPathSchemaFileLocaterPtr ExactSearchPathSchemaFileLocater::CreateExactSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt)
-    {
+ECN::SearchPathSchemaFileLocaterPtr ExactSearchPathSchemaFileLocater::CreateExactSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt) {
     return new ExactSearchPathSchemaFileLocater(searchPaths, includeFilesWithNoVerExt);
-    }
+}
 
-struct SchemaComparisonOptions
-    {
+struct SchemaComparisonOptions {
     BeFileName InFileNames[NSCHEMAS];
     bvector<BeFileName> ReferenceDirectories[NSCHEMAS];
     bool NoStandardSchemas;
     bool UseStandardUnitsAndFormatsSchemas;
-    };
+};
 
-static void ShowUsage(const char* progName)
-    {
+static void ShowUsage(const char* progName) {
     std::fprintf(stderr,
                  "\n%s -i <inputSchemaPath> <inputSchemaPath> [-r directories]\n%s\n%s\n%s\n%s\n%s\n%s\n",
                  progName,
@@ -55,37 +52,32 @@ static void ShowUsage(const char* progName)
                  " -i        FILE0 [FILE1 ... FILEN] specify input schemas",
                  " -r --ref  DIR0  [DIR1  ... DIRN]  other directories for reference schemas",
                  " --NoStandardSchemas               do not initialize SchemaReadContext with standard schemas directory");
-    }
+}
 
-static bool NoParameterNext(int argc, char** argv, int index)
-    {
+static bool NoParameterNext(int argc, char** argv, int index) {
     int next = index + 1;
     if (next >= argc || argv[next][0] == '-')
         return true;
     return false;
-    }
+}
 
-static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& options)
-    {
+static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& options) {
     size_t inFileIndex = 0;
     size_t referenceSchemasIndex = 0;
     bool allInputFilesDefined = false;
     options.NoStandardSchemas = false;
     options.UseStandardUnitsAndFormatsSchemas = false;
-    for (int i = 1; i < argc; ++i)
-        {
+    for (int i = 1; i < argc; ++i) {
         if (0 == std::strcmp(argv[i], "-h") || 0 == std::strcmp(argv[i], "--help"))
             return false;
         if (0 == std::strcmp(argv[i], "--NoStandardSchemas"))
             options.NoStandardSchemas = true;
         else if (0 == std::strcmp(argv[i], "--UseStandardUnitsAndFormatsSchemas"))
             options.UseStandardUnitsAndFormatsSchemas = true;
-        else if (0 == std::strcmp(argv[i], "-i"))
-            {
+        else if (0 == std::strcmp(argv[i], "-i")) {
             if (NoParameterNext(argc, argv, i))
                 return false;
-            while (false == NoParameterNext(argc, argv, i))
-                {
+            while (false == NoParameterNext(argc, argv, i)) {
                 if (allInputFilesDefined)
                     return false;
                 options.InFileNames[inFileIndex].AssignUtf8(argv[++i]);
@@ -93,62 +85,50 @@ static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& option
                     return false;
                 ++inFileIndex;
                 allInputFilesDefined = inFileIndex == NSCHEMAS;
-                }
             }
-        else if (0 == std::strcmp(argv[i], "-r") || 0 == std::strcmp(argv[i], "--ref"))
-            {
+        } else if (0 == std::strcmp(argv[i], "-r") || 0 == std::strcmp(argv[i], "--ref")) {
             if (referenceSchemasIndex >= NSCHEMAS)
                 return false;
-            while (false == NoParameterNext(argc, argv, i))
-                {
+            while (false == NoParameterNext(argc, argv, i)) {
                 BeFileName refDir(argv[++i]);
                 refDir.AppendSeparator();
                 options.ReferenceDirectories[referenceSchemasIndex].push_back(refDir);
-                }
-            for (auto const& refDirectory : options.ReferenceDirectories[referenceSchemasIndex])
-                {
-                if (!refDirectory.Contains(L"\\"))
-                    {
+            }
+            for (auto const& refDirectory : options.ReferenceDirectories[referenceSchemasIndex]) {
+                if (!refDirectory.Contains(L"\\")) {
                     std::fputs("-r/--ref should be followed by one or more directories", stderr);
                     return false;
-                    }
                 }
-            ++referenceSchemasIndex;
             }
-        else
-            {
+            ++referenceSchemasIndex;
+        } else {
             std::fprintf(stderr, "Unknown option %s\n", argv[i]);
             return false;
-            }
         }
+    }
 
-    while (referenceSchemasIndex > 0 && referenceSchemasIndex < NSCHEMAS)
-        {
+    while (referenceSchemasIndex > 0 && referenceSchemasIndex < NSCHEMAS) {
         options.ReferenceDirectories[referenceSchemasIndex] = options.ReferenceDirectories[referenceSchemasIndex - 1];
         ++referenceSchemasIndex;
-        }
+    }
 
     return allInputFilesDefined;
-    }
+}
 
-static void LogError(Utf8String message)
-    {
+static void LogError(Utf8String message) {
     size_t offset = 0;
     Utf8String m;
-    while ((offset = message.GetNextToken (m, "\n\r", offset)) != Utf8String::npos)
-        {
-        if(!Utf8String::IsNullOrEmpty(m.c_str()))
+    while ((offset = message.GetNextToken(m, "\n\r", offset)) != Utf8String::npos) {
+        if (!Utf8String::IsNullOrEmpty(m.c_str()))
             s_logger->infov("%s", m.c_str());
-        }
     }
+}
 
-int CompareSchemas(SchemaComparisonOptions& options, BeFileName& assetsDir)
-    {
+int CompareSchemas(SchemaComparisonOptions& options, BeFileName& assetsDir) {
     ECN::ECSchemaReadContextPtr contexts[NSCHEMAS];
     ECN::ECSchemaPtr schemas[NSCHEMAS];
     Utf8String checksums[NSCHEMAS];
-    for (int i = 0; i < NSCHEMAS; ++i)
-        {
+    for (int i = 0; i < NSCHEMAS; ++i) {
         contexts[i] = ECN::ECSchemaReadContext::CreateContext(true, true);
         contexts[i]->SetPreserveElementOrder(false);
         contexts[i]->SetSkipValidation(true);
@@ -156,104 +136,91 @@ int CompareSchemas(SchemaComparisonOptions& options, BeFileName& assetsDir)
         bvector<WString> searchPaths;
         for (auto const& refDir : options.ReferenceDirectories[i])
             searchPaths.push_back(WString(refDir.GetName()));
-        
+
         ECN::SearchPathSchemaFileLocaterPtr exactSchemaLocater = ExactSearchPathSchemaFileLocater::CreateExactSearchPathSchemaFileLocater(searchPaths, true);
         contexts[i]->AddSchemaLocater(*exactSchemaLocater);
 
-        if (options.UseStandardUnitsAndFormatsSchemas)
-            {
+        if (options.UseStandardUnitsAndFormatsSchemas) {
             static ECN::SchemaKey units("Units", 1, 0, 0);
             static ECN::SchemaKey formats("Formats", 1, 0, 0);
 
             ECN::ECSchemaPtr unitsSchema = contexts[i]->LocateSchema(units, ECN::SchemaMatchType::LatestWriteCompatible);
-            if (!unitsSchema.IsValid())
-                {
+            if (!unitsSchema.IsValid()) {
                 s_logger->errorv("Failed to load standard 'Units' schema.");
                 return SCHEMA_COMPARISON_EXIT_FAILURE;
-                }
-
-            ECN::ECSchemaPtr formatsSchema = contexts[i]->LocateSchema(formats, ECN::SchemaMatchType::LatestWriteCompatible);
-            if (!formatsSchema.IsValid())
-                {
-                s_logger->errorv("Failed to load standard 'Formats' schema.");
-                return SCHEMA_COMPARISON_EXIT_FAILURE;
-                }
             }
 
+            ECN::ECSchemaPtr formatsSchema = contexts[i]->LocateSchema(formats, ECN::SchemaMatchType::LatestWriteCompatible);
+            if (!formatsSchema.IsValid()) {
+                s_logger->errorv("Failed to load standard 'Formats' schema.");
+                return SCHEMA_COMPARISON_EXIT_FAILURE;
+            }
+        }
+
         ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlFile(schemas[i], options.InFileNames[i].c_str(), *contexts[i]);
-        if (status != ECN::SchemaReadStatus::Success || !schemas[i].IsValid())
-            {
+        if (status != ECN::SchemaReadStatus::Success || !schemas[i].IsValid()) {
             Utf8String err("Failed to read schema ");
             err += Utf8CP(options.InFileNames[i].GetFileNameWithoutExtension().c_str());
             s_logger->fatal(err.c_str());
             return SCHEMA_COMPARISON_EXIT_FAILURE;
-            }
+        }
         s_logger->infov("Located schema: %s\n", schemas[i]->GetName().c_str());
 
         checksums[i] = schemas[i]->ComputeCheckSum();
 
         s_logger->infov("Checksum for %s = %s\n", schemas[i]->GetFullSchemaName().c_str(), checksums[i].c_str());
-        }
+    }
 
     bvector<ECN::ECSchemaCP> cpSchemas[NSCHEMAS] = {{schemas[0].get()}, {schemas[1].get()}};
     ECN::SchemaComparer comparer;
     ECN::SchemaDiff diff;
     ECN::SchemaComparer::Options comparerOptions(ECN::SchemaComparer::DetailLevel::Full, ECN::SchemaComparer::DetailLevel::Full);
-    if (ERROR == comparer.Compare(diff, cpSchemas[0], cpSchemas[1], comparerOptions))
-        {
+    if (ERROR == comparer.Compare(diff, cpSchemas[0], cpSchemas[1], comparerOptions)) {
         s_logger->error("Failed to compare schemas");
         return SCHEMA_COMPARISON_EXIT_FAILURE;
-        }
-    if (diff.Changes().IsEmpty())
-        {
+    }
+    if (diff.Changes().IsEmpty()) {
         s_logger->info("The schemas are identical");
 
-        if (Utf8String::IsNullOrEmpty(checksums[0].c_str()) || Utf8String::IsNullOrEmpty(checksums[1].c_str()))
-            {
+        if (Utf8String::IsNullOrEmpty(checksums[0].c_str()) || Utf8String::IsNullOrEmpty(checksums[1].c_str())) {
             s_logger->error("Checksum computation for one or both of the schemas failed because of a serialization error. See errors above for more info.");
             return SCHEMA_COMPARISON_EXIT_FAILURE;
-            }
+        }
 
         if (checksums[0].EqualsIAscii(checksums[1]))
             return SUCCESS;
-        else
-            {
+        else {
             s_logger->error("The checksums do not match");
             return SCHEMA_COMPARISON_EXIT_IDENTICAL_CHECKSUMS_NOT_MATCH;
-            }
         }
-    for (size_t i = 0; i < diff.Changes().Count(); ++i)
-        {
+    }
+    for (size_t i = 0; i < diff.Changes().Count(); ++i) {
         Utf8String s;
         diff.Changes()[i].WriteToString(s);
         LogError(s);
-        }
+    }
     s_logger->info("The schemas are different (see log)");
 
-    if (Utf8String::IsNullOrEmpty(checksums[0].c_str()) || Utf8String::IsNullOrEmpty(checksums[1].c_str()))
-        {
+    if (Utf8String::IsNullOrEmpty(checksums[0].c_str()) || Utf8String::IsNullOrEmpty(checksums[1].c_str())) {
         s_logger->error("Checksum computation for one or both of the schemas failed because of a serialization error. See errors above for more info.");
         return SCHEMA_COMPARISON_EXIT_FAILURE;
-        }
-
-    if (checksums[0].EqualsIAscii(checksums[1]))
-        {
-        s_logger->error("The checksums should not match");
-        return SCHEMA_COMPARISON_EXIT_DIFFERENCES_CHECKSUMS_MATCH;
-        }
-
-    return SCHEMA_COMPARISON_EXIT_DIFFERENCES_DETECTED;
     }
 
-int main(int argc, char** argv)
-    {
+    if (checksums[0].EqualsIAscii(checksums[1])) {
+        s_logger->error("The checksums should not match");
+        return SCHEMA_COMPARISON_EXIT_DIFFERENCES_CHECKSUMS_MATCH;
+    }
+
+    return SCHEMA_COMPARISON_EXIT_DIFFERENCES_DETECTED;
+}
+
+int main(int argc, char** argv) {
     SchemaComparisonOptions progOptions;
 
-    if (!TryParseInput(argc, argv, progOptions))
-        {
+    if (!TryParseInput(argc, argv, progOptions)) {
         ShowUsage(argv[0]);
         return SCHEMA_COMPARISON_EXIT_FAILURE;
-        }
+    }
 
     WChar exePathW[MAX_PATH];
     if (0 == ::GetModuleFileNameW(nullptr, exePathW, MAX_PATH))
@@ -271,13 +238,12 @@ int main(int argc, char** argv)
 
     if (progOptions.NoStandardSchemas)
         s_logger->infov(L"Skipping initialization of ECSchemaReadContext");
-    else
-        {
+    else {
         ECN::ECSchemaReadContext::Initialize(workingDirectory);
-        s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory.c_str());    
-        }
+        s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory.c_str());
+    }
 
     int comparisonResult = CompareSchemas(progOptions, workingDirectory);
 
     return comparisonResult;
-    }
+}

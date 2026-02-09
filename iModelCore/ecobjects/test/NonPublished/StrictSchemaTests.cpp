@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -9,17 +9,16 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct ClassTests : ECTestFixture
-    {
+struct ClassTests : ECTestFixture {
     ECSchemaPtr m_schema;
 
     //---------------------------------------------------------------------------------------//
     // Stores the format of the test schema xml as a string
     // @bsimethod
     //+---------------+---------------+---------------+---------------+---------------+------//
-    static Utf8CP   TestSchemaXMLString()
-        {
-        Utf8CP format = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+    static Utf8CP TestSchemaXMLString() {
+        Utf8CP format =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
             "<ECSchema schemaName=\"TestStrictSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
             "    <ECClass typeName=\"ClassA\" displayLabel=\"Regular Class\" isDomainClass=\"True\" >"
             "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
@@ -33,30 +32,28 @@ struct ClassTests : ECTestFixture
             "</ECSchema>";
 
         return format;
-        }
+    }
 
     //---------------------------------------------------------------------------------------//
     // Creates the test schema from the string xml format
     // @bsimethod
     //+---------------+---------------+---------------+---------------+---------------+------//
-    void CreateTestSchema()
-        {
-        ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+    void CreateTestSchema() {
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(m_schema, TestSchemaXMLString(), *schemaContext))
             << "Test schema failed to read";
         ASSERT_TRUE(m_schema.IsValid())
             << "Test Schema is not valid";
-        }
-    };
+    }
+};
 
 //---------------------------------------------------------------------------------------//
-// Test to check that Class may  not have a relationship class as a base class and may 
+// Test to check that Class may  not have a relationship class as a base class and may
 // not be a base class for a relationship class
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(ClassTests, CheckBaseClasses)
-    {
+TEST_F(ClassTests, CheckBaseClasses) {
     CreateTestSchema();
 
     ECClassP testClass = m_schema->GetClassP("ClassA");
@@ -70,17 +67,17 @@ TEST_F(ClassTests, CheckBaseClasses)
         << "Regular class cannot have a RelationshipClass as a base class";
     ASSERT_EQ(ECObjectsStatus::BaseClassUnacceptable, relClass->AddBaseClass(*testClass))
         << "RelationshipClass cannot have a regular class as a base class";
-    }
+}
 
 //---------------------------------------------------------------------------------------//
 // Test to check that Abstract classes cannot be instantiated
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(ClassTests, CheckAbstractness)
-    {
+TEST_F(ClassTests, CheckAbstractness) {
     CreateTestSchema();
 
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+    Utf8CP schemaXml =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "    <ECClass typeName=\"AbstractClass\" displayLabel=\"Abstract Class\" isDomainClass=\"False\" isStruct=\"False\" isCustomAttributeClass=\"False\" >"
         "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
@@ -113,15 +110,14 @@ TEST_F(ClassTests, CheckAbstractness)
 
     StandaloneECInstancePtr classInstance2 = classEnabler2->CreateInstance();
     ASSERT_FALSE(classInstance2.IsValid()) << "Abstract Classses may not be instantiated";
-    }
+}
 
 //---------------------------------------------------------------------------------------//
-// Test to check that It is only valid to set one of the following flags to true: 
-// isDomainClass, isStruct and isCustomAttributeClass 
+// Test to check that It is only valid to set one of the following flags to true:
+// isDomainClass, isStruct and isCustomAttributeClass
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(ClassTests, ValidateOnlyOneFlagTrue)
-    {
+TEST_F(ClassTests, ValidateOnlyOneFlagTrue) {
     CreateTestSchema();
 
     ECClassCP domainClass = m_schema->GetClassCP("ClassA");
@@ -139,7 +135,8 @@ TEST_F(ClassTests, ValidateOnlyOneFlagTrue)
     ASSERT_TRUE(!customAttributeClass->IsEntityClass() && customAttributeClass->IsCustomAttributeClass() && !customAttributeClass->IsStructClass())
         << "Only isCustomAttributeClass property should be true for CustomAttribute class";
 
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+    Utf8CP schemaXml =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<ECSchema schemaName=\"TestStrictSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "    <ECClass typeName=\"RegularClassA\" displayLabel=\"Regular Class A\" isDomainClass=\"True\" isStruct=\"True\" >"
         "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
@@ -179,15 +176,15 @@ TEST_F(ClassTests, ValidateOnlyOneFlagTrue)
     ASSERT_NE(nullptr, structClass) << "Cannot find 'RegularClassD' in the test schema";
     ASSERT_TRUE(!structClass->IsEntityClass() && !structClass->IsCustomAttributeClass() && structClass->IsStructClass())
         << "Only isStruct property should be true for a class with isDomainClass and isStruct and isCustomAttributeClass equal to true";
-    }
+}
 
 //---------------------------------------------------------------------------------------//
 // Test to check that Class hierarchies must set these flags in a consistent manner
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(ClassTests, ClassHierarchiesFlagsConsistent)
-    {
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+TEST_F(ClassTests, ClassHierarchiesFlagsConsistent) {
+    Utf8CP schemaXml =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "    <ECClass typeName=\"AbstractClass\" displayLabel=\"Abstract Class\" isDomainClass=\"False\" isStruct=\"False\" isCustomAttributeClass=\"False\" >"
         "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
@@ -237,19 +234,18 @@ TEST_F(ClassTests, ClassHierarchiesFlagsConsistent)
         << "Cannot remove the base class of 'ClassB'";
     ASSERT_NE(ECObjectsStatus::Success, testClass2->AddBaseClass(*testBaseClass))
         << "Cannot add struct base class to 'ClassB' in the test schema";
-    }
+}
 
-struct RelationshipClassTests : ECTestFixture
-    {
+struct RelationshipClassTests : ECTestFixture {
     ECSchemaPtr m_schema;
 
     //---------------------------------------------------------------------------------------//
     // Stores the format of the test schema xml as a string
     // @bsimethod
     //+---------------+---------------+---------------+---------------+---------------+------//
-    static Utf8CP   TestSchemaXMLString()
-        {
-        Utf8CP format = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+    static Utf8CP TestSchemaXMLString() {
+        Utf8CP format =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
             "<ECSchema schemaName=\"TestStrictSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
             "    <ECClass typeName=\"RegularClass\" displayLabel=\"Regular Class\" isDomainClass=\"True\">"
             "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
@@ -283,32 +279,30 @@ struct RelationshipClassTests : ECTestFixture
             "</ECSchema>";
 
         return format;
-        }
-    
+    }
+
     //---------------------------------------------------------------------------------------//
     // Creates the test schema using the TestSchemaXml string
     // @bsimethod
     //+---------------+---------------+---------------+---------------+---------------+------//
-    void CreateTestSchema()
-        {
-        ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+    void CreateTestSchema() {
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(m_schema, TestSchemaXMLString(), *schemaContext))
-               << "Failed to read the test schema from xml string";
+            << "Failed to read the test schema from xml string";
         ASSERT_TRUE(m_schema.IsValid()) << "Test Schema is not valid";
         ASSERT_TRUE(m_schema->IsECVersion(ECVersion::Latest)) << "Test Schema is not the latest ECVersion, " << ECSchema::GetECVersionString(ECVersion::Latest) << ".";
-        }
-    };
+    }
+};
 
 //---------------------------------------------------------------------------------------//
 // Test to check that RelationshipClass may not regular class as base class and that
 // RegularClass may not have relationship class as a base class
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(RelationshipClassTests, RelationshipClassBaseClass)
-    {
+TEST_F(RelationshipClassTests, RelationshipClassBaseClass) {
     CreateTestSchema();
-    
+
     ECClassP regularClass = m_schema->GetClassP("RegularClass");
     ASSERT_NE(nullptr, regularClass) << "Cannot find 'RegularClass' in the test schema";
 
@@ -316,19 +310,17 @@ TEST_F(RelationshipClassTests, RelationshipClassBaseClass)
     ASSERT_NE(nullptr, relClass) << "Cannot find 'RelationshipA' in the test schema";
 
     ASSERT_EQ(ECObjectsStatus::BaseClassUnacceptable, relClass->AddBaseClass(*regularClass))
-           << "RelationshipClass may not have regular class as a base class";
+        << "RelationshipClass may not have regular class as a base class";
 
     ASSERT_EQ(ECObjectsStatus::BaseClassUnacceptable, regularClass->AddBaseClass(*relClass))
-           << "Regular Class may not have RelationshipClass as a base class";
-    }
-
+        << "Regular Class may not have RelationshipClass as a base class";
+}
 
 //---------------------------------------------------------------------------------------//
 // Test to check that Abstract RelationshipClass may not be instatiated
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(RelationshipClassTests, RelationshipClassAbstractness)
-    {
+TEST_F(RelationshipClassTests, RelationshipClassAbstractness) {
     CreateTestSchema();
 
     ECRelationshipClassP relClass = m_schema->GetClassP("RelationshipA")->GetRelationshipClassP();
@@ -336,14 +328,14 @@ TEST_F(RelationshipClassTests, RelationshipClassAbstractness)
 
     relClass->SetClassModifier(ECClassModifier::Abstract);
     ASSERT_EQ(ECClassModifier::Abstract, relClass->GetClassModifier())
-           << "'RelationshipA' is not Abstract";
+        << "'RelationshipA' is not Abstract";
 
     StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
     ASSERT_TRUE(relationshipEnabler.IsValid()) << "RelationshipClassEnabler is not valid for 'RelationshipA'";
 
     StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
     ASSERT_FALSE(relationshipInstance.IsValid()) << "Instance may not be created for the Abstract Relationship Class";
-    }
+}
 
 //---------------------------------------------------------------------------------------//
 // Test to check that for non-abstract RelationshipClass constraint must be well-defined
@@ -351,9 +343,9 @@ TEST_F(RelationshipClassTests, RelationshipClassAbstractness)
 // regular class and not relationship class
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(RelationshipClassTests, NonAbstractRelationshipClassConstraintsDefinition)
-    {
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+TEST_F(RelationshipClassTests, NonAbstractRelationshipClassConstraintsDefinition) {
+    Utf8CP schemaXml =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "    <ECClass typeName=\"SourceClass\" displayLabel=\"Source Class\" isDomainClass=\"True\">"
         "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
@@ -370,7 +362,7 @@ TEST_F(RelationshipClassTests, NonAbstractRelationshipClassConstraintsDefinition
         "        </Target>"
         "    </ECRelationshipClass>"
         "</ECSchema>";
-    
+
     ECSchemaPtr schema;
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
@@ -389,25 +381,24 @@ TEST_F(RelationshipClassTests, NonAbstractRelationshipClassConstraintsDefinition
     EXPECT_EQ(ECClassModifier::None, relClass1->GetClassModifier());
 
     ASSERT_TRUE(relClass1->GetSource().GetConstraintClasses().size() > 0)
-             << "'RelationshipClass SourceConstraint does not have a well-defined class";
+        << "'RelationshipClass SourceConstraint does not have a well-defined class";
 
     ASSERT_TRUE(relClass1->GetTarget().GetConstraintClasses().size() > 0)
-             << "'RelationshipClass TargetConstraint does not have a well-defined class";
+        << "'RelationshipClass TargetConstraint does not have a well-defined class";
 
-    for (auto source : relClass1->GetSource().GetConstraintClasses())
-        {        
-        ASSERT_NE(ECClassType::Relationship, source->GetClassType()) 
-               << "'RelationshipConstraint may not have RelationshipClass";
+    for (auto source : relClass1->GetSource().GetConstraintClasses()) {
+        ASSERT_NE(ECClassType::Relationship, source->GetClassType())
+            << "'RelationshipConstraint may not have RelationshipClass";
 
         ASSERT_TRUE(ECClassModifier::Abstract == source->GetClassModifier() || ECClassModifier::None == source->GetClassModifier())
-                 << "'RealtioshipConstraint classes may only be Domain or Abstract";
-        }
+            << "'RealtioshipConstraint classes may only be Domain or Abstract";
+    }
 
     // Need to set the abstract constraint to regular class before it can be set. Otherwise, the target constraint is too narrow
     ASSERT_EQ(ECObjectsStatus::Success, relClass1->GetTarget().SetAbstractConstraint(*regularClass))
-           <<  "Cannot set the abstract constraint of the Target-Constraint on " << relClass1->GetFullName() << ".";
+        << "Cannot set the abstract constraint of the Target-Constraint on " << relClass1->GetFullName() << ".";
     ASSERT_EQ(ECObjectsStatus::Success, relClass1->GetTarget().AddClass(*regularClass))
-           << "Regular class cannot be added to RelationshipConstraint";
-    }
+        << "Regular class cannot be added to RelationshipConstraint";
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
 
@@ -10,40 +10,35 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Phenomenon::Phenomenon(ECSchemaCR schema, Utf8CP name) : Phenomenon(schema, name, nullptr)
-    {
+Phenomenon::Phenomenon(ECSchemaCR schema, Utf8CP name) : Phenomenon(schema, name, nullptr) {
     m_unitsContext = &schema.GetUnitsContext();
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Phenomenon::Phenomenon(ECSchemaCR schema, Utf8CP name, Utf8CP definition) : Units::Phenomenon(name, definition), m_schema(schema), m_isDisplayLabelExplicitlyDefined(false)
-    {
+Phenomenon::Phenomenon(ECSchemaCR schema, Utf8CP name, Utf8CP definition) : Units::Phenomenon(name, definition), m_schema(schema), m_isDisplayLabelExplicitlyDefined(false) {
     m_unitsContext = &schema.GetUnitsContext();
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Utf8StringCR Phenomenon::GetFullName() const
-    {
+Utf8StringCR Phenomenon::GetFullName() const {
     return m_fullName.GetName(*this);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Utf8String Phenomenon::GetQualifiedName(ECSchemaCR primarySchema) const
-    {
+Utf8String Phenomenon::GetQualifiedName(ECSchemaCR primarySchema) const {
     return SchemaParseUtils::GetQualifiedName<Phenomenon>(primarySchema, *this);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECObjectsStatus Phenomenon ::SetDisplayLabel(Utf8StringCR label)
-{
+ECObjectsStatus Phenomenon ::SetDisplayLabel(Utf8StringCR label) {
     m_isDisplayLabelExplicitlyDefined = label != "";
     Units::Phenomenon::SetLabel(label.c_str());
 
@@ -53,61 +48,54 @@ ECObjectsStatus Phenomenon ::SetDisplayLabel(Utf8StringCR label)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Utf8StringCR Phenomenon::GetDisplayLabel() const
-    {
+Utf8StringCR Phenomenon::GetDisplayLabel() const {
     return GetInvariantDisplayLabel();
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Utf8StringCR Phenomenon::GetInvariantDisplayLabel() const
-    {
-    if(GetIsDisplayLabelDefined())
+Utf8StringCR Phenomenon::GetInvariantDisplayLabel() const {
+    if (GetIsDisplayLabelDefined())
         return Units::Phenomenon::GetInvariantDisplayLabel();
     else
         return GetName();
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Utf8StringCR Phenomenon::GetDescription() const
-    {
+Utf8StringCR Phenomenon::GetDescription() const {
     return m_description;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-SchemaReadStatus Phenomenon::ReadXml(pugi::xml_node phenomenonNode, ECSchemaReadContextR context)
-    {
+SchemaReadStatus Phenomenon::ReadXml(pugi::xml_node phenomenonNode, ECSchemaReadContextR context) {
     Utf8String value;
     auto defAttr = phenomenonNode.attribute(DEFINITION_ATTRIBUTE);
-    if (!defAttr)
-        {
+    if (!defAttr) {
         LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", GetName().c_str(), DEFINITION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
-        }
+    }
     value = defAttr.as_string();
 
-    if (SUCCESS != SetDefinition(value.c_str()))
-        {
+    if (SUCCESS != SetDefinition(value.c_str())) {
         LOG.errorv("Invalid ECSchemaXML: The Phenomenon %s contains an invalid %s attribute", GetName().c_str(), DEFINITION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
-        }
+    }
 
     READ_OPTIONAL_XML_ATTRIBUTE(phenomenonNode, DESCRIPTION_ATTRIBUTE, this, Description)
     READ_OPTIONAL_XML_ATTRIBUTE(phenomenonNode, ECXML_DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
 
     return SchemaReadStatus::Success;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus Phenomenon::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
-    {
+SchemaWriteStatus Phenomenon::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const {
     if (ecXmlVersion < ECVersion::V3_2)
         return SchemaWriteStatus::Success;
 
@@ -125,30 +113,27 @@ SchemaWriteStatus Phenomenon::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVe
 
     xmlWriter.WriteElementEnd();
     return status;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-bool Phenomenon::ToJson(BeJsValue outValue, bool includeSchemaVersion) const
-    {
+bool Phenomenon::ToJson(BeJsValue outValue, bool includeSchemaVersion) const {
     return ToJson(outValue, true, includeSchemaVersion);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-bool Phenomenon::ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion) const
-    {
+bool Phenomenon::ToJson(BeJsValue outValue, bool standalone, bool includeSchemaVersion) const {
     // Common properties to all Schema children
-    if (standalone)
-        {
+    if (standalone) {
         outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_ITEM_URI;
         outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
             outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
         outValue[NAME_ATTRIBUTE] = GetName();
-        }
+    }
 
     outValue[ECJSON_SCHEMA_ITEM_TYPE] = PHENOMENON_ELEMENT;
     outValue[DEFINITION_ATTRIBUTE] = GetDefinition();
@@ -159,6 +144,6 @@ bool Phenomenon::ToJson(BeJsValue outValue, bool standalone, bool includeSchemaV
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
 
     return true;
-    }
+}
 
 END_BENTLEY_ECOBJECT_NAMESPACE

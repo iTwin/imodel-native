@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <Bentley/RefCounted.h>
 #include <Bentley/Nullable.h>
@@ -11,36 +11,34 @@
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/SchemaComparer.h>
 
-#define SCHEMAMERGER_OPTION_MERGEONLYDYNAMICSCHEMAS  "#onlyDynamicSchemas"
-#define SCHEMAMERGER_OPTION_SKIPSTANDARDSCHEMAS      "#skipStandardSchemas"
-#define SCHEMAMERGER_OPTION_KEEPVERSION              "#keepVersion"
-#define SCHEMAMERGER_OPTION_IGNOREINCOMPATIBLEPROPERTYTYPECHANGES           "#ignoreIncompatiblePropertyTypeChanges"
+#define SCHEMAMERGER_OPTION_MERGEONLYDYNAMICSCHEMAS "#onlyDynamicSchemas"
+#define SCHEMAMERGER_OPTION_SKIPSTANDARDSCHEMAS "#skipStandardSchemas"
+#define SCHEMAMERGER_OPTION_KEEPVERSION "#keepVersion"
+#define SCHEMAMERGER_OPTION_IGNOREINCOMPATIBLEPROPERTYTYPECHANGES "#ignoreIncompatiblePropertyTypeChanges"
 
-#define SCHEMAMERGER_DUMPSCHEMAS                     "#dumpSchemas"
-#define SCHEMAMERGER_DUMPLOCATION                    "#dumpLocation"
+#define SCHEMAMERGER_DUMPSCHEMAS "#dumpSchemas"
+#define SCHEMAMERGER_DUMPLOCATION "#dumpLocation"
 
-#define SCHEMAMERGER_RENAMESCHEMAITEMONCONFLICT               "#renameSchemaItemOnConflict"
-#define SCHEMAMERGER_RENAMEPROPERTYONCONFLICT                 "#renamePropertyOnConflict"
-#define SCHEMAMERGER_PREFERRIGHTSIDEDISPLAYLABEL              "#preferRightSideDisplayLabel"
-#define SCHEMAMERGER_IGNORESTRENGTHCHANGEPROBLEMS             "#ignoreStrengthChangeProblems"
-#define SCHEMAMERGER_DONOTMERGEREFERENCES                     "#doNotMergeReferences"
-
+#define SCHEMAMERGER_RENAMESCHEMAITEMONCONFLICT "#renameSchemaItemOnConflict"
+#define SCHEMAMERGER_RENAMEPROPERTYONCONFLICT "#renamePropertyOnConflict"
+#define SCHEMAMERGER_PREFERRIGHTSIDEDISPLAYLABEL "#preferRightSideDisplayLabel"
+#define SCHEMAMERGER_IGNORESTRENGTHCHANGEPROBLEMS "#ignoreStrengthChangeProblems"
+#define SCHEMAMERGER_DONOTMERGEREFERENCES "#doNotMergeReferences"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-struct SchemaMergeResult final
-    {
+struct SchemaMergeResult final {
     friend struct SchemaMerger;
-private:
+
+   private:
     ECSchemaReadContextPtr m_schemaReadContext;
-    IssueReporter m_issueReporter; //Once ECobjects issue reporting is available
+    IssueReporter m_issueReporter;  // Once ECobjects issue reporting is available
     bvector<ECSchemaP> m_modifiedSchemas;
 
-public:
-    SchemaMergeResult() 
-        : m_issueReporter(), 
-          m_schemaReadContext(ECSchemaReadContext::CreateContext(false, true))
-        {}
+   public:
+    SchemaMergeResult()
+        : m_issueReporter(),
+          m_schemaReadContext(ECSchemaReadContext::CreateContext(false, true)) {}
 
     bvector<ECSchemaCP> GetResults() const { return m_schemaReadContext->GetCache().GetSchemas(); }
     ECSchemaCacheR GetSchemaCache() { return m_schemaReadContext->GetCache(); }
@@ -50,14 +48,14 @@ public:
     IssueReporter const& Issues() const { return m_issueReporter; }
     BentleyStatus AddIssueListener(IIssueListener const& issueListener) { return m_issueReporter.AddListener(issueListener); }
     bvector<ECSchemaP> GetModifiedSchemas() const { return m_modifiedSchemas; }
-    };
+};
 
-struct SchemaMergeOptions final
-    {
-private:
+struct SchemaMergeOptions final {
+   private:
     bool m_skipValidation = false;
     BeJsDocument m_json;
-public:
+
+   public:
     SchemaMergeOptions() {}
 
     //! Setting this flag instructs the merger to skip validations
@@ -84,8 +82,14 @@ public:
     bool GetIgnoreIncompatiblePropertyTypeChanges() const { return m_json[SCHEMAMERGER_OPTION_IGNOREINCOMPATIBLEPROPERTYTYPECHANGES].asBool(false); }
 
     //! Instructs the merger to dump schemas to the given location
-    void SetDumpSchemas(Utf8String path) { m_json[SCHEMAMERGER_DUMPSCHEMAS] = true; m_json[SCHEMAMERGER_DUMPLOCATION] = path; }
-    void ResetDumpSchemas() { m_json.removeMember(SCHEMAMERGER_DUMPSCHEMAS); m_json.removeMember(SCHEMAMERGER_DUMPLOCATION); }
+    void SetDumpSchemas(Utf8String path) {
+        m_json[SCHEMAMERGER_DUMPSCHEMAS] = true;
+        m_json[SCHEMAMERGER_DUMPLOCATION] = path;
+    }
+    void ResetDumpSchemas() {
+        m_json.removeMember(SCHEMAMERGER_DUMPSCHEMAS);
+        m_json.removeMember(SCHEMAMERGER_DUMPLOCATION);
+    }
     bool GetDumpSchemas() const { return m_json[SCHEMAMERGER_DUMPSCHEMAS].asBool(false); }
     Utf8String GetDumpSchemaLocation() const { return m_json[SCHEMAMERGER_DUMPLOCATION].asString(); }
 
@@ -117,18 +121,17 @@ public:
 
     Utf8String GetJson() const { return m_json.ToUtf8CP(); }
     void ReadFromJson(Utf8CP json) { return m_json.Parse(json); }
-    };
+};
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct SchemaMerger final
-{
-private:
+struct SchemaMerger final {
+   private:
     SchemaMerger() = delete;
     ~SchemaMerger() = delete;
-public:
 
+   public:
     //! Merges a vector of schemas with existing ones
     //! @param[out] result Returns the merged schemas operation result
     //! @param[in] left All existing schemas
@@ -138,7 +141,7 @@ public:
 
     using ShouldMergeSchemaFunc = std::function<bool(ECSchemaCP schema)>;
 
-private:
+   private:
     static ECObjectsStatus MergeSchema(SchemaMergeResult& result, ECSchemaP left, ECSchemaCP right, RefCountedPtr<SchemaChange> schemaChange, SchemaMergeOptions const& options);
     static ECObjectsStatus MergeClass(SchemaMergeResult& result, ECClassP left, ECClassCP right, RefCountedPtr<ClassChange> classChange, SchemaMergeOptions const& options);
     static ECObjectsStatus MergeProperty(SchemaMergeResult& result, ECPropertyP left, ECPropertyCP right, RefCountedPtr<PropertyChange> propertyChange, SchemaMergeOptions const& options);
@@ -153,24 +156,24 @@ private:
     static ECObjectsStatus MergeUnit(SchemaMergeResult& result, ECUnitP left, ECUnitCP right, RefCountedPtr<UnitChange> change, SchemaMergeOptions const& options);
     static ECObjectsStatus MergeFormat(SchemaMergeResult& result, ECFormatP left, ECFormatCP right, RefCountedPtr<FormatChange> change, SchemaMergeOptions const& options);
 
-    template <typename T, typename TSetter = T, typename TParent> //TSetter may differ from T, being the const or reference version of T
-    static ECObjectsStatus MergePrimitive(PrimitiveChange<T>& change, TParent* parent, ECObjectsStatus(TParent::*setPrimitive)(TSetter), Utf8CP parentKey, SchemaMergeResult& result, SchemaMergeOptions const& options, bool preferLeftValue = true);
+    template <typename T, typename TSetter = T, typename TParent>  // TSetter may differ from T, being the const or reference version of T
+    static ECObjectsStatus MergePrimitive(PrimitiveChange<T>& change, TParent* parent, ECObjectsStatus (TParent::*setPrimitive)(TSetter), Utf8CP parentKey, SchemaMergeResult& result, SchemaMergeOptions const& options, bool preferLeftValue = true);
     static void MergeCustomAttributes(SchemaMergeResult& result, CustomAttributeChanges& changes, Utf8CP scopeDescription, IECCustomAttributeContainerP left, IECCustomAttributeContainerCP right);
 
     template <typename TItemChange, typename TItem>
-    using TMergeItem = ECObjectsStatus(*)(SchemaMergeResult&, TItem *, const TItem *, RefCountedPtr<TItemChange>, const SchemaMergeOptions &);
+    using TMergeItem = ECObjectsStatus (*)(SchemaMergeResult&, TItem*, const TItem*, RefCountedPtr<TItemChange>, const SchemaMergeOptions&);
     template <typename TItem>
-    using TCopyItem = ECObjectsStatus(ECSchema::*)(TItem * &, const TItem &, bool, Utf8CP);
+    using TCopyItem = ECObjectsStatus (ECSchema::*)(TItem*&, const TItem&, bool, Utf8CP);
     template <typename TItem>
-    using TGetItemCP = const TItem *(ECSchema::*)(Utf8CP) const;
+    using TGetItemCP = const TItem* (ECSchema::*)(Utf8CP) const;
     template <typename TItem>
-    using TGetItemP = TItem *(ECSchema::*)(Utf8CP);
+    using TGetItemP = TItem* (ECSchema::*)(Utf8CP);
     template <typename TItemChange, typename TItem>
     static ECObjectsStatus MergeItems(SchemaMergeResult& result, ECSchemaP left, ECSchemaCP right, SchemaMergeOptions const& options, ECChangeArray<TItemChange>& changes, TGetItemCP<TItem> getItemCP, TGetItemP<TItem> getItemP, TCopyItem<TItem> copyItem, TMergeItem<TItemChange, TItem> mergeItem);
 
-    template <typename T> 
+    template <typename T>
     using SchemaItemGetterFunc = std::function<T(ECSchemaP schema, Utf8StringCR itemName)>;
-    template <typename T> 
+    template <typename T>
     using SchemaItemSetterFunc = std::function<ECObjectsStatus(T value)>;
 
     template <typename T>

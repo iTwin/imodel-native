@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 
 #include "../../ECObjectsTestPCH.h"
 #include "../../TestFixture/TestFixture.h"
@@ -11,16 +11,15 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct ClassCopyTest : CopyTestFixture 
-    {
-    ECClassP m_sourceClass; // This class will live inside of CopyTestFixture::m_sourceSchema
-    ECClassP m_targetClass; // This class will live inside of CopyTestFixture::m_targetSchema
+struct ClassCopyTest : CopyTestFixture {
+    ECClassP m_sourceClass;  // This class will live inside of CopyTestFixture::m_sourceSchema
+    ECClassP m_targetClass;  // This class will live inside of CopyTestFixture::m_targetSchema
 
-    protected:
-        void 
-        SetUp() override;
-        void CopyClass(bool copyReferences);
-    };
+   protected:
+    void
+    SetUp() override;
+    void CopyClass(bool copyReferences);
+};
 
 //=======================================================================================
 //! ClassCopyTest
@@ -33,32 +32,28 @@ struct ClassCopyTest : CopyTestFixture
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-void ClassCopyTest::SetUp()
-    {
+void ClassCopyTest::SetUp() {
     CreateTestSchema();
 
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_targetSchema, "TargetSchema", "ts", 1, 1, 1));
     ASSERT_TRUE(m_targetSchema.IsValid());
 
     CopyTestFixture::SetUp();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-void ClassCopyTest::CopyClass(bool copyReferences)
-    {
-
+void ClassCopyTest::CopyClass(bool copyReferences) {
     EC_EXPECT_SUCCESS(m_targetSchema->CopyClass(m_targetClass, *m_sourceClass, copyReferences));
     EXPECT_TRUE(nullptr != m_targetClass);
     EXPECT_NE(m_sourceClass, m_targetClass);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ClassCopyTest, EntityClassWithBaseClassWithoutCopyingType)
-    {
+TEST_F(ClassCopyTest, EntityClassWithBaseClassWithoutCopyingType) {
     ECEntityClassP sourceEntity;
     ECEntityClassP baseEntity;
     EC_EXPECT_SUCCESS(m_sourceSchema->CreateEntityClass(sourceEntity, "EntityClass"));
@@ -67,7 +62,6 @@ TEST_F(ClassCopyTest, EntityClassWithBaseClassWithoutCopyingType)
 
     m_sourceClass = sourceEntity;
 
-
     CopyClass(false);
 
     EXPECT_TRUE(m_targetClass->HasBaseClasses());
@@ -75,13 +69,12 @@ TEST_F(ClassCopyTest, EntityClassWithBaseClassWithoutCopyingType)
     EXPECT_STREQ(m_sourceSchema->GetName().c_str(), baseClass->GetSchema().GetName().c_str());
 
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*m_targetSchema, *m_sourceSchema));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ClassCopyTest, RelationshipClassWithContraintClassesWithoutCopyingType)
-    {
+TEST_F(ClassCopyTest, RelationshipClassWithContraintClassesWithoutCopyingType) {
     ECRelationshipClassP relClass;
     ECEntityClassP entity1;
     ECEntityClassP entity2;
@@ -90,7 +83,6 @@ TEST_F(ClassCopyTest, RelationshipClassWithContraintClassesWithoutCopyingType)
     EC_EXPECT_SUCCESS(m_sourceSchema->CreateRelationshipClass(relClass, "RelClass", *entity1, "Source", *entity2, "Target"));
 
     m_sourceClass = relClass;
-
 
     CopyClass(false);
 
@@ -105,13 +97,12 @@ TEST_F(ClassCopyTest, RelationshipClassWithContraintClassesWithoutCopyingType)
     EXPECT_STREQ(m_sourceSchema->GetName().c_str(), destTargetClass->GetSchema().GetName().c_str());
 
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*m_targetSchema, *m_sourceSchema));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ClassCopyTest, RelationshipClassWithAbstractContraintWithoutCopyingType)
-    {
+TEST_F(ClassCopyTest, RelationshipClassWithAbstractContraintWithoutCopyingType) {
     ECRelationshipClassP relClass;
     ECEntityClassP entity1;
     ECEntityClassP entity2;
@@ -122,7 +113,6 @@ TEST_F(ClassCopyTest, RelationshipClassWithAbstractContraintWithoutCopyingType)
     EC_EXPECT_SUCCESS(relClass->GetTarget().SetAbstractConstraint(*entity2));
 
     m_sourceClass = relClass;
-
 
     CopyClass(false);
 
@@ -138,14 +128,12 @@ TEST_F(ClassCopyTest, RelationshipClassWithAbstractContraintWithoutCopyingType)
     EXPECT_STREQ(m_sourceSchema->GetName().c_str(), destTargetClass->GetSchema().GetName().c_str());
 
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*m_targetSchema, *m_sourceSchema));
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyRelationshipClassWithConstraintClassesInRefSchema)
-    {
+TEST_F(ClassCopyTest, CopyRelationshipClassWithConstraintClassesInRefSchema) {
     Utf8String referenceSchemaString = R"xml(
                 <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECEntityClass typeName="House"/>
@@ -210,13 +198,12 @@ TEST_F(ClassCopyTest, CopyRelationshipClassWithConstraintClassesInRefSchema)
     ASSERT_TRUE(ecCopiedRel->GetTarget().GetMultiplicity().Equals(RelationshipMultiplicity::ZeroMany()));
     ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().size(), 1);
     ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().at(0), referenceSchema->GetClassCP("Room"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyRelationshipClassWithConstraintClassesInRefSchemaAndOriginal)
-    {
+TEST_F(ClassCopyTest, CopyRelationshipClassWithConstraintClassesInRefSchemaAndOriginal) {
     Utf8String referenceSchemaString = R"xml(
                 <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECEntityClass typeName="House" />
@@ -282,13 +269,12 @@ TEST_F(ClassCopyTest, CopyRelationshipClassWithConstraintClassesInRefSchemaAndOr
     ASSERT_TRUE(ecCopiedRel->GetTarget().GetMultiplicity().Equals(RelationshipMultiplicity::ZeroOne()));
     ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().size(), 1);
     ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().at(0), copySchemaFrom->GetClassP("Room"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassCopyTest, RelationshipClassesWithNoBaseClass)
-{
+TEST_F(ClassCopyTest, RelationshipClassesWithNoBaseClass) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                 <ECClass typeName="apple" isDomainClass="True">
@@ -328,8 +314,7 @@ TEST_F(ClassCopyTest, RelationshipClassesWithNoBaseClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyRelationshipClassWithAbstractConstraintInRefSchema)
-    {
+TEST_F(ClassCopyTest, CopyRelationshipClassWithAbstractConstraintInRefSchema) {
     Utf8String referenceSchemaString = R"xml(
         <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="BaseSource" />
@@ -402,13 +387,12 @@ TEST_F(ClassCopyTest, CopyRelationshipClassWithAbstractConstraintInRefSchema)
     ASSERT_EQ(ecCopiedRel->GetTarget().GetAbstractConstraint(), referenceSchema->GetClassCP("BaseTarget"));
     ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().size(), 1);
     ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().at(0), referenceSchema->GetClassCP("Target"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyRelationshipClassWithAbstractConstraintInRefSchemaAndOriginal)
-    {
+TEST_F(ClassCopyTest, CopyRelationshipClassWithAbstractConstraintInRefSchemaAndOriginal) {
     Utf8String referenceSchemaString = R"xml(
         <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="BaseSource" />
@@ -481,13 +465,12 @@ TEST_F(ClassCopyTest, CopyRelationshipClassWithAbstractConstraintInRefSchemaAndO
     ASSERT_EQ(ecCopiedRel->GetTarget().GetAbstractConstraint(), copySchemaFrom->GetClassCP("BaseTarget"));
     ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().size(), 1);
     ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().at(0), copySchemaFrom->GetClassCP("Target"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyCustomAttributesIncludingReferences)
-    {
+TEST_F(ClassCopyTest, CopyCustomAttributesIncludingReferences) {
     Utf8CP schemaString = R"(
         <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECCustomAttributeClass typeName="CustomClass" appliesTo="Any"/>
@@ -527,13 +510,12 @@ TEST_F(ClassCopyTest, CopyCustomAttributesIncludingReferences)
     EXPECT_EQ(schemaCopyTo->GetClassCP("CustomClass"), &schemaCopyTo->GetClassCP("EntityClass")->GetCustomAttribute("testSchema", "CustomClass")->GetClass());
 
     EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedCAClass)
-    {
+TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedCAClass) {
     Utf8CP referenceSchemaString = R"(
         <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECCustomAttributeClass typeName="CustomClass" appliesTo="Any"/>
@@ -582,13 +564,12 @@ TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedCAClass)
 
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *referenceSchema));
     EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedSourceSchema)
-    {
+TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedSourceSchema) {
     Utf8CP schemaString = R"(
         <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECCustomAttributeClass typeName="CustomClass" appliesTo="Any"/>
@@ -626,15 +607,14 @@ TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedSourceSchema)
     EXPECT_TRUE(schemaCopyTo->GetClassCP("EntityClass")->GetCustomAttribute("testSchema", "CustomClass").IsValid());
 
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedSourceSchemaSameSchemaName)
-    {
-    //Alternate version of the previous test, but the new schema has the same name as the original
-    //which is illegal, so the copy process will fail.
+TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedSourceSchemaSameSchemaName) {
+    // Alternate version of the previous test, but the new schema has the same name as the original
+    // which is illegal, so the copy process will fail.
     Utf8CP schemaString = R"(
         <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECCustomAttributeClass typeName="CustomClass" appliesTo="Any"/>
@@ -656,30 +636,29 @@ TEST_F(ClassCopyTest, CopyCustomAttributesWithReferencedSourceSchemaSameSchemaNa
     ASSERT_EQ(schemaCopyFrom->GetClassCP("CustomClass"), &schemaCopyFrom->GetClassCP("EntityClass")->GetCustomAttribute("testSchema", "CustomClass")->GetClass());
 
     {
-    ECSchemaPtr schemaCopyTo;
-    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
-    ECClassP ecClass;
-    EXPECT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("EntityClass"), false));
-    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("EntityClass")); //EntityClass may have been removed after failure, but we do not remove it if the error is just in custom attributes
+        ECSchemaPtr schemaCopyTo;
+        ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+        ECClassP ecClass;
+        EXPECT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("EntityClass"), false));
+        EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("EntityClass"));  // EntityClass may have been removed after failure, but we do not remove it if the error is just in custom attributes
     }
 
-    { //Same call but with copyReferences=true
-    ECSchemaPtr schemaCopyTo;
-    ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
-    ECClassP ecClass;
-    EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("EntityClass"), true));
-    EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("EntityClass"));
-    EXPECT_NE(schemaCopyFrom->GetClassCP("EntityClass"), schemaCopyTo->GetClassCP("EntityClass"));
-    EXPECT_TRUE(schemaCopyTo->GetClassCP("EntityClass")->GetCustomAttribute("testSchema", "CustomClass").IsValid());
-    EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
+    {  // Same call but with copyReferences=true
+        ECSchemaPtr schemaCopyTo;
+        ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
+        ECClassP ecClass;
+        EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("EntityClass"), true));
+        EXPECT_NE(nullptr, schemaCopyTo->GetClassCP("EntityClass"));
+        EXPECT_NE(schemaCopyFrom->GetClassCP("EntityClass"), schemaCopyTo->GetClassCP("EntityClass"));
+        EXPECT_TRUE(schemaCopyTo->GetClassCP("EntityClass")->GetCustomAttribute("testSchema", "CustomClass").IsValid());
+        EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyNavigationPropertyIncludingReferences)
-    {
+TEST_F(ClassCopyTest, CopyNavigationPropertyIncludingReferences) {
     Utf8CP schemaString = R"**(
         <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECRelationshipClass typeName="HouseHasRooms" strengthDirection="Forward" modifier="None">
@@ -720,13 +699,12 @@ TEST_F(ClassCopyTest, CopyNavigationPropertyIncludingReferences)
     EXPECT_EQ(schemaCopyTo->GetClassCP("HouseHasRooms")->GetRelationshipClassCP(), schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty()->GetRelationshipClass());
 
     EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyNavigationPropertyOnlyInlcudingRelationshipClass)
-    {
+TEST_F(ClassCopyTest, CopyNavigationPropertyOnlyInlcudingRelationshipClass) {
     Utf8CP referenceSchemaString = R"(
         <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="House"/>
@@ -779,13 +757,12 @@ TEST_F(ClassCopyTest, CopyNavigationPropertyOnlyInlcudingRelationshipClass)
     ASSERT_EQ(referenceSchema->GetClassCP("House"), schemaCopyTo->GetClassCP("HouseHasRooms")->GetRelationshipClassCP()->GetSource().GetConstraintClasses()[0]);
 
     EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyNavigationPropertyWithReferencedSourceSchema)
-    {
+TEST_F(ClassCopyTest, CopyNavigationPropertyWithReferencedSourceSchema) {
     Utf8CP schemaString = R"**(
         <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECRelationshipClass typeName="HouseHasRooms" strengthDirection="Forward" modifier="None">
@@ -824,13 +801,12 @@ TEST_F(ClassCopyTest, CopyNavigationPropertyWithReferencedSourceSchema)
     EXPECT_EQ(schemaCopyFrom->GetClassCP("HouseHasRooms")->GetRelationshipClassCP(), schemaCopyTo->GetClassCP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationProperty()->GetRelationshipClass());
 
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyNavigationPropertyConstraintsAreNotHeld)
-    {
+TEST_F(ClassCopyTest, CopyNavigationPropertyConstraintsAreNotHeld) {
     Utf8CP schemaString = R"**(
         <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECRelationshipClass typeName="HouseHasRooms" strengthDirection="Forward" modifier="None">
@@ -855,7 +831,7 @@ TEST_F(ClassCopyTest, CopyNavigationPropertyConstraintsAreNotHeld)
     ECClassP ecClass;
 
     ECSchemaPtr schemaCopyTo1;
-    ECSchema::CreateSchema(schemaCopyTo1, "testSchema", "ts", 1, 0, 0); // schema name and version is same
+    ECSchema::CreateSchema(schemaCopyTo1, "testSchema", "ts", 1, 0, 0);  // schema name and version is same
 
     EXPECT_EQ(ECObjectsStatus::NotFound, schemaCopyTo1->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("Room"), false));
     EXPECT_EQ(nullptr, schemaCopyTo1->GetClassCP("Room")) << "Partial class not removed on failure";
@@ -873,9 +849,8 @@ TEST_F(ClassCopyTest, CopyNavigationPropertyConstraintsAreNotHeld)
     EXPECT_EQ(roomTo, relClass->GetTarget().GetAbstractConstraint());
     EXPECT_EQ(schemaCopyTo1->GetClassCP("House"), relClass->GetSource().GetAbstractConstraint());
 
-
     ECSchemaPtr schemaCopyTo1a;
-    ECSchema::CreateSchema(schemaCopyTo1a, "testSchema", "ts", 1, 3, 3); // schema name and major version is same
+    ECSchema::CreateSchema(schemaCopyTo1a, "testSchema", "ts", 1, 3, 3);  // schema name and major version is same
 
     EC_EXPECT_SUCCESS(schemaCopyTo1a->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("Room"), true));
     EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo1a, *schemaCopyFrom));
@@ -887,28 +862,25 @@ TEST_F(ClassCopyTest, CopyNavigationPropertyConstraintsAreNotHeld)
     EXPECT_EQ(ecClass, relClass->GetTarget().GetAbstractConstraint());
     EXPECT_EQ(schemaCopyTo1a->GetClassCP("House"), relClass->GetSource().GetAbstractConstraint());
 
-
     ECSchemaPtr schemaCopyTo2;
-    ECSchema::CreateSchema(schemaCopyTo2, "testSchema", "ts", 2, 0, 0); // schema name same, but version differs
+    ECSchema::CreateSchema(schemaCopyTo2, "testSchema", "ts", 2, 0, 0);  // schema name same, but version differs
 
     EXPECT_EQ(ECObjectsStatus::NotFound, schemaCopyTo2->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("Room"), false));
     EXPECT_EQ(nullptr, schemaCopyTo2->GetClassCP("Room")) << "Partial class not removed on failure";
 
-
     ECSchemaPtr schemaCopyTo3;
-    ECSchema::CreateSchema(schemaCopyTo3, "otherSchema", "os", 3, 2, 1); // totally different schema
+    ECSchema::CreateSchema(schemaCopyTo3, "otherSchema", "os", 3, 2, 1);  // totally different schema
 
     EC_EXPECT_SUCCESS(schemaCopyTo3->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("Room"), false));
     EXPECT_EQ(nullptr, schemaCopyTo3->GetClassCP("HouseHasRooms"));
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo3, *schemaCopyFrom));
     EXPECT_FALSE(schemaCopyTo3->GetClassP("Room")->GetPropertyP("NavigationPropertyToHouse")->GetAsNavigationPropertyP()->Verify());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, RenameCausesNameClashWithReferences_Relationships)
-    {
+TEST_F(ClassCopyTest, RenameCausesNameClashWithReferences_Relationships) {
     Utf8CP schemaString = R"**(
         <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECRelationshipClass typeName="HouseHasRooms" strengthDirection="Forward" modifier="None">
@@ -938,19 +910,17 @@ TEST_F(ClassCopyTest, RenameCausesNameClashWithReferences_Relationships)
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, schemaCopyTo1->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("HouseHasRooms"), true, "Room"));
     EXPECT_EQ(nullptr, schemaCopyTo1->GetClassCP("Room")) << "Partial class not removed on failure";
 
-
     ECSchemaPtr schemaCopyTo1a;
     ECSchema::CreateSchema(schemaCopyTo1a, "testSchema", "ts", 1, 0, 0);
 
     EXPECT_EQ(ECObjectsStatus::ClassTypeNotCorrect, schemaCopyTo1a->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("Room"), true, "HouseHasRooms"));
     EXPECT_EQ(nullptr, schemaCopyTo1a->GetClassCP("HouseHasRooms")) << "Partial class not removed on failure";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyEnumerationPropertyReferencesOriginalSchema)
-    {
+TEST_F(ClassCopyTest, CopyEnumerationPropertyReferencesOriginalSchema) {
     Utf8CP schemaString = R"(
         <ECSchema schemaName="testSchema" alias="ts" version="01.02.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="TestEnum" backingTypeName="int"/>
@@ -977,13 +947,12 @@ TEST_F(ClassCopyTest, CopyEnumerationPropertyReferencesOriginalSchema)
     EXPECT_EQ(schemaCopyFrom->GetEnumerationP("TestEnum"), schemaCopyTo->GetClassCP("TestClass")->GetPropertyP("TestProperty")->GetAsPrimitivePropertyP()->GetEnumeration());
 
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyEnumerationPropertyReferencesReferenceSchema)
-    {
+TEST_F(ClassCopyTest, CopyEnumerationPropertyReferencesReferenceSchema) {
     Utf8CP referenceSchemaString = R"(
         <ECSchema schemaName="referenceSchema" alias="rs" version="03.02.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="TestEnum" backingTypeName="int"/>
@@ -1020,13 +989,12 @@ TEST_F(ClassCopyTest, CopyEnumerationPropertyReferencesReferenceSchema)
 
     EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *referenceSchema));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyEnumerationArrayPropertyReferencesOriginalSchema)
-    {
+TEST_F(ClassCopyTest, CopyEnumerationArrayPropertyReferencesOriginalSchema) {
     Utf8CP schemaString = R"(
         <ECSchema schemaName="testSchema" alias="ts" version="01.02.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="TestEnum" backingTypeName="int"/>
@@ -1058,13 +1026,12 @@ TEST_F(ClassCopyTest, CopyEnumerationArrayPropertyReferencesOriginalSchema)
     EXPECT_EQ(schemaCopyFrom->GetEnumerationP("TestEnum"), schemaCopyTo->GetClassCP("TestClass")->GetPropertyP("TestArrayProperty")->GetAsPrimitiveArrayPropertyP()->GetEnumeration());
 
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, RenameCausesNameClashWithReferences_Enums)
-    {
+TEST_F(ClassCopyTest, RenameCausesNameClashWithReferences_Enums) {
     Utf8CP schemaString = R"(
         <ECSchema schemaName="testSchema" alias="ts" version="01.02.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="TestEnum" backingTypeName="int"/>
@@ -1101,13 +1068,12 @@ TEST_F(ClassCopyTest, RenameCausesNameClashWithReferences_Enums)
     EXPECT_EQ(nullptr, schemaCopyTo2->GetClassCP("TestEnum"));
     EXPECT_EQ(nullptr, schemaCopyTo2->GetEnumerationCP("TestEnum"));
     EXPECT_TRUE(!ECSchema::IsSchemaReferenced(*schemaCopyTo2, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyEnumerationArrayPropertyReferencesReferenceSchema)
-    {
+TEST_F(ClassCopyTest, CopyEnumerationArrayPropertyReferencesReferenceSchema) {
     Utf8CP referenceSchemaString = R"(
         <ECSchema schemaName="referenceSchema" alias="rs" version="03.02.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEnumeration typeName="TestEnum" backingTypeName="int"/>
@@ -1144,13 +1110,12 @@ TEST_F(ClassCopyTest, CopyEnumerationArrayPropertyReferencesReferenceSchema)
 
     EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *referenceSchema));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyStructPropertyReferencesOriginalSchema)
-    {
+TEST_F(ClassCopyTest, CopyStructPropertyReferencesOriginalSchema) {
     Utf8CP schemaString = R"(
         <ECSchema schemaName="testSchema" alias="ts" version="01.02.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECStructClass typeName="TestStruct"/>
@@ -1172,7 +1137,6 @@ TEST_F(ClassCopyTest, CopyStructPropertyReferencesOriginalSchema)
     EXPECT_EQ(nullptr, schemaCopyTo->GetClassCP("TestClass"));
     EXPECT_EQ(nullptr, schemaCopyTo->GetClassCP("TestStruct"));
 
-
     ECSchema::CreateSchema(schemaCopyTo, "newSchema", "ts", 2, 3, 4);
 
     EC_EXPECT_SUCCESS(schemaCopyTo->CopyClass(ecClass, *schemaCopyFrom->GetClassCP("TestClass"), false));
@@ -1183,13 +1147,12 @@ TEST_F(ClassCopyTest, CopyStructPropertyReferencesOriginalSchema)
     EXPECT_EQ(schemaCopyFrom->GetClassCP("TestStruct")->GetStructClassCP(), &schemaCopyTo->GetClassCP("TestClass")->GetPropertyP("TestStructProperty")->GetAsStructPropertyP()->GetType());
 
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, RenameCausesNameClashWithReferences_Structs)
-    {
+TEST_F(ClassCopyTest, RenameCausesNameClashWithReferences_Structs) {
     Utf8CP schemaString = R"(
         <ECSchema schemaName="testSchema" alias="ts" version="01.02.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECStructClass typeName="TestStruct"/>
@@ -1226,13 +1189,12 @@ TEST_F(ClassCopyTest, RenameCausesNameClashWithReferences_Structs)
     EXPECT_EQ(nullptr, schemaCopyTo2->GetClassCP("TestClass"));
     EXPECT_EQ(nullptr, schemaCopyTo2->GetClassCP("TestStruct"));
     EXPECT_TRUE(!ECSchema::IsSchemaReferenced(*schemaCopyTo2, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyStructPropertyReferencesReferenceSchema)
-    {
+TEST_F(ClassCopyTest, CopyStructPropertyReferencesReferenceSchema) {
     Utf8CP referenceSchemaString = R"(
         <ECSchema schemaName="referenceSchema" alias="rs" version="03.02.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECStructClass typeName="TestStruct"/>
@@ -1269,13 +1231,12 @@ TEST_F(ClassCopyTest, CopyStructPropertyReferencesReferenceSchema)
 
     EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *referenceSchema));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyStructArrayPropertyReferencesOriginalSchema)
-    {
+TEST_F(ClassCopyTest, CopyStructArrayPropertyReferencesOriginalSchema) {
     Utf8CP schemaString = R"(
         <ECSchema schemaName="testSchema" alias="ts" version="01.02.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECStructClass typeName="TestStruct"/>
@@ -1302,13 +1263,12 @@ TEST_F(ClassCopyTest, CopyStructArrayPropertyReferencesOriginalSchema)
     EXPECT_EQ(schemaCopyFrom->GetClassCP("TestStruct")->GetStructClassCP(), &schemaCopyTo->GetClassCP("TestClass")->GetPropertyP("TestStructArrayProperty")->GetAsStructArrayPropertyP()->GetStructElementType());
 
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ClassCopyTest, CopyStructArrayPropertyReferencesReferenceSchema)
-    {
+TEST_F(ClassCopyTest, CopyStructArrayPropertyReferencesReferenceSchema) {
     Utf8CP referenceSchemaString = R"(
         <ECSchema schemaName="referenceSchema" alias="rs" version="03.02.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECStructClass typeName="TestStruct"/>
@@ -1345,6 +1305,6 @@ TEST_F(ClassCopyTest, CopyStructArrayPropertyReferencesReferenceSchema)
 
     EXPECT_FALSE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *schemaCopyFrom));
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schemaCopyTo, *referenceSchema));
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

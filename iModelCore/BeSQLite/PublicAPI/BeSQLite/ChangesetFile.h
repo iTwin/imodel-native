@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
 #include "BeLzma.h"
@@ -15,8 +15,8 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 // @bsiclass
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ChangesetFileReaderBase : ChangeStream {
-private:
-    Db const* m_db; // Used only for debugging
+   private:
+    Db const* m_db;  // Used only for debugging
     bvector<BeFileName> m_files;
 
     struct Reader : Changes::Reader {
@@ -38,11 +38,11 @@ private:
 
     BE_SQLITE_EXPORT ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override;
 
-protected:
+   protected:
     bvector<BeFileName> const& GetFiles() const { return m_files; }
 
-public:
-    virtual ~ChangesetFileReaderBase(){}
+   public:
+    virtual ~ChangesetFileReaderBase() {}
     bool _IsEmpty() const override { return m_files.size() == 0; }
     RefCountedPtr<Reader> MakeReader() const { return new Reader(*this); }
     RefCountedPtr<Changes::Reader> _GetReader() const override { return MakeReader(); }
@@ -55,12 +55,12 @@ public:
 // @bsiclass
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ChangesetFileWriter : ChangeStream {
-private:
+   private:
     BeSQLite::LzmaEncoder m_lzmaEncoder;
     BeFileName m_pathname;
     BeFileLzmaOutStream* m_outLzmaFileStream;
     Utf8String m_prefix;
-    Db const* m_db; // Only for debugging
+    Db const* m_db;  // Only for debugging
 
     DbResult StartOutput();
     BE_SQLITE_EXPORT void FinishOutput();
@@ -71,7 +71,7 @@ private:
     bool _IsEmpty() const override { return false; }
     BE_SQLITE_EXPORT ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override;
 
-public:
+   public:
     BE_SQLITE_EXPORT ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const*,
                                          BeSQLite::LzmaEncoder::LzmaParams const& lzmaParams = BeSQLite::LzmaEncoder::LzmaParams());
     BE_SQLITE_EXPORT DbResult Initialize();
@@ -82,7 +82,7 @@ public:
 // @bsiclass
 //=======================================================================================
 struct RevisionUtility final {
-private:
+   private:
     static Utf8String GetChangesetId(BeFileName changesetFile);
     static BentleyStatus ReadChangesetPrefix(BeSQLite::LzmaDecoder& lzmaDecoder, Utf8StringR prefix);
     static BentleyStatus OpenChangesetForReading(BeSQLite::LzmaDecoder& lzmaDecoder, BlockFilesLzmaInStream& inLzmaFileStream);
@@ -92,7 +92,7 @@ private:
     static BentleyStatus WriteChangeset(BeSQLite::LzmaEncoder& lzmaEncoder, BeFileName inChangesetFileName);
     static BentleyStatus GetUncompressSize(BeSQLite::LzmaDecoder& lzmaDecoder, uint32_t& uncompressSize);
 
-public:
+   public:
     RevisionUtility() = delete;
     BE_SQLITE_EXPORT static BentleyStatus RecompressRevision(Utf8CP sourceFile, Utf8CP targetFile, LzmaEncoder::LzmaParams param);
     BE_SQLITE_EXPORT static BentleyStatus DisassembleRevision(Utf8CP sourceFile, Utf8CP targetDir);

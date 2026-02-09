@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <cstddef>
 #include <ECDb/SchemaManager.h>
@@ -17,9 +17,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct TableSpaceSchemaManager
-    {
-protected:
+struct TableSpaceSchemaManager {
+   protected:
     ECDbCR m_ecdb;
     DbTableSpace m_tableSpace;
     SchemaReader m_reader;
@@ -27,19 +26,20 @@ protected:
     DbSchema m_dbSchema;
     mutable LightweightCache m_lightweightCache;
 
-private:
-    //not copyable
+   private:
+    // not copyable
     TableSpaceSchemaManager(TableSpaceSchemaManager const&) = delete;
     TableSpaceSchemaManager& operator=(TableSpaceSchemaManager const&) = delete;
 
     BentleyStatus TryLoadClassMap(ClassMap*&, ClassMapLoadContext& ctx, ECN::ECClassCR) const;
     static void RevertIds(bvector<ECN::ECSchemaCP>&);
-protected:
+
+   protected:
     BentleyStatus TryGetClassMap(ClassMap const*&, ClassMapLoadContext&, ECN::ECClassCR) const;
     BentleyStatus TryGetClassMap(ClassMap*&, ClassMapLoadContext&, ECN::ECClassCR) const;
     ClassMap* AddClassMap(std::unique_ptr<ClassMap>) const;
 
-public:
+   public:
     TableSpaceSchemaManager(ECDbCR ecdb, DbTableSpace const& tableSpace)
         : m_ecdb(ecdb), m_tableSpace(tableSpace), m_reader(*this), m_dbSchema(*this), m_lightweightCache(*this) {}
 
@@ -86,55 +86,60 @@ public:
     bool IsMain() const { return m_tableSpace.IsMain(); }
     DbTableSpace const& GetTableSpace() const { return m_tableSpace; }
     DbSchema const& GetDbSchema() const { return m_dbSchema; }
-    DbSchema& GetDbSchemaR() const { return const_cast<DbSchema&> (m_dbSchema); }
+    DbSchema& GetDbSchemaR() const { return const_cast<DbSchema&>(m_dbSchema); }
     LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
     IssueDataSource const& Issues() const { return m_ecdb.GetImpl().Issues(); }
 
-    void ClearCache() const { m_reader.ClearCache(); m_classMapDictionary.clear(); m_dbSchema.ClearCache(); m_lightweightCache.Clear(); }
-
-    };
+    void ClearCache() const {
+        m_reader.ClearCache();
+        m_classMapDictionary.clear();
+        m_dbSchema.ClearCache();
+        m_lightweightCache.Clear();
+    }
+};
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 // Allow in memory schema which is not mapped
 struct VirtualSchemaManager : ECN::IECSchemaLocater {
-    private:
-        mutable uint64_t m_idSeq;
-        ECDbCR m_ecdb;
-        mutable ECN::ECSchemaCachePtr m_cache;
-        mutable bmap<Utf8String, ECN::ECSchemaCP> m_schemas;
-        virtual ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
-        BentleyStatus AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate) const;
-        uint64_t GetNextId() const;
-        void SetVirtualTypeIds (ECN::ECSchemaR schema) const;
-        void AddECDbVirtualSchema() const;
-        void AddSystemVirtualSchemas() const;
-    public:
-        VirtualSchemaManager(ECDbCR ecdb);
-        //VirtualSchemaManager(VirtualSchemaManager const&) = delete;
-        //VirtualSchemaManager(VirtualSchemaManager &&) = delete;
-        //VirtualSchemaManager& operator = (VirtualSchemaManager&) = delete;
-        //VirtualSchemaManager& operator = (VirtualSchemaManager&&) = delete;
-        bool IsValidVirtualSchema(ECN::ECSchemaR schema, Utf8StringR err) const;
-        ECN::ECSchemaCP GetSchema(Utf8StringCR schemaName) const;
-        ECN::ECClassCP GetClass(Utf8StringCR schemaName, Utf8StringCR className) const;
-        // The numberOfClasses parameter gives us the exact number of classes found which can be used for more personalized error message
-        ECN::ECClassCP FindClass(Utf8StringCR className, size_t& numberOfClasses) const;
-        BentleyStatus Add(Utf8StringCR schemaXml) const;
-        Utf8String GetDescription() const override {
-            return Utf8PrintfString("ECDb:VirtualSchemaManager %s", m_ecdb.GetDbFileName());
-        }
+   private:
+    mutable uint64_t m_idSeq;
+    ECDbCR m_ecdb;
+    mutable ECN::ECSchemaCachePtr m_cache;
+    mutable bmap<Utf8String, ECN::ECSchemaCP> m_schemas;
+    virtual ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
+    BentleyStatus AddAndValidateVirtualSchema(Utf8StringCR schemaXml, bool validate) const;
+    uint64_t GetNextId() const;
+    void SetVirtualTypeIds(ECN::ECSchemaR schema) const;
+    void AddECDbVirtualSchema() const;
+    void AddSystemVirtualSchemas() const;
+
+   public:
+    VirtualSchemaManager(ECDbCR ecdb);
+    // VirtualSchemaManager(VirtualSchemaManager const&) = delete;
+    // VirtualSchemaManager(VirtualSchemaManager &&) = delete;
+    // VirtualSchemaManager& operator = (VirtualSchemaManager&) = delete;
+    // VirtualSchemaManager& operator = (VirtualSchemaManager&&) = delete;
+    bool IsValidVirtualSchema(ECN::ECSchemaR schema, Utf8StringR err) const;
+    ECN::ECSchemaCP GetSchema(Utf8StringCR schemaName) const;
+    ECN::ECClassCP GetClass(Utf8StringCR schemaName, Utf8StringCR className) const;
+    // The numberOfClasses parameter gives us the exact number of classes found which can be used for more personalized error message
+    ECN::ECClassCP FindClass(Utf8StringCR className, size_t& numberOfClasses) const;
+    BentleyStatus Add(Utf8StringCR schemaXml) const;
+    Utf8String GetDescription() const override {
+        return Utf8PrintfString("ECDb:VirtualSchemaManager %s", m_ecdb.GetDbFileName());
+    }
 };
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct ECSchemaOwnershipClaimAppData : ECN::ECAppData::Data {
-    private:
-        static Utf8String s_key;
-        BeGuid m_id;
-    public:
+   private:
+    static Utf8String s_key;
+    BeGuid m_id;
 
+   public:
     static RefCountedPtr<ECSchemaOwnershipClaimAppData> GetOwnershipClaim(ECN::ECSchemaCR schema) {
         BeMutexHolder holder(schema.GetMutex());
         auto data = schema.GetAppData().GetData(ECSchemaOwnershipClaimAppData::s_key);
@@ -183,9 +188,8 @@ struct ECSchemaOwnershipClaimAppData : ECN::ECAppData::Data {
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct MainSchemaManager final : TableSpaceSchemaManager
-    {
-private:
+struct MainSchemaManager final : TableSpaceSchemaManager {
+   private:
     BeMutex& m_mutex;
     VirtualSchemaManager m_vsm;
     ECDbSystemSchemaHelper m_systemSchemaHelper;
@@ -212,7 +216,8 @@ private:
 
     static DbResult UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb, SchemaImportContext* ctx = nullptr);
     void ResetIds(bvector<ECN::ECSchemaCP> const& schemas) const;
-public:
+
+   public:
     explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb), m_vsm(ecdb), m_schemaSync(const_cast<ECDbR>(ecdb)) {}
     ~MainSchemaManager() {}
     /* ====================== */
@@ -220,7 +225,7 @@ public:
     BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&) const;
     BentleyStatus PurgeOrphanTables(SchemaImportContext&) const;
     /* ====================== */
-    SchemaSync& GetSchemaSync() const { return m_schemaSync;  }
+    SchemaSync& GetSchemaSync() const { return m_schemaSync; }
     VirtualSchemaManager const& GetVirtualSchemaManager() const;
     SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions, SchemaImportToken const*, SchemaSync::SyncDbUri) const;
     ClassMappingStatus MapClass(SchemaImportContext&, ECN::ECClassCR) const;
@@ -232,146 +237,146 @@ public:
     DbResult UpgradeECInstances() const { return UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(GetECDb()); }
     BentleyStatus CreateClassViews() const;
     BentleyStatus CreateClassViews(bvector<ECN::ECClassId> const& ecclassids) const;
-    SchemaChangeEvent& OnBeforeSchemaChanges() const { return m_onBeforeSchemaChanged;}
-    SchemaChangeEvent& OnAfterSchemaChanges() const { return m_onAfterSchemaCHanged;};
+    SchemaChangeEvent& OnBeforeSchemaChanges() const { return m_onBeforeSchemaChanged; }
+    SchemaChangeEvent& OnAfterSchemaChanges() const { return m_onAfterSchemaCHanged; };
     ECDbSystemSchemaHelper const& GetSystemSchemaHelper() const { return m_systemSchemaHelper; }
     BentleyStatus UpdateDbSchema(bool doNotTrackDDLChanges) const;
-    };
+};
 
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct SchemaManager::Dispatcher final
-    {
-    private:
-        struct Iterable final
-            {
-            struct const_iterator final
-                {
-                using iterator_category=std::forward_iterator_tag;
-                using value_type=TableSpaceSchemaManager const*;
-                using difference_type=std::ptrdiff_t;
-                using pointer=TableSpaceSchemaManager const**;
-                using reference=TableSpaceSchemaManager const*&;
+struct SchemaManager::Dispatcher final {
+   private:
+    struct Iterable final {
+        struct const_iterator final {
+            using iterator_category = std::forward_iterator_tag;
+            using value_type = TableSpaceSchemaManager const*;
+            using difference_type = std::ptrdiff_t;
+            using pointer = TableSpaceSchemaManager const**;
+            using reference = TableSpaceSchemaManager const*&;
 
-                enum class Type { Begin, End };
+            enum class Type { Begin,
+                              End };
 
-                private:
-                    std::vector<TableSpaceSchemaManager const*>::const_iterator m_it;
+           private:
+            std::vector<TableSpaceSchemaManager const*>::const_iterator m_it;
 
-                public:
-                    const_iterator(Iterable const& iterable, Type type)
-                        {
-                        BeAssert(iterable.m_collection != nullptr);
-                        if (type == Type::Begin)
-                            m_it = iterable.m_collection->begin();
-                        else
-                            m_it = iterable.m_collection->end();
-                        }
+           public:
+            const_iterator(Iterable const& iterable, Type type) {
+                BeAssert(iterable.m_collection != nullptr);
+                if (type == Type::Begin)
+                    m_it = iterable.m_collection->begin();
+                else
+                    m_it = iterable.m_collection->end();
+            }
 
-                    ~const_iterator() {}
-                    //copyable
-                    const_iterator(const_iterator const& rhs) : m_it(rhs.m_it) {}
-                    const_iterator& operator=(const_iterator const& rhs)
-                        {
-                        if (this != &rhs)
-                            m_it = rhs.m_it;
+            ~const_iterator() {}
+            // copyable
+            const_iterator(const_iterator const& rhs) : m_it(rhs.m_it) {}
+            const_iterator& operator=(const_iterator const& rhs) {
+                if (this != &rhs)
+                    m_it = rhs.m_it;
 
-                        return *this;
-                        }
-                    //moveable
-                    const_iterator(const_iterator&& rhs) : m_it(std::move(rhs.m_it)) {}
-                    const_iterator& operator=(const_iterator&& rhs)
-                        {
-                        if (this != &rhs)
-                            m_it = std::move(rhs.m_it);
+                return *this;
+            }
+            // moveable
+            const_iterator(const_iterator&& rhs) : m_it(std::move(rhs.m_it)) {}
+            const_iterator& operator=(const_iterator&& rhs) {
+                if (this != &rhs)
+                    m_it = std::move(rhs.m_it);
 
-                        return *this;
-                        }
+                return *this;
+            }
 
-                    TableSpaceSchemaManager const* operator*() const { return *m_it; }
+            TableSpaceSchemaManager const* operator*() const { return *m_it; }
 
-                    const_iterator& operator++() { m_it++; return *this; }
-                    bool operator== (const_iterator const& rhs) const { return m_it == rhs.m_it; }
-                    bool operator!= (const_iterator const& rhs) const { return !(*this == rhs); }
-                };
+            const_iterator& operator++() {
+                m_it++;
+                return *this;
+            }
+            bool operator==(const_iterator const& rhs) const { return m_it == rhs.m_it; }
+            bool operator!=(const_iterator const& rhs) const { return !(*this == rhs); }
+        };
 
-            std::vector<TableSpaceSchemaManager const*> const* m_collection = nullptr;
-            std::vector<TableSpaceSchemaManager const*> m_filteredCollection;
+        std::vector<TableSpaceSchemaManager const*> const* m_collection = nullptr;
+        std::vector<TableSpaceSchemaManager const*> m_filteredCollection;
 
-            explicit Iterable(TableSpaceSchemaManager const& filter)
-                {
-                m_filteredCollection.push_back(&filter);
-                m_collection = &m_filteredCollection;
-                }
+        explicit Iterable(TableSpaceSchemaManager const& filter) {
+            m_filteredCollection.push_back(&filter);
+            m_collection = &m_filteredCollection;
+        }
 
-            Iterable() {}
-            explicit Iterable(Dispatcher const& dispatcher) : m_collection(&dispatcher.m_orderedManagers) {}
-            bool IsValid() const { return m_collection != nullptr; }
-            const_iterator begin() const { return const_iterator(*this, const_iterator::Type::Begin); }
-            const_iterator end() const { return const_iterator(*this, const_iterator::Type::End); }
-            };
-
-        ECDb const& m_ecdb;
-        BeMutex& m_mutex;
-        mutable std::map<Utf8String, std::unique_ptr<TableSpaceSchemaManager>, CompareIUtf8Ascii> m_managers;
-        mutable std::vector<TableSpaceSchemaManager const*> m_orderedManagers;
-        MainSchemaManager const* m_main = nullptr;
-        mutable BeIdSet m_unsupportedClassIdCache;
-        mutable bool m_unsupportedClassesLoaded;
-
-        //not copyable
-        Dispatcher(Dispatcher const&) = delete;
-        Dispatcher& operator=(Dispatcher const&) = delete;
-
-        void InitMain();
-
-        Iterable GetIterable(Utf8CP tableSpaceName) const;
-        TableSpaceSchemaManager const* GetManager(Utf8CP tableSpaceName) const;
-
-    public:
-        Dispatcher(ECDbCR ecdb, BeMutex& mutex) : m_ecdb(ecdb), m_mutex(mutex), m_unsupportedClassesLoaded(false), m_unsupportedClassIdCache() { InitMain(); }
-        ~Dispatcher() {}
-
-        MainSchemaManager const& Main() const { BeAssert(m_main != nullptr); return *m_main; }
-        BentleyStatus AddManager(DbTableSpace const&) const;
-        BentleyStatus RemoveManager(DbTableSpace const&) const;
-        bool ExistsManager(Utf8StringCR tableSpace) const;
-        bool OwnsSchema(ECN::ECSchemaCR schema) const;
-        bvector<ECN::ECSchemaCP> GetSchemas(bool loadSchemaEntities, Utf8CP tableSpace) const;
-        ECN::ECSchemaPtr LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR, Utf8CP tableSpace) const;
-        bool ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode, Utf8CP tableSpace) const;
-        ECN::ECSchemaCP GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities, SchemaLookupMode, Utf8CP tableSpace) const;
-        ECN::ECClassCP FindClass(Utf8StringCR className, Utf8CP tableSpace) const;
-        ECN::ECClassCP GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode, Utf8CP tableSpace) const;
-        ECN::ECClassCP GetClass(ECN::ECClassId classId, Utf8CP tableSpace) const;
-        bool IsSubClassOf(Utf8StringCR subClassECSqlName, Utf8StringCR parentClassECSqlName, Utf8CP tableSpace);
-        bool IsSubClassOf(ECN::ECClassId subClassId, ECN::ECClassId parentClassId, Utf8CP tableSpace);
-
-        ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode, Utf8CP tableSpace) const;
-        ClassMapStrategy GetClassMapStrategy(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode, Utf8CP tableSpace) const;
-
-        ClassMap const* GetClassMap(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode, Utf8CP tableSpace) const;
-        ClassMap const* GetClassMap(ECN::ECClassCR, Utf8CP tableSpace) const;
-
-        // returns nullptr in case of errors
-        ECN::ECDerivedClassesList const* GetDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const;
-        Nullable<ECN::ECDerivedClassesList> GetAllDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const;
-
-        ECN::ECEnumerationCP GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode, Utf8CP tableSpace) const;
-        ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode, Utf8CP tableSpace) const;
-        ECN::ECUnitCP GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unitName, SchemaLookupMode, Utf8CP tableSpace) const;
-        ECN::ECFormatCP GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR formatName, SchemaLookupMode, Utf8CP tableSpace) const;
-        ECN::UnitSystemCP GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode, Utf8CP tableSpace) const;
-        ECN::PhenomenonCP GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode, Utf8CP tableSpace) const;
-        ECN::PropertyCategoryCP GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR propertyCategoryName, SchemaLookupMode, Utf8CP tableSpace) const;
-
-        //! Check if a class is unsupported by current ECDb runtime
-        bool IsClassUnsupported(ECN::ECClassId classId) const;
-
-        void ClearCache() const;
-
-        static std::vector<Utf8CP> GetECDbSchemaNames() { return {"ECDbFileInfo", "ECDbMap", "ECDbMeta", "ECDbSchemaPolicies", "ECDbSystem", "ECDbChange"}; }
+        Iterable() {}
+        explicit Iterable(Dispatcher const& dispatcher) : m_collection(&dispatcher.m_orderedManagers) {}
+        bool IsValid() const { return m_collection != nullptr; }
+        const_iterator begin() const { return const_iterator(*this, const_iterator::Type::Begin); }
+        const_iterator end() const { return const_iterator(*this, const_iterator::Type::End); }
     };
+
+    ECDb const& m_ecdb;
+    BeMutex& m_mutex;
+    mutable std::map<Utf8String, std::unique_ptr<TableSpaceSchemaManager>, CompareIUtf8Ascii> m_managers;
+    mutable std::vector<TableSpaceSchemaManager const*> m_orderedManagers;
+    MainSchemaManager const* m_main = nullptr;
+    mutable BeIdSet m_unsupportedClassIdCache;
+    mutable bool m_unsupportedClassesLoaded;
+
+    // not copyable
+    Dispatcher(Dispatcher const&) = delete;
+    Dispatcher& operator=(Dispatcher const&) = delete;
+
+    void InitMain();
+
+    Iterable GetIterable(Utf8CP tableSpaceName) const;
+    TableSpaceSchemaManager const* GetManager(Utf8CP tableSpaceName) const;
+
+   public:
+    Dispatcher(ECDbCR ecdb, BeMutex& mutex) : m_ecdb(ecdb), m_mutex(mutex), m_unsupportedClassesLoaded(false), m_unsupportedClassIdCache() { InitMain(); }
+    ~Dispatcher() {}
+
+    MainSchemaManager const& Main() const {
+        BeAssert(m_main != nullptr);
+        return *m_main;
+    }
+    BentleyStatus AddManager(DbTableSpace const&) const;
+    BentleyStatus RemoveManager(DbTableSpace const&) const;
+    bool ExistsManager(Utf8StringCR tableSpace) const;
+    bool OwnsSchema(ECN::ECSchemaCR schema) const;
+    bvector<ECN::ECSchemaCP> GetSchemas(bool loadSchemaEntities, Utf8CP tableSpace) const;
+    ECN::ECSchemaPtr LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR, Utf8CP tableSpace) const;
+    bool ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode, Utf8CP tableSpace) const;
+    ECN::ECSchemaCP GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities, SchemaLookupMode, Utf8CP tableSpace) const;
+    ECN::ECClassCP FindClass(Utf8StringCR className, Utf8CP tableSpace) const;
+    ECN::ECClassCP GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode, Utf8CP tableSpace) const;
+    ECN::ECClassCP GetClass(ECN::ECClassId classId, Utf8CP tableSpace) const;
+    bool IsSubClassOf(Utf8StringCR subClassECSqlName, Utf8StringCR parentClassECSqlName, Utf8CP tableSpace);
+    bool IsSubClassOf(ECN::ECClassId subClassId, ECN::ECClassId parentClassId, Utf8CP tableSpace);
+
+    ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode, Utf8CP tableSpace) const;
+    ClassMapStrategy GetClassMapStrategy(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode, Utf8CP tableSpace) const;
+
+    ClassMap const* GetClassMap(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode, Utf8CP tableSpace) const;
+    ClassMap const* GetClassMap(ECN::ECClassCR, Utf8CP tableSpace) const;
+
+    // returns nullptr in case of errors
+    ECN::ECDerivedClassesList const* GetDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const;
+    Nullable<ECN::ECDerivedClassesList> GetAllDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const;
+
+    ECN::ECEnumerationCP GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode, Utf8CP tableSpace) const;
+    ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode, Utf8CP tableSpace) const;
+    ECN::ECUnitCP GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unitName, SchemaLookupMode, Utf8CP tableSpace) const;
+    ECN::ECFormatCP GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR formatName, SchemaLookupMode, Utf8CP tableSpace) const;
+    ECN::UnitSystemCP GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode, Utf8CP tableSpace) const;
+    ECN::PhenomenonCP GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode, Utf8CP tableSpace) const;
+    ECN::PropertyCategoryCP GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR propertyCategoryName, SchemaLookupMode, Utf8CP tableSpace) const;
+
+    //! Check if a class is unsupported by current ECDb runtime
+    bool IsClassUnsupported(ECN::ECClassId classId) const;
+
+    void ClearCache() const;
+
+    static std::vector<Utf8CP> GetECDbSchemaNames() { return {"ECDbFileInfo", "ECDbMap", "ECDbMeta", "ECDbSchemaPolicies", "ECDbSystem", "ECDbChange"}; }
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

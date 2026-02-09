@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -13,71 +13,68 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct AdHocPropertyTest : ECTestFixture
-    {
-    protected:
-        ECSchemaPtr         m_schema;
-        ECSchemaReadContextPtr context;
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsiclass
+ +---------------+---------------+---------------+---------------+---------------+------*/
+struct AdHocPropertyTest : ECTestFixture {
+   protected:
+    ECSchemaPtr m_schema;
+    ECSchemaReadContextPtr context;
 
-        Utf8CP const s_schemaXml =
-            "<?xml version='1.0' encoding='utf-8'?>"
-            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-            "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.10' prefix='bsca' />"
-            "   <ECStructClass typeName = 'AdHocHolder'>"
-            "       <ECCustomAttributes>"
-            "           <AdhocPropertyContainerDefinition xmlns='Bentley_Standard_CustomAttributes.01.10'>"
-            "               <NameProperty>Name</NameProperty>"
-            "               <DisplayLabelProperty>Label</DisplayLabelProperty>"
-            "               <ValueProperty>Value</ValueProperty>"
-            "               <TypeProperty>Type</TypeProperty>"
-            "               <UnitProperty>Unit</UnitProperty>"
-            "               <ExtendTypeProperty>ExtendType</ExtendTypeProperty>"
-            "               <IsReadOnlyProperty>IsReadOnly</IsReadOnlyProperty>"
-            "           </AdhocPropertyContainerDefinition>"
-            "       </ECCustomAttributes>"
-            "       <ECProperty propertyName='Name' typeName='string' />"
-            "       <ECProperty propertyName='Label' typeName='string' />"
-            "       <ECProperty propertyName='Value' typeName='string' />"
-            "       <ECProperty propertyName='Type' typeName='int' />"
-            "       <ECProperty propertyName='Unit' typeName='string' />"
-            "       <ECProperty propertyName='ExtendType' typeName='string' />"
-            "       <ECProperty propertyName='IsReadOnly' typeName='boolean' />"
-            "   </ECStructClass>"
-            "   <ECEntityClass typeName = 'NoAdHocs'>"
-            "       <ECProperty propertyName = 'NotAdHoc' typeName = 'string' />"
-            "   </ECEntityClass>"
-            "   <ECEntityClass typeName = 'AdHocs'>"
-            "       <ECCustomAttributes>"
-            "           <AdhocPropertySpecification xmlns='Bentley_Standard_CustomAttributes.01.10'>"
-            "               <AdHocPropertyContainer>AdHocHolder</AdHocPropertyContainer>"
-            "           </AdhocPropertySpecification>"
-            "       </ECCustomAttributes>"
-            "       <ECStructArrayProperty propertyName = 'AdHocHolder' typeName = 'AdHocHolder' />"
-            "   </ECEntityClass>"
-            "</ECSchema>";
+    Utf8CP const s_schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.10' prefix='bsca' />"
+        "   <ECStructClass typeName = 'AdHocHolder'>"
+        "       <ECCustomAttributes>"
+        "           <AdhocPropertyContainerDefinition xmlns='Bentley_Standard_CustomAttributes.01.10'>"
+        "               <NameProperty>Name</NameProperty>"
+        "               <DisplayLabelProperty>Label</DisplayLabelProperty>"
+        "               <ValueProperty>Value</ValueProperty>"
+        "               <TypeProperty>Type</TypeProperty>"
+        "               <UnitProperty>Unit</UnitProperty>"
+        "               <ExtendTypeProperty>ExtendType</ExtendTypeProperty>"
+        "               <IsReadOnlyProperty>IsReadOnly</IsReadOnlyProperty>"
+        "           </AdhocPropertyContainerDefinition>"
+        "       </ECCustomAttributes>"
+        "       <ECProperty propertyName='Name' typeName='string' />"
+        "       <ECProperty propertyName='Label' typeName='string' />"
+        "       <ECProperty propertyName='Value' typeName='string' />"
+        "       <ECProperty propertyName='Type' typeName='int' />"
+        "       <ECProperty propertyName='Unit' typeName='string' />"
+        "       <ECProperty propertyName='ExtendType' typeName='string' />"
+        "       <ECProperty propertyName='IsReadOnly' typeName='boolean' />"
+        "   </ECStructClass>"
+        "   <ECEntityClass typeName = 'NoAdHocs'>"
+        "       <ECProperty propertyName = 'NotAdHoc' typeName = 'string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName = 'AdHocs'>"
+        "       <ECCustomAttributes>"
+        "           <AdhocPropertySpecification xmlns='Bentley_Standard_CustomAttributes.01.10'>"
+        "               <AdHocPropertyContainer>AdHocHolder</AdHocPropertyContainer>"
+        "           </AdhocPropertySpecification>"
+        "       </ECCustomAttributes>"
+        "       <ECStructArrayProperty propertyName = 'AdHocHolder' typeName = 'AdHocHolder' />"
+        "   </ECEntityClass>"
+        "</ECSchema>";
 
-        void SetUp()
-            {
-            ECTestFixture::SetUp();
-            context = ECSchemaReadContext::CreateContext();
-            EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(m_schema, s_schemaXml, *context));
-            }
-    };
+    void SetUp() {
+        ECTestFixture::SetUp();
+        context = ECSchemaReadContext::CreateContext();
+        EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(m_schema, s_schemaXml, *context));
+    }
+};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(AdHocPropertyTest, SwapAdHocProperties)
-    {
+TEST_F(AdHocPropertyTest, SwapAdHocProperties) {
     IECInstancePtr instance = m_schema->GetClassP("adHocs")->GetDefaultStandaloneEnabler()->CreateInstance();
     AdHocPropertyEdit adHocs(*instance, "AdHocHolder");
     EXPECT_TRUE(adHocs.IsSupported());
     EXPECT_EQ(0, adHocs.GetCount());
 
-    //Add 1st AdHoc Property
+    // Add 1st AdHoc Property
     ECValue v;
     uint32_t propertyOneIdx;
     v.SetUtf8CP("property one", false);
@@ -85,7 +82,7 @@ TEST_F(AdHocPropertyTest, SwapAdHocProperties)
     EXPECT_EQ(1, adHocs.GetCount());
     EXPECT_TRUE(adHocs.GetPropertyIndex(propertyOneIdx, "propertyone"));
 
-    //test metadata
+    // test metadata
     bool isReadOnly;
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.IsReadOnly(isReadOnly, propertyOneIdx));
     EXPECT_FALSE(isReadOnly);
@@ -105,16 +102,16 @@ TEST_F(AdHocPropertyTest, SwapAdHocProperties)
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetExtendedTypeName(str, propertyOneIdx));
     EXPECT_TRUE(str.empty());
 
-    //test value
+    // test value
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetValue(v, propertyOneIdx));
     EXPECT_EQ(0, strcmp(v.GetUtf8CP(), "property one"));
 
-    //test value from instance
+    // test value from instance
     EXPECT_EQ(ECObjectsStatus::PropertyNotFound, instance->GetValue(v, "propertyone"));
-    EXPECT_EQ(ECObjectsStatus::Success, instance->GetValueOrAdHoc(v, "propertyone"));    // include ad-hoc properties
+    EXPECT_EQ(ECObjectsStatus::Success, instance->GetValueOrAdHoc(v, "propertyone"));  // include ad-hoc properties
     EXPECT_EQ(0, strcmp(v.GetUtf8CP(), "property one"));
 
-    //Add 2nd AdHoc Property
+    // Add 2nd AdHoc Property
     ECValue v1;
     uint32_t propertyTwoIdx;
     v1.SetUtf8CP("property", false);
@@ -122,38 +119,37 @@ TEST_F(AdHocPropertyTest, SwapAdHocProperties)
     EXPECT_EQ(2, adHocs.GetCount());
     EXPECT_TRUE(adHocs.GetPropertyIndex(propertyTwoIdx, "property2"));
 
-    //set additional metadata
+    // set additional metadata
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.SetIsReadOnly(propertyTwoIdx, true));
-    EXPECT_EQ(ECObjectsStatus::OperationNotSupported, adHocs.SetIsHidden(propertyTwoIdx, false));//cross check why ishidden can't be set
+    EXPECT_EQ(ECObjectsStatus::OperationNotSupported, adHocs.SetIsHidden(propertyTwoIdx, false));  // cross check why ishidden can't be set
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.SetDisplayLabel(propertyTwoIdx, "Property Two"));
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.SetName(propertyTwoIdx, "propertytwo"));
     v1.SetUtf8CP("property two", false);
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.SetValue(propertyTwoIdx, v1));
 
-    //Swap properties based on index
+    // Swap properties based on index
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.Swap(propertyOneIdx, propertyTwoIdx));
 
-    //verify display label after swap
+    // verify display label after swap
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetDisplayLabel(str, propertyOneIdx));
     EXPECT_TRUE(str.Equals("Property Two"));
 
-    //remove AdHoc property
+    // remove AdHoc property
     EXPECT_EQ(2, adHocs.GetCount());
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.Remove(propertyOneIdx));
     EXPECT_EQ(1, adHocs.GetCount());
     EXPECT_FALSE(adHocs.GetPropertyIndex(propertyOneIdx, "time"));
     EXPECT_TRUE(adHocs.GetPropertyIndex(propertyOneIdx, "propertyone"));
 
-    //remove all AdHoc properties
+    // remove all AdHoc properties
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.Clear());
     EXPECT_EQ(0, adHocs.GetCount());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(AdHocPropertyTest, InvalidCases)
-    {
+TEST_F(AdHocPropertyTest, InvalidCases) {
     IECInstancePtr noAdHocs = m_schema->GetClassP("NoAdHocs")->GetDefaultStandaloneEnabler()->CreateInstance();
     EXPECT_FALSE(AdHocPropertyQuery(*noAdHocs, "NONE").IsSupported());
 
@@ -162,25 +158,24 @@ TEST_F(AdHocPropertyTest, InvalidCases)
     EXPECT_TRUE(adHocs.IsSupported());
     EXPECT_EQ(0, adHocs.GetCount());
 
-    //Try to find non-existent AdHoc
+    // Try to find non-existent AdHoc
     uint32_t propIdx;
     EXPECT_FALSE(adHocs.GetPropertyIndex(propIdx, "DoesNotExist"));
 
-    //Name must be valid
+    // Name must be valid
     ECValue v;
     EXPECT_EQ(ECObjectsStatus::Error, adHocs.Add(nullptr, v));
     EXPECT_EQ(ECObjectsStatus::Error, adHocs.Add("Not a Valid EC Name", v));
 
-    //Value must be null or primitive
+    // Value must be null or primitive
     v.SetStruct(m_schema->GetClassP("AdHocHolder")->GetDefaultStandaloneEnabler()->CreateInstance().get());
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, adHocs.Add("Struct", v));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(AdHocPropertyTest, AddPropertyWithOptionalMetadata)
-    {
+TEST_F(AdHocPropertyTest, AddPropertyWithOptionalMetadata) {
     IECInstancePtr instance = m_schema->GetClassP("AdHocs")->GetDefaultStandaloneEnabler()->CreateInstance();
     AdHocPropertyEdit adHocs(*instance, "AdHocHolder");
     EXPECT_TRUE(adHocs.IsSupported());
@@ -224,13 +219,12 @@ TEST_F(AdHocPropertyTest, AddPropertyWithOptionalMetadata)
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetValue(v, propIdx));
     EXPECT_TRUE(v.IsDouble());
     EXPECT_EQ(v.GetDouble(), 1234.0);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(AdHocPropertyTest, VerifyReadOnlyAdHocProperty)
-    {
+TEST_F(AdHocPropertyTest, VerifyReadOnlyAdHocProperty) {
     IECInstancePtr instance = m_schema->GetClassP("AdHocs")->GetDefaultStandaloneEnabler()->CreateInstance();
     AdHocPropertyEdit adHocs(*instance, "AdHocHolder");
     EXPECT_TRUE(adHocs.IsSupported());
@@ -248,7 +242,7 @@ TEST_F(AdHocPropertyTest, VerifyReadOnlyAdHocProperty)
 
     EXPECT_TRUE(adHocs.GetPropertyIndex(propIdx, "DoorHeight"));
 
-    //Property is read-only
+    // Property is read-only
     v.SetDouble(5678.0);
     EXPECT_TRUE(instance->IsPropertyOrAdHocReadOnly("DoorHeight"));
     EXPECT_EQ(ECObjectsStatus::PropertyNotFound, instance->SetValue("DoorHeight", v));
@@ -256,24 +250,23 @@ TEST_F(AdHocPropertyTest, VerifyReadOnlyAdHocProperty)
     EXPECT_EQ(ECObjectsStatus::PropertyNotFound, instance->ChangeValue("DoorHeight", v));
     EXPECT_EQ(ECObjectsStatus::UnableToSetReadOnlyProperty, instance->ChangeValueOrAdHoc("DoorHeight", v));
 
-    //can set read-only property through AdHoc API
+    // can set read-only property through AdHoc API
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.SetValue(propIdx, v));
     EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetValue(v, propIdx));
     EXPECT_EQ(v.GetDouble(), 5678.0);
     EXPECT_FALSE(v.IsReadOnly());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(AdHocPropertyTest, GetAdHocPropertyUsingECValueAccessor)
-    {
+TEST_F(AdHocPropertyTest, GetAdHocPropertyUsingECValueAccessor) {
     IECInstancePtr instance = m_schema->GetClassP("AdHocs")->GetDefaultStandaloneEnabler()->CreateInstance();
     AdHocPropertyEdit adHocs(*instance, "AdHocHolder");
     EXPECT_TRUE(adHocs.IsSupported());
     EXPECT_EQ(0, adHocs.GetCount());
 
-    //Add 1st AdHoc Property
+    // Add 1st AdHoc Property
     ECValue v;
     uint32_t propertyOneIdx;
     v.SetUtf8CP("property one", false);
@@ -290,6 +283,6 @@ TEST_F(AdHocPropertyTest, GetAdHocPropertyUsingECValueAccessor)
     EXPECT_EQ(ECObjectsStatus::Success, instance->SetValueUsingAccessor(va, ECValue("set using accessor", false)));
     EXPECT_EQ(ECObjectsStatus::Success, instance->GetValueUsingAccessor(v, va));
     EXPECT_EQ(0, strcmp(v.GetUtf8CP(), "set using accessor"));
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

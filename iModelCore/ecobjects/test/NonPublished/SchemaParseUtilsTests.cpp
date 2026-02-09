@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 #include "../../PrivateApi/ECObjects/SchemaParseUtils.h"
@@ -10,15 +10,13 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct SchemaParseUtilsTest : ECTestFixture
-    {
-    };
+struct SchemaParseUtilsTest : ECTestFixture {
+};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ParseBooleanXmlString)
-    {
+TEST_F(SchemaParseUtilsTest, ParseBooleanXmlString) {
     bool bval;
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseBooleanXmlString(bval, "True"));
@@ -32,13 +30,12 @@ TEST_F(SchemaParseUtilsTest, ParseBooleanXmlString)
     EXPECT_FALSE(bval);
 
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseBooleanXmlString(bval, ""));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ParseCardinalityString__LegacyStrings)
-    {
+TEST_F(SchemaParseUtilsTest, ParseCardinalityString__LegacyStrings) {
     uint32_t lowerLimit, upperLimit;
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseCardinalityString(lowerLimit, upperLimit, "1"));
@@ -68,14 +65,13 @@ TEST_F(SchemaParseUtilsTest, ParseCardinalityString__LegacyStrings)
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseCardinalityString(lowerLimit, upperLimit, "5"));
     EXPECT_EQ(0, lowerLimit);
     EXPECT_EQ(5, upperLimit);
-    }
+}
 
 #define BEGRUDGINGLY_EXPECT_EQ EXPECT_EQ
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ParseCardinalityString__NonLegacyStrings)
-    {
+TEST_F(SchemaParseUtilsTest, ParseCardinalityString__NonLegacyStrings) {
     uint32_t lowerLimit, upperLimit;
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseCardinalityString(lowerLimit, upperLimit, "(3,12)"));
@@ -96,13 +92,12 @@ TEST_F(SchemaParseUtilsTest, ParseCardinalityString__NonLegacyStrings)
     BEGRUDGINGLY_EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseCardinalityString(lowerLimit, upperLimit, "(5)"));
     BEGRUDGINGLY_EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseCardinalityString(lowerLimit, upperLimit, "(3..12)"));
     BEGRUDGINGLY_EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseCardinalityString(lowerLimit, upperLimit, "(3,foo)"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ParseContainerString)
-    {
+TEST_F(SchemaParseUtilsTest, ParseContainerString) {
     CustomAttributeContainerType type;
 
     // Case sensistive
@@ -226,13 +221,12 @@ TEST_F(SchemaParseUtilsTest, ParseContainerString)
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseContainerString(type, ""));
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseContainerString(type, "foo"));
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseContainerString(commaParse, "Schema EntityClass"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ParseDirectionString)
-    {
+TEST_F(SchemaParseUtilsTest, ParseDirectionString) {
     ECRelatedInstanceDirection direction;
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseDirectionString(direction, "forward"));
@@ -247,13 +241,12 @@ TEST_F(SchemaParseUtilsTest, ParseDirectionString)
 
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseDirectionString(direction, ""));
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseDirectionString(direction, "foo"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ParseXmlFullyQualifiedName)
-    {
+TEST_F(SchemaParseUtilsTest, ParseXmlFullyQualifiedName) {
     Utf8String alias;
     Utf8String typeName;
 
@@ -266,13 +259,12 @@ TEST_F(SchemaParseUtilsTest, ParseXmlFullyQualifiedName)
     EXPECT_STREQ("Baz", typeName.c_str());
 
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseXmlFullyQualifiedName(alias, typeName, ""));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ParseModifierXmlString)
-    {
+TEST_F(SchemaParseUtilsTest, ParseModifierXmlString) {
     ECClassModifier modifier;
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseModifierXmlString(modifier, "Abstract"));
@@ -292,13 +284,12 @@ TEST_F(SchemaParseUtilsTest, ParseModifierXmlString)
 
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseModifierXmlString(modifier, ""));
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseModifierXmlString(modifier, "foo"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ParseLegacyMultiplicityString)
-    {
+TEST_F(SchemaParseUtilsTest, ParseLegacyMultiplicityString) {
     uint32_t lowerLimit, upperLimit;
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(3..12)"));
@@ -344,13 +335,12 @@ TEST_F(SchemaParseUtilsTest, ParseLegacyMultiplicityString)
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(7banana)"));
     EXPECT_EQ(7, lowerLimit);
     EXPECT_EQ(INT_MAX, upperLimit);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ParseMultiplicityString)
-    {
+TEST_F(SchemaParseUtilsTest, ParseMultiplicityString) {
     uint32_t lowerLimit, upperLimit;
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(3..12)"));
@@ -375,13 +365,12 @@ TEST_F(SchemaParseUtilsTest, ParseMultiplicityString)
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(7..N)"));
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(5)"));
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(7banana)"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ParsePrimitiveType)
-    {
+TEST_F(SchemaParseUtilsTest, ParsePrimitiveType) {
     PrimitiveType primType;
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParsePrimitiveType(primType, "string"));
@@ -419,13 +408,12 @@ TEST_F(SchemaParseUtilsTest, ParsePrimitiveType)
 
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParsePrimitiveType(primType, ""));
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParsePrimitiveType(primType, "foo"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ParseStrengthType)
-    {
+TEST_F(SchemaParseUtilsTest, ParseStrengthType) {
     StrengthType strength;
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseStrengthType(strength, "referencing"));
@@ -439,35 +427,32 @@ TEST_F(SchemaParseUtilsTest, ParseStrengthType)
 
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseStrengthType(strength, ""));
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseStrengthType(strength, "foo"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, DirectionToString)
-    {
+TEST_F(SchemaParseUtilsTest, DirectionToString) {
     EXPECT_STREQ("forward", SchemaParseUtils::DirectionToXmlString(ECRelatedInstanceDirection::Forward));
     EXPECT_STREQ("backward", SchemaParseUtils::DirectionToXmlString(ECRelatedInstanceDirection::Backward));
 
     EXPECT_STREQ("Forward", SchemaParseUtils::DirectionToJsonString(ECRelatedInstanceDirection::Forward));
     EXPECT_STREQ("Backward", SchemaParseUtils::DirectionToJsonString(ECRelatedInstanceDirection::Backward));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ModifierToString)
-    {
+TEST_F(SchemaParseUtilsTest, ModifierToString) {
     EXPECT_STREQ("Abstract", SchemaParseUtils::ModifierToString(ECClassModifier::Abstract));
     EXPECT_STREQ("Sealed", SchemaParseUtils::ModifierToString(ECClassModifier::Sealed));
     EXPECT_STREQ("None", SchemaParseUtils::ModifierToString(ECClassModifier::None));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, PrimitiveTypeToString)
-    {
+TEST_F(SchemaParseUtilsTest, PrimitiveTypeToString) {
     EXPECT_STREQ("binary", SchemaParseUtils::PrimitiveTypeToString(PrimitiveType::PRIMITIVETYPE_Binary));
     EXPECT_STREQ("boolean", SchemaParseUtils::PrimitiveTypeToString(PrimitiveType::PRIMITIVETYPE_Boolean));
     EXPECT_STREQ("dateTime", SchemaParseUtils::PrimitiveTypeToString(PrimitiveType::PRIMITIVETYPE_DateTime));
@@ -478,13 +463,12 @@ TEST_F(SchemaParseUtilsTest, PrimitiveTypeToString)
     EXPECT_STREQ("point3d", SchemaParseUtils::PrimitiveTypeToString(PrimitiveType::PRIMITIVETYPE_Point3d));
     EXPECT_STREQ("string", SchemaParseUtils::PrimitiveTypeToString(PrimitiveType::PRIMITIVETYPE_String));
     EXPECT_STREQ("Bentley.Geometry.Common.IGeometry", SchemaParseUtils::PrimitiveTypeToString(PrimitiveType::PRIMITIVETYPE_IGeometry));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, StrengthToString)
-    {
+TEST_F(SchemaParseUtilsTest, StrengthToString) {
     EXPECT_STREQ("referencing", SchemaParseUtils::StrengthToXmlString(StrengthType::Referencing));
     EXPECT_STREQ("embedding", SchemaParseUtils::StrengthToXmlString(StrengthType::Embedding));
     EXPECT_STREQ("holding", SchemaParseUtils::StrengthToXmlString(StrengthType::Holding));
@@ -492,13 +476,12 @@ TEST_F(SchemaParseUtilsTest, StrengthToString)
     EXPECT_STREQ("Referencing", SchemaParseUtils::StrengthToJsonString(StrengthType::Referencing));
     EXPECT_STREQ("Embedding", SchemaParseUtils::StrengthToJsonString(StrengthType::Embedding));
     EXPECT_STREQ("Holding", SchemaParseUtils::StrengthToJsonString(StrengthType::Holding));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ContainerTypeToString)
-    {
+TEST_F(SchemaParseUtilsTest, ContainerTypeToString) {
     EXPECT_STREQ("Schema", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::Schema).c_str());
     EXPECT_STREQ("EntityClass", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::EntityClass).c_str());
     EXPECT_STREQ("CustomAttributeClass", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::CustomAttributeClass).c_str());
@@ -515,17 +498,16 @@ TEST_F(SchemaParseUtilsTest, ContainerTypeToString)
     EXPECT_STREQ("TargetRelationshipConstraint", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::TargetRelationshipConstraint).c_str());
     EXPECT_STREQ("AnyRelationshipConstraint", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::AnyRelationshipConstraint).c_str());
     EXPECT_STREQ("Any", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::Any).c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, MultiplicityToLegacyString)
-    {
+TEST_F(SchemaParseUtilsTest, MultiplicityToLegacyString) {
     EXPECT_EQ("(0,N)", SchemaParseUtils::MultiplicityToLegacyString(RelationshipMultiplicity(0)));
     EXPECT_EQ("(0,1)", SchemaParseUtils::MultiplicityToLegacyString(RelationshipMultiplicity(0, 1)));
     EXPECT_EQ("(3,N)", SchemaParseUtils::MultiplicityToLegacyString(RelationshipMultiplicity(3)));
     EXPECT_EQ("(3,5)", SchemaParseUtils::MultiplicityToLegacyString(RelationshipMultiplicity(3, 5)));
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

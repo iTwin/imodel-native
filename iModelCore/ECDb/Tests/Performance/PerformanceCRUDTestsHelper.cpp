@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "PerformanceCRUDTestsHelper.h"
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -9,14 +9,12 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::ECSqlReadInstances(ECDbR ecdb, bool iterateResultSet)
-    {
+void PerformanceCRUDTestsHelper::ECSqlReadInstances(ECDbR ecdb, bool iterateResultSet) {
     m_selectTime = -1.0;
     int instanceId = 1;
-    //printf("Start profiling and press key tp continue..."); getchar();
+    // printf("Start profiling and press key tp continue..."); getchar();
     StopWatch timer(true);
-    for (auto const& kvPair : m_ecsqlTestItems)
-        {
+    for (auto const& kvPair : m_ecsqlTestItems) {
         Utf8CP selectECSql = kvPair.second.m_selectECSql.c_str();
         LOG.infov("\n READ ECSql statement :  %s \n", selectECSql);
         ECSqlStatement stmt;
@@ -25,103 +23,90 @@ void PerformanceCRUDTestsHelper::ECSqlReadInstances(ECDbR ecdb, bool iterateResu
         if (!stat.IsSuccess())
             return;
 
-        for (size_t i = 0; i < m_instancesPerClass; i++)
-            {
-            if (!stmt.BindInt64(1, (int64_t) (instanceId++)).IsSuccess())
-                {
+        for (size_t i = 0; i < m_instancesPerClass; i++) {
+            if (!stmt.BindInt64(1, (int64_t)(instanceId++)).IsSuccess()) {
                 FAIL();
                 return;
-                }
+            }
 
             DbResult stat = stmt.Step();
-            if (stat != BE_SQLITE_ROW && stat != BE_SQLITE_DONE)
-                {
+            if (stat != BE_SQLITE_ROW && stat != BE_SQLITE_DONE) {
                 FAIL();
                 return;
-                }
+            }
 
-            if (iterateResultSet)
-                {
+            if (iterateResultSet) {
                 Utf8String propValue;
                 int columnCount = stmt.GetColumnCount();
-                ASSERT_EQ((int) m_propertiesPerClass, columnCount);
-                for (int j = 0; j < columnCount; j++)
-                    {
+                ASSERT_EQ((int)m_propertiesPerClass, columnCount);
+                for (int j = 0; j < columnCount; j++) {
                     propValue = stmt.GetValueText(j);
                     ASSERT_FALSE(Utf8String::IsNullOrEmpty(propValue.c_str()));
-                    }
                 }
+            }
 
             stmt.Reset();
             stmt.ClearBindings();
-            }
         }
+    }
     timer.Stop();
-    //printf("Stop profiling and press key to continue..."); getchar();
+    // printf("Stop profiling and press key to continue..."); getchar();
     m_selectTime = timer.GetElapsedSeconds();
     LOG.infov("ECSQL SELECT %d instances each against %d classes with %d Properties took %.4f s.", m_instancesPerClass, m_ecsqlTestItems.size(), m_propertiesPerClass, m_selectTime);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::ECSqlDeleteInstances(ECDbR ecdb)
-    {
+void PerformanceCRUDTestsHelper::ECSqlDeleteInstances(ECDbR ecdb) {
     m_deleteTime = -1.0;
     int instanceId = 1;
-    //printf("Start profiling and press key tp continue..."); getchar();
+    // printf("Start profiling and press key tp continue..."); getchar();
     StopWatch timer(true);
-    for (auto const& kvPair : m_ecsqlTestItems)
-        {
+    for (auto const& kvPair : m_ecsqlTestItems) {
         Utf8CP deleteECSql = kvPair.second.m_deleteECSql.c_str();
         LOG.infov("\n Delete ECSql statement : %s \n", deleteECSql);
         ECSqlStatement stmt;
         ECSqlStatus stat = stmt.Prepare(ecdb, deleteECSql);
         LOG.infov("\n Back-end Delete Sql : %s \n", stmt.GetNativeSql());
-        if (!stat.IsSuccess())
-            {
+        if (!stat.IsSuccess()) {
             ASSERT_TRUE(false);
             return;
+        }
+
+        for (size_t i = 0; i < m_instancesPerClass; i++) {
+            if (!stmt.BindInt64(1, (int64_t)(instanceId++)).IsSuccess()) {
+                ASSERT_TRUE(false);
+                return;
             }
 
-        for (size_t i = 0; i < m_instancesPerClass; i++)
-            {
-            if (!stmt.BindInt64(1, (int64_t) (instanceId++)).IsSuccess())
-                {
+            if (BE_SQLITE_DONE != stmt.Step() || ecdb.GetModifiedRowCount() == 0) {
                 ASSERT_TRUE(false);
                 return;
-                }
-
-            if (BE_SQLITE_DONE != stmt.Step() || ecdb.GetModifiedRowCount() == 0)
-                {
-                ASSERT_TRUE(false);
-                return;
-                }
+            }
 
             stmt.Reset();
             stmt.ClearBindings();
-            }
         }
+    }
     timer.Stop();
-    //printf("Stop profiling and press key to continue..."); getchar();
+    // printf("Stop profiling and press key to continue..."); getchar();
     m_deleteTime = timer.GetElapsedSeconds();
     LOG.infov("ECSQL DELETE %d instances each against %d classes with %d Properties took %.4f s.", m_instancesPerClass, m_ecsqlTestItems.size(), m_propertiesPerClass, m_deleteTime);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::ECSqlUpdateInstances(ECDbR ecdb, bool bindPropertyValues)
-    {
+void PerformanceCRUDTestsHelper::ECSqlUpdateInstances(ECDbR ecdb, bool bindPropertyValues) {
     m_updateTime = -1.0;
     int instanceId = 1;
     StopWatch timer(true);
-    for (auto const& kvPair : m_ecsqlTestItems)
-        {
+    for (auto const& kvPair : m_ecsqlTestItems) {
         ECClassCP testClass = kvPair.first;
         Utf8CP updateECSql = kvPair.second.m_updateECSql.c_str();
         LOG.infov("\n Update ECSql statement :  %s \n", updateECSql);
-        const int propertyCount = (int) testClass->GetPropertyCount(true);
+        const int propertyCount = (int)testClass->GetPropertyCount(true);
 
         ECSqlStatement stmt;
         ECSqlStatus stat = stmt.Prepare(ecdb, updateECSql);
@@ -129,113 +114,93 @@ void PerformanceCRUDTestsHelper::ECSqlUpdateInstances(ECDbR ecdb, bool bindPrope
         if (!stat.IsSuccess())
             return;
 
-        for (size_t i = 0; i < m_instancesPerClass; i++)
-            {
-            if (bindPropertyValues)
-                {
-                for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
-                    {
-                    if (!stmt.BindText(parameterIndex, ("UpdatedValue"), IECSqlBinder::MakeCopy::No).IsSuccess())
-                        {
+        for (size_t i = 0; i < m_instancesPerClass; i++) {
+            if (bindPropertyValues) {
+                for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++) {
+                    if (!stmt.BindText(parameterIndex, ("UpdatedValue"), IECSqlBinder::MakeCopy::No).IsSuccess()) {
                         ASSERT_TRUE(false);
                         return;
-                        }
-                    }
-                if (!stmt.BindInt64(propertyCount + 1, (int64_t) (instanceId++)).IsSuccess())
-                    {
-                    ASSERT_TRUE(false);
-                    return;
                     }
                 }
-            else
-                {
-                if (!stmt.BindInt64(1, (int64_t) (instanceId++)).IsSuccess())
-                    {
+                if (!stmt.BindInt64(propertyCount + 1, (int64_t)(instanceId++)).IsSuccess()) {
                     ASSERT_TRUE(false);
                     return;
-                    }
                 }
+            } else {
+                if (!stmt.BindInt64(1, (int64_t)(instanceId++)).IsSuccess()) {
+                    ASSERT_TRUE(false);
+                    return;
+                }
+            }
 
-            if (BE_SQLITE_DONE != stmt.Step() || ecdb.GetModifiedRowCount() == 0)
-                {
+            if (BE_SQLITE_DONE != stmt.Step() || ecdb.GetModifiedRowCount() == 0) {
                 ASSERT_TRUE(false);
                 return;
-                }
+            }
 
             stmt.Reset();
             stmt.ClearBindings();
-            }
         }
+    }
     timer.Stop();
     m_updateTime = timer.GetElapsedSeconds();
     LOG.infov("ECSQL UPDATE %d instances each against %d classes with %d Properties took %.4f s.", m_instancesPerClass, m_ecsqlTestItems.size(), m_propertiesPerClass, m_updateTime);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::ECSqlInsertInstances(ECDbR ecdb, bool bindPropertyValues, int64_t initInstanceId)
-    {
+void PerformanceCRUDTestsHelper::ECSqlInsertInstances(ECDbR ecdb, bool bindPropertyValues, int64_t initInstanceId) {
     m_insertTime = -1.0;
     StopWatch timer(true);
-    for (auto const& kvPair : m_ecsqlTestItems)
-        {
+    for (auto const& kvPair : m_ecsqlTestItems) {
         ECClassCP testClass = kvPair.first;
         Utf8CP insertECSql = kvPair.second.m_insertECSql.c_str();
         LOG.infov("\n Insert ECSql statement : %s \n", insertECSql);
-        const int propertyCount = (int) testClass->GetPropertyCount(true);
+        const int propertyCount = (int)testClass->GetPropertyCount(true);
 
         ECSqlStatement stmt;
         ECSqlStatus stat = stmt.Prepare(ecdb, insertECSql);
         LOG.infov("\n Back-end Insert Sql : %s \n", stmt.GetNativeSql());
-        if (!stat.IsSuccess())
-            {
+        if (!stat.IsSuccess()) {
             ASSERT_TRUE(false);
             return;
+        }
+
+        for (size_t i = 0; i < m_instancesPerClass; i++) {
+            if (!stmt.BindInt64(1, initInstanceId++).IsSuccess()) {
+                ASSERT_TRUE(false);
+                return;
             }
 
-        for (size_t i = 0; i < m_instancesPerClass; i++)
-            {
-            if (!stmt.BindInt64(1, initInstanceId++).IsSuccess())
-                {
-                ASSERT_TRUE(false);
-                return;
-                }
-
-            if (bindPropertyValues)
-                {
-                for (int parameterIndex = 2; parameterIndex <= (propertyCount + 1); parameterIndex++)
-                    {
-                    if (!stmt.BindText(parameterIndex, "Init Value", IECSqlBinder::MakeCopy::No).IsSuccess())
-                        {
+            if (bindPropertyValues) {
+                for (int parameterIndex = 2; parameterIndex <= (propertyCount + 1); parameterIndex++) {
+                    if (!stmt.BindText(parameterIndex, "Init Value", IECSqlBinder::MakeCopy::No).IsSuccess()) {
                         ASSERT_TRUE(false);
                         return;
-                        }
                     }
                 }
+            }
 
-            if (BE_SQLITE_DONE != stmt.Step() || ecdb.GetModifiedRowCount() == 0)
-                {
+            if (BE_SQLITE_DONE != stmt.Step() || ecdb.GetModifiedRowCount() == 0) {
                 ASSERT_TRUE(false);
                 return;
-                }
+            }
 
             stmt.Reset();
             stmt.ClearBindings();
-            }
         }
+    }
     timer.Stop();
     m_insertTime = timer.GetElapsedSeconds();
     LOG.infov("ECSQL INSERT %d instances each against %d classes with %d Properties took %.4f s.", m_instancesPerClass, m_ecsqlTestItems.size(), m_propertiesPerClass, m_insertTime);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::GenerateECSqlCRUDTestStatements(ECSchemaR ecSchema, bool hardCodePropertyValues)
-    {
-    for (ECClassCP testClass : ecSchema.GetClasses())
-        {
+void PerformanceCRUDTestsHelper::GenerateECSqlCRUDTestStatements(ECSchemaR ecSchema, bool hardCodePropertyValues) {
+    for (ECClassCP testClass : ecSchema.GetClasses()) {
         ECSqlTestItem& testItem = m_ecsqlTestItems[testClass];
         Utf8StringR insertECSql = testItem.m_insertECSql;
         Utf8StringR selectECSql = testItem.m_selectECSql;
@@ -257,67 +222,59 @@ void PerformanceCRUDTestsHelper::GenerateECSqlCRUDTestStatements(ECSchemaR ecSch
         deleteECSql.append(className).append(" WHERE ECInstanceId=?");
 
         bool isFirstItem = true;
-        for (auto prop : testClass->GetProperties(true))
-            {
-            if (!isFirstItem)
-                {
+        for (auto prop : testClass->GetProperties(true)) {
+            if (!isFirstItem) {
                 selectECSql.append(", ");
 
                 insertECSql.append(", ");
                 insertValuesSql.append(", ");
 
                 updateECSql.append(", ");
-                }
+            }
 
             selectECSql.append(prop->GetName());
 
-            if (hardCodePropertyValues)
-                {
+            if (hardCodePropertyValues) {
                 insertECSql.append(prop->GetName());
                 insertValuesSql.append("'InitValue'");
 
                 updateECSql.append(prop->GetName());
                 updateECSql.append(" = 'UpdatedValue'");
-                }
-            else
-                {
+            } else {
                 insertECSql.append(prop->GetName());
                 insertValuesSql.append("?");
 
                 updateECSql.append(prop->GetName());
                 updateECSql.append("=? ");
-                }
+            }
 
             isFirstItem = false;
-            }
+        }
 
         selectECSql.append(" FROM ONLY ").append(className).append(" WHERE ECInstanceId=?");
         insertECSql.append(insertValuesSql).append(")");
         updateECSql.append("WHERE ECInstanceId=?");
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::CreatePrimitiveProperties(ECClassR ecClass)
-    {
+void PerformanceCRUDTestsHelper::CreatePrimitiveProperties(ECClassR ecClass) {
     PrimitiveECPropertyP primitiveP;
-    for (size_t i = 0; i < m_propertiesPerClass; i++)
-        {
+    for (size_t i = 0; i < m_propertiesPerClass; i++) {
         Utf8String temp;
         temp.Sprintf("_Property%d", i);
         Utf8String propName = ecClass.GetName();
         propName.append(temp);
         ecClass.CreatePrimitiveProperty(primitiveP, propName, PrimitiveType::PRIMITIVETYPE_String);
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::CreateClassHierarchy(ECSchemaR testSchema, size_t LevelCount, ECClassR baseClass)
-    {
+void PerformanceCRUDTestsHelper::CreateClassHierarchy(ECSchemaR testSchema, size_t LevelCount, ECClassR baseClass) {
     if (LevelCount == 0)
         return;
 
@@ -336,14 +293,13 @@ void PerformanceCRUDTestsHelper::CreateClassHierarchy(ECSchemaR testSchema, size
 
     CreateClassHierarchy(testSchema, LevelCount - 1, *tmpClass);
     CreateClassHierarchy(testSchema, LevelCount - 1, *tmpClass1);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::GenerateSqlCRUDTestStatements(ECClassCP &ecClass, bool hardCodePropertyValues)
-    {
-    Utf8String className = (Utf8String) ecClass->GetName();
+void PerformanceCRUDTestsHelper::GenerateSqlCRUDTestStatements(ECClassCP& ecClass, bool hardCodePropertyValues) {
+    Utf8String className = (Utf8String)ecClass->GetName();
 
     m_insertSql = Utf8String("INSERT INTO ts_");
     m_insertSql.append(className).append(" (Id, ");
@@ -354,210 +310,183 @@ void PerformanceCRUDTestsHelper::GenerateSqlCRUDTestStatements(ECClassCP &ecClas
 
     m_selectSql = Utf8String("SELECT ");
 
-    //use view here to make sure referential integrity is ensured. Otherwise it is not comparable to ECSQL.
+    // use view here to make sure referential integrity is ensured. Otherwise it is not comparable to ECSQL.
     m_deleteSql = Utf8String("DELETE FROM ts_");
     m_deleteSql.append(className).append(" WHERE Id = ? ");
 
     bool isFirstItem = true;
-    for (auto prop : ecClass->GetProperties(true))
-        {
-        if (!isFirstItem)
-            {
+    for (auto prop : ecClass->GetProperties(true)) {
+        if (!isFirstItem) {
             m_selectSql.append(", ");
 
             m_insertSql.append(", ");
             insertValuesSql.append(", ");
 
             m_updateSql.append(", ");
-            }
+        }
 
         m_selectSql.append(prop->GetName());
 
-        if (hardCodePropertyValues)
-            {
+        if (hardCodePropertyValues) {
             m_insertSql.append(prop->GetName());
             insertValuesSql.append("'InitValue'");
 
             m_updateSql.append(prop->GetName());
             m_updateSql.append(" = 'UpdatedValue' ");
-            }
-        else
-            {
+        } else {
             m_insertSql.append(prop->GetName());
             insertValuesSql.append("?");
 
             m_updateSql.append(prop->GetName());
             m_updateSql.append(" = ? ");
-            }
+        }
 
         isFirstItem = false;
-        }
+    }
 
     m_selectSql.append(" FROM ts_");
     m_selectSql.append(className).append(" WHERE Id = ? ");
     m_insertSql.append(insertValuesSql).append(");");
     m_updateSql.append("WHERE Id = ?");
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::SqlInsertInstances(ECDbR ecdb, ECClassR ecClass, bool bindPropertyValues, int64_t initInstanceId)
-    {
+void PerformanceCRUDTestsHelper::SqlInsertInstances(ECDbR ecdb, ECClassR ecClass, bool bindPropertyValues, int64_t initInstanceId) {
     m_insertTime = -1.0;
-    //Insert Instance using Sql Query.
-    const int propertyCount = (int) ecClass.GetPropertyCount(true);
+    // Insert Instance using Sql Query.
+    const int propertyCount = (int)ecClass.GetPropertyCount(true);
     BeSQLite::Statement stmt;
     StopWatch timer(true);
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, m_insertSql.c_str()))
-        {
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, m_insertSql.c_str())) {
         FAIL();
         return;
-        }
+    }
 
-    for (size_t i = 0; i < m_instancesPerClass; i++)
-        {
-        if (BE_SQLITE_OK != stmt.BindInt64(1, initInstanceId++))
-            {
+    for (size_t i = 0; i < m_instancesPerClass; i++) {
+        if (BE_SQLITE_OK != stmt.BindInt64(1, initInstanceId++)) {
             FAIL();
             return;
-            }
+        }
 
-        if (bindPropertyValues)
-            {
-            for (int parameterIndex = 2; parameterIndex <= propertyCount + 1; parameterIndex++)
-                {
-                if (BE_SQLITE_OK != stmt.BindText(parameterIndex, "Init Value", BeSQLite::Statement::MakeCopy::No))
-                    {
+        if (bindPropertyValues) {
+            for (int parameterIndex = 2; parameterIndex <= propertyCount + 1; parameterIndex++) {
+                if (BE_SQLITE_OK != stmt.BindText(parameterIndex, "Init Value", BeSQLite::Statement::MakeCopy::No)) {
                     FAIL();
                     return;
-                    }
                 }
             }
+        }
 
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         stmt.Reset();
         stmt.ClearBindings();
-        }
+    }
     timer.Stop();
     stmt.Finalize();
     m_insertTime = timer.GetElapsedSeconds();
     LOG.infov("\n Insert Sql :  %s \n", m_insertSql.c_str());
     LOG.infov("Scenario - INSERT INTO- 1 class [%d properties each] , %d instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_insertTime);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::SqlReadInstances(ECDbR ecdb, ECClassR ecClass, bool iterateResultSet)
-    {
+void PerformanceCRUDTestsHelper::SqlReadInstances(ECDbR ecdb, ECClassR ecClass, bool iterateResultSet) {
     m_selectTime = -1.0;
-    //Read Instance using Sql Query.
+    // Read Instance using Sql Query.
     BeSQLite::Statement stmt;
     StopWatch timer(true);
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, m_selectSql.c_str()));
-    for (size_t i = 0; i < m_instancesPerClass; i++)
-        {
-        ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt64(1, (int64_t) (i + 1)));
+    for (size_t i = 0; i < m_instancesPerClass; i++) {
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt64(1, (int64_t)(i + 1)));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-        if (iterateResultSet)
-            {
+        if (iterateResultSet) {
             Utf8String propValue;
             int columnCount = stmt.GetColumnCount();
-            ASSERT_EQ((int) m_propertiesPerClass, columnCount);
-            for (int j = 0; j < columnCount; j++)
-                {
+            ASSERT_EQ((int)m_propertiesPerClass, columnCount);
+            for (int j = 0; j < columnCount; j++) {
                 propValue = stmt.GetValueText(j);
                 ASSERT_FALSE(Utf8String::IsNullOrEmpty(propValue.c_str()));
-                }
             }
+        }
 
         stmt.Reset();
         stmt.ClearBindings();
-        }
+    }
     timer.Stop();
     m_selectTime = timer.GetElapsedSeconds();
     stmt.Finalize();
     LOG.infov("\n READ Sql : %s \n", m_selectSql.c_str());
     LOG.infov("Scenario - Read - 1 class [%d properties each] , %d Instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_selectTime);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::SqlUpdateInstances(ECDbR ecdb, ECClassR ecClass, bool bindPropertyValues)
-    {
+void PerformanceCRUDTestsHelper::SqlUpdateInstances(ECDbR ecdb, ECClassR ecClass, bool bindPropertyValues) {
     m_updateTime = -1.0;
-    //Update Instance using Sql Query.
-    const int propertyCount = (int) ecClass.GetPropertyCount(true);
+    // Update Instance using Sql Query.
+    const int propertyCount = (int)ecClass.GetPropertyCount(true);
     BeSQLite::Statement stmt;
     StopWatch timer(true);
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, m_updateSql.c_str()))
-        {
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, m_updateSql.c_str())) {
         FAIL();
         return;
+    }
+
+    for (size_t i = 0; i < m_instancesPerClass; i++) {
+        if (bindPropertyValues) {
+            for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++) {
+                ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(parameterIndex, "UpdatedValue", BeSQLite::Statement::MakeCopy::No));
+            }
+
+            ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt64(propertyCount + 1, (int64_t)(i + 1)));
+        } else {
+            ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt64(1, (int64_t)(i + 1)));
         }
 
-    for (size_t i = 0; i < m_instancesPerClass; i++)
-        {
-        if (bindPropertyValues)
-            {
-            for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
-                {
-                ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(parameterIndex, "UpdatedValue", BeSQLite::Statement::MakeCopy::No));
-                }
-
-            ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt64(propertyCount + 1, (int64_t) (i + 1)));
-            }
-        else
-            {
-            ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt64(1, (int64_t) (i + 1)));
-            }
-
-        if (BE_SQLITE_DONE != stmt.Step() || ecdb.GetModifiedRowCount() == 0)
-            {
+        if (BE_SQLITE_DONE != stmt.Step() || ecdb.GetModifiedRowCount() == 0) {
             ASSERT_TRUE(false);
             return;
-            }
+        }
 
         stmt.Reset();
         stmt.ClearBindings();
-        }
+    }
     timer.Stop();
     stmt.Finalize();
     m_updateTime = timer.GetElapsedSeconds();
     LOG.infov("\n Update Sql :  %s \n", m_updateSql.c_str());
     LOG.infov("Scenario - Update - 1 class [%d properties each] , %d Instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_updateTime);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::SqlDeleteInstances(ECDbR ecdb, ECClassR ecClass)
-    {
+void PerformanceCRUDTestsHelper::SqlDeleteInstances(ECDbR ecdb, ECClassR ecClass) {
     m_deleteTime = -1.0;
     StopWatch timer(true);
     BeSQLite::Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, m_deleteSql.c_str()));
-    for (size_t i = 0; i < m_instancesPerClass; i++)
-        {
-        ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt64(1, (int64_t) (i + 1)));
+    for (size_t i = 0; i < m_instancesPerClass; i++) {
+        ASSERT_EQ(BE_SQLITE_OK, stmt.BindInt64(1, (int64_t)(i + 1)));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         stmt.Reset();
         stmt.ClearBindings();
-        }
+    }
     timer.Stop();
     m_deleteTime = timer.GetElapsedSeconds();
     LOG.infov("\n Delete Sql :  %s \n", m_deleteSql.c_str());
     LOG.infov("Scenario - DELETE - 1 class [%d properties each] , %d instances per class took - %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_deleteTime);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::SetUpTestECDb(Utf8String destFileName)
-    {
+void PerformanceCRUDTestsHelper::SetUpTestECDb(Utf8String destFileName) {
     m_ecsqlTestItems.clear();
 
     Utf8String seedFileName;
@@ -565,8 +494,7 @@ void PerformanceCRUDTestsHelper::SetUpTestECDb(Utf8String destFileName)
 
     BeFileName seedFilePath = BuildECDbPath(seedFileName.c_str());
 
-    if (!seedFilePath.DoesPathExist())
-        {
+    if (!seedFilePath.DoesPathExist()) {
         m_instancesPerClass = 10000;
         ECSchemaPtr testSchema = nullptr;
         ECEntityClassP baseClass = nullptr;
@@ -592,8 +520,8 @@ void PerformanceCRUDTestsHelper::SetUpTestECDb(Utf8String destFileName)
         m_ecdb.SaveChanges();
         m_ecsqlTestItems.clear();
         m_ecdb.CloseDb();
-        }
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(destFileName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     }
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(destFileName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+}
 
 END_ECDBUNITTESTS_NAMESPACE

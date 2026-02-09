@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <Bentley/RefCounted.h>
 #include <Bentley/Nullable.h>
@@ -17,13 +17,12 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct SchemaConflictHelper final
-{
-private:
+struct SchemaConflictHelper final {
+   private:
     SchemaConflictHelper() = delete;
     ~SchemaConflictHelper() = delete;
-public:
 
+   public:
     ECOBJECTS_EXPORT static bool IsSameKindOfProperty(ECPropertyCR p1, ECPropertyCR p2);
     ECOBJECTS_EXPORT static bool ArePropertiesCompatible(ECPropertyCR p1, ECPropertyCR p2);
     ECOBJECTS_EXPORT static bool IsPropertyCompatibleWithDerivedClasses(ECClassCR ecClass, ECPropertyCR propertyToAdd);
@@ -32,7 +31,7 @@ public:
     ECOBJECTS_EXPORT static bool PropertyExistsInHierarchy(ECClassCR ecClass, Utf8CP propertyName);
     ECOBJECTS_EXPORT static BentleyStatus FindUniquePropertyName(ECClassCR target, Utf8StringR propertyName);
 
-private:
+   private:
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

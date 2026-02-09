@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 USING_NAMESPACE_BENTLEY_EC
 
@@ -19,7 +19,7 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Next() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::GetRowId(int64_t& rowId) {
-    rowId =(int64_t)((*m_it).GetValueUnchecked());
+    rowId = (int64_t)((*m_it).GetValueUnchecked());
     return BE_SQLITE_OK;
 }
 
@@ -38,7 +38,7 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::GetColumn(i
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) {
+DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Filter(int idxNum, const char* idxStr, int argc, DbValue* argv) {
     int i = 0;
     bool recompute = true;
     if (idxNum & 1) {
@@ -70,7 +70,7 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Filter(int 
                 ++propCount;
                 return false;
             });
-            if (propList.empty())  {
+            if (propList.empty()) {
                 GetTable().SetError("ContainsProps vtab: expect json array of strings contain property names");
                 return BE_SQLITE_ERROR;
             }
@@ -81,13 +81,15 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Filter(int 
                             AND [cm].[MapStrategy] NOT IN (0, 10, 11)
                     JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
                     JOIN [ec_Property] [pt] ON [pt].[Id] = [pp].[RootPropertyId]
-                WHERE  [pt].[Name] IN (%s) GROUP BY [pm].[ClassId] HAVING COUNT(DISTINCT [pt].[Name]) = %d)x", propList.c_str(), propCount).GetUtf8CP();
+                WHERE  [pt].[Name] IN (%s) GROUP BY [pm].[ClassId] HAVING COUNT(DISTINCT [pt].[Name]) = %d)x",
+                                             propList.c_str(), propCount)
+                                 .GetUtf8CP();
             BeSQLite::Statement stmt;
-            if(BE_SQLITE_OK != stmt.Prepare(GetTable().GetModule().GetDb(), sql.c_str())) {
+            if (BE_SQLITE_OK != stmt.Prepare(GetTable().GetModule().GetDb(), sql.c_str())) {
                 GetTable().SetError("ContainsProps vtab: unable to prepare sql stmt");
                 return BE_SQLITE_ERROR;
             }
-            while(stmt.Step() == BE_SQLITE_ROW) {
+            while (stmt.Step() == BE_SQLITE_ROW) {
                 m_classIds.insert(stmt.GetValueId<ECClassId>(0));
             }
         }
@@ -100,38 +102,38 @@ DbResult ClassPropsModule::ClassPropsVirtualTable::ClassPropsCursor::Filter(int 
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult ClassPropsModule::ClassPropsVirtualTable::BestIndex(IndexInfo& indexInfo) {
-    int i, j;              /* Loop over constraints */
-    int idxNum = 0;        /* The query plan bitmask */
-    int unusableMask = 0;  /* Mask of unusable constraints */
-    int nArg = 0;          /* Number of arguments that seriesFilter() expects */
-    int aIdx[2];           /* Constraints on start, stop, and step */
+    int i, j;             /* Loop over constraints */
+    int idxNum = 0;       /* The query plan bitmask */
+    int unusableMask = 0; /* Mask of unusable constraints */
+    int nArg = 0;         /* Number of arguments that seriesFilter() expects */
+    int aIdx[2];          /* Constraints on start, stop, and step */
     const int SQLITE_SERIES_CONSTRAINT_VERIFY = 0;
     aIdx[0] = aIdx[1] = -1;
     int nConstraint = indexInfo.GetConstraintCount();
 
-    for(i=0; i<nConstraint; i++){
+    for (i = 0; i < nConstraint; i++) {
         auto pConstraint = indexInfo.GetConstraint(i);
-        int iCol;    /* 0 for start, 1 for stop, 2 for step */
-        int iMask;   /* bitmask for those column */
-        if( pConstraint->GetColumn()< (int)ClassPropsCursor::Columns::Text) continue;
+        int iCol;  /* 0 for start, 1 for stop, 2 for step */
+        int iMask; /* bitmask for those column */
+        if (pConstraint->GetColumn() < (int)ClassPropsCursor::Columns::Text) continue;
         iCol = pConstraint->GetColumn() - (int)ClassPropsCursor::Columns::Text;
         iMask = 1 << iCol;
-        if (!pConstraint->IsUsable()){
-            unusableMask |=  iMask;
+        if (!pConstraint->IsUsable()) {
+            unusableMask |= iMask;
             continue;
-        } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ ){
+        } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ) {
             idxNum |= iMask;
             aIdx[iCol] = i;
         }
     }
-    for( i = 0; i < 1; i++) {
-        if( (j = aIdx[i]) >= 0 ) {
+    for (i = 0; i < 1; i++) {
+        if ((j = aIdx[i]) >= 0) {
             indexInfo.GetConstraintUsage(j)->SetArgvIndex(++nArg);
             indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
         }
     }
 
-    if ((unusableMask & ~idxNum)!=0 ){
+    if ((unusableMask & ~idxNum) != 0) {
         return BE_SQLITE_CONSTRAINT;
     }
 
@@ -185,46 +187,42 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::GetColumn(int i, Context& ctx) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONStringIntoArray(BeJsDocument& doc) {
-    if(!doc.isArray()) {
+    if (!doc.isArray()) {
         GetTable().SetError("IdSet vtab: The argument should be a valid JSON array of ids");
         return BE_SQLITE_ERROR;
     }
     bool flag = doc.ForEachArrayMember([&](BeJsValue::ArrayIndex a, BeJsConst k1) {
-                                            if(BE_SQLITE_OK != FilterJSONBasedOnType(k1)) {
-                                                GetTable().SetError(SqlPrintfString("IdSet vtab: The element with index %u is invalid", a));
-                                                return true;
-                                            }
-                                            return false; 
-                                        });
-    if(flag)
+        if (BE_SQLITE_OK != FilterJSONBasedOnType(k1)) {
+            GetTable().SetError(SqlPrintfString("IdSet vtab: The element with index %u is invalid", a));
+            return true;
+        }
+        return false;
+    });
+    if (flag)
         return BE_SQLITE_ERROR;
     return BE_SQLITE_OK;
 }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONBasedOnType(BeJsConst& val) {
-    if(val.isNull()) {
+    if (val.isNull()) {
         return BE_SQLITE_ERROR;
-    }
-    else if(val.isNumeric()) {
+    } else if (val.isNumeric()) {
         uint64_t id = val.GetUInt64();
-        if(id == 0)
+        if (id == 0)
             return BE_SQLITE_ERROR;
         m_idSet.insert(id);
-    }
-    else if(val.isString()) {
+    } else if (val.isString()) {
         uint64_t id;
         BentleyStatus status = BeStringUtilities::ParseUInt64(id, val.ToUtf8CP());
-        if(status != BentleyStatus::SUCCESS)
+        if (status != BentleyStatus::SUCCESS)
             return BE_SQLITE_ERROR;
-        if(id == 0)
+        if (id == 0)
             return BE_SQLITE_ERROR;
         m_idSet.insert(id);
-    }
-    else
+    } else
         return BE_SQLITE_ERROR;
     return BE_SQLITE_OK;
 }
@@ -232,12 +230,12 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONBasedOnType(BeJsConst& 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) {
+DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char* idxStr, int argc, DbValue* argv) {
     int recompute = false;
-    if( idxNum & 1 ){
-        if(argv[0].GetValueType() == DbValueType::TextVal) {
+    if (idxNum & 1) {
+        if (argv[0].GetValueType() == DbValueType::TextVal) {
             Utf8String valueGiven = argv[0].GetValueText();
-            if(!valueGiven.EqualsIAscii(m_text)) {
+            if (!valueGiven.EqualsIAscii(m_text)) {
                 m_text = valueGiven;
                 recompute = true;
             }
@@ -247,12 +245,12 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
     } else {
         Reset();
     }
-    if(recompute) {
+    if (recompute) {
         m_idSet.clear();
         BeJsDocument doc;
         doc.Parse(m_text.c_str());
-        
-        if(FilterJSONStringIntoArray(doc) != BE_SQLITE_OK) {
+
+        if (FilterJSONStringIntoArray(doc) != BE_SQLITE_OK) {
             Reset();
             m_index = m_idSet.begin();
             return BE_SQLITE_ERROR;
@@ -273,38 +271,38 @@ void IdSetModule::IdSetTable::IdSetCursor::Reset() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::BestIndex(IndexInfo& indexInfo) {
-    int i, j;              /* Loop over constraints */
-    int idxNum = 0;        /* The query plan bitmask */
-    int unusableMask = 0;  /* Mask of unusable constraints */
-    int nArg = 0;          /* Number of arguments that seriesFilter() expects */
-    int aIdx[2];           /* Constraints on start, stop, and step */
+    int i, j;             /* Loop over constraints */
+    int idxNum = 0;       /* The query plan bitmask */
+    int unusableMask = 0; /* Mask of unusable constraints */
+    int nArg = 0;         /* Number of arguments that seriesFilter() expects */
+    int aIdx[2];          /* Constraints on start, stop, and step */
     const int SQLITE_SERIES_CONSTRAINT_VERIFY = 0;
     aIdx[0] = aIdx[1] = -1;
     int nConstraint = indexInfo.GetConstraintCount();
 
-    for(i=0; i<nConstraint; i++) {
+    for (i = 0; i < nConstraint; i++) {
         auto pConstraint = indexInfo.GetConstraint(i);
-        int iCol;    /* 0 for start, 1 for stop, 2 for step */
-        int iMask;   /* bitmask for those column */
-        if( pConstraint->GetColumn()< (int)IdSetCursor::Columns::Json_array_ids) continue;
+        int iCol;  /* 0 for start, 1 for stop, 2 for step */
+        int iMask; /* bitmask for those column */
+        if (pConstraint->GetColumn() < (int)IdSetCursor::Columns::Json_array_ids) continue;
         iCol = pConstraint->GetColumn() - (int)IdSetCursor::Columns::Json_array_ids;
         iMask = 1 << iCol;
-        if (!pConstraint->IsUsable()){
-            unusableMask |=  iMask;
+        if (!pConstraint->IsUsable()) {
+            unusableMask |= iMask;
             continue;
-        } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ ){
+        } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ) {
             idxNum |= iMask;
             aIdx[iCol] = i;
         }
     }
-    for( i = 0; i < 1; i++) {
-        if( (j = aIdx[i]) >= 0 ) {
+    for (i = 0; i < 1; i++) {
+        if ((j = aIdx[i]) >= 0) {
             indexInfo.GetConstraintUsage(j)->SetArgvIndex(++nArg);
             indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
         }
     }
 
-    if ((unusableMask & ~idxNum)!=0 ) {
+    if ((unusableMask & ~idxNum) != 0) {
         return BE_SQLITE_CONSTRAINT;
     }
 
@@ -312,7 +310,6 @@ DbResult IdSetModule::IdSetTable::BestIndex(IndexInfo& indexInfo) {
     indexInfo.SetEstimatedRows(100);
     indexInfo.SetIdxNum(idxNum);
     return BE_SQLITE_OK;
-
 }
 
 //---------------------------------------------------------------------------------------
@@ -327,7 +324,7 @@ DbResult IdSetModule::Connect(DbVirtualTable*& out, Config& conf, int argc, cons
 DbResult RegisterBuildInVTabs(ECDbR ecdb) {
     DbResult rc = (new ClassPropsModule(ecdb))->Register();
     DbResult rcIdSet = (new IdSetModule(ecdb))->Register();
-    if(rc != BE_SQLITE_OK || rcIdSet != BE_SQLITE_OK)
+    if (rc != BE_SQLITE_OK || rcIdSet != BE_SQLITE_OK)
         return rc;
     return BE_SQLITE_OK;
 }

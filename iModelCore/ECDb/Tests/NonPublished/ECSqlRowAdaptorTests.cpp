@@ -14,21 +14,21 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct ECSqlTemplate final {
-public:
+   public:
     enum class Tags : uint64_t {
         NONE = 0,
         USE_DOT_ACCESSOR = 1,
     };
 
-private:
+   private:
     Utf8String m_template;
     Tags m_tags = Tags::NONE;
     int m_lineNo = 0;
 
-public:
+   public:
     ECSqlTemplate(Utf8CP templateStr) : m_template(templateStr) {}
     ECSqlTemplate(Utf8CP templateStr, Tags tag, int lineNo) : m_template(templateStr), m_tags(tag), m_lineNo(lineNo) {}
-    ECSqlTemplate(const ECSqlTemplate& other) : m_template(other.m_template), m_tags(other.m_tags),m_lineNo(other.m_lineNo) {}
+    ECSqlTemplate(const ECSqlTemplate& other) : m_template(other.m_template), m_tags(other.m_tags), m_lineNo(other.m_lineNo) {}
     ECSqlTemplate(ECSqlTemplate&& other) : m_template(std::move(other.m_template)), m_tags(std::move(other.m_tags)), m_lineNo(std::move(other.m_lineNo)) {}
     ECSqlTemplate& operator=(const ECSqlTemplate& other) {
         m_template = other.m_template;
@@ -90,7 +90,7 @@ public:
 ENUM_IS_FLAGS(ECSqlTemplate::Tags);
 
 struct ECSqlTemplates final {
-public:
+   public:
     static std::vector<ECSqlTemplate> GetTemplates() {
         static std::vector<ECSqlTemplate> out;
         if (out.empty()) {
@@ -129,7 +129,7 @@ public:
 };
 
 struct ECSqlRowAdaptorFixture : ECDbTestFixture {
-public:
+   public:
     const char* expected_ECClassDef_Name = R"("ECDbMeta.ECClassDef")";
     const char* expected_ECClassDef_ClassId = R"("0x25")";
     const char* expected_SchemaOwnsClasses_Name = R"("ECDbMeta.SchemaOwnsClasses")";
@@ -263,7 +263,6 @@ TEST_F(ECSqlRowAdaptorFixture, class_id_rendering_with_js_name_option) {
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlRowAdaptorFixture, Test) {
-
     SetupECDb("test.ecdb");
 
     Options options;
@@ -306,7 +305,6 @@ TEST_F(ECSqlRowAdaptorFixture, Test) {
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlRowAdaptorFixture, Test1) {
-
     SetupECDb("test.ecdb");
 
     // ECClassId

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include <ECObjects/SchemaComparer.h>
 #include "../TestFixture/TestFixture.h"
@@ -12,10 +12,8 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct PropertyConflictTest : ECTestFixture {
-
-    static ECSchemaPtr LoadSchemaFromString(Utf8CP schemaXml)
-        {
-        ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    static ECSchemaPtr LoadSchemaFromString(Utf8CP schemaXml) {
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
         ECSchemaPtr schema;
         SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
@@ -23,7 +21,7 @@ struct PropertyConflictTest : ECTestFixture {
             return nullptr;
 
         return schema;
-        }
+    }
 
     static constexpr Utf8CP s_testSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0"
@@ -59,45 +57,40 @@ struct PropertyConflictTest : ECTestFixture {
         </ECEntityClass>
     </ECSchema>)xml";
 
-    static ECSchemaPtr LoadTestSchema()
-        {
+    static ECSchemaPtr LoadTestSchema() {
         return LoadSchemaFromString(s_testSchemaXml);
-        }
+    }
 
-    static ECSchemaPtr LoadTestSchemaWithStructs()
-        {
+    static ECSchemaPtr LoadTestSchemaWithStructs() {
         return LoadSchemaFromString(s_testSchemaWithStructsXml);
-        }
+    }
 
-    void AssertSchemaEquals(ECSchemaPtr schema, Utf8CP expectedSchemaXml)
-        {
+    void AssertSchemaEquals(ECSchemaPtr schema, Utf8CP expectedSchemaXml) {
         SchemaComparer comparer;
         SchemaComparer::Options comparerOptions = SchemaComparer::Options(SchemaComparer::DetailLevel::Full, SchemaComparer::DetailLevel::Full);
         SchemaDiff diff;
         ECSchemaPtr expectedSchema = LoadSchemaFromString(expectedSchemaXml);
         ASSERT_TRUE(expectedSchema.IsValid());
 
-        bvector<ECSchemaCP> actualSchemas   { schema.get() };
-        bvector<ECSchemaCP> expectedSchemas { expectedSchema.get() };
+        bvector<ECSchemaCP> actualSchemas{schema.get()};
+        bvector<ECSchemaCP> expectedSchemas{expectedSchema.get()};
 
         ASSERT_EQ(BentleyStatus::SUCCESS, comparer.Compare(diff, actualSchemas, expectedSchemas, comparerOptions));
         bool isChanged = diff.Changes().IsChanged();
-        if (isChanged)
-            {
+        if (isChanged) {
             Utf8String resultSchemaXml;
             schema->WriteToXmlString(resultSchemaXml, ECVersion::Latest);
             printf("Schema does not match expected result:\n%s\n", resultSchemaXml.c_str());
             printf("Expected schema:\n%s\n", expectedSchemaXml);
             FAIL() << "Schemas are not equal";
-            }
         }
+    }
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, AddNonConflictingProperties)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, AddNonConflictingProperties) {
     ECSchemaPtr schema = LoadTestSchema();
     auto* classA = schema->GetClassP("A");
     auto* classB = schema->GetClassP("B");
@@ -137,13 +130,12 @@ TEST_F(PropertyConflictTest, AddNonConflictingProperties)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, AddCompatibleAndIncompatibleOverrides)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, AddCompatibleAndIncompatibleOverrides) {
     ECSchemaPtr schema = LoadTestSchema();
     auto* classA = schema->GetClassP("A");
     auto* classB = schema->GetClassP("B");
@@ -184,13 +176,12 @@ TEST_F(PropertyConflictTest, AddCompatibleAndIncompatibleOverrides)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, AddIncompatibleOverridesMultipleTimes)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, AddIncompatibleOverridesMultipleTimes) {
     ECSchemaPtr schema = LoadTestSchema();
     auto* classA = schema->GetClassP("A");
     auto* classB = schema->GetClassP("B");
@@ -238,14 +229,12 @@ TEST_F(PropertyConflictTest, AddIncompatibleOverridesMultipleTimes)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, AddCompatiblePropertyMultipleTimes)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, AddCompatiblePropertyMultipleTimes) {
     ECSchemaPtr schema = LoadTestSchema();
     auto* classA = schema->GetClassP("A");
     auto* classB = schema->GetClassP("B");
@@ -285,13 +274,12 @@ TEST_F(PropertyConflictTest, AddCompatiblePropertyMultipleTimes)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, AddBasePropertyWhichIntroducesConflict)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, AddBasePropertyWhichIntroducesConflict) {
     ECSchemaPtr schema = LoadTestSchema();
     auto* classA = schema->GetClassP("A");
     auto* classB = schema->GetClassP("B");
@@ -304,7 +292,7 @@ TEST_F(PropertyConflictTest, AddBasePropertyWhichIntroducesConflict)
     ASSERT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveProperty(prop, "c", PRIMITIVETYPE_Double, true));
     ASSERT_NE(nullptr, prop);
     ASSERT_STREQ("c", prop->GetName().c_str());
-    
+
     static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.01" alias="V2ToV3"/>
@@ -327,13 +315,12 @@ TEST_F(PropertyConflictTest, AddBasePropertyWhichIntroducesConflict)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, ResolveConflictsFalse_ReturnsErrorOnConflict)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, ResolveConflictsFalse_ReturnsErrorOnConflict) {
     ECSchemaPtr schema = LoadTestSchema();
     auto* classB = schema->GetClassP("B");
     ASSERT_NE(nullptr, classB);
@@ -342,13 +329,12 @@ TEST_F(PropertyConflictTest, ResolveConflictsFalse_ReturnsErrorOnConflict)
     // Attempt to create property with same name as base class property, but resolveConflicts=false
     ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, classB->CreatePrimitiveProperty(prop, "a", PRIMITIVETYPE_Boolean, false));
     ASSERT_EQ(nullptr, prop);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, ConflictWithRenamedProperty)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, ConflictWithRenamedProperty) {
     ECSchemaPtr schema = LoadTestSchema();
     auto* classB = schema->GetClassP("B");
     ASSERT_NE(nullptr, classB);
@@ -362,12 +348,12 @@ TEST_F(PropertyConflictTest, ConflictWithRenamedProperty)
     // Now try to add a property literally named "ts_a_" with compatible type
     ASSERT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveProperty(prop, "ts_a_", PRIMITIVETYPE_Boolean, true));
     ASSERT_NE(nullptr, prop);
-    ASSERT_STREQ("ts_a_", prop->GetName().c_str()); // Should reuse the existing property
+    ASSERT_STREQ("ts_a_", prop->GetName().c_str());  // Should reuse the existing property
 
     // Now try to add a property literally named "ts_a_" with incompatible type
     ASSERT_EQ(ECObjectsStatus::Success, classB->CreatePrimitiveProperty(prop, "ts_a_", PRIMITIVETYPE_String, true));
     ASSERT_NE(nullptr, prop);
-    ASSERT_STREQ("ts_ts_a__", prop->GetName().c_str()); // Should add underscore
+    ASSERT_STREQ("ts_ts_a__", prop->GetName().c_str());  // Should add underscore
 
     static constexpr Utf8CP expectedSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -392,14 +378,13 @@ TEST_F(PropertyConflictTest, ConflictWithRenamedProperty)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Test that struct properties can have same type as base - compatible override
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, StructProperty_CompatibleOverride)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Test that struct properties can have same type as base - compatible override
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, StructProperty_CompatibleOverride) {
     ECSchemaPtr schema = LoadTestSchemaWithStructs();
     auto* classB = schema->GetClassP("B");
     auto* structA = schema->GetClassCP("StructA")->GetStructClassCP();
@@ -430,14 +415,13 @@ TEST_F(PropertyConflictTest, StructProperty_CompatibleOverride)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Test that struct properties with different types conflict
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, StructProperty_IncompatibleOverride)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Test that struct properties with different types conflict
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, StructProperty_IncompatibleOverride) {
     ECSchemaPtr schema = LoadTestSchemaWithStructs();
     auto* classB = schema->GetClassP("B");
     auto* structB = schema->GetClassCP("StructB")->GetStructClassCP();
@@ -478,14 +462,13 @@ TEST_F(PropertyConflictTest, StructProperty_IncompatibleOverride)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Test that struct property conflicts with primitive property
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, StructProperty_ConflictWithPrimitiveProperty)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Test that struct property conflicts with primitive property
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, StructProperty_ConflictWithPrimitiveProperty) {
     ECSchemaPtr schema = LoadTestSchemaWithStructs();
     auto* classB = schema->GetClassP("B");
     auto* structA = schema->GetClassCP("StructA")->GetStructClassCP();
@@ -526,14 +509,13 @@ TEST_F(PropertyConflictTest, StructProperty_ConflictWithPrimitiveProperty)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Test that array properties can have same type as base - compatible override
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, ArrayProperty_CompatibleOverride)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Test that array properties can have same type as base - compatible override
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, ArrayProperty_CompatibleOverride) {
     ECSchemaPtr schema = LoadTestSchema();
     auto* classB = schema->GetClassP("B");
     ASSERT_NE(nullptr, classB);
@@ -566,14 +548,13 @@ TEST_F(PropertyConflictTest, ArrayProperty_CompatibleOverride)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Test that array properties with different types conflict
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, ArrayProperty_IncompatibleOverride)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Test that array properties with different types conflict
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, ArrayProperty_IncompatibleOverride) {
     ECSchemaPtr schema = LoadTestSchema();
     auto* classB = schema->GetClassP("B");
     ASSERT_NE(nullptr, classB);
@@ -616,14 +597,13 @@ TEST_F(PropertyConflictTest, ArrayProperty_IncompatibleOverride)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Test that array property conflicts with primitive property
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, ArrayProperty_ConflictWithPrimitiveProperty)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Test that array property conflicts with primitive property
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, ArrayProperty_ConflictWithPrimitiveProperty) {
     ECSchemaPtr schema = LoadTestSchema();
     auto* classB = schema->GetClassP("B");
     ASSERT_NE(nullptr, classB);
@@ -660,14 +640,13 @@ TEST_F(PropertyConflictTest, ArrayProperty_ConflictWithPrimitiveProperty)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Test that struct array properties can have same type as base - compatible override
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, StructArrayProperty_CompatibleOverride)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Test that struct array properties can have same type as base - compatible override
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, StructArrayProperty_CompatibleOverride) {
     ECSchemaPtr schema = LoadTestSchemaWithStructs();
     auto* classB = schema->GetClassP("B");
     auto* structA = schema->GetClassCP("StructA")->GetStructClassCP();
@@ -704,14 +683,13 @@ TEST_F(PropertyConflictTest, StructArrayProperty_CompatibleOverride)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Test that struct array properties with different types conflict
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, StructArrayProperty_IncompatibleOverride)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Test that struct array properties with different types conflict
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, StructArrayProperty_IncompatibleOverride) {
     ECSchemaPtr schema = LoadTestSchemaWithStructs();
     auto* classB = schema->GetClassP("B");
     auto* structA = schema->GetClassCP("StructA")->GetStructClassCP();
@@ -760,14 +738,13 @@ TEST_F(PropertyConflictTest, StructArrayProperty_IncompatibleOverride)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* Test that struct array property conflicts with struct property
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyConflictTest, StructArrayProperty_ConflictWithStructProperty)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Test that struct array property conflicts with struct property
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyConflictTest, StructArrayProperty_ConflictWithStructProperty) {
     ECSchemaPtr schema = LoadTestSchemaWithStructs();
     auto* classB = schema->GetClassP("B");
     auto* structA = schema->GetClassCP("StructA")->GetStructClassCP();
@@ -808,6 +785,6 @@ TEST_F(PropertyConflictTest, StructArrayProperty_ConflictWithStructProperty)
         </ECEntityClass>
     </ECSchema>)xml";
     AssertSchemaEquals(schema, expectedSchemaXml);
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -19,8 +19,7 @@ struct CrossSchemaUnitConversionTests : ECTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CrossSchemaUnitConversionTests, ConvertUnitCrossSchemaNonLinearReference)
-    {
+TEST_F(CrossSchemaUnitConversionTests, ConvertUnitCrossSchemaNonLinearReference) {
     Utf8CP schema1Xml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema1" alias="ts1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <UnitSystem typeName="TEST_UNITSYSTEM" />
@@ -61,13 +60,12 @@ TEST_F(CrossSchemaUnitConversionTests, ConvertUnitCrossSchemaNonLinearReference)
 
     EXPECT_EQ(Units::UnitsProblemCode::NoProblem, unitB->Convert(actualValue, 2.0, unitB)) << "";
     EXPECT_EQ(actualValue, 2.0) << "unitB to unitA conversion should be simple doubling";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CrossSchemaUnitConversionTests, ConvertUnitCrossSchemaLinearReference)
-    {
+TEST_F(CrossSchemaUnitConversionTests, ConvertUnitCrossSchemaLinearReference) {
     Utf8CP schema1Xml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema1" alias="ts1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <UnitSystem typeName="TEST_UNITSYSTEM" />
@@ -100,6 +98,6 @@ TEST_F(CrossSchemaUnitConversionTests, ConvertUnitCrossSchemaLinearReference)
 
     EXPECT_EQ(Units::UnitsProblemCode::NoProblem, unitB->Convert(actualValue, 2.0, unitB)) << "";
     EXPECT_EQ(actualValue, 2.0) << "unitB to unitA conversion should be simple doubling";
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

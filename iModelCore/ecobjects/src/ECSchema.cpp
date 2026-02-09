@@ -1,13 +1,13 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
 #include "SchemaXml.h"
 #include "SchemaJson.h"
 #include "StronglyConnectedGraph.h"
-#if defined (_WIN32) // WIP_NONPORT - iostreams not support on Android
+#if defined(_WIN32)  // WIP_NONPORT - iostreams not support on Android
 #include <iomanip>
 #endif
 #include <Bentley/BeFileName.h>
@@ -27,95 +27,87 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
 static bool s_noAssert = false;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 ECAppData& ECSchema::GetAppData() const {
     if (m_appData.IsNull())
         m_appData = ECAppData::Create();
-        
+
     return *m_appData;
 }
-/*---------------------------------------------------------------------------------**//**
-* Currently this is only used by ECValidatedName and ECSchema.
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECNameValidation::ValidationResult ECNameValidation::Validate (Utf8CP name)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * Currently this is only used by ECValidatedName and ECSchema.
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECNameValidation::ValidationResult ECNameValidation::Validate(Utf8CP name) {
     if (nullptr == name || 0 == *name)
         return RESULT_NullOrEmpty;
     else if ('0' <= name[0] && '9' >= name[0])
         return RESULT_BeginsWithDigit;
-    else
-        {
+    else {
         for (Utf8CP cur = name; *cur; ++cur)
-            if (!IsValidAlphaNumericCharacter (*cur))
+            if (!IsValidAlphaNumericCharacter(*cur))
                 return RESULT_IncludesInvalidCharacters;
-        }
-
-    return RESULT_Valid;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECNameValidation::AppendEncodedCharacter (WStringR encoded, WChar c)
-    {
+    return RESULT_Valid;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void ECNameValidation::AppendEncodedCharacter(WStringR encoded, WChar c) {
     WChar buf[5];
     HexFormatOptions opts = (HexFormatOptions)(static_cast<int>(HexFormatOptions::LeadingZeros) | static_cast<int>(HexFormatOptions::Uppercase));
-    BeStringUtilities::FormatUInt64 (buf, _countof(buf), (uint64_t)c, opts, 4);
+    BeStringUtilities::FormatUInt64(buf, _countof(buf), (uint64_t)c, opts, 4);
     encoded.append(L"__x");
     encoded.append(buf);
     encoded.append(L"__");
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECNameValidation::DecodeFromValidName (Utf8StringR decoded, Utf8StringCR name)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool ECNameValidation::DecodeFromValidName(Utf8StringR decoded, Utf8StringCR name) {
     // "__x####__"
     //  012345678
 
     decoded = name;
     if (Utf8String::npos == name.find("__x"))
-        return false; // => no decoding was required
+        return false;  // => no decoding was required
 
     // TFS#298776: The encoding has always been done using UTF-16 - first in .NET, then in Vancouver.
     // Therefore we must convert.
     WString buf(name.c_str(), BentleyCharEncoding::Utf8);
     size_t pos = 0;
     bool wasDecoded = false;
-    while (pos + 8 < buf.length() && Utf8String::npos != (pos = buf.find (L"__x", pos)))
-        {
-        if ('_' == buf[pos+7] && '_' == buf[pos+8])
-            {
+    while (pos + 8 < buf.length() && Utf8String::npos != (pos = buf.find(L"__x", pos))) {
+        if ('_' == buf[pos + 7] && '_' == buf[pos + 8]) {
             uint32_t charCode;
-            if (1 == WString::Swscanf_safe(buf.c_str() + pos + 3, L"%x", &charCode))
-                {
+            if (1 == WString::Swscanf_safe(buf.c_str() + pos + 3, L"%x", &charCode)) {
                 buf[pos] = (WChar)charCode;
-                buf.erase (pos+1, 8);
+                buf.erase(pos + 1, 8);
                 pos++;
                 wasDecoded = true;
                 continue;
-                }
             }
+        }
 
         // could not decode this escape code, leave it intact
         pos += 3;
-        }
+    }
 
     if (wasDecoded)
         decoded.Assign(buf.c_str());
 
     return wasDecoded;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECNameValidation::EncodeToValidName (Utf8StringR output, Utf8StringCR input)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool ECNameValidation::EncodeToValidName(Utf8StringR output, Utf8StringCR input) {
     output.clear();
     if (input.empty())
         return false;
@@ -126,68 +118,58 @@ bool ECNameValidation::EncodeToValidName (Utf8StringR output, Utf8StringCR input
 
     // First character cannot be a digit
     bool needToEncode = ('0' <= input[0] && '9' >= input[0]);
-    if (!needToEncode)
-        {
-        for (size_t i = 0; i < input.length(); i++)
-            {
-            if (!IsValidAlphaNumericCharacter (input[i]))
-                {
+    if (!needToEncode) {
+        for (size_t i = 0; i < input.length(); i++) {
+            if (!IsValidAlphaNumericCharacter(input[i])) {
                 needToEncode = true;
                 break;
-                }
             }
         }
+    }
 
-    if (!needToEncode)
-        {
+    if (!needToEncode) {
         output = input;
-        return false; // => no encoding was necessary
-        }
+        return false;  // => no encoding was necessary
+    }
 
     WString name(input.c_str(), BentleyCharEncoding::Utf8);
     WString encoded;
-    encoded.reserve (name.length());
+    encoded.reserve(name.length());
     bool wasEncoded = false;
 
     // First character cannot be a digit
     size_t startIndex = 0;
-    if ('0' <= name[0] && '9' >= name[0])
-        {
-        AppendEncodedCharacter (encoded, name[0]);
+    if ('0' <= name[0] && '9' >= name[0]) {
+        AppendEncodedCharacter(encoded, name[0]);
         startIndex = 1;
         wasEncoded = true;
-        }
+    }
 
-    for (size_t i = startIndex; i < name.length(); i++)
-        {
-        if (!IsValidAlphaNumericCharacter (name[i]))
-            {   
-            AppendEncodedCharacter (encoded, name[i]);
+    for (size_t i = startIndex; i < name.length(); i++) {
+        if (!IsValidAlphaNumericCharacter(name[i])) {
+            AppendEncodedCharacter(encoded, name[i]);
             wasEncoded = true;
-            }
-        else
-            encoded.append (1, name[i]);
-        }
+        } else
+            encoded.append(1, name[i]);
+    }
 
     output.Assign(encoded.c_str());
     return wasEncoded;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECNameValidation::EncodeToValidName (Utf8StringCR name)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ECNameValidation::EncodeToValidName(Utf8StringCR name) {
     Utf8String encoded;
-    EncodeToValidName (encoded, name);
+    EncodeToValidName(encoded, name);
     return encoded;
-    }
+}
 
 //---------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
-bool ECValidatedName::SetValidName(Utf8CP name, bool decodeNameToDisplayLabel)
-    {
+bool ECValidatedName::SetValidName(Utf8CP name, bool decodeNameToDisplayLabel) {
     if (!ECNameValidation::IsValidName(name))
         return false;
 
@@ -196,110 +178,97 @@ bool ECValidatedName::SetValidName(Utf8CP name, bool decodeNameToDisplayLabel)
         m_hasExplicitDisplayLabel = ECNameValidation::DecodeFromValidName(m_displayLabel, m_name);
 
     return true;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECValidatedName::SetName (Utf8CP name)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void ECValidatedName::SetName(Utf8CP name) {
     // Note that this method can be called with an un-encoded name (e.g. called by users creating schemas dynamically),
     // or with an encoded name (e.g. when deserializing a schema from xml)
     // Hence we both encode and decode here
 
     // Encode the name
     m_name.clear();
-    ECNameValidation::EncodeToValidName (m_name, name);
+    ECNameValidation::EncodeToValidName(m_name, name);
 
     // If the display label has not been explicitly set, use the (decoded) property name
     if (!m_hasExplicitDisplayLabel)
-        ECNameValidation::DecodeFromValidName (m_displayLabel, m_name);
-    }
+        ECNameValidation::DecodeFromValidName(m_displayLabel, m_name);
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECValidatedName::SetDisplayLabel(Utf8CP label)
-    {
-    if (nullptr == label || '\0' == *label)
-        {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void ECValidatedName::SetDisplayLabel(Utf8CP label) {
+    if (nullptr == label || '\0' == *label) {
         m_hasExplicitDisplayLabel = false;
         m_displayLabel.clear();
-        }
-    else
-        {
+    } else {
         m_hasExplicitDisplayLabel = true;
         m_displayLabel = label;
-        }
     }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // ECSchemaCache
 /////////////////////////////////////////////////////////////////////////////////////////
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchema::~ECSchema ()
-    {
-    for (auto entry : m_classMap)
-        {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchema::~ECSchema() {
+    for (auto entry : m_classMap) {
         ECClassP ecClass = entry.second;
         //==========================================================
-        //Bug #23511: Publisher crash related to a NULL ECClass name
-        //We need to cleanup any derived class link in other schema.
-        //If schema fail later during loading it is possible that is
-        //had created derived class links in reference ECSchemas. Since
-        //This schema would be deleted we need to remove those dead links.
-        for(auto baseClass : ecClass->GetBaseClasses())
-            {
+        // Bug #23511: Publisher crash related to a NULL ECClass name
+        // We need to cleanup any derived class link in other schema.
+        // If schema fail later during loading it is possible that is
+        // had created derived class links in reference ECSchemas. Since
+        // This schema would be deleted we need to remove those dead links.
+        for (auto baseClass : ecClass->GetBaseClasses()) {
             if (&baseClass->GetSchema() != this)
                 baseClass->RemoveDerivedClass(*ecClass);
-            }
-        //==========================================================
         }
+        //==========================================================
+    }
 
-    ClassMap::iterator  classIterator = m_classMap.begin();
-    while (classIterator != m_classMap.end())
-        {
+    ClassMap::iterator classIterator = m_classMap.begin();
+    while (classIterator != m_classMap.end()) {
         ECClassP ecClass = classIterator->second;
         classIterator = m_classMap.erase(classIterator);
         delete ecClass;
-        }
-    BeAssert (m_classMap.empty());
+    }
+    BeAssert(m_classMap.empty());
 
-    for (auto entry : m_enumerationMap)
-        {
+    for (auto entry : m_enumerationMap) {
         ECEnumerationP ecEnumeration = entry.second;
         delete ecEnumeration;
-        }
+    }
 
     m_enumerationMap.clear();
     BeAssert(m_enumerationMap.empty());
 
-    for (auto entry : m_kindOfQuantityMap)
-        {
+    for (auto entry : m_kindOfQuantityMap) {
         auto kindOfQuantity = entry.second;
         delete kindOfQuantity;
-        }
+    }
 
     m_kindOfQuantityMap.clear();
     BeAssert(m_kindOfQuantityMap.empty());
 
-    for (auto entry : m_propertyCategoryMap)
-        {
+    for (auto entry : m_propertyCategoryMap) {
         auto propertyCategory = entry.second;
         delete propertyCategory;
-        }
+    }
 
     m_propertyCategoryMap.clear();
     BeAssert(m_propertyCategoryMap.empty());
 
-    for (auto entry : m_formatMap)
-        {
+    for (auto entry : m_formatMap) {
         auto format = entry.second;
         delete format;
-        }
+    }
     m_formatMap.clear();
     BeAssert(m_formatMap.empty());
 
@@ -308,61 +277,59 @@ ECSchema::~ECSchema ()
 
     m_refSchemaList.clear();
 
-    memset ((void*)this, 0xececdead, 4);// Replaced sizeof(this) with 4. There is value
-                                        // in trying to make this logic "correct" for a 64-bit build.
-                                        // This memset is clearly just intended to aid in debugging.
-                                        // Attempting to use this object with the high 4 bytes of the vtable
-                                        // pointer set to 0xececdead will crash just as reliably.
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::ResetId() { 
+    memset((void*)this, 0xececdead, 4);  // Replaced sizeof(this) with 4. There is value
+                                         // in trying to make this logic "correct" for a 64-bit build.
+                                         // This memset is clearly just intended to aid in debugging.
+                                         // Attempting to use this object with the high 4 bytes of the vtable
+                                         // pointer set to 0xececdead will crash just as reliably.
+}
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchema::ResetId() {
     BeMutexHolder holder(GetMutex());
-    for(auto v : GetClasses())
+    for (auto v : GetClasses())
         v->ResetId();
-    
+
     for (auto v : GetEnumerations())
         v->ResetId();
-    
-    for (auto v: GetPropertyCategories())
+
+    for (auto v : GetPropertyCategories())
         v->ResetId();
-    
+
     for (auto v : GetKindOfQuantities())
         v->ResetId();
-    
+
     for (auto v : GetUnitSystems())
         v->ResetId();
 
-    for (auto v :  GetUnits())
+    for (auto v : GetUnits())
         v->ResetId();
 
     for (auto v : GetPhenomena())
         v->ResetId();
-    
+
     for (auto v : GetFormats())
         v->ResetId();
-    
-    m_ecSchemaId.Invalidate(); 
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::SetErrorHandling (bool showMessages, bool doAssert)
-    {
+
+    m_ecSchemaId.Invalidate();
+}
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchema::SetErrorHandling(bool showMessages, bool doAssert) {
     s_noAssert = !doAssert;
     ECClass::SetErrorHandling(doAssert);
     SchemaXmlReader::SetErrorHandling(doAssert);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetName (Utf8StringCR name)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::SetName(Utf8StringCR name) {
     if (m_immutable)
         return ECObjectsStatus::SchemaIsImmutable;
-    else if (!ECNameValidation::IsValidName (name.c_str()))
+    else if (!ECNameValidation::IsValidName(name.c_str()))
         return ECObjectsStatus::InvalidName;
 
     m_key.SetName(name);
@@ -371,14 +338,14 @@ ECObjectsStatus ECSchema::SetName (Utf8StringCR name)
         m_hasExplicitDisplayLabel = ECNameValidation::DecodeFromValidName(m_displayLabel, m_key.GetName());
 
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetAlias (Utf8StringCR alias)
-    {
-    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::SetAlias(Utf8StringCR alias) {
+    if (m_immutable)
+        return ECObjectsStatus::SchemaIsImmutable;
 
     else if (Utf8String::IsNullOrEmpty(alias.c_str()))
         return ECObjectsStatus::InvalidName;
@@ -389,109 +356,101 @@ ECObjectsStatus ECSchema::SetAlias (Utf8StringCR alias)
     ECNameValidation::EncodeToValidName(m_alias, alias);
 
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetDescription (Utf8StringCR description)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::SetDescription(Utf8StringCR description) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     m_description = description;
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECSchema::GetDescription() const
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR ECSchema::GetDescription() const {
     return m_description;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetDisplayLabel (Utf8StringCR displayLabel)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::SetDisplayLabel(Utf8StringCR displayLabel) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     m_displayLabel = displayLabel;
     m_hasExplicitDisplayLabel = true;
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECSchema::GetDisplayLabel() const
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR ECSchema::GetDisplayLabel() const {
     return GetInvariantDisplayLabel();
-    }
+}
 
 static Utf8CP s_standardSchemaNames[] =
     {
-    "Bentley_Standard_CustomAttributes",
-    "Bentley_Standard_Classes",
-    "Bentley_ECSchemaMap",
-    "EditorCustomAttributes",
-    "Bentley_Common_Classes",
-    "Dimension_Schema",
-    "iip_mdb_customAttributes",
-    "KindOfQuantity_Schema",
-    "rdl_customAttributes",
-    "SIUnitSystemDefaults",
-    "Unit_Attributes",
-    "Units_Schema",
-    "USCustomaryUnitSystemDefaults",
-    "ECDbMap",
-    "CoreCustomAttributes", // New EC3 Standard Schema
-    "SchemaLocalizationCustomAttributes", // New EC3 Standard Schema
-    "Units", // New EC3 Standard Schema
-    "Formats" // New EC3 Standard Schema
-    };
+        "Bentley_Standard_CustomAttributes",
+        "Bentley_Standard_Classes",
+        "Bentley_ECSchemaMap",
+        "EditorCustomAttributes",
+        "Bentley_Common_Classes",
+        "Dimension_Schema",
+        "iip_mdb_customAttributes",
+        "KindOfQuantity_Schema",
+        "rdl_customAttributes",
+        "SIUnitSystemDefaults",
+        "Unit_Attributes",
+        "Units_Schema",
+        "USCustomaryUnitSystemDefaults",
+        "ECDbMap",
+        "CoreCustomAttributes",                // New EC3 Standard Schema
+        "SchemaLocalizationCustomAttributes",  // New EC3 Standard Schema
+        "Units",                               // New EC3 Standard Schema
+        "Formats"                              // New EC3 Standard Schema
+};
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsStandardSchema(Utf8StringCR schemaName)
-    {
-    for (Utf8CP* cur = s_standardSchemaNames, *end = cur + _countof(s_standardSchemaNames); cur < end; ++cur)
-        if (schemaName.Equals (*cur))
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::IsStandardSchema(Utf8StringCR schemaName) {
+    for (Utf8CP *cur = s_standardSchemaNames, *end = cur + _countof(s_standardSchemaNames); cur < end; ++cur)
+        if (schemaName.Equals(*cur))
             return true;
 
     return false;
-    }
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsStandardSchema () const
-    {
+}
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::IsStandardSchema() const {
     return IsStandardSchema(m_key.GetName());
-    }
+}
 
 static Utf8CP s_originalStandardSchemaFullNames[] =
     {
-    "Bentley_Standard_CustomAttributes.01.00.00",
-    "Bentley_Standard_Classes.01.00.00",
-    "EditorCustomAttributes.01.00.00",
-    "Bentley_Common_Classes.01.00.00",
-    "Dimension_Schema.01.00.00",
-    "iip_mdb_customAttributes.01.00.00",
-    "KindOfQuantity_Schema.01.00.00",
-    "rdl_customAttributes.01.00.00",
-    "SIUnitSystemDefaults.01.00.00",
-    "Unit_Attributes.01.00.00",
-    "Units_Schema.01.00.00",
-    "USCustomaryUnitSystemDefaults.01.00.00"
-    };
+        "Bentley_Standard_CustomAttributes.01.00.00",
+        "Bentley_Standard_Classes.01.00.00",
+        "EditorCustomAttributes.01.00.00",
+        "Bentley_Common_Classes.01.00.00",
+        "Dimension_Schema.01.00.00",
+        "iip_mdb_customAttributes.01.00.00",
+        "KindOfQuantity_Schema.01.00.00",
+        "rdl_customAttributes.01.00.00",
+        "SIUnitSystemDefaults.01.00.00",
+        "Unit_Attributes.01.00.00",
+        "Units_Schema.01.00.00",
+        "USCustomaryUnitSystemDefaults.01.00.00"};
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsSamePrimarySchema (ECSchemaR primarySchema) const
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::IsSamePrimarySchema(ECSchemaR primarySchema) const {
     if (0 != BeStringUtilities::StricmpAscii(this->GetAlias().c_str(), primarySchema.GetAlias().c_str()))
         return false;
 
@@ -499,25 +458,23 @@ bool ECSchema::IsSamePrimarySchema (ECSchemaR primarySchema) const
         return false;
 
     return (GetClassCount() == primarySchema.GetClassCount());
-    }
+}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECSchema::IsSupplementalSchema () const
-    {
+bool ECSchema::IsSupplementalSchema() const {
     SupplementalSchemaMetaDataPtr suppMetaData = nullptr;
     return SupplementalSchemaMetaData::TryGetFromSchema(suppMetaData, *this);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::ShouldNotBeStored (SchemaKeyCR key)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::ShouldNotBeStored(SchemaKeyCR key) {
     Utf8String schemaName = key.GetFullSchemaName();
-    for (Utf8CP* cur = s_originalStandardSchemaFullNames, *end = cur + _countof(s_originalStandardSchemaFullNames); cur < end; ++cur)
-        if (schemaName.Equals (*cur))
+    for (Utf8CP *cur = s_originalStandardSchemaFullNames, *end = cur + _countof(s_originalStandardSchemaFullNames); cur < end; ++cur)
+        if (schemaName.Equals(*cur))
             return true;
 
     // We don't want to import any version of the Units_Schema
@@ -525,27 +482,25 @@ bool ECSchema::ShouldNotBeStored (SchemaKeyCR key)
         return true;
 
     return false;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetVersionRead (const uint32_t versionRead)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::SetVersionRead(const uint32_t versionRead) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     if (versionRead > 999 || versionRead < 0)
         return ECObjectsStatus::InvalidECVersion;
-    
+
     m_key.SetVersionRead(versionRead);
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetVersionWrite (const uint32_t value)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::SetVersionWrite(const uint32_t value) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     if (value > 999 || value < 0)
@@ -553,13 +508,12 @@ ECObjectsStatus ECSchema::SetVersionWrite (const uint32_t value)
 
     m_key.SetVersionWrite(value);
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetVersionMinor (const uint32_t versionMinor)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::SetVersionMinor(const uint32_t versionMinor) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     if (versionMinor > 9999999 || versionMinor < 0)
@@ -567,22 +521,20 @@ ECObjectsStatus ECSchema::SetVersionMinor (const uint32_t versionMinor)
 
     m_key.SetVersionMinor(versionMinor);
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::SetImmutable()
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchema::SetImmutable() {
     BeAssert(!m_immutable);
     m_immutable = true;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CreateECVersion(ECVersion &ecVersion, uint32_t ecMajorVersion, uint32_t ecMinorVersion)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CreateECVersion(ECVersion& ecVersion, uint32_t ecMajorVersion, uint32_t ecMinorVersion) {
     if (ecMajorVersion == 2 && ecMinorVersion == 0)
         ecVersion = ECVersion::V2_0;
     else if (ecMajorVersion == 3 && ecMinorVersion == 0)
@@ -595,38 +547,34 @@ ECObjectsStatus ECSchema::CreateECVersion(ECVersion &ecVersion, uint32_t ecMajor
         return ECObjectsStatus::InvalidECVersion;
 
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECVersion ECSchema::ECVersionToWrite(uint32_t ecMajorVersion, uint32_t ecMinorVersion)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECVersion ECSchema::ECVersionToWrite(uint32_t ecMajorVersion, uint32_t ecMinorVersion) {
     ECVersion ecVersion;
     auto const ecVersionStatus = ECSchema::CreateECVersion(ecVersion, ecMajorVersion, ecMinorVersion);
     if (ecVersion <= ECVersion::V3_0 || ECObjectsStatus::Success != ecVersionStatus)
         ecVersion = ECVersion::Latest;
     return ecVersion;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::ParseECVersion(uint32_t &ecVersionMajor, uint32_t &ecVersionMinor, ECVersion ecVersion)
-    {
-    ecVersionMajor = (uint32_t) ((uint32_t) ecVersion >> 16);
-    ecVersionMinor = (uint32_t) (0xFFFF & (uint32_t) ecVersion);
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::ParseECVersion(uint32_t& ecVersionMajor, uint32_t& ecVersionMinor, ECVersion ecVersion) {
+    ecVersionMajor = (uint32_t)((uint32_t)ecVersion >> 16);
+    ecVersionMinor = (uint32_t)(0xFFFF & (uint32_t)ecVersion);
 
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ECSchema::GetECVersionString(ECVersion ecVersion)
-    {
-    switch (ecVersion)
-        {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP ECSchema::GetECVersionString(ECVersion ecVersion) {
+    switch (ecVersion) {
         case ECVersion::V2_0:
             return "2.0";
         case ECVersion::V3_0:
@@ -635,463 +583,407 @@ Utf8CP ECSchema::GetECVersionString(ECVersion ecVersion)
             return "3.1";
         case ECVersion::V3_2:
             return "3.2";
-        }
-    return nullptr;
     }
+    return nullptr;
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::Validate(bool resolveIssues)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::Validate(bool resolveIssues) {
     // Need to skip validation for supplemental schemas since they are not required to have fully defined relationships
     if (Utf8String::npos != GetName().find("_Supplemental_"))
         return true;
 
     bool isValid = true;
-    for (ECClassP ecClass : GetClasses())
-        {
+    for (ECClassP ecClass : GetClasses()) {
         ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
-        if (relClass != nullptr)
-            {
+        if (relClass != nullptr) {
             if (!relClass->Verify(resolveIssues))
                 isValid = false;
 
             continue;
-            }
+        }
 
         if (!ecClass->Validate())
             isValid = false;
-        }
+    }
 
-    for (KindOfQuantityCP koq : GetKindOfQuantities())
-        {
+    for (KindOfQuantityCP koq : GetKindOfQuantities()) {
         if (!koq->Verify())
             isValid = false;
-        }
+    }
 
     // Workaround:  This evaluate makes sure that each UnitSymbol is evaluated immediately after deserialization happens.  Otherwise, it could happen whenever
     // a call to do a conversion happens.  This could lead to a threading issue...
-    for (auto const& unit : GetUnits())
-        {
+    for (auto const& unit : GetUnits()) {
         unit->Evaluate();
-        }
+    }
 
-    for (auto const& phen : GetPhenomena())
-        {
+    for (auto const& phen : GetPhenomena()) {
         phen->Evaluate();
-        }
+    }
 
-    if (OriginalECXmlVersionLessThan(ECVersion::V3_1) && resolveIssues && ECClass::SchemaAllowsOverridingArrays(this))
-        {
-        for (ECClassP ecClass : GetClasses())
-            {
+    if (OriginalECXmlVersionLessThan(ECVersion::V3_1) && resolveIssues && ECClass::SchemaAllowsOverridingArrays(this)) {
+        for (ECClassP ecClass : GetClasses()) {
             ECObjectsStatus status = ecClass->FixArrayPropertyOverrides();
-            if (ECObjectsStatus::Success != status)
-                {
+            if (ECObjectsStatus::Success != status) {
                 LOG.errorv("Failed to fix array property overrides for properties of class '%s'", ecClass->GetFullName());
                 return false;
-                }
             }
         }
+    }
 
-    if (!isValid)
-        {
+    if (!isValid) {
         // If the validation fails and the schema is read from an ECXML 3.1 or greater, fail to validate.
-        if (OriginalECXmlVersionAtLeast(ECVersion::V3_1))
-            {
+        if (OriginalECXmlVersionAtLeast(ECVersion::V3_1)) {
             Utf8String schemaFullName = GetFullSchemaName();
             LOG.errorv("Schema validation failed for schema '%s'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.",
                        schemaFullName.c_str());
             return false;
-            }
+        }
 
-        if (!IsECVersion(ECVersion::V3_0))
-            {
+        if (!IsECVersion(ECVersion::V3_0)) {
             LOG.warningv("ECSchemaXML for %s did not pass ECXml 3.1 validation, being downgraded to ECXml 3.0", GetName().c_str());
 
             // Failed to validate for a 3.1 schema. Downgraded to a 3.0 schema in memory.
             m_ecVersion = ECVersion::V3_0;
-            }
-        else
+        } else
             LOG.warningv("ECSchema did not pass EC3.1 validation.");
-        }
-    else
+    } else
         m_ecVersion = ECVersion::Latest;
 
     return true;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::DebugDump()const
-    {
-    printf("ECSchema: this=0x%" PRIx64 "  %s, nClasses=%d\n", (uint64_t)this, m_key.GetFullSchemaName().c_str(), (int) m_classMap.size());
-    for (ClassMap::const_iterator it = m_classMap.begin(); it != m_classMap.end(); ++it)
-        {
-        bpair<Utf8CP, ECClassP>const& entry = *it;
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchema::DebugDump() const {
+    printf("ECSchema: this=0x%" PRIx64 "  %s, nClasses=%d\n", (uint64_t)this, m_key.GetFullSchemaName().c_str(), (int)m_classMap.size());
+    for (ClassMap::const_iterator it = m_classMap.begin(); it != m_classMap.end(); ++it) {
+        bpair<Utf8CP, ECClassP> const& entry = *it;
         ECClassCP ecClass = entry.second;
         printf("    ECClass: 0x%" PRIx64 ", %s\n", (uint64_t)ecClass, ecClass->GetName().c_str());
-        }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::RenameClass (ECClassR ecClass, Utf8CP newName)
-    {
-    ClassMap::iterator iter = m_classMap.find (ecClass.GetName().c_str());
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::RenameClass(ECClassR ecClass, Utf8CP newName) {
+    ClassMap::iterator iter = m_classMap.find(ecClass.GetName().c_str());
     if (iter == m_classMap.end() || iter->second != &ecClass)
         return ECObjectsStatus::ClassNotFound;
 
     ECClassP pClass = &ecClass;
-    m_classMap.erase (iter);
-    ECObjectsStatus renameStatus = ecClass.SetName (newName);
-    ECObjectsStatus addStatus = AddClass (pClass);
+    m_classMap.erase(iter);
+    ECObjectsStatus renameStatus = ecClass.SetName(newName);
+    ECObjectsStatus addStatus = AddClass(pClass);
     return ECObjectsStatus::Success != renameStatus ? renameStatus : addStatus;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8String ECSchema::FindUniqueSchemaItemName (Utf8CP startingName) const
-    {
-    //TODO: Rewire this to SchemaConflictHelper::FindUniqueSchemaItemName at some point.
+Utf8String ECSchema::FindUniqueSchemaItemName(Utf8CP startingName) const {
+    // TODO: Rewire this to SchemaConflictHelper::FindUniqueSchemaItemName at some point.
     if (!NamedElementExists(startingName))
         return startingName;
-    
-    Utf8PrintfString newName ("%s_", startingName);
-    while(NamedElementExists(newName.c_str()))
-        {
-        newName.append("_");
-        }
-    return newName;
-    }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddClass(ECClassP pClass, bool resolveConflicts)
-    {
+    Utf8PrintfString newName("%s_", startingName);
+    while (NamedElementExists(newName.c_str())) {
+        newName.append("_");
+    }
+    return newName;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::AddClass(ECClassP pClass, bool resolveConflicts) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    if (NamedElementExists(pClass->GetName().c_str()))
-        {
-        if (!resolveConflicts)
-            {
+    if (NamedElementExists(pClass->GetName().c_str())) {
+        if (!resolveConflicts) {
             LOG.errorv("Cannot create class '%s' because a named element the same identifier already exists in the schema",
                        pClass->GetName().c_str());
 
             return ECObjectsStatus::NamedItemAlreadyExists;
-            }
+        }
 
         Utf8String uniqueName = FindUniqueSchemaItemName(pClass->GetName().c_str());
         pClass->SetName(uniqueName);
         return AddClass(pClass, resolveConflicts);
-        }
+    }
 
-    if (false == m_classMap.insert(bpair<Utf8CP, ECClassP>(pClass->GetName().c_str(), pClass)).second)
-        {
+    if (false == m_classMap.insert(bpair<Utf8CP, ECClassP>(pClass->GetName().c_str(), pClass)).second) {
         LOG.errorv("There was a problem adding class '%s' to the schema",
                    pClass->GetName().c_str());
 
         return ECObjectsStatus::Error;
-        }
+    }
 
     if (m_serializationOrder.GetPreserveElementOrder())
         m_serializationOrder.AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
 
-    //DebugDump(); wprintf(L"\n");
+    // DebugDump(); wprintf(L"\n");
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CreateEntityClass (ECEntityClassP& pClass, Utf8StringCR name)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CreateEntityClass(ECEntityClassP& pClass, Utf8StringCR name) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     pClass = new ECEntityClass(*this);
-    ECObjectsStatus status = pClass->SetName (name);
-    if (ECObjectsStatus::Success != status)
-        {
+    ECObjectsStatus status = pClass->SetName(name);
+    if (ECObjectsStatus::Success != status) {
         delete pClass;
         pClass = nullptr;
         return status;
-        }
+    }
 
-    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
-        {
+    if (ECObjectsStatus::Success != (status = AddClass(pClass))) {
         delete pClass;
         pClass = nullptr;
-        }
+    }
 
     return status;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CreateMixinClass (ECEntityClassP& pClass, Utf8StringCR name, ECEntityClassCR appliesTo, ECSchemaReadContextR schemaContext)
-    {
+ECObjectsStatus ECSchema::CreateMixinClass(ECEntityClassP& pClass, Utf8StringCR name, ECEntityClassCR appliesTo, ECSchemaReadContextR schemaContext) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     pClass = new ECEntityClass(*this);
-    ECObjectsStatus status = pClass->SetName (name);
-    if (ECObjectsStatus::Success != status)
-        {
+    ECObjectsStatus status = pClass->SetName(name);
+    if (ECObjectsStatus::Success != status) {
         delete pClass;
         pClass = nullptr;
         return status;
-        }
+    }
 
     pClass->SetClassModifier(ECClassModifier::Abstract);
 
     IECInstancePtr mixinInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance(schemaContext, "IsMixin");
-    if (!mixinInstance.IsValid())
-        {
+    if (!mixinInstance.IsValid()) {
         delete pClass;
         pClass = nullptr;
         return ECObjectsStatus::UnableToSetMixinCustomAttribute;
-        }
+    }
 
     auto& coreCA = mixinInstance->GetClass().GetSchema();
     if (!ECSchema::IsSchemaReferenced(*this, coreCA))
         this->AddReferencedSchema(const_cast<ECSchemaR>(coreCA));
 
     auto& appliesToClassSchema = appliesTo.GetSchema();
-    if ((this != &appliesToClassSchema) && !ECSchema::IsSchemaReferenced(*this, appliesToClassSchema))
-        {
+    if ((this != &appliesToClassSchema) && !ECSchema::IsSchemaReferenced(*this, appliesToClassSchema)) {
         status = this->AddReferencedSchema(const_cast<ECSchemaR>(appliesToClassSchema));
-        if (ECObjectsStatus::Success != status)
-            {
+        if (ECObjectsStatus::Success != status) {
             delete pClass;
             pClass = nullptr;
             return status;
-            }
         }
+    }
 
     ECValue appliesToClass(ECClass::GetQualifiedClassName(*this, appliesTo).c_str());
     status = mixinInstance->SetValue("AppliesToEntityClass", appliesToClass);
 
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         delete pClass;
         pClass = nullptr;
         return status;
-        }
+    }
 
-    if (ECObjectsStatus::Success != pClass->SetCustomAttribute(*mixinInstance))
-        {
+    if (ECObjectsStatus::Success != pClass->SetCustomAttribute(*mixinInstance)) {
         delete pClass;
         pClass = nullptr;
         return status;
-        }
+    }
 
-    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
-        {
+    if (ECObjectsStatus::Success != (status = AddClass(pClass))) {
         delete pClass;
         pClass = nullptr;
-        }
+    }
 
     return status;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CreateStructClass (ECStructClassP& pClass, Utf8StringCR name)
-    {
+ECObjectsStatus ECSchema::CreateStructClass(ECStructClassP& pClass, Utf8StringCR name) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     pClass = new ECStructClass(*this);
-    ECObjectsStatus status = pClass->SetName (name);
-    if (ECObjectsStatus::Success != status)
-        {
+    ECObjectsStatus status = pClass->SetName(name);
+    if (ECObjectsStatus::Success != status) {
         delete pClass;
         pClass = nullptr;
         return status;
-        }
+    }
 
-    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
-        {
+    if (ECObjectsStatus::Success != (status = AddClass(pClass))) {
         delete pClass;
         pClass = nullptr;
-        }
+    }
 
     return status;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CreateCustomAttributeClass (ECCustomAttributeClassP& pClass, Utf8StringCR name)
-    {
+ECObjectsStatus ECSchema::CreateCustomAttributeClass(ECCustomAttributeClassP& pClass, Utf8StringCR name) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     pClass = new ECCustomAttributeClass(*this);
-    ECObjectsStatus status = pClass->SetName (name);
-    if (ECObjectsStatus::Success != status)
-        {
+    ECObjectsStatus status = pClass->SetName(name);
+    if (ECObjectsStatus::Success != status) {
         delete pClass;
         pClass = nullptr;
         return status;
-        }
-
-    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
-        {
-        delete pClass;
-        pClass = nullptr;
-        }
-
-    return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass, Utf8StringCR name, bool verify)
-    {
+    if (ECObjectsStatus::Success != (status = AddClass(pClass))) {
+        delete pClass;
+        pClass = nullptr;
+    }
+
+    return status;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CreateRelationshipClass(ECRelationshipClassP& pClass, Utf8StringCR name, bool verify) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     pClass = new ECRelationshipClass(*this, verify);
-    ECObjectsStatus status = pClass->SetName (name);
-    if (ECObjectsStatus::Success != status)
-        {
+    ECObjectsStatus status = pClass->SetName(name);
+    if (ECObjectsStatus::Success != status) {
         delete pClass;
         pClass = nullptr;
         return status;
-        }
+    }
 
-    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
-        {
+    if (ECObjectsStatus::Success != (status = AddClass(pClass))) {
         delete pClass;
         pClass = nullptr;
         return status;
-        }
+    }
 
     return ECObjectsStatus::Success;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CreateRelationshipClass(ECRelationshipClassP& relationshipClass, Utf8StringCR name, ECEntityClassCR source, Utf8CP sourceRoleLabel, ECEntityClassCR target, Utf8CP targetRoleLabel)
-    {
+ECObjectsStatus ECSchema::CreateRelationshipClass(ECRelationshipClassP& relationshipClass, Utf8StringCR name, ECEntityClassCR source, Utf8CP sourceRoleLabel, ECEntityClassCR target, Utf8CP targetRoleLabel) {
     ECObjectsStatus status = CreateRelationshipClass(relationshipClass, name);
     if (ECObjectsStatus::Success != status)
         return status;
 
     status = relationshipClass->GetSource().AddClass(source);
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         delete relationshipClass;
         relationshipClass = nullptr;
         return status;
-        }
-
-    status = relationshipClass->GetSource().SetRoleLabel(sourceRoleLabel);
-    if (ECObjectsStatus::Success != status)
-        {
-        delete relationshipClass;
-        relationshipClass = nullptr;
-        return status;
-        }
-
-    status = relationshipClass->GetTarget().AddClass(target);
-    if (ECObjectsStatus::Success != status)
-        {
-        delete relationshipClass;
-        relationshipClass = nullptr;
-        return status;
-        }
-
-    status = relationshipClass->GetTarget().SetRoleLabel(targetRoleLabel);
-    if (ECObjectsStatus::Success != status)
-        {
-        delete relationshipClass;
-        relationshipClass = nullptr;
-        return status;
-        }
-
-    return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CreateEnumeration(ECEnumerationP & ecEnumeration, Utf8CP name, PrimitiveType type)
-    {
+    status = relationshipClass->GetSource().SetRoleLabel(sourceRoleLabel);
+    if (ECObjectsStatus::Success != status) {
+        delete relationshipClass;
+        relationshipClass = nullptr;
+        return status;
+    }
+
+    status = relationshipClass->GetTarget().AddClass(target);
+    if (ECObjectsStatus::Success != status) {
+        delete relationshipClass;
+        relationshipClass = nullptr;
+        return status;
+    }
+
+    status = relationshipClass->GetTarget().SetRoleLabel(targetRoleLabel);
+    if (ECObjectsStatus::Success != status) {
+        delete relationshipClass;
+        relationshipClass = nullptr;
+        return status;
+    }
+
+    return ECObjectsStatus::Success;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CreateEnumeration(ECEnumerationP& ecEnumeration, Utf8CP name, PrimitiveType type) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     ecEnumeration = new ECEnumeration(*this);
     ecEnumeration->SetName(name);
 
     auto status = ecEnumeration->SetType(type);
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         delete ecEnumeration;
         ecEnumeration = nullptr;
         return status;
-        }
-
-    status = AddSchemaChildToMap<ECEnumeration, EnumerationMap>(ecEnumeration, &m_enumerationMap, ECSchemaElementType::ECEnumeration);
-    if (ECObjectsStatus::Success != status)
-        {
-        delete ecEnumeration;
-        ecEnumeration = nullptr;
-        }
-
-    return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CreateKindOfQuantity(KindOfQuantityP& kindOfQuantity, Utf8CP name)
-    {
+    status = AddSchemaChildToMap<ECEnumeration, EnumerationMap>(ecEnumeration, &m_enumerationMap, ECSchemaElementType::ECEnumeration);
+    if (ECObjectsStatus::Success != status) {
+        delete ecEnumeration;
+        ecEnumeration = nullptr;
+    }
+
+    return status;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CreateKindOfQuantity(KindOfQuantityP& kindOfQuantity, Utf8CP name) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     kindOfQuantity = new KindOfQuantity(*this);
     kindOfQuantity->SetName(name);
 
     auto status = AddSchemaChildToMap<KindOfQuantity, KindOfQuantityMap>(kindOfQuantity, &m_kindOfQuantityMap, ECSchemaElementType::KindOfQuantity);
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         delete kindOfQuantity;
         kindOfQuantity = nullptr;
-        }
+    }
 
     return status;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CreatePropertyCategory(PropertyCategoryP& propertyCategory, Utf8CP name, bool logError)
-    {
+ECObjectsStatus ECSchema::CreatePropertyCategory(PropertyCategoryP& propertyCategory, Utf8CP name, bool logError) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     propertyCategory = new PropertyCategory(*this);
     propertyCategory->SetName(name);
 
     auto status = AddSchemaChildToMap<PropertyCategory, PropertyCategoryMap>(propertyCategory, &m_propertyCategoryMap, ECSchemaElementType::PropertyCategory, logError);
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         delete propertyCategory;
         propertyCategory = nullptr;
-        }
+    }
 
     return status;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf8CP displayLabel, Utf8CP description)
-    {
+ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf8CP displayLabel, Utf8CP description) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     system = new UnitSystem(*this, name);
@@ -1103,38 +995,34 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
     if (nullptr != displayLabel)
         status = system->SetDisplayLabel(displayLabel);
 
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         delete system;
         system = nullptr;
         return status;
-        }
+    }
 
     if (nullptr != description)
         status = system->SetDescription(description);
 
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         delete system;
         system = nullptr;
         return status;
-        }
+    }
 
     status = AddUnitType<UnitSystem>(system, ECSchemaElementType::UnitSystem);
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         delete system;
         system = nullptr;
-        }
+    }
 
     return status;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name, Utf8CP definition, Utf8CP displayLabel, Utf8CP description)
-    {
+ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name, Utf8CP definition, Utf8CP displayLabel, Utf8CP description) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     phenomenon = new Phenomenon(*this, name, definition);
@@ -1144,53 +1032,47 @@ ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name,
     if (nullptr != displayLabel)
         status = phenomenon->SetDisplayLabel(displayLabel);
 
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         delete phenomenon;
         phenomenon = nullptr;
         return status;
-        }
+    }
 
     if (nullptr != description)
         status = phenomenon->SetDescription(description);
 
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         delete phenomenon;
         phenomenon = nullptr;
         return status;
-        }
+    }
 
     status = AddUnitType<Phenomenon>(phenomenon, ECSchemaElementType::Phenomenon);
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         delete phenomenon;
         phenomenon = nullptr;
-        }
+    }
 
     return status;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Nullable<double> numerator, Nullable<double> denominator, Nullable<double> offset, Utf8CP label, Utf8CP description)
-    {
+ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Nullable<double> numerator, Nullable<double> denominator, Nullable<double> offset, Utf8CP label, Utf8CP description) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     const auto* phenomSchema = &phenom.GetSchema();
-    if ((this != phenomSchema) && !ECSchema::IsSchemaReferenced(*this, *phenomSchema))
-        {
+    if ((this != phenomSchema) && !ECSchema::IsSchemaReferenced(*this, *phenomSchema)) {
         LOG.errorv("Phenomenon %s with schema %s is not in this or any schema referenced by schema %s", phenom.GetName().c_str(), phenomSchema->GetName().c_str(), this->GetName().c_str());
         return ECObjectsStatus::SchemaNotFound;
-        }
+    }
 
     const auto* systemSchema = &unitSystem.GetSchema();
-    if ((this != systemSchema) && !ECSchema::IsSchemaReferenced(*this, *systemSchema))
-        {
+    if ((this != systemSchema) && !ECSchema::IsSchemaReferenced(*this, *systemSchema)) {
         LOG.errorv("UnitSystem %s with schema %s is not in this or any schema referenced by schema %s", unitSystem.GetName().c_str(), systemSchema->GetName().c_str(), this->GetName().c_str());
         return ECObjectsStatus::SchemaNotFound;
-        }
+    }
 
     unit = new ECUnit(*this, name);
     unit->SetSystem(unitSystem);
@@ -1208,161 +1090,139 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
         unit->SetOffset(offset.Value());
 
     ECObjectsStatus status = ECObjectsStatus::Success;
-    const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto)
-        {
-        if (ECObjectsStatus::Success != status)
-            {
+    const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto) {
+        if (ECObjectsStatus::Success != status) {
             delete unit;
             unit = nullptr;
-            }
-        };
+        }
+    };
 
-    if(nullptr != label)
-        {
+    if (nullptr != label) {
         unit->SetDisplayLabel(label);
         cleanupIfNecessary();
-        }
-    if(nullptr != description)
-        {
+    }
+    if (nullptr != description) {
         status = unit->SetDescription(description);
         cleanupIfNecessary();
-        if(status != ECObjectsStatus::Success) return status;
-        }
+        if (status != ECObjectsStatus::Success) return status;
+    }
 
     status = AddUnitType<ECUnit>(unit, ECSchemaElementType::Unit);
     cleanupIfNecessary();
-    if(status != ECObjectsStatus::Success) return status;
+    if (status != ECObjectsStatus::Success) return status;
 
     return status;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf8CP name, UnitSystemCR unitSystem, Utf8CP label, Utf8CP description)
-    {
+ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf8CP name, UnitSystemCR unitSystem, Utf8CP label, Utf8CP description) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     ECObjectsStatus status = ECObjectsStatus::Success;
-    const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto)
-        {
-        if (ECObjectsStatus::Success != status)
-            {
+    const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto) {
+        if (ECObjectsStatus::Success != status) {
             delete unit;
             unit = nullptr;
-            }
-        };
+        }
+    };
 
     const auto* systemSchema = &unitSystem.GetSchema();
     const auto* parentSchema = &parent.GetSchema();
 
-    if ((this != systemSchema) && !ECSchema::IsSchemaReferenced(*this, *systemSchema))
-        {
+    if ((this != systemSchema) && !ECSchema::IsSchemaReferenced(*this, *systemSchema)) {
         LOG.errorv("UnitSystem %s with schema %s is not in this or any schema referenced by schema %s", unitSystem.GetName().c_str(), systemSchema->GetName().c_str(), this->GetName().c_str());
         return ECObjectsStatus::SchemaNotFound;
-        }
-    if ((this != parentSchema) && !ECSchema::IsSchemaReferenced(*this, *parentSchema))
-        {
+    }
+    if ((this != parentSchema) && !ECSchema::IsSchemaReferenced(*this, *parentSchema)) {
         LOG.errorv("Unit %s with schema %s is not in this or any schema referenced by schema %s", parent.GetName().c_str(), parentSchema->GetName().c_str(), this->GetName().c_str());
         return ECObjectsStatus::SchemaNotFound;
-        }
+    }
 
-    unit =  new ECUnit(*this, parent, unitSystem, name);
+    unit = new ECUnit(*this, parent, unitSystem, name);
 
-    if (nullptr != label)
-        {
+    if (nullptr != label) {
         unit->SetDisplayLabel(label);
         cleanupIfNecessary();
-        }
+    }
 
-    if (nullptr != description)
-        {
+    if (nullptr != description) {
         status = unit->SetDescription(description);
         cleanupIfNecessary();
-        if(status != ECObjectsStatus::Success) return status;
-        }
+        if (status != ECObjectsStatus::Success) return status;
+    }
 
     status = AddUnitType<ECUnit>(unit, ECSchemaElementType::InvertedUnit);
     cleanupIfNecessary();
-    if(status != ECObjectsStatus::Success) return status;
+    if (status != ECObjectsStatus::Success) return status;
 
     return status;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, double numerator, Nullable<double> denominator, Utf8CP label, Utf8CP description)
-    {
+ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, double numerator, Nullable<double> denominator, Utf8CP label, Utf8CP description) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     ECObjectsStatus status = ECObjectsStatus::Success;
-    const auto cleanupIfNecessary = [&constant, &status]() -> decltype(auto)
-        {
-        if (ECObjectsStatus::Success != status)
-            {
+    const auto cleanupIfNecessary = [&constant, &status]() -> decltype(auto) {
+        if (ECObjectsStatus::Success != status) {
             delete constant;
             constant = nullptr;
-            }
-        };
+        }
+    };
 
     const auto* phenomSchema = &phenom.GetSchema();
-    if ((this != phenomSchema) && !ECSchema::IsSchemaReferenced(*this, *phenomSchema))
-        {
+    if ((this != phenomSchema) && !ECSchema::IsSchemaReferenced(*this, *phenomSchema)) {
         LOG.errorv("Phenomenon %s with schema %s is not in this or any schema referenced by schema %s", phenom.GetName().c_str(), phenomSchema->GetName().c_str(), this->GetName().c_str());
         return ECObjectsStatus::SchemaNotFound;
-        }
+    }
 
     constant = new ECUnit(*this, phenom, name, definition, numerator, denominator);
 
-    if (nullptr != label)
-        {
+    if (nullptr != label) {
         constant->SetDisplayLabel(label);
         cleanupIfNecessary();
-        }
+    }
 
-    if (nullptr != description)
-        {
+    if (nullptr != description) {
         status = constant->SetDescription(description);
         cleanupIfNecessary();
-        if(status != ECObjectsStatus::Success) return status;
-        }
+        if (status != ECObjectsStatus::Success) return status;
+    }
     status = AddUnitType<ECUnit>(constant, ECSchemaElementType::Constant);
     cleanupIfNecessary();
-    if(status != ECObjectsStatus::Success) return status;
+    if (status != ECObjectsStatus::Success) return status;
 
     return status;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CreateFormat(ECFormatP& unitFormat, Utf8CP name, Utf8CP displayLabel, Utf8CP description, Formatting::NumericFormatSpecCP nfs, Formatting::CompositeValueSpecCP composite)
-    {
+ECObjectsStatus ECSchema::CreateFormat(ECFormatP& unitFormat, Utf8CP name, Utf8CP displayLabel, Utf8CP description, Formatting::NumericFormatSpecCP nfs, Formatting::CompositeValueSpecCP composite) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     unitFormat = new ECFormat(*this, name);
-    if (displayLabel != nullptr)
-        {
+    if (displayLabel != nullptr) {
         ECObjectsStatus status = unitFormat->SetDisplayLabel(displayLabel);
-        if (ECObjectsStatus::Success != status)
-            {
+        if (ECObjectsStatus::Success != status) {
             delete unitFormat;
             unitFormat = nullptr;
             return status;
-            }
         }
+    }
 
-    if (description != nullptr)
-        {
+    if (description != nullptr) {
         ECObjectsStatus status = unitFormat->SetDescription(description);
-        if (ECObjectsStatus::Success != status)
-            {
+        if (ECObjectsStatus::Success != status) {
             delete unitFormat;
             unitFormat = nullptr;
             return status;
-            }
         }
+    }
 
     if (nullptr != nfs)
         unitFormat->SetNumericSpec(*nfs);
@@ -1370,123 +1230,120 @@ ECObjectsStatus ECSchema::CreateFormat(ECFormatP& unitFormat, Utf8CP name, Utf8C
         unitFormat->SetCompositeSpec(*composite);
 
     ECObjectsStatus status = AddSchemaChildToMap<ECFormat, FormatMap>(unitFormat, &m_formatMap, ECSchemaElementType::Format);
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         delete unitFormat;
         unitFormat = nullptr;
         return status;
-        }
+    }
 
     return ECObjectsStatus::Success;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-template<typename T, typename T_MAP>
-ECObjectsStatus ECSchema::AddSchemaChildToMap(T* child, T_MAP* map, ECSchemaElementType childType, bool logError)
-    {
+template <typename T, typename T_MAP>
+ECObjectsStatus ECSchema::AddSchemaChildToMap(T* child, T_MAP* map, ECSchemaElementType childType, bool logError) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    if(NamedElementExists(child->GetName().c_str()))
-        {
+    if (NamedElementExists(child->GetName().c_str())) {
         if (logError)
             LOG.errorv("Cannot create %s '%s' because a named element with the same identifier already exists in the schema", SchemaParseUtils::SchemaElementTypeToString(childType), child->GetName().c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
-        }
+    }
 
-    if (false == map->insert(bpair<Utf8CP, T*>(child->GetName().c_str(), child)).second)
-        {
+    if (false == map->insert(bpair<Utf8CP, T*>(child->GetName().c_str(), child)).second) {
         LOG.errorv("There was a problem adding %s '%s' to the schema", SchemaParseUtils::SchemaElementTypeToString(childType), child->GetName().c_str());
         return ECObjectsStatus::Error;
-        }
+    }
 
     if (m_serializationOrder.GetPreserveElementOrder())
         m_serializationOrder.AddElement(child->GetName().c_str(), childType);
     return ECObjectsStatus::Success;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-template<typename T>
-ECObjectsStatus ECSchema::AddUnitType(T* child, ECSchemaElementType childType)
-    {
+template <typename T>
+ECObjectsStatus ECSchema::AddUnitType(T* child, ECSchemaElementType childType) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    if(NamedElementExists(child->GetName().c_str()))
-        {
+    if (NamedElementExists(child->GetName().c_str())) {
         LOG.errorv("Cannot create %s '%s' because a named element with the same identifier already exists in the schema", SchemaParseUtils::SchemaElementTypeToString(childType), child->GetName().c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
-        }
+    }
 
     ECObjectsStatus status = m_unitsContext.Add<T>(child, childType);
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         LOG.errorv("There was a problem adding %s '%s' to the schema", SchemaParseUtils::SchemaElementTypeToString(childType), child->GetName().c_str());
         return status;
-        }
+    }
 
     if (m_serializationOrder.GetPreserveElementOrder())
         m_serializationOrder.AddElement(child->GetName().c_str(), childType);
     return ECObjectsStatus::Success;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-template<typename T> ECObjectsStatus ECSchema::AddSchemaChild(T* child, ECSchemaElementType childType) {;}
-template<> ECObjectsStatus ECSchema::AddSchemaChild<ECEnumeration>(ECEnumerationP child, ECSchemaElementType childType) {return AddSchemaChildToMap<ECEnumeration, EnumerationMap>(child, &m_enumerationMap, childType);}
-template<> ECObjectsStatus ECSchema::AddSchemaChild<PropertyCategory>(PropertyCategoryP child, ECSchemaElementType childType) {return AddSchemaChildToMap<PropertyCategory, PropertyCategoryMap>(child, &m_propertyCategoryMap, childType);}
-template<> ECObjectsStatus ECSchema::AddSchemaChild<KindOfQuantity>(KindOfQuantityP child, ECSchemaElementType childType) {return AddSchemaChildToMap<KindOfQuantity, KindOfQuantityMap>(child, &m_kindOfQuantityMap, childType);}
-template<> ECObjectsStatus ECSchema::AddSchemaChild<UnitSystem>(UnitSystemP child, ECSchemaElementType childType) {return AddUnitType<UnitSystem>(child, childType);}
-template<> ECObjectsStatus ECSchema::AddSchemaChild<Phenomenon>(PhenomenonP child, ECSchemaElementType childType) {return AddUnitType<Phenomenon>(child, childType);}
-template<> ECObjectsStatus ECSchema::AddSchemaChild<ECUnit>(ECUnitP child, ECSchemaElementType childType) {return AddUnitType<ECUnit>(child, childType);}
-template<> ECObjectsStatus ECSchema::AddSchemaChild<ECFormat>(ECFormatP child, ECSchemaElementType childType) {return AddSchemaChildToMap<ECFormat, FormatMap>(child, &m_formatMap, childType);}
+template <typename T>
+ECObjectsStatus ECSchema::AddSchemaChild(T* child, ECSchemaElementType childType) { ; }
+template <>
+ECObjectsStatus ECSchema::AddSchemaChild<ECEnumeration>(ECEnumerationP child, ECSchemaElementType childType) { return AddSchemaChildToMap<ECEnumeration, EnumerationMap>(child, &m_enumerationMap, childType); }
+template <>
+ECObjectsStatus ECSchema::AddSchemaChild<PropertyCategory>(PropertyCategoryP child, ECSchemaElementType childType) { return AddSchemaChildToMap<PropertyCategory, PropertyCategoryMap>(child, &m_propertyCategoryMap, childType); }
+template <>
+ECObjectsStatus ECSchema::AddSchemaChild<KindOfQuantity>(KindOfQuantityP child, ECSchemaElementType childType) { return AddSchemaChildToMap<KindOfQuantity, KindOfQuantityMap>(child, &m_kindOfQuantityMap, childType); }
+template <>
+ECObjectsStatus ECSchema::AddSchemaChild<UnitSystem>(UnitSystemP child, ECSchemaElementType childType) { return AddUnitType<UnitSystem>(child, childType); }
+template <>
+ECObjectsStatus ECSchema::AddSchemaChild<Phenomenon>(PhenomenonP child, ECSchemaElementType childType) { return AddUnitType<Phenomenon>(child, childType); }
+template <>
+ECObjectsStatus ECSchema::AddSchemaChild<ECUnit>(ECUnitP child, ECSchemaElementType childType) { return AddUnitType<ECUnit>(child, childType); }
+template <>
+ECObjectsStatus ECSchema::AddSchemaChild<ECFormat>(ECFormatP child, ECSchemaElementType childType) { return AddSchemaChildToMap<ECFormat, FormatMap>(child, &m_formatMap, childType); }
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-bool ECSchema::NamedElementExists(Utf8CP name) const
-    {
+bool ECSchema::NamedElementExists(Utf8CP name) const {
     return (m_classMap.find(name) != m_classMap.end()) ||
-        (m_enumerationMap.find(name) != m_enumerationMap.end()) ||
-        (m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end()) ||
-        (m_propertyCategoryMap.find(name) != m_propertyCategoryMap.end()) ||
-        (m_formatMap.find(name) != m_formatMap.end()) ||
-        (nullptr != GetUnitCP(name)) ||
-        (nullptr != GetPhenomenonCP(name)) ||
-        (nullptr != GetUnitSystemCP(name));
-    }
+           (m_enumerationMap.find(name) != m_enumerationMap.end()) ||
+           (m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end()) ||
+           (m_propertyCategoryMap.find(name) != m_propertyCategoryMap.end()) ||
+           (m_formatMap.find(name) != m_formatMap.end()) ||
+           (nullptr != GetUnitCP(name)) ||
+           (nullptr != GetPhenomenonCP(name)) ||
+           (nullptr != GetUnitSystemCP(name));
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetVersionFromString(Utf8CP versionString)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::SetVersionFromString(Utf8CP versionString) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     uint32_t versionRead;
     uint32_t versionWrite;
     uint32_t versionMinor;
     ECObjectsStatus status;
-    if ((ECObjectsStatus::Success != (status = ParseVersionString (versionRead, versionWrite, versionMinor, versionString))) ||
-        (ECObjectsStatus::Success != (status = this->SetVersionRead (versionRead))) ||
+    if ((ECObjectsStatus::Success != (status = ParseVersionString(versionRead, versionWrite, versionMinor, versionString))) ||
+        (ECObjectsStatus::Success != (status = this->SetVersionRead(versionRead))) ||
         (ECObjectsStatus::Success != (status = this->SetVersionWrite(versionWrite))) ||
-        (ECObjectsStatus::Success != (status = this->SetVersionMinor (versionMinor))))
+        (ECObjectsStatus::Success != (status = this->SetVersionMinor(versionMinor))))
         return status;
     else
         return ECObjectsStatus::Success;
-    }
+}
 
 //-------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+----//
-ECObjectsStatus ECSchema::SetECVersion(ECVersion ecVersion)
-    {
+ECObjectsStatus ECSchema::SetECVersion(ECVersion ecVersion) {
     ECObjectsStatus status = ECObjectsStatus::Success;
 
-    switch (ecVersion)
-        {
+    switch (ecVersion) {
         case ECVersion::V2_0:
         case ECVersion::V3_0:
         case ECVersion::V3_1:
@@ -1495,16 +1352,15 @@ ECObjectsStatus ECSchema::SetECVersion(ECVersion ecVersion)
             break;
         default:
             return ECObjectsStatus::InvalidECVersion;
-        }
+    }
 
     return status;
-    }
+}
 
 //-------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+----//
-ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, Utf8StringCR alias, uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor, ECVersion ecVersion)
-    {
+ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, Utf8StringCR alias, uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor, ECVersion ecVersion) {
     schemaOut = new ECSchema();
 
     ECObjectsStatus status;
@@ -1515,60 +1371,53 @@ ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR sche
     if (ECObjectsStatus::Success != (status = schemaOut->ParseECVersion(schemaOut->m_originalECXmlVersionMajor, schemaOut->m_originalECXmlVersionMinor, originalXmlVersion)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetName(schemaName)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetAlias(alias)) ||
-        ECObjectsStatus::Success != (status = schemaOut->SetVersionRead (versionRead)) ||
+        ECObjectsStatus::Success != (status = schemaOut->SetVersionRead(versionRead)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetVersionWrite(versionWrite)) ||
-        ECObjectsStatus::Success != (status = schemaOut->SetVersionMinor (versionMinor)) ||
-        ECObjectsStatus::Success != (status = schemaOut->SetECVersion (ecVersion)))
-        {
+        ECObjectsStatus::Success != (status = schemaOut->SetVersionMinor(versionMinor)) ||
+        ECObjectsStatus::Success != (status = schemaOut->SetECVersion(ecVersion))) {
         schemaOut = nullptr;
         return status;
-        }
+    }
 
     return ECObjectsStatus::Success;
-    }
+}
 
-template<typename Item, typename ReferencedItem>
-ECObjectsStatus logCopyErrorDueToReferencedItem(Item const* item, ECSchemaCP targetSchema, ReferencedItem const* refItem, Utf8CP refItemTypeName, ECSchemaCP searchedRefSchema, bool copyReferences)
-    {
+template <typename Item, typename ReferencedItem>
+ECObjectsStatus logCopyErrorDueToReferencedItem(Item const* item, ECSchemaCP targetSchema, ReferencedItem const* refItem, Utf8CP refItemTypeName, ECSchemaCP searchedRefSchema, bool copyReferences) {
     LOG.errorv("Could not copy '%s:%s' into '%s' because the referenced %s '%s' was not found in the target copy of the schema '%s'.  Copy References was set to '%s'.",
-        item->GetSchema().GetFullSchemaName().c_str(), item->GetName().c_str(), targetSchema->GetFullSchemaName().c_str(), refItemTypeName, refItem->GetName().c_str(),
-        searchedRefSchema->GetFullSchemaName().c_str(), copyReferences ? "true" : "false");
+               item->GetSchema().GetFullSchemaName().c_str(), item->GetName().c_str(), targetSchema->GetFullSchemaName().c_str(), refItemTypeName, refItem->GetName().c_str(),
+               searchedRefSchema->GetFullSchemaName().c_str(), copyReferences ? "true" : "false");
     return ECObjectsStatus::NotFound;
-    }
+}
 
 // Gets the existing reference matching possibleReference or adds possible reference.  Always returns a reference to the actual schema reference relative to the 'schema' object
-ECObjectsStatus getOrAddReferencedSchema(ECSchemaP schema, ECSchemaCR possibleReference, ECSchemaP& actualReference, bool willCopyRef)
-    {
-    if (willCopyRef || schema->GetName().Equals(possibleReference.GetName().c_str()))
-        {
+ECObjectsStatus getOrAddReferencedSchema(ECSchemaP schema, ECSchemaCR possibleReference, ECSchemaP& actualReference, bool willCopyRef) {
+    if (willCopyRef || schema->GetName().Equals(possibleReference.GetName().c_str())) {
         actualReference = schema;
         return ECObjectsStatus::Success;
-        }
+    }
 
     auto referencedSchemas = schema->GetReferencedSchemas();
     auto schemaRef = referencedSchemas.Find(possibleReference.GetSchemaKey(), SchemaMatchType::Latest);
     bool referenceNeeded = schemaRef == referencedSchemas.end();
-    if (referenceNeeded)
-        {
+    if (referenceNeeded) {
         ECObjectsStatus status = schema->AddReferencedSchema(const_cast<ECSchemaR>(possibleReference));
-        actualReference = const_cast<ECSchemaP> (&possibleReference);
+        actualReference = const_cast<ECSchemaP>(&possibleReference);
         return status;
-        }
+    }
 
     actualReference = schemaRef->second.get();
     return ECObjectsStatus::Success;
-    }
+}
 
-template<typename NamedItemA, typename NamedItemB>
-bool areFromSameSchema (NamedItemA const* itemA, NamedItemB const* itemB)
-    {
+template <typename NamedItemA, typename NamedItemB>
+bool areFromSameSchema(NamedItemA const* itemA, NamedItemB const* itemB) {
     if (nullptr == itemA || nullptr == itemB) return false;
     return itemA->GetSchema().GetName().Equals(itemB->GetSchema().GetName().c_str());
-    }
+}
 
-template<typename Item, typename RefItem>
-ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), ECObjectsStatus(ECSchema::*copyItem)(RefItem *&, const RefItem &, bool, Utf8CP))
-    {
+template <typename Item, typename RefItem>
+ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item& itemWithRef, RefItem*& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem* (ECSchema::*getItemP)(Utf8CP), ECObjectsStatus (ECSchema::*copyItem)(RefItem*&, const RefItem&, bool, Utf8CP)) {
     bool willCopyRef = copyReferences && areFromSameSchema(&itemWithRef, startingRef);
     ECSchemaP refSchema;
     ECObjectsStatus status = getOrAddReferencedSchema(this, startingRef->GetSchema(), refSchema, willCopyRef);
@@ -1576,52 +1425,45 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRe
         return status;
 
     refForCopy = (refSchema->*getItemP)(startingRef->GetName().c_str());
-    if (nullptr == refForCopy)
-        {
+    if (nullptr == refForCopy) {
         if (willCopyRef)
             status = (this->*copyItem)(refForCopy, *startingRef, copyReferences, nullptr);
         else
             status = logCopyErrorDueToReferencedItem(&itemWithRef, this, startingRef, SchemaParseUtils::SchemaElementTypeToString(refItemType), refSchema, copyReferences);
-        }
+    }
     return status;
-    }
+}
 
-ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation)
-    {
-        bool willCopyRef = copyReferences && areFromSameSchema(&classWithRef, startingRef);
-        ECSchemaP refSchema;
-        ECObjectsStatus status = getOrAddReferencedSchema(this, startingRef->GetSchema(), refSchema, willCopyRef);
-        if (ECObjectsStatus::Success != status)
-            return status;
-    
-        refForCopy = (refSchema->ECSchema::GetClassP)(startingRef->GetName().c_str());
-        if (nullptr == refForCopy)
-            {
-            if (willCopyRef)
-                status = CopyClass(refForCopy, *startingRef, copyReferences, nullptr, skipValidation);
-            else
-                status = logCopyErrorDueToReferencedItem(&classWithRef, this, startingRef, SchemaParseUtils::SchemaElementTypeToString(ECSchemaElementType::ECClass), refSchema, copyReferences);
-            }
+ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation) {
+    bool willCopyRef = copyReferences && areFromSameSchema(&classWithRef, startingRef);
+    ECSchemaP refSchema;
+    ECObjectsStatus status = getOrAddReferencedSchema(this, startingRef->GetSchema(), refSchema, willCopyRef);
+    if (ECObjectsStatus::Success != status)
         return status;
+
+    refForCopy = (refSchema->ECSchema::GetClassP)(startingRef->GetName().c_str());
+    if (nullptr == refForCopy) {
+        if (willCopyRef)
+            status = CopyClass(refForCopy, *startingRef, copyReferences, nullptr, skipValidation);
+        else
+            status = logCopyErrorDueToReferencedItem(&classWithRef, this, startingRef, SchemaParseUtils::SchemaElementTypeToString(ECSchemaElementType::ECClass), refSchema, copyReferences);
     }
-ECObjectsStatus ECSchema::GetOrCopyReferencedEnumerationForCopy(ECClassCR classWithRef, ECEnumerationP& refForCopy, ECEnumerationCP startingRef, bool copyReferences)
-    {
+    return status;
+}
+ECObjectsStatus ECSchema::GetOrCopyReferencedEnumerationForCopy(ECClassCR classWithRef, ECEnumerationP& refForCopy, ECEnumerationCP startingRef, bool copyReferences) {
     return GetOrCopyReferencedItemForCopy(classWithRef, refForCopy, startingRef, copyReferences, ECSchemaElementType::ECEnumeration, &ECSchema::GetEnumerationP, &ECSchema::CopyEnumeration);
-    }
-ECObjectsStatus ECSchema::GetOrCopyReferencedKindOfQuantityForCopy(ECClassCR classWithRef, KindOfQuantityP& refForCopy, KindOfQuantityCP startingRef, bool copyReferences)
-    {
+}
+ECObjectsStatus ECSchema::GetOrCopyReferencedKindOfQuantityForCopy(ECClassCR classWithRef, KindOfQuantityP& refForCopy, KindOfQuantityCP startingRef, bool copyReferences) {
     return GetOrCopyReferencedItemForCopy(classWithRef, refForCopy, startingRef, copyReferences, ECSchemaElementType::KindOfQuantity, &ECSchema::GetKindOfQuantityP, &ECSchema::CopyKindOfQuantity);
-    }
-ECObjectsStatus ECSchema::GetOrCopyReferencedPropertyCategoryForCopy(ECClassCR classWithRef, PropertyCategoryP& refForCopy, PropertyCategoryCP startingRef, bool copyReferences)
-    {
+}
+ECObjectsStatus ECSchema::GetOrCopyReferencedPropertyCategoryForCopy(ECClassCR classWithRef, PropertyCategoryP& refForCopy, PropertyCategoryCP startingRef, bool copyReferences) {
     return GetOrCopyReferencedItemForCopy(classWithRef, refForCopy, startingRef, copyReferences, ECSchemaElementType::PropertyCategory, &ECSchema::GetPropertyCategoryP, &ECSchema::CopyPropertyCategory);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences, Utf8CP newName, bool skipValidation)
-    {
+ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences, Utf8CP newName, bool skipValidation) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
     Utf8String targetClassName((newName == nullptr ? sourceClass.GetName().c_str() : newName));
     // Make sure the name is not already used
@@ -1629,16 +1471,13 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
         return ECObjectsStatus::NamedItemAlreadyExists;
 
     ECObjectsStatus status = ECObjectsStatus::Success;
-    switch (sourceClass.GetClassType())
-        {
-        case ECClassType::Relationship:
-            { // Brackets are needed to get around compiler error, C2360, where the initializer of an identifier cannot be skipped by any case
+    switch (sourceClass.GetClassType()) {
+        case ECClassType::Relationship: {  // Brackets are needed to get around compiler error, C2360, where the initializer of an identifier cannot be skipped by any case
             // since the variable lives through the entire switch/case statement. Need to put in a scope block to make it explicit.
             ECRelationshipClassCP sourceAsRelationshipClass = sourceClass.GetRelationshipClassCP();
             ECRelationshipClassP newRelationshipClass;
             status = this->CreateRelationshipClass(newRelationshipClass, targetClassName, !skipValidation);
-            if (ECObjectsStatus::Success == status)
-                {
+            if (ECObjectsStatus::Success == status) {
                 newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
                 newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
 
@@ -1646,16 +1485,15 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
                 if (ECObjectsStatus::Success == status)
                     status = sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget(), copyReferences);
 
-                if (ECObjectsStatus::Success != status)
-                    {
+                if (ECObjectsStatus::Success != status) {
                     LOG.errorv("Failed to copy class %s to schema %s", sourceClass.GetFullName(), GetFullSchemaName().c_str());
                     DeleteClass(*newRelationshipClass);
                     newRelationshipClass = nullptr;
-                    }
                 }
+            }
             targetClass = newRelationshipClass;
             break;
-            }
+        }
         case ECClassType::Struct:
             ECStructClassP newStructClass;
             status = CreateStructClass(newStructClass, targetClassName);
@@ -1677,7 +1515,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
             LOG.errorv("Unable to copy class '%s' into '%s' because the class type is not handled", sourceClass.GetFullName(), GetFullSchemaName().c_str());
             status = ECObjectsStatus::ECClassNotSupported;
             break;
-        }
+    }
 
     if (ECObjectsStatus::Success != status)
         return status;
@@ -1689,43 +1527,37 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
 
     // Set the base classes on the target class from the source class
     // This is inconsistent with the Managed implementation of CopyClass which does not copy base classes
-    for (ECClassP baseClass: sourceClass.GetBaseClasses())
-        {
+    for (ECClassP baseClass : sourceClass.GetBaseClasses()) {
         ECClassP targetBaseClass = nullptr;
-        if (ECObjectsStatus::Success == (status = GetOrCopyReferencedClassForCopy(sourceClass, targetBaseClass, baseClass, copyReferences)))
-            {
+        if (ECObjectsStatus::Success == (status = GetOrCopyReferencedClassForCopy(sourceClass, targetBaseClass, baseClass, copyReferences))) {
             // Not validating the class to be added since it should already be valid schema. Also this avoids some of the inheritance rule checking
             // for Mixins and Relationships
             status = targetClass->_AddBaseClass(*targetBaseClass, false, false, false);
-            }
-        if (ECObjectsStatus::Success != status)
-            {
+        }
+        if (ECObjectsStatus::Success != status) {
             DeleteClass(*targetClass);
             targetClass = nullptr;
             return status;
-            }
         }
-
-    for(ECPropertyCP sourceProperty: sourceClass.GetProperties(false))
-        {
-        ECPropertyP destProperty;
-        status = targetClass->CopyProperty(destProperty, sourceProperty, sourceProperty->GetName().c_str(), true, true, copyReferences);
-        if (ECObjectsStatus::Success != status)
-            {
-            DeleteClass(*targetClass);
-            targetClass = nullptr;
-            return status;
-            }
-        }
-
-    return sourceClass.CopyCustomAttributesTo(*targetClass, copyReferences);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP& targetEnumeration, ECEnumerationCR sourceEnumeration, bool copyReferences, Utf8CP newName)
-    {
+    for (ECPropertyCP sourceProperty : sourceClass.GetProperties(false)) {
+        ECPropertyP destProperty;
+        status = targetClass->CopyProperty(destProperty, sourceProperty, sourceProperty->GetName().c_str(), true, true, copyReferences);
+        if (ECObjectsStatus::Success != status) {
+            DeleteClass(*targetClass);
+            targetClass = nullptr;
+            return status;
+        }
+    }
+
+    return sourceClass.CopyCustomAttributesTo(*targetClass, copyReferences);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP& targetEnumeration, ECEnumerationCR sourceEnumeration, bool copyReferences, Utf8CP newName) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     ECObjectsStatus status;
@@ -1739,8 +1571,7 @@ ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP& targetEnumeration, ECE
     targetEnumeration->SetDescription(sourceEnumeration.GetInvariantDescription().c_str());
     targetEnumeration->SetIsStrict(sourceEnumeration.GetIsStrict());
 
-    for (auto sourceEnumerator : sourceEnumeration.GetEnumerators())
-        {
+    for (auto sourceEnumerator : sourceEnumeration.GetEnumerators()) {
         ECEnumeratorP targetEnumerator;
         if (PrimitiveType::PRIMITIVETYPE_Integer == targetEnumeration->GetType())
             targetEnumeration->CreateEnumerator(targetEnumerator, sourceEnumerator->GetName().c_str(), sourceEnumerator->GetInteger());
@@ -1751,13 +1582,12 @@ ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP& targetEnumeration, ECE
             targetEnumerator->SetDisplayLabel(sourceEnumerator->GetInvariantDisplayLabel().c_str());
 
         targetEnumerator->SetDescription(sourceEnumerator->GetInvariantDescription().c_str());
-        }
-
-    return ECObjectsStatus::Success;
     }
 
-ECObjectsStatus ECSchema::TryFillKindOfQuantity(KindOfQuantityP targetKOQ, KindOfQuantityCR sourceKOQ, bool copyReferences)
-    {
+    return ECObjectsStatus::Success;
+}
+
+ECObjectsStatus ECSchema::TryFillKindOfQuantity(KindOfQuantityP targetKOQ, KindOfQuantityCR sourceKOQ, bool copyReferences) {
     ECObjectsStatus status;
     if (sourceKOQ.GetIsDisplayLabelDefined())
         targetKOQ->SetDisplayLabel(sourceKOQ.GetInvariantDisplayLabel().c_str());
@@ -1766,20 +1596,17 @@ ECObjectsStatus ECSchema::TryFillKindOfQuantity(KindOfQuantityP targetKOQ, KindO
     targetKOQ->SetRelativeError(sourceKOQ.GetRelativeError());
 
     ECUnitCP persistUnit = sourceKOQ.GetPersistenceUnit();
-    if (nullptr != persistUnit)
-        {
+    if (nullptr != persistUnit) {
         ECUnitP targetPersistUnit = nullptr;
         status = GetOrCopyReferencedItemForCopy(sourceKOQ, targetPersistUnit, persistUnit, copyReferences, ECSchemaElementType::Unit, &ECSchema::GetUnitP, &ECSchema::CopyUnit);
         if (ECObjectsStatus::Success != status)
             return status;
 
         targetKOQ->SetPersistenceUnit(*targetPersistUnit);
-        }
+    }
 
-    if (sourceKOQ.HasPresentationFormats())
-        {
-        for (NamedFormatCR format : sourceKOQ.GetPresentationFormats())
-            {
+    if (sourceKOQ.HasPresentationFormats()) {
+        for (NamedFormatCR format : sourceKOQ.GetPresentationFormats()) {
             ECFormatCP parentFormat = format.GetParentFormat();
             ECFormatP targetParentFormat = nullptr;
             status = GetOrCopyReferencedItemForCopy(sourceKOQ, targetParentFormat, parentFormat, copyReferences, ECSchemaElementType::Format, &ECSchema::GetFormatP, &ECSchema::CopyFormat);
@@ -1789,16 +1616,15 @@ ECObjectsStatus ECSchema::TryFillKindOfQuantity(KindOfQuantityP targetKOQ, KindO
             NamedFormat newFormat = format;
             newFormat.SetParentFormat(targetParentFormat);
             targetKOQ->AddPresentationFormatInternal(newFormat);
-            }
         }
-    return ECObjectsStatus::Success;
     }
+    return ECObjectsStatus::Success;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQuantityCR sourceKOQ, bool copyReferences, Utf8CP newName)
-    {
+ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQuantityCR sourceKOQ, bool copyReferences, Utf8CP newName) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     ECObjectsStatus status;
@@ -1807,24 +1633,22 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
         return status;
 
     status = TryFillKindOfQuantity(targetKOQ, sourceKOQ, copyReferences);
-    if (ECObjectsStatus::Success != status)
-        {
+    if (ECObjectsStatus::Success != status) {
         DeleteKindOfQuantity(*targetKOQ);
         return status;
-        }
+    }
 
     return ECObjectsStatus::Success;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyPropertyCategory(PropertyCategoryP& targetPropCategory, PropertyCategoryCR sourcePropCategory, bool copyReferences, Utf8CP newName)
-    {
+ECObjectsStatus ECSchema::CopyPropertyCategory(PropertyCategoryP& targetPropCategory, PropertyCategoryCR sourcePropCategory, bool copyReferences, Utf8CP newName) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     ECObjectsStatus status;
-    status = CreatePropertyCategory(targetPropCategory, (newName == nullptr ?  sourcePropCategory.GetName().c_str() : newName));
+    status = CreatePropertyCategory(targetPropCategory, (newName == nullptr ? sourcePropCategory.GetName().c_str() : newName));
     if (ECObjectsStatus::Success != status)
         return status;
 
@@ -1835,13 +1659,12 @@ ECObjectsStatus ECSchema::CopyPropertyCategory(PropertyCategoryP& targetPropCate
     targetPropCategory->SetPriority(sourcePropCategory.GetPriority());
 
     return ECObjectsStatus::Success;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyUnitSystem(UnitSystemP& targetUnitSystem, UnitSystemCR sourceUnitSystem, bool copyReferences, Utf8CP newName)
-    {
+ECObjectsStatus ECSchema::CopyUnitSystem(UnitSystemP& targetUnitSystem, UnitSystemCR sourceUnitSystem, bool copyReferences, Utf8CP newName) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     ECObjectsStatus status;
@@ -1857,14 +1680,13 @@ ECObjectsStatus ECSchema::CopyUnitSystem(UnitSystemP& targetUnitSystem, UnitSyst
         targetUnitSystem->SetDescription(sourceUnitSystem.GetDescription());
 
     return ECObjectsStatus::Success;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 // NOTE: Does not handle implicit references added by the definition string.
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyPhenomenon(PhenomenonP& targetPhenom, PhenomenonCR sourcePhenom, bool copyReferences, Utf8CP newName)
-    {
+ECObjectsStatus ECSchema::CopyPhenomenon(PhenomenonP& targetPhenom, PhenomenonCR sourcePhenom, bool copyReferences, Utf8CP newName) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     ECObjectsStatus status;
@@ -1880,14 +1702,13 @@ ECObjectsStatus ECSchema::CopyPhenomenon(PhenomenonP& targetPhenom, PhenomenonCR
         targetPhenom->SetDescription(sourcePhenom.GetInvariantDescription().c_str());
 
     return ECObjectsStatus::Success;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 // NOTE: This method does not attempt to copy or add references for the units referenced by the sourceUnits definition
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit, bool copyReferences, Utf8CP newName)
-    {
+ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit, bool copyReferences, Utf8CP newName) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     targetUnit = nullptr;
@@ -1902,18 +1723,14 @@ ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit, boo
     if (ECObjectsStatus::Success != status)
         return status;
 
-    if (sourceUnit.IsConstant())
-        {
+    if (sourceUnit.IsConstant()) {
         status = CreateConstant(targetUnit, name, sourceUnit.GetDefinition().c_str(), *targetPhenom, sourceUnit.GetNumerator());
-        }
-    else
-        {
-        if (!sourceUnit.HasUnitSystem())
-            {
+    } else {
+        if (!sourceUnit.HasUnitSystem()) {
             // Checks on construction of the source unit should keep this from ever happening.
-            LOG.errorv ("Cannot copy unit '%s' because it does not have a unit system defined and all units besides constants must define a unit system", sourceUnit.GetName().c_str());
+            LOG.errorv("Cannot copy unit '%s' because it does not have a unit system defined and all units besides constants must define a unit system", sourceUnit.GetName().c_str());
             return ECObjectsStatus::InvalidUnit;
-            }
+        }
 
         UnitSystemCP system = nullptr;
         UnitSystemP targetSystem = nullptr;
@@ -1922,8 +1739,7 @@ ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit, boo
         if (ECObjectsStatus::Success != status)
             return status;
 
-        if (sourceUnit.IsInvertedUnit())
-            {
+        if (sourceUnit.IsInvertedUnit()) {
             ECUnitCP parent = sourceUnit.GetInvertingUnit();
             ECUnitP targetParent = nullptr;
             status = GetOrCopyReferencedItemForCopy(sourceUnit, targetParent, parent, copyReferences, ECSchemaElementType::Unit, &ECSchema::GetUnitP, &ECSchema::CopyUnit);
@@ -1931,12 +1747,11 @@ ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit, boo
                 return status;
 
             status = CreateInvertedUnit(targetUnit, *targetParent, name, *targetSystem);
-            }
-        else // Normal unit
-            {
+        } else  // Normal unit
+        {
             status = CreateUnit(targetUnit, name, sourceUnit.GetDefinition().c_str(), *targetPhenom, *targetSystem);
-            }
         }
+    }
 
     if (ECObjectsStatus::Success != status)
         return status;
@@ -1957,13 +1772,12 @@ ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit, boo
         targetUnit->SetDescription(sourceUnit.GetInvariantDescription().c_str());
 
     return ECObjectsStatus::Success;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceFormat, bool copyReferences, Utf8CP newName)
-    {
+ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceFormat, bool copyReferences, Utf8CP newName) {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     ECObjectsStatus status = CreateFormat(targetFormat, (newName == nullptr ? sourceFormat.GetName().c_str() : newName));
@@ -1975,11 +1789,9 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
         targetFormat->SetDescription(sourceFormat.GetInvariantDescription().c_str());
     if (sourceFormat.HasNumeric())
         targetFormat->SetNumericSpec(*sourceFormat.GetNumericSpec());
-    if (sourceFormat.HasComposite())
-        {
+    if (sourceFormat.HasComposite()) {
         auto sourceComp = sourceFormat.GetCompositeSpec();
-        const auto getTargetUnit = [&](Units::UnitCP source) -> Units::UnitCP
-            {
+        const auto getTargetUnit = [&](Units::UnitCP source) -> Units::UnitCP {
             if (nullptr == source)
                 return nullptr;
             ECUnitCP unit = (ECUnitCP)source;
@@ -1989,7 +1801,7 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
                 return nullptr;
 
             return targetUnit;
-            };
+        };
         auto comp = Formatting::CompositeValueSpec(getTargetUnit(sourceComp->GetMajorUnit()),
                                                    getTargetUnit(sourceComp->GetMiddleUnit()),
                                                    getTargetUnit(sourceComp->GetMinorUnit()),
@@ -2009,17 +1821,16 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
             comp.SetSubLabel(sourceComp->GetSubLabel());
 
         targetFormat->SetCompositeSpec(comp);
-        }
-    return status;
     }
+    return status;
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext, bool skipValidation) const
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContextP schemaContext, bool skipValidation) const {
     ECObjectsStatus status = ECObjectsStatus::Success;
-    status = CreateSchema(schemaOut,  GetName().c_str(), GetAlias().c_str(), GetVersionRead(), GetVersionWrite(), GetVersionMinor(), m_ecVersion);
+    status = CreateSchema(schemaOut, GetName().c_str(), GetAlias().c_str(), GetVersionRead(), GetVersionWrite(), GetVersionMinor(), m_ecVersion);
     if (ECObjectsStatus::Success != status)
         return status;
 
@@ -2034,134 +1845,117 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, ECSchemaReadContext
     schemaOut->SetOrigin(origin);
 
     ECSchemaReferenceListCR referencedSchemas = GetReferencedSchemas();
-    if(schemaContext == nullptr)
-        {
+    if (schemaContext == nullptr) {
         for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
             schemaOut->AddReferencedSchema(*iter->second.get());
-        }
-    else
-        {
-        for (auto& ref : GetReferencedSchemas())
-            {
+    } else {
+        for (auto& ref : GetReferencedSchemas()) {
             SchemaKey desiredKey(ref.first);
             ECSchemaPtr referencedSchema = schemaContext->LocateSchema(desiredKey, SchemaMatchType::Latest);
-            if(referencedSchema == nullptr)
+            if (referencedSchema == nullptr)
                 return ECObjectsStatus::SchemaNotFound;
 
             schemaOut->AddReferencedSchema(*referencedSchema);
-            }
         }
+    }
 
-    for (auto ecEnumeration : m_enumerationContainer)
-        {
+    for (auto ecEnumeration : m_enumerationContainer) {
         ECEnumerationP copyEnumeration;
         status = schemaOut->CopyEnumeration(copyEnumeration, *ecEnumeration);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
-        }
+    }
 
-    for (auto propertyCategory : m_propertyCategoryContainer)
-        {
+    for (auto propertyCategory : m_propertyCategoryContainer) {
         PropertyCategoryP copyPropertyCategory;
         status = schemaOut->CopyPropertyCategory(copyPropertyCategory, *propertyCategory);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
-        }
+    }
 
-    for (auto system : m_unitsContext.m_unitSystemContainer)
-        {
+    for (auto system : m_unitsContext.m_unitSystemContainer) {
         UnitSystemP copySystem;
         status = schemaOut->CopyUnitSystem(copySystem, *system);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
-        }
+    }
 
-    for (auto phenom : m_unitsContext.m_phenomenonContainer)
-        {
+    for (auto phenom : m_unitsContext.m_phenomenonContainer) {
         PhenomenonP copyPhenom;
         status = schemaOut->CopyPhenomenon(copyPhenom, *phenom, true);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
-        }
+    }
 
-    for (auto unit : m_unitsContext.m_unitContainer)
-        {
+    for (auto unit : m_unitsContext.m_unitContainer) {
         ECUnitP copyUnit;
         status = schemaOut->CopyUnit(copyUnit, *unit, true);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
-        }
+    }
 
-    for (auto format : m_formatContainer)
-        {
+    for (auto format : m_formatContainer) {
         ECFormatP copyFormat;
         status = schemaOut->CopyFormat(copyFormat, *format, true);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
-        }
+    }
 
-    for (auto koq : m_kindOfQuantityContainer)
-        {
+    for (auto koq : m_kindOfQuantityContainer) {
         KindOfQuantityP copyKOQ;
         status = schemaOut->CopyKindOfQuantity(copyKOQ, *koq, true);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
-        }
+    }
 
-    for (ECClassP ecClass : m_classContainer)
-        {
+    for (ECClassP ecClass : m_classContainer) {
         ECClassP copyClass;
         status = schemaOut->CopyClass(copyClass, *ecClass, true, nullptr, skipValidation);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
-        }
+    }
 
     return CopyCustomAttributesTo(*schemaOut, true);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECSchemaP ECSchema::GetSchemaPByAlias(Utf8StringCR alias)
-    {
+ECSchemaP ECSchema::GetSchemaPByAlias(Utf8StringCR alias) {
     if (alias.empty())
         return this;
 
     // lookup referenced schema by alias
     bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator;
-    for (schemaIterator = m_referencedSchemaAliasMap.begin(); schemaIterator != m_referencedSchemaAliasMap.end(); schemaIterator++)
-        {
+    for (schemaIterator = m_referencedSchemaAliasMap.begin(); schemaIterator != m_referencedSchemaAliasMap.end(); schemaIterator++) {
         if (alias.EqualsIAscii(schemaIterator->second))
             return schemaIterator->first;
-        }
+    }
 
     return nullptr;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECSchemaCP ECSchema::GetSchemaByAliasP(Utf8StringCR alias) const
-    {
+ECSchemaCP ECSchema::GetSchemaByAliasP(Utf8StringCR alias) const {
     if (alias.empty())
         return this;
 
     // lookup referenced schema by alias
     bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator;
-    for (schemaIterator = m_referencedSchemaAliasMap.begin(); schemaIterator != m_referencedSchemaAliasMap.end(); schemaIterator++)
-        {
+    for (schemaIterator = m_referencedSchemaAliasMap.begin(); schemaIterator != m_referencedSchemaAliasMap.end(); schemaIterator++) {
         if (alias.EqualsIAscii(schemaIterator->second))
             return schemaIterator->first;
-        }
-
-    return nullptr;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) const
-    {
+    return nullptr;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) const {
     alias = EMPTY_STRING;
     if (&schema == this)
         return ECObjectsStatus::Success;
@@ -2170,29 +1964,25 @@ ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) con
         return ECObjectsStatus::Success;
 
     bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator = m_referencedSchemaAliasMap.find(const_cast<ECSchemaP>(&schema));
-    if (schemaIterator != m_referencedSchemaAliasMap.end())
-        {
+    if (schemaIterator != m_referencedSchemaAliasMap.end()) {
         alias = schemaIterator->second;
         return ECObjectsStatus::Success;
-        }
+    }
 
     bmap<ECSchemaP, Utf8String>::const_iterator aliasIterator;
-    for (aliasIterator = m_referencedSchemaAliasMap.begin(); aliasIterator != m_referencedSchemaAliasMap.end(); aliasIterator++)
-        {
-        if (aliasIterator->first->GetSchemaKey() == schema.GetSchemaKey())
-            {
+    for (aliasIterator = m_referencedSchemaAliasMap.begin(); aliasIterator != m_referencedSchemaAliasMap.end(); aliasIterator++) {
+        if (aliasIterator->first->GetSchemaKey() == schema.GetSchemaKey()) {
             alias = aliasIterator->second;
             return ECObjectsStatus::Success;
-            }
         }
-    return ECObjectsStatus::SchemaNotFound;
     }
+    return ECObjectsStatus::SchemaNotFound;
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECClassCP ECSchema::LookupClass(Utf8CP name, bool useFullName) const
-    {
+ECClassCP ECSchema::LookupClass(Utf8CP name, bool useFullName) const {
     Utf8String aliasOrSchemaName;
     Utf8String unqualifiedName;
     if (ECObjectsStatus::Success != ECClass::ParseClassName(aliasOrSchemaName, unqualifiedName, name))
@@ -2202,25 +1992,22 @@ ECClassCP ECSchema::LookupClass(Utf8CP name, bool useFullName) const
     if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsIAscii(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsIAscii(GetName())))
         return GetClassCP(unqualifiedName.c_str());
 
-    if (useFullName)
-        {
-        for (const auto& s : GetReferencedSchemas())
-            {
+    if (useFullName) {
+        for (const auto& s : GetReferencedSchemas()) {
             if (aliasOrSchemaName.EqualsIAscii(s.second->GetName()))
                 return s.second->GetClassCP(unqualifiedName.c_str());
-            }
-        return nullptr;
         }
+        return nullptr;
+    }
 
     ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(aliasOrSchemaName);
     return (nullptr != resolvedUnitSchema ? resolvedUnitSchema->GetClassCP(unqualifiedName.c_str()) : nullptr);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-KindOfQuantityCP ECSchema::LookupKindOfQuantity(Utf8CP name, bool useFullName) const
-    {
+KindOfQuantityCP ECSchema::LookupKindOfQuantity(Utf8CP name, bool useFullName) const {
     Utf8String aliasOrSchemaName;
     Utf8String unqualifiedName;
     if (ECObjectsStatus::Success != ECClass::ParseClassName(aliasOrSchemaName, unqualifiedName, name))
@@ -2230,25 +2017,22 @@ KindOfQuantityCP ECSchema::LookupKindOfQuantity(Utf8CP name, bool useFullName) c
     if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsIAscii(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsIAscii(GetName())))
         return GetKindOfQuantityCP(unqualifiedName.c_str());
 
-    if (useFullName)
-        {
-        for (const auto& s : GetReferencedSchemas())
-            {
+    if (useFullName) {
+        for (const auto& s : GetReferencedSchemas()) {
             if (aliasOrSchemaName.EqualsIAscii(s.second->GetName()))
                 return s.second->GetKindOfQuantityCP(unqualifiedName.c_str());
-            }
-        return nullptr;
         }
+        return nullptr;
+    }
 
     ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(aliasOrSchemaName);
     return (nullptr != resolvedUnitSchema ? resolvedUnitSchema->GetKindOfQuantityCP(unqualifiedName.c_str()) : nullptr);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECEnumerationCP ECSchema::LookupEnumeration(Utf8CP name, bool useFullName) const
-    {
+ECEnumerationCP ECSchema::LookupEnumeration(Utf8CP name, bool useFullName) const {
     Utf8String aliasOrSchemaName;
     Utf8String unqualifiedName;
     if (ECObjectsStatus::Success != ECClass::ParseClassName(aliasOrSchemaName, unqualifiedName, name))
@@ -2258,25 +2042,22 @@ ECEnumerationCP ECSchema::LookupEnumeration(Utf8CP name, bool useFullName) const
     if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsIAscii(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsIAscii(GetName())))
         return GetEnumerationCP(unqualifiedName.c_str());
 
-    if (useFullName)
-        {
-        for (const auto& s : GetReferencedSchemas())
-            {
+    if (useFullName) {
+        for (const auto& s : GetReferencedSchemas()) {
             if (aliasOrSchemaName.EqualsIAscii(s.second->GetName()))
                 return s.second->GetEnumerationCP(unqualifiedName.c_str());
-            }
-        return nullptr;
         }
+        return nullptr;
+    }
 
     ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(aliasOrSchemaName);
     return (nullptr != resolvedUnitSchema ? resolvedUnitSchema->GetEnumerationCP(unqualifiedName.c_str()) : nullptr);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-PropertyCategoryCP ECSchema::LookupPropertyCategory(Utf8CP name, bool useFullName) const
-    {
+PropertyCategoryCP ECSchema::LookupPropertyCategory(Utf8CP name, bool useFullName) const {
     Utf8String aliasOrSchemaName;
     Utf8String unqualifiedName;
     if (ECObjectsStatus::Success != ECClass::ParseClassName(aliasOrSchemaName, unqualifiedName, name))
@@ -2286,26 +2067,23 @@ PropertyCategoryCP ECSchema::LookupPropertyCategory(Utf8CP name, bool useFullNam
     if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsIAscii(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsIAscii(GetName())))
         return GetPropertyCategoryCP(unqualifiedName.c_str());
 
-    if (useFullName)
-        {
-        for (const auto& s : GetReferencedSchemas())
-            {
+    if (useFullName) {
+        for (const auto& s : GetReferencedSchemas()) {
             if (aliasOrSchemaName.EqualsIAscii(s.second->GetName()))
                 return s.second->GetPropertyCategoryCP(unqualifiedName.c_str());
-            }
-        return nullptr;
         }
+        return nullptr;
+    }
 
     ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(aliasOrSchemaName);
     return (nullptr != resolvedUnitSchema ? resolvedUnitSchema->GetPropertyCategoryCP(unqualifiedName.c_str()) : nullptr);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-template<typename T>
-ECObjectsStatus ECSchema::DeleteUnitType(T& child)
-    {
+template <typename T>
+ECObjectsStatus ECSchema::DeleteUnitType(T& child) {
     // NOTE: This is probably a bad idea. Need to make a copy of the name, because it will be destructed in the following call to
     // SchemaUnitContext. However, it will still be needed after to make sure it is removed from serialization order.
     Utf8String name = child.GetName().c_str();
@@ -2316,53 +2094,47 @@ ECObjectsStatus ECSchema::DeleteUnitType(T& child)
 
     m_serializationOrder.RemoveElement(name.c_str());
     return ECObjectsStatus::Success;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-UnitSystemP ECSchema::GetUnitSystemP(Utf8CP name)
-    {
+UnitSystemP ECSchema::GetUnitSystemP(Utf8CP name) {
     return m_unitsContext.Get<UnitSystem>(name);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::DeleteUnitSystem(UnitSystemR unitSystem)
-    {
+ECObjectsStatus ECSchema::DeleteUnitSystem(UnitSystemR unitSystem) {
     return DeleteUnitType<UnitSystem>(unitSystem);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-PhenomenonP ECSchema::GetPhenomenonP(Utf8CP name)
-    {
+PhenomenonP ECSchema::GetPhenomenonP(Utf8CP name) {
     return m_unitsContext.Get<Phenomenon>(name);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::DeletePhenomenon(PhenomenonR phenomenon)
-    {
+ECObjectsStatus ECSchema::DeletePhenomenon(PhenomenonR phenomenon) {
     return DeleteUnitType<Phenomenon>(phenomenon);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECUnitP ECSchema::GetUnitP(Utf8CP name)
-    {
+ECUnitP ECSchema::GetUnitP(Utf8CP name) {
     return m_unitsContext.Get<ECUnit>(name);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECFormatCP ECSchema::LookupFormat(Utf8CP name, bool useFullName) const
-    {
+ECFormatCP ECSchema::LookupFormat(Utf8CP name, bool useFullName) const {
     Utf8String aliasOrSchemaName;
     Utf8String unqualifiedName;
     if (ECObjectsStatus::Success != ECClass::ParseClassName(aliasOrSchemaName, unqualifiedName, name))
@@ -2372,80 +2144,72 @@ ECFormatCP ECSchema::LookupFormat(Utf8CP name, bool useFullName) const
     if (aliasOrSchemaName.empty() || (!useFullName && aliasOrSchemaName.EqualsIAscii(GetAlias())) || (useFullName && aliasOrSchemaName.EqualsIAscii(GetName())))
         return GetFormatCP(unqualifiedName.c_str());
 
-    if (useFullName)
-        {
-        for (const auto& s : GetReferencedSchemas())
-            {
+    if (useFullName) {
+        for (const auto& s : GetReferencedSchemas()) {
             if (aliasOrSchemaName.EqualsIAscii(s.second->GetName()))
                 return s.second->GetFormatCP(unqualifiedName.c_str());
-            }
-        return nullptr;
         }
+        return nullptr;
+    }
 
     ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(aliasOrSchemaName);
     return (nullptr != resolvedUnitSchema ? resolvedUnitSchema->GetFormatCP(unqualifiedName.c_str()) : nullptr);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::DeleteUnit(ECUnitR unit)
-    {
+ECObjectsStatus ECSchema::DeleteUnit(ECUnitR unit) {
     return DeleteUnitType<ECUnit>(unit);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECUnitP ECSchema::GetInvertedUnitP(Utf8CP name)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECUnitP ECSchema::GetInvertedUnitP(Utf8CP name) {
     auto unit = GetUnitP(name);
-    if((nullptr != unit) && (unit->IsInvertedUnit()))
+    if ((nullptr != unit) && (unit->IsInvertedUnit()))
         return unit;
     return nullptr;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECUnitP ECSchema::GetConstantP(Utf8CP name)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECUnitP ECSchema::GetConstantP(Utf8CP name) {
     auto unit = GetUnitP(name);
-    if((nullptr != unit) && (unit->IsConstant()))
+    if ((nullptr != unit) && (unit->IsConstant()))
         return unit;
     return nullptr;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias) {
     ECSchemaReadContext context(nullptr, false, false);
     return AddReferencedSchema(refSchema, alias, context);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext) {
     // disallow adding a supplemental schema as a referenced schema
-    if (refSchema.IsSupplementalSchema())
-        {
+    if (refSchema.IsSupplementalSchema()) {
         LOG.warningv("%s is trying to add %s as a referenced schema.  Supplemental schemas are not allowed to be referenced.  Ignoring this reference.", this->GetFullSchemaName().c_str(), refSchema.GetFullSchemaName().c_str());
-        return ECObjectsStatus::Success; // returning success even though we didn't add it because this should not cause the entire serialization to fail
-        }
+        return ECObjectsStatus::Success;  // returning success even though we didn't add it because this should not cause the entire serialization to fail
+    }
 
     SchemaKeyCR refSchemaKey = refSchema.GetSchemaKey();
 
-    if (GetSchemaKey().GetName().EqualsI(refSchemaKey.GetName())) //Make sure we are not referencing ourselves, in any version
-        {
+    if (GetSchemaKey().GetName().EqualsI(refSchemaKey.GetName()))  // Make sure we are not referencing ourselves, in any version
+    {
         LOG.warningv("%s is trying to add itself (%s) as a referenced schema.", this->GetFullSchemaName().c_str(), refSchema.GetFullSchemaName().c_str());
         return ECObjectsStatus::SchemaHasReferenceCycle;
-        }
+    }
 
-    if (m_refSchemaList.end () != m_refSchemaList.find (refSchemaKey))
+    if (m_refSchemaList.end() != m_refSchemaList.find(refSchemaKey))
         return ECObjectsStatus::NamedItemAlreadyExists;
 
     Utf8String tmpAlias(alias);
@@ -2454,511 +2218,417 @@ ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR 
 
     // Make sure the alias is unique within this schema
     bmap<ECSchemaP, Utf8String>::const_iterator aliasIterator;
-    for (aliasIterator = m_referencedSchemaAliasMap.begin(); aliasIterator != m_referencedSchemaAliasMap.end(); aliasIterator++)
-        {
-        if (0 == tmpAlias.compare (aliasIterator->second))
-            {
+    for (aliasIterator = m_referencedSchemaAliasMap.begin(); aliasIterator != m_referencedSchemaAliasMap.end(); aliasIterator++) {
+        if (0 == tmpAlias.compare(aliasIterator->second)) {
             break;
-            }
         }
+    }
 
     // We found a matching alias already being referenced
-    if (aliasIterator != m_referencedSchemaAliasMap.end())
-        {
+    if (aliasIterator != m_referencedSchemaAliasMap.end()) {
         int subScript;
-        for (subScript = 1; subScript < 500; subScript++)
-            {
+        for (subScript = 1; subScript < 500; subScript++) {
             Utf8Char temp[256];
             BeStringUtilities::Snprintf(temp, "%s%d", tmpAlias.c_str(), subScript);
             Utf8String tryAlias(temp);
-            for (aliasIterator = m_referencedSchemaAliasMap.begin(); aliasIterator != m_referencedSchemaAliasMap.end(); aliasIterator++)
-                {
-                if (0 == tryAlias.compare (aliasIterator->second))
-                    {
+            for (aliasIterator = m_referencedSchemaAliasMap.begin(); aliasIterator != m_referencedSchemaAliasMap.end(); aliasIterator++) {
+                if (0 == tryAlias.compare(aliasIterator->second)) {
                     break;
-                    }
-                }
-            // we didn't find the alias in the map
-            if (aliasIterator == m_referencedSchemaAliasMap.end())
-                {
-                tmpAlias = tryAlias;
-                break;
                 }
             }
+            // we didn't find the alias in the map
+            if (aliasIterator == m_referencedSchemaAliasMap.end()) {
+                tmpAlias = tryAlias;
+                break;
+            }
         }
+    }
 
     Utf8CP schemaName = refSchemaKey.GetName().c_str();
-    auto iter = std::find_if(m_refSchemaList.begin(), m_refSchemaList.end(), [&schemaName](const bpair<SchemaKey, ECSchemaPtr>& schemaPair) 
-        {
+    auto iter = std::find_if(m_refSchemaList.begin(), m_refSchemaList.end(), [&schemaName](const bpair<SchemaKey, ECSchemaPtr>& schemaPair) {
         return BeStringUtilities::Stricmp(schemaName, schemaPair.first.GetName().c_str()) == 0;
-        });
+    });
 
-    if (iter != m_refSchemaList.end())
-        {
+    if (iter != m_refSchemaList.end()) {
         LOG.warningv("Schema %s is adding a reference to %s while it already references %s. For compatibility this is currently permitted but probably indicates a problem.",
-            this->GetFullSchemaName().c_str(), refSchema.GetFullSchemaName().c_str(), iter->second->GetFullSchemaName().c_str());
+                     this->GetFullSchemaName().c_str(), refSchema.GetFullSchemaName().c_str(), iter->second->GetFullSchemaName().c_str());
         BeAssert(false && "Schema is adding a reference to a schema it already references under a different version. This is probably a problem.");
-        }
+    }
 
     m_refSchemaList[refSchemaKey] = &refSchema;
     // Check for recursion
-    if (AddingSchemaCausedCycles ())
-        {
-        m_refSchemaList.erase (refSchemaKey);
+    if (AddingSchemaCausedCycles()) {
+        m_refSchemaList.erase(refSchemaKey);
         return ECObjectsStatus::SchemaHasReferenceCycle;
-        }
-
-    m_referencedSchemaAliasMap.insert(bpair<ECSchemaP, const Utf8String> (&refSchema, tmpAlias));
-    return ECObjectsStatus::Success;
     }
+
+    m_referencedSchemaAliasMap.insert(bpair<ECSchemaP, const Utf8String>(&refSchema, tmpAlias));
+    return ECObjectsStatus::Success;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECSchema::RemoveReferencedSchema(SchemaKeyCR schemaKey, SchemaMatchType matchType, bool dropReferences)
-    {
+ECObjectsStatus ECSchema::RemoveReferencedSchema(SchemaKeyCR schemaKey, SchemaMatchType matchType, bool dropReferences) {
     ECSchemaReferenceListCR schemas = GetReferencedSchemas();
     auto schemaIt = schemas.Find(schemaKey, matchType);
     return schemaIt != schemas.end() ? RemoveReferencedSchema(*schemaIt->second) : ECObjectsStatus::SchemaNotFound;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema, bool dropReferences)
-    {
-    ECSchemaReferenceList::iterator schemaIterator = m_refSchemaList.find (refSchema.GetSchemaKey());
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema, bool dropReferences) {
+    ECSchemaReferenceList::iterator schemaIterator = m_refSchemaList.find(refSchema.GetSchemaKey());
     if (schemaIterator == m_refSchemaList.end())
         return ECObjectsStatus::SchemaNotFound;
 
     ECSchemaPtr refSchemaPtr = schemaIterator->second;
 
-    const auto HandleCustomAttribute = [&](IECCustomAttributeContainerP container, IECInstancePtr ca) -> ECObjectsStatus
-        {
-        if (ca->GetClass().GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
-            {
-            if (dropReferences)
-                {
+    const auto HandleCustomAttribute = [&](IECCustomAttributeContainerP container, IECInstancePtr ca) -> ECObjectsStatus {
+        if (ca->GetClass().GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()) {
+            if (dropReferences) {
                 container->RemoveCustomAttribute(ca->GetClass());
-                }
-            else
+            } else
                 return ECObjectsStatus::SchemaInUse;
-            }
+        }
         return ECObjectsStatus::Success;
-        };
+    };
 
     // Check for referenced schema in custom attribute
     for (auto ca : GetCustomAttributes(false))
-        if (ca->GetClass().GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
-            {
+        if (ca->GetClass().GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()) {
             auto handleAttrStatus = HandleCustomAttribute(this, ca);
             if (ECObjectsStatus::Success != handleAttrStatus)
                 return handleAttrStatus;
-            }
+        }
 
-    const auto unitUsesSchema = [&](ECUnitCP unit) -> bool
-        {
+    const auto unitUsesSchema = [&](ECUnitCP unit) -> bool {
         if (nullptr == unit)
             return false;
         if (unit->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
             return true;
-        if (((nullptr != unit->GetPhenomenon()) && (unit->GetPhenomenon()->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()))
-            || ((nullptr != unit->GetUnitSystem()) && (unit->GetUnitSystem()->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())))
+        if (((nullptr != unit->GetPhenomenon()) && (unit->GetPhenomenon()->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())) || ((nullptr != unit->GetUnitSystem()) && (unit->GetUnitSystem()->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())))
             return true;
         return false;
-        };
+    };
 
-    const auto formatUsesSchema = [&](NamedFormatCP format) -> bool
-        {
+    const auto formatUsesSchema = [&](NamedFormatCP format) -> bool {
         if (nullptr == format)
             return false;
         if ((nullptr != format->GetParentFormat()) && format->GetParentFormat()->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
             return true;
         if (!format->HasComposite())
             return false;
-        if (unitUsesSchema((ECUnitCP)format->GetCompositeMajorUnit())
-            || unitUsesSchema((ECUnitCP)format->GetCompositeMiddleUnit())
-            || unitUsesSchema((ECUnitCP)format->GetCompositeMinorUnit())
-            || unitUsesSchema((ECUnitCP)format->GetCompositeSubUnit()))
+        if (unitUsesSchema((ECUnitCP)format->GetCompositeMajorUnit()) || unitUsesSchema((ECUnitCP)format->GetCompositeMiddleUnit()) || unitUsesSchema((ECUnitCP)format->GetCompositeMinorUnit()) || unitUsesSchema((ECUnitCP)format->GetCompositeSubUnit()))
             return true;
         return false;
-        };
-    
-    const auto kindOfQuantityUsesSchema = [&](KindOfQuantityCP koq) -> bool
-        {
+    };
+
+    const auto kindOfQuantityUsesSchema = [&](KindOfQuantityCP koq) -> bool {
         if (nullptr == koq)
             return false;
         if (koq->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
             return true;
         if ((nullptr != koq->GetPersistenceUnit()) && unitUsesSchema(koq->GetPersistenceUnit()))
             return true;
-        if (!koq->GetPresentationFormats().empty())
-            {
-            for (auto format : koq->GetPresentationFormats())
-                {
+        if (!koq->GetPresentationFormats().empty()) {
+            for (auto format : koq->GetPresentationFormats()) {
                 if (formatUsesSchema(&format))
                     return true;
-                }
             }
+        }
         return false;
-        };
+    };
 
     // check for classes referencing it
-    for (ECClassP ecClass: GetClasses())
-        {
+    for (ECClassP ecClass : GetClasses()) {
         std::vector<ECClassP> baseClassesToRemove;
         // First, check each base class to see if the base class uses that schema
-        for (ECClassP baseClass: ecClass->GetBaseClasses())
-            {
-            if (baseClass->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
-                {
+        for (ECClassP baseClass : ecClass->GetBaseClasses()) {
+            if (baseClass->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()) {
                 if (dropReferences)
                     baseClassesToRemove.push_back(baseClass);
                 else
                     return ECObjectsStatus::SchemaInUse;
-                }
             }
-        if (dropReferences)
-            {
-            for (ECClassP baseClass : baseClassesToRemove)
-                {
+        }
+        if (dropReferences) {
+            for (ECClassP baseClass : baseClassesToRemove) {
                 ECObjectsStatus status = ecClass->RemoveBaseClass(*baseClass);
                 if (ECObjectsStatus::Success != status)
                     return status;
-                }
             }
+        }
 
-        if (ecClass->IsEntityClass())
-            {
+        if (ecClass->IsEntityClass()) {
             ECEntityClassCP appliesToClass = ecClass->GetEntityClassCP()->GetAppliesToClass();
-            if (nullptr != appliesToClass && appliesToClass->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
-                {
-                if (dropReferences)
-                    {
+            if (nullptr != appliesToClass && appliesToClass->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()) {
+                if (dropReferences) {
                     auto setAppliesToStatus = ecClass->GetEntityClassP()->SetAppliesToClass(nullptr);
                     if (ECObjectsStatus::Success != setAppliesToStatus)
                         return setAppliesToStatus;
-                    }
-                else
+                } else
                     return ECObjectsStatus::SchemaInUse;
-                }
             }
+        }
 
         for (auto ca : ecClass->GetCustomAttributes(false))
-            if (ca->GetClass().GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
-                {
+            if (ca->GetClass().GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()) {
                 auto handleAttrStatus = HandleCustomAttribute(ecClass, ca);
                 if (ECObjectsStatus::Success != handleAttrStatus)
                     return handleAttrStatus;
-                }
+            }
 
         // If it is a relationship class, check the constraints to make sure the constraints don't use that schema
         ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
-        if (nullptr != relClass)
-            {
-            for (auto* constraint : std::array<ECRelationshipConstraintP, 2>({&relClass->GetTarget(), &relClass->GetSource()}))
-                {
+        if (nullptr != relClass) {
+            for (auto* constraint : std::array<ECRelationshipConstraintP, 2>({&relClass->GetTarget(), &relClass->GetSource()})) {
                 for (auto ca : constraint->GetCustomAttributes(false))
-                    if (ca->GetClass().GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
-                        {
+                    if (ca->GetClass().GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()) {
                         auto handleAttrStatus = HandleCustomAttribute(constraint, ca);
                         if (ECObjectsStatus::Success != handleAttrStatus)
                             return handleAttrStatus;
-                        }
+                    }
 
-                if (constraint->IsAbstractConstraintDefined())
-                    {
-                    if (constraint->GetAbstractConstraint()->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
-                        {
+                if (constraint->IsAbstractConstraintDefined()) {
+                    if (constraint->GetAbstractConstraint()->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()) {
                         if (dropReferences)
                             constraint->RemoveAbstractConstraint();
                         else
                             return ECObjectsStatus::SchemaInUse;
-                        }
                     }
+                }
                 std::vector<ECClassCP> constraintsToRemove;
-                for (auto constraintClass : constraint->GetConstraintClasses())
-                    {
-                    if (constraintClass->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
-                        {
+                for (auto constraintClass : constraint->GetConstraintClasses()) {
+                    if (constraintClass->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()) {
                         if (dropReferences)
                             constraintsToRemove.push_back(constraintClass);
                         else
                             return ECObjectsStatus::SchemaInUse;
-                        }
                     }
-                if (dropReferences)
-                    {
-                    for (ECClassCP constraintClass : constraintsToRemove)
-                        {
+                }
+                if (dropReferences) {
+                    for (ECClassCP constraintClass : constraintsToRemove) {
                         ECObjectsStatus status = constraint->RemoveClass(*constraintClass);
                         if (ECObjectsStatus::Success != status)
                             return status;
-                        }
                     }
                 }
             }
+        }
 
         std::vector<ECPropertyP> propertiesToDelete;
         // And make sure that there are no struct types from another schema
-        for (ECPropertyP prop: ecClass->GetProperties(false))
-            {
+        for (ECPropertyP prop : ecClass->GetProperties(false)) {
             // Check Custom Attributes before checking property type
             for (auto ca : prop->GetCustomAttributes(false))
-                if (ca->GetClass().GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
-                    {
+                if (ca->GetClass().GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()) {
                     auto handleAttrStatus = HandleCustomAttribute(prop, ca);
                     if (ECObjectsStatus::Success != handleAttrStatus)
                         return handleAttrStatus;
-                    }
+                }
 
-            if (prop->IsCategoryDefinedLocally())
-                {
-                if (prop->GetCategory()->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
-                    {
-                    if (dropReferences)
-                        {
+            if (prop->IsCategoryDefinedLocally()) {
+                if (prop->GetCategory()->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()) {
+                    if (dropReferences) {
                         auto setCategoryStatus = prop->SetCategory(nullptr);
                         if (ECObjectsStatus::Success != setCategoryStatus)
                             return setCategoryStatus;
-                        }
-                    else
+                    } else
                         return ECObjectsStatus::SchemaInUse;
-                    }
                 }
-            if (prop->IsKindOfQuantityDefinedLocally())
-                {
-                if ((nullptr != prop->GetKindOfQuantity()) && kindOfQuantityUsesSchema(prop->GetKindOfQuantity()))
-                    {
-                    if (dropReferences)
-                        {
+            }
+            if (prop->IsKindOfQuantityDefinedLocally()) {
+                if ((nullptr != prop->GetKindOfQuantity()) && kindOfQuantityUsesSchema(prop->GetKindOfQuantity())) {
+                    if (dropReferences) {
                         auto removeKoqStatus = prop->SetKindOfQuantity(nullptr);
                         if (ECObjectsStatus::Success != removeKoqStatus)
                             return removeKoqStatus;
-                        }
-                    else
+                    } else
                         return ECObjectsStatus::SchemaInUse;
-                    }
-                }
-
-            ECEnumerationCP enumeration;
-            if (prop->GetIsPrimitive())
-                {
-                PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
-                enumeration = primProp->GetEnumeration();
-                }
-            else if (prop->GetIsPrimitiveArray())
-                {
-                PrimitiveArrayECPropertyCP primArrayProp = prop->GetAsPrimitiveArrayProperty();
-                enumeration = primArrayProp->GetEnumeration();
-                }
-            else
-                {
-                enumeration = nullptr;
-                }
-            
-            if (nullptr != enumeration && enumeration->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
-                {
-                if (dropReferences)
-                    propertiesToDelete.push_back(prop);
-                else
-                    return ECObjectsStatus::SchemaInUse;
-                }
-
-            ECClassCP typeClass = nullptr;
-            if (prop->GetIsStruct())
-                {
-                typeClass = &(prop->GetAsStructProperty()->GetType());
-                }
-            else if (prop->GetIsStructArray())
-                {
-                typeClass = &(prop->GetAsStructArrayProperty()->GetStructElementType());
-                }
-            else if (prop->GetIsNavigation())
-                {
-                typeClass = prop->GetAsNavigationProperty()->GetRelationshipClass();
-                }
-            if (nullptr == typeClass)
-                continue;
-
-            if (typeClass->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
-                {
-                if (dropReferences)
-                    propertiesToDelete.push_back(prop);
-                else
-                    return ECObjectsStatus::SchemaInUse;
                 }
             }
 
-            if (dropReferences)
-                {
-                for (auto propertyToDelete : propertiesToDelete)
-                    {
-                    if (nullptr != propertyToDelete)
-                        {
-                        auto removeEnumerationStatus = ecClass->DeleteProperty(*propertyToDelete);
-                        if (ECObjectsStatus::Success != removeEnumerationStatus)
-                            return removeEnumerationStatus;
-                        }
-                    }
-                }
+            ECEnumerationCP enumeration;
+            if (prop->GetIsPrimitive()) {
+                PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
+                enumeration = primProp->GetEnumeration();
+            } else if (prop->GetIsPrimitiveArray()) {
+                PrimitiveArrayECPropertyCP primArrayProp = prop->GetAsPrimitiveArrayProperty();
+                enumeration = primArrayProp->GetEnumeration();
+            } else {
+                enumeration = nullptr;
+            }
+
+            if (nullptr != enumeration && enumeration->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()) {
+                if (dropReferences)
+                    propertiesToDelete.push_back(prop);
+                else
+                    return ECObjectsStatus::SchemaInUse;
+            }
+
+            ECClassCP typeClass = nullptr;
+            if (prop->GetIsStruct()) {
+                typeClass = &(prop->GetAsStructProperty()->GetType());
+            } else if (prop->GetIsStructArray()) {
+                typeClass = &(prop->GetAsStructArrayProperty()->GetStructElementType());
+            } else if (prop->GetIsNavigation()) {
+                typeClass = prop->GetAsNavigationProperty()->GetRelationshipClass();
+            }
+            if (nullptr == typeClass)
+                continue;
+
+            if (typeClass->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()) {
+                if (dropReferences)
+                    propertiesToDelete.push_back(prop);
+                else
+                    return ECObjectsStatus::SchemaInUse;
+            }
         }
-    
+
+        if (dropReferences) {
+            for (auto propertyToDelete : propertiesToDelete) {
+                if (nullptr != propertyToDelete) {
+                    auto removeEnumerationStatus = ecClass->DeleteProperty(*propertyToDelete);
+                    if (ECObjectsStatus::Success != removeEnumerationStatus)
+                        return removeEnumerationStatus;
+                }
+            }
+        }
+    }
+
     std::vector<KindOfQuantityP> koqToDelete;
-    for (auto koq : GetKindOfQuantities())
-        {
+    for (auto koq : GetKindOfQuantities()) {
         ECUnitCP persUnit = koq->GetPersistenceUnit();
-        if (nullptr != persUnit && persUnit->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey())
-            {
+        if (nullptr != persUnit && persUnit->GetSchema().GetSchemaKey() == refSchemaPtr->GetSchemaKey()) {
             if (dropReferences)
                 koqToDelete.push_back(koq);
             else
                 return ECObjectsStatus::SchemaInUse;
-            }
+        }
 
-        for (auto f : koq->GetPresentationFormats())
-            {
-            if (formatUsesSchema(&f))
-                {
+        for (auto f : koq->GetPresentationFormats()) {
+            if (formatUsesSchema(&f)) {
                 if (dropReferences)
                     koq->RemovePresentationFormat(f);
                 else
                     return ECObjectsStatus::SchemaInUse;
-                }
             }
         }
-    
-    if (dropReferences)
-        {
-        for (auto koq : koqToDelete)
-            {
+    }
+
+    if (dropReferences) {
+        for (auto koq : koqToDelete) {
             auto deleteKoqStatus = DeleteKindOfQuantity(*koq);
             if (ECObjectsStatus::Success != deleteKoqStatus)
                 return deleteKoqStatus;
-            }
         }
+    }
 
     std::vector<ECUnitP> unitsToDelete;
-    for (auto unit : GetUnits())
-        {
-        if (unitUsesSchema(unit))
-            {
+    for (auto unit : GetUnits()) {
+        if (unitUsesSchema(unit)) {
             if (dropReferences)
                 unitsToDelete.push_back(unit);
             else
                 return ECObjectsStatus::SchemaInUse;
-            }
         }
+    }
 
-    if (dropReferences)
-        {
-        for (auto unit : unitsToDelete)
-            {
+    if (dropReferences) {
+        for (auto unit : unitsToDelete) {
             auto deleteUnitStatus = DeleteUnit(*unit);
             if (ECObjectsStatus::Success != deleteUnitStatus)
                 return deleteUnitStatus;
-            }
         }
+    }
 
     std::vector<ECFormatP> formatsToDelete;
-    for (auto format : GetFormats())
-        {
-        if (formatUsesSchema(format))
-            {
+    for (auto format : GetFormats()) {
+        if (formatUsesSchema(format)) {
             if (dropReferences)
                 formatsToDelete.push_back(format);
             else
                 return ECObjectsStatus::SchemaInUse;
-            }
         }
+    }
 
-    if (dropReferences)
-        {
-        for (auto format : formatsToDelete)
-            {
+    if (dropReferences) {
+        for (auto format : formatsToDelete) {
             auto deleteFormatStatus = DeleteFormat(*format);
             if (ECObjectsStatus::Success != deleteFormatStatus)
                 return deleteFormatStatus;
-            }
         }
-    
+    }
+
     m_refSchemaList.erase(schemaIterator);
     bmap<ECSchemaP, Utf8String>::iterator iterator = m_referencedSchemaAliasMap.find(&refSchema);
     if (iterator != m_referencedSchemaAliasMap.end())
         m_referencedSchemaAliasMap.erase(iterator);
 
     return ECObjectsStatus::Success;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-int ECSchema::RemoveUnusedSchemaReferences()
-    {
+int ECSchema::RemoveUnusedSchemaReferences() {
     bvector<SchemaKey> refSchemaKeys;
     for (auto refSchema : GetReferencedSchemas())
         refSchemaKeys.push_back(refSchema.first);
 
     int numRemovedSchema = 0;
-    for (auto key : refSchemaKeys)
-        {
+    for (auto key : refSchemaKeys) {
         if (ECObjectsStatus::Success == RemoveReferencedSchema(key))
             ++numRemovedSchema;
-        }
-    return numRemovedSchema;
     }
+    return numRemovedSchema;
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info, ECSchemaReadContextR readContext)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info, ECSchemaReadContextR readContext) {
     m_supplementalSchemaInfo = info;
     if (nullptr == info)
         this->RemoveCustomAttribute(SupplementalSchemaInfo::GetCustomAttributeSchemaName(),
                                     SupplementalSchemaInfo::GetCustomAttributeAccessor());
-    else
-        {
+    else {
         IECInstancePtr attribute = info->CreateCustomAttribute(readContext);
-        if (attribute.IsValid())
-            {
+        if (attribute.IsValid()) {
             auto& coreCA = attribute->GetClass().GetSchema();
             if (!ECSchema::IsSchemaReferenced(*this, coreCA))
                 this->AddReferencedSchema(const_cast<ECSchemaR>(coreCA));
             this->SetCustomAttribute(*attribute);
-            }
         }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr ECSchema::LocateSchema(SchemaKeyR key, ECSchemaReadContextR schemaContext)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr ECSchema::LocateSchema(SchemaKeyR key, ECSchemaReadContextR schemaContext) {
     return schemaContext.LocateSchema(key, SchemaMatchType::LatestWriteCompatible);
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------+---------------+---------------+---------------+---------------+-------
-static void AddFilePathToSchemaPaths(ECSchemaReadContextR schemaContext, WCharCP ecSchemaXmlFile)
-    {
-    BeFileName schemaDirectory (BeFileName::DevAndDir, ecSchemaXmlFile);
-    schemaContext.AddSchemaPath(schemaDirectory, true); // We always add the last path we used to the top in the priority list, if it does not exist yet
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-static ECSchemaPtr ParseHeaderAndLocateSchema(WCharCP schemaXmlFile, ECSchemaReadContextR schemaContext, const SchemaMatchType matchType, SchemaReadStatus* outStatus)
-    {
+static void AddFilePathToSchemaPaths(ECSchemaReadContextR schemaContext, WCharCP ecSchemaXmlFile) {
+    BeFileName schemaDirectory(BeFileName::DevAndDir, ecSchemaXmlFile);
+    schemaContext.AddSchemaPath(schemaDirectory, true);  // We always add the last path we used to the top in the priority list, if it does not exist yet
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+static ECSchemaPtr ParseHeaderAndLocateSchema(WCharCP schemaXmlFile, ECSchemaReadContextR schemaContext, const SchemaMatchType matchType, SchemaReadStatus* outStatus) {
     pugi::xml_document xmlDoc;
     pugi::xml_parse_result result = xmlDoc.load_file(schemaXmlFile);
-    if(!result)
-    {
+    if (!result) {
         BeAssert(s_noAssert);
-        LOG.errorv ("Error loading XML file %ls: %s (error at char %d)", schemaXmlFile, result.description(), result.offset);
+        LOG.errorv("Error loading XML file %ls: %s (error at char %d)", schemaXmlFile, result.description(), result.offset);
         if (outStatus != nullptr)
             *outStatus = SchemaReadStatus::FailedToParseXml;
         return nullptr;
@@ -2968,69 +2638,59 @@ static ECSchemaPtr ParseHeaderAndLocateSchema(WCharCP schemaXmlFile, ECSchemaRea
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     pugi::xml_node schemaNode;
     auto status = SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
-    if (SchemaReadStatus::Success != status)
-        {
+    if (SchemaReadStatus::Success != status) {
         if (outStatus != nullptr)
             *outStatus = status;
         return nullptr;
-        }
+    }
 
     ECSchemaPtr schema = schemaContext.LocateSchema(searchKey, matchType);
-    if (!schema.IsValid())
-        {
+    if (!schema.IsValid()) {
         const auto stat = ECSchema::ReadFromXmlFile(schema, schemaXmlFile, schemaContext);
         if (outStatus != nullptr)
             *outStatus = stat;
-        }
-    else {
+    } else {
         if (outStatus != nullptr)
             *outStatus = SchemaReadStatus::Success;
-        }
+    }
     return schema;
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECSchemaPtr ECSchema::LocateSchema(WCharCP schemaXmlFile, ECSchemaReadContextR schemaContext, const SchemaMatchType matchType, SchemaReadStatus* readStatus)
-    {
+ECSchemaPtr ECSchema::LocateSchema(WCharCP schemaXmlFile, ECSchemaReadContextR schemaContext, const SchemaMatchType matchType, SchemaReadStatus* readStatus) {
     return ParseHeaderAndLocateSchema(schemaXmlFile, schemaContext, matchType, readStatus);
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECSchemaPtr ECSchema::LocateSchema(Utf8CP schemaXmlFile, ECSchemaReadContextR schemaContext, const SchemaMatchType matchType, SchemaReadStatus* readStatus)
-    {
+ECSchemaPtr ECSchema::LocateSchema(Utf8CP schemaXmlFile, ECSchemaReadContextR schemaContext, const SchemaMatchType matchType, SchemaReadStatus* readStatus) {
     return ParseHeaderAndLocateSchema(WString(schemaXmlFile, BentleyCharEncoding::Utf8).c_str(), schemaContext, matchType, readStatus);
-    }
+}
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SearchPathSchemaFileLocater::TryLoadingSupplementalSchemas(Utf8StringCR schemaName, WStringCR schemaFilePath, ECSchemaReadContextR schemaContext, bvector<ECSchemaP>& supplementalSchemas)
-    {
-    BeFileName schemaPath (schemaFilePath.c_str());
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool SearchPathSchemaFileLocater::TryLoadingSupplementalSchemas(Utf8StringCR schemaName, WStringCR schemaFilePath, ECSchemaReadContextR schemaContext, bvector<ECSchemaP>& supplementalSchemas) {
+    BeFileName schemaPath(schemaFilePath.c_str());
     WString filter;
     filter.AssignUtf8(schemaName.c_str());
     filter += L"_Supplemental_*.*.*.ecschema.xml";
     schemaPath.AppendToPath(filter.c_str());
     BeFileListIterator fileList(schemaPath.GetName(), false);
     BeFileName filePath;
-    while (SUCCESS == fileList.GetNextFileName (filePath))
-        {
-        WCharCP     fileName = filePath.GetName();
+    while (SUCCESS == fileList.GetNextFileName(filePath)) {
+        WCharCP fileName = filePath.GetName();
         ECSchemaPtr schemaOut = nullptr;
 
-        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile (schemaOut, fileName, schemaContext))
+        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(schemaOut, fileName, schemaContext))
             continue;
         supplementalSchemas.push_back(schemaOut.get());
-        }
+    }
 
-    //The first file filter already finds files with 3 digits, this one would return them a second time
+    // The first file filter already finds files with 3 digits, this one would return them a second time
     /*BeFileName schemaPath2(schemaFilePath.c_str());
     filter.AssignUtf8(schemaName.c_str());
     filter += L"_Supplemental_*.*.*.*.ecschema.xml";
@@ -3048,66 +2708,60 @@ bool SearchPathSchemaFileLocater::TryLoadingSupplementalSchemas(Utf8StringCR sch
         }*/
 
     return true;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 SearchPathSchemaFileLocater::SearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt) : m_searchPaths(searchPaths), m_includeFilesWithNoVersionExt(includeFilesWithNoVerExt) {};
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SearchPathSchemaFileLocater::~SearchPathSchemaFileLocater () {};
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+SearchPathSchemaFileLocater::~SearchPathSchemaFileLocater() {};
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SearchPathSchemaFileLocaterPtr SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+SearchPathSchemaFileLocaterPtr SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt) {
     return new SearchPathSchemaFileLocater(searchPaths, includeFilesWithNoVerExt);
-    }
+}
 
-void SearchPathSchemaFileLocater::AddCandidateSchemas(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, WStringCR fileFilter, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext)
-    {
+void SearchPathSchemaFileLocater::AddCandidateSchemas(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, WStringCR fileFilter, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext) {
     BeFileName fileExpression(schemaPath.c_str());
     fileExpression.AppendToPath(fileFilter.c_str());
 
-    BeFileListIterator  fileList(fileExpression.c_str(), false);
-    BeFileName          filePath;
+    BeFileListIterator fileList(fileExpression.c_str(), false);
+    BeFileName filePath;
 
-    while (SUCCESS == fileList.GetNextFileName(filePath))
-        {
+    while (SUCCESS == fileList.GetNextFileName(filePath)) {
         Utf8String fileName(filePath.GetFileNameWithoutExtension());
 
         SchemaKey key;
-        if (SchemaKey::ParseSchemaFullName(key, fileName.c_str()) != ECObjectsStatus::Success)
-            {
+        if (SchemaKey::ParseSchemaFullName(key, fileName.c_str()) != ECObjectsStatus::Success) {
             LOG.warningv("Failed to parse schema file name %s. Skipping that file.", fileName.c_str());
             continue;
-            }
+        }
 
         SchemaKey ciKey(Utf8String(key.GetName().c_str()).ToLower().c_str(), key.GetVersionRead(), key.GetVersionWrite(), key.GetVersionMinor());
         SchemaKey ciDesiredSchemaKey(Utf8String(desiredSchemaKey.GetName().c_str()).ToLower().c_str(), desiredSchemaKey.GetVersionRead(), desiredSchemaKey.GetVersionWrite(), desiredSchemaKey.GetVersionMinor());
-        //If key matches, OR the legacy compatible match evaluates true
+        // If key matches, OR the legacy compatible match evaluates true
         if (ciKey.Matches(ciDesiredSchemaKey, matchType) ||
             (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && (matchType == SchemaMatchType::LatestWriteCompatible || matchType == SchemaMatchType::LatestReadCompatible) &&
-             0 == ciKey.GetName().CompareTo(ciDesiredSchemaKey.GetName()) && key.GetVersionRead() == desiredSchemaKey.GetVersionRead()))
-            {
+             0 == ciKey.GetName().CompareTo(ciDesiredSchemaKey.GetName()) && key.GetVersionRead() == desiredSchemaKey.GetVersionRead())) {
             foundFiles.push_back(CandidateSchema());
             auto& candidate = foundFiles.back();
             candidate.FileName = filePath;
             candidate.Key = key;
             candidate.SearchPath = schemaPath;
-            }
         }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, Utf8CP schemaName, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, Utf8CP schemaName, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext) {
     BeAssert(m_includeFilesWithNoVersionExt && "Should be called only when no-extension schemas are to be examined");
 
     BeFileName schemaPathname(schemaPath.c_str());
@@ -3120,8 +2774,7 @@ void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<Candidat
 
     pugi::xml_document xmlDoc;
     pugi::xml_parse_result result = xmlDoc.load_file(schemaPathname.GetWCharCP());
-    if(!result)
-    {
+    if (!result) {
         BeAssert(s_noAssert);
         LOG.warningv("Failed to read schema from %ls: %s", schemaPathname.c_str(), result.description());
         return;
@@ -3130,29 +2783,26 @@ void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<Candidat
     SchemaKey key;
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     pugi::xml_node schemaNode;
-    if (SchemaReadStatus::Success != SchemaXmlReader::ReadSchemaStub(key, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc))
-        {
+    if (SchemaReadStatus::Success != SchemaXmlReader::ReadSchemaStub(key, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc)) {
         LOG.warningv("Failed to read schema version from %ls", schemaPathname.c_str());
         return;
-        }
+    }
 
     SchemaKey ciKey(Utf8String(key.GetName().c_str()).ToLower().c_str(), key.GetVersionRead(), key.GetVersionWrite(), key.GetVersionMinor());
     SchemaKey ciDesiredSchemaKey(Utf8String(desiredSchemaKey.GetName().c_str()).ToLower().c_str(), desiredSchemaKey.GetVersionRead(), desiredSchemaKey.GetVersionWrite(), desiredSchemaKey.GetVersionMinor());
-    //If key matches, OR the legacy compatible match evaluates true
+    // If key matches, OR the legacy compatible match evaluates true
     if (ciKey.Matches(ciDesiredSchemaKey, matchType) ||
         (schemaContext.m_acceptLegacyImperfectLatestCompatibleMatch && matchType == SchemaMatchType::LatestWriteCompatible &&
-        0 == ciKey.GetName().CompareTo(ciDesiredSchemaKey.GetName()) && key.GetVersionRead() == desiredSchemaKey.GetVersionRead()))
-        {
+         0 == ciKey.GetName().CompareTo(ciDesiredSchemaKey.GetName()) && key.GetVersionRead() == desiredSchemaKey.GetVersionRead())) {
         foundFiles.push_back(CandidateSchema());
         auto& candidate = foundFiles.back();
         candidate.FileName = schemaPathname;
         candidate.Key = key;
         candidate.SearchPath = schemaPath;
-        }
     }
+}
 
-void SearchPathSchemaFileLocater::FindEligibleSchemaFiles(bvector<CandidateSchema>& foundFiles, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext)
-    {
+void SearchPathSchemaFileLocater::FindEligibleSchemaFiles(bvector<CandidateSchema>& foundFiles, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext) {
     Utf8CP schemaName = desiredSchemaKey.GetName().c_str();
     WString twoVersionExpression;
     WString threeVersionExpression;
@@ -3162,47 +2812,39 @@ void SearchPathSchemaFileLocater::FindEligibleSchemaFiles(bvector<CandidateSchem
     Utf8String twoVersionSuffix;
     Utf8String threeVersionSuffix;
 
-    if (matchType == SchemaMatchType::Latest)
-        {
+    if (matchType == SchemaMatchType::Latest) {
         twoVersionSuffix = ".*.*.ecschema.xml";
         threeVersionSuffix = ".*.*.*.ecschema.xml";
-        }
-    else if (matchType == SchemaMatchType::LatestWriteCompatible)
-        {
+    } else if (matchType == SchemaMatchType::LatestWriteCompatible) {
         twoVersionSuffix.Sprintf(".%02" PRIu32 ".*.ecschema.xml", desiredSchemaKey.GetVersionRead());
         threeVersionSuffix.Sprintf(".%02" PRIu32 ".%02" PRIu32 ".*.ecschema.xml", desiredSchemaKey.GetVersionRead(), desiredSchemaKey.GetVersionWrite());
-        }
-    else if (matchType == SchemaMatchType::LatestReadCompatible)
-        {
+    } else if (matchType == SchemaMatchType::LatestReadCompatible) {
         twoVersionSuffix.Sprintf(".%02" PRIu32 ".*.ecschema.xml", desiredSchemaKey.GetVersionRead());
         threeVersionSuffix.Sprintf(".%02" PRIu32 ".*.*.ecschema.xml", desiredSchemaKey.GetVersionRead());
-        }
-    else //MatchType_Exact
-        {
+    } else  // MatchType_Exact
+    {
         twoVersionSuffix.Sprintf(".%02" PRIu32 ".%02" PRIu32 ".ecschema.xml", desiredSchemaKey.GetVersionRead(), desiredSchemaKey.GetVersionMinor());
         threeVersionSuffix.Sprintf(".%02" PRIu32 ".%02" PRIu32 ".%02" PRIu32 ".ecschema.xml",
                                    desiredSchemaKey.GetVersionRead(), desiredSchemaKey.GetVersionWrite(), desiredSchemaKey.GetVersionMinor());
-        }
+    }
 
     twoVersionExpression.AppendUtf8(twoVersionSuffix.c_str());
     threeVersionExpression.AppendUtf8(threeVersionSuffix.c_str());
 
-    for (WString schemaPathStr : m_searchPaths)
-        {
-        //LOG.debugv("(SearchPathSchemaFileLocater) Attempting to locate schema %s in path %ls", schemaName, schemaPathStr.c_str());
+    for (WString schemaPathStr : m_searchPaths) {
+        // LOG.debugv("(SearchPathSchemaFileLocater) Attempting to locate schema %s in path %ls", schemaName, schemaPathStr.c_str());
 
         if (m_includeFilesWithNoVersionExt)
             AddCandidateNoExtensionSchema(foundFiles, schemaPathStr, schemaName, desiredSchemaKey, matchType, schemaContext);
         AddCandidateSchemas(foundFiles, schemaPathStr, twoVersionExpression, desiredSchemaKey, matchType, schemaContext);
         AddCandidateSchemas(foundFiles, schemaPathStr, threeVersionExpression, desiredSchemaKey, matchType, schemaContext);
-        }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) {
     bpair<SchemaKey, SchemaMatchType> lookup = make_bpair<SchemaKey, SchemaMatchType>(key, matchType);
     bmap<bpair<SchemaKey, SchemaMatchType>, ECSchemaPtr>::iterator iter = m_knownSchemas.find(lookup);
     if (iter != m_knownSchemas.end())
@@ -3212,28 +2854,26 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
     FindEligibleSchemaFiles(eligibleSchemaFiles, key, matchType, schemaContext);
 
     size_t resultCount = eligibleSchemaFiles.size();
-    if (resultCount == 0)
-        {
+    if (resultCount == 0) {
         m_knownSchemas.Insert(lookup, nullptr);
         return nullptr;
-        }
+    }
 
     auto& schemaToLoad = *std::max_element(eligibleSchemaFiles.begin(), eligibleSchemaFiles.end(), SchemyKeyIsLessByVersion);
     LOG.debugv(L"SearchPathSchemaFileLocater::_LocateSchema: Attempting to load schema %ls...", schemaToLoad.FileName.GetName());
 
-    //Get cached version of the schema
-    ECSchemaPtr schemaOut = schemaContext.GetFoundSchema(schemaToLoad.Key, SchemaMatchType::Exact);;
-    if (schemaOut.IsValid())
-        {
+    // Get cached version of the schema
+    ECSchemaPtr schemaOut = schemaContext.GetFoundSchema(schemaToLoad.Key, SchemaMatchType::Exact);
+    ;
+    if (schemaOut.IsValid()) {
         m_knownSchemas.Insert(make_bpair<SchemaKey, SchemaMatchType>(key, SchemaMatchType::Exact), schemaOut);
         return schemaOut;
-        }
+    }
 
-    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(schemaOut, schemaToLoad.FileName.c_str(), schemaContext, false))
-        {
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(schemaOut, schemaToLoad.FileName.c_str(), schemaContext, false)) {
         m_knownSchemas.Insert(lookup, nullptr);
         return nullptr;
-        }
+    }
 
     LOG.debugv(L"Located %ls...", schemaToLoad.FileName.c_str());
 
@@ -3241,21 +2881,19 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
     bvector<ECSchemaP> supplementalSchemas;
     TryLoadingSupplementalSchemas(schemaToLoad.Key.GetName().c_str(), schemaToLoad.SearchPath, schemaContext, supplementalSchemas);
 
-    if (supplementalSchemas.size() > 0)
-        {
+    if (supplementalSchemas.size() > 0) {
         ECN::SupplementedSchemaBuilder builder;
         builder.UpdateSchema(*schemaOut, supplementalSchemas, schemaContext);
-        }
+    }
 
     m_knownSchemas.Insert(lookup, schemaOut);
     return schemaOut;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr StringSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr StringSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) {
     // Check if locator has a schema key that matches the key and match type
     auto matches = [&key, &matchType](const std::pair<SchemaKey, Utf8String>& pair) { return pair.first.Matches(key, matchType); };
     bmap<SchemaKey, Utf8String>::const_iterator iter = std::find_if(m_schemaStrings.begin(), m_schemaStrings.end(), matches);
@@ -3264,47 +2902,42 @@ ECSchemaPtr StringSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType m
 
     // Read the schema from Xml string
     ECSchemaPtr schemaOut;
-    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schemaOut, iter->second.c_str(), schemaContext))
-        {
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schemaOut, iter->second.c_str(), schemaContext)) {
         return nullptr;
-        }
-
-    return schemaOut;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr SanitizingSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
-    {
+    return schemaOut;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr SanitizingSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) {
     ECSchemaReadContextPtr internalContext = ECSchemaReadContext::CreateContext(true, true);
     internalContext->AddSchemaLocater(GetInnerLocater());
-    //We may want to expose the schemas available in schemaContext to the internalContext. For ECDb that's not necessary, so we don't do it for now.
+    // We may want to expose the schemas available in schemaContext to the internalContext. For ECDb that's not necessary, so we don't do it for now.
     auto innerSchema = internalContext->LocateSchema(key, matchType);
-    if(!innerSchema.IsValid())
+    if (!innerSchema.IsValid())
         return nullptr;
 
     ECSchemaPtr sanitizedSchema;
     LOG.infov("Creating copy of returned schema %s to clean schema graph", innerSchema->GetName().c_str());
     auto status = innerSchema->CopySchema(sanitizedSchema, &schemaContext, false);
-    
-    if(status != ECObjectsStatus::Success)
-        {
+
+    if (status != ECObjectsStatus::Success) {
         LOG.errorv("Failed to copy schema %s for sanitization. Status: %d", innerSchema->GetName().c_str(), (int)status);
         return nullptr;
-        }
-    
-    if(!sanitizedSchema.IsValid())
-        {
+    }
+
+    if (!sanitizedSchema.IsValid()) {
         LOG.errorv("Sanitized schema copy is invalid for schema %s", innerSchema->GetName().c_str());
         return nullptr;
-        }
-    
-    if(schemaContext.AddSchema(*sanitizedSchema) == ECObjectsStatus::DuplicateSchema)
-        {
+    }
+
+    if (schemaContext.AddSchema(*sanitizedSchema) == ECObjectsStatus::DuplicateSchema) {
         LOG.debugv("Duplicate schema detected when adding sanitized copy of %s to schema context", innerSchema->GetName().c_str());
         return nullptr;
-        }
+    }
 
     Utf8PrintfString origin("Sanitized copy of %s", innerSchema->GetOrigin().c_str());
     sanitizedSchema->SetOrigin(origin);
@@ -3312,96 +2945,85 @@ ECSchemaPtr SanitizingSchemaLocater::_LocateSchema(SchemaKeyR key, SchemaMatchTy
     // For unknown reasons, CopySchema does not preserve this. But there is a comment suggesting it does that on purpose. So we do it here outside.
     sanitizedSchema->SetOriginalECXmlVersion(innerSchema->GetOriginalECXmlVersionMajor(), innerSchema->GetOriginalECXmlVersionMinor());
     return sanitizedSchema;
-    }
+}
 
-struct ChecksumHelper
-{
-    static Utf8String ComputeCheckSumForString(Utf8CP string, size_t len)
-        {
+struct ChecksumHelper {
+    static Utf8String ComputeCheckSumForString(Utf8CP string, size_t len) {
         SHA1 sha1;
         return sha1((Byte const*)string, sizeof(Utf8Char) * len);
-        }
-    static Utf8String ComputeCheckSumForString(WCharCP string, size_t len)
-        {
+    }
+    static Utf8String ComputeCheckSumForString(WCharCP string, size_t len) {
         SHA1 sha1;
         return sha1((Byte const*)string, sizeof(WChar) * len);
-        }
-    static Utf8String ComputeCheckSumForFile(WCharCP schemaFile)
-        {
+    }
+    static Utf8String ComputeCheckSumForFile(WCharCP schemaFile) {
         Utf8String checkSum;
         BeFile file;
-        if (BeFileStatus::Success != file.Open (schemaFile, BeFileAccess::Read))
-            {
+        if (BeFileStatus::Success != file.Open(schemaFile, BeFileAccess::Read)) {
             BeAssert(false);
             return checkSum;
-            }
+        }
 
         ByteStream fileContents;
-        if (BeFileStatus::Success != file.ReadEntireFile(fileContents))
-            {
+        if (BeFileStatus::Success != file.ReadEntireFile(fileContents)) {
             BeAssert(false);
             return checkSum;
-            }
+        }
 
         SHA1 sha1;
         return sha1((Byte const*)fileContents.GetData(), fileContents.GetSize());
-        }
+    }
 };
 
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+  * @bsimethod
+  +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-Utf8String ECSchema::ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len)
-    {
+Utf8String ECSchema::ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len) {
     return ChecksumHelper::ComputeCheckSumForString(str, len);
-    }
+}
 
- /*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECSchema::ComputeCheckSum()
-    {
+Utf8String ECSchema::ComputeCheckSum() {
     Utf8String xmlStr;
     ECVersion xmlVersion;
 
     if (ECObjectsStatus::Success != CreateECVersion(xmlVersion, m_originalECXmlVersionMajor, m_originalECXmlVersionMinor))
         xmlVersion = ECVersion::V3_1;
-    if (SchemaWriteStatus::Success != WriteToXmlString (xmlStr, xmlVersion))
+    if (SchemaWriteStatus::Success != WriteToXmlString(xmlStr, xmlVersion))
         return "";
 
     SHA1 sha1;
     m_key.SetChecksum(sha1((Byte const*)xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length()));
     return m_key.GetChecksum();
-    }
+}
 
-void ReportFailedSchema(SchemaKeyCR key, Utf8StringCR additionalInfo, SchemaReadStatus status, ECSchemaReadContextR schemaContext)
-    {
+void ReportFailedSchema(SchemaKeyCR key, Utf8StringCR additionalInfo, SchemaReadStatus status, ECSchemaReadContextR schemaContext) {
     Utf8String keyStr = key.GetFullSchemaName();
     if (SchemaReadStatus::DuplicateSchema == status)
         schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0008,
-            "Failed to read schema '%s'.\nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema.", keyStr.c_str());
-    else if(SchemaReadStatus::HasReferenceCycle == status)
+                                       "Failed to read schema '%s'.\nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema.", keyStr.c_str());
+    else if (SchemaReadStatus::HasReferenceCycle == status)
         schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0062,
-            "Failed to read schema '%s'. The attempt to load from XML ended up in a circular reference.", keyStr.c_str());
+                                       "Failed to read schema '%s'. The attempt to load from XML ended up in a circular reference.", keyStr.c_str());
     else
         schemaContext.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::InvalidInputData, ECIssueId::EC_0009,
-            "Failed to read schema '%s'.\n%s", keyStr.c_str(), additionalInfo.c_str());
-    }
+                                       "Failed to read schema '%s'.\n%s", keyStr.c_str(), additionalInfo.c_str());
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext, bool addFilePathAsSearchPath)
-    {
-    LOG.debugv (L"About to read native ECSchema from file: fileName='%ls'", ecSchemaXmlFile);
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext, bool addFilePathAsSearchPath) {
+    LOG.debugv(L"About to read native ECSchema from file: fileName='%ls'", ecSchemaXmlFile);
     schemaOut = nullptr;
 
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(ecSchemaXmlFile, pugi::parse_default | pugi::parse_ws_pcdata_single);
-    if(!result)
-    {
-        LOG.errorv ("Error loading XML file %ls: %s (error at char %d)", ecSchemaXmlFile, result.description(), result.offset);
+    if (!result) {
+        LOG.errorv("Error loading XML file %ls: %s (error at char %d)", ecSchemaXmlFile, result.description(), result.offset);
         return SchemaReadStatus::FailedToParseXml;
     }
 
@@ -3412,49 +3034,43 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
     SchemaKey resolvedKey;
     SchemaReadStatus status = reader.Deserialize(schemaOut, resolvedKey, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForFile(ecSchemaXmlFile).c_str() : nullptr);
 
-    if (SchemaReadStatus::Success != status)
-        {
+    if (SchemaReadStatus::Success != status) {
         Utf8String fileName(ecSchemaXmlFile);
         ReportFailedSchema(resolvedKey, fileName, status, schemaContext);
 
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
-        }
-    else
-        {
+    } else {
         Utf8PrintfString origin("Loaded from file %ls", ecSchemaXmlFile);
         schemaOut->SetOrigin(origin);
-        }
-
-    return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSchemaXml, ECSchemaReadContextR schemaContext)
-    {
+    return status;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSchemaXml, ECSchemaReadContextR schemaContext) {
     schemaOut = nullptr;
     SchemaReadStatus status = SchemaReadStatus::Success;
 
-    size_t stringByteCount = strlen (ecSchemaXml) * sizeof(Utf8Char);
+    size_t stringByteCount = strlen(ecSchemaXml) * sizeof(Utf8Char);
 
     pugi::xml_document xmldoc;
     pugi::xml_parse_result result = xmldoc.load_string(ecSchemaXml, pugi::parse_default | pugi::parse_ws_pcdata_single);
 
-    if (!result)
-        {
+    if (!result) {
         BeAssert(false);
         LOG.errorv("Failed to read ECSchema from XML %s", result.description());
         return SchemaReadStatus::FailedToParseXml;
-        }
+    }
 
     SchemaXmlReader reader(schemaContext, xmldoc);
     SchemaKey resolvedKey;
     status = reader.Deserialize(schemaOut, resolvedKey, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForString(ecSchemaXml, stringByteCount).c_str() : nullptr);
 
-    if (SchemaReadStatus::Success != status)
-        {
+    if (SchemaReadStatus::Success != status) {
         Utf8Char first200Bytes[201];
         BeStringUtilities::Strncpy(first200Bytes, ecSchemaXml, 200);
         first200Bytes[200] = '\0';
@@ -3462,175 +3078,151 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
 
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
-        }
-    else
-        {
+    } else {
         schemaOut->SetOrigin("Loaded from string");
-        }
-
-    return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, WCharCP ecSchemaXml, ECSchemaReadContextR schemaContext)
-    {
+    return status;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, WCharCP ecSchemaXml, ECSchemaReadContextR schemaContext) {
     schemaOut = nullptr;
     SchemaReadStatus status = SchemaReadStatus::Success;
 
-    size_t stringSize = wcslen (ecSchemaXml) * sizeof(WChar);
+    size_t stringSize = wcslen(ecSchemaXml) * sizeof(WChar);
 
     Utf8String xmlUtf8;
-    if(BeStringUtilities::WCharToUtf8(xmlUtf8, ecSchemaXml) != BentleyStatus::SUCCESS)
-        {
+    if (BeStringUtilities::WCharToUtf8(xmlUtf8, ecSchemaXml) != BentleyStatus::SUCCESS) {
         BeAssert(false);
         LOG.error("Failed to convert schema xml from wchar to char.");
         return SchemaReadStatus::FailedToParseXml;
-        }
+    }
 
     pugi::xml_document xmldoc;
     pugi::xml_parse_result result = xmldoc.load_string(xmlUtf8.c_str(), pugi::parse_default | pugi::parse_ws_pcdata_single);
 
-    if (!result)
-        {
+    if (!result) {
         BeAssert(false);
         LOG.errorv("Failed to read ECSchema from XML %s", result.description());
         return SchemaReadStatus::FailedToParseXml;
-        }
+    }
 
     SchemaXmlReader reader(schemaContext, xmldoc);
     SchemaKey resolvedKey;
     status = reader.Deserialize(schemaOut, resolvedKey, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize / sizeof(WChar)).c_str() : nullptr);
 
-    if (SchemaReadStatus::Success != status)
-        {
+    if (SchemaReadStatus::Success != status) {
         WChar first200Characters[201];
-PUSH_DISABLE_DEPRECATION_WARNINGS
+        PUSH_DISABLE_DEPRECATION_WARNINGS
         wcsncpy(first200Characters, ecSchemaXml, 200);
-POP_DISABLE_DEPRECATION_WARNINGS
+        POP_DISABLE_DEPRECATION_WARNINGS
         first200Characters[200] = L'\0';
         Utf8String additionalInfo(first200Characters);
         ReportFailedSchema(resolvedKey, additionalInfo, status, schemaContext);
 
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
-        }
-    else
-        {
+    } else {
         schemaOut->SetOrigin("Loaded from string (wchar)");
-        }
+    }
 
     return status;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema) {
     return ECSchema::IsSchemaReferenced(thisSchema, potentiallyReferencedSchema, ECN::SchemaMatchType::Exact);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema, ECN::SchemaMatchType matchType)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyReferencedSchema, ECN::SchemaMatchType matchType) {
     ECSchemaReferenceListCR referencedSchemas = thisSchema.GetReferencedSchemas();
     return referencedSchemas.end() != referencedSchemas.Find(potentiallyReferencedSchema.GetSchemaKey(), matchType);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-static bool DependsOn(ECSchemaCP thisSchema, ECSchemaCP possibleDependency)
-    {
+static bool DependsOn(ECSchemaCP thisSchema, ECSchemaCP possibleDependency) {
     if (ECSchema::IsSchemaReferenced(*thisSchema, *possibleDependency))
         return true;
 
     SupplementalSchemaMetaDataPtr metaData;
-    if (SupplementalSchemaMetaData::TryGetFromSchema(metaData, *possibleDependency)
-        && metaData.IsValid()
-        && metaData->IsForPrimarySchema(thisSchema->GetName(), 0, 0, SchemaMatchType::Latest))
-        {
-        return true; // possibleDependency supplements thisSchema. possibleDependency must be imported before thisSchema
-        }
+    if (SupplementalSchemaMetaData::TryGetFromSchema(metaData, *possibleDependency) && metaData.IsValid() && metaData->IsForPrimarySchema(thisSchema->GetName(), 0, 0, SchemaMatchType::Latest)) {
+        return true;  // possibleDependency supplements thisSchema. possibleDependency must be imported before thisSchema
+    }
 
     // Maybe possibleDependency supplements one of my references?
     ECSchemaReferenceListCR referencedSchemas = thisSchema->GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
-        {
+    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it) {
         if (DependsOn(it->second.get(), possibleDependency))
             return true;
-        }
+    }
 
     return false;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void InsertSchemaInDependencyOrderedList(bvector<ECSchemaCP>& schemas, ECSchemaCP insertSchema)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+static void InsertSchemaInDependencyOrderedList(bvector<ECSchemaCP>& schemas, ECSchemaCP insertSchema) {
     if (std::find(schemas.begin(), schemas.end(), insertSchema) != schemas.end())
-        return; // This (and its referenced ECSchemas) are already in the list
+        return;  // This (and its referenced ECSchemas) are already in the list
 
-    for (auto rit = schemas.rbegin(); rit < schemas.rend(); ++rit)
-        {
-        if (DependsOn(*rit, insertSchema))
-            {
-            schemas.insert(rit.base(), insertSchema); // insert right after the referenced schema in the list
+    for (auto rit = schemas.rbegin(); rit < schemas.rend(); ++rit) {
+        if (DependsOn(*rit, insertSchema)) {
+            schemas.insert(rit.base(), insertSchema);  // insert right after the referenced schema in the list
             return;
-            }
         }
-
-    schemas.insert(schemas.begin(), insertSchema); // insert at the beginning
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP insertSchema, bool ignoreReferencedSchemas = false)
-    {
+    schemas.insert(schemas.begin(), insertSchema);  // insert at the beginning
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+static void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP insertSchema, bool ignoreReferencedSchemas = false) {
     InsertSchemaInDependencyOrderedList(schemas, insertSchema);
     if (ignoreReferencedSchemas) return;
 
     ECSchemaReferenceListCR referencedSchemas = insertSchema->GetReferencedSchemas();
     for (const auto& refedSchema : referencedSchemas)
         BuildDependencyOrderedSchemaList(schemas, refedSchema.second.get());
-    }
+}
 
-/*----------------------------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+-------------------------*/
-void ECSchema::SortSchemasInDependencyOrder(bvector<ECSchemaCP>& schemas, bool ignoreReferencedSchemas)
-    {
+/*----------------------------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+-------------------------*/
+void ECSchema::SortSchemasInDependencyOrder(bvector<ECSchemaCP>& schemas, bool ignoreReferencedSchemas) {
     bvector<ECSchemaCP> temp;
     for (const auto& schema : schemas)
         BuildDependencyOrderedSchemaList(temp, schema, ignoreReferencedSchemas);
     std::reverse(temp.begin(), temp.end());
     schemas = temp;
-    }
+}
 
-namespace
-    {
-    bool CheckECVersionGreaterThanLatest(ECSchemaCR schema)
-        {
-        if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest))
-            {
-            LOG.errorv("The schema '%s' has ECVersion %s which is greater than the latest version %s and cannot be serialized.", schema.GetName().c_str(),
-                schema.GetOriginalECXmlVersionAsString().c_str(), schema.GetECVersionString(ECVersion::Latest));
-            return false;
-            }
-        return true;
-        }
+namespace {
+bool CheckECVersionGreaterThanLatest(ECSchemaCR schema) {
+    if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest)) {
+        LOG.errorv("The schema '%s' has ECVersion %s which is greater than the latest version %s and cannot be serialized.", schema.GetName().c_str(),
+                   schema.GetOriginalECXmlVersionAsString().c_str(), schema.GetECVersionString(ECVersion::Latest));
+        return false;
     }
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecXmlVersion) const
-    {
+    return true;
+}
+}  // namespace
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecXmlVersion) const {
     ecSchemaXml.clear();
 
     if (!CheckECVersionGreaterThanLatest(*this))
@@ -3641,25 +3233,23 @@ SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecX
     SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
 
     const auto status = schemaWriter.Serialize();
-    if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1)
-        {
+    if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1) {
         LOG.errorv("The ECXml 3.1 schema failed to serialize. The schema will be serialized as ECXml 3.2 instead.");
         return WriteToXmlString(ecSchemaXml, ECVersion::V3_2);
-        }
+    }
 
     if (SchemaWriteStatus::Success != status)
         return status;
 
-    xmlWriter->ToString (ecSchemaXml);
+    xmlWriter->ToString(ecSchemaXml);
 
     return SchemaWriteStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion ecXmlVersion) const
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion ecXmlVersion) const {
     ecSchemaXml.clear();
 
     if (!CheckECVersionGreaterThanLatest(*this))
@@ -3669,28 +3259,26 @@ SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion 
     xmlWriter->SetIndentation(4);
 
     SchemaXmlWriter schemaWriter(*xmlWriter.get(), *this, ecXmlVersion);
-    
+
     const auto status = schemaWriter.Serialize();
-    if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1)
-        {
+    if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1) {
         LOG.errorv("The ECXml 3.1 schema failed to serialize. The schema will be serialized as ECXml 3.2 instead.");
         return WriteToXmlString(ecSchemaXml, ECVersion::V3_2);
-        }
+    }
 
     if (SchemaWriteStatus::Success != status)
         return status;
 
-    xmlWriter->ToString (ecSchemaXml);
+    xmlWriter->ToString(ecSchemaXml);
 
     return SchemaWriteStatus::Success;
-    }
+}
 
 //---------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
 // static
-SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSchemaP schemaToSerialize)
-    {
+SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSchemaP schemaToSerialize) {
     if (nullptr == schemaToSerialize)
         return SchemaWriteStatus::FailedToCreateXml;
 
@@ -3698,17 +3286,16 @@ SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSche
     schemaToSerialize->CopySchema(schemaCopy);
     ECSchemaDownConverter::Convert(*schemaCopy);
     return schemaCopy->WriteToXmlString(ec2SchemaXml, ECVersion::V2_0);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion, bool utf16) const
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion, bool utf16) const {
     if (!CheckECVersionGreaterThanLatest(*this))
         return SchemaWriteStatus::FailedToSaveXml;
 
-    auto serializeToFile = [&ecSchemaXmlFile, &utf16] (ECSchemaCR schema, ECVersion ecXmlVersion) {
+    auto serializeToFile = [&ecSchemaXmlFile, &utf16](ECSchemaCR schema, ECVersion ecXmlVersion) {
         BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(ecSchemaXmlFile);
 
         if (xmlWriter.IsNull())
@@ -3721,19 +3308,17 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ec
     };
 
     const auto status = serializeToFile(*this, ecXmlVersion);
-    if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1)
-        {
+    if (status == SchemaWriteStatus::FailedToSaveXml && ecXmlVersion == ECVersion::V3_1) {
         LOG.errorv("The ECXml 3.1 schema failed to serialize. The schema will be serialized as ECXml 3.2 instead.");
         return serializeToFile(*this, ECVersion::V3_2);
-        }
-    return status;
     }
+    return status;
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
-    {
+bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const {
     if (!CheckECVersionGreaterThanLatest(*this))
         return false;
 
@@ -3744,13 +3329,12 @@ bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
         return false;
 
     return true;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECSchema::WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify) const
-    {
+bool ECSchema::WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify) const {
     Json::Value jsonSchema;
 
     if (!WriteToJsonValue(jsonSchema))
@@ -3758,202 +3342,173 @@ bool ECSchema::WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify) co
 
     ecSchemaJsonString = minify ? jsonSchema.ToString() : jsonSchema.toStyledString();
     return true;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::CollectAllSchemasInGraph(bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchema::CollectAllSchemasInGraph(bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const {
     if (includeRootSchema)
-        allSchemas.push_back (this);
+        allSchemas.push_back(this);
 
     ECSchemaReferenceListCR referencedSchemas = this->GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
-        {
-        if (!includeRootSchema)
-            {
+    for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter) {
+        if (!includeRootSchema) {
             if (this == iter->second.get())
                 continue;
-            }
+        }
 
-        bvector<ECN::ECSchemaCP>::iterator it = std::find (allSchemas.begin(), allSchemas.end(), iter->second.get());
+        bvector<ECN::ECSchemaCP>::iterator it = std::find(allSchemas.begin(), allSchemas.end(), iter->second.get());
 
-        if (it != allSchemas.end())
-            {
+        if (it != allSchemas.end()) {
             allSchemas.erase(it);
             allSchemas.push_back(iter->second.get());
             iter->second->CollectAllSchemasInGraph(allSchemas, false);
-            }
-        else
-            iter->second->CollectAllSchemasInGraph (allSchemas, true);
-        }
+        } else
+            iter->second->CollectAllSchemasInGraph(allSchemas, true);
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::FindAllSchemasInGraph(bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const
-    {
-    CollectAllSchemasInGraph (allSchemas, includeRootSchema);
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchema::FindAllSchemasInGraph(bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const {
+    CollectAllSchemasInGraph(allSchemas, includeRootSchema);
     std::reverse(allSchemas.begin(), allSchemas.end());
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECSchema::FindSchema(SchemaKeyCR schemaKey, SchemaMatchType matchType) const
-    {
-    if (this->GetSchemaKey().Matches (schemaKey, matchType))
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ECSchema::FindSchema(SchemaKeyCR schemaKey, SchemaMatchType matchType) const {
+    if (this->GetSchemaKey().Matches(schemaKey, matchType))
         return this;
 
     ECSchemaReferenceListCR referencedSchemas = GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
-        {
-        ECSchemaCP schema = iter->second->FindSchema (schemaKey, matchType);
+    for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter) {
+        ECSchemaCP schema = iter->second->FindSchema(schemaKey, matchType);
         if (nullptr != schema)
             return schema;
-        }
-
-    return nullptr;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECGetChildFunctor
-    {
+    return nullptr;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+struct ECGetChildFunctor {
     typedef bvector<ECSchemaCP> ChildCollection;
-    ChildCollection operator () (ECSchemaCP schema) const
-        {
+    ChildCollection operator()(ECSchemaCP schema) const {
         bvector<ECSchemaCP> schemas;
         ECSchemaReferenceListCR referencedSchemas = schema->GetReferencedSchemas();
         for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
             schemas.push_back(iter->second.get());
 
         return schemas;
-        }
-    };
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::AddingSchemaCausedCycles () const
-    {
+    }
+};
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::AddingSchemaCausedCycles() const {
     ECGetChildFunctor fncTor;
 
-    typedef SCCGraph <ECSchemaCP, ECGetChildFunctor> SchemaGraph;
-    SchemaGraph graph (fncTor);
+    typedef SCCGraph<ECSchemaCP, ECGetChildFunctor> SchemaGraph;
+    SchemaGraph graph(fncTor);
 
     SchemaGraph::SCCContext context;
     graph.StronglyConnect(this, context);
 
     bool hasCycles = false;
-    for (SchemaGraph::SccNodes::const_iterator iter = context.m_components.begin(); iter != context.m_components.end(); ++iter)
-        {
-        if (1 != iter->size())
-            {
+    for (SchemaGraph::SccNodes::const_iterator iter = context.m_components.begin(); iter != context.m_components.end(); ++iter) {
+        if (1 != iter->size()) {
             hasCycles = true;
             Utf8String cycleString;
-            for (SchemaGraph::NodeVector::const_iterator cycleIter = iter->begin(); cycleIter != iter->end(); ++cycleIter)
-                {
+            for (SchemaGraph::NodeVector::const_iterator cycleIter = iter->begin(); cycleIter != iter->end(); ++cycleIter) {
                 cycleString.append((*cycleIter)->m_node->m_key.GetFullSchemaName());
                 cycleString.append("-->");
-                }
-            cycleString.append( (*iter->begin())->m_node->m_key.GetFullSchemaName());
-            LOG.errorv ("ECSchema '%s' contains cycles %s", m_key.GetFullSchemaName().c_str(), cycleString.c_str());
+            }
+            cycleString.append((*iter->begin())->m_node->m_key.GetFullSchemaName());
+            LOG.errorv("ECSchema '%s' contains cycles %s", m_key.GetFullSchemaName().c_str(), cycleString.c_str());
 
             break;
-            }
         }
+    }
 
     return hasCycles;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchema::RemoveInvalidDisplayCharacters(ECSchemaR schema) {
+    Utf8String temp;
+    if (ECNameValidation::RemoveControlCharacters(temp, schema.GetDisplayLabel())) {
+        schema.SetDisplayLabel(temp);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::RemoveInvalidDisplayCharacters(ECSchemaR schema)
-    {
-    Utf8String temp;
-    if (ECNameValidation::RemoveControlCharacters(temp, schema.GetDisplayLabel()))
-            {
-            schema.SetDisplayLabel(temp);
-            }
-
-    if(ECNameValidation::RemoveControlCharacters(temp, schema.GetDescription()))
-        {
+    if (ECNameValidation::RemoveControlCharacters(temp, schema.GetDescription())) {
         schema.SetDescription(temp);
+    }
+
+    for (ECClassP ecClass : schema.GetClasses()) {
+        if (ECNameValidation::RemoveControlCharacters(temp, ecClass->GetDisplayLabel())) {
+            ecClass->SetDisplayLabel(temp);
         }
 
-    for (ECClassP ecClass : schema.GetClasses())
-        {
-        if (ECNameValidation::RemoveControlCharacters(temp, ecClass->GetDisplayLabel()))
-            {
-            ecClass->SetDisplayLabel(temp);
-            }
-
-        if(ECNameValidation::RemoveControlCharacters(temp, ecClass->GetDescription()))
-            {
+        if (ECNameValidation::RemoveControlCharacters(temp, ecClass->GetDescription())) {
             ecClass->SetDescription(temp);
-            }
+        }
 
         ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
-        if (relClass != nullptr)
-            {
-            if (ECNameValidation::RemoveControlCharacters(temp, relClass->GetSource().GetRoleLabel()))
-                {
+        if (relClass != nullptr) {
+            if (ECNameValidation::RemoveControlCharacters(temp, relClass->GetSource().GetRoleLabel())) {
                 relClass->GetSource().SetRoleLabel(temp);
-                }
-
-            if (ECNameValidation::RemoveControlCharacters(temp, relClass->GetTarget().GetRoleLabel()))
-                {
-                relClass->GetTarget().SetRoleLabel(temp);
-                }
             }
 
-        for (ECPropertyP prop : ecClass->GetProperties())
-            {
-            if (ECNameValidation::RemoveControlCharacters(temp, prop->GetDisplayLabel()))
-                {
-                prop->SetDisplayLabel(temp);
-                }
+            if (ECNameValidation::RemoveControlCharacters(temp, relClass->GetTarget().GetRoleLabel())) {
+                relClass->GetTarget().SetRoleLabel(temp);
+            }
+        }
 
-            if (ECNameValidation::RemoveControlCharacters(temp, prop->GetDescription()))
-                {
+        for (ECPropertyP prop : ecClass->GetProperties()) {
+            if (ECNameValidation::RemoveControlCharacters(temp, prop->GetDisplayLabel())) {
+                prop->SetDisplayLabel(temp);
+            }
+
+            if (ECNameValidation::RemoveControlCharacters(temp, prop->GetDescription())) {
                 prop->SetDescription(temp);
-                }
             }
         }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECSchema::ReadSchemaKey(Utf8StringR schemaXml, SchemaKey& schemaKey)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+SchemaReadStatus ECSchema::ReadSchemaKey(Utf8StringR schemaXml, SchemaKey& schemaKey) {
     pugi::xml_document xmlDoc;
     pugi::xml_parse_result parseResult = xmlDoc.load_string(schemaXml.c_str());
-    if(!parseResult)
-        {
+    if (!parseResult) {
         LOG.errorv("Error loading XML string: %s (error at char %d)", parseResult.description(), parseResult.offset);
         return SchemaReadStatus::FailedToParseXml;
-        }
+    }
 
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     pugi::xml_node schemaNode;
     return SchemaXmlReader::ReadSchemaStub(schemaKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
-    }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // IStandaloneEnablerLocater
 /////////////////////////////////////////////////////////////////////////////////////////
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr IStandaloneEnablerLocater::LocateStandaloneEnabler(SchemaKeyCR schemaKey, Utf8CP className)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneECEnablerPtr IStandaloneEnablerLocater::LocateStandaloneEnabler(SchemaKeyCR schemaKey, Utf8CP className) {
     return _LocateStandaloneEnabler(schemaKey, className);
-    }
+}
 
 DEFINE_KEY_METHOD(IStandaloneEnablerLocater)
 
@@ -3961,12 +3516,11 @@ DEFINE_KEY_METHOD(IStandaloneEnablerLocater)
 // ECSchemaCache
 /////////////////////////////////////////////////////////////////////////////////////////
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchemaCache::AddSchema(ECSchemaR ecSchema)
-    {
-    if (m_schemas.end() != m_schemas.find (ecSchema.GetSchemaKey()))
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchemaCache::AddSchema(ECSchemaR ecSchema) {
+    if (m_schemas.end() != m_schemas.find(ecSchema.GetSchemaKey()))
         return ECObjectsStatus::DuplicateSchema;
 
     bvector<ECSchemaP> schemas;
@@ -3974,209 +3528,179 @@ ECObjectsStatus ECSchemaCache::AddSchema(ECSchemaR ecSchema)
     bool inserted = false;
 
     // referenced schemas
-    for (bvector<ECSchemaP>::const_iterator iter = schemas.begin(); iter != schemas.end(); ++iter)
-        {
+    for (bvector<ECSchemaP>::const_iterator iter = schemas.begin(); iter != schemas.end(); ++iter) {
         ECSchemaP referencedSchema = *iter;
         bpair<SchemaMap::iterator, bool> result = m_schemas.insert(SchemaMap::value_type(referencedSchema->GetSchemaKey(), referencedSchema));
         inserted |= result.second;
-        if(result.second)
-            {
+        if (result.second) {
             // we did insert a referenced schema into the cache, make sure the tree is clean.
             CheckCleanSchemaGraph(referencedSchema);
-            }
-        else
-            {
+        } else {
             // the referenced schema was not inserted because it already exists in the cache. Now we want to verify that the existing one matches the one used by the root schema
             ECSchemaP existingSchema = result.first->second.get();
-            if(existingSchema != referencedSchema)
-                {
+            if (existingSchema != referencedSchema) {
                 LOG.warningv("ECSchemaCache: Adding schema '%s' which references schema '%s'. However, a different in-memory instance of this referenced schema already exists in the cache. This may indicate an issue with the schema graph.",
-                     ecSchema.GetSchemaKey().GetFullSchemaName().c_str(), existingSchema->GetSchemaKey().GetFullSchemaName().c_str());
-                }
+                             ecSchema.GetSchemaKey().GetFullSchemaName().c_str(), existingSchema->GetSchemaKey().GetFullSchemaName().c_str());
             }
         }
+    }
 
     // root schema
     bpair<SchemaMap::iterator, bool> result = m_schemas.insert(SchemaMap::value_type(ecSchema.GetSchemaKey(), &ecSchema));
     inserted |= result.second;
-    if(result.second)
-        {
+    if (result.second) {
         // we did insert the root schema into the cache, make sure the tree is clean.
         CheckCleanSchemaGraph(&ecSchema);
-        }
+    }
 
     return inserted ? ECObjectsStatus::Success : ECObjectsStatus::DuplicateSchema;
-    }
+}
 
-void ECSchemaCache::CheckCleanSchemaGraph(ECSchemaP schema) const
-    {
+void ECSchemaCache::CheckCleanSchemaGraph(ECSchemaP schema) const {
     Utf8StringCR name = schema->GetName().c_str();
-    for (auto const& kvPair : m_schemas)
-        {
-        if(kvPair.first.CompareByName(name) == 0 && !schema->GetSchemaKey().Matches(kvPair.first, SchemaMatchType::Exact))
-            {
+    for (auto const& kvPair : m_schemas) {
+        if (kvPair.first.CompareByName(name) == 0 && !schema->GetSchemaKey().Matches(kvPair.first, SchemaMatchType::Exact)) {
             LOG.warningv("ECSchemaCache: Adding schema '%s' to the cache while schema '%s' already exists. Typically, only one version of a schema with the same name is expected. This may indicate an issue with the schema graph.",
-                    schema->GetSchemaKey().GetFullSchemaName().c_str(), kvPair.first.GetFullSchemaName().c_str());
-            }
+                         schema->GetSchemaKey().GetFullSchemaName().c_str(), kvPair.first.GetFullSchemaName().c_str());
         }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchemaCache::DropSchema(SchemaKeyCR ecSchemaKey)
-    {
-    SchemaMap::iterator iter = m_schemas.find (ecSchemaKey);
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchemaCache::DropSchema(SchemaKeyCR ecSchemaKey) {
+    SchemaMap::iterator iter = m_schemas.find(ecSchemaKey);
     if (iter == m_schemas.end())
         return ECObjectsStatus::SchemaNotFound;
 
     m_schemas.erase(iter);
     return ECObjectsStatus::Success;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchemaCache::DropAllReferencesOfSchema(ECSchemaR schema)
-    {
-    for (SchemaMap::iterator iter = m_schemas.begin(); iter != m_schemas.end();)
-        {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchemaCache::DropAllReferencesOfSchema(ECSchemaR schema) {
+    for (SchemaMap::iterator iter = m_schemas.begin(); iter != m_schemas.end();) {
         bool removeSchema = false;
         bvector<ECSchemaP> schemas;
         iter->second->FindAllSchemasInGraph(schemas, true);
-        for (bvector<ECSchemaP>::const_iterator refIter = schemas.begin(); refIter != schemas.end(); ++refIter)
-            {
-            if ((*refIter) == &schema)
-                {
+        for (bvector<ECSchemaP>::const_iterator refIter = schemas.begin(); refIter != schemas.end(); ++refIter) {
+            if ((*refIter) == &schema) {
                 removeSchema = true;
                 break;
-                }
             }
+        }
 
         if (removeSchema)
             iter = m_schemas.erase(iter);
         else
             ++iter;
-
-        }
-    return ECObjectsStatus::Success;
     }
+    return ECObjectsStatus::Success;
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchType) const
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchType) const {
     SchemaMap::const_iterator iter;
-    switch (matchType)
-        {
-        case SchemaMatchType::Identical:
-            {
-            iter = m_schemas.find (key);
+    switch (matchType) {
+        case SchemaMatchType::Identical: {
+            iter = m_schemas.find(key);
             break;
-            }
-        default:
-            {
-            //Other cases the container is not sorted by the match type.
+        }
+        default: {
+            // Other cases the container is not sorted by the match type.
             iter = std::find_if(m_schemas.begin(), m_schemas.end(), SchemaKeyMatchPredicate(key, matchType));
             break;
-            }
         }
+    }
 
     if (iter == m_schemas.end())
         return nullptr;
 
     return iter->second.get();
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP ECSchemaCache::FindSchema(const SchemaKeyMatchCallback& predicate) const
-    {
-    SchemaMap::const_iterator iter = std::find_if(m_schemas.begin(), m_schemas.end(), [&predicate](const std::pair<SchemaKey, ECSchemaPtr>& schemaPair) 
-        {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP ECSchemaCache::FindSchema(const SchemaKeyMatchCallback& predicate) const {
+    SchemaMap::const_iterator iter = std::find_if(m_schemas.begin(), m_schemas.end(), [&predicate](const std::pair<SchemaKey, ECSchemaPtr>& schemaPair) {
         return predicate(schemaPair.first);
-        });
+    });
 
     if (iter == m_schemas.end())
         return nullptr;
 
     return iter->second.get();
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaCache::WalkSchemas(const SchemaCallback& callback) const
-    {
-    for (auto const& kvPair : m_schemas)
-        {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchemaCache::WalkSchemas(const SchemaCallback& callback) const {
+    for (auto const& kvPair : m_schemas) {
         callback(kvPair.second.get());
-        }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP ECSchemaCache::FindSchemaByNameI(Utf8CP schemaName) const
-    {
-    return this->FindSchema([&schemaName](SchemaKeyCR key) 
-        {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP ECSchemaCache::FindSchemaByNameI(Utf8CP schemaName) const {
+    return this->FindSchema([&schemaName](SchemaKeyCR key) {
         return BeStringUtilities::Stricmp(schemaName, key.GetName().c_str()) == 0;
-        });
-    }
+    });
+}
 
 //---------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<ECSchemaCP> ECSchemaCache::GetSchemas() const
-    {
+bvector<ECSchemaCP> ECSchemaCache::GetSchemas() const {
     bvector<ECSchemaCP> schemas;
     for (auto const& kvPair : m_schemas)
         schemas.push_back(kvPair.second.get());
 
     return schemas;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t ECSchemaCache::GetSchemas(bvector<ECSchemaP>& schemas) const
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+size_t ECSchemaCache::GetSchemas(bvector<ECSchemaP>& schemas) const {
     schemas.clear();
 
     for (auto const& kvPair : m_schemas)
         schemas.push_back(kvPair.second.get());
 
     return schemas.size();
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-void ECSchemaCache::GetSupplementalSchemasFor(Utf8CP schemaName, bvector<ECSchemaP>& supplementalSchemas) const
-    {
+void ECSchemaCache::GetSupplementalSchemasFor(Utf8CP schemaName, bvector<ECSchemaP>& supplementalSchemas) const {
     supplementalSchemas.clear();
 
     Utf8String supplementalName(schemaName);
     supplementalName.append("_Supplemental");
-    for (auto const& schema : m_schemas)
-        {
+    for (auto const& schema : m_schemas) {
         if (schema.first.GetName().StartsWithI(supplementalName.c_str()))
             supplementalSchemas.push_back(schema.second.get());
-        }
     }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // ECSchemaElementsOrder
 /////////////////////////////////////////////////////////////////////////////////////////
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema) {
     m_elementVector.clear();
     AddElements<ECEnumeration, ECEnumerationContainer>(ecSchema.GetEnumerations(), ECSchemaElementType::ECEnumeration);
     AddElements<ECClass, ECClassContainer>(ecSchema.GetClasses(), ECSchemaElementType::ECClass);
@@ -4187,92 +3711,83 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     AddElements<ECFormat, FormatContainer>(ecSchema.GetFormats(), ECSchemaElementType::Format);
 
     // Units are a special case because all 3 types are in the same container.
-    for (const auto u: ecSchema.GetUnits())
-        {
-        if (nullptr == u)
-            {
+    for (const auto u : ecSchema.GetUnits()) {
+        if (nullptr == u) {
             BeAssert(false);
             continue;
-            }
+        }
         if (u->IsConstant())
             AddElement(u->GetName().c_str(), ECSchemaElementType::Constant);
         else if (u->IsInvertedUnit())
             AddElement(u->GetName().c_str(), ECSchemaElementType::InvertedUnit);
         else
             AddElement(u->GetName().c_str(), ECSchemaElementType::Unit);
-        }
     }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SchemaKey
 /////////////////////////////////////////////////////////////////////////////////////////
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SchemaKey::FormatFullSchemaName(Utf8CP schemaName, uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaKey::FormatFullSchemaName(Utf8CP schemaName, uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor) {
     Utf8String versionString = FormatSchemaVersion(versionRead, versionWrite, versionMinor);
     Utf8PrintfString formattedString("%s.%s", schemaName, versionString.c_str());
     return formattedString;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SchemaKey::FormatSchemaVersion (uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaKey::FormatSchemaVersion(uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor) {
     Utf8String versionString;
     versionString.Sprintf("%02" PRIu32 ".%02" PRIu32 ".%02" PRIu32, versionRead, versionWrite, versionMinor);
     return versionString;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SchemaKey::FormatLegacySchemaVersion (uint32_t versionRead, uint32_t versionMinor)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaKey::FormatLegacySchemaVersion(uint32_t versionRead, uint32_t versionMinor) {
     Utf8String versionString;
     versionString.Sprintf("%02" PRIu32 ".%02" PRIu32, versionRead, versionMinor);
     return versionString;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SchemaKey::FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t versionRead, uint32_t versionMinor)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaKey::FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t versionRead, uint32_t versionMinor) {
     Utf8PrintfString formattedString("%s.%s", schemaName, FormatLegacySchemaVersion(versionRead, versionMinor).c_str());
     return formattedString;
-    }
+}
 
 #define ECSCHEMA_VERSION_FORMAT_EXPLANATION " Format must be either RR.mm or RR.ww.mm where RR is read version, ww is the write compatibility version and mm is minor version."
 #define ECSCHEMA_VERSION_FORMAT_EXPLANATION_EC32 " Format must be RR.ww.mm where RR is read version, ww is the write compatibility version and mm is minor version."
 #define ECSCHEMA_FULLNAME_FORMAT_EXPLANATION " Format must be either Name.RR.mm or Name.RR.ww.mm where RR is read version, ww is the write compatibility version and mm is minor version."
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus SchemaKey::ParseSchemaFullName (Utf8StringR schemaName, uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP fullName)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus SchemaKey::ParseSchemaFullName(Utf8StringR schemaName, uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP fullName) {
     if (Utf8String::IsNullOrEmpty(fullName))
         return ECObjectsStatus::ParseError;
 
-    Utf8CP firstDot = strchr (fullName, '.');
-    if (nullptr == firstDot)
-        {
-        LOG.errorv ("Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
+    Utf8CP firstDot = strchr(fullName, '.');
+    if (nullptr == firstDot) {
+        LOG.errorv("Invalid ECSchema FullName String: '%s' does not contain a '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
         return ECObjectsStatus::ParseError;
-        }
+    }
 
     size_t nameLen = firstDot - fullName;
-    if (nameLen < 1)
-        {
-        LOG.errorv ("Invalid ECSchema FullName String: '%s' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
+    if (nameLen < 1) {
+        LOG.errorv("Invalid ECSchema FullName String: '%s' does not have any characters before the '.'!" ECSCHEMA_FULLNAME_FORMAT_EXPLANATION, fullName);
         return ECObjectsStatus::ParseError;
-        }
+    }
 
-    schemaName.assign (fullName, nameLen);
+    schemaName.assign(fullName, nameLen);
 
     ECObjectsStatus stat = ParseVersionString(versionRead, versionWrite, versionMinor, firstDot + 1);
     if (ECObjectsStatus::Success != stat)
@@ -4284,114 +3799,100 @@ ECObjectsStatus SchemaKey::ParseSchemaFullName (Utf8StringR schemaName, uint32_t
         versionMinor = 0;
 
     return stat;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus SchemaKey::ParseVersionString (uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString)
-    {
-    if(Utf8String::IsNullOrEmpty(versionString))
+/*---------------------------------------------------------------------------------**/ /**
+  @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus SchemaKey::ParseVersionString(uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString) {
+    if (Utf8String::IsNullOrEmpty(versionString))
         return ECObjectsStatus::Success;
 
     bvector<Utf8String> tokens;
     BeStringUtilities::Split(versionString, ".", tokens);
     size_t digits = tokens.size();
 
-    if (digits < 2)
-        {
+    if (digits < 2) {
         LOG.errorv("Invalid ECSchema Version String: '%s' at least 2 version numbers are required!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
         return ECObjectsStatus::ParseError;
-        }
+    }
 
     Utf8P end = nullptr;
     Utf8CP chars = tokens[0].c_str();
     versionRead = strtoul(chars, &end, 10);
-    if (end == chars)
-        {
+    if (end == chars) {
         versionRead = DEFAULT_VERSION_READ;
         LOG.errorv("Invalid ECSchema Version String: '%s' The characters '%s' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString, chars);
         return ECObjectsStatus::ParseError;
-        }
+    }
 
     chars = tokens[1].c_str();
     uint32_t second = strtoul(chars, &end, 10);
-    if (end == chars)
-        {
+    if (end == chars) {
         versionWrite = DEFAULT_VERSION_WRITE;
         versionMinor = DEFAULT_VERSION_MINOR;
         LOG.errorv("Invalid ECSchema Version String: '%s' The characters '%s' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString, chars);
         return ECObjectsStatus::ParseError;
-        }
+    }
 
-    if (digits == 2)
-        {
+    if (digits == 2) {
         versionWrite = DEFAULT_VERSION_WRITE;
         versionMinor = second;
         return ECObjectsStatus::Success;
-        }
-
+    }
 
     chars = tokens[2].c_str();
     uint32_t third = strtoul(chars, &end, 10);
-    //We have to support this case because some callers pass stuff like "1.5.ecschema.xml" to this method, which used to work
-    //before 3 number versions were introduced.
-    if (end == chars)
-        {
+    // We have to support this case because some callers pass stuff like "1.5.ecschema.xml" to this method, which used to work
+    // before 3 number versions were introduced.
+    if (end == chars) {
         versionWrite = DEFAULT_VERSION_WRITE;
         versionMinor = second;
-        }
-    else
-        {
+    } else {
         versionWrite = second;
         versionMinor = third;
-        }
+    }
 
     return ECObjectsStatus::Success;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus SchemaKey::ParseVersionStringStrict(uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString)
-    {
+ECObjectsStatus SchemaKey::ParseVersionStringStrict(uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString) {
     if (Utf8String::IsNullOrEmpty(versionString))
         return ECObjectsStatus::InvalidECVersion;
     int count = 0;
-    const int maxVersionSize = 10; //If we somehow got a non terminated string the max a version can be is xx.xx.xx\0
+    const int maxVersionSize = 10;  // If we somehow got a non terminated string the max a version can be is xx.xx.xx\0
     int iter = 0;
-    while (versionString[iter] != '\0' && iter < maxVersionSize)
-        {
+    while (versionString[iter] != '\0' && iter < maxVersionSize) {
         if (versionString[iter] == '.')
             ++count;
         ++iter;
-        }
-
-    if (count < 2)
-        {
-        LOG.errorv("Invalid ECSchema Version String: '%s' at least 3 version numbers are required!" ECSCHEMA_VERSION_FORMAT_EXPLANATION_EC32, versionString);
-        return ECObjectsStatus::InvalidECVersion;
-        }
-
-    return ParseVersionString(versionRead, versionWrite, versionMinor, versionString);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-int SchemaKey::CompareByName (Utf8StringCR schemaName) const
-    {
+    if (count < 2) {
+        LOG.errorv("Invalid ECSchema Version String: '%s' at least 3 version numbers are required!" ECSCHEMA_VERSION_FORMAT_EXPLANATION_EC32, versionString);
+        return ECObjectsStatus::InvalidECVersion;
+    }
+
+    return ParseVersionString(versionRead, versionWrite, versionMinor, versionString);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+int SchemaKey::CompareByName(Utf8StringCR schemaName) const {
     // TFS#223524: This was added to do case-insensitive comparison, but it is being used inappropriately.
     // ECSchema names are case-sensitive. If there are particular contexts in which case should be disregarded,
     // the code that handles those contexts should do so explicitly.
-    return strcmp (m_schemaName.c_str(), schemaName.c_str());
-    }
+    return strcmp(m_schemaName.c_str(), schemaName.c_str());
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-int SchemaKey::CompareByVersion(SchemaKeyCR rhs) const
-    {
+int SchemaKey::CompareByVersion(SchemaKeyCR rhs) const {
     SchemaKeyCR lhs = *this;
 
     if (lhs.m_versionRead != rhs.m_versionRead)
@@ -4401,24 +3902,20 @@ int SchemaKey::CompareByVersion(SchemaKeyCR rhs) const
         return lhs.m_versionWrite - rhs.m_versionWrite;
 
     return lhs.m_versionMinor - rhs.m_versionMinor;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
-    {
-    switch (matchType)
-        {
-        case SchemaMatchType::Identical:
-            {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool SchemaKey::LessThan(SchemaKeyCR rhs, SchemaMatchType matchType) const {
+    switch (matchType) {
+        case SchemaMatchType::Identical: {
             if (!m_checksum.empty() || !rhs.m_checksum.empty())
                 return 0 > strcmp(m_checksum.c_str(), rhs.m_checksum.c_str());
-            //Fall through
-            }
-        case SchemaMatchType::Exact:
-            {
-            int nameCompare = CompareByName (rhs.m_schemaName);
+            // Fall through
+        }
+        case SchemaMatchType::Exact: {
+            int nameCompare = CompareByName(rhs.m_schemaName);
 
             if (nameCompare != 0)
                 return nameCompare < 0;
@@ -4431,10 +3928,9 @@ bool SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
 
             return m_versionMinor < rhs.m_versionMinor;
             break;
-            }
-        case SchemaMatchType::LatestWriteCompatible:
-            {
-            int nameCompare = CompareByName (rhs.m_schemaName);
+        }
+        case SchemaMatchType::LatestWriteCompatible: {
+            int nameCompare = CompareByName(rhs.m_schemaName);
 
             if (nameCompare != 0)
                 return nameCompare < 0;
@@ -4446,41 +3942,37 @@ bool SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
                 return m_versionWrite < rhs.m_versionWrite;
 
             return false;
-            }
-        case SchemaMatchType::LatestReadCompatible:
-            {
+        }
+        case SchemaMatchType::LatestReadCompatible: {
             int nameCompare = CompareByName(rhs.m_schemaName);
 
             if (nameCompare != 0)
                 return nameCompare < 0;
 
             return m_versionRead < rhs.m_versionRead;
-            }
-        case SchemaMatchType::Latest: //Only compare by name
-            {
-            return CompareByName (rhs.m_schemaName) < 0;
-            }
+        }
+        case SchemaMatchType::Latest:  // Only compare by name
+        {
+            return CompareByName(rhs.m_schemaName) < 0;
+        }
         default:
             return false;
-        }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
-    {
-    switch (matchType)
-        {
-        case SchemaMatchType::Identical:
-            {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool SchemaKey::Matches(SchemaKeyCR rhs, SchemaMatchType matchType) const {
+    switch (matchType) {
+        case SchemaMatchType::Identical: {
             if (!m_checksum.empty() && !rhs.m_checksum.empty())
                 return 0 == strcmp(m_checksum.c_str(), rhs.m_checksum.c_str());
-            //fall through
-            }
+            // fall through
+        }
         case SchemaMatchType::Exact:
-            return 0 == CompareByName (rhs.m_schemaName) && m_versionRead == rhs.m_versionRead &&
-                m_versionWrite == rhs.m_versionWrite && m_versionMinor == rhs.m_versionMinor;
+            return 0 == CompareByName(rhs.m_schemaName) && m_versionRead == rhs.m_versionRead &&
+                   m_versionWrite == rhs.m_versionWrite && m_versionMinor == rhs.m_versionMinor;
         case SchemaMatchType::LatestReadCompatible:
             if (CompareByName(rhs.m_schemaName) != 0)
                 return false;
@@ -4493,86 +3985,77 @@ bool SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
 
             return m_versionWrite > rhs.m_versionWrite;
         case SchemaMatchType::LatestWriteCompatible:
-            return 0 == CompareByName (rhs.m_schemaName) && m_versionRead == rhs.m_versionRead &&
-                m_versionWrite == rhs.m_versionWrite && m_versionMinor >= rhs.m_versionMinor;
+            return 0 == CompareByName(rhs.m_schemaName) && m_versionRead == rhs.m_versionRead &&
+                   m_versionWrite == rhs.m_versionWrite && m_versionMinor >= rhs.m_versionMinor;
         case SchemaMatchType::Latest:
-            return 0 == CompareByName (rhs.m_schemaName);
+            return 0 == CompareByName(rhs.m_schemaName);
         default:
             return false;
-        }
     }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SchemaMapExact
 /////////////////////////////////////////////////////////////////////////////////////////
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECClassFinder
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+struct ECClassFinder {
     ECN::SchemaNameClassNamePair const& m_key;
-    ECClassP&                          m_class;
-    ECClassFinder (ECN::SchemaNameClassNamePair const& key, ECClassP& foundClass)
-        :m_key(key), m_class(foundClass)
-        {}
+    ECClassP& m_class;
+    ECClassFinder(ECN::SchemaNameClassNamePair const& key, ECClassP& foundClass)
+        : m_key(key), m_class(foundClass) {}
 
-    bool operator () (ECSchemaR val)
-        {
+    bool operator()(ECSchemaR val) {
         if (0 != val.GetName().CompareTo(m_key.m_schemaName))
             return false;
 
         m_class = val.GetClassP(m_key.m_className.c_str());
         return nullptr != m_class;
-        }
+    }
 
-    bool operator () (ECSchemaPtr const& val)
-        {
+    bool operator()(ECSchemaPtr const& val) {
         if (val.IsNull())
             return false;
 
         return (*this)(*val);
-        }
+    }
 
-    bool operator () (bpair<SchemaKey,ECSchemaPtr> const& val)
-        {
+    bool operator()(bpair<SchemaKey, ECSchemaPtr> const& val) {
         return (*this)(val.second);
-        }
+    }
+};
 
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP SchemaMapExact::FindClassP (ECN::SchemaNameClassNamePair const& classNamePair) const
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ECClassP SchemaMapExact::FindClassP(ECN::SchemaNameClassNamePair const& classNamePair) const {
     ECClassP classInstance = nullptr;
     ECClassFinder classFinder(classNamePair, classInstance);
 
-    SchemaMapExact::const_iterator iter = std::find_if (begin(), end(), classFinder);
+    SchemaMapExact::const_iterator iter = std::find_if(begin(), end(), classFinder);
     return iter == end() ? nullptr : classInstance;
-    }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // QualifiedECAccessor
 /////////////////////////////////////////////////////////////////////////////////////////
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String QualifiedECAccessor::ToString() const
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String QualifiedECAccessor::ToString() const {
     Utf8PrintfString str("%s:%s:%s", m_schemaName.c_str(), m_className.c_str(), m_accessString.c_str());
     return str;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool QualifiedECAccessor::FromString (Utf8CP str)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool QualifiedECAccessor::FromString(Utf8CP str) {
     bvector<Utf8String> tokens;
-    BeStringUtilities::Split (str, ":", tokens);
+    BeStringUtilities::Split(str, ":", tokens);
     if (3 != tokens.size())
         return false;
 
@@ -4581,97 +4064,84 @@ bool QualifiedECAccessor::FromString (Utf8CP str)
     m_accessString = tokens[2];
 
     return true;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool QualifiedECAccessor::FromAccessString (ECEnablerCR enabler, Utf8CP accessString)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool QualifiedECAccessor::FromAccessString(ECEnablerCR enabler, Utf8CP accessString) {
     ECValueAccessor va;
-    if (ECObjectsStatus::Success == ECValueAccessor::PopulateValueAccessor (va, enabler, accessString) && 0 < va.GetDepth() && nullptr != va[0].GetECProperty())
-        {
+    if (ECObjectsStatus::Success == ECValueAccessor::PopulateValueAccessor(va, enabler, accessString) && 0 < va.GetDepth() && nullptr != va[0].GetECProperty()) {
         ECClassCR rootClass = va[0].GetECProperty()->GetClass();
         m_schemaName = rootClass.GetSchema().GetName();
         m_className = rootClass.GetName();
         m_accessString = accessString;
         return true;
-        }
-    else
+    } else
         return false;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool QualifiedECAccessor::Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper)
-    {
-    SchemaNameClassNamePair schemaClass (m_schemaName, m_className);
-    bool remapped = schemaClass.Remap (pre, post, remapper);
-    if (remapped)
-        {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool QualifiedECAccessor::Remap(ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper) {
+    SchemaNameClassNamePair schemaClass(m_schemaName, m_className);
+    bool remapped = schemaClass.Remap(pre, post, remapper);
+    if (remapped) {
         m_schemaName = schemaClass.m_schemaName;
         m_className = schemaClass.m_className;
-        }
+    }
 
-    ECClassCP newClass = post.GetClassCP (schemaClass.m_className.c_str());
+    ECClassCP newClass = post.GetClassCP(schemaClass.m_className.c_str());
     ECValueAccessor va;
-    if (nullptr != newClass && ECObjectsStatus::Success == ECValueAccessor::PopulateAndRemapValueAccessor (va, *newClass->GetDefaultStandaloneEnabler(), m_accessString.c_str(), remapper))
-        {
+    if (nullptr != newClass && ECObjectsStatus::Success == ECValueAccessor::PopulateAndRemapValueAccessor(va, *newClass->GetDefaultStandaloneEnabler(), m_accessString.c_str(), remapper)) {
         Utf8String newAccessString = va.GetManagedAccessString();
-        if (!newAccessString.Equals (m_accessString))
-            {
+        if (!newAccessString.Equals(m_accessString)) {
             m_accessString = newAccessString;
             remapped = true;
-            }
         }
+    }
 
     return remapped;
-    }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SchemaNameClassNamePair
 /////////////////////////////////////////////////////////////////////////////////////////
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SchemaNameClassNamePair::Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool SchemaNameClassNamePair::Remap(ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper) {
     bool remapped = false;
-    if (pre.GetName().Equals (m_schemaName))
-        {
-        if (!pre.GetName().Equals (post.GetName()))
-            {
+    if (pre.GetName().Equals(m_schemaName)) {
+        if (!pre.GetName().Equals(post.GetName())) {
             m_schemaName = post.GetName();
             remapped = true;
-            }
+        }
 
         Utf8String newClassName = m_className;
-        if (remapper.ResolveClassName (newClassName, post))
-            {
+        if (remapper.ResolveClassName(newClassName, post)) {
             m_className = newClassName;
             remapped = true;
-            }
         }
+    }
 
     return remapped;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
 
-bool ECNameValidation::RemoveControlCharacters(Utf8StringR cntrlCharsRemoved, Utf8StringCR cntrlCharsPresent)
-    {
+bool ECNameValidation::RemoveControlCharacters(Utf8StringR cntrlCharsRemoved, Utf8StringCR cntrlCharsPresent) {
     cntrlCharsRemoved = cntrlCharsPresent;
-    auto iter = std::remove_if(cntrlCharsRemoved.begin(), cntrlCharsRemoved.end(), [](Utf8Char c) {return iscntrl(c); });
-    if (iter != cntrlCharsRemoved.end())
-        {
+    auto iter = std::remove_if(cntrlCharsRemoved.begin(), cntrlCharsRemoved.end(), [](Utf8Char c) { return iscntrl(c); });
+    if (iter != cntrlCharsRemoved.end()) {
         cntrlCharsRemoved.erase(iter, cntrlCharsRemoved.end());
         return true;
-        }
-    return false;
     }
+    return false;
+}
 
 END_BENTLEY_ECOBJECT_NAMESPACE

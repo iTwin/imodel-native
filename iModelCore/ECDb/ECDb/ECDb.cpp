@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -21,8 +21,7 @@ InstanceReader& ECDb::GetInstanceReader() const { return m_pimpl->GetInstanceRea
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-InstanceWriter& ECDb::GetInstanceWriter()  const { return m_pimpl->GetInstanceWriter(); }
-
+InstanceWriter& ECDb::GetInstanceWriter() const { return m_pimpl->GetInstanceWriter(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -31,31 +30,27 @@ InstanceRepository& ECDb::GetInstanceRepository() const { return m_pimpl->GetIns
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::~ECDb()
-    {
+ECDb::~ECDb() {
     m_appData.Clear();
-    if (m_pimpl != nullptr)
-        {
+    if (m_pimpl != nullptr) {
         delete m_pimpl;
         m_pimpl = nullptr;
-        }
     }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-ECSqlConfig& ECDb::GetECSqlConfig() const
-    {
+ECSqlConfig& ECDb::GetECSqlConfig() const {
     return m_pimpl->GetECSqlConfig();
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::ApplyECDbSettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation)
-    {
+void ECDb::ApplyECDbSettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation) {
     m_pimpl->m_settingsManager.ApplySettings(requireECCrudTokenValidation, requireECSchemaImportTokenValidation);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -65,65 +60,59 @@ ECDb::SettingsManager const& ECDb::GetECDbSettingsManager() const { return m_pim
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-bool ECDb::SchemaRequiresProfileUpgrade(ECN::ECSchemaCR ecSchema) const
-    {
+bool ECDb::SchemaRequiresProfileUpgrade(ECN::ECSchemaCR ecSchema) const {
     return FeatureManager::SchemaRequiresProfileUpgrade(*this, ecSchema);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_OnDbOpening()
-    {
+DbResult ECDb::_OnDbOpening() {
     DbResult stat = Db::_OnDbOpening();
     if (stat != BE_SQLITE_OK)
         return stat;
 
     return m_pimpl->OnDbOpening();
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_OnDbCreated(CreateParams const& params)
-    {
+DbResult ECDb::_OnDbCreated(CreateParams const& params) {
     DbResult stat = Db::_OnDbCreated(params);
     if (stat != BE_SQLITE_OK)
         return stat;
 
     BeAssert(!IsReadonly());
     return m_pimpl->OnDbCreated();
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_OnDbOpened(OpenParams const& params)
-    {
+DbResult ECDb::_OnDbOpened(OpenParams const& params) {
     DbResult stat = Db::_OnDbOpened(params);
     if (stat != BE_SQLITE_OK)
         return stat;
 
     return m_pimpl->OnDbOpened(params);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_AfterSchemaChangeSetApplied() const
-    {
+DbResult ECDb::_AfterSchemaChangeSetApplied() const {
     auto rc = GetImpl().Schemas().Main().UpdateDbSchema(true);
     if (rc != SUCCESS)
         return BE_SQLITE_ERROR;
 
     return BE_SQLITE_OK;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_AfterDataChangeSetApplied(bool schemaChanged)
-    {
+DbResult ECDb::_AfterDataChangeSetApplied(bool schemaChanged) {
     BentleyStatus status = m_pimpl->GetProfileManager().RefreshProfileVersion();
     if (status != SUCCESS)
         return BE_SQLITE_ERROR;
@@ -138,15 +127,14 @@ DbResult ECDb::_AfterDataChangeSetApplied(bool schemaChanged)
             return BE_SQLITE_ERROR;
     }
     return BE_SQLITE_OK;
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-bool ECDb::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const
-    {
+bool ECDb::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const {
     return m_pimpl->TryGetSqlFunction(function, name, argCount);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -158,56 +146,50 @@ bvector<DbFunction*> ECDb::GetSqlFunctions() const {
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::_OnAfterSetBriefcaseId()
-    {
+void ECDb::_OnAfterSetBriefcaseId() {
     m_pimpl->OnBriefcaseIdAssigned(GetBriefcaseId());
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::_OnDbClose()
-    {
+void ECDb::_OnDbClose() {
     BeAssert(m_pimpl != nullptr && "DbClose was called in destructor after pimpl was deleted.");
-    if (m_pimpl != nullptr)
-        {
+    if (m_pimpl != nullptr) {
         delete m_pimpl;
         m_pimpl = nullptr;
-        }
+    }
 
     m_pimpl = new Impl(*this);
     Db::_OnDbClose();
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::_OnDbChangedByOtherConnection()
-    {
+void ECDb::_OnDbChangedByOtherConnection() {
     Db::_OnDbChangedByOtherConnection();
     m_pimpl->OnDbChangedByOtherConnection();
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-ProfileState ECDb::_CheckProfileVersion() const
-    {
+ProfileState ECDb::_CheckProfileVersion() const {
     ProfileState besqliteState = Db::_CheckProfileVersion();
     return besqliteState.Merge(m_pimpl->GetProfileManager().CheckProfileVersion());
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_UpgradeProfile(Db::OpenParams const& params)
-    {
+DbResult ECDb::_UpgradeProfile(Db::OpenParams const& params) {
     DbResult stat = Db::_UpgradeProfile(params);
     if (BE_SQLITE_OK != stat)
         return stat;
 
     return m_pimpl->GetProfileManager().UpgradeProfile(params);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -232,7 +214,7 @@ void ECDb::_OnRemoveFunction(DbFunction& func) const { m_pimpl->OnRemoveFunction
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) { return m_pimpl->ResetInstanceIdSequence(briefcaseId, ecClassIgnoreList);}
+BentleyStatus ECDb::ResetInstanceIdSequence(BeBriefcaseId briefcaseId, IdSet<ECN::ECClassId> const* ecClassIgnoreList) { return m_pimpl->ResetInstanceIdSequence(briefcaseId, ecClassIgnoreList); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -276,27 +258,25 @@ DbResult ECDb::CreateChangeCache(ECDbR changeCache, BeFileNameCR changeCachePath
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-//static
+// static
 BeFileName ECDb::GetDefaultChangeCachePath(Utf8CP ecdbPath) { return ChangeManager::DetermineDefaultCachePath(ecdbPath); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus ECDb::ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ECDbR changeCacheFile, ECDbCR primaryFile, ChangeSetArg const& changeSetInfo, ChangeSummaryExtractOptions const& options)
-    {
+// static
+BentleyStatus ECDb::ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ECDbR changeCacheFile, ECDbCR primaryFile, ChangeSetArg const& changeSetInfo, ChangeSummaryExtractOptions const& options) {
     BeMutexHolder lock(primaryFile.GetImpl().GetMutex());
     return ChangeSummaryExtractor::Extract(changeSummaryKey, changeCacheFile, primaryFile, changeSetInfo, options);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ChangeSetArg const& changeSetInfo, ChangeSummaryExtractOptions const& options) const
-    {
+BentleyStatus ECDb::ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ChangeSetArg const& changeSetInfo, ChangeSummaryExtractOptions const& options) const {
     BeMutexHolder lock(GetImpl().GetMutex());
     return ChangeSummaryExtractor::Extract(changeSummaryKey, *this, changeSetInfo, options);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -313,26 +293,23 @@ BentleyStatus ECDb::AddIssueListener(IIssueListener const& issueListener) { retu
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::RemoveIssueListener() { m_pimpl->RemoveIssueListener(); }
 
-
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-BeGuid ECDb::GetId() const  {return m_pimpl->GetId(); }
+BeGuid ECDb::GetId() const { return m_pimpl->GetId(); }
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnClearCache) const
-    {
+void ECDb::AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnClearCache) const {
     m_pimpl->AddAppData(key, appData, deleteOnClearCache);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpace, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const* writeToken) const
-    {
+BentleyStatus ECDb::OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpace, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const* writeToken) const {
     return m_pimpl->OpenBlobIO(blobIO, tableSpace, ecClass, propertyAccessString, ecinstanceId, writable, writeToken);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -357,32 +334,34 @@ ProfileVersion const& ECDb::GetECDbProfileVersion() const { return m_pimpl->GetP
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl& ECDb::GetImpl() const { BeAssert(m_pimpl != nullptr); return *m_pimpl; }
+ECDb::Impl& ECDb::GetImpl() const {
+    BeAssert(m_pimpl != nullptr);
+    return *m_pimpl;
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-//static
-DbResult ECDb::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors)
-    {
+// static
+DbResult ECDb::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors) {
     return Impl::InitializeLib(ecdbTempDir, hostAssetsDir, logSqliteErrors);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-//static
+// static
 bool ECDb::IsInitialized() { return Impl::IsInitialized(); }
 
 //*****************************************************************************************
-//SettingsManager
+// SettingsManager
 //*****************************************************************************************
 
 struct ECCrudWriteToken final {};
 struct SchemaImportToken final {};
 
 //---------------------------------------------------------------------------------------
-//not inlined to prevent being called outside ECDb
+// not inlined to prevent being called outside ECDb
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ECDb::SettingsManager::SettingsManager() {}
@@ -390,27 +369,23 @@ ECDb::SettingsManager::SettingsManager() {}
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::SettingsManager::~SettingsManager()
-    {
-    if (m_crudWriteToken != nullptr)
-        {
+ECDb::SettingsManager::~SettingsManager() {
+    if (m_crudWriteToken != nullptr) {
         delete m_crudWriteToken;
         m_crudWriteToken = nullptr;
-        }
-
-    if (m_schemaImportToken != nullptr)
-        {
-        delete m_schemaImportToken;
-        m_schemaImportToken = nullptr;
-        }
     }
 
+    if (m_schemaImportToken != nullptr) {
+        delete m_schemaImportToken;
+        m_schemaImportToken = nullptr;
+    }
+}
+
 //---------------------------------------------------------------------------------------
-//not inlined to prevent being called outside ECDb
+// not inlined to prevent being called outside ECDb
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ECDb::SettingsManager::ApplySettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken)
-    {
+void ECDb::SettingsManager::ApplySettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken) {
     m_settings = ECDb::Settings(requireECCrudWriteToken, requireECSchemaImportToken);
 
     if (requireECCrudWriteToken)
@@ -418,16 +393,16 @@ void ECDb::SettingsManager::ApplySettings(bool requireECCrudWriteToken, bool req
 
     if (requireECSchemaImportToken)
         m_schemaImportToken = new SchemaImportToken();
-    }
+}
 
 //---------------------------------------------------------------------------------------
-//not inlined to prevent being called outside ECDb
+// not inlined to prevent being called outside ECDb
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ECDb::Settings::Settings() {}
 
 //---------------------------------------------------------------------------------------
-//not inlined to prevent being called outside ECDb
+// not inlined to prevent being called outside ECDb
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ECDb::Settings::Settings(bool requiresECCrudWriteToken, bool requiresECSchemaImportToken) : m_requiresECCrudWriteToken(requiresECCrudWriteToken), m_requiresECSchemaImportToken(requiresECSchemaImportToken) {}
@@ -435,14 +410,14 @@ ECDb::Settings::Settings(bool requiresECCrudWriteToken, bool requiresECSchemaImp
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-bool AsciiCaseInsensitiveCompare::operator()(Utf8StringCR lhs, Utf8StringCR rhs) const{
+bool AsciiCaseInsensitiveCompare::operator()(Utf8StringCR lhs, Utf8StringCR rhs) const {
     return BeStringUtilities::StricmpAscii(lhs.c_str(), rhs.c_str()) < 0;
 }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-bool AsciiCaseInsensitiveCompare::operator()(Utf8CP lhs, Utf8CP rhs) const{
+bool AsciiCaseInsensitiveCompare::operator()(Utf8CP lhs, Utf8CP rhs) const {
     return BeStringUtilities::StricmpAscii(lhs, rhs) < 0;
 }
 

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -9,79 +9,73 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct InstanceLabelTest : ECTestFixture
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsistruct
+ +---------------+---------------+---------------+---------------+---------------+------*/
+struct InstanceLabelTest : ECTestFixture {
     StandaloneECEnablerPtr m_customAttributeEnabler;
     ECSchemaPtr m_schema;
     Utf8Char m_className[2] = "A";
 
-    void CreateSchema()
-        {
+    void CreateSchema() {
         ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-        SchemaKey schemaKey ("Bentley_Standard_CustomAttributes", 1, 5);
-        ECSchemaPtr customAttributesSchema = context->LocateSchema (schemaKey, SchemaMatchType::Latest);
-        
-        m_customAttributeEnabler = customAttributesSchema->GetClassP ("InstanceLabelSpecification")->GetDefaultStandaloneEnabler();
+        SchemaKey schemaKey("Bentley_Standard_CustomAttributes", 1, 5);
+        ECSchemaPtr customAttributesSchema = context->LocateSchema(schemaKey, SchemaMatchType::Latest);
 
-        ECSchema::CreateSchema (m_schema, "TestSchema", "ts", 1, 0, 0);
-        m_schema->AddReferencedSchema (*customAttributesSchema);
-        }
+        m_customAttributeEnabler = customAttributesSchema->GetClassP("InstanceLabelSpecification")->GetDefaultStandaloneEnabler();
 
-    ECClassCP CreateClass (Utf8CP className, bool hasInstanceLabelAttribute, Utf8CP instanceLabelPropertyName)
-        {
+        ECSchema::CreateSchema(m_schema, "TestSchema", "ts", 1, 0, 0);
+        m_schema->AddReferencedSchema(*customAttributesSchema);
+    }
+
+    ECClassCP CreateClass(Utf8CP className, bool hasInstanceLabelAttribute, Utf8CP instanceLabelPropertyName) {
         ECEntityClassP ecClass;
-        m_schema->CreateEntityClass (ecClass, className);
+        m_schema->CreateEntityClass(ecClass, className);
 
         PrimitiveECPropertyP prop;
-        ecClass->CreatePrimitiveProperty (prop, instanceLabelPropertyName, PRIMITIVETYPE_String);
+        ecClass->CreatePrimitiveProperty(prop, instanceLabelPropertyName, PRIMITIVETYPE_String);
 
-        if (hasInstanceLabelAttribute)
-            {
+        if (hasInstanceLabelAttribute) {
             IECInstancePtr labelAttr = m_customAttributeEnabler->CreateInstance();
             ECValue v;
             if (instanceLabelPropertyName)
-                v.SetUtf8CP (instanceLabelPropertyName, false);
+                v.SetUtf8CP(instanceLabelPropertyName, false);
 
-            labelAttr->SetValue ("PropertyName", v);
-            ecClass->SetCustomAttribute (*labelAttr);
-            }
+            labelAttr->SetValue("PropertyName", v);
+            ecClass->SetCustomAttribute(*labelAttr);
+        }
 
         return ecClass;
-        }
+    }
 
-    void TestInstanceLabel (bool hasInstanceLabelAttribute, Utf8CP instanceLabelPropertyName, Utf8CP instanceLabelPropertyValue)
-        {
-        ECClassCP ecClass = CreateClass (m_className, hasInstanceLabelAttribute, instanceLabelPropertyName);
+    void TestInstanceLabel(bool hasInstanceLabelAttribute, Utf8CP instanceLabelPropertyName, Utf8CP instanceLabelPropertyValue) {
+        ECClassCP ecClass = CreateClass(m_className, hasInstanceLabelAttribute, instanceLabelPropertyName);
         IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
         if (nullptr != instanceLabelPropertyValue)
-            instance->SetValue (instanceLabelPropertyName, ECValue (instanceLabelPropertyValue, false));
+            instance->SetValue(instanceLabelPropertyName, ECValue(instanceLabelPropertyValue, false));
 
         Utf8String displayLabel;
-        EXPECT_EQ (ECObjectsStatus::Success, instance->GetDisplayLabel (displayLabel));
+        EXPECT_EQ(ECObjectsStatus::Success, instance->GetDisplayLabel(displayLabel));
         if (instanceLabelPropertyValue)
-            EXPECT_TRUE (displayLabel.Equals (instanceLabelPropertyValue));
+            EXPECT_TRUE(displayLabel.Equals(instanceLabelPropertyValue));
         else
-            EXPECT_TRUE (displayLabel.Equals (ecClass->GetDisplayLabel()));
+            EXPECT_TRUE(displayLabel.Equals(ecClass->GetDisplayLabel()));
 
         ++m_className[0];
-        }
-    };
+    }
+};
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (InstanceLabelTest, TestLabels)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceLabelTest, TestLabels) {
     CreateSchema();
 
-    TestInstanceLabel (true, "InstanceLabelProperty", "MyLabel");
-    TestInstanceLabel (false, "DisplayLabel", nullptr);   // Bill added DisplayLabel and variants as hard-coded property names to use for label if no specification present; managed does not do this; reverted it.
-    TestInstanceLabel (false, "NAME", "C");
-    TestInstanceLabel (true, "NAME", "MyName");
-    TestInstanceLabel (false, "ThisIsNotAnInstanceLabel", nullptr);
-    }
+    TestInstanceLabel(true, "InstanceLabelProperty", "MyLabel");
+    TestInstanceLabel(false, "DisplayLabel", nullptr);  // Bill added DisplayLabel and variants as hard-coded property names to use for label if no specification present; managed does not do this; reverted it.
+    TestInstanceLabel(false, "NAME", "C");
+    TestInstanceLabel(true, "NAME", "MyName");
+    TestInstanceLabel(false, "ThisIsNotAnInstanceLabel", nullptr);
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -11,8 +11,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //**********************************************************************************
 // Reproduces delete with referential integrity performance issue reported by VR
 //**********************************************************************************
-void RelateInstances(ECDb& ecdb, ECClassCP sourceClass, ECInstanceId sourceECInstanceId, ECClassCP targetClass, ECInstanceId targetECInstanceId, ECRelationshipClassCP relClass)
-    {
+void RelateInstances(ECDb& ecdb, ECClassCP sourceClass, ECInstanceId sourceECInstanceId, ECClassCP targetClass, ECInstanceId targetECInstanceId, ECRelationshipClassCP relClass) {
     StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
     StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
 
@@ -33,20 +32,18 @@ void RelateInstances(ECDb& ecdb, ECClassCP sourceClass, ECInstanceId sourceECIns
     ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey ecInstanceKey;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(ecInstanceKey, *relationshipInstance.get()));
-    }
+}
 
-ECInstanceKey InsertInstance(ECDbR ecdb, ECClassCP ecClass)
-    {
+ECInstanceKey InsertInstance(ECDbR ecdb, ECClassCP ecClass) {
     JsonInserter inserter(ecdb, *ecClass, nullptr);
     Json::Value instance(Json::objectValue);
     ECInstanceKey instanceKey;
     EXPECT_EQ(BE_SQLITE_OK, inserter.Insert(instanceKey, instance));
     EXPECT_TRUE(instanceKey.IsValid());
     return instanceKey;
-    }
+}
 
-void CreateDeleteReferentialIntegrityTestDb(BeFileNameR testDbPath)
-    {
+void CreateDeleteReferentialIntegrityTestDb(BeFileNameR testDbPath) {
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
     BeFileName assetsDir;
@@ -57,12 +54,11 @@ void CreateDeleteReferentialIntegrityTestDb(BeFileNameR testDbPath)
     BeFileName outputDir;
     BeTest::GetHost().GetOutputRoot(outputDir);
     testDbPath = BeFileName(nullptr, outputDir.GetName(), L"fieldengineerdeletereferentialintegrity.ecdb", nullptr);
-    if (BeFileName::DoesPathExist(testDbPath.GetName()))
-        {
+    if (BeFileName::DoesPathExist(testDbPath.GetName())) {
         // Delete any previously created file
         BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile(testDbPath.GetName());
         ASSERT_TRUE(fileDeleteStatus == BeFileNameStatus::Success);
-        }
+    }
 
     ECDb ecdb;
     DbResult stat = ecdb.CreateNewDb(testDbPath.GetNameUtf8().c_str());
@@ -107,10 +103,9 @@ void CreateDeleteReferentialIntegrityTestDb(BeFileNameR testDbPath)
     ECSchema::ReadFromXmlString(schema, schemaXml, *context);
 
     ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()));
-    }
+}
 
-void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)
-    {
+void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo) {
     BeFileName testDbPath;
     CreateDeleteReferentialIntegrityTestDb(testDbPath);
 
@@ -121,43 +116,41 @@ void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)
     ECInstanceKey testECInstanceKey;
 
     {
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testDbPath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testDbPath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
-    ECClassCP testClass = ecdb.Schemas().GetClass(testSchemaName, testClassName);
+        ECClassCP testClass = ecdb.Schemas().GetClass(testSchemaName, testClassName);
 
-    ECClassCP cachedInfoClass = ecdb.Schemas().GetClass(testSchemaName, "CachedInfoClass");
+        ECClassCP cachedInfoClass = ecdb.Schemas().GetClass(testSchemaName, "CachedInfoClass");
 
-    ECClassCP tempClass = ecdb.Schemas().GetClass(testSchemaName, "TestClassRelationship");
-    ECRelationshipClassCP testRelationshipClass = tempClass->GetRelationshipClassCP();
+        ECClassCP tempClass = ecdb.Schemas().GetClass(testSchemaName, "TestClassRelationship");
+        ECRelationshipClassCP testRelationshipClass = tempClass->GetRelationshipClassCP();
 
-    tempClass = ecdb.Schemas().GetClass(testSchemaName, "CachedInfoClassRelationship");
-    ECRelationshipClassCP cachedInfoRelationshipClass = tempClass->GetRelationshipClassCP();
+        tempClass = ecdb.Schemas().GetClass(testSchemaName, "CachedInfoClassRelationship");
+        ECRelationshipClassCP cachedInfoRelationshipClass = tempClass->GetRelationshipClassCP();
 
-    // insert test data
-    testECInstanceKey = InsertInstance(ecdb, testClass);
-    for (int i = 0; i < childCount; i++)
-        {
-        ECInstanceKey childKey = InsertInstance(ecdb, testClass);
-        RelateInstances(ecdb, testClass, testECInstanceKey.GetInstanceId(), testClass, childKey.GetInstanceId(), testRelationshipClass);
-        if (withRelationsToCachedInfo)
-            {
-            ECInstanceKey infoKey = InsertInstance(ecdb, cachedInfoClass);
-            RelateInstances(ecdb, cachedInfoClass, infoKey.GetInstanceId(), testClass, childKey.GetInstanceId(), cachedInfoRelationshipClass);
+        // insert test data
+        testECInstanceKey = InsertInstance(ecdb, testClass);
+        for (int i = 0; i < childCount; i++) {
+            ECInstanceKey childKey = InsertInstance(ecdb, testClass);
+            RelateInstances(ecdb, testClass, testECInstanceKey.GetInstanceId(), testClass, childKey.GetInstanceId(), testRelationshipClass);
+            if (withRelationsToCachedInfo) {
+                ECInstanceKey infoKey = InsertInstance(ecdb, cachedInfoClass);
+                RelateInstances(ecdb, cachedInfoClass, infoKey.GetInstanceId(), testClass, childKey.GetInstanceId(), cachedInfoRelationshipClass);
             }
         }
 
-    ecdb.SaveChanges();
+        ecdb.SaveChanges();
     }
 
-    //reopen to minimize any caching from the creation and population of the test ecdb
+    // reopen to minimize any caching from the creation and population of the test ecdb
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testDbPath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     ECClassCP testClass = ecdb.Schemas().GetClass(testSchemaName, testClassName);
 
-    //printf ("Attach to profiler\n");
-    //getchar ();
+    // printf ("Attach to profiler\n");
+    // getchar ();
 
     // Delete
     StopWatch timer(true);
@@ -166,8 +159,8 @@ void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)
     timer.Stop();
     ASSERT_EQ(BE_SQLITE_OK, status);
 
-    //printf ("Detach from profiler\n");
-    //getchar ();
+    // printf ("Detach from profiler\n");
+    // getchar ();
 
     Utf8CP traceMessage = nullptr;
     if (withRelationsToCachedInfo)
@@ -176,10 +169,9 @@ void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)
         traceMessage = "ECInstanceDeleter::Delete for one instance with 1 set of %d related child instances took %.4f ms.";
 
     LOG.tracev(traceMessage, childCount, timer.GetElapsedSeconds() * 1000.0);
-    }
+}
 
-void RunDeleteReferentialIntegrityTestUsingECSql(bool withRelationsToCachedInfo)
-    {
+void RunDeleteReferentialIntegrityTestUsingECSql(bool withRelationsToCachedInfo) {
     BeFileName testDbPath;
     CreateDeleteReferentialIntegrityTestDb(testDbPath);
 
@@ -190,41 +182,39 @@ void RunDeleteReferentialIntegrityTestUsingECSql(bool withRelationsToCachedInfo)
     ECInstanceKey testECInstanceKey;
 
     {
-    ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testDbPath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testDbPath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
-    ECClassCP testClass = ecdb.Schemas().GetClass(testSchemaName, testClassName);
+        ECClassCP testClass = ecdb.Schemas().GetClass(testSchemaName, testClassName);
 
-    ECClassCP cachedInfoClass = ecdb.Schemas().GetClass(testSchemaName, "CachedInfoClass");
+        ECClassCP cachedInfoClass = ecdb.Schemas().GetClass(testSchemaName, "CachedInfoClass");
 
-    ECClassCP tempClass = ecdb.Schemas().GetClass(testSchemaName, "TestClassRelationship");
-    ECRelationshipClassCP testRelationshipClass = tempClass->GetRelationshipClassCP();
+        ECClassCP tempClass = ecdb.Schemas().GetClass(testSchemaName, "TestClassRelationship");
+        ECRelationshipClassCP testRelationshipClass = tempClass->GetRelationshipClassCP();
 
-    tempClass = ecdb.Schemas().GetClass(testSchemaName, "CachedInfoClassRelationship");
-    ECRelationshipClassCP cachedInfoRelationshipClass = tempClass->GetRelationshipClassCP();
+        tempClass = ecdb.Schemas().GetClass(testSchemaName, "CachedInfoClassRelationship");
+        ECRelationshipClassCP cachedInfoRelationshipClass = tempClass->GetRelationshipClassCP();
 
-    // insert test data
-    testECInstanceKey = InsertInstance(ecdb, testClass);
-    for (int i = 0; i < childCount; i++)
-        {
-        ECInstanceKey childKey = InsertInstance(ecdb, testClass);
-        RelateInstances(ecdb, testClass, testECInstanceKey.GetInstanceId(), testClass, childKey.GetInstanceId(), testRelationshipClass);
-        if (withRelationsToCachedInfo)
-            {
-            ECInstanceKey infoKey = InsertInstance(ecdb, cachedInfoClass);
-            RelateInstances(ecdb, cachedInfoClass, infoKey.GetInstanceId(), testClass, childKey.GetInstanceId(), cachedInfoRelationshipClass);
+        // insert test data
+        testECInstanceKey = InsertInstance(ecdb, testClass);
+        for (int i = 0; i < childCount; i++) {
+            ECInstanceKey childKey = InsertInstance(ecdb, testClass);
+            RelateInstances(ecdb, testClass, testECInstanceKey.GetInstanceId(), testClass, childKey.GetInstanceId(), testRelationshipClass);
+            if (withRelationsToCachedInfo) {
+                ECInstanceKey infoKey = InsertInstance(ecdb, cachedInfoClass);
+                RelateInstances(ecdb, cachedInfoClass, infoKey.GetInstanceId(), testClass, childKey.GetInstanceId(), cachedInfoRelationshipClass);
             }
         }
 
-    ecdb.SaveChanges();
+        ecdb.SaveChanges();
     }
 
-    //reopen to minimize any caching from the creation and population of the test ecdb
+    // reopen to minimize any caching from the creation and population of the test ecdb
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testDbPath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
-    //printf ("Attach to profiler\n");
-    //getchar ();
+    // printf ("Attach to profiler\n");
+    // getchar ();
 
     // Delete
     StopWatch timer(true);
@@ -236,8 +226,8 @@ void RunDeleteReferentialIntegrityTestUsingECSql(bool withRelationsToCachedInfo)
     auto stepStatus = stmt.Step();
     ASSERT_EQ(BE_SQLITE_DONE, stepStatus);
     timer.Stop();
-    //printf ("Detach from profiler\n");
-    //getchar ();
+    // printf ("Detach from profiler\n");
+    // getchar ();
 
     Utf8CP traceMessage = nullptr;
     if (withRelationsToCachedInfo)
@@ -246,39 +236,34 @@ void RunDeleteReferentialIntegrityTestUsingECSql(bool withRelationsToCachedInfo)
         traceMessage = "ECSQL DELETE for one instance with 1 set of %d related child instances took %.4f ms.";
 
     LOG.tracev(traceMessage, childCount, timer.GetElapsedSeconds() * 1000.0);
-    }
-
+}
 
 //---------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(PerformanceFieldEngineer, DeleteReferentialIntegrityWithTwoRelationshipsWithECSql)
-    {
+TEST(PerformanceFieldEngineer, DeleteReferentialIntegrityWithTwoRelationshipsWithECSql) {
     RunDeleteReferentialIntegrityTestUsingECSql(true);
-    }
+}
 
 //---------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(PerformanceFieldEngineer, DeleteReferentialIntegrityWithOneRelationshipWithECSql)
-    {
+TEST(PerformanceFieldEngineer, DeleteReferentialIntegrityWithOneRelationshipWithECSql) {
     RunDeleteReferentialIntegrityTestUsingECSql(false);
-    }
+}
 
 //---------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(PerformanceFieldEngineer, DeleteReferentialIntegrityWithTwoRelationships)
-    {
+TEST(PerformanceFieldEngineer, DeleteReferentialIntegrityWithTwoRelationships) {
     RunDeleteReferentialIntegrityTest(true);
-    }
+}
 
 //---------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(PerformanceFieldEngineer, DeleteReferentialIntegrityWithOneRelationship)
-    {
+TEST(PerformanceFieldEngineer, DeleteReferentialIntegrityWithOneRelationship) {
     RunDeleteReferentialIntegrityTest(false);
-    }
+}
 
 END_ECDBUNITTESTS_NAMESPACE

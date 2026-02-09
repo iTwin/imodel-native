@@ -19,7 +19,6 @@
  *
  *************************************************************/
 
-
 #ifndef _CONNECTIVITY_SQLSCAN_HXX
 #define _CONNECTIVITY_SQLSCAN_HXX
 #pragma once
@@ -34,73 +33,69 @@
 typedef void* yyscan_t;
 #endif
 
+namespace connectivity {
 
-namespace connectivity
-    {
+//==========================================================================
+// OSQLParseNodesContainer
+// grabage collection of nodes
+//==========================================================================
+class OSQLParseNodesContainer {
+   private:
+    std::vector<OSQLParseNode*> m_aNodes;
 
-    //==========================================================================
-    // OSQLParseNodesContainer
-    // grabage collection of nodes
-    //==========================================================================
-    class OSQLParseNodesContainer {
-        private:
-            std::vector<OSQLParseNode*> m_aNodes;
-        public:
-            OSQLParseNodesContainer(){}
-            ~OSQLParseNodesContainer();
-            bool empty() const { return m_aNodes.empty(); }
-            void clearAndDelete();
-            size_t size() const { return m_aNodes.size(); }
-            OSQLParseNode* front() const { return m_aNodes.front(); }
-            OSQLParseNode* NewNode(const sal_Char* pNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID = 0);
-        };
-    //==========================================================================
-    //= OSQLScanner
-    //==========================================================================
-    /** Scanner for SQL92
-    */
-    class OOO_DLLPUBLIC_DBTOOLS OSQLScanner
-        {
-        private:
-            const IParseContext* m_pContext; // context for parse, knows all international stuff
-            const Utf8String m_sStatement; // statement to parse
-            Utf8String m_sErrorMessage;
-            sal_Int32 m_nCurrentPos; // next position to read from the statement
-            sal_Bool m_bInternational; // do we have a statement which may uses
-            sal_Int32 m_nRule; // rule to be set
-            OSQLParseNodesContainer m_pGarbageCollector;
-            void SetRule(sal_Int32 nRule) { m_nRule = nRule; }
+   public:
+    OSQLParseNodesContainer() {}
+    ~OSQLParseNodesContainer();
+    bool empty() const { return m_aNodes.empty(); }
+    void clearAndDelete();
+    size_t size() const { return m_aNodes.size(); }
+    OSQLParseNode* front() const { return m_aNodes.front(); }
+    OSQLParseNode* NewNode(const sal_Char* pNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID = 0);
+};
+//==========================================================================
+//= OSQLScanner
+//==========================================================================
+/** Scanner for SQL92
+ */
+class OOO_DLLPUBLIC_DBTOOLS OSQLScanner {
+   private:
+    const IParseContext* m_pContext;  // context for parse, knows all international stuff
+    const Utf8String m_sStatement;    // statement to parse
+    Utf8String m_sErrorMessage;
+    sal_Int32 m_nCurrentPos;    // next position to read from the statement
+    sal_Bool m_bInternational;  // do we have a statement which may uses
+    sal_Int32 m_nRule;          // rule to be set
+    OSQLParseNodesContainer m_pGarbageCollector;
+    void SetRule(sal_Int32 nRule) { m_nRule = nRule; }
 
-        public:
-            yyscan_t  yyscanner; //do not add m_ with this var as it used in macros;
+   public:
+    yyscan_t yyscanner;  // do not add m_ with this var as it used in macros;
 
-        public:
-            OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sal_Bool bInternational);
-            virtual ~OSQLScanner();
-            virtual void SQLyyerror(const char *fmt);
-            virtual void output(sal_Int32) { OSL_ASSERT("Internal error in sdblex.l: output not possible"); }
-            virtual void ECHO(void) { OSL_ASSERT("Internal error in sdblex.l: ECHO not possible"); }
-            virtual IParseContext::InternationalKeyCode getInternationalTokenID(const char* sToken) const;
-            // setting the new information before scanning
-            const Utf8String& getErrorMessage() const { return m_sErrorMessage; }
-            sal_Int32 SQLyygetc(void);
-            Utf8String getStatement() const { return m_sStatement; }
-            sal_Int32 SQLlex(YYSTYPE* val);
-            // set this as scanner for flex
-            // rules settings
-            sal_Int32    GetCurrentRule() const;
-            sal_Int32    GetGERRule() const;
-            sal_Int32    GetENGRule() const;
-            sal_Int32    GetSQLRule() const;
-            sal_Int32    GetDATERule() const;
-            sal_Int32    GetSTRINGRule() const;
-            inline sal_Int32 GetCurrentPos() const { return m_nCurrentPos; }
+   public:
+    OSQLScanner(Utf8CP rNewStatement, const IParseContext* pContext, sal_Bool bInternational);
+    virtual ~OSQLScanner();
+    virtual void SQLyyerror(const char* fmt);
+    virtual void output(sal_Int32) { OSL_ASSERT("Internal error in sdblex.l: output not possible"); }
+    virtual void ECHO(void) { OSL_ASSERT("Internal error in sdblex.l: ECHO not possible"); }
+    virtual IParseContext::InternationalKeyCode getInternationalTokenID(const char* sToken) const;
+    // setting the new information before scanning
+    const Utf8String& getErrorMessage() const { return m_sErrorMessage; }
+    sal_Int32 SQLyygetc(void);
+    Utf8String getStatement() const { return m_sStatement; }
+    sal_Int32 SQLlex(YYSTYPE* val);
+    // set this as scanner for flex
+    // rules settings
+    sal_Int32 GetCurrentRule() const;
+    sal_Int32 GetGERRule() const;
+    sal_Int32 GetENGRule() const;
+    sal_Int32 GetSQLRule() const;
+    sal_Int32 GetDATERule() const;
+    sal_Int32 GetSTRINGRule() const;
+    inline sal_Int32 GetCurrentPos() const { return m_nCurrentPos; }
 
-            OSQLParseNode* NewNode(const sal_Char* pNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID = 0);
-            OSQLParseNode* NewNode(Utf8String const& _rNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID = 0);
-
-
-        };
-    }
+    OSQLParseNode* NewNode(const sal_Char* pNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID = 0);
+    OSQLParseNode* NewNode(Utf8String const& _rNewValue, SQLNodeType eNodeType, sal_uInt32 nNodeID = 0);
+};
+}  // namespace connectivity
 
 #endif

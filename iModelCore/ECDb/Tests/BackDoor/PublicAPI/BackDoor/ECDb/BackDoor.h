@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
 #include "ECDbTests.h"
@@ -15,27 +15,22 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //! tests to call functions that are not part of the published api.
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-namespace BackDoor
-    {
-    namespace ECObjects
-        {
-        namespace ECValue
-            {
-            void SetAllowsPointersIntoInstanceMemory (ECN::ECValueR, bool allow);
-            bool AllowsPointersIntoInstanceMemory (ECN::ECValueCR);
-            }
+namespace BackDoor {
+namespace ECObjects {
+namespace ECValue {
+void SetAllowsPointersIntoInstanceMemory(ECN::ECValueR, bool allow);
+bool AllowsPointersIntoInstanceMemory(ECN::ECValueCR);
+}  // namespace ECValue
 
-        namespace ECSchemaReadContext
-            {
-            ECN::ECObjectsStatus AddSchema(ECN::ECSchemaReadContext&, ECN::ECSchemaR);
-            }
-        }
+namespace ECSchemaReadContext {
+ECN::ECObjectsStatus AddSchema(ECN::ECSchemaReadContext&, ECN::ECSchemaR);
+}
+}  // namespace ECObjects
 
-    namespace BentleyGeometryFlatBuffer
-        {
-        IGeometryPtr BytesToGeometrySafe(Byte const*, size_t bufferSize);
-        void GeometryToBytes(bvector<Byte>&, IGeometryCR);
-        }
-    };
+namespace BentleyGeometryFlatBuffer {
+IGeometryPtr BytesToGeometrySafe(Byte const*, size_t bufferSize);
+void GeometryToBytes(bvector<Byte>&, IGeometryCR);
+}  // namespace BentleyGeometryFlatBuffer
+};  // namespace BackDoor
 
 END_ECDBUNITTESTS_NAMESPACE

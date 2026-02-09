@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -11,61 +11,57 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct SchemaLocatorTests : ECTestFixture {};
 
-struct TestSchemaLocater1 : IECSchemaLocater, NonCopyableClass
-    {
-protected:
-    ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override
-        {
+struct TestSchemaLocater1 : IECSchemaLocater, NonCopyableClass {
+   protected:
+    ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override {
         ECSchemaPtr schema;
         ECSchema::CreateSchema(schema, "TestSchema1", "ts1", 1, 0, 0);
         return schema;
-        }
-public:
+    }
+
+   public:
     Utf8String GetDescription() const override {
         return Utf8PrintfString("TestSchemaLocater1");
     }
-    };
+};
 
-struct TestSchemaLocater2 : IECSchemaLocater, NonCopyableClass
-    {
-protected:
-    ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override
-        {
+struct TestSchemaLocater2 : IECSchemaLocater, NonCopyableClass {
+   protected:
+    ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override {
         ECSchemaPtr schema;
         ECSchema::CreateSchema(schema, "TestSchema2", "ts2", 2, 0, 0);
         return schema;
-        }
-public:
+    }
+
+   public:
     Utf8String GetDescription() const override {
-            return Utf8PrintfString("TestSchemaLocater2");
-        }
-    };
+        return Utf8PrintfString("TestSchemaLocater2");
+    }
+};
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaLocatorTests, SchemaReadContext_WithoutVersionExtension)
-    {
+TEST_F(SchemaLocatorTests, SchemaReadContext_WithoutVersionExtension) {
     ECSchemaReadContextPtr readWithoutVersionContext = ECSchemaReadContext::CreateContext(false, true);
     readWithoutVersionContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
 
     ECSchemaReadContextPtr readWithVersionContext = ECSchemaReadContext::CreateContext(false, false);
     readWithVersionContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
 
-    SchemaKey key ("SchemaWithoutVersion", 1, 0, 0);
+    SchemaKey key("SchemaWithoutVersion", 1, 0, 0);
 
     ECSchemaPtr schema = readWithoutVersionContext->LocateSchema(key, SchemaMatchType::Exact);
     ASSERT_TRUE(schema.IsValid());
 
     ECSchemaPtr schema2 = readWithVersionContext->LocateSchema(key, SchemaMatchType::Exact);
     ASSERT_FALSE(schema2.IsValid());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaLocatorTests, SearchSchemaFileLocater_WithoutVersionExtension)
-    {
+TEST_F(SchemaLocatorTests, SearchSchemaFileLocater_WithoutVersionExtension) {
     bvector<WString> searchPaths;
     searchPaths.push_back(ECTestFixture::GetTestDataPath(L"\\").c_str());
 
@@ -80,13 +76,12 @@ TEST_F(SchemaLocatorTests, SearchSchemaFileLocater_WithoutVersionExtension)
     auto locater2 = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths, false);
     ECSchemaPtr schema2 = locater2->LocateSchema(key, SchemaMatchType::Identical, *context2);
     ASSERT_FALSE(schema2.IsValid());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(SchemaLocatorTests, LocatingSchemaContext_WithLocaterAddedFirst)
-    {
+TEST_F(SchemaLocatorTests, LocatingSchemaContext_WithLocaterAddedFirst) {
     auto const context = ECSchemaReadContext::CreateContext();
     TestSchemaLocater1 locator1;
     TestSchemaLocater2 locator2;
@@ -98,13 +93,12 @@ TEST_F(SchemaLocatorTests, LocatingSchemaContext_WithLocaterAddedFirst)
     auto const schema = context->LocateSchema(key, SchemaMatchType::Latest);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_STREQ("TestSchema1", schema->GetName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(SchemaLocatorTests, LocatingSchemaContext_WithPrioritizedLocater)
-    {
+TEST_F(SchemaLocatorTests, LocatingSchemaContext_WithPrioritizedLocater) {
     auto const context = ECSchemaReadContext::CreateContext();
     TestSchemaLocater1 locator1;
     TestSchemaLocater2 locator2;
@@ -116,13 +110,12 @@ TEST_F(SchemaLocatorTests, LocatingSchemaContext_WithPrioritizedLocater)
     auto const schema = context->LocateSchema(key, SchemaMatchType::Latest);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_STREQ("TestSchema2", schema->GetName().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(SchemaLocatorTests, LocatingSchemaContext_CacheLocaterIsBeforePrioritizedLocater)
-    {
+TEST_F(SchemaLocatorTests, LocatingSchemaContext_CacheLocaterIsBeforePrioritizedLocater) {
     auto const context = ECSchemaReadContext::CreateContext();
     TestSchemaLocater2 locator;
     SchemaKey key;
@@ -149,22 +142,21 @@ TEST_F(SchemaLocatorTests, LocatingSchemaContext_CacheLocaterIsBeforePrioritized
     auto const locatedSchema2 = context->LocateSchema(matchingKey, SchemaMatchType::Latest);
     ASSERT_TRUE(locatedSchema2.IsValid());
     EXPECT_STREQ("TestSchema1", locatedSchema2->GetName().c_str());
-    }
+}
 
-TEST_F(SchemaLocatorTests, SanitizingSchemaLocater_CopySchemaUsesNewReference)
-    {
+TEST_F(SchemaLocatorTests, SanitizingSchemaLocater_CopySchemaUsesNewReference) {
     StringSchemaLocater locater;
-    SchemaKey bisCoreKey ("BisCore", 1, 0, 0);
-    locater.AddSchemaString(bisCoreKey, 
-        R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    SchemaKey bisCoreKey("BisCore", 1, 0, 0);
+    locater.AddSchemaString(bisCoreKey,
+                            R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="BisCore" alias="bis" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="Element" />
             <ECCustomAttributeClass typeName="ClassHasHandler" appliesTo="Any" />
         </ECSchema>)schema");
 
-    SchemaKey domainSchemaKey ("DomainSchema", 1, 0, 0);
-    locater.AddSchemaString(domainSchemaKey, 
-        R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    SchemaKey domainSchemaKey("DomainSchema", 1, 0, 0);
+    locater.AddSchemaString(domainSchemaKey,
+                            R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="DomainSchema" alias="ds" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
             <ECEntityClass typeName="MyElement">
@@ -182,9 +174,9 @@ TEST_F(SchemaLocatorTests, SanitizingSchemaLocater_CopySchemaUsesNewReference)
 
     ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
     StringSchemaLocater locater2;
-    SchemaKey bisCoreKey2 ("BisCore", 1, 0, 1);
-    locater2.AddSchemaString(bisCoreKey2, 
-        R"schema(<?xml version='1.0' encoding='utf-8' ?>
+    SchemaKey bisCoreKey2("BisCore", 1, 0, 1);
+    locater2.AddSchemaString(bisCoreKey2,
+                             R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="BisCore" alias="bis" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="Element" />
             <ECCustomAttributeClass typeName="ClassHasHandler" appliesTo="Any" />
@@ -196,26 +188,24 @@ TEST_F(SchemaLocatorTests, SanitizingSchemaLocater_CopySchemaUsesNewReference)
     ASSERT_TRUE(domainSchema2.IsValid());
     ASSERT_TRUE(domainSchema2->GetSchemaKey().Matches(domainSchemaKey, SchemaMatchType::Exact));
     ECSchemaCP bisCore2 = nullptr;
-    for(auto& refSchema : domainSchema2->GetReferencedSchemas())
-        {
+    for (auto& refSchema : domainSchema2->GetReferencedSchemas()) {
         ASSERT_TRUE(bisCore2 == nullptr);
         bisCore2 = refSchema.second.get();
-        }
+    }
     ASSERT_TRUE(bisCore2 != nullptr);
     ASSERT_TRUE(bisCore2->GetSchemaKey().Matches(bisCoreKey2, SchemaMatchType::Exact));
     auto myElement = domainSchema2->GetClassCP("MyElement");
     ASSERT_TRUE(myElement != nullptr);
     auto caInstance = myElement->GetCustomAttributeLocal("BisCore", "ClassHasHandler");
     ASSERT_TRUE(caInstance.IsValid());
-    ASSERT_TRUE(caInstance->GetClass().GetSchema().GetSchemaKey().Matches(bisCoreKey2, SchemaMatchType::Exact)); // Validate CA class schema
+    ASSERT_TRUE(caInstance->GetClass().GetSchema().GetSchemaKey().Matches(bisCoreKey2, SchemaMatchType::Exact));  // Validate CA class schema
     ECClassCP baseClass = nullptr;
-    for(auto bc : myElement->GetBaseClasses())
-        {
+    for (auto bc : myElement->GetBaseClasses()) {
         ASSERT_TRUE(baseClass == nullptr);
         baseClass = bc;
-        }
-    ASSERT_TRUE(baseClass != nullptr);
-    ASSERT_TRUE(baseClass->GetSchema().GetSchemaKey().Matches(bisCoreKey2, SchemaMatchType::Exact)); // Validate base class schema
     }
+    ASSERT_TRUE(baseClass != nullptr);
+    ASSERT_TRUE(baseClass->GetSchema().GetSchemaKey().Matches(bisCoreKey2, SchemaMatchType::Exact));  // Validate base class schema
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

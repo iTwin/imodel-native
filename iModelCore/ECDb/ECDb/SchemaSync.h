@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/SchemaManager.h>
 #include "ECDbInternalTypes.h"
@@ -16,7 +16,7 @@ struct SchemaSyncHelper final {
     using AliasMap = bmap<Utf8String, Utf8String, CompareIUtf8Ascii>;
     using StringList = bvector<Utf8String>;
     static constexpr auto ALIAS_SYNC_DB = "schema_sync_db";
-	static constexpr auto ALIAS_MAIN_DB = "main";
+    static constexpr auto ALIAS_MAIN_DB = "main";
     static constexpr auto TABLE_BE_PROP = "be_Prop";
 
     static int ForeignKeyCheck(DbCR conn, std::vector<std::string> const& tables, Utf8CP dbAlias);

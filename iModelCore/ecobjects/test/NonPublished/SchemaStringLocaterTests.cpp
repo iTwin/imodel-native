@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -14,8 +14,7 @@ struct SchemaStringLocaterTests : ECTestFixture {};
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaStringLocaterTests, StringSchemaLocater_LocateSchemaWithSameKey)
-    {
+TEST_F(SchemaStringLocaterTests, StringSchemaLocater_LocateSchemaWithSameKey) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Test" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="Fruit" isDomainClass="True" description="A generic description">
@@ -33,13 +32,12 @@ TEST_F(SchemaStringLocaterTests, StringSchemaLocater_LocateSchemaWithSameKey)
 
     auto fruit = schema->GetClassCP("Fruit");
     ASSERT_NE(nullptr, fruit);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaStringLocaterTests, StringSchemaLocater_LocateSchemaWithDifferentKey)
-    {
+TEST_F(SchemaStringLocaterTests, StringSchemaLocater_LocateSchemaWithDifferentKey) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Test" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="Fruit" isDomainClass="True" description="A generic description">
@@ -57,13 +55,12 @@ TEST_F(SchemaStringLocaterTests, StringSchemaLocater_LocateSchemaWithDifferentKe
 
     auto fruit = schema->GetClassCP("Fruit");
     ASSERT_NE(nullptr, fruit);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(SchemaStringLocaterTests, LocatingSchemaContext_SchemaXmlIsDeleted)
-    {
+TEST_F(SchemaStringLocaterTests, LocatingSchemaContext_SchemaXmlIsDeleted) {
     Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Test" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="Fruit" isDomainClass="True" description="A generic description">
@@ -82,6 +79,6 @@ TEST_F(SchemaStringLocaterTests, LocatingSchemaContext_SchemaXmlIsDeleted)
 
     auto fruit = schema->GetClassCP("Fruit");
     ASSERT_NE(nullptr, fruit);
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

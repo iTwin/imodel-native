@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 #include "BeXml/BeXml.h"
@@ -15,26 +15,23 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct SchemaDeserializationTest : ECTestFixture 
-    {
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static ECPropertyP GetPropertyByName(ECClassCR ecClass, Utf8CP name, bool expectExists = true)
-        {
+struct SchemaDeserializationTest : ECTestFixture {
+    /*---------------------------------------------------------------------------------**/ /**
+     * @bsimethod
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    static ECPropertyP GetPropertyByName(ECClassCR ecClass, Utf8CP name, bool expectExists = true) {
         ECPropertyP prop = ecClass.GetPropertyP(name);
         EXPECT_EQ(expectExists, nullptr != prop);
         Utf8String utf8(name);
         prop = ecClass.GetPropertyP(utf8.c_str());
         EXPECT_EQ(expectExists, nullptr != prop);
         return prop;
-        }
+    }
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void VerifyWidgetsSchema(ECSchemaPtr const& schema)
-        {
+    /*---------------------------------------------------------------------------------**/ /**
+     * @bsimethod
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    void VerifyWidgetsSchema(ECSchemaPtr const& schema) {
         ASSERT_TRUE(schema.IsValid());
         EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2));
 
@@ -46,12 +43,11 @@ struct SchemaDeserializationTest : ECTestFixture
         EXPECT_EQ(9, schema->GetVersionRead());
         EXPECT_EQ(6, schema->GetVersionMinor());
 
-    #ifdef DEBUG_PRINT
-        for(ECClassP pClass: schema->GetClasses())
-            {
+#ifdef DEBUG_PRINT
+        for (ECClassP pClass : schema->GetClasses()) {
             printf("Widgets contains class: '%s' with display label '%s'\n", pClass->GetName().c_str(), pClass->GetDisplayLabel().c_str());
-            }
-    #endif
+        }
+#endif
 
         ECClassP pClass = schema->GetClassP("ClassDoesNotExistInSchema");
         EXPECT_FALSE(pClass);
@@ -153,23 +149,22 @@ struct SchemaDeserializationTest : ECTestFixture
         EXPECT_EQ(ECObjectsStatus::Success, instance->GetValue(ecValue, "Writeable"));
         EXPECT_FALSE(ecValue.GetBoolean());
 
-    #ifdef DEBUG_PRINT
-        for(ECPropertyP pProperty: pClass->GetProperties())
-            {
+#ifdef DEBUG_PRINT
+        for (ECPropertyP pProperty : pClass->GetProperties()) {
             printf("TestClass contains property: %s of type %s\n", pProperty->GetName().c_str(), pProperty->GetTypeName().c_str());
-            }
-    #endif   
         }
-    };
+#endif
+    }
+};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, TestAbstractness)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+TEST_F(SchemaDeserializationTest, TestAbstractness) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Abstract' version='01.00' displayLabel='AbstractClasses' description='Schema with abstract class' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECClass typeName='Abstract1' description='Abstract ECClass' displayLabel='Abstract' isDomainClass='false' isCustomAttributeClass='false' isStruct='false'>"
         "       <ECProperty propertyName='Name' typeName='string' displayLabel='Project Name' />"
@@ -182,16 +177,16 @@ TEST_F(SchemaDeserializationTest, TestAbstractness)
     ECClassCP absClass = schema->GetClassCP("Abstract1");
     ASSERT_TRUE(absClass->IsEntityClass());
     ASSERT_TRUE(ECClassModifier::Abstract == absClass->GetClassModifier());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, InvalidStructArrayPropertySpecification)
-    {
+TEST_F(SchemaDeserializationTest, InvalidStructArrayPropertySpecification) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='StructArray' version='01.00' displayLabel='StructArrays' description='Schema with invalid XML for a struct array property' nameSpacePrefix='sa' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECClass typeName='Ent1' description='Entity ECClass' displayLabel='Entity' isDomainClass='true' isCustomAttributeClass='false' isStruct='false'>"
         "        <ECArrayProperty propertyName = 'TypeReferences' typeName = 'string' minOccurs = '0' maxOccurs = 'unbounded' isStruct = 'True' />"
@@ -209,16 +204,16 @@ TEST_F(SchemaDeserializationTest, InvalidStructArrayPropertySpecification)
 
     ArrayECPropertyCP typeReferences2 = prop->GetAsArrayProperty();
     ASSERT_NE(nullptr, typeReferences2);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, CaseSensitivity)
-    {
+TEST_F(SchemaDeserializationTest, CaseSensitivity) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='CaseInsensitive' version='01.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' nameSpacePrefix='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
         "    <ECStructClass typeName='MyStruct'>"
@@ -241,14 +236,12 @@ TEST_F(SchemaDeserializationTest, CaseSensitivity)
     StructECPropertyP structProp = prop->GetAsStructPropertyP();
     ASSERT_NE(nullptr, structProp);
     EXPECT_TRUE(ent->IsDefined("CustomAttrib"));
+}
 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingFile)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingFile) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
@@ -264,192 +257,180 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingFile)
     status = ECSchema::ReadFromXmlFile(deserializedSchema, ECTestFixture::GetTempDataPath(L"widgets.xml").c_str(), *schemaContext);
     EXPECT_EQ(SchemaReadStatus::Success, status);
     VerifyWidgetsSchema(deserializedSchema);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileDoesNotExist) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"ThisFileIsntReal.xml").c_str(), *schemaContext);
 
     EXPECT_EQ(SchemaReadStatus::FailedToParseXml, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
     DISABLE_ASSERTS
-        ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"MissingNodes.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ(SchemaReadStatus::FailedToParseXml, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
     DISABLE_ASSERTS
-        ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"IllFormedXml.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ(SchemaReadStatus::FailedToParseXml, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingECSchemaNode) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"MissingECSchemaNode.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNamespace) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"MissingNamespace.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenCustomAttributeIsMissingNamespace)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenCustomAttributeIsMissingNamespace) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"MissingNamespaceOnCustomAttribute.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ(SchemaReadStatus::Success, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasUnsupportedNamespace) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"UnsupportedECXmlNamespace.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectErrorWhenRelationshipEndpointNotFound)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectErrorWhenRelationshipEndpointNotFound) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"BadRelationship.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateNamespacePrefixes)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateNamespacePrefixes) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"DuplicatePrefixes.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ(SchemaReadStatus::Success, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttribute)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingSchemaNameAttribute) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"MissingSchemaName.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttribute)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileHasMissingClassNameAttribute) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"MissingClassName.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionString)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionString) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"InvalidVersionString.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -457,36 +438,36 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenXmlFileHasInvalidVersionStrin
     EXPECT_EQ(0, schema->GetVersionMinor());
 
     EXPECT_EQ(SchemaReadStatus::Success, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectFailureWhenMissingTypeNameInProperty)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectFailureWhenMissingTypeNameInProperty) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Widgets' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECClass typeName='ecProject' description='Project ECClass' displayLabel='Project' isDomainClass='True'>"
-        "       <ECProperty propertyName='Name' typename='string' displayLabel='Project Name' />" // typename is mis-capitalized
+        "       <ECProperty propertyName='Name' typename='string' displayLabel='Project Name' />"  // typename is mis-capitalized
         "    </ECClass>"
         "</ECSchema>";
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, InvalidTypeNameInPrimitivePropertyConvertedToString)
-    {
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, InvalidTypeNameInPrimitivePropertyConvertedToString) {
+    Utf8CP schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Widgets' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "<ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
         "    <ECClass typeName='ecProject' description='Project ECClass' displayLabel='Project' isDomainClass='True'>"
@@ -494,7 +475,7 @@ TEST_F(SchemaDeserializationTest, InvalidTypeNameInPrimitivePropertyConvertedToS
         "       <ECProperty propertyName='Date' typeName='banana' />"
         "    </ECClass>"
         "</ECSchema>";
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
@@ -506,18 +487,17 @@ TEST_F(SchemaDeserializationTest, InvalidTypeNameInPrimitivePropertyConvertedToS
     EXPECT_TRUE(PRIMITIVETYPE_String == pProperty->GetAsPrimitiveProperty()->GetType());
     pProperty = GetPropertyByName(*pClass, "Date");
     EXPECT_EQ(PRIMITIVETYPE_String, pProperty->GetAsPrimitiveProperty()->GetType());
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWithEmptyCustomAttribute)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWithEmptyCustomAttribute) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
-    //schemaContext->AddSchemaPath(L"C:\\temp\\data\\ECXA\\SchemasAndDgn\');
-    //SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, L"C:\\temp\\data\\ECXA\\SchemasAndDgn\\Bentley_Plant.06.00.ecschema.xml", *schemaContext);
+    // schemaContext->AddSchemaPath(L"C:\\temp\\data\\ECXA\\SchemasAndDgn\');
+    // SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, L"C:\\temp\\data\\ECXA\\SchemasAndDgn\\Bentley_Plant.06.00.ecschema.xml", *schemaContext);
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"EmptyCustomAttribute.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ(SchemaReadStatus::Success, status);
 
@@ -525,14 +505,13 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithEmptyCustomAttribute)
     SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString);
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
     EXPECT_NE(Utf8String::npos, ecSchemaXmlString.find("<Relationship/>"));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseClassInReferencedFile)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseClassInReferencedFile) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"SchemaThatReferences.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -540,17 +519,16 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseCl
 
     ECClassP pClass = schema->GetClassP("circle");
     ASSERT_TRUE(nullptr != pClass);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredAttributes)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredAttributes) {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling(true, false);
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"OnlyRequiredECSchemaAttributes.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -571,28 +549,27 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredA
     EXPECT_FALSE(pClass->GetIsDisplayLabelDefined());
     EXPECT_STREQ("", pClass->GetDescription().c_str());
     EXPECT_TRUE(pClass->IsEntityClass());
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingWidgetsECSchema) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ(SchemaReadStatus::Success, status);
     VerifyWidgetsSchema(schema);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromString)
-    {
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromString) {
+    Utf8CP schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Widgets' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECClass typeName='ecProject' description='Project ECClass' displayLabel='Project' isDomainClass='True'>"
         "       <ECProperty propertyName='Name' typeName='string' displayLabel='Project Name' />"
@@ -601,7 +578,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
         "    </ECClass>"
         "    <ECEnumeration typeName='Enumeration' backingTypeName='int' description='desc' displayLabel='dl'/>"
         "</ECSchema>";
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
@@ -676,14 +653,13 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_STREQ("int", pEnumeration->GetTypeName().c_str());
     EXPECT_STREQ("desc", pEnumeration->GetDescription().c_str());
     EXPECT_STREQ("dl", pEnumeration->GetDisplayLabel().c_str());
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -702,26 +678,22 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     EXPECT_EQ(SchemaReadStatus::Success, status);
 
     VerifyWidgetsSchema(deserializedSchema);
-    }
+}
 
-
-void verifyKoqOnProperties (ECSchemaPtr schema)
-    {
+void verifyKoqOnProperties(ECSchemaPtr schema) {
     auto testClass = schema->GetClassCP("TestClass");
     EXPECT_EQ(7, testClass->GetPropertyCount(true));
-    for (auto const& prop : testClass->GetProperties(true))
-        {
+    for (auto const& prop : testClass->GetProperties(true)) {
         auto koq = prop->GetKindOfQuantity();
         ASSERT_NE(nullptr, koq) << prop->GetName().c_str();
         EXPECT_STREQ("MyKoq", koq->GetName().c_str());
-        }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, CanRoundTripKOQsOnPropertyTypes)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, CanRoundTripKOQsOnPropertyTypes) {
     // NOTE: ECDb doesn't allow KOQs on Navigation properties and they have no use on them, but we have supported it for this long so I'm leaving it in.  Could safely be removed without breaking file format but might keep some existing schemas from loading.
     // ECDb supports KOQs on structs and struct arrays, there is little use for this but it was requested at some point.  There is a possibility that removing support would break some schema imported into an iModel
     // Primitive of all type, primitive array and enums of any backing primitive types are intentionally supported.
@@ -749,7 +721,7 @@ TEST_F(SchemaDeserializationTest, CanRoundTripKOQsOnPropertyTypes)
                         </Target>
                     </ECRelationshipClass>
                 </ECSchema>)xml";
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
@@ -775,17 +747,15 @@ TEST_F(SchemaDeserializationTest, CanRoundTripKOQsOnPropertyTypes)
     std::regex koqFinder("\"kindOfQuantity\" *: *\"TestSchema.MyKoq\"");
     auto counter = std::sregex_iterator(jsonSchema.begin(), jsonSchema.end(), koqFinder);
     EXPECT_EQ(7, std::distance(counter, std::sregex_iterator()));
-    }
+}
 
 template <typename INamedItems>
-void expectNoDisplayLabels(ECSchemaCP schema, INamedItems const & (ECSchema::*getItems)() const)
-    {
+void expectNoDisplayLabels(ECSchemaCP schema, INamedItems const& (ECSchema::*getItems)() const) {
     for (const auto& item : (schema->*getItems)())
         EXPECT_FALSE(item->GetIsDisplayLabelDefined()) << item->GetName().c_str();
-    }
+}
 
-void verifyNoExplicitDisplayLabels(ECSchemaCP schema)
-    {
+void verifyNoExplicitDisplayLabels(ECSchemaCP schema) {
     EXPECT_FALSE(schema->GetIsDisplayLabelDefined());
     expectNoDisplayLabels(schema, &ECSchema::GetEnumerations);
     expectNoDisplayLabels(schema, &ECSchema::GetKindOfQuantities);
@@ -795,13 +765,12 @@ void verifyNoExplicitDisplayLabels(ECSchemaCP schema)
     expectNoDisplayLabels(schema, &ECSchema::GetFormats);
     expectNoDisplayLabels(schema, &ECSchema::GetPropertyCategories);
     expectNoDisplayLabels(schema, &ECSchema::GetClasses);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, RoundTripUnsetDisplayLabels)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, RoundTripUnsetDisplayLabels) {
     Utf8CP schemaXML = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEnumeration typeName="MyEnum" backingTypeName="int" />
                     <KindOfQuantity typeName="MyKoq" relativeError="0.1" persistenceUnit="FT" />
@@ -830,7 +799,7 @@ TEST_F(SchemaDeserializationTest, RoundTripUnsetDisplayLabels)
                         </Target>
                     </ECRelationshipClass>
                 </ECSchema>)xml";
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
@@ -856,14 +825,14 @@ TEST_F(SchemaDeserializationTest, RoundTripUnsetDisplayLabels)
     std::regex labelFinder("label");
     auto counter = std::sregex_iterator(jsonSchema.begin(), jsonSchema.end(), labelFinder);
     EXPECT_EQ(0, std::distance(counter, std::sregex_iterator()));
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInECXml2)
-    {
-    Utf8CP widgets_schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInECXml2) {
+    Utf8CP widgets_schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Widgets' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECClass typeName='DifferentClass' isDomainClass='True'>"
         "    </ECClass>"
@@ -873,7 +842,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInECXml2)
         "    <ECClass typeName='ecProject' isDomainClass='True'>"
         "    </ECClass>"
         "</ECSchema>";
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, widgets_schemaXML, *schemaContext);
@@ -881,9 +850,10 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInECXml2)
     EXPECT_EQ(SchemaReadStatus::Success, status);
 
     ECSchemaPtr schema2;
-    ECSchemaReadContextPtr   schemaContext2 = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext2 = ECSchemaReadContext::CreateContext();
 
-    Utf8CP widgets2_schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP widgets2_schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Widgets2' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECClass typeName='ecProject' description='Project ECClass' displayLabel='Project' isDomainClass='True'>"
         "       <ECProperty propertyName='Name' typeName='string' displayLabel='Project Name' />"
@@ -895,14 +865,14 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInECXml2)
     status = ECSchema::ReadFromXmlString(schema2, widgets2_schemaXML, *schemaContext2);
 
     EXPECT_EQ(SchemaReadStatus::Success, status);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInECXml3)
-    {
-    Utf8CP widgets_schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+TEST_F(SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInECXml3) {
+    Utf8CP widgets_schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Widgets' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECEntityClass typeName='DifferentClass'>"
         "    </ECEntityClass>"
@@ -912,7 +882,7 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInECXml3)
         "    <ECEntityClass typeName='ecProject'>"
         "    </ECEntityClass>"
         "</ECSchema>";
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, widgets_schemaXML, *schemaContext);
@@ -920,9 +890,10 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInECXml3)
     EXPECT_EQ(SchemaReadStatus::DuplicateTypeName, status);
 
     ECSchemaPtr schema2;
-    ECSchemaReadContextPtr   schemaContext2 = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext2 = ECSchemaReadContext::CreateContext();
 
-    Utf8CP widgets2_schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP widgets2_schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Widgets2' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECEntityClass typeName='ecProject' description='Project ECClass' displayLabel='Project' isDomainClass='True'>"
         "       <ECProperty propertyName='Name' typeName='string' displayLabel='Project Name' />"
@@ -934,14 +905,14 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInECXml3)
     status = ECSchema::ReadFromXmlString(schema2, widgets2_schemaXML, *schemaContext2);
 
     EXPECT_EQ(SchemaReadStatus::DuplicateTypeName, status);
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, EnsureSupplementalSchemaCannotHaveBaseClasses)
-    {
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, EnsureSupplementalSchemaCannotHaveBaseClasses) {
+    Utf8CP schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0' schemaName='SupplementalSchemaWithBaseClasses_Supplemental_Mapping' nameSpacePrefix='ss' version='01.00' description='Test Supplemental Mapping Schema' displayLabel='Electrical Extended Supplemental Mapping' xmlns:ec='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "<ECClass typeName='MAPPING' displayLabel='Mapping' isStruct='false' isDomainClass='true' isCustomAttributeClass='false'/>"
         "<ECClass typeName='ELECTRICAL_PROPERTY_MAPPING' displayLabel='Electrical Property Mapping' isStruct='false' isDomainClass='false' isCustomAttributeClass='true'>"
@@ -959,7 +930,7 @@ TEST_F(SchemaDeserializationTest, EnsureSupplementalSchemaCannotHaveBaseClasses)
         "</ECProperty>"
         "</ECClass>"
         "</ECSchema>";
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
@@ -976,15 +947,14 @@ TEST_F(SchemaDeserializationTest, EnsureSupplementalSchemaCannotHaveBaseClasses)
 
     const ECBaseClassesList& baseClassList2 = ecClass->GetBaseClasses();
     EXPECT_EQ(0, baseClassList2.size()) << "Class " << className << " should not have any base classes since it is in a supplemental schema.";
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenSerializingToFile)
-    {
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenSerializingToFile) {
     ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ(status, SchemaReadStatus::Success);
@@ -992,42 +962,42 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenSerializingToFile)
 
     SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"test.xml").c_str());
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenReferencingNonExistingUnitAttributesSchema)
-    {
-    Utf8CP schemaXML = "<ECSchema schemaName=\"ReferencesUnits\" nameSpacePrefix=\"ru\" Description=\"Schema that references the unavailable U_A.1.1 schema\" "
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenReferencingNonExistingUnitAttributesSchema) {
+    Utf8CP schemaXML =
+        "<ECSchema schemaName=\"ReferencesUnits\" nameSpacePrefix=\"ru\" Description=\"Schema that references the unavailable U_A.1.1 schema\" "
         "version=\"1.1\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "    <ECSchemaReference name=\"Unit_Attributes\" version=\"01.01\" prefix=\"ua\" />"
         "</ECSchema>";
 
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
     EXPECT_EQ(SchemaReadStatus::Success, status);
+}
 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
-    {
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound) {
+    Utf8CP schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='ReferencedSchema' version='01.00' displayLabel='Display Label' description='Description' nameSpacePrefix='ref' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECClass typeName='BaseClass' description='Project ECClass' displayLabel='Project' isDomainClass='True' />"
         "</ECSchema>";
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr refSchema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(refSchema, schemaXML, *schemaContext);
     EXPECT_EQ(SchemaReadStatus::Success, status);
 
-    schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Stuff' version='09.06' displayLabel='Display Label' description='Description' nameSpacePrefix='stuff' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "<ECSchemaReference name='ReferencedSchema' version='01.00' prefix='ref' />"
         "    <ECClass typeName='ecProject' description='Project ECClass' displayLabel='Project' isDomainClass='True'>"
@@ -1040,37 +1010,32 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
 
     EXPECT_NE(SchemaReadStatus::Success, status);
     EXPECT_TRUE(schema.IsNull());
-    }
+}
 
-
-
-void ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BeXmlNodeP root)
-    {
+void ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BeXmlNodeP root) {
     BeXmlNodeP currentNode = root->GetFirstChild();
-    for(auto expectedTypeName : expectedTypeNames)
-        {
-        if(currentNode == nullptr)
-            {
+    for (auto expectedTypeName : expectedTypeNames) {
+        if (currentNode == nullptr) {
             FAIL() << "Reached end of document, Node '" << expectedTypeName << "' expected.";
-            }
+        }
 
         Utf8String nodeTypeName;
         EXPECT_EQ(BeXmlStatus::BEXML_Success, currentNode->GetAttributeStringValue(nodeTypeName, "typeName"));
         EXPECT_EQ(expectedTypeName, nodeTypeName);
 
         currentNode = currentNode->GetNextSibling();
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, TestPreservingElementOrder)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+TEST_F(SchemaDeserializationTest, TestPreservingElementOrder) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->SetPreserveElementOrder(true);
 
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='TestSchema' version='01.00' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECEntityClass typeName=\"GHI\" description=\"Project ECClass\" displayLabel=\"Class GHI\"></ECEntityClass>"
         "    <ECEntityClass typeName=\"ABC\" description=\"Project ECClass\" displayLabel=\"Class ABC\"></ECEntityClass>"
@@ -1091,15 +1056,15 @@ TEST_F(SchemaDeserializationTest, TestPreservingElementOrder)
 
     bvector<Utf8String> typeNames = {"GHI", "ABC", "DEF"};
     ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, TestDefaultElementOrder)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+TEST_F(SchemaDeserializationTest, TestDefaultElementOrder) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='TestSchema' version='01.00' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECEntityClass typeName=\"GHI\" description=\"Project ECClass\" displayLabel=\"Class GHI\"></ECEntityClass>"
         "    <ECEntityClass typeName=\"ABC\" description=\"Project ECClass\" displayLabel=\"Class ABC\"></ECEntityClass>"
@@ -1119,17 +1084,17 @@ TEST_F(SchemaDeserializationTest, TestDefaultElementOrder)
     // Enumerations(DEF) are serialized first, then classes(ABC, GHI)
     bvector<Utf8String> typeNames = {"DEF", "ABC", "GHI"};
     ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, TestPreserveElementOrderWithBaseClassAndRelationships)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+TEST_F(SchemaDeserializationTest, TestPreserveElementOrderWithBaseClassAndRelationships) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->SetPreserveElementOrder(true);
 
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='TestSchema' version='01.00' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECEntityClass typeName=\"GHI\" description=\"Project ECClass\" displayLabel=\"Class GHI\"></ECEntityClass>"
         "    <ECEntityClass typeName=\"ABC\" description=\"Project ECClass\" displayLabel=\"Class ABC\">"
@@ -1167,17 +1132,24 @@ TEST_F(SchemaDeserializationTest, TestPreserveElementOrderWithBaseClassAndRelati
     EXPECT_EQ(BEXML_Success, xmlStatus);
 
     // Expecting the same order as specified in the SchemaXML Document.
-    bvector<Utf8String> typeNames = {"GHI","ABC","PQR", "MNO", "JKL", "DEF",};
+    bvector<Utf8String> typeNames = {
+        "GHI",
+        "ABC",
+        "PQR",
+        "MNO",
+        "JKL",
+        "DEF",
+    };
     ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, TestDefaultElementOrderWithBaseClassAndRelationships)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+TEST_F(SchemaDeserializationTest, TestDefaultElementOrderWithBaseClassAndRelationships) {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXML =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='TestSchema' version='01.00' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECEntityClass typeName=\"GHI\" description=\"Project ECClass\" displayLabel=\"Class GHI\"></ECEntityClass>"
         "    <ECEntityClass typeName=\"ABC\" description=\"Project ECClass\" displayLabel=\"Class ABC\">"
@@ -1218,15 +1190,14 @@ TEST_F(SchemaDeserializationTest, TestDefaultElementOrderWithBaseClassAndRelatio
     // JKL has a constraint in DEF, those two classes are written before the class they depend in.
     bvector<Utf8String> typeNames = {"PQR", "MNO", "ABC", "JKL", "DEF", "GHI"};
     ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, ExpectInvalidSchemaAndDuplicateStatusWhenLoadingSchemaFromXmlASecondTime)
-    {
+TEST_F(SchemaDeserializationTest, ExpectInvalidSchemaAndDuplicateStatusWhenLoadingSchemaFromXmlASecondTime) {
     ECSchemaPtr schema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     WString schemaFilePath = ECTestFixture::GetTestDataPath(L"Widgets.01.00.ecschema.xml");
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, schemaFilePath.c_str(), *schemaContext);
@@ -1242,14 +1213,14 @@ TEST_F(SchemaDeserializationTest, ExpectInvalidSchemaAndDuplicateStatusWhenLoadi
     ECSchemaPtr schema3 = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
     EXPECT_TRUE(schema3.IsValid()) << "Expected a valid schema when calling ECSchemaReadContext::LocateSchema after schema was loaded using ECSchema::ReadFromXmlFile";
     VerifyWidgetsSchema(schema3);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, ExpectFailureWhenDerivedPropertyDifferByCaseECXml3)
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+TEST_F(SchemaDeserializationTest, ExpectFailureWhenDerivedPropertyDifferByCaseECXml3) {
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='A' modifier='abstract'>"
         "       <ECProperty propertyName='Prop' typeName='string'></ECProperty>"
@@ -1264,14 +1235,14 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenDerivedPropertyDifferByCaseEC
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDerivedPropertyDifferByCaseECXml2)
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDerivedPropertyDifferByCaseECXml2) {
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema2' version='01.00' nameSpacePrefix='ts2' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "   <ECClass typeName='A' isDomainClass='true'>"
         "       <ECProperty propertyName='Prop' typeName='string'></ECProperty>"
@@ -1286,16 +1257,16 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDerivedPropertyDifferByCaseEC
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, ExpectFailureWhenAliasNotFoundOrEmpty)
-    {
+TEST_F(SchemaDeserializationTest, ExpectFailureWhenAliasNotFoundOrEmpty) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "</ECSchema>";
 
@@ -1303,20 +1274,20 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenAliasNotFoundOrEmpty)
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Schema with no alias attribute was supposed to fail to deserialize.";
 
-    Utf8CP schemaXml2 = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXml2 =
+        "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' alias='' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "</ECSchema>";
 
     ECSchemaPtr schema2;
     status = ECSchema::ReadFromXmlString(schema2, schemaXml2, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Schema with empty alias attribute was supposed to fail to deserialize.";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, CanLoadCaInstanceWhichAppearsBeforeCaDefinition)
-    {
+TEST_F(SchemaDeserializationTest, CanLoadCaInstanceWhichAppearsBeforeCaDefinition) {
     Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
         <ECSchema schemaName='testSchema' version='01.00.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
 
@@ -1386,14 +1357,13 @@ TEST_F(SchemaDeserializationTest, CanLoadCaInstanceWhichAppearsBeforeCaDefinitio
     ECValue doubleSillyDouble;
     EXPECT_EQ(ECObjectsStatus::Success, doubleSillyCA->GetValue(doubleSillyDouble, "DoubleSillyDouble"));
     EXPECT_EQ(49, doubleSillyDouble.GetDouble());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-//This test ensures we support any unknown element or attribute put into existing ECSchema XML. Important for backwards compatibility of future EC versions.
-TEST_F(SchemaDeserializationTest, DeserializeComprehensiveSchemaWithUnknowns)
-    {
+// This test ensures we support any unknown element or attribute put into existing ECSchema XML. Important for backwards compatibility of future EC versions.
+TEST_F(SchemaDeserializationTest, DeserializeComprehensiveSchemaWithUnknowns) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
@@ -1402,13 +1372,12 @@ TEST_F(SchemaDeserializationTest, DeserializeComprehensiveSchemaWithUnknowns)
 
     EXPECT_EQ(6, schema->GetClassCount());
     EXPECT_EQ(1, schema->GetEnumerationCount());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, SelfReferencingStructArray)
-    {
+TEST_F(SchemaDeserializationTest, SelfReferencingStructArray) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                 <ECClass typeName="Foo" description="Used as data type" isStruct="True" isDomainClass="False">
@@ -1432,55 +1401,53 @@ TEST_F(SchemaDeserializationTest, SelfReferencingStructArray)
     ASSERT_EQ(4, foo->GetPropertyCount());
     ECPropertyP bad = foo->GetPropertyP("Luminaires");
     ASSERT_EQ(nullptr, bad);
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaDeserializationTest, ChecksumIsCalculatedFromContext)
-    {
+TEST_F(SchemaDeserializationTest, ChecksumIsCalculatedFromContext) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         </ECSchema>
         )xml";
 
     {
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    context->SetCalculateChecksum(true);
-    ASSERT_TRUE(context->GetCalculateChecksum()) << "The calculate checksum flag should be turned on.";
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        context->SetCalculateChecksum(true);
+        ASSERT_TRUE(context->GetCalculateChecksum()) << "The calculate checksum flag should be turned on.";
 
-    ECSchemaPtr testSchema;
-    DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
+        ECSchemaPtr testSchema;
+        DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
 
-    ASSERT_TRUE(testSchema.IsValid());
-    EXPECT_FALSE(testSchema->GetSchemaKey().GetChecksum().empty()) << "Expect the checksum of the schema to be valid when the calculate checksum flag is set to true on the ECSchemaReadContext.";
+        ASSERT_TRUE(testSchema.IsValid());
+        EXPECT_FALSE(testSchema->GetSchemaKey().GetChecksum().empty()) << "Expect the checksum of the schema to be valid when the calculate checksum flag is set to true on the ECSchemaReadContext.";
     }
     {
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_FALSE(context->GetCalculateChecksum()) << "By default the calculate checksum flag should be off";
-    ECSchemaPtr testSchema;
-    DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
-    ASSERT_TRUE(testSchema.IsValid());
-    EXPECT_TRUE(testSchema->GetSchemaKey().GetChecksum().empty()) << "Expect the checksum of the schema to be empty when the calculate checksum flag is false on the ECSchemaReadContext.";
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_FALSE(context->GetCalculateChecksum()) << "By default the calculate checksum flag should be off";
+        ECSchemaPtr testSchema;
+        DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
+        ASSERT_TRUE(testSchema.IsValid());
+        EXPECT_TRUE(testSchema->GetSchemaKey().GetChecksum().empty()) << "Expect the checksum of the schema to be empty when the calculate checksum flag is false on the ECSchemaReadContext.";
     }
     {
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    context->SetSkipValidation(true);
-    context->SetCalculateChecksum(true);
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        context->SetSkipValidation(true);
+        context->SetCalculateChecksum(true);
 
-    ECSchemaPtr testSchema;
-    DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
+        ECSchemaPtr testSchema;
+        DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
 
-    ASSERT_TRUE(testSchema.IsValid());
-    EXPECT_FALSE(testSchema->GetSchemaKey().GetChecksum().empty()) << "Expect the checksum of the schema to be valid when the calculate checksum and skip validation flags are set to true on the ECSchemaReadContext.";
+        ASSERT_TRUE(testSchema.IsValid());
+        EXPECT_FALSE(testSchema->GetSchemaKey().GetChecksum().empty()) << "Expect the checksum of the schema to be valid when the calculate checksum and skip validation flags are set to true on the ECSchemaReadContext.";
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, CaseConflictInMultipleBaseClasses)
-    {
+TEST_F(SchemaDeserializationTest, CaseConflictInMultipleBaseClasses) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Test" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                 <ECClass typeName="ClassA" isDomainClass="True">
@@ -1512,13 +1479,12 @@ TEST_F(SchemaDeserializationTest, CaseConflictInMultipleBaseClasses)
     ASSERT_TRUE(propA->GetName().Equals(propB->GetName()));
     ASSERT_TRUE(propA->GetName().Equals(propC->GetName()));
     ASSERT_TRUE(propC->GetName().Equals(propB->GetName()));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, PruneSchemas)
-    {
+TEST_F(SchemaDeserializationTest, PruneSchemas) {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->GetSchemasToPrune() = bvector<Utf8String>{"BaseElementSchema"};
     context->SetResolveConflicts(true);
@@ -1574,8 +1540,8 @@ TEST_F(SchemaDeserializationTest, PruneSchemas)
     ASSERT_TRUE(schema.IsValid());
 
     const auto& refedSchemas = schema->GetReferencedSchemas();
-    EXPECT_TRUE(refedSchemas.end() == std::find_if(refedSchemas.begin(), refedSchemas.end(), [&](const auto& s) { return s.second->GetName().EqualsIAscii("BaseElementSchema");})) << "invalid schema should no longer be referenced";
-    EXPECT_TRUE(refedSchemas.end() != std::find_if(refedSchemas.begin(), refedSchemas.end(), [&](const auto& s) { return s.second->GetName().EqualsIAscii("ValidRefSchema");})) << "invalid schema should no longer be referenced";
+    EXPECT_TRUE(refedSchemas.end() == std::find_if(refedSchemas.begin(), refedSchemas.end(), [&](const auto& s) { return s.second->GetName().EqualsIAscii("BaseElementSchema"); })) << "invalid schema should no longer be referenced";
+    EXPECT_TRUE(refedSchemas.end() != std::find_if(refedSchemas.begin(), refedSchemas.end(), [&](const auto& s) { return s.second->GetName().EqualsIAscii("ValidRefSchema"); })) << "invalid schema should no longer be referenced";
 
     ASSERT_TRUE(nullptr != schema->GetClassCP("RelationshipWithBadConstraint")) << "baseElem-referencing constraint should have been pruned";
     EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("Params")) << "baseElem-referencing struct property should have been pruned";
@@ -1586,50 +1552,45 @@ TEST_F(SchemaDeserializationTest, PruneSchemas)
 
     // Custom attribute referencing baseElem and non-existent schema should be pruned.
     // Custom attribute referencing the valid schema should be fine.
-    for (const auto& [testCaseNumber, schemaName, customAttr, expectedResult] : std::vector<std::tuple<unsigned int, Utf8CP, Utf8CP, bool>>
-        {
-            { 1, "BaseElementSchema", "TestCustomAttr1", false },
-            { 2, "BaseElementSchema", "TestCustomAttr2", false },
-            { 3, "BaseElementSchema", "TestCustomAttr3", false },
+    for (const auto& [testCaseNumber, schemaName, customAttr, expectedResult] : std::vector<std::tuple<unsigned int, Utf8CP, Utf8CP, bool>>{
+             {1, "BaseElementSchema", "TestCustomAttr1", false},
+             {2, "BaseElementSchema", "TestCustomAttr2", false},
+             {3, "BaseElementSchema", "TestCustomAttr3", false},
 
-            { 4, "NonExistentRefSchema", "TestCustomAttr1", false },
-            { 5, "NonExistentRefSchema", "TestCustomAttr2", false },
-            { 6, "NonExistentRefSchema", "TestCustomAttr3", false },
+             {4, "NonExistentRefSchema", "TestCustomAttr1", false},
+             {5, "NonExistentRefSchema", "TestCustomAttr2", false},
+             {6, "NonExistentRefSchema", "TestCustomAttr3", false},
 
-            { 7, "ValidRefSchema", "TestCustomAttr1", false },
-            { 8, "ValidRefSchema", "TestCustomAttr2", false },
-            { 9, "ValidRefSchema", "TestCustomAttr3", true },
-        })
-        {
+             {7, "ValidRefSchema", "TestCustomAttr1", false},
+             {8, "ValidRefSchema", "TestCustomAttr2", false},
+             {9, "ValidRefSchema", "TestCustomAttr3", true},
+         }) {
         EXPECT_EQ(expectedResult, schema->GetCustomAttributeContainer().GetCustomAttribute(schemaName, customAttr).IsValid()) << "Test case " << testCaseNumber << " failed.";
-        }
+    }
 
     // Custom attribute referencing baseElem and non-existent schema should be pruned.
     // Custom attribute referencing the valid schema should be fine.
-    for (const auto& [testCaseNumber, schemaName, customAttr, expectedResult] : std::vector<std::tuple<unsigned int, Utf8CP, Utf8CP, bool>>
-        {
-            { 1, "BaseElementSchema", "TestCustomAttr4", false },
-            { 2, "BaseElementSchema", "TestCustomAttr5", false },
-            { 3, "BaseElementSchema", "TestCustomAttr6", false },
+    for (const auto& [testCaseNumber, schemaName, customAttr, expectedResult] : std::vector<std::tuple<unsigned int, Utf8CP, Utf8CP, bool>>{
+             {1, "BaseElementSchema", "TestCustomAttr4", false},
+             {2, "BaseElementSchema", "TestCustomAttr5", false},
+             {3, "BaseElementSchema", "TestCustomAttr6", false},
 
-            { 4, "NonExistentRefSchema", "TestCustomAttr4", false },
-            { 5, "NonExistentRefSchema", "TestCustomAttr5", false },
-            { 6, "NonExistentRefSchema", "TestCustomAttr6", false },
+             {4, "NonExistentRefSchema", "TestCustomAttr4", false},
+             {5, "NonExistentRefSchema", "TestCustomAttr5", false},
+             {6, "NonExistentRefSchema", "TestCustomAttr6", false},
 
-            { 7, "ValidRefSchema", "TestCustomAttr4", false },
-            { 8, "ValidRefSchema", "TestCustomAttr5", false },
-            { 9, "ValidRefSchema", "TestCustomAttr6", true },
-        })
-        {
+             {7, "ValidRefSchema", "TestCustomAttr4", false},
+             {8, "ValidRefSchema", "TestCustomAttr5", false},
+             {9, "ValidRefSchema", "TestCustomAttr6", true},
+         }) {
         EXPECT_EQ(expectedResult, schema->GetClassCP("Foo")->IsDefined(schemaName, customAttr)) << "Test case " << testCaseNumber << " failed.";
-        }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, PruneCAFromPrunedEC32Schemas)
-    {
+TEST_F(SchemaDeserializationTest, PruneCAFromPrunedEC32Schemas) {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->GetSchemasToPrune() = bvector<Utf8String>{"RefSchema"};
     context->SetResolveConflicts(true);
@@ -1663,13 +1624,12 @@ TEST_F(SchemaDeserializationTest, PruneCAFromPrunedEC32Schemas)
 
     EXPECT_FALSE(schema->GetCustomAttributeContainer().GetCustomAttribute("RefSchema", "TestCustomAttr").IsValid())
         << "custom attribute applied to referencing RefSchema should be pruned";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, DoNotSearchClassFromPrunedSchemas)
-    {
+TEST_F(SchemaDeserializationTest, DoNotSearchClassFromPrunedSchemas) {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->GetSchemasToPrune() = bvector<Utf8String>{"RefSchema"};
     context->SetResolveConflicts(true);
@@ -1707,13 +1667,12 @@ TEST_F(SchemaDeserializationTest, DoNotSearchClassFromPrunedSchemas)
     ASSERT_TRUE(testLogger.m_messages.size() == 4);
     ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_DEBUG, "Skipping loading of the custom attribute because its schema RefSchema.01.00.00 is being pruned."));
     ASSERT_TRUE(testLogger.ValidateMessageAtIndex(2, NativeLogging::SEVERITY::LOG_DEBUG, "Skipping finding of the class 'TestCustomAttr' because its schema 'RefSchema.01.00.00' is being pruned."));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, AliasesForPruneSchemasAreResetForEachSchema)
-    {
+TEST_F(SchemaDeserializationTest, AliasesForPruneSchemasAreResetForEachSchema) {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->GetSchemasToPrune() = bvector<Utf8String>{"BadRef"};
     context->SetResolveConflicts(true);
@@ -1757,7 +1716,7 @@ TEST_F(SchemaDeserializationTest, AliasesForPruneSchemasAreResetForEachSchema)
     locater.AddSchemaString(SchemaKey("Test", 1, 1), schemaXml);
     context->AddSchemaLocater(locater);
 
-    SchemaKey testKey ("Test", 1, 0);
+    SchemaKey testKey("Test", 1, 0);
     ECSchemaPtr schema = context->LocateSchema(testKey, SchemaMatchType::Latest);
     ASSERT_TRUE(schema.IsValid());
 
@@ -1769,7 +1728,7 @@ TEST_F(SchemaDeserializationTest, AliasesForPruneSchemasAreResetForEachSchema)
     ASSERT_NE(nullptr, aStructProp);
 
     auto it = schema->GetReferencedSchemas().Find(SchemaKey("BadRef", 1, 0), SchemaMatchType::Latest);
-    ASSERT_TRUE (it == schema->GetReferencedSchemas().end()) << "Should not find BadRef Schema ... it was pruned";
+    ASSERT_TRUE(it == schema->GetReferencedSchemas().end()) << "Should not find BadRef Schema ... it was pruned";
 
     it = schema->GetReferencedSchemas().Find(SchemaKey("OtherSchema", 1, 0), SchemaMatchType::Latest);
     ASSERT_FALSE(it == schema->GetReferencedSchemas().end()) << "Should find OtherSchema Schema ... it was not pruned";
@@ -1785,13 +1744,12 @@ TEST_F(SchemaDeserializationTest, AliasesForPruneSchemasAreResetForEachSchema)
     ASSERT_FALSE(it == otherSchema->GetReferencedSchemas().end()) << "Should find RefSchema Schema ... it was not pruned";
     ECSchemaPtr refSchema = it->second;
     ASSERT_TRUE(refSchema.IsValid());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, PropertyConflictRenamedWhenDerivedClassBeforeBaseClass)
-    {
+TEST_F(SchemaDeserializationTest, PropertyConflictRenamedWhenDerivedClassBeforeBaseClass) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Test" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                 <ECClass typeName="Apple" isDomainClass="True">
@@ -1810,13 +1768,12 @@ TEST_F(SchemaDeserializationTest, PropertyConflictRenamedWhenDerivedClassBeforeB
     ASSERT_TRUE(schema->Validate());
     ASSERT_EQ(1, schema->GetClassCP("Fruit")->GetPropertyCount());
     ASSERT_EQ(2, schema->GetClassCP("Apple")->GetPropertyCount());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, PropertyConflictRenamedWhenDerivedClassAfterBaseClass)
-    {
+TEST_F(SchemaDeserializationTest, PropertyConflictRenamedWhenDerivedClassAfterBaseClass) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Test" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                 <ECClass typeName="Fruit" isDomainClass="True">
@@ -1835,13 +1792,12 @@ TEST_F(SchemaDeserializationTest, PropertyConflictRenamedWhenDerivedClassAfterBa
     ASSERT_TRUE(schema->Validate());
     ASSERT_EQ(1, schema->GetClassCP("Fruit")->GetPropertyCount());
     ASSERT_EQ(2, schema->GetClassCP("Apple")->GetPropertyCount());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, PropertyConflictFoundWhenDerivedClassBeforeBaseClass)
-    {
+TEST_F(SchemaDeserializationTest, PropertyConflictFoundWhenDerivedClassBeforeBaseClass) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Test" alias="ts" version="01.01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Apple" >
@@ -1855,13 +1811,12 @@ TEST_F(SchemaDeserializationTest, PropertyConflictFoundWhenDerivedClassBeforeBas
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, PropertyConflictFoundWhenDerivedClassAfterBaseClass)
-    {
+TEST_F(SchemaDeserializationTest, PropertyConflictFoundWhenDerivedClassAfterBaseClass) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Test" alias="ts" version="01.01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Fruit" isDomainClass="True">
@@ -1875,13 +1830,12 @@ TEST_F(SchemaDeserializationTest, PropertyConflictFoundWhenDerivedClassAfterBase
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, PropertyRenameHandlesBasePropertyWithCaseDifference)
-    {
+TEST_F(SchemaDeserializationTest, PropertyRenameHandlesBasePropertyWithCaseDifference) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Test" alias="ts" version="01.01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Fruit" isDomainClass="True">
@@ -1901,13 +1855,12 @@ TEST_F(SchemaDeserializationTest, PropertyRenameHandlesBasePropertyWithCaseDiffe
     auto prop = schema->GetClassCP("Apple")->GetPropertyP("ts_color_", false);
     ASSERT_NE(nullptr, prop);
     ASSERT_STREQ("ts_color_", prop->GetName().c_str()) << "Expected renamed property in derived class to match base class name casing";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, PropertyRenameHandlesBasePropertyWithTargetNameButIncompatibleType)
-    {
+TEST_F(SchemaDeserializationTest, PropertyRenameHandlesBasePropertyWithTargetNameButIncompatibleType) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Test" alias="ts" version="01.01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Fruit" isDomainClass="True">
@@ -1928,14 +1881,13 @@ TEST_F(SchemaDeserializationTest, PropertyRenameHandlesBasePropertyWithTargetNam
     Utf8String schemaString;
     schema->WriteToXmlString(schemaString);
     ASSERT_NE(nullptr, prop) << schemaString.c_str();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 // NOTE: Exact rename order is arbitrary but should probably remain consistent
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, PropertyRenameHandlesDerivedPropertyWithTargetNameButIncompatibleType)
-    {
+TEST_F(SchemaDeserializationTest, PropertyRenameHandlesDerivedPropertyWithTargetNameButIncompatibleType) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Test" alias="ts" version="01.01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Fruit" isDomainClass="True">
@@ -1960,15 +1912,13 @@ TEST_F(SchemaDeserializationTest, PropertyRenameHandlesDerivedPropertyWithTarget
     EXPECT_NE(nullptr, schema->GetClassCP("Fruit")->GetPropertyP("Color", false)) << schemaString.c_str();
     EXPECT_NE(nullptr, schema->GetClassCP("Apple")->GetPropertyP("ts_Color_", false)) << schemaString.c_str();
     EXPECT_NE(nullptr, schema->GetClassCP("Gala")->GetPropertyP("ts_ts_Color__", false)) << schemaString.c_str();
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 // NOTE: Exact rename order is arbitrary but should probably remain consistent
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, PropertyRenameHandleMultipleBaseClasses)
-    {
+TEST_F(SchemaDeserializationTest, PropertyRenameHandleMultipleBaseClasses) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Test" alias="ts" version="01.01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Fruit" isDomainClass="True">
@@ -1994,37 +1944,30 @@ TEST_F(SchemaDeserializationTest, PropertyRenameHandleMultipleBaseClasses)
     EXPECT_NE(nullptr, schema->GetClassCP("Fruit")->GetPropertyP("ts_Color_", false)) << schemaString.c_str();
     EXPECT_NE(nullptr, schema->GetClassCP("Food")->GetPropertyP("Color", false)) << schemaString.c_str();
     EXPECT_NE(nullptr, schema->GetClassCP("Apple")->GetPropertyP("ts_Color__", false)) << schemaString.c_str();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaDeserializationTest, EmptyNamedItemsValidity)
-    {
-    auto wrapInSchemaAndRead = [](Utf8CP innerXml)
-        {
+TEST_F(SchemaDeserializationTest, EmptyNamedItemsValidity) {
+    auto wrapInSchemaAndRead = [](Utf8CP innerXml) {
         Utf8String schemaXml = Utf8String(
-            R"xml(<?xml version="1.0" encoding="UTF-8"?>
+                                   R"xml(<?xml version="1.0" encoding="UTF-8"?>
                 <ECSchema schemaName="test" displayLabel="TestSchema" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            )xml")
-            + innerXml
-            + "</ECSchema>";
+            )xml") + innerXml + "</ECSchema>";
 
         ECSchemaPtr schema;
         ECSchemaReadContextPtr readCtx = ECSchemaReadContext::CreateContext();
         return ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *readCtx);
-        };
+    };
 
-    auto wrapInClassAndRead = [&](Utf8CP innerXml)
-        {
+    auto wrapInClassAndRead = [&](Utf8CP innerXml) {
         Utf8String schemaXml = Utf8String(
-            R"xml(
+                                   R"xml(
                 <ECEntityClass typeName="TestClass">
-            )xml")
-            + innerXml
-            + "</ECEntityClass>";
+            )xml") + innerXml + "</ECEntityClass>";
         return wrapInSchemaAndRead(schemaXml.c_str());
-        };
+    };
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, wrapInSchemaAndRead(R"xml(<PropertyCategory typeName="" priority="0" />)xml"))
         << "it should be invalid to deserialize a property category with an empty name";
@@ -2051,15 +1994,15 @@ TEST_F(SchemaDeserializationTest, EmptyNamedItemsValidity)
             <ECEntityClass typeName="TestEntity">
                 <ECStructProperty propertyName="" typeName="Loc" />
             </ECEntityClass>
-        )xml")
-    ) << "it should be invalid to deserialize a struct property with an empty name";
+        )xml"))
+        << "it should be invalid to deserialize a struct property with an empty name";
     EXPECT_EQ(SchemaReadStatus::Success, wrapInSchemaAndRead(R"xml(
             <ECStructClass typeName="Loc" />
             <ECEntityClass typeName="TestEntity">
                 <ECStructProperty propertyName="ValidName" typeName="Loc" />
             </ECEntityClass>
-        )xml")
-    ) << "it should be valid to deserialize a struct property with a non-empty name";
+        )xml"))
+        << "it should be valid to deserialize a struct property with a non-empty name";
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, wrapInSchemaAndRead(R"xml(
             <ECEntityClass typeName="A" />
@@ -2074,8 +2017,8 @@ TEST_F(SchemaDeserializationTest, EmptyNamedItemsValidity)
                     <Class class="B"/>
                 </Target>
             </ECRelationshipClass>
-        )xml")
-    ) << "it should be invalid to deserialize a navigation property with an empty name";
+        )xml"))
+        << "it should be invalid to deserialize a navigation property with an empty name";
     EXPECT_EQ(SchemaReadStatus::Success, wrapInSchemaAndRead(R"xml(
             <ECEntityClass typeName="A" />
             <ECEntityClass typeName="B">
@@ -2089,86 +2032,98 @@ TEST_F(SchemaDeserializationTest, EmptyNamedItemsValidity)
                     <Class class="B"/>
                 </Target>
             </ECRelationshipClass>
-        )xml")
-    ) << "it should be valid to deserialize a navigation property with a non-empty name";
+        )xml"))
+        << "it should be valid to deserialize a navigation property with a non-empty name";
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, wrapInSchemaAndRead(R"xml(
             <ECEnumeration typeName="" backingTypeName="int">
                 <ECEnumerator name="E1" value="0" displayLabel="CODE1" />
             </ECEnumeration>
-        )xml")
-    ) << "it should be invalid to deserialize an enumeration with an empty name";
+        )xml"))
+        << "it should be invalid to deserialize an enumeration with an empty name";
     EXPECT_EQ(SchemaReadStatus::Success, wrapInSchemaAndRead(R"xml(
             <ECEnumeration typeName="ValidName" backingTypeName="int">
                 <ECEnumerator name="E1" value="0" displayLabel="CODE1" />
             </ECEnumeration>
-        )xml")
-    ) << "it should be valid to deserialize an enumeration with a non-empty name";
+        )xml"))
+        << "it should be valid to deserialize an enumeration with a non-empty name";
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, wrapInSchemaAndRead(R"xml(
             <ECEnumeration typeName="E" backingTypeName="int">
                 <ECEnumerator name="" value="0" displayLabel="CODE1" />
             </ECEnumeration>
-        )xml")
-    ) << "it should be invalid to deserialize an enumerator with an empty name";
+        )xml"))
+        << "it should be invalid to deserialize an enumerator with an empty name";
     EXPECT_EQ(SchemaReadStatus::Success, wrapInSchemaAndRead(R"xml(
             <ECEnumeration typeName="E" backingTypeName="int">
                 <ECEnumerator name="ValidName" value="0" displayLabel="CODE1" />
             </ECEnumeration>
-        )xml")
-    ) << "it should be valid to deserialize an enumerator with a non-empty name";
+        )xml"))
+        << "it should be valid to deserialize an enumerator with a non-empty name";
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, wrapInSchemaAndRead(R"xml(
         <ECSchemaReference name="Units" version="01.00.00" alias="u" />
         <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
         <KindOfQuantity typeName=""        displayLabel="test" persistenceUnit="u:RAD" presentationUnits="f:DefaultRealU(2)[u:ARC_DEG]" relativeError="0.001" />
-    )xml")) << "it should be invalid to deserialize a Kind of Quantity with an empty name";
-    EXPECT_EQ(SchemaReadStatus::Success,            wrapInSchemaAndRead(R"xml(
+    )xml"))
+        << "it should be invalid to deserialize a Kind of Quantity with an empty name";
+    EXPECT_EQ(SchemaReadStatus::Success, wrapInSchemaAndRead(R"xml(
         <ECSchemaReference name="Units" version="01.00.00" alias="u" />
         <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
         <KindOfQuantity typeName="TestKoQ" displayLabel="test" persistenceUnit="u:RAD" presentationUnits="f:DefaultRealU(2)[u:ARC_DEG]" relativeError="0.001" />
-    )xml")) << "it should be valid to deserialize a Kind of Quantity with a non-empty name";
+    )xml"))
+        << "it should be valid to deserialize a Kind of Quantity with a non-empty name";
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, wrapInSchemaAndRead(R"xml(
         <ECSchemaReference name="Units" version="01.00.00" alias="u" />
         <Unit typeName=""     phenomenon="u:VOLUME" unitSystem="u:USCUSTOM" definition="u:IN(3)" numerator="50.0" displayLabel="ttt" />
-    )xml")) << "it should be invalid to deserialize a Unit with an empty name";
-    EXPECT_EQ(SchemaReadStatus::Success,            wrapInSchemaAndRead(R"xml(
+    )xml"))
+        << "it should be invalid to deserialize a Unit with an empty name";
+    EXPECT_EQ(SchemaReadStatus::Success, wrapInSchemaAndRead(R"xml(
         <ECSchemaReference name="Units" version="01.00.00" alias="u" />
         <Unit typeName="TEST" phenomenon="u:VOLUME" unitSystem="u:USCUSTOM" definition="u:IN(3)" numerator="50.0" displayLabel="ttt" />
-    )xml")) << "it should be valid to deserialize a Unit with a non-empty name";
+    )xml"))
+        << "it should be valid to deserialize a Unit with a non-empty name";
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, wrapInSchemaAndRead(R"xml(
         <Phenomenon typeName=""         definition="WORK*TEMPERATURE_CHANGE(-2)" displayLabel="Ttt" />
-    )xml")) << "it should be invalid to deserialize a phenomenon with an empty name";
-    EXPECT_EQ(SchemaReadStatus::Success,            wrapInSchemaAndRead(R"xml(
+    )xml"))
+        << "it should be invalid to deserialize a phenomenon with an empty name";
+    EXPECT_EQ(SchemaReadStatus::Success, wrapInSchemaAndRead(R"xml(
         <Phenomenon typeName="TESTROPY" definition="WORK*TEMPERATURE_CHANGE(-2)" displayLabel="Ttt" />
-    )xml")) << "it should be valid to deserialize a phenomenon with a non-empty name";
+    )xml"))
+        << "it should be valid to deserialize a phenomenon with a non-empty name";
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, wrapInSchemaAndRead(R"xml(
         <ECSchemaReference name="Units" version="01.00.00" alias="u" />
         <Constant typeName=""     phenomenon="u:LENGTH_RATIO" definition="u:ONE" numerator="2.234234234234153142657" displayLabel="Ttt"/>
-    )xml")) << "it should be invalid to deserialize a constant with an empty name";
-    EXPECT_EQ(SchemaReadStatus::Success,            wrapInSchemaAndRead(R"xml(
+    )xml"))
+        << "it should be invalid to deserialize a constant with an empty name";
+    EXPECT_EQ(SchemaReadStatus::Success, wrapInSchemaAndRead(R"xml(
         <ECSchemaReference name="Units" version="01.00.00" alias="u" />
         <Constant typeName="TEST" phenomenon="u:LENGTH_RATIO" definition="u:ONE" numerator="2.234234234234153142657" displayLabel="Ttt"/>
-    )xml")) << "it should be valid to deserialize a constant with a non-empty name";
+    )xml"))
+        << "it should be valid to deserialize a constant with a non-empty name";
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, wrapInSchemaAndRead(R"xml(
         <ECSchemaReference name="Units" version="01.00.00" alias="u" />
         <InvertedUnit typeName=""           invertsUnit="u:MM_PER_SEC" unitSystem="u:INTERNATIONAL" />
-    )xml")) << "it should be invalid to deserialize an inverted unit with an empty name";
-    EXPECT_EQ(SchemaReadStatus::Success,            wrapInSchemaAndRead(R"xml(
+    )xml"))
+        << "it should be invalid to deserialize an inverted unit with an empty name";
+    EXPECT_EQ(SchemaReadStatus::Success, wrapInSchemaAndRead(R"xml(
         <ECSchemaReference name="Units" version="01.00.00" alias="u" />
         <InvertedUnit typeName="SEC_PER_MM" invertsUnit="u:MM_PER_SEC" unitSystem="u:INTERNATIONAL" />
-    )xml")) << "it should be valid to deserialize an inverted unit with a non-empty name";
+    )xml"))
+        << "it should be valid to deserialize an inverted unit with a non-empty name";
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, wrapInSchemaAndRead(R"xml(
         <UnitSystem typeName=""              />
-    )xml")) << "it should be invalid to deserialize a unit system with an empty name";
-    EXPECT_EQ(SchemaReadStatus::Success,            wrapInSchemaAndRead(R"xml(
+    )xml"))
+        << "it should be invalid to deserialize a unit system with an empty name";
+    EXPECT_EQ(SchemaReadStatus::Success, wrapInSchemaAndRead(R"xml(
         <UnitSystem typeName="TEST_UNIT_SYS" />
-    )xml")) << "it should be valid to deserialize a unit system with a non-empty name";
+    )xml"))
+        << "it should be valid to deserialize a unit system with a non-empty name";
 
     EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, wrapInSchemaAndRead(R"xml(
         <ECSchemaReference name="Units" version="01.00.00" alias="u" />
@@ -2177,23 +2132,23 @@ TEST_F(SchemaDeserializationTest, EmptyNamedItemsValidity)
                 <Unit label="&quot;">u:IN</Unit>
             </Composite>
         </Format>
-    )xml")) << "it should be invalid to deserialize a format with an empty name";
-    EXPECT_EQ(SchemaReadStatus::Success,            wrapInSchemaAndRead(R"xml(
+    )xml"))
+        << "it should be invalid to deserialize a format with an empty name";
+    EXPECT_EQ(SchemaReadStatus::Success, wrapInSchemaAndRead(R"xml(
         <ECSchemaReference name="Units" version="01.00.00" alias="u" />
         <Format typeName="TestFormat" displayLabel="Inches" type="fractional" precision="8" uomSeparator="" formatTraits="keepSingleZero|showUnitLabel">
             <Composite spacer="">
                 <Unit label="&quot;">u:IN</Unit>
             </Composite>
         </Format>
-    )xml")) << "it should be valid to deserialize a format with a non-empty name";
-    }
+    )xml"))
+        << "it should be valid to deserialize a format with a non-empty name";
+}
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                    
+//@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaDeserializationTest, SchemaUnitWithAndWithoutPropertiesExplicitlySet)
-    {
-
+TEST_F(SchemaDeserializationTest, SchemaUnitWithAndWithoutPropertiesExplicitlySet) {
     ECSchemaPtr writeSchema;
     ECSchema::CreateSchema(writeSchema, "TestSchema", "ts", 1, 0, 7);
 
@@ -2232,14 +2187,12 @@ TEST_F(SchemaDeserializationTest, SchemaUnitWithAndWithoutPropertiesExplicitlySe
     EXPECT_FALSE(unitCP->HasOffset());
     EXPECT_FALSE(unitCP->HasNumerator());
     EXPECT_FALSE(unitCP->HasDenominator());
-    }
+}
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                    
+//@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaDeserializationTest, SchemaFailsWithPresenceOfControlCharacters)
-    {
-
+TEST_F(SchemaDeserializationTest, SchemaFailsWithPresenceOfControlCharacters) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Test" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Fruit" isDomainClass="True" description="A generic description">
@@ -2255,33 +2208,31 @@ TEST_F(SchemaDeserializationTest, SchemaFailsWithPresenceOfControlCharacters)
                 </ECEntityClass>
             </ECSchema> )xml";
 
-    //Showing current schema is valid
+    // Showing current schema is valid
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->SetResolveConflicts(true);
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
 
-    //adding control characters
+    // adding control characters
     Utf8String controlString = "\x1f This description now has control characters in it\x03\u0006";
     schema->GetClassP("Apple")->SetDescription(controlString);
     ASSERT_EQ(controlString, schema->GetClassP("Apple")->GetDescription());
 
-    //Showing schema is now invalid
-    ECSchemaReadContextPtr context_hasCtrlChars = ECSchemaReadContext::CreateContext();  
-    SchemaKey testKey ("Test", 1, 0);
+    // Showing schema is now invalid
+    ECSchemaReadContextPtr context_hasCtrlChars = ECSchemaReadContext::CreateContext();
+    SchemaKey testKey("Test", 1, 0);
     ECSchemaPtr schema_hasCtrlChars = context_hasCtrlChars->LocateSchema(testKey, SchemaMatchType::Latest);
     ASSERT_FALSE(schema_hasCtrlChars.IsValid());
-    }
+}
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                  
+//@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaDeserializationTest, ControlCharacterHandling)
-    {
-    
-    //Creating Schema
-    ECSchemaPtr schema; 
+TEST_F(SchemaDeserializationTest, ControlCharacterHandling) {
+    // Creating Schema
+    ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "Test", "ts", 1, 0, 0);
     schema->SetDescription("\x09Has cont\x0Brol characters in it\x0A");
     schema->SetDisplayLabel("\x09Has cont\x0Brol characters in it\x0A");
@@ -2301,7 +2252,7 @@ TEST_F(SchemaDeserializationTest, ControlCharacterHandling)
     carrots->AddBaseClass(*veg);
     ASSERT_TRUE(schema.IsValid());
 
-    //Setting Descriptions/display labels to contain control characters
+    // Setting Descriptions/display labels to contain control characters
     schema->GetClassP("Fruit")->SetDescription("\06Has control characters in it\07\x08");
     schema->GetClassP("Fruit")->SetDisplayLabel("\x09Has cont\x0Brol characters in it\x0A");
     schema->GetClassP("Apples")->SetDescription("\x0CHas control characters in it\x0E");
@@ -2311,7 +2262,7 @@ TEST_F(SchemaDeserializationTest, ControlCharacterHandling)
     schema->GetClassP("Carrots")->SetDescription("\x18Has control cha\x1Fracters in it\x19\x1A");
     schema->GetClassP("Carrots")->SetDisplayLabel("\x1BHas control\x1E characters in it\x1C\x1D");
 
-    //Creating relationship class and setting its role labels
+    // Creating relationship class and setting its role labels
     ECRelationshipClassP relClass;
     schema->CreateRelationshipClass(relClass, "RelationshipClass");
     relClass->GetSource().AddClass(*fruit);
@@ -2319,7 +2270,7 @@ TEST_F(SchemaDeserializationTest, ControlCharacterHandling)
     relClass->GetSource().SetRoleLabel("Has control characters in it\u0001\02");
     relClass->GetTarget().SetRoleLabel("\x03Has control characters in it\04\05");
 
-    //creating properties and setting descriptions/display labels to contain control characters
+    // creating properties and setting descriptions/display labels to contain control characters
     PrimitiveECPropertyP prop1, prop2, prop3, prop4;
     schema->GetClassP("Fruit")->CreatePrimitiveProperty(prop1, "prop1", PRIMITIVETYPE_String);
     schema->GetClassP("Apples")->CreatePrimitiveProperty(prop2, "prop2", PRIMITIVETYPE_String);
@@ -2335,14 +2286,14 @@ TEST_F(SchemaDeserializationTest, ControlCharacterHandling)
     prop4->SetDescription("\x1BHas control\x1E characters in it\x1C\x1D");
     prop4->SetDisplayLabel("\06Has control characters in it\07\x08");
 
-    //Showing that schema is still seen as valid despite presence of control characters
+    // Showing that schema is still seen as valid despite presence of control characters
     ASSERT_TRUE(schema.IsValid());
 
-    //Removing control characters from schema
+    // Removing control characters from schema
     ECSchema::RemoveInvalidDisplayCharacters(*schema);
 
-    //Showing all Descriptions, display labels, and role labels have had their control characters removed, and schema is valid
-    Utf8String noControlString ="Has control characters in it";
+    // Showing all Descriptions, display labels, and role labels have had their control characters removed, and schema is valid
+    Utf8String noControlString = "Has control characters in it";
 
     ASSERT_EQ(noControlString, schema->GetDescription());
     ASSERT_EQ(noControlString, schema->GetDisplayLabel());
@@ -2368,35 +2319,33 @@ TEST_F(SchemaDeserializationTest, ControlCharacterHandling)
     ASSERT_EQ(noControlString, schema->GetClassP("Carrots")->GetPropertyP("prop4")->GetDescription());
     ASSERT_EQ(noControlString, schema->GetClassP("Carrots")->GetPropertyP("prop4")->GetDisplayLabel());
 
-   ASSERT_TRUE(schema.IsValid());
-    }
+    ASSERT_TRUE(schema.IsValid());
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (SchemaDeserializationTest, SchemaNameValidationControlCharacterRemoval)
-    {
-
-    //Shows that a schema cannot be created with a name containing control characters  
-    //Cannot do something like badSchema->GetName() since it is an invalid schema  
+TEST_F(SchemaDeserializationTest, SchemaNameValidationControlCharacterRemoval) {
+    // Shows that a schema cannot be created with a name containing control characters
+    // Cannot do something like badSchema->GetName() since it is an invalid schema
     ECSchemaPtr badSchema;
     ECSchema::CreateSchema(badSchema, "bad\x06Name\x1f", "bn", 1, 0, 0);
     ASSERT_FALSE(badSchema.IsValid());
 
-    //creating valid schema
-    //Shows that when you SetName() with control characters, if there is already a valid name, it does not go through
-    //The name must be valid to successfully reset
+    // creating valid schema
+    // Shows that when you SetName() with control characters, if there is already a valid name, it does not go through
+    // The name must be valid to successfully reset
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "schemaName", "Ts", 1, 0, 0);
     schema->SetName("Te\x03st\x1a");
     ASSERT_NE("Te\x03st\x1a", schema->GetName());
     ASSERT_EQ("schemaName", schema->GetName());
 
-    //shows that SetName() is working as expected without control characters
+    // shows that SetName() is working as expected without control characters
     schema->SetName("SomethingValid");
     ASSERT_EQ("SomethingValid", schema->GetName());
 
-    //shows ECNameValidation::EncodeToValidName() encodes control characters in a way which makes the schema name valid
+    // shows ECNameValidation::EncodeToValidName() encodes control characters in a way which makes the schema name valid
     Utf8String encodedName, controlCharName = "\x1fTe\x03st\x1a";
     ECNameValidation::EncodeToValidName(encodedName, controlCharName);
     ASSERT_EQ("__x001F__Te__x0003__st__x001A__", encodedName);
@@ -2404,31 +2353,29 @@ TEST_F (SchemaDeserializationTest, SchemaNameValidationControlCharacterRemoval)
     ASSERT_EQ("__x001F__Te__x0003__st__x001A__", schema->GetName());
     ASSERT_TRUE(schema.IsValid());
 
-    //shows ECNameValidation::DecodeFromValidName() will remove not control characters which made it into an encoded name
-    //Note: Removing control characters through DecodeFromValidName() created an issue where superscript 4 was also removed in linux, so the functionality was removed 
+    // shows ECNameValidation::DecodeFromValidName() will remove not control characters which made it into an encoded name
+    // Note: Removing control characters through DecodeFromValidName() created an issue where superscript 4 was also removed in linux, so the functionality was removed
     Utf8String decodedName, badEncodedName = "Te__x0006____x001B__s__x0015__t__x001F____x0021__";
     ECNameValidation::DecodeFromValidName(decodedName, badEncodedName);
     ASSERT_EQ("Te\x06\x1Bs\x15t\x1F!", decodedName);
 
-    //Shows handling of non control character invalid characters
+    // Shows handling of non control character invalid characters
     Utf8String charName = "Te^st-";
     ECNameValidation::EncodeToValidName(encodedName, charName);
     ASSERT_EQ("Te__x005E__st__x002D__", encodedName);
     ECNameValidation::DecodeFromValidName(decodedName, encodedName);
     ASSERT_EQ(charName, decodedName);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (SchemaDeserializationTest, ECNameValidation_NonASCIICharsAreNotRemoved)
-    {
-    auto removeControlChars = [](Utf8String testString)
-        {
+TEST_F(SchemaDeserializationTest, ECNameValidation_NonASCIICharsAreNotRemoved) {
+    auto removeControlChars = [](Utf8String testString) {
         Utf8String charsRemoved;
         EXPECT_FALSE(ECNameValidation::RemoveControlCharacters(charsRemoved, testString)) << "Expected no chars removed " << charsRemoved.c_str();
-        EXPECT_STREQ(charsRemoved.c_str(), testString.c_str());        
-        };
+        EXPECT_STREQ(charsRemoved.c_str(), testString.c_str());
+    };
     removeControlChars("inH2O@39.2°F");
     removeControlChars("W/(m·Δ°C)");
     removeControlChars("m²·Δ°C/W");
@@ -2441,16 +2388,14 @@ TEST_F (SchemaDeserializationTest, ECNameValidation_NonASCIICharsAreNotRemoved)
     removeControlChars("你好");
     removeControlChars("こんにちは");
     removeControlChars("Здравствуйте");
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (SchemaDeserializationTest, NonASCIICharsInSchemaPath)
-    {
+TEST_F(SchemaDeserializationTest, NonASCIICharsInSchemaPath) {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    
+
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ(SchemaReadStatus::Success, status);
@@ -2479,41 +2424,38 @@ TEST_F (SchemaDeserializationTest, NonASCIICharsInSchemaPath)
     deserializedSchema2 = schemaContext->LocateSchema(key, SchemaMatchType::LatestReadCompatible);
     EXPECT_TRUE(deserializedSchema2.IsValid());
     VerifyWidgetsSchema(deserializedSchema2);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (SchemaDeserializationTest, ECNameValidation_NonASCIICharsAreProperlyEnCodedDecoded)
-    {
-    auto encodeDecodeString = [](Utf8String testString)
-        {
+TEST_F(SchemaDeserializationTest, ECNameValidation_NonASCIICharsAreProperlyEnCodedDecoded) {
+    auto encodeDecodeString = [](Utf8String testString) {
         Utf8String encodedString;
         Utf8String decodedString;
         EXPECT_TRUE(ECNameValidation::EncodeToValidName(encodedString, testString)) << "Expected to encode string: " << testString.c_str();
         EXPECT_TRUE(ECNameValidation::DecodeFromValidName(decodedString, encodedString)) << "Expected to decode string: " << encodedString.c_str();
         EXPECT_STREQ(testString.c_str(), decodedString.c_str()) << "Encoded string: " << encodedString.c_str();
-        };
-    encodeDecodeString ("inH2O@39.2°F");
-    encodeDecodeString ("W/(m·Δ°C)");
-    encodeDecodeString ("m²·Δ°C/W");
-    encodeDecodeString ("ft³ (US Survey)");
-    encodeDecodeString ("ft⁴");
-    //encodeDecodeString ("🌈💨🍩🎪📀💚👊🏽"); // Emoji do not round trip
-    encodeDecodeString ("ÂḚƜẳ⨚∲⊭⋙⋷⨂⎝»☾☄︎‱⸘⁇❣❡➩⇒↤⇶◉•∙☒☑︎№©ℹ︎ℳ℃℉ℬµΩ");
-    //encodeDecodeString ("🃇");  // Does not round trip
-    encodeDecodeString ("नमस्कार");
-    encodeDecodeString ("ہیلو");
-    encodeDecodeString ("你好");
-    encodeDecodeString ("こんにちは");
-    encodeDecodeString ("Здравствуйте");
-    }
+    };
+    encodeDecodeString("inH2O@39.2°F");
+    encodeDecodeString("W/(m·Δ°C)");
+    encodeDecodeString("m²·Δ°C/W");
+    encodeDecodeString("ft³ (US Survey)");
+    encodeDecodeString("ft⁴");
+    // encodeDecodeString ("🌈💨🍩🎪📀💚👊🏽"); // Emoji do not round trip
+    encodeDecodeString("ÂḚƜẳ⨚∲⊭⋙⋷⨂⎝»☾☄︎‱⸘⁇❣❡➩⇒↤⇶◉•∙☒☑︎№©ℹ︎ℳ℃℉ℬµΩ");
+    // encodeDecodeString ("🃇");  // Does not round trip
+    encodeDecodeString("नमस्कार");
+    encodeDecodeString("ہیلو");
+    encodeDecodeString("你好");
+    encodeDecodeString("こんにちは");
+    encodeDecodeString("Здравствуйте");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, RoundtripSchemaWithEmptyElements)
-    {
+TEST_F(SchemaDeserializationTest, RoundtripSchemaWithEmptyElements) {
     /* We changed a flag in pugixml (pugi::parse_ws_pcdata_single) which causes elements with no children to parse their whitespace content
     which by default was considered insignificant. This is to fix properties with only whitespaces in them, like <StringValue> </StringValue>.
     It caused problems with Format because we did not expect this type of child.
@@ -2606,17 +2548,16 @@ TEST_F(SchemaDeserializationTest, RoundtripSchemaWithEmptyElements)
     SchemaDiff diff;
     ASSERT_EQ(BentleyStatus::SUCCESS, comparer.Compare(diff, context->GetCache().GetSchemas(), context2->GetCache().GetSchemas(), comparerOptions));
     ASSERT_FALSE(diff.Changes().IsChanged());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, MultipleVersionsOfSchemaInSameContext)
-    {
-    //There was a bug in CA deserialization so the CA would use a wrong version
-    //of the schema if multiple versions were in a context.
-    //Since SchemaMatchType::LatestReadCompatible and ECSchemaCache behave unpredictable (the cache uses a bmap and returns the first valid item),
-    //we are adding more than two versions of the schema to increase the likelyhood of the cache hitting the wrong instance
+TEST_F(SchemaDeserializationTest, MultipleVersionsOfSchemaInSameContext) {
+    // There was a bug in CA deserialization so the CA would use a wrong version
+    // of the schema if multiple versions were in a context.
+    // Since SchemaMatchType::LatestReadCompatible and ECSchemaCache behave unpredictable (the cache uses a bmap and returns the first valid item),
+    // we are adding more than two versions of the schema to increase the likelyhood of the cache hitting the wrong instance
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
 
     Utf8CP schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -2659,56 +2600,55 @@ TEST_F(SchemaDeserializationTest, MultipleVersionsOfSchemaInSameContext)
         </ECSchema>)xml";
 
     StringSchemaLocater locater;
-    SchemaKey key ("TestSchema", 1, 0, 2);
-    SchemaKey keyAlt ("TestSchema", 1, 0, 3);
-    SchemaKey keyAlt2 ("TestSchema", 1, 0, 1);
+    SchemaKey key("TestSchema", 1, 0, 2);
+    SchemaKey keyAlt("TestSchema", 1, 0, 3);
+    SchemaKey keyAlt2("TestSchema", 1, 0, 1);
     locater.AddSchemaString(keyAlt, schemaXmlAlt);
     locater.AddSchemaString(keyAlt2, schemaXmlAlt2);
     locater.AddSchemaString(key, schemaXml);
     context->AddSchemaLocater(locater);
 
     {
-    ECSchemaPtr schema = context->LocateSchema(keyAlt, SchemaMatchType::Exact);
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_EQ(3, schema->GetVersionMinor());
-    ASSERT_EQ(0, schema->GetReferencedSchemas().size());
-    auto c = schema->GetClassCP("MyClass");
-    ASSERT_TRUE(c != nullptr);
-    auto ca = c->GetCustomAttribute("MyCustomAttribute");
-    ASSERT_TRUE(ca.IsValid());
-    ASSERT_EQ(3, ca->GetClass().GetSchema().GetVersionMinor());
+        ECSchemaPtr schema = context->LocateSchema(keyAlt, SchemaMatchType::Exact);
+        ASSERT_TRUE(schema.IsValid());
+        ASSERT_EQ(3, schema->GetVersionMinor());
+        ASSERT_EQ(0, schema->GetReferencedSchemas().size());
+        auto c = schema->GetClassCP("MyClass");
+        ASSERT_TRUE(c != nullptr);
+        auto ca = c->GetCustomAttribute("MyCustomAttribute");
+        ASSERT_TRUE(ca.IsValid());
+        ASSERT_EQ(3, ca->GetClass().GetSchema().GetVersionMinor());
     }
 
     {
-    ECSchemaPtr schema = context->LocateSchema(keyAlt2, SchemaMatchType::Exact);
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_EQ(1, schema->GetVersionMinor());
-    ASSERT_EQ(0, schema->GetReferencedSchemas().size());
-    auto c = schema->GetClassCP("MyClass");
-    ASSERT_TRUE(c != nullptr);
-    auto ca = c->GetCustomAttribute("MyCustomAttribute");
-    ASSERT_TRUE(ca.IsValid());
-    ASSERT_EQ(1, ca->GetClass().GetSchema().GetVersionMinor());
+        ECSchemaPtr schema = context->LocateSchema(keyAlt2, SchemaMatchType::Exact);
+        ASSERT_TRUE(schema.IsValid());
+        ASSERT_EQ(1, schema->GetVersionMinor());
+        ASSERT_EQ(0, schema->GetReferencedSchemas().size());
+        auto c = schema->GetClassCP("MyClass");
+        ASSERT_TRUE(c != nullptr);
+        auto ca = c->GetCustomAttribute("MyCustomAttribute");
+        ASSERT_TRUE(ca.IsValid());
+        ASSERT_EQ(1, ca->GetClass().GetSchema().GetVersionMinor());
     }
 
     {
-    ECSchemaPtr schema = context->LocateSchema(key, SchemaMatchType::Exact);
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_EQ(2, schema->GetVersionMinor());
-    ASSERT_EQ(0, schema->GetReferencedSchemas().size());
-    auto c = schema->GetClassCP("MyClass");
-    ASSERT_TRUE(c != nullptr);
-    auto ca = c->GetCustomAttribute("MyCustomAttribute");
-    ASSERT_TRUE(ca.IsValid());
-    ASSERT_EQ(2, ca->GetClass().GetSchema().GetVersionMinor());
+        ECSchemaPtr schema = context->LocateSchema(key, SchemaMatchType::Exact);
+        ASSERT_TRUE(schema.IsValid());
+        ASSERT_EQ(2, schema->GetVersionMinor());
+        ASSERT_EQ(0, schema->GetReferencedSchemas().size());
+        auto c = schema->GetClassCP("MyClass");
+        ASSERT_TRUE(c != nullptr);
+        auto ca = c->GetCustomAttribute("MyCustomAttribute");
+        ASSERT_TRUE(ca.IsValid());
+        ASSERT_EQ(2, ca->GetClass().GetSchema().GetVersionMinor());
     }
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, EmptyStringPropertyTagInCA)
-    {
+TEST_F(SchemaDeserializationTest, EmptyStringPropertyTagInCA) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECCustomAttributeClass typeName="GeneralCustomAttribute" appliesTo="Schema, AnyClass">
@@ -2731,16 +2671,16 @@ TEST_F(SchemaDeserializationTest, EmptyStringPropertyTagInCA)
     ASSERT_TRUE(schema.IsValid());
 
     {
-    ECClassCP myClass = schema->GetClassCP("MyClass");
-    ASSERT_TRUE(myClass != nullptr);
-    ECClassCP caClass = schema->GetClassCP("GeneralCustomAttribute");
-    ASSERT_TRUE(caClass != nullptr);
-    IECInstancePtr ca = myClass->GetCustomAttribute(*caClass);
-    ASSERT_TRUE(ca.IsValid());
-    ECValue val;
-    ca->GetValue(val, "Primitive");
-    ASSERT_FALSE(val.IsNull());
-    ASSERT_STREQ("", val.GetUtf8CP());
+        ECClassCP myClass = schema->GetClassCP("MyClass");
+        ASSERT_TRUE(myClass != nullptr);
+        ECClassCP caClass = schema->GetClassCP("GeneralCustomAttribute");
+        ASSERT_TRUE(caClass != nullptr);
+        IECInstancePtr ca = myClass->GetCustomAttribute(*caClass);
+        ASSERT_TRUE(ca.IsValid());
+        ECValue val;
+        ca->GetValue(val, "Primitive");
+        ASSERT_FALSE(val.IsNull());
+        ASSERT_STREQ("", val.GetUtf8CP());
     }
 
     // Serialize to string
@@ -2760,13 +2700,12 @@ TEST_F(SchemaDeserializationTest, EmptyStringPropertyTagInCA)
     SchemaDiff diff;
     ASSERT_EQ(BentleyStatus::SUCCESS, comparer.Compare(diff, context->GetCache().GetSchemas(), context2->GetCache().GetSchemas(), comparerOptions));
     ASSERT_FALSE(diff.Changes().IsChanged());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, MissingBSCAReference)
-    {
+TEST_F(SchemaDeserializationTest, MissingBSCAReference) {
     // For standard schemas, our custom attribute deserializer automatically adds missing references. It writes a warning to the logs but schema is expected
     // to load successfully
     ECSchemaPtr schema;
@@ -2796,19 +2735,18 @@ TEST_F(SchemaDeserializationTest, MissingBSCAReference)
         "       <ECProperty propertyName='IsReadOnly' typeName='boolean' />"
         "   </ECStructClass>"
         "</ECSchema>";
-            
+
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, AbstractConstraintLogMessages)
+TEST_F(SchemaDeserializationTest, AbstractConstraintLogMessages) {
     {
-    {
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Test" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                 <ECClass typeName="Foo" isDomainClass="True">
                 </ECClass>
@@ -2826,17 +2764,17 @@ TEST_F(SchemaDeserializationTest, AbstractConstraintLogMessages)
                 </ECRelationshipClass>
             </ECSchema>)xml";
 
-    TestLogger testLogger;
-    LogCatcher logCatcher(testLogger);
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_INFO, "Abstract Constraint Violation (ResolveIssues: Yes): The Source-Constraint of 'Test:RelationshipWithNoAbstractConstraint' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class."));
+        TestLogger testLogger;
+        LogCatcher logCatcher(testLogger);
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        ASSERT_TRUE(schema.IsValid());
+        ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_INFO, "Abstract Constraint Violation (ResolveIssues: Yes): The Source-Constraint of 'Test:RelationshipWithNoAbstractConstraint' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class."));
     }
 
     {
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="Test" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                 <ECClass typeName="Foo" isDomainClass="True">
                 </ECClass>
@@ -2850,18 +2788,18 @@ TEST_F(SchemaDeserializationTest, AbstractConstraintLogMessages)
                 </ECRelationshipClass>
             </ECSchema>)xml";
 
-    TestLogger testLogger;
-    LogCatcher logCatcher(testLogger);
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_EQ(nullptr, testLogger.GetLastMessage(NativeLogging::SEVERITY::LOG_INFO));
-    ASSERT_TRUE(testLogger.m_messages.size() == 1);
+        TestLogger testLogger;
+        LogCatcher logCatcher(testLogger);
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        ASSERT_TRUE(schema.IsValid());
+        ASSERT_EQ(nullptr, testLogger.GetLastMessage(NativeLogging::SEVERITY::LOG_INFO));
+        ASSERT_TRUE(testLogger.m_messages.size() == 1);
     }
 
     {
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Foo">
                 </ECEntityClass>
@@ -2879,12 +2817,12 @@ TEST_F(SchemaDeserializationTest, AbstractConstraintLogMessages)
                 </ECRelationshipClass>
             </ECSchema>)xml";
 
-    TestLogger testLogger;
-    LogCatcher logCatcher(testLogger);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    ASSERT_TRUE(testLogger.m_messages.size() == 5);
-    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_ERROR, "Abstract Constraint Violation (ResolveIssues: No): The Source-Constraint of 'TestSchema:RelationshipWithNoAbstractConstraint' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class."));
+        TestLogger testLogger;
+        LogCatcher logCatcher(testLogger);
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        ASSERT_TRUE(testLogger.m_messages.size() == 5);
+        ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_ERROR, "Abstract Constraint Violation (ResolveIssues: No): The Source-Constraint of 'TestSchema:RelationshipWithNoAbstractConstraint' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class."));
     }
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

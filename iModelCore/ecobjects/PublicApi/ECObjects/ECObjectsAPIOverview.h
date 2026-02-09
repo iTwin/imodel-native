@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #pragma once
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -11,33 +11,32 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //****** API doc main page *******
 
 //! @addtogroup ECObjectsGroup
-//! ECObjects is the heart of @b EC, Bentley's Information Modeling System. ECObjects is a set of abstractions 
+//! ECObjects is the heart of @b EC, Bentley's Information Modeling System. ECObjects is a set of abstractions
 //! working with engineering/business data and metadata (see @ref ECInstanceHowTos for details).
-//! 
-//! An ECSchema is used to describe the data model / metadata of the information model. An ECSchema is just a collection of 
-//! @ref ECClass "ECClasses". You can think of an ECClass as being like a C++ class that only defines 
-//! properties (ECClasses define no methods or behaviors.) In some ways, they are closer to 
-//! C++ pure virtual abstract base classes that only contain property getters and setters. 
+//!
+//! An ECSchema is used to describe the data model / metadata of the information model. An ECSchema is just a collection of
+//! @ref ECClass "ECClasses". You can think of an ECClass as being like a C++ class that only defines
+//! properties (ECClasses define no methods or behaviors.) In some ways, they are closer to
+//! C++ pure virtual abstract base classes that only contain property getters and setters.
 //! They are also very analogous to a database table definition.
 //! ECClasses contain @ref ECProperty "ECProperties". These are property *definitions*, not values.
 //!
-//! There are also @ref ECRelationshipClass "ECRelationshipClasses" that are ECClasses that define @ref ECRelationshipConstraint "ECRelationshipConstraints" 
-//! indicating what ECClasses they relate. 
-//! ECRelationshipInstances represent the relationships between the ECInstances (defined/constrained by their ECRelationshipClass) 
+//! There are also @ref ECRelationshipClass "ECRelationshipClasses" that are ECClasses that define @ref ECRelationshipConstraint "ECRelationshipConstraints"
+//! indicating what ECClasses they relate.
+//! ECRelationshipInstances represent the relationships between the ECInstances (defined/constrained by their ECRelationshipClass)
 //! ECRelationships are analogous to database foreign key constraint.
-//! 
-//! @ref IECInstance "ECInstances" represent instances of business data and refer to an ECClass and can hold values for each ECProperty. 
+//!
+//! @ref IECInstance "ECInstances" represent instances of business data and refer to an ECClass and can hold values for each ECProperty.
 //! They are analogous to the rows of a database table.
 //!
 //! @see @ref ECInstanceHowTos
-
 
 //****** ECInstancesHowTos *******
 
 //! @page ECInstanceHowTos Working with ECInstances
 //! @section ECInstancesStructPropertiesHowTos ECInstances and struct properties
 //! Structs can only be set in an IECInstance member by member using the fully qualified property access string to each member.
-//! Using %ECValue::SetStruct will result in an error. This is intentional to protect clients from performance issues which the 
+//! Using %ECValue::SetStruct will result in an error. This is intentional to protect clients from performance issues which the
 //! %ECValue::SetStruct option would have.
 //!
 //! @e Right:
@@ -66,7 +65,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //!
 //!
 //! @section ECInstancesStructArrayPropertiesHowTos ECInstances and struct array properties
-//! In contrast to @ref ECInstancesStructPropertiesHowTos "struct properties", struct array properties can only be set 
+//! In contrast to @ref ECInstancesStructPropertiesHowTos "struct properties", struct array properties can only be set
 //! in an IECInstance using ECValue::SetStruct. Here using the property access string option would fail.
 //!
 //! @note ECValue::SetStruct does not copy the struct object.
@@ -81,7 +80,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //!     instance->AddArrayElements (L"Affiliates", 3); //initialize the struct array to hold 3 struct elements
 //!     ECValue v;
 //!     v.SetStruct (affiliate1StructInstance); // does not copy the struct
-//!     instance->SetValue (L"Affiliates", v, 0); 
+//!     instance->SetValue (L"Affiliates", v, 0);
 //!     v.SetStruct (affiliate2StructInstance); // does not copy the struct
 //!     instance->SetValue (L"Affiliates", v, 1);
 //!     v.SetStruct (affiliate3StructInstance); // does not copy the struct
@@ -90,7 +89,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //!
 //! @section ECInstancesDateTimePropertiesHowTos ECInstances and DateTime properties
 //! %DateTime values in ECObjects are represented by the BentleyApi::DateTime class. Each DateTime instance
-//! can contain metadata about the actual date time value (see also DateTime::Info). 
+//! can contain metadata about the actual date time value (see also DateTime::Info).
 //! In order to preserve the metadata when persisting a DateTime, clients can decorate the respective
 //! ECProperty with the @b %DateTimeInfo custom attribute from the standard ECSchema @b Bentley_Standard_CustomAttributes.
 //! @note The metadata is not persisted per-instance. Instead it is the custom attribute that holds the information on a per-property
@@ -100,7 +99,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! ### How the @b %DateTimeInfo custom attribute affects %IECInstance::SetValue
 //! @li If the custom attribute is present, the metadata of the DateTime object is checked against the custom attribute. If it doesn't match,
 //! IECInstance::SetValue is aborted with an error.
-//! @li If the custom attribute is not present, no metadata checks are performed. 
+//! @li If the custom attribute is not present, no metadata checks are performed.
 //!
 //!
 //!     //Assume an ECProperty 'LastModified' without DateTimeInfo custom attribute and
@@ -110,7 +109,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //!     IECInstanceP instance = ...;
 //!     instance->SetValue (L"LastModified", v); // works as LastModified doesn't have a DateTimeInfo custom attribute
 //!     instance->SetValue (L"LastModifiedUtc", v); //returns error as DateTime metadata doesn't match ECProperty's DateTimeInfo custom attribute
-//! 
+//!
 //! ### How the @b %DateTimeInfo custom attribute affects IECInstance::GetValue
 //! @li If the custom attribute is present, the resulting DateTime object will have the metadata from the custom attribute.
 //! @li If the custom attribute is not present, the resulting DateTime object will get @e default metadata as defined by DateTimeInfo::GetDefault
@@ -127,7 +126,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //!     ...
 //!     instance->GetValue (v, L"LastModifiedUtc");
 //!     dt = v.GetDateTime (); //dt.GetInfo ().GetKind () will amount to DateTime::Kind::Utc
-//! 
+//!
 //!
 //! @section ECInstancesPropertyIndex Property Index
 //! The property index is the index into the PropertyLayout of the corresponding ECProperty.

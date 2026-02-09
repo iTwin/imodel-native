@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
@@ -15,8 +15,7 @@ struct SchemaConverterTests : ECTestFixture {};
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaConverterTests, RenameReservedWords)
-    {
+TEST_F(SchemaConverterTests, RenameReservedWords) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="TestEntityClass" isDomainClass="true">
@@ -43,7 +42,7 @@ TEST_F(SchemaConverterTests, RenameReservedWords)
     ASSERT_TRUE(schema.IsValid());
 
     EXPECT_TRUE(ECSchemaConverter::Convert(*schema, *context));
-    
+
     ECClassCP entity = schema->GetClassCP("TestEntityClass");
     EXPECT_EQ(nullptr, entity->GetPropertyP("Id")) << "The Id property is a reserved keyword and should have been renamed";
     EXPECT_EQ(nullptr, entity->GetPropertyP("ECClassId")) << "The ECClassId property is a reserved keyword and should have been renamed";
@@ -66,13 +65,12 @@ TEST_F(SchemaConverterTests, RenameReservedWords)
     EXPECT_EQ(nullptr, structClass->GetPropertyP("TestSchema_Id_")) << "The Id property is not a reserved keyword for Struct classes and should not be renamed";
     EXPECT_EQ(nullptr, structClass->GetPropertyP("TestSchema_ECClassId_")) << "The ECClassId property is not a reserved keyword for Struct classes and should not be renamed";
     EXPECT_EQ(nullptr, structClass->GetPropertyP("TestSchema_ECInstanceId_")) << "The ECInstanceId property is not a reserved keyword for Struct classes and should not be renamed";
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaConverterTests, RenameRelationshipReservedWords)
-    {
+TEST_F(SchemaConverterTests, RenameRelationshipReservedWords) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="A" isStruct="true"/>
@@ -114,13 +112,12 @@ TEST_F(SchemaConverterTests, RenameRelationshipReservedWords)
     EXPECT_NE(nullptr, relClass->GetPropertyP("TestSchema_TargetECInstanceId_")) << "The TargetECInstanceId property is a reserved keyword and should have been renamed";
     EXPECT_NE(nullptr, relClass->GetPropertyP("TestSchema_TargetId_")) << "The TargetId property is a reserved keyword and should have been renamed";
     EXPECT_NE(nullptr, relClass->GetPropertyP("TestSchema_TargetECClassId_")) << "The TargetECClassId property is a reserved keyword and should have been renamed";
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-TEST_F(SchemaConverterTests, PruneEmptyNamedCategories)
-    {
+TEST_F(SchemaConverterTests, PruneEmptyNamedCategories) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
@@ -163,10 +160,9 @@ TEST_F(SchemaConverterTests, PruneEmptyNamedCategories)
     EXPECT_FALSE(class1->GetPropertyP("propB")->GetCustomAttribute("EditorCustomAttributes", "Category").IsValid()) << "propB's category had an invalid name so the Category CA should be removed";
     EXPECT_NE(nullptr, schema->GetPropertyCategoryCP("ValidTestName")) << "the first category has a valid name and should not have been pruned";
     EXPECT_EQ(nullptr, schema->GetPropertyCategoryCP("")) << "the second category has an invalid name and should have been pruned";
-    }
+}
 
-TEST_F(SchemaConverterTests, EmptyStructPropertyRemoval)
-    {
+TEST_F(SchemaConverterTests, EmptyStructPropertyRemoval) {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="as" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECStructClass typeName="EmptyStruct"/>
@@ -194,13 +190,12 @@ TEST_F(SchemaConverterTests, EmptyStructPropertyRemoval)
 
     ECSchemaConverter::Convert(*schema, *context);
 
-    //showing after conversion, struct property with empty struct class is deleted, but normal struct properties are left alone
+    // showing after conversion, struct property with empty struct class is deleted, but normal struct properties are left alone
     ASSERT_EQ(0, schema->GetClassCP("EmptyEntity")->GetPropertyCount());
     ASSERT_EQ(2, schema->GetClassCP("FullEntity")->GetPropertyCount());
-    }
+}
 
-TEST_F(SchemaConverterTests, GetContainerName)
-    {
+TEST_F(SchemaConverterTests, GetContainerName) {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "test", "t", 1, 1, 1);
     ECEntityClassP ecClass;
@@ -212,6 +207,6 @@ TEST_F(SchemaConverterTests, GetContainerName)
     EXPECT_STREQ("ECSchema test", converter.GetContainerName(*schema).c_str());
     EXPECT_STREQ("ECClass testClass", converter.GetContainerName(*ecClass).c_str());
     EXPECT_STREQ("ECProperty testProp", converter.GetContainerName(*ecProp).c_str());
-    }
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE

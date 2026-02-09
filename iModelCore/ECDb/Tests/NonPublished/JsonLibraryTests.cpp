@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See LICENSE.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
+ * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+ * See LICENSE.md in the repository root for full copyright notice.
+ *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include <BeRapidJson/BeRapidJson.h>
 
@@ -10,18 +10,17 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// Test NaN handling 
+// Test NaN handling
 // Expected behavior (after a Bentley change to JsonCpp) is conversion to a null value.
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST(JsonCpp, NaN)
-    {
+TEST(JsonCpp, NaN) {
     Json::Value obj1(Json::objectValue);
     Json::Value obj2(Json::objectValue);
 
     {
-    ScopedDisableFailOnAssertion disableFailOnAssertion;
-    obj1["nan"] = std::numeric_limits<double>::quiet_NaN();
+        ScopedDisableFailOnAssertion disableFailOnAssertion;
+        obj1["nan"] = std::numeric_limits<double>::quiet_NaN();
     }
 
     Utf8String str = Json::FastWriter().write(obj1);
@@ -31,14 +30,13 @@ TEST(JsonCpp, NaN)
     ASSERT_TRUE(parseSuccessful);
     ASSERT_TRUE(obj2.isMember("nan"));
     ASSERT_TRUE(obj2["nan"].isNull());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // Make sure there is no loss of precision roundtripping double values.
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST(JsonCpp, RoundTripDoubles)
-    {
+TEST(JsonCpp, RoundTripDoubles) {
     Json::Value obj1(Json::objectValue);
     Json::Value obj2(Json::objectValue);
 
@@ -66,13 +64,12 @@ TEST(JsonCpp, RoundTripDoubles)
 
     ASSERT_DOUBLE_EQ(d1, d2);
     ASSERT_DOUBLE_EQ(n1, n2);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(JsonCpp, RoundTripInt64)
-    {
+TEST(JsonCpp, RoundTripInt64) {
     BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
 
     const int64_t expectedPositiveInt64 = id.GetValue();
@@ -92,13 +89,12 @@ TEST(JsonCpp, RoundTripInt64)
 
     ASSERT_EQ(expectedPositiveInt64, actualPositiveInt64);
     ASSERT_EQ(expectedNegativeInt64, actualNegativeInt64);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(JsonCpp, Int64Rendering)
-    {
+TEST(JsonCpp, Int64Rendering) {
     BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
     const int64_t expectedPositiveInt64 = id.GetValue();
     const int64_t expectedNegativeInt64 = (-1) * id.GetValue();
@@ -117,17 +113,15 @@ TEST(JsonCpp, Int64Rendering)
     jsonStr = Json::FastWriter().write(json2);
     jsonStr.TrimEnd();
     ASSERT_STREQ(expectedNegativeInt64Str.c_str(), jsonStr.c_str());
-    }
+}
 
-struct RapidJsonTests : public ECDbTestFixture
- {};
+struct RapidJsonTests : public ECDbTestFixture {};
 
 //---------------------------------------------------------------------------------------
 // Test code grabbed (and refactored) from rapidjson/examples/tutorial/tutorial.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, FromRapidJsonTutorialCpp)
-    {
+TEST_F(RapidJsonTests, FromRapidJsonTutorialCpp) {
     ////////////////////////////////////////////////////////////////////////////
     // 1. Parse a JSON text string to a document.
 
@@ -138,7 +132,7 @@ TEST_F(RapidJsonTests, FromRapidJsonTutorialCpp)
     ASSERT_FALSE(document.Parse<0>(json).HasParseError());
 
     ////////////////////////////////////////////////////////////////////////////
-    // 2. Access values in document. 
+    // 2. Access values in document.
 
     ASSERT_TRUE(document.IsObject());
     ASSERT_TRUE(document.HasMember("hello"));
@@ -161,14 +155,13 @@ TEST_F(RapidJsonTests, FromRapidJsonTutorialCpp)
     ASSERT_TRUE(document["pi"].IsDouble());
     ASSERT_EQ(3.1416, document["pi"].GetDouble());
 
-    
-        {
+    {
         const rapidjson::Value& a = document["a"];
         ASSERT_TRUE(a.IsArray());
 
         for (rapidjson::SizeType i = 0; i < a.Size(); i++)
             ASSERT_EQ(i, a[i].GetInt());
-        }
+    }
 
     ////////////////////////////////////////////////////////////////////////////
     // 3. Modify values in document.
@@ -183,21 +176,21 @@ TEST_F(RapidJsonTests, FromRapidJsonTutorialCpp)
     ASSERT_TRUE(document["i"].IsInt64());
 
     // Adding values to array.
-    
-        {
+
+    {
         rapidjson::Value& a = document["a"];
         rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
 
         for (int i = 5; i <= 10; i++)
-            a.PushBack(i, allocator);    // May look a bit strange, allocator is needed for potentially realloc. We normally uses the document's.
+            a.PushBack(i, allocator);  // May look a bit strange, allocator is needed for potentially realloc. We normally uses the document's.
 
         for (rapidjson::SizeType i = 0; i < a.Size(); i++)
             ASSERT_EQ(i, a[i].GetInt());
 
-        a.PushBack("Lua", allocator).PushBack("Mio", allocator);   // Fluent API
+        a.PushBack("Lua", allocator).PushBack("Mio", allocator);  // Fluent API
 
         ASSERT_EQ(13, a.Size());
-        }
+    }
 
     // Making string values.
 
@@ -210,7 +203,7 @@ TEST_F(RapidJsonTests, FromRapidJsonTutorialCpp)
     ASSERT_TRUE(0 == strcmp("rapidjson", document["hello"].GetString()));
 
     Utf8Char buffer[10];
-    sprintf(buffer, "%s %s", "Milo", "Yip");    // synthetic example of dynamically created string.
+    sprintf(buffer, "%s %s", "Milo", "Yip");  // synthetic example of dynamically created string.
 
     rapidjson::Value author(buffer, document.GetAllocator());
 
@@ -221,14 +214,13 @@ TEST_F(RapidJsonTests, FromRapidJsonTutorialCpp)
     ASSERT_TRUE(author.IsNull());  // Move semantic for assignment. After this variable is assigned as a member, the variable becomes null.
     ASSERT_TRUE(document.HasMember("author"));
     ASSERT_TRUE(0 == strcmp("Milo Yip", document["author"].GetString()));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // Demonstrate unfortunate add member behavior
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, AddMemberBehavior)
-    {
+TEST_F(RapidJsonTests, AddMemberBehavior) {
     rapidjson::Document document;
     document.SetObject();
 
@@ -241,13 +233,13 @@ TEST_F(RapidJsonTests, AddMemberBehavior)
     ASSERT_TRUE(document["y"].IsNull());
 
     // demonstrate unfortunate behavior
-    document["x"] = 1;                          // this syntax works in JsonCpp
-    document["y"] = 2;                          // this syntax works in JsonCpp
+    document["x"] = 1;  // this syntax works in JsonCpp
+    document["y"] = 2;  // this syntax works in JsonCpp
 
-    ASSERT_FALSE(document.HasMember("x"));    // member was not really added
-    ASSERT_FALSE(document.HasMember("y"));    // member was not really added
-    ASSERT_TRUE(document["x"].IsNull());       // null value returned for nonexistent members
-    ASSERT_TRUE(document["y"].IsNull());       // null value returned for nonexistent members
+    ASSERT_FALSE(document.HasMember("x"));  // member was not really added
+    ASSERT_FALSE(document.HasMember("y"));  // member was not really added
+    ASSERT_TRUE(document["x"].IsNull());    // null value returned for nonexistent members
+    ASSERT_TRUE(document["y"].IsNull());    // null value returned for nonexistent members
 
     // this is how members must be added
     rapidjson::Value x;
@@ -265,39 +257,37 @@ TEST_F(RapidJsonTests, AddMemberBehavior)
     ASSERT_EQ(1, document["x"].GetInt());
     ASSERT_EQ(2, document["y"].GetInt());
 
-    //return value of AddMember is not the created member but the caller
+    // return value of AddMember is not the created member but the caller
     rapidjson::Value& returnValueOfAddMember = document.AddMember("testmember", rapidjson::Value(111).Move(), document.GetAllocator());
     ASSERT_TRUE(returnValueOfAddMember.IsObject());
     ASSERT_EQ(111, document["testmember"].GetInt());
     ASSERT_EQ(111, returnValueOfAddMember["testmember"].GetInt()) << "AddMember returns the calling object, not the inserted member";
     ASSERT_TRUE(&document == &returnValueOfAddMember) << "AddMember returns the calling object, not the inserted member";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, PushBackBehavior)
-    {
+TEST_F(RapidJsonTests, PushBackBehavior) {
     rapidjson::Document json(rapidjson::kArrayType);
 
     const int arrayElementVal = 123;
     ScopedDisableFailOnAssertion disableFailOnAssertion;
 
-    //return value is not the inserted array element, but the array itself!
+    // return value is not the inserted array element, but the array itself!
     rapidjson::Value& returnValueOfPushBack = json.PushBack(rapidjson::Value(arrayElementVal).Move(), json.GetAllocator());
 
     ASSERT_TRUE(&returnValueOfPushBack == &json) << "PushBack returns the array, not the inserted array element";
 
     ASSERT_EQ(arrayElementVal, json[0].GetInt());
     ASSERT_EQ(arrayElementVal, returnValueOfPushBack[0].GetInt()) << "PushBack returns the array, not the inserted array element";
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // Make sure there is no loss of precision roundtripping double values.
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, RoundTripDoubles)
-    {
+TEST_F(RapidJsonTests, RoundTripDoubles) {
     rapidjson::Document document1;
     document1.SetObject();
 
@@ -331,13 +321,12 @@ TEST_F(RapidJsonTests, RoundTripDoubles)
 
     ASSERT_DOUBLE_EQ(d1, d2);
     ASSERT_DOUBLE_EQ(n1, n2);
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RapidJsonTests, Int64Rendering)
-    {
+TEST_F(RapidJsonTests, Int64Rendering) {
     BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
     const int64_t expectedPositiveInt64 = id.GetValue();
     const int64_t expectedNegativeInt64 = (-1) * id.GetValue();
@@ -361,13 +350,12 @@ TEST_F(RapidJsonTests, Int64Rendering)
     rapidjson::Writer<rapidjson::StringBuffer> writer2(stringBuffer2);
     json.Accept(writer2);
     ASSERT_STREQ(expectedNegativeInt64Str.c_str(), stringBuffer2.GetString());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RapidJsonTests, RoundTripInt64)
-    {
+TEST_F(RapidJsonTests, RoundTripInt64) {
     BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
 
     rapidjson::Document document1;
@@ -392,14 +380,13 @@ TEST_F(RapidJsonTests, RoundTripInt64)
 
     ASSERT_EQ(expectedPositiveInt64, document2["positive"].GetInt64());
     ASSERT_EQ(expectedNegativeInt64, document2["negative"].GetInt64());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // Variation of PerformanceECJsonInserter.Insert from PerformanceECJsonInserterTests.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, InsertIntoECDb)
-    {
+TEST_F(RapidJsonTests, InsertIntoECDb) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("RapidJsonInsertIntoECDb.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
 
     // Read JSON input from file
@@ -441,38 +428,35 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
 
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(ecInstanceKey.GetInstanceId(), rapidJsonInput));
     m_ecdb.SaveChanges();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueDefaultConstructor)
-    {
+TEST_F(RapidJsonTests, ValueDefaultConstructor) {
     rapidjson::Value x;
     ASSERT_EQ(rapidjson::kNullType, x.GetType());
     ASSERT_TRUE(x.IsNull());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueAssignmentOperator)
-    {
+TEST_F(RapidJsonTests, ValueAssignmentOperator) {
     rapidjson::Value x(1234);
     rapidjson::Value y;
     y = x;
-    ASSERT_TRUE(x.IsNull()); // move semantic
+    ASSERT_TRUE(x.IsNull());  // move semantic
     ASSERT_EQ(1234, y.GetInt());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueNull)
-    {
+TEST_F(RapidJsonTests, ValueNull) {
     // default constructor
     rapidjson::Value x;
     ASSERT_EQ(rapidjson::kNullType, x.GetType());
@@ -497,23 +481,22 @@ TEST_F(RapidJsonTests, ValueNull)
 
     rapidjson::Document array(rapidjson::kArrayType);
     array.PushBack(rapidjson::Value(1).Move(), array.GetAllocator()).PushBack(rapidjson::Value(2).Move(), array.GetAllocator());
-    ASSERT_EQ(2, (int) array.Size());
+    ASSERT_EQ(2, (int)array.Size());
     array.SetNull();
     ASSERT_FALSE(array.IsArray());
 
     rapidjson::Document obj(rapidjson::kObjectType);
     obj.AddMember("m1", rapidjson::Value(1).Move(), array.GetAllocator()).AddMember("m2", rapidjson::Value(2).Move(), array.GetAllocator());
-    ASSERT_EQ(2, (int) obj.MemberCount());
+    ASSERT_EQ(2, (int)obj.MemberCount());
     obj.SetNull();
     ASSERT_FALSE(obj.IsObject());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueTrue)
-    {
+TEST_F(RapidJsonTests, ValueTrue) {
     // Constructor with bool
     rapidjson::Value x(true);
     ASSERT_EQ(rapidjson::kTrueType, x.GetType());
@@ -536,14 +519,13 @@ TEST_F(RapidJsonTests, ValueTrue)
     rapidjson::Value z;
     z.SetBool(true);
     ASSERT_TRUE(z.IsTrue());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueFalse)
-    {
+TEST_F(RapidJsonTests, ValueFalse) {
     // Constructor with bool
     rapidjson::Value x(false);
     ASSERT_EQ(rapidjson::kFalseType, x.GetType());
@@ -566,14 +548,13 @@ TEST_F(RapidJsonTests, ValueFalse)
     rapidjson::Value z;
     z.SetBool(false);
     ASSERT_TRUE(z.IsFalse());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueInt)
-    {
+TEST_F(RapidJsonTests, ValueInt) {
     // Constructor with int
     rapidjson::Value x(1234);
     ASSERT_EQ(rapidjson::kNumberType, x.GetType());
@@ -619,14 +600,13 @@ TEST_F(RapidJsonTests, ValueInt)
     // operator=(int)
     z = 5678;
     ASSERT_EQ(5678, z.GetInt());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueUint)
-    {
+TEST_F(RapidJsonTests, ValueUint) {
     // Constructor with int
     rapidjson::Value x(1234u);
     ASSERT_EQ(rapidjson::kNumberType, x.GetType());
@@ -639,7 +619,7 @@ TEST_F(RapidJsonTests, ValueUint)
     ASSERT_TRUE(x.IsUint());
     ASSERT_TRUE(x.IsInt64());
     ASSERT_TRUE(x.IsUint64());
-    ASSERT_EQ(1234.0, x.GetDouble()); // Number can always be cast as double but !IsDouble().
+    ASSERT_EQ(1234.0, x.GetDouble());  // Number can always be cast as double but !IsDouble().
 
     ASSERT_FALSE(x.IsDouble());
     ASSERT_FALSE(x.IsNull());
@@ -659,18 +639,17 @@ TEST_F(RapidJsonTests, ValueUint)
     z = 5678u;
     ASSERT_EQ(5678u, z.GetUint());
 
-    z = 2147483648u; // 2^31, cannot cast as int
+    z = 2147483648u;  // 2^31, cannot cast as int
     ASSERT_EQ(2147483648u, z.GetUint());
     ASSERT_FALSE(z.IsInt());
     ASSERT_TRUE(z.IsInt64());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueInt64)
-    {
+TEST_F(RapidJsonTests, ValueInt64) {
     // Constructor with int
     rapidjson::Value x(INT64_C(1234));
     ASSERT_EQ(rapidjson::kNumberType, x.GetType());
@@ -706,21 +685,20 @@ TEST_F(RapidJsonTests, ValueInt64)
     z.SetInt64(1234);
     ASSERT_EQ(1234, z.GetInt64());
 
-    z.SetInt64(2147483648LL); // 2^31, cannot cast as int
+    z.SetInt64(2147483648LL);  // 2^31, cannot cast as int
     ASSERT_FALSE(z.IsInt());
     ASSERT_TRUE(z.IsUint());
 
-    z.SetInt64(4294967296LL); // 2^32, cannot cast as uint
+    z.SetInt64(4294967296LL);  // 2^32, cannot cast as uint
     ASSERT_FALSE(z.IsInt());
     ASSERT_FALSE(z.IsUint());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueUint64)
-    {
+TEST_F(RapidJsonTests, ValueUint64) {
     // Constructor with int
     rapidjson::Value x(INT64_C(1234));
     ASSERT_EQ(rapidjson::kNumberType, x.GetType());
@@ -748,27 +726,26 @@ TEST_F(RapidJsonTests, ValueUint64)
     z.SetUint64(1234);
     ASSERT_EQ(1234u, z.GetUint64());
 
-    z.SetUint64(2147483648LL); // 2^31, cannot cast as int
+    z.SetUint64(2147483648LL);  // 2^31, cannot cast as int
     ASSERT_FALSE(z.IsInt());
     ASSERT_TRUE(z.IsUint());
     ASSERT_TRUE(z.IsInt64());
 
-    z.SetUint64(4294967296LL); // 2^32, cannot cast as uint
+    z.SetUint64(4294967296LL);  // 2^32, cannot cast as uint
     ASSERT_FALSE(z.IsInt());
     ASSERT_FALSE(z.IsUint());
     ASSERT_TRUE(z.IsInt64());
 
-    z.SetUint64(9223372036854775808uLL); // 2^63 cannot cast as int64
+    z.SetUint64(9223372036854775808uLL);  // 2^63 cannot cast as int64
     ASSERT_FALSE(z.IsInt64());
     ASSERT_EQ(9223372036854775808uLL, z.GetUint64());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueDouble)
-    {
+TEST_F(RapidJsonTests, ValueDouble) {
     // Constructor with double
     rapidjson::Value x(12.34);
     ASSERT_EQ(rapidjson::kNumberType, x.GetType());
@@ -792,14 +769,13 @@ TEST_F(RapidJsonTests, ValueDouble)
 
     z = 56.78;
     ASSERT_EQ(56.78, z.GetDouble());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueString)
-    {
+TEST_F(RapidJsonTests, ValueString) {
     // Constructor with const string
     rapidjson::Value x("Hello", 5);
     ASSERT_EQ(rapidjson::kStringType, x.GetType());
@@ -837,18 +813,17 @@ TEST_F(RapidJsonTests, ValueString)
     // SetString()
     char s[] = "World";
     rapidjson::Value w;
-    w.SetString(s, (rapidjson::SizeType) strlen(s), allocator);
+    w.SetString(s, (rapidjson::SizeType)strlen(s), allocator);
     s[0] = '\0';
     ASSERT_STREQ("World", w.GetString());
     ASSERT_EQ(5u, w.GetStringLength());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueArray)
-    {
+TEST_F(RapidJsonTests, ValueArray) {
     rapidjson::Value x(rapidjson::kArrayType);
     const rapidjson::Value& y = x;
     rapidjson::Value::AllocatorType allocator;
@@ -942,16 +917,15 @@ TEST_F(RapidJsonTests, ValueArray)
     z.SetArray();
     ASSERT_TRUE(z.IsArray());
     ASSERT_TRUE(z.Empty());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueObject)
-    {
+TEST_F(RapidJsonTests, ValueObject) {
     rapidjson::Value x(rapidjson::kObjectType);
-    RapidJsonValueCR y = x; // const version
+    RapidJsonValueCR y = x;  // const version
     rapidjson::Value::AllocatorType allocator;
 
     ASSERT_EQ(rapidjson::kObjectType, x.GetType());
@@ -1018,92 +992,81 @@ TEST_F(RapidJsonTests, ValueObject)
     rapidjson::Value z;
     z.SetObject();
     ASSERT_TRUE(z.IsObject());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueBigNestedArray)
-    {
+TEST_F(RapidJsonTests, ValueBigNestedArray) {
     rapidjson::MemoryPoolAllocator<> allocator;
     rapidjson::Value x(rapidjson::kArrayType);
     static const rapidjson::SizeType n = 200;
 
-    for (rapidjson::SizeType i = 0; i < n; i++)
-        {
+    for (rapidjson::SizeType i = 0; i < n; i++) {
         rapidjson::Value y(rapidjson::kArrayType);
-        for (rapidjson::SizeType j = 0; j < n; j++)
-            {
-            rapidjson::Value number((int) (i * n + j));
+        for (rapidjson::SizeType j = 0; j < n; j++) {
+            rapidjson::Value number((int)(i * n + j));
             y.PushBack(number, allocator);
-            }
+        }
 
         x.PushBack(y, allocator);
-        }
+    }
 
-    for (rapidjson::SizeType i = 0; i < n; i++)
-        {
-        for (rapidjson::SizeType j = 0; j < n; j++)
-            {
+    for (rapidjson::SizeType i = 0; i < n; i++) {
+        for (rapidjson::SizeType j = 0; j < n; j++) {
             ASSERT_TRUE(x[i][j].IsInt());
-            ASSERT_EQ((int) (i * n + j), x[i][j].GetInt());
-            }
+            ASSERT_EQ((int)(i * n + j), x[i][j].GetInt());
         }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueBigNestedObject)
-    {
+TEST_F(RapidJsonTests, ValueBigNestedObject) {
     rapidjson::MemoryPoolAllocator<> allocator;
     rapidjson::Value x(rapidjson::kObjectType);
     static const rapidjson::SizeType n = 200;
 
-    for (rapidjson::SizeType i = 0; i < n; i++)
-        {
+    for (rapidjson::SizeType i = 0; i < n; i++) {
         char name1[10];
         sprintf(name1, "%d", i);
 
-        rapidjson::Value name(name1, (rapidjson::SizeType) strlen(name1), allocator);
+        rapidjson::Value name(name1, (rapidjson::SizeType)strlen(name1), allocator);
         rapidjson::Value object(rapidjson::kObjectType);
 
-        for (rapidjson::SizeType j = 0; j < n; j++)
-            {
+        for (rapidjson::SizeType j = 0; j < n; j++) {
             char name2[10];
             sprintf(name2, "%d", j);
 
-            rapidjson::Value name(name2, (rapidjson::SizeType) strlen(name2), allocator);
-            rapidjson::Value number((int) (i * n + j));
+            rapidjson::Value name(name2, (rapidjson::SizeType)strlen(name2), allocator);
+            rapidjson::Value number((int)(i * n + j));
             object.AddMember(name, number, allocator);
-            }
-
-        x.AddMember(name, object, allocator);
         }
 
-    for (rapidjson::SizeType i = 0; i < n; i++)
-        {
+        x.AddMember(name, object, allocator);
+    }
+
+    for (rapidjson::SizeType i = 0; i < n; i++) {
         char name1[10];
         sprintf(name1, "%d", i);
 
-        for (rapidjson::SizeType j = 0; j < n; j++)
-            {
+        for (rapidjson::SizeType j = 0; j < n; j++) {
             char name2[10];
             sprintf(name2, "%d", j);
             x[name1];
-            ASSERT_EQ((int) (i * n + j), x[name1][name2].GetInt());
-            }
+            ASSERT_EQ((int)(i * n + j), x[name1][name2].GetInt());
         }
     }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, ValueRemoveLastElement)
-    {
+TEST_F(RapidJsonTests, ValueRemoveLastElement) {
     rapidjson::Document doc;
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
     rapidjson::Value objVal(rapidjson::kObjectType);
@@ -1114,30 +1077,28 @@ TEST_F(RapidJsonTests, ValueRemoveLastElement)
     ASSERT_TRUE(objVal.HasMember("var3"));
     objVal.RemoveMember("var3");
     ASSERT_FALSE(objVal.HasMember("var3"));
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/valuetest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, DocumentCrtAllocator)
-    {
+TEST_F(RapidJsonTests, DocumentCrtAllocator) {
     typedef rapidjson::GenericValue<rapidjson::UTF8<>, rapidjson::CrtAllocator> V;
 
     V::AllocatorType allocator;
     V o(rapidjson::kObjectType);
-    o.AddMember("x", 1, allocator); // Should not call destructor on uninitialized name/value of newly allocated members.
+    o.AddMember("x", 1, allocator);  // Should not call destructor on uninitialized name/value of newly allocated members.
 
     V a(rapidjson::kArrayType);
-    a.PushBack(1, allocator); // Should not call destructor on uninitialized Value of newly allocated elements.
-    }
+    a.PushBack(1, allocator);  // Should not call destructor on uninitialized Value of newly allocated elements.
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/documenttest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, DocumentParse)
-    {
+TEST_F(RapidJsonTests, DocumentParse) {
     rapidjson::Document doc;
 
     doc.Parse<0>(" { \"hello\" : \"world\", \"t\" : true , \"f\" : false, \"n\": null, \"i\":123, \"pi\": 3.1416, \"a\":[1, 2, 3, 4] } ");
@@ -1178,14 +1139,13 @@ TEST_F(RapidJsonTests, DocumentParse)
 
     for (rapidjson::SizeType i = 0; i < 4; i++)
         ASSERT_EQ(i + 1, a[i].GetUint());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/documenttest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, DocumentAcceptWriter)
-    {
+TEST_F(RapidJsonTests, DocumentAcceptWriter) {
     rapidjson::Document doc;
     doc.Parse<0>(" { \"hello\" : \"world\", \"t\" : true , \"f\" : false, \"n\": null, \"i\":123, \"a\":[1, 2, 3, 4] } ");
 
@@ -1194,14 +1154,13 @@ TEST_F(RapidJsonTests, DocumentAcceptWriter)
 
     doc.Accept(writer);
     ASSERT_STREQ("{\"hello\":\"world\",\"t\":true,\"f\":false,\"n\":null,\"i\":123,\"a\":[1,2,3,4]}", stringBuffer.GetString());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/writertest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, WriterCompact)
-    {
+TEST_F(RapidJsonTests, WriterCompact) {
     rapidjson::StringStream s("{ \"hello\" : \"world\", \"t\" : true , \"f\" : false, \"n\": null, \"i\":123, \"a\":[1, 2, 3] } ");
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
@@ -1210,91 +1169,82 @@ TEST_F(RapidJsonTests, WriterCompact)
     reader.Parse<0>(s, writer);
     ASSERT_STREQ("{\"hello\":\"world\",\"t\":true,\"f\":false,\"n\":null,\"i\":123,\"a\":[1,2,3]}", buffer.GetString());
     ASSERT_EQ(65u, buffer.GetSize());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/writertest.cpp
 // json -> parse -> writer -> json
 // @bsitest
 //---------------------------------------------------------------------------------------
-#define RAPIDJSON_TEST_ROUNDTRIP(json) \
-    { \
-    rapidjson::StringStream s (json); \
-    rapidjson::StringBuffer buffer; \
-    rapidjson::Writer<rapidjson::StringBuffer> writer (buffer); \
-    rapidjson::Reader reader; \
-    reader.Parse<0>(s, writer); \
-    ASSERT_STREQ (json, buffer.GetString()); \
+#define RAPIDJSON_TEST_ROUNDTRIP(json)                             \
+    {                                                              \
+        rapidjson::StringStream s(json);                           \
+        rapidjson::StringBuffer buffer;                            \
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer); \
+        rapidjson::Reader reader;                                  \
+        reader.Parse<0>(s, writer);                                \
+        ASSERT_STREQ(json, buffer.GetString());                    \
     }
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/writertest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, WriterInt)
-    {
+TEST_F(RapidJsonTests, WriterInt) {
     RAPIDJSON_TEST_ROUNDTRIP("[-1]");
     RAPIDJSON_TEST_ROUNDTRIP("[-123]");
     RAPIDJSON_TEST_ROUNDTRIP("[-2147483648]");
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/writertest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, WriterUInt)
-    {
+TEST_F(RapidJsonTests, WriterUInt) {
     RAPIDJSON_TEST_ROUNDTRIP("[0]");
     RAPIDJSON_TEST_ROUNDTRIP("[1]");
     RAPIDJSON_TEST_ROUNDTRIP("[123]");
     RAPIDJSON_TEST_ROUNDTRIP("[2147483647]");
     RAPIDJSON_TEST_ROUNDTRIP("[4294967295]");
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/writertest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, WriterInt64)
-    {
+TEST_F(RapidJsonTests, WriterInt64) {
     RAPIDJSON_TEST_ROUNDTRIP("[-1234567890123456789]");
     RAPIDJSON_TEST_ROUNDTRIP("[-9223372036854775808]");
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/writertest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, WriterUint64)
-    {
+TEST_F(RapidJsonTests, WriterUint64) {
     RAPIDJSON_TEST_ROUNDTRIP("[1234567890123456789]");
     RAPIDJSON_TEST_ROUNDTRIP("[9223372036854775807]");
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // From libsrc/rapidjson/test/unittest/writertest.cpp
 // @bsitest
 //---------------------------------------------------------------------------------------
-TEST_F(RapidJsonTests, WriterString)
-    {
+TEST_F(RapidJsonTests, WriterString) {
     RAPIDJSON_TEST_ROUNDTRIP("[\"Hello\"]");
     RAPIDJSON_TEST_ROUNDTRIP("[\"Hello\\u0000World\"]");
     RAPIDJSON_TEST_ROUNDTRIP("[\"\\\"\\\\/\\b\\f\\n\\r\\t\"]");
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsiclass
-//+---------------+---------------+---------------+---------------+---------------+------
-struct SqliteJsonTests : public ECDbTestFixture
-    {};
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SqliteJsonTests, Int64Rendering)
-    {
+struct SqliteJsonTests : public ECDbTestFixture {};
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SqliteJsonTests, Int64Rendering) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("sqlitejsontests.ecdb"));
 
     BeBriefcaseBasedId id(BeBriefcaseId(123), INT64_C(4129813293));
@@ -1320,13 +1270,12 @@ TEST_F(SqliteJsonTests, Int64Rendering)
 
     colon = negativeInt64JsonStr.find_first_of(':');
     ASSERT_STREQ(expectedNegativeInt64Str.c_str(), Utf8String(negativeInt64JsonStr.substr(colon + 1, expectedNegativeInt64Str.size())).Trim().c_str());
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SqliteJsonTests, RoundTripDoublesAndInt64)
-    {
+TEST_F(SqliteJsonTests, RoundTripDoublesAndInt64) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("sqlitejsontests.ecdb"));
 
     const double expectedPositiveDouble = PI;
@@ -1335,8 +1284,7 @@ TEST_F(SqliteJsonTests, RoundTripDoublesAndInt64)
     const int64_t expectedPositiveInt64 = id.GetValue();
     const int64_t expectedNegativeInt64 = (-1) * id.GetValue();
 
-
-    //double round-trip
+    // double round-trip
     Statement toStmt;
     ASSERT_EQ(BE_SQLITE_OK, toStmt.Prepare(m_ecdb, "SELECT json_object('positive',?,'negative',?)"));
     ASSERT_EQ(BE_SQLITE_OK, toStmt.BindDouble(1, expectedPositiveDouble));
@@ -1355,7 +1303,7 @@ TEST_F(SqliteJsonTests, RoundTripDoublesAndInt64)
     fromStmt.Reset();
     fromStmt.ClearBindings();
 
-    //int64 round-trip
+    // int64 round-trip
     ASSERT_EQ(BE_SQLITE_OK, toStmt.BindInt64(1, expectedPositiveInt64));
     ASSERT_EQ(BE_SQLITE_OK, toStmt.BindInt64(2, expectedNegativeInt64));
     ASSERT_EQ(BE_SQLITE_ROW, toStmt.Step());
@@ -1369,20 +1317,18 @@ TEST_F(SqliteJsonTests, RoundTripDoublesAndInt64)
     ASSERT_EQ(expectedNegativeInt64, fromStmt.GetValueInt64(1));
     fromStmt.Reset();
     fromStmt.ClearBindings();
-    }
-
+}
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(JsonValueHelper, Comparisons)
-    {
+TEST(JsonValueHelper, Comparisons) {
     JsonValue uintVal(Json::Value(UINT32_C(1)));
     EXPECT_TRUE(uintVal.m_value.isUInt());
     EXPECT_FALSE(uintVal.m_value.isInt());
     EXPECT_TRUE(uintVal.m_value.isIntegral());
 
-    JsonValue intVal(Json::Value((int) 1));
+    JsonValue intVal(Json::Value((int)1));
     EXPECT_TRUE(intVal.m_value.isInt());
     EXPECT_FALSE(intVal.m_value.isUInt());
     EXPECT_TRUE(intVal.m_value.isIntegral());
@@ -1390,7 +1336,7 @@ TEST(JsonValueHelper, Comparisons)
     EXPECT_FALSE(uintVal.m_value == intVal.m_value) << "JsonCpp comparison is strict on exact integral type";
     EXPECT_TRUE(uintVal == intVal) << "JsonValue helper API does integral type coercion";
 
-    JsonValue int64Val(Json::Value((int64_t) 1));
+    JsonValue int64Val(Json::Value((int64_t)1));
     EXPECT_TRUE(int64Val.m_value.isInt());
     EXPECT_TRUE(int64Val.m_value.isIntegral());
 
@@ -1399,7 +1345,7 @@ TEST(JsonValueHelper, Comparisons)
     EXPECT_FALSE(int64Val.m_value == uintVal.m_value) << "JsonCpp comparison is strict on exact integral type";
     EXPECT_TRUE(int64Val == uintVal) << "JsonValue helper API does integral type coercion";
 
-    JsonValue uint64Val(Json::Value((uint64_t) 1));
+    JsonValue uint64Val(Json::Value((uint64_t)1));
     EXPECT_TRUE(uint64Val.m_value.isUInt());
     EXPECT_TRUE(uint64Val.m_value.isIntegral());
 
@@ -1417,6 +1363,6 @@ TEST(JsonValueHelper, Comparisons)
     EXPECT_FALSE(boolVal.m_value == int64Val.m_value) << "JsonCpp comparison is strict on exact integral type";
     EXPECT_EQ(boolVal.m_value.asUInt(), int64Val.m_value.asUInt()) << "JsonCpp asUInt is supported on bools";
     EXPECT_FALSE(boolVal == int64Val) << "JsonValueHelper does not treat bools equal with other numeric values";
-    }
+}
 
 END_ECDBUNITTESTS_NAMESPACE
