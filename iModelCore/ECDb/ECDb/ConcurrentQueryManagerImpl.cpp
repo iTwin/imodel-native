@@ -2291,49 +2291,4 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::GetFromEnv() {
     return Config::GetDefault();
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void ECSqlRowReader::PrepareAndBindStatement(ECDb const& db, std::string const& ecsql) {
-    if (m_stmt.IsPrepared() && strcmp(m_stmt.GetECSql(), ecsql.c_str()) == 0)
-        return;
-
-    m_stmt.Finalize();
-    ECSqlStatus st = m_stmt.Prepare(db, ecsql.c_str());
-    if (!st.IsSuccess()) {
-        throw std::runtime_error(SqlPrintfString("failed to prepare statement: %s. error: %s", ecsql.c_str(), db.GetLastError().c_str()).GetUtf8CP());
-    }
-    std:: string err;
-    if(!m_params.TryBindTo(m_stmt, err))
-        throw std::runtime_error(SqlPrintfString("failed to bind parameters for statement: %s. error: %s", ecsql.c_str(), err.c_str()).GetUtf8CP());
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void ECSqlRowReader::BindStatement() {
-    std:: string err;
-    if(!m_params.TryBindTo(m_stmt, err))
-        throw std::runtime_error(SqlPrintfString("failed to bind parameters for statement with error: %s", err.c_str()).GetUtf8CP());
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-bool ECSqlRowReader::Step(BeJsValue val) {
-    auto rc = m_stmt.Step();
-    if (rc == BE_SQLITE_DONE) return false;
-    if(rc != BE_SQLITE_OK) throw std::runtime_error("ECSqlStep failed");
-    if(!m_adaptor.RenderRowAsArray(val, ECSqlStatementRow(m_stmt))) throw std::runtime_error("failed to render row");
-    return true;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void ECSqlRowReader::Reset() {
-    m_stmt.Reset();
-    m_stmt.ClearBindings();
-    BindStatement();
-}
 END_BENTLEY_SQLITE_EC_NAMESPACE
