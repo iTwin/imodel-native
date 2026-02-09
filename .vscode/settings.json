@@ -73,7 +73,7 @@
     // C/C++ formatting - Google style (cross-platform)
     "C_Cpp.formatting": "clangFormat",
     "C_Cpp.clang_format_style": "file",
-    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, ColumnLimit: 0, IndentWidth: 4 }",
+    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, ColumnLimit: 0, IndentWidth: 4, SortIncludes: false}",
     // Ensure consistent line endings across platforms
     "files.eol": "\n",
     // Cross-platform editor settings for C/C++
