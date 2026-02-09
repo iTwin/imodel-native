@@ -2343,6 +2343,8 @@ QueryResponse::Ptr ECSqlRowReader::Impl::TryExecute(ECSqlRequest::Ptr request, R
     }
     if(!(m_args == request->GetArgs() && m_limit == request->GetLimit())) {
         std::string error;
+        m_adaptor.GetStatement().Reset();
+        m_adaptor.GetStatement().ClearBindings();
         if (!BindParams(request->GetArgs(), request->GetLimit(), error)) { // Bind parameters
             recordPrepareTime();
             return setError(SqlPrintfString("failed to bind params to ecsql: %s. error: %s", ecsql.c_str(), error.c_str()).GetUtf8CP(), QueryResponse::Status::Error_ECSql_BindingFailed);
